@@ -8,6 +8,7 @@ platforms = [
   "osx-arm64",
   "win-64",
   "linux-aarch64",
+  "win-arm64",
   { platform = "linux-64", cuda = "12.9" },
   { platform = "linux-64", cuda = "13.0" },
 ]
@@ -48,14 +49,18 @@ openblas = "*"
 ### Environments ###
 # We include one build task (and a corresponding environment) per solve group
 
+[environments.default]
+features = ["no-win-arm64"]
+solve-group = "default"
+
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-deps-compilers", "build-task", "win-openblas"]
+features = ["build-deps", "build-deps-compilers", "build-task", "win-openblas", "no-win-arm64"]
 solve-group = "default"
 
 [environments.test]
 # tasks: test, test-coverage, test-xslow
-features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
+features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs", "no-win-arm64"]
 solve-group = "default"
 
 [environments.smoke-docs]
@@ -65,22 +70,22 @@ solve-group = "default"
 
 [environments.docs]
 # tasks: docs, open-docs, refguide-check
-features = ["docs", "marray"]
+features = ["docs", "marray", "no-win-arm64"]
 solve-group = "default"
 
 [environments.test-fail-slow]
 # tasks: test-fail-slow
-features = ["run-deps", "test-deps", "fail-slow"]
+features = ["run-deps", "test-deps", "fail-slow", "no-win-arm64"]
 solve-group = "default"
 
 [environments.ipython]
 # tasks: ipython
-features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
+features = ["run-deps", "test-deps", "ipython-dep", "ipython-task", "no-win-arm64"]
 solve-group = "default"
 
 [environments.jupyter]
 # tasks: jupyter
-features = ["run-deps", "test-deps", "ipython-dep", "jupyter"]
+features = ["run-deps", "test-deps", "ipython-dep", "jupyter", "no-win-arm64"]
 solve-group = "default"
 
 [environments.bench]
@@ -246,7 +251,7 @@ features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "scip
 
 [environments.build-clang-23]
 # tasks: build-clang-23
-features = ["build-deps", "build-clang-23"]
+features = ["build-deps", "build-clang-23", "no-win-arm64"]
 
 [environments.build-intel]
 # tasks: build-intel
@@ -255,6 +260,11 @@ features = ["build-deps", "pythran-pypi", "intel", "build-intel", "py312"]
 [environments.test-intel]
 # tasks: test-intel
 features = ["run-deps", "test-deps", "intel", "test-intel", "py312"]
+
+[environments.win-arm64]
+# tasks: build-win-arm64, {test-tasks}
+features = ["win-arm64", "scipy-openblas32", "test-tasks"]
+no-default-feature = true
 
 [environments.gha-update]
 # tasks: gha-update
@@ -1007,6 +1017,55 @@ cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin test --build-dir=b
 depends-on = "build-intel"
 description = "Test SciPy (Intel OneAPI compilers)"
 
+
+### Alternative platforms ###
+
+[feature.no-win-arm64]
+platforms = [
+  "linux-64",
+  "osx-arm64",
+  "win-64",
+  "linux-aarch64",
+  "linux-64-cuda-12-9",
+  "linux-64-cuda-13-0",
+]
+
+[feature.win-arm64]
+platforms = ["win-arm64"]
+
+[feature.win-arm64.dependencies]
+# build
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pybind11 = "*"
+pkg-config = "*"
+# test
+pytest = "*"
+hypothesis = "*"
+pytest-timeout = "*"
+pytest-xdist = "*"
+threadpoolctl = "*"
+mpmath = "*"
+
+[feature.win-arm64.pypi-dependencies]
+numpy = "<2.4.3"  # np.linalg.solve crash, see gh-24774
+pooch = "*"
+spin = "*"
+
+[feature.win-arm64.tasks.build-win-arm64]
+cmd = "spin build --with-scipy-openblas=32 --setup-args=-Duse-pythran=false"
+env = {
+  CC = "clang-cl",
+  CXX = "clang-cl",
+}
+description = "Build SciPy (default settings)"
+
+[feature.win-arm64.tasks.test-win-arm64]
+cmd = "spin test --no-build"
+depends-on = "build-win-arm64"
+description = "Test SciPy (default settings)"
 
 ### Maintenance tools ###
 
