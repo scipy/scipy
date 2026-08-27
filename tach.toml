@@ -157,7 +157,6 @@ depends_on = [
     "scipy.special",
     "scipy.stats.contingency",
     "scipy.stats.distributions",
-    "scipy.stats.mstats",
     "scipy.stats.qmc", "scipy._external",
 ]
 

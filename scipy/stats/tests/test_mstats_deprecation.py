@@ -14,6 +14,7 @@ class TestMstatsDeprecation:
         stats.__dict__.pop("mstats", None)
         globals().pop("mstats", None)
 
+    @pytest.mark.thread_unsafe
     def test_import_message(self):
         message = "`scipy.stats.mstats` is deprecated..."
 

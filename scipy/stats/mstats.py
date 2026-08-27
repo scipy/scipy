@@ -225,7 +225,7 @@ def _document_deprecation(wrapper, message):
 for fun_name in __all__:
    fun = globals()[fun_name]
    message =_get_deprecation_message(fun, _mstats_deprecation_table, stats)
-   wrapper = _deprecated(message, stacklevel=3)(fun)
+   wrapper = _deprecated(message, stacklevel=2)(fun)
    _document_deprecation(wrapper, message)
    globals()[fun_name] = wrapper
 

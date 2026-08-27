@@ -153,11 +153,11 @@ This occurs because NaNs arising from invalid numerical calculations involving N
 y / y
 ```
 
-This can lead to invalid calculations producing bogus but harmless-looking numerical results, which is clearly unsafe in scientific computing. Rather than flagging the problem and allowing the user to *fix* it, it hides the problem and produces seemingly correct but erroneous values. 
+This can lead to invalid calculations producing bogus but harmless-looking numerical results, which is clearly unsafe in scientific computing. Rather than flagging the problem and allowing the user to *fix* it, it hides the problem and produces seemingly correct but erroneous values.
 
 +++
 
-The second reason for deprecating `mstats` is that `mstats` function interfaces and implementations were entirely separate from those of `scipy.stats`, and often neglected in terms of maintenance and enhancements. Consider, for instance, the stark difference in documentation thoroughness and feature completeness between [`scipy.stats.mannwhitneyu`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mannwhitneyu.html) and [`scipy.stats.mstats.mannwhitneyu`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mstats.mannwhitneyu.html#scipy.stats.mstats.mannwhitneyu). Eliminating `mstats` in favor of adding missing data allows SciPy maintainers to provide users with one, complete implementation with a single interface. 
+The second reason for deprecating `mstats` is that `mstats` function interfaces and implementations were entirely separate from those of `scipy.stats`, and often neglected in terms of maintenance and enhancements. Consider, for instance, the stark difference in documentation thoroughness and feature completeness between [`scipy.stats.mannwhitneyu`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mannwhitneyu.html) and [`scipy.stats.mstats.mannwhitneyu`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.mstats.mannwhitneyu.html#scipy.stats.mstats.mannwhitneyu). Eliminating `mstats` in favor of adding missing data allows SciPy maintainers to provide users with one, complete implementation with a single interface.
 
 +++
 
