@@ -9147,7 +9147,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/ld64_osx-arm64-956.6-llvm19_1_h6922315_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libamd-3.3.3-h5087772_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libblas-3.11.0-4_h51639a9_openblas.conda
-      - conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.91.0-hce30654_0.conda
+      - conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.92.0-hce30654_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libbtf-2.3.2-h99b4a89_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libcamd-3.3.3-h99b4a89_7100102.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/libcblas-3.11.0-4_hb0561ab_openblas.conda
@@ -35328,14 +35328,15 @@ packages:
     - libblas >=3.11.0,<4.0a0
   size: 18162
   timestamp: 1786058887392
-- conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.91.0-hce30654_0.conda
-  sha256: 3fee05bc086ef520e1f05ce4b9be48971ee504d9a78c433cd98e8d9b39316f20
-  md5: 7c364719d869c7e3e313b2bb618c1bec
+- conda: https://prefix.dev/conda-forge/osx-arm64/libboost-headers-1.92.0-hce30654_0.conda
+  sha256: 71a6bd4edd218128eb9d8bc9a9735f3ee7a655e673e2d961437527214ae26087
+  md5: ccded7d0f59edaa5a63e0a65efaa608a
   constrains:
   - boost-cpp <0.0a0
   license: BSL-1.0
-  size: 15154734
-  timestamp: 1776908824946
+  run_exports: {}
+  size: 15288467
+  timestamp: 1787650262259
 - conda: https://prefix.dev/conda-forge/osx-arm64/libbrotlicommon-1.2.0-hc919400_1.conda
   sha256: a7cb9e660531cf6fbd4148cff608c85738d0b76f0975c5fc3e7d5e92840b7229
   md5: 006e7ddd8a110771134fcc4e1e3a6ffa
