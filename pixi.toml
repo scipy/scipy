@@ -314,6 +314,14 @@ description = "Build SciPy (default settings)"
 
 ### Default testing ###
 
+[feature.test-deps.target.unix.dependencies]
+# compilers needed for Cython API compile tests; on Windows those use MSVC
+c-compiler = "*"
+cxx-compiler = "*"
+
+[feature.test-deps.target.win-64.dependencies]
+clang-cl_win-64 = "*"
+
 [feature.test-deps.dependencies]
 pytest = "*"
 hypothesis = "*"
