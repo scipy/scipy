@@ -102,10 +102,10 @@ jobs:
   fast_spin_arm64:
     name: fast, py3.12/npAny, spin (Win-ARM64), no pythran
     runs-on: windows-11-arm
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1 &&
-      (github.repository == 'scipy/scipy' || github.repository == '')
+    # needs: get_commit_message
+    # if: >
+    #   needs.get_commit_message.outputs.message == 1 &&
+    #   (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -113,26 +113,17 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
         with:
-          python-version: "3.12"
-          architecture: "arm64"
-
-      - name: pip-packages
-        run: |
-          # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
-          python -m pip install "numpy<2.4.3" --group build --group dev-cli --group test-core --group openblas32
-          python -m pip install -r requirements/pkgconf.txt
+          pixi-version: v0.77.1
+          cache: false
+          environments: win-arm64
 
       - name: Build
-        run: |
-          $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
-          $env:cc = "clang-cl"
-          $env:cxx = "clang-cl"
-          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
+        run: pixi run build-win-arm64
 
       - name: Test
         run: |
-          $env:OPENBLAS_NUM_THREADS = 1
-          spin test -j2 -- --durations=25
+          # test runner parallel clashes with OpenBLAS multithreading
+          $env:OPENBLAS_NUM_THREADS=1
+          pixi run test -j2 -- --durations=25
