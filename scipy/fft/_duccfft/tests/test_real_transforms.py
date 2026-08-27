@@ -11,7 +11,7 @@ from pytest import raises as assert_raises
 from scipy.fft._duccfft.realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
-fftpack_test_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests')
+fftpack_ref_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests', 'ref')
 
 MDATA_COUNT = 8
 FFTWDATA_COUNT = 14
@@ -30,7 +30,7 @@ def is_longdouble_binary_compatible():
 @pytest.fixture(scope="module")
 def reference_data():
     # Matlab reference data
-    MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
+    MDATA = np.load(join(fftpack_ref_dir, 'test.npz'))
     X = [MDATA[f'x{i}'] for i in range(MDATA_COUNT)]
     Y = [MDATA[f'y{i}'] for i in range(MDATA_COUNT)]
 
@@ -39,14 +39,14 @@ def reference_data():
     #    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
     #    contains the output of the DCT applied to the input np.linspace(0, size-1,
     #    size)
-    FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
-    FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
+    FFTWDATA_DOUBLE = np.load(join(fftpack_ref_dir, 'fftw_double_ref.npz'))
+    FFTWDATA_SINGLE = np.load(join(fftpack_ref_dir, 'fftw_single_ref.npz'))
     FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
     assert len(FFTWDATA_SIZES) == FFTWDATA_COUNT
 
     if is_longdouble_binary_compatible():
         FFTWDATA_LONGDOUBLE = np.load(
-            join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
+            join(fftpack_ref_dir, 'fftw_longdouble_ref.npz'))
     else:
         FFTWDATA_LONGDOUBLE = {k: v.astype(np.longdouble)
                                for k,v in FFTWDATA_DOUBLE.items()}

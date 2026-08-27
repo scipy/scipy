@@ -162,7 +162,7 @@ endif
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
-  linalg_cython_gen.process('_decomp_interpolative.pyx'),
+  linalg_cython_gen.process('src/_decomp_interpolative.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -189,7 +189,7 @@ py3.extension_module('_batched_linalg',
 
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
-  linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
+  linalg_init_cython_gen.process('src/_solve_toeplitz.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -199,7 +199,7 @@ py3.extension_module('_solve_toeplitz',
 
 # _matfuncs_sqrtm_triu:
 py3.extension_module('_matfuncs_sqrtm_triu',
-  linalg_init_cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
+  linalg_init_cython_gen.process('src/_matfuncs_sqrtm_triu.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -234,7 +234,7 @@ cython_lapack = py3.extension_module('cython_lapack',
 
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
-  input: '_decomp_update.pyx.in',
+  input: 'src/_decomp_update.pyx.in',
   command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
@@ -249,7 +249,7 @@ py3.extension_module('_decomp_update',
 
 py3.extension_module('_internal_matfuncs',
   [
-    '_matfuncsmodule.c',
+    'src/_matfuncsmodule.c',
     'src/_matfuncs_expm.c',
     'src/_matfuncs_sqrtm.c',
   ],
@@ -261,7 +261,7 @@ py3.extension_module('_internal_matfuncs',
 
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
+  linalg_init_utils_cython_gen.process('src/_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
   link_args: version_link_args,

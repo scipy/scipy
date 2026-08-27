@@ -1,6 +1,5 @@
 python_sources = [
   '__init__.py',
-  'dots.png',
   'test_array_likes.py',
   'test_c_api.py',
   'test_datatypes.py',
@@ -19,11 +18,4 @@ py3.install_sources(
   install_tag: 'tests'
 )
 
-py3.install_sources([
-    'data/label_inputs.txt',
-    'data/label_results.txt',
-    'data/label_strels.txt',
-  ],
-  subdir: 'scipy/ndimage/tests/data',
-  install_tag: 'tests'
-)
+subdir('ref')
