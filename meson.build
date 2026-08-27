@@ -236,6 +236,13 @@ else
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
+# this is required until we bump to a version which includes
+# https://github.com/boostorg/math/commit/03b38dbbadffeb6d412422e3f06bc0be7513a523
+boost_math_dep = declare_dependency(
+  dependencies: boost_math_dep,
+  compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
+)
+
 if all_system_libraries or use_system_libraries.contains('qhull')
   qhull_r_dep = dependency('qhull_r', version : '8.0.2')
 elif auto_system_libraries
