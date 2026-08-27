@@ -10,7 +10,7 @@ from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data
-MDATA = np.load(join(dirname(__file__), 'test.npz'))
+MDATA = np.load(join(dirname(__file__), 'ref', 'test.npz'))
 X = [MDATA[f'x{i}'] for i in range(8)]
 Y = [MDATA[f'y{i}'] for i in range(8)]
 
@@ -19,8 +19,8 @@ Y = [MDATA[f'y{i}'] for i in range(8)]
 #    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
 #    contains the output of the DCT applied to the input np.linspace(0, size-1,
 #    size)
-FFTWDATA_DOUBLE = np.load(join(dirname(__file__), 'fftw_double_ref.npz'))
-FFTWDATA_SINGLE = np.load(join(dirname(__file__), 'fftw_single_ref.npz'))
+FFTWDATA_DOUBLE = np.load(join(dirname(__file__), 'ref', 'fftw_double_ref.npz'))
+FFTWDATA_SINGLE = np.load(join(dirname(__file__), 'ref', 'fftw_single_ref.npz'))
 FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
 
 

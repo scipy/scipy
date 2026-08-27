@@ -12,18 +12,18 @@ _ufuncs_pxi_pxd_sources = [
 ]
 
 ufuncs_sources = [
-  'cython_special_wrappers.cpp',
-  'sf_error.cc',
-  'dd_real_wrappers.cpp'
+  'src/cython_special_wrappers.cpp',
+  'src/sf_error.cc',
+  'src/dd_real_wrappers.cpp'
 ]
 
 ufuncs_cxx_sources = [
-  'ellint_carlson_wrap.cxx',
-  'sf_error.cc',
+  'src/ellint_carlson_wrap.cxx',
+  'src/sf_error.cc',
 ]
 
 cdflib_lib = static_library('cdflib',
-  'cdflib.c',
+  'src/cdflib.c',
   include_directories: ['../_lib', '../_build_utils/src'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -31,8 +31,8 @@ cdflib_lib = static_library('cdflib',
 ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
 
 py3.extension_module('_special_ufuncs',
-  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  ['src/_special_ufuncs.cpp', 'src/_special_ufuncs_docs.cpp', 'src/sf_error.cc'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
   cpp_args: ['-DBOOST_MATH_STANDALONE=1'] + ufuncs_cpp_args,
@@ -41,8 +41,8 @@ py3.extension_module('_special_ufuncs',
 )
 
 py3.extension_module('_gufuncs',
-  ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  ['src/_gufuncs.cpp', 'src/_gufuncs_docs.cpp', 'src/sf_error.cc'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   cpp_args: ufuncs_cpp_args,
@@ -51,7 +51,7 @@ py3.extension_module('_gufuncs',
 )
 
 py3.extension_module('_specfun',
-  [cython_gen_cpp.process('_specfun.pyx')],
+  [cython_gen_cpp.process('src/_specfun.pyx')],
   dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
@@ -95,7 +95,7 @@ py3.extension_module('_ufuncs',
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   dependencies: [
     boost_math_dep,
     xsf_dep,
@@ -109,18 +109,18 @@ py3.extension_module('_ufuncs',
 )
 
 ellint_files = [
-  'ellint_carlson_wrap.hh',
-  'ellint_carlson_cpp_lite/_rc.hh',
-  'ellint_carlson_cpp_lite/_rd.hh',
-  'ellint_carlson_cpp_lite/_rf.hh',
-  'ellint_carlson_cpp_lite/_rg.hh',
-  'ellint_carlson_cpp_lite/_rj.hh',
-  'ellint_carlson_cpp_lite/ellint_argcheck.hh',
-  'ellint_carlson_cpp_lite/ellint_arith_aux.hh',
-  'ellint_carlson_cpp_lite/ellint_arithmetic.hh',
-  'ellint_carlson_cpp_lite/ellint_carlson.hh',
-  'ellint_carlson_cpp_lite/ellint_common.hh',
-  'ellint_carlson_cpp_lite/ellint_typing.hh',
+  'src/ellint_carlson_wrap.hh',
+  'src/ellint_carlson_cpp_lite/_rc.hh',
+  'src/ellint_carlson_cpp_lite/_rd.hh',
+  'src/ellint_carlson_cpp_lite/_rf.hh',
+  'src/ellint_carlson_cpp_lite/_rg.hh',
+  'src/ellint_carlson_cpp_lite/_rj.hh',
+  'src/ellint_carlson_cpp_lite/ellint_argcheck.hh',
+  'src/ellint_carlson_cpp_lite/ellint_arith_aux.hh',
+  'src/ellint_carlson_cpp_lite/ellint_arithmetic.hh',
+  'src/ellint_carlson_cpp_lite/ellint_carlson.hh',
+  'src/ellint_carlson_cpp_lite/ellint_common.hh',
+  'src/ellint_carlson_cpp_lite/ellint_typing.hh',
 ]
 
 ellint_dep = declare_dependency(sources: ellint_files)
@@ -137,7 +137,7 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   link_args: version_link_args,
   dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
   install: true,
@@ -145,10 +145,10 @@ py3.extension_module('_ufuncs_cxx',
 )
 
 py3.extension_module('_ellip_harm_2',
-  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
+  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'src/sf_error.cc'],
   c_args: [cython_c_args],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   link_args: version_link_args,
   dependencies: [xsf_dep, np_dep],
   install: true,
@@ -158,12 +158,12 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
-    'cython_special_wrappers.cpp',
-    'sf_error.cc',
-    'dd_real_wrappers.cpp'],
+    'src/cython_special_wrappers.cpp',
+    'src/sf_error.cc',
+    'src/dd_real_wrappers.cpp'],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
-  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src', 'src'],
   link_args: version_link_args,
   dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_with: cdflib_lib,

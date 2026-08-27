@@ -17,7 +17,7 @@ py3.extension_module('_distance_pybind',
 )
 
 py3.extension_module('_hausdorff',
-  [cython_gen.process('_hausdorff.pyx')],
+  [cython_gen.process('src/_hausdorff.pyx')],
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,

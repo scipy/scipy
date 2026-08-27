@@ -1,7 +1,9 @@
+# cython
+
 _stats_pxd = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('_stats.pxd'),
-  fs.copyfile('_biasedurn.pxd'),
+  fs.copyfile('_biasedurn/__init__.pxd', '_biasedurn.pxd'),
+  fs.copyfile('_stats/__init__.pxd', '_stats.pxd'),
 ]
 
 stats_special_cython_gen = generator(cython,
@@ -13,67 +15,9 @@ stats_special_cython_gen = generator(cython,
     _stats_pxd,
     cython_special_pxd])
 
-py3.extension_module('_stats',
-  stats_special_cython_gen.process('_stats.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/stats'
-)
 
-py3.extension_module('_ansari_swilk_statistics',
-  cython_gen.process('_ansari_swilk_statistics.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/stats'
-)
-
-py3.extension_module('_sobol',
-  cython_gen.process('_sobol.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/stats'
-)
-
-py3.install_sources([
-    '_sobol_direction_numbers.npz'
-  ],
-  subdir: 'scipy/stats'
-)
-
-py3.extension_module('_qmc_cy',
-  cython_gen_cpp.process('_qmc_cy.pyx'),
-  cpp_args: cython_cpp_args,
-  dependencies: [np_dep, thread_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/stats'
-)
-
-py3.extension_module('_biasedurn',
-  [
-    cython_gen_cpp.process('_biasedurn.pyx'),
-    'biasedurn/fnchyppr.cpp',
-    'biasedurn/impls.cpp',
-    'biasedurn/stoc1.cpp',
-    'biasedurn/stoc3.cpp',
-    'biasedurn/stocR.h',
-    'biasedurn/wnchyppr.cpp',
-    'libnpyrandom/distributions.c',
-  ],
-  cpp_args: ['-DR_BUILD', cython_cpp_args],
-  include_directories: ['libnpyrandom'],
-  link_args: version_link_args,
-  dependencies: [np_dep],
-  install: true,
-  subdir: 'scipy/stats'
-)
-
+# pythran
+    
 if use_pythran
   py3.extension_module('_stats_pythran',
     pythran_gen.process('_stats_pythran.py'),
@@ -96,15 +40,7 @@ else
 endif
 
 
-py3.extension_module('_qmvnt_cy',
-  cython_gen_cpp.process('_qmvnt_cy.pyx'),
-  cpp_args: cython_cpp_args,
-  dependencies: [np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/stats'
-)
-
+# python
 
 py3.install_sources([
     '__init__.py',
@@ -166,22 +102,15 @@ py3.install_sources([
   subdir: 'scipy/stats'
 )
 
-py3.install_sources([
-    '_biasedurn.pxd',
-    '_stats.pxd'
-  ],
-  subdir: 'scipy/stats'
-)
 
-py3.install_sources([
-    '_qmc_cy.pyi',
-    '_sobol.pyi'
-  ],
-  subdir: 'scipy/stats'
-)
-
+subdir('_ansari_swilk_statistics')
+subdir('_biasedurn')
 subdir('_levy_stable')
-subdir('_unuran')
+subdir('_qmc_cy')
+subdir('_qmvnt_cy')
 subdir('_rcont')
+subdir('_sobol')
+subdir('_stats')
+subdir('_unuran')
 
 subdir('tests')

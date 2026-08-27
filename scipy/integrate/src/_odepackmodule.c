@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
-#include "src/lsoda.h"
+#include "lsoda.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

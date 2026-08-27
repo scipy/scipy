@@ -1,18 +1,11 @@
-py3.install_sources([
-    '__init__.py',
-  ],
-  pure: false,
-  subdir: 'scipy/stats/_rcont'
-)
-
-py3.extension_module('rcont',
+py3.extension_module('__init__',
   [
-    '_rcont.c',
-    '../libnpyrandom/logfactorial.c',
-    '../libnpyrandom/distributions.c',
+    'src/_rcont.c',
+    '../src/libnpyrandom/logfactorial.c',
+    '../src/libnpyrandom/distributions.c',
   ],
-  cython_gen.process('rcont.pyx'),
-  include_directories: ['../libnpyrandom'],
+  cython_gen.process('__init__.pyx'),
+  include_directories: ['../src/libnpyrandom'],
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,

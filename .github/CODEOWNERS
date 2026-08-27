@@ -56,7 +56,7 @@ scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
 scipy/stats/_sensitivity_analysis.py  @tupui
 scipy/stats/_survival.py  @tupui @mdhaber
-scipy/stats/.unuran/  @tirthasheshpatel
+scipy/stats/_unuran/  @tirthasheshpatel
 
 # Testing infrastructure
 pytest.ini  @larsoner

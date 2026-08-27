@@ -8,7 +8,7 @@ from libc.stdint cimport uint32_t, uint64_t, int64_t
 
 ctypedef int64_t tab_t
 
-cdef extern from "./_rcont.h":
+cdef extern from "./src/_rcont.h":
     ctypedef struct bitgen_t:
         void *state
         uint64_t (*next_uint64)(void *st) nogil

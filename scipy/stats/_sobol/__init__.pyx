@@ -144,7 +144,7 @@ def _initialize_direction_numbers(poly, vinit, dtype):
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    _curdir = importlib.resources.files("scipy.stats")
+    _curdir = importlib.resources.files("scipy.stats._sobol")
     _npzfile = _curdir.joinpath("_sobol_direction_numbers.npz")
     with importlib.resources.as_file(_npzfile) as f:
         dns = np.load(f)

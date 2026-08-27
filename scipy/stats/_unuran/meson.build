@@ -1,6 +1,6 @@
 _unuran_pxd = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('unuran.pxd'),
+  fs.copyfile('src/unuran.pxd'),
 ]
 
 # Cython pyx -> c generator with _lib_pxd dependency, because the unuran
@@ -17,11 +17,11 @@ unuran_defines = unuran.get_variable('unuran_defines')
 
 py3.extension_module('unuran_wrapper',
   [
-    unuran_cython_gen.process('unuran_wrapper.pyx'),
+    unuran_cython_gen.process('src/unuran_wrapper.pyx'),
     unuran_sources
   ],
   c_args: [unuran_defines, cython_c_args],
-  include_directories: unuran_include_dirs,
+  include_directories: [unuran_include_dirs, 'src'],
   dependencies: [np_dep, ccallback_dep],
   link_args: version_link_args,
   install: true,
