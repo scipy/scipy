@@ -512,6 +512,7 @@ cpp_args_pythran += [
   _cpp_Wno_unused_but_set_variable,
   _cpp_Wno_unused_function,
   _cpp_Wno_unused_variable,
+  _cpp_Wno_unused_template, # https://github.com/serge-sans-paille/pythran/issues/2477
   _cpp_Wno_int_in_bool_context,
 ]
 
