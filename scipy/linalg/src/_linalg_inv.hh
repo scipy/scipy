@@ -368,8 +368,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: is_symm and is_herm are always equal
                     if (is_symm) {
-                        // try Cholesky first, fall back to sytrf if it fails
-                        slice_structure = St::POS_DEF;
+                        /*
+                         * If working on a copy (overwrite_a is False):
+                         *    try Cholesky first, fall back to sytrf if it fails
+                         * If working in-place, do the inversion in one go,
+                         *    (if Cholesky failed, it already destroyed the input)
+                         */
+                        slice_structure = overwrite_a ? St::SYM : St::POS_DEF ;
                     }
                     else {
                         slice_structure = St::GENERAL;
@@ -383,7 +388,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     else if (is_herm) {
                         // Hermitian (may also be symmetric if entries are real)
                         // try Cholesky first, fall back to hetrf if it fails
-                        slice_structure = St::POS_DEF;
+                        slice_structure = overwrite_a ? St::HER : St::POS_DEF ;
                     }
                     else {
                         // is_symm && !is_herm: complex symmetric, not hermitian

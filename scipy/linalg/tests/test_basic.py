@@ -1755,6 +1755,26 @@ class TestInv:
         with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
 
+    def test_sym_overwrite_a(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # setting overwrite_a makes it work in-place; for symmetric inputs this
+        # conflicts with trying Cholesky first.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], order='F')
+        a3inv = inv(a3)
+
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # the same bug triggers with a float `a` and an explicit overwrite_a=True
+        a3inv = inv(a3.astype(float), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # for completeness, cover the complex input
+        a3inv = inv(a3.astype(complex), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
 
 class TestDet:
     def test_1x1_all_singleton_dims(self):
