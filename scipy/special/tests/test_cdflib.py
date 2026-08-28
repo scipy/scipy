@@ -1006,3 +1006,16 @@ def test_nrdtrimn_edge_cases(p, std, x, ref):
 ])
 def test_nrdtrisd_edge_cases(mn, p, x, ref):
     assert_equal(sp.nrdtrisd(mn, p, x), ref)
+
+@pytest.mark.parametrize("df, t, cdf_ref", [
+    (10, 10, 0.9999992052234122),
+    (10, -10, 7.947765877982061e-07),
+    (1, -2000, 0.0001591549298289854),
+    (1000, -2, 0.022885173246625867),
+    (1000, 5, 0.9999996616371818),
+    (1000, -30, 7.687343722021527e-142)
+])
+def test_students_t_functions_spot_checks(df, t, cdf_ref):
+    assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-12)
+    assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
+    assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)
