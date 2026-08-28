@@ -12357,8 +12357,6 @@ const char *stdtr_doc = R"(
     )";
 
 const char *stdtridf_doc = R"(
-    "stdtridf",
-    """
     stdtridf(p, t, out=None)
 
     Inverse of `stdtr` vs df.
