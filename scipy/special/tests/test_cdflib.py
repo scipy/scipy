@@ -294,13 +294,6 @@ class TestCDFlib:
             _student_t_cdf,
             [IntArg(1, 100), Arg(1e-10, np.inf)], rtol=1e-7)
 
-    @pytest.mark.xfail(run=False)
-    def test_stdtridf(self):
-        _assert_inverts(
-            sp.stdtridf,
-            _student_t_cdf,
-            0, [ProbArg(), Arg()], rtol=1e-7)
-
     def test_stdtrit(self):
         _assert_inverts(
             sp.stdtrit,
