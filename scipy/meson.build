@@ -73,6 +73,7 @@ numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
 np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+nanobind_dep = dependency('nanobind')
 
 # Pythran include directory and build flags
 if use_pythran
