@@ -1,5 +1,5 @@
 py3.extension_module('_interpnd',
-  spt_cython_gen.process('_interpnd.pyx'),
+  spt_cython_gen.process('src/_interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -8,7 +8,7 @@ py3.extension_module('_interpnd',
 )
 
 py3.extension_module('_ppoly',
-  linalg_cython_gen.process('_ppoly.pyx'),
+  linalg_cython_gen.process('src/_ppoly.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -17,7 +17,7 @@ py3.extension_module('_ppoly',
 )
 
 py3.extension_module('_rgi_cython',
-  linalg_cython_gen.process('_rgi_cython.pyx'),
+  linalg_cython_gen.process('src/_rgi_cython.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   install: true,

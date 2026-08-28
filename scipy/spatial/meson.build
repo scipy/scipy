@@ -12,11 +12,12 @@ spt_cython_gen = generator(cython,
 
 py3.extension_module('_qhull',
   [spt_cython_gen.process('_qhull.pyx'),
-    'qhull_misc.h', 'qhull_misc.c'],
+    'src/qhull_misc.h', 'src/qhull_misc.c'],
   c_args: cython_c_args,
   include_directories: [
     '../_lib',
     '../_build_utils/src',
+    'src',
   ],
   link_args: version_link_args,
   dependencies: [np_dep, qhull_r_dep],
@@ -35,7 +36,7 @@ ckdtree_src = [
 ]
 
 py3.extension_module('_ckdtree',
-  ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
+  ckdtree_src + [cython_gen_cpp.process('src/_ckdtree.pyx')],
   # Revert to just cython_cpp_args once Cython 3.2.5 is available.
   cpp_args: [
     cython_cpp_args,
@@ -54,7 +55,7 @@ py3.extension_module('_ckdtree',
 )
 
 py3.extension_module('_voronoi',
-  [cython_gen.process('_voronoi.pyx')],
+  [cython_gen.process('src/_voronoi.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
   link_args: version_link_args,

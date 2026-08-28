@@ -1,11 +1,11 @@
 py3.extension_module('_direct',
-  ['_direct/direct_wrap.c',
-   '_direct/direct-internal.h',
-   '_direct/DIRect.c',
-   '_direct/DIRserial.c',
-   '_direct/DIRsubrout.c',
-   '_directmodule.h',
-   '_directmodule.c'
+  ['src/_direct/direct_wrap.c',
+   'src/_direct/direct-internal.h',
+   'src/_direct/DIRect.c',
+   'src/_direct/DIRserial.c',
+   'src/_direct/DIRsubrout.c',
+   'src/_directmodule.h',
+   'src/_directmodule.c'
   ],
   include_directories: '../_lib/src',
   dependencies: np_dep,
@@ -16,7 +16,7 @@ py3.extension_module('_direct',
 
 py3.extension_module('_minpack',
   [
-    '_minpackmodule.c',
+    'src/_minpackmodule.c',
     'src/minpack.c',
   ],
   include_directories: 'src/',
@@ -27,14 +27,14 @@ py3.extension_module('_minpack',
 
 rectangular_lsap = static_library('rectangular_lsap',
   [
-    'rectangular_lsap/rectangular_lsap.h',
-    'rectangular_lsap/rectangular_lsap.cpp'
+    'src/rectangular_lsap/rectangular_lsap.h',
+    'src/rectangular_lsap/rectangular_lsap.cpp'
   ],
   gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_lsap',
-  ['_lsapmodule.c'],
+  ['src/_lsapmodule.c'],
   link_with: rectangular_lsap,
   include_directories: '../_lib/src',
   dependencies: np_dep,
@@ -45,17 +45,17 @@ py3.extension_module('_lsap',
 
 rootfind_lib = static_library('rootfind',
   [
-    'Zeros/bisect.c',
-    'Zeros/brenth.c',
-    'Zeros/brentq.c',
-    'Zeros/ridder.c',
-    'Zeros/zeros.h'
+    'src/Zeros/bisect.c',
+    'src/Zeros/brenth.c',
+    'src/Zeros/brentq.c',
+    'src/Zeros/ridder.c',
+    'src/Zeros/zeros.h'
   ],
   gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_zeros',
-  '_zerosmodule.c',
+  'src/_zerosmodule.c',
   link_with: rootfind_lib,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -66,7 +66,7 @@ py3.extension_module('_zeros',
 
 py3.extension_module('_lbfgsb',
   [
-    '_lbfgsbmodule.c',
+    'src/_lbfgsbmodule.c',
     'src/lbfgsb.c',
   ],
   dependencies: [lapack_dep, np_dep],
@@ -77,11 +77,11 @@ py3.extension_module('_lbfgsb',
 )
 
 py3.extension_module('_moduleTNC',
-  ['tnc/tnc.h',
-    cython_gen.process('tnc/_moduleTNC.pyx'),
-    'tnc/tnc.c'],
+  ['src/tnc/tnc.h',
+    cython_gen.process('src/tnc/_moduleTNC.pyx'),
+    'src/tnc/tnc.c'],
   c_args: cython_c_args,
-  include_directories: 'tnc',
+  include_directories: 'src/tnc',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
@@ -89,8 +89,7 @@ py3.extension_module('_moduleTNC',
 )
 
 py3.extension_module('_pava_pybind',
-  ['_pava/pava_pybind.cpp'],
-  include_directories: '_pava',
+  ['src/pava_pybind.cpp'],
   dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
   install: true,
@@ -130,7 +129,7 @@ opt_gen = generator(cython,
   depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
 py3.extension_module('_bglu_dense',
-  opt_gen.process('_bglu_dense.pyx'),
+  opt_gen.process('src/_bglu_dense.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -140,7 +139,7 @@ py3.extension_module('_bglu_dense',
 
 py3.extension_module('_slsqplib',
   [
-    '_slsqpmodule.c',
+    'src/_slsqpmodule.c',
     'src/slsqp.c',
     'src/nnls.c'
   ],

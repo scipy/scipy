@@ -7,7 +7,7 @@ import io
 
 from scipy.io.matlab._mio5 import MatFile5Reader
 
-test_data_path = os.path.join(os.path.dirname(__file__), 'data')
+test_data_path = os.path.join(os.path.dirname(__file__), 'ref', 'data')
 
 
 def read_minimat_vars(rdr):

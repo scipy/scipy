@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 
 from scipy.io.matlab._mio import loadmat
 
-TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
+TEST_DATA_PATH = pjoin(dirname(__file__), 'ref', 'data')
 
 
 def test_multiple_fieldnames():

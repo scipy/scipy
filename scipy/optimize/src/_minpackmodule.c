@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
-#include "src/minpack.h"
+#include "minpack.h"
 
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}

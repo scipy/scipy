@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
-#include "src/dop.h"
+#include "dop.h"
 #include <math.h>
 
 static PyObject* dop_error;
