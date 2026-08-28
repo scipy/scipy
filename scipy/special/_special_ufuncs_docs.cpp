@@ -12356,6 +12356,53 @@ const char *stdtr_doc = R"(
     True
     )";
 
+const char *stdtridf_doc = R"(
+    "stdtridf",
+    """
+    stdtridf(p, t, out=None)
+
+    Inverse of `stdtr` vs df.
+
+    Returns the argument df such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    t : array_like
+        Upper bound of the integral
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Value of `df` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : Student t distribution
+
+    Examples
+    --------
+    Compute the student t cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import stdtr, stdtridf
+    >>> df, x = 5, 2
+    >>> cdf_value = stdtr(df, x)
+    >>> cdf_value
+    0.9490302605850709
+
+    Verify that `stdtridf` recovers the original value for `df` given
+    the CDF value and `x`.
+
+    >>> stdtridf(cdf_value, x)
+    5.000000000000012
+    )";
+    
 const char *stdtrit_doc = R"(
     stdtrit(df, p, out=None)
 
@@ -12413,7 +12460,7 @@ const char *stdtrit_doc = R"(
     >>> x = 1
     >>> cdf_value = stdtr(df, x)
     >>> stdtrit(df, cdf_value)
-    0.9999999994418539
+    1.0000000000000007
 
     Plot the function for three different degrees of freedom.
 
