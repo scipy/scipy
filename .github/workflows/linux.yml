@@ -678,10 +678,10 @@ jobs:
           pixi exec ccache -s
 
   #################################################################################
-  clang-22-build-only:
+  clang-23-build-only:
     # Purpose is to check for warnings in builds with latest clang.
     # We do not run the test suite here.
-    name: Clang-22 aarch build-only (-Werror)
+    name: Clang-23 aarch build-only (-Werror)
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -699,7 +699,7 @@ jobs:
           cache: false
 
       - name: Build wheel, check for compiler warnings
-        run: pixi run build-clang-22
+        run: pixi run build-clang-23
 
   #################################################################################
   test_aarch64:
