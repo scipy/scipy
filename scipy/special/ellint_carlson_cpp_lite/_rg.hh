@@ -50,14 +50,14 @@ namespace ellint_carlson {
 namespace arithmetic { namespace aux {
 
 template<typename T>
-static inline typing::real_only<T, void>
+inline typing::real_only<T, void>
 rg_dot2_acc(const T& fac, const T& term, T& acc, T& cor)
 {
     fdot2_acc(fac, term, acc, cor);
 }
 
 template<typename CT>
-static inline typing::cplx_only<CT, void>
+inline typing::cplx_only<CT, void>
 rg_dot2_acc(const typing::decplx_t<CT>& fac, const CT& term, CT& acc, CT& cor)
 {
     typedef typing::decplx_t<CT> RT;
@@ -74,7 +74,7 @@ rg_dot2_acc(const typing::decplx_t<CT>& fac, const CT& term, CT& acc, CT& cor)
 
 
 template<typename T>
-static ExitStatus
+ExitStatus
 rg0(const T& x, const T& y, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;

@@ -1817,6 +1817,33 @@ class TestOrderFilt:
         xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
 
+@make_xp_test_case(lfiltic)
+class TestLFiltic:
+    """_TestLinearFilter is parameterized by dtype so we collect the tests for lfiltic
+    which are not dtype-dependent here to avoid running them multiple times."""
+    def test_lfiltic_bad_coeffs(self):  # array-like is np-only
+        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
+        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
+
+    @skip_xp_backends('cupy', reason="CuPy does not support scalar initial conditions")
+    def test_lfiltic_scalar_ic(self, xp):
+        # regression test for gh-14664: scalar initial conditions must be
+        # accepted and give the same result as the equivalent length-1 array,
+        # independently of the filter length (a short filter used to raise).
+        b = xp.asarray([1 - 0.2])
+        a = xp.asarray([1.0, -0.2])
+        xp_assert_close(lfiltic(b, a, 3.0), lfiltic(b, a, xp.asarray([3.0])))
+
+        # a scalar `x` (with M > 0) is likewise accepted
+        b2 = xp.asarray([1.0, 0.5, 0.25])
+        a2 = xp.asarray([1.0, -0.3])
+        xp_assert_close(lfiltic(b2, a2, 2.0, 1.0),
+                        lfiltic(b2, a2, xp.asarray([2.0]), xp.asarray([1.0])))
+
+
 @make_xp_test_case(lfilter)
 class _TestLinearFilter:
     def generate(self, shape, xp):
@@ -2218,14 +2245,6 @@ class _TestLinearFilter:
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
 
-    @make_xp_test_case(lfiltic)
-    def test_lfiltic_bad_coeffs(xp):
-        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
-        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
-
     @skip_xp_backends(
         'array_api_strict', reason='int64 and float64 cannot be promoted together'
     )
@@ -2243,21 +2262,6 @@ class _TestLinearFilter:
 
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
         xp_assert_equal(zi, zi_2, **check_dtype_arg)
-
-    @make_xp_test_case(lfiltic)
-    def test_lfiltic_scalar_ic(self, xp):
-        # regression test for gh-14664: scalar initial conditions must be
-        # accepted and give the same result as the equivalent length-1 array,
-        # independently of the filter length (a short filter used to raise).
-        b = xp.asarray([1 - 0.2])
-        a = xp.asarray([1.0, -0.2])
-        xp_assert_close(lfiltic(b, a, 3.0), lfiltic(b, a, xp.asarray([3.0])))
-
-        # a scalar `x` (with M > 0) is likewise accepted
-        b2 = xp.asarray([1.0, 0.5, 0.25])
-        a2 = xp.asarray([1.0, -0.3])
-        xp_assert_close(lfiltic(b2, a2, 2.0, 1.0),
-                        lfiltic(b2, a2, xp.asarray([2.0]), xp.asarray([1.0])))
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_short_x_FIR(self, xp):

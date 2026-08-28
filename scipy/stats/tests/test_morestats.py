@@ -2312,6 +2312,22 @@ class TestWilcoxon:
         with pytest.raises(AxisError, match=message):
             stats.wilcoxon(x, y, axis=3, _no_deco=True)
 
+    @skip_xp_backends("jax.numpy", reason="`method='exact'` is incompatible with JAX")
+    def test_gh26026(self, xp):
+        # gh-26026 reported inaccuracy in very small p-values; in this case
+        # the returned p-value was exactly zero. Check that this is resolved.
+        dtype = xp.float64  # because this test is looking for accuracy
+        x = xp.asarray([23, 75, 79, 31, 71, -39, 16, 51, 17, 32, 46, 77, 69, 5, 12, 66,
+                        40, 14, 7, 20, 97, 65, 11, 90, 81, -2, 19, 6, -98, 83, -56, 50,
+                        70, 95, 96, -68, 87, 72, 44, 91, 13, 10, 35, 21, 53, 36, 47, 89,
+                        55, 45, 22, 92, 61, 33, 84, 18, 76, 24, 88, 57, 1, 25, 94, 30,
+                        -60, 73, 85, 59, 52, 62, 48, 49, 29, 15, 43, 42, -9, 26, 58, 4,
+                        78, 3, 64, 67, 37, 41, 86, 27, 28, 63, 93, -34, 74, 8, 80, 100,
+                        99, 82, 38, 54], dtype=dtype)
+        res = stats.wilcoxon(x, method='exact')
+        ref = xp.asarray(51499060970173 / 633825300114114700748351602688, dtype=dtype)
+        xp_assert_close(res.pvalue, ref)
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf

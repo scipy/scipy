@@ -1529,9 +1529,9 @@ is marked by a light blue background. Per definition the zeroth slice
 (`m_num_mid`), here being the sample ``6//2=3``, is marked by the text "mid".
 By default the `stft` calculates all slices which have some overlap with the
 signal. Hence the first slice is at `p_min` = -1 with the lowest sample index
-being `k_min` = -5. The first sample index unaffected by a slice not sticking
-out to the left of the signal is :math:`p_{lb} = 2` and the first sample index
-unaffected by border effects is :math:`k_{lb} = 5`. The property
+being `k_min` = -5. The first slice index not sticking out to the left of the
+signal is :math:`p_{lb} = 2` and the first sample index unaffected by border
+effects is :math:`k_{lb} = 5`. The property
 `lower_border_end` returns the tuple :math:`(k_{lb}, p_{lb})`.
 
 The behavior at the end of the signal is depicted for a signal with
