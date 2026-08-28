@@ -4707,8 +4707,7 @@ class TestKSTest:
         xp_assert_equal(res.statistic_location, ref.statistic_location)
         xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
-    @skip_xp_backends(np_only=True, reason='string `cdf` incompatible with other xp')
-    def test_gh25448(self):
+    def test_gh25448(self):  # string `cdf` incompatible with other xp
         # gh-25448 reported a failure with with `cdf='norm'` + use of `args`
         rng = np.random.default_rng(254482544825448)
         x = rng.normal(size=100)
