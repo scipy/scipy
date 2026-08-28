@@ -965,7 +965,7 @@ const char *_stirling2_inexact_doc = R"(
 const char *hyp0f1_doc = R"(
     hyp0f1(v, z, out=None)
 
-    Confluent hypergeometric limit function 0F1.
+    Confluent hypergeometric limit function :math:`{}_0F_1(; v; z)`.
 
     Parameters
     ----------
@@ -985,11 +985,12 @@ const char *hyp0f1_doc = R"(
     -----
     This function is defined as:
 
-    .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
+    .. math:: {}_0F_1(; v; z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
 
-    It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
-    and satisfies the differential equation :math:`f''(z) + vf'(z) =
-    f(z)`. See [1]_ for more information.
+    where :math:`(\cdot)_k` is the Pochhammer symbol; see `poch`. It is also
+    the limit as :math:`q \to \infty` of :math:`{}_1F_1(q; v; z/q)`,
+    and satisfies the differential equation :math:`z f''(z) + vf'(z) = f(z)`.
+    See [1]_ for more information.
 
     References
     ----------
@@ -1031,7 +1032,7 @@ const char *hyp0f1_doc = R"(
 const char *hyp1f1_doc = R"(
     hyp1f1(a, b, x, out=None)
 
-    Confluent hypergeometric function 1F1.
+    Confluent hypergeometric function :math:`{}_1F_1(a; b; x)`.
 
     The confluent hypergeometric function is defined by the series
 
@@ -7378,7 +7379,7 @@ const char *hankel2e_doc = R"(
 const char *hyp2f1_doc = R"(
     hyp2f1(a, b, c, z, out=None)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
+    Gauss hypergeometric function :math:`{}_2F_1(a, b; c; z)`.
 
     Parameters
     ----------
@@ -7405,22 +7406,23 @@ const char *hyp2f1_doc = R"(
 
     .. math::
 
-       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       {}_2F_1(a, b; c; z) = \sum_{n=0}^\infty
        \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
 
     and defined on the rest of the complex z-plane by analytic
     continuation [1]_.
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
-    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+    :math:`a` or :math:`b` is a nonpositive integer, the series terminates and
+    the result is a polynomial.
 
     The implementation for complex values of ``z`` is described in [2]_,
     except for ``z`` in the region defined by
 
     .. math::
 
-         0.9 <= \left|z\right| < 1.1,
-         \left|1 - z\right| >= 0.9,
-         \mathrm{real}(z) >= 0
+         0.9 \le \left|z\right| < 1.1,
+         \left|1 - z\right| \ge 0.9,
+         \mathrm{Re}(z) \ge 0
 
     in which the implementation follows [4]_.
 
@@ -7485,7 +7487,7 @@ const char *hyp2f1_doc = R"(
 const char *hyperu_doc = R"(
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U.
+    Confluent hypergeometric function :math:`U(a, b, x)`.
 
     It is defined as the solution to the equation
 
@@ -7513,7 +7515,7 @@ const char *hyperu_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Values of `U`
+        Values of :math:`U(a, b, x)`
 
     References
     ----------
@@ -7531,7 +7533,7 @@ const char *hyperu_doc = R"(
     >>> sc.hyperu(1, 1, x)
     array([nan, nan, nan, nan, nan])
 
-    It approaches zero as `x` goes to infinity.
+    For :math:`a = 1` and :math:`b = 1`, it approaches zero as `x` goes to infinity.
 
     >>> x = np.array([1, 10, 100])
     >>> sc.hyperu(1, 1, x)

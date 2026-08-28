@@ -1381,6 +1381,13 @@ class TestAiry:
             [-2.2944396826, -4.0731550891, -5.5123957297,
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
+    def test_gh26034(self):
+        z = np.asarray(-10 - 0j)
+        res = special.airy(z)
+        ref = special.airy(z.real)
+        for r, e in zip(res, ref):
+            assert_allclose(r, e)
+
 
 class TestAssocLaguerre:
     def test_assoc_laguerre(self):
