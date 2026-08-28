@@ -3667,8 +3667,8 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     >>> p = np.array([0.5])
     >>> k = np.array([1.6, -0.2])
     >>> b, a = signal.invresz(r, p, k)
-    >>> b
-    array([ 2. , -1. ,  0.1])
+    >>> b, a
+    (array([ 2. , -1. ,  0.1]), array([ 1. , -0.5]))
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
