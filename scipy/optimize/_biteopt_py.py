@@ -55,7 +55,7 @@ def biteopt(
         Target objective value. The optimization stops early once the best
         objective value found is less than or equal to `f_min`. By default
         (-inf) this criterion is disabled and the full iteration budget is
-        used. None is also accepted and equivalent to the default.
+        used.
     rng : {None, int, `numpy.random.Generator`}, optional
         Controls reproducibility. Passed to `numpy.random.default_rng` to
         derive the integer seed used by BiteOpt's internal PRNG.
@@ -142,8 +142,6 @@ def biteopt(
     lb = np.ascontiguousarray(bounds.lb, dtype=np.float64)
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
-    if lb.shape != ub.shape or lb.ndim != 1 or lb.shape[0] == 0:
-        raise ValueError("bounds must contain at least one finite (min, max) pair")
     if not np.all(lb < ub):
         raise ValueError("Bounds are not consistent min < max")
     if np.any(np.isinf(lb)) or np.any(np.isinf(ub)):
@@ -156,14 +154,10 @@ def biteopt(
         # oversized values here for a clear error
         max_allowed_int = np.iinfo(np.intc).max
         maxfun = _validate_int(maxfun, "maxfun", minimum=1, maximum=max_allowed_int)
+    else:
+        ndim = len(lb)
+        maxfun = 1000 * ndim
 
-
-        _int_max = int(np.iinfo(np.intc).max)
-        if maxfun > _int_max:
-            raise ValueError(f"maxfun must not exceed {_int_max}.")
-
-    if f_min is None:
-        f_min = -np.inf
     f_min = float(f_min)
 
     # BiteOpt's internal PRNG is driven by the NumPy Generator's bit
@@ -183,9 +177,6 @@ def biteopt(
                     "must return a scalar value."
                 ) from e
         return fx
-
-    if maxfun is None:
-        maxfun = 1000 * len(lb)
 
     # naming convention: SciPy's "maxfun" is BiteOpt's "iter"
     # BiteOpt internally scales iter by sqrt(depth): useiter = int(iter * sqrt(depth)).

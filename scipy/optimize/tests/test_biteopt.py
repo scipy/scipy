@@ -291,6 +291,8 @@ class TestInputValidation:
         (0, ValueError, "must be an integer not less than 1"),
         (-1, ValueError, "must be an integer not less than 1"),
         (1.5, TypeError, "must be an integer"),
+        (np.iinfo(np.intc).max + 1, ValueError,
+         "maxfun must be an integer not greater than"),
     ])
     def test_invalid_maxfun(self, maxfun, exc_type, msg):
         with pytest.raises(exc_type, match=msg):
