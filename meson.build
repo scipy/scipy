@@ -151,7 +151,6 @@ if cc.get_id() != 'clang-cl'
   endif
 endif
 
-generate_f2pymod = find_program('tools/building/generate_f2pymod.py')
 tempita = find_program('tools/building/tempita.py')
 
 use_pythran = get_option('use-pythran')
@@ -224,7 +223,7 @@ elif use_system_libraries.contains('auto')
   auto_system_libraries = true
 endif
 
-boost_version = '1.91.0'
+boost_version = '1.92.0'
 if all_system_libraries or use_system_libraries.contains('boost.math')
   boost_math_dep = dependency('boost', version : boost_version)
 elif auto_system_libraries
