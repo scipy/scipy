@@ -121,8 +121,8 @@ mask = np.asarray([[False, False, False,  True, False],
 NumPy offers `np.ma.masked_array`, for working with masked data, and functions in the {mod}`scipy.stats<scipy.stats>` were provided to work with these NumPy masked arrays.
 
 In principle, the masked array approach is advantageous because it has the potential to avoid conflating *missing* NaN values with *invalid* NaN values, such as the result of `0 / 0`. It can also be faster in batch calculations with many slices, because batched masked array calculations can be implemented to ignore masked values without introducing Python `for` loops.
-
-However, the {fun}`scipy.stats.mstats.hmean<scipy.stats.mstats.hmean>` function is now deprecated along with the {mod}`scipy.stats.mstats<scipy.stats.mstats>` namespace and all other uses of `np.ma.masked_array` in {mod}`scipy.stats<scipy.stats`.
+`
+However, the {func}`scipy.stats.mstats.hmean<scipy.stats.mstats.hmean>` function is now deprecated along with the {mod}`scipy.stats.mstats<scipy.stats.mstats>` namespace and all other uses of `np.ma.masked_array` in {mod}`scipy.stats<scipy.stats>`.
 
 ```{code-cell} ipython3
 x = np.ma.masked_array(data, mask=mask)
@@ -147,7 +147,7 @@ y = np.ma.masked_array(x)
 np.sum(y / y)
 ```
 
-This occurs because NaNs arising from invalid numerical calculations involving NumPy masked arrays are  masked without warning (and subsequently ignored).
+This occurs because NaNs arising from invalid numerical calculations involving NumPy masked arrays are masked without warning (and subsequently ignored).
 
 ```{code-cell} ipython3
 y / y
@@ -161,9 +161,9 @@ The second reason for deprecating `mstats` is that `mstats` function interfaces 
 
 +++
 
-The final reason for deprecating `scipy.stats.mstats` and support for NumPy masked arrays is the rise in support for Array API compatible arrays throughout SciPy. NumPy masked arrays themselves are mostly unmaintained and do not conform to the Array API Standard; so when adding major capabilities in GPU in JIT computing via CuPy, PyTorch, and JAX arrays via the array API, it is difficult to preserve support for the legacy `np.ma.masked_array` type.
+The final reason for deprecating `scipy.stats.mstats` and support for NumPy masked arrays is the rise in support for Array API compatible arrays throughout SciPy. NumPy masked arrays themselves are mostly unmaintained and do not conform to the Array API Standard, so when adding support for high priority libraries like CuPy, JAX, and PyTorch, which *are* compatible with the standard, it is difficult to also preserve support for the legacy `np.ma.masked_array` type.
 
-Fortunately, as support for the Array API Standard closes this window, it opens the door toward a new way of supporting masked data. Specifically, [MArray](https://mdhaber.github.io/marray/tutorial.html) is a an Array API compatible array type that *wraps* the functionality of other array backends and endows them with support for masks.
+Fortunately, as support for the Array API Standard closes this window, it opens the door toward a new way of supporting masked data. Specifically, [MArray](https://mdhaber.github.io/marray/tutorial.html) is an Array API compatible array type that *wraps* the functionality of other array backends and endows them with support for masks.
 
 ```{code-cell} ipython3
 from marray import numpy as xp
