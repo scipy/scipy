@@ -3503,6 +3503,8 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     >>> b = np.array([2, -1, 0.1])
     >>> a = np.array([1, -0.5])
     >>> r, p, k = signal.residuez(b, a)
+    >>> r, p
+    (array([0.4]), array([0.5]))
     >>> k
     array([ 1.6, -0.2])
     """
