@@ -1292,26 +1292,28 @@ Under the array API standard, arrays created without an explicit ``device``
 land on the backend's *default* device. If SciPy code creates an array
 internally without propagating the input's device (``device=xp_device(x)``),
 the result only breaks when the input lives on a *non-default* device - a
-situation regular CPU test runs never exercise.
+situation regular CPU test runs never exercise as there is only one CPU device.
 
 Using the PyTorch ``'meta'`` device (through ``SCIPY_DEVICE=meta``) closes that
-gap without hardware. E.g., running::
+gap without needing extra hardware. E.g., running::
 
   pixi run test-torch-meta
 
 makes torch's data-free ``meta`` device the default while the ``xp`` fixture
 hands tests a wrapper namespace that creates input arrays on CPU.
 SciPy-internal code resolves the real namespace from its input arrays, so any
-internal creation that omits ``device=`` lands on ``meta`` and fails loudly
-(``Expected all tensors to be on the same device``) at the first combination
-with input data.
+internal creation that omits ``device=`` lands on ``meta`` and fails with an
+exception (``Expected all tensors to be on the same device``) at the first
+combination with input data.
 
 In other words: testing with the PyTorch meta device provides a
-device-propagation leak detector, equivalent in structure to a GPU CI run with
-CPU inputs. This includes ``cpu_only`` functions: their NumPy round-trip must
+device-propagation leak detector. It simulates running the test suite on a
+machine whose default device is a GPU while all test arrays are created in CPU
+memory - a situation in which a missing ``device=`` actually breaks - without
+needing a GPU.
+This includes ``cpu_only`` functions: their NumPy round-trip must
 return results on the *input's* device (not the default device), so they run
-and are value-checked in this mode - more coverage than a CUDA run, where their
-inputs cannot be converted to NumPy at all.
+and are value-checked in this mode.
 
 When triaging a failure in this mode:
 
@@ -1321,12 +1323,12 @@ When triaging a failure in this mode:
 * ``Tensor.item() cannot be called on meta tensors`` / ``Cannot copy out of
   meta tensor``: check where the offending tensor was created. Most often it
   is also a real leak, one step removed: an internal conversion omitted
-  ``device=`` (e.g. a host parameter converted with a bare ``xp.asarray(p)``
-  and then validated with ``xp.any(p <= 0)``), and the fix is again to pin
-  the creation site. Only when the device-to-host transfer is inherent to
-  the implementation - a computed value genuinely needed on the host, which
-  is a legal synchronization on real devices but impossible on the data-free
-  ``meta`` device - mark the test with
+  ``device=`` (e.g. a host parameter - one that lives in CPU memory - converted
+  with a bare ``xp.asarray(p)`` and then validated with ``xp.any(p <= 0)``),
+  and the fix is again to pin the creation site. Only when the device-to-host transfer
+  is inherent to the implementation - a computed value genuinely needed on the
+  host, which is a legal synchronization on real devices but impossible on the
+  data-free ``meta`` device - mark the test with
   ``@pytest.mark.skip_xp_backends(skip_meta=True, reason=...)``.
 * A value assertion comparing a ``meta`` result against a ``cpu`` reference
   means the function constructs its output on the default device because it
