@@ -7531,7 +7531,7 @@ const char *hyperu_doc = R"(
     >>> sc.hyperu(1, 1, x)
     array([nan, nan, nan, nan, nan])
 
-    For `a = 1` and `b = 1`, it approaches zero as `x` goes to infinity.
+    For :math:`a = 1` and :math:`b = 1`, it approaches zero as `x` goes to infinity.
 
     >>> x = np.array([1, 10, 100])
     >>> sc.hyperu(1, 1, x)
