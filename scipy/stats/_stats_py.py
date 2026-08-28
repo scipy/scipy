@@ -8230,8 +8230,7 @@ def _parse_kstest_args(data1, data2, args, N):
         rvsfunc = data1
 
     if isinstance(data2, str):
-        special_distributions = {'norm': special.ndtr}
-        cdf = special_distributions.get(data2, getattr(distributions, data2).cdf)
+        cdf = getattr(distributions, data2).cdf
         data2 = None
     elif callable(data2):
         cdf = data2
@@ -8249,7 +8248,9 @@ def _kstest_n_samples(kwargs):
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
-                 marray=True)
+                 marray=True,
+                 extra_note="String arguments are compatible only "
+                            "with the NumPy backend.")
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
