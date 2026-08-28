@@ -445,12 +445,20 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the nth degree
-    shifted Jacobi polynomial, :math:`G^{p,q}_n(x)`. These sample
-    points and weights correctly integrate polynomials of degree
-    :math:`2n - 1` or less over the interval :math:`[0, 1]` with
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Jacobi polynomial
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1).
+
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
     weight function :math:`w(x) = (1 - x)^{p-q} x^{q-1}`. See 22.2.2
-    in [AS]_ for details.
+    in [AS]_ for details. Note that here, in contrast to `roots_sh_legendre`,
+    `roots_sh_chebyt`, and `roots_sh_chebyu`, more than just the argument is
+    shifted.
 
     Parameters
     ----------
@@ -579,16 +587,19 @@ def sh_jacobi(n, p, q, monic=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
+    `sh_chebyu`, more than just the argument is shifted. See 22.2.2
+    in [AS]_ for details.
 
     Parameters
     ----------
     n : int
         Degree of the polynomial.
     p : float
-        Parameter, must have :math:`p > q - 1`.
+        Parameter, must satisfy :math:`p - q > -1`.
     q : float
         Parameter, must be greater than 0.
     monic : bool, optional
@@ -605,6 +616,12 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     Examples
     --------
@@ -1475,7 +1492,7 @@ def _pbcf(n, theta):
     v0 = 1.0
     v1 = (1.0*ctp[3,:] + 6.0*ct) / 24.0
     v2 = (15.0*ctp[4,:] - 327.0*ctp[2,:] - 143.0) / 1152.0
-    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:] 
+    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:]
           + 238425.0*ctp[3,:] + 259290.0*ct) / 414720.0
     v4 = (-121260.0*ctp[10,:] + 551733.0*ctp[8,:] - 151958.0*ctp[6,:]
           - 57484425.0*ctp[4,:] - 132752238.0*ctp[2,:] - 12118727) / 39813120.0
@@ -1883,7 +1900,7 @@ def hermitenorm(n, monic=False):
     np.float64(-2.0)
 
     Plot probabilist's Hermite polynomials of degree 0 to 4:
-    
+
     >>> x = np.linspace(-3, 3, 100)
     >>> fig, ax = plt.subplots()
     >>> for i in range(5):
@@ -3503,7 +3520,7 @@ def roots_sh_legendre(n, mu=False):
     shifted Legendre polynomial :math:`P^*_n(x)`. These sample points
     and weights correctly integrate polynomials of degree :math:`2n -
     1` or less over the interval :math:`[0, 1]` with weight function
-    :math:`w(x) = 1.0`. See 2.2.11 in [AS]_ for details.
+    :math:`w(x) = 1.0`. See 22.2.11 in [AS]_ for details.
 
     Parameters
     ----------
@@ -3554,7 +3571,7 @@ def roots_sh_legendre(n, mu=False):
     The sum of the weights for shifted Gauss-Legendre quadrature is always 1:
 
     >>> x, w, mu = roots_sh_legendre(10, mu=True)
-    >>> mu 
+    >>> mu
     1.0  # Sum of weights of shifted Gauss-Legendre quadrature is always 1
 
     """

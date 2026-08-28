@@ -175,6 +175,7 @@ def test_duplicate_timestamps():
     assert_equal(sol.status, 1)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -241,6 +242,7 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -287,6 +289,7 @@ def test_integration_complex():
         assert np.all(e < 5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_complex_sparse():
     # Regression test for gh-24671: solve_ivp with a complex ODE and
     # jac_sparsity should not emit ComplexWarning.
@@ -303,6 +306,7 @@ def test_integration_complex_sparse():
     assert np.all(e < 5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.fail_slow(5)
 def test_integration_sparse_difference():
     n = 200
@@ -331,6 +335,7 @@ def test_integration_sparse_difference():
         assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_const_jac():
     rtol = 1e-3
     atol = 1e-6
@@ -1024,6 +1029,7 @@ def test_num_jac():
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
 def test_num_jac_sparse(structure_type):
     def fun(t, y):

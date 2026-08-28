@@ -1468,6 +1468,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
+def _pinv_signature(*args, **kwargs):
+    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
+
+
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1606,7 +1611,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2))
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1700,7 +1705,11 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
-@_apply_over_batch(('A', 2))
+def _matrix_balance_signature(*args, **kwargs):
+    return "(i,i)->(i,i),(2,i)" if kwargs.get('separate') else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """

@@ -207,19 +207,8 @@ py3.install_sources([
   '_trustregion_ncg.py',
   '_tstutils.py',
   '_zeros_py.py',
-  'cobyla.py',
   'cython_optimize.pxd',
   'elementwise.py',
-  'lbfgsb.py',
-  'linesearch.py',
-  'minpack.py',
-  'minpack2.py',
-  'moduleTNC.py',
-  'nonlin.py',
-  'optimize.py',
-  'slsqp.py',
-  'tnc.py',
-  'zeros.py'
 ],
   subdir: 'scipy/optimize'
 )

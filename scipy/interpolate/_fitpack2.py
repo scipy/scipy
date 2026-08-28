@@ -1411,12 +1411,19 @@ class _BivariateSplineBase:
         >>> ax2.imshow(zdata_interp)
         >>> plt.show()
         """
-        x = np.atleast_1d(np.asarray(x))
-        y = np.atleast_1d(np.asarray(y))
+        x = np.asarray(x)
+        y = np.asarray(y)
+        # backwards compat, cf https://github.com/scipy/scipy/issues/25471
+        needs_squeeze = (x.ndim == 0) and (y.ndim == 0)
+
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
         if grid:
+            x = x.ravel()
+            y = y.ravel()
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 
@@ -1454,6 +1461,10 @@ class _BivariateSplineBase:
                     raise ValueError(f"Error code returned by bispeu: {ier}")
 
             z = z.reshape(shape)
+
+            if needs_squeeze:
+                z = z.squeeze()
+
         return z
 
     def partial_derivative(self, dx, dy):

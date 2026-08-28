@@ -16,7 +16,7 @@ is a scale-parameter). The support for the standard form is :math:`x>0`.
 
      M\left(t\right)=\frac{1}{\Phi\left(a\right)\sqrt{2\pi}}\int_{0}^{\infty}\frac{e^{xt}}{x^{2}}\exp\left(-\frac{1}{2}\left(\alpha-\frac{1}{x}\right)^{2}\right)dx
 
-No moments?
+The raw moment :math:`E[X^r]` exists if and only if :math:`r < 1`.
 
 .. math::
 

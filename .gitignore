@@ -72,9 +72,6 @@ dist
 # The shelf plugin uses this dir
 ./.shelf
 MANIFEST
-# distutils configuration
-site.cfg
-setup.cfg
 # other temporary files
 .coverage
 .deps
@@ -248,7 +245,7 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/_ckdtree.cxx
 scipy/spatial/ckdtree.h
-scipy/spatial/_hausdorff.c
+scipy/spatial/distance/_hausdorff.c
 scipy/spatial/_qhull.c
 scipy/spatial/_voronoi.c
 scipy/spatial/transform/_rotation.c

@@ -27,8 +27,8 @@ __all__ = [
 class WavFileWarning(UserWarning):
     """
     Warning for WAV files with format issues that can still be read.
-    
-    Raised when a WAV file has problems like missing metadata or 
+
+    Raised when a WAV file has problems like missing metadata or
     non-standard formatting, but can still be processed successfully.
     """
     pass
@@ -49,7 +49,7 @@ class SeekEmulatingReader:
         data = self.reader.read(size)
         self.pos += len(data)
         return data
-    
+
     def seek(self, offset, whence=os.SEEK_SET, /):
         match whence:
             case os.SEEK_SET if offset >= self.pos:
@@ -62,13 +62,13 @@ class SeekEmulatingReader:
                 raise io.UnsupportedOperation("SeekEmulatingReader was asked to emulate"
                                               " a seek operation it does not support.")
         return self.pos
-    
+
     def tell(self):
         return self.pos
-    
+
     def close(self):
         self.reader.close()
-    
+
     # np.fromfile expects to be able to call flush(), and _read_data_chunk
     # expects to catch io.UnsupportedOperation if np.fromfile fails.
     def flush(self):
@@ -719,7 +719,7 @@ def read(filename, mmap=False):
         mmap = False
     else:
         fid = open(filename, 'rb')
-    
+
     if not (was_seekable := fid.seekable()):
         fid = SeekEmulatingReader(fid)
 

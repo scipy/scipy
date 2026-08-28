@@ -460,6 +460,17 @@ class TestBinom:
         res = stats.binom.pmf(3, 2000, 0.999)
         assert_allclose(res, 0, atol=1e-16)
 
+    def test_gh22622(self):
+        # check that gh-22622 is resolved:
+        # for extreme values of n and p the survival and inverse survival
+        # functions most pass a roundtrip test
+        k = 16
+        n = 10000
+        p = 4e-5
+        sf_res = stats.binom.sf(k, n, p)
+        isf_res = stats.binom.isf(sf_res, n, p)
+        assert_allclose(isf_res, k, rtol=1e-15)
+
 
 class TestArcsine:
 
@@ -3091,7 +3102,7 @@ class TestPoisson:
          (1, 300, -294.29288973525115, -1.5496082669460162e-128)])
     def test_gh8424(self, k, mu, logcdf_reference, logsf_reference):
         # test extreme cases where the naive log(cdf) and log(sf) would fail
-        # reference values were computed with mpmath with 1000 digits of precision 
+        # reference values were computed with mpmath with 1000 digits of precision
         # from mpmath import mp
         # mp.dps = 1000
         # logcdf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), a=mp.mpf(mu),
@@ -3467,6 +3478,11 @@ class TestInvgauss:
         assert_allclose(dist.sf(x), dist0.sf(x))
         assert_allclose(dist.ppf(p), dist0.ppf(p))
         assert_allclose(dist.isf(p), dist0.isf(p))
+
+    def test_gh25096(self):
+        # Regression test for gh-25096: invgauss.ppf should not raise a warning
+        # for the given inputs
+        stats.invgauss.ppf(0.97969, 66.99652081)
 
 
 class TestLandau:
@@ -4747,7 +4763,7 @@ class TestExponNorm:
         dist_norm = stats.norm()
         assert_allclose(dist.logpdf(x), dist_norm.logpdf(x))
         assert_allclose(dist.cdf(x), dist_norm.cdf(x))
-        assert_allclose(dist.sf(x), dist_norm.sf(x)) 
+        assert_allclose(dist.sf(x), dist_norm.sf(x))
 
 class TestGenExpon:
     def test_pdf_unity_area(self):
@@ -8608,10 +8624,10 @@ class TestTukeyLambda:
 
         cdf = stats.tukeylambda.cdf(x, lam)
         assert cdf[-1] == 1.0
-        # Check that the cdf is always increasing except when it saturates 
+        # Check that the cdf is always increasing except when it saturates
         # to 1.0
         assert np.all(np.diff(cdf[cdf < 1]) > 0)
-        
+
 class TestLevy:
 
     def test_levy_cdf_ppf(self):

@@ -3192,6 +3192,27 @@ def test_bounds_with_list():
     )
 
 
+@pytest.mark.parametrize('method', ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc',
+                                    'slsqp', 'cobyla', 'cobyqa', 'trust-constr'))
+def test_minimize_does_not_mutate_bounds(method):
+    # `minimize` broadcast lb/ub onto the caller's `Bounds`; cf. gh-8419
+    bounds = optimize.Bounds(0., np.inf)
+    lb, ub, keep_feasible = bounds.lb, bounds.ub, bounds.keep_feasible
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method=method, bounds=bounds)
+    assert bounds.lb is lb
+    assert bounds.ub is ub
+    assert bounds.keep_feasible is keep_feasible
+
+
+def test_minimize_bounds_reusable_across_sizes():
+    # consequence of the above: a dimension-agnostic `Bounds` was only usable once
+    bounds = optimize.Bounds(0., np.inf)
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
+    optimize.minimize(optimize.rosen, [0.5, 0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
+
+
 @pytest.mark.parametrize('method', (
     'slsqp', 'cg', 'cobyqa', 'powell','nelder-mead', 'bfgs', 'l-bfgs-b',
     'trust-constr'))
@@ -3423,6 +3444,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
     assert abs(fun(res.x)) < 1e-5
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])

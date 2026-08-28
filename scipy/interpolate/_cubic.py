@@ -6,7 +6,8 @@ import numpy as np
 
 from scipy.linalg import solve, solve_banded
 from scipy._lib._array_api import (
-    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for
+    array_namespace, xp_size, xp_capabilities, is_cupy, scipy_namespace_for,
+    xp_device, xp_result_device
 )
 from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
@@ -563,7 +564,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
             t = xpx.at(t)[...].set(mk)
         else:
             # determine slopes between breakpoints
-            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:], dtype=x.dtype)
+            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:], dtype=x.dtype,
+                         device=xp_device(x))
             dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
             m = xpx.at(m)[2:-2, ...].set(xp.diff(y, axis=0) / dx)
 
@@ -821,6 +823,8 @@ class CubicSpline(CubicHermiteSpline):
             )
             return
 
+        # the NumPy round-trip must return the result on the inputs' device
+        device = xp_result_device(x, y)
         x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
@@ -986,7 +990,7 @@ class CubicSpline(CubicHermiteSpline):
                                      overwrite_b=True, check_finite=False)
                     s = s.reshape(b.shape)
 
-        x, y, s = map(xp.asarray, (x, y, s))
+        x, y, s = (xp.asarray(arr, device=device) for arr in (x, y, s))
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 

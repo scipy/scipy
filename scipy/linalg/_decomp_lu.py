@@ -16,7 +16,13 @@ from ._batched_linalg import _lu as _linalg_lu
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
-@_apply_over_batch(('a', 2))
+def _luf_signature(a, *args, **kwargs):
+    m, n = a.shape[-2:]
+    k = min(m, n)
+    return f"(i,j)->(i,j),({k})"
+
+
+@_apply_over_batch(('a', 2), signature=_luf_signature)
 def lu_factor(a, overwrite_a=False, check_finite=True):
     """
     Compute pivoted LU decomposition of a matrix.

@@ -53,7 +53,7 @@ def main():
             else:
                 post = matchobj.group(2)
             return '``' + matchobj.group(1) + '``' + post
-        
+
         def asterisk_repl(matchobj):
             """repl to un-escape asterisks in code blocks"""
             code = matchobj.group(1).replace("\\*", "*")

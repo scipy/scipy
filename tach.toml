@@ -60,7 +60,7 @@ depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.lapack", "sci
 
 [[modules]]
 path = "scipy.io"
-depends_on = ["scipy._lib", "scipy.io.arff", "scipy.io.matlab", "scipy.io.wavfile", "scipy.sparse"]
+depends_on = ["scipy._lib", "scipy.io.matlab", "scipy.sparse"]
 
 [[modules]]
 path = "scipy.io.arff"
@@ -128,7 +128,7 @@ depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.spatial.distance", "
 
 [[modules]]
 path = "scipy.spatial.distance"
-depends_on = ["scipy._lib", "scipy.linalg", "scipy.spatial", "scipy.special", "scipy._external"]
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.spatial.transform"

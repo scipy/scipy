@@ -197,7 +197,7 @@ class HBInfo:
             raise ValueError(
                 f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
             )
-        
+
         # Fourth line
         line = fid.readline().strip("\n")
 
@@ -481,6 +481,10 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
     Returns
     -------
     data : csc_array or csc_matrix
@@ -500,8 +504,8 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
@@ -532,6 +536,16 @@ def hb_read(path_or_open_file, *, spmatrix=_NoValue):
         prefixes = (os.path.dirname(__file__),)
         warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
         spmatrix = True
+    elif spmatrix is True:
+        msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+         The spmatrix classes are deprecated and will be removed then.
+         The return value will always be a sparse array.
+         Unless you use * instead of @, ** for matrix power, or you depend
+         on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+         See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+         """
+        prefixes = (os.path.dirname(__file__),)
+        warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
 
     if spmatrix:
         return csc_matrix(data)
@@ -565,8 +579,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_array, eye
-    >>> data = csr_array(eye(3))  # create a sparse array
+    >>> from scipy.sparse import csr_array, eye_array
+    >>> data = csr_array(eye_array(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'

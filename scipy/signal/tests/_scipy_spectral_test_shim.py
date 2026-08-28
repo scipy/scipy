@@ -120,7 +120,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     p0 = 0  # ST.lower_border_end[1] + 1
     nn = x.shape[axis] if padded else n+k_off+1
     # number of frames akin to legacy stft computation
-    p1 = (x.shape[axis] - nperseg) // nstep + 1 
+    p1 = (x.shape[axis] - nperseg) // nstep + 1
 
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)

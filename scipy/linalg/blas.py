@@ -159,6 +159,7 @@ BLAS Level 2 functions
    chpr2
    cspmv
    cspr
+   csymv
    csyr
    ctbmv
    ctbsv
@@ -179,6 +180,7 @@ BLAS Level 2 functions
    zhpr2
    zspmv
    zspr
+   zsymv
    zsyr
    ztbmv
    ztbsv
@@ -256,9 +258,9 @@ if not (HAS_LP64 or HAS_ILP64):
     raise RuntimeError("SciPy needs either LP64 or ILP64 BLAS.")
 
 if HAS_LP64:
-    from scipy.linalg._fblas import *  # noqa: E402, F403
+    from scipy.linalg._fblas import *  # noqa: F403
 else:
-    from scipy.linalg._fblas_64 import *  # noqa: E402, F403
+    from scipy.linalg._fblas_64 import *  # noqa: F403
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 
@@ -489,7 +491,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     prefix (here, ``d-`` because ``a`` is double precision real):
 
     >>> x_gemv
-    <fortran function dgemv>
+    <fblas function dgemv>
 
     The BLAS variant information is also available from the ``typecode`` attribute:
 
@@ -506,7 +508,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     the ``dtype=`` argument:
 
     >>> LA.get_blas_funcs('gemv', dtype=np.float32)
-    <fortran function sgemv>
+    <fblas function sgemv>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):

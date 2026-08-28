@@ -5,6 +5,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
 
 import math
+import os
 from warnings import warn
 
 import numpy as np
@@ -244,14 +245,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
-    
+
     @property
     def mT(self):
         if (n := self.ndim) < 2:
             raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
         axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
         return self.transpose(axes=axes)
-    
+
     mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:
@@ -1680,13 +1681,24 @@ def isspmatrix_coo(x):
     Examples
     --------
     >>> from scipy.sparse import coo_array, coo_matrix, csr_matrix, isspmatrix_coo
-    >>> isspmatrix_coo(coo_matrix([[5]]))
+    >>> isspmatrix_coo(coo_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_coo(coo_array([[5]]))
+    >>> isspmatrix_coo(coo_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_coo(csr_matrix([[5]]))
+    >>> isspmatrix_coo(csr_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_coo` is being replaced by `self.format == "coo" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_coo function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, coo_matrix)
 
 

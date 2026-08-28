@@ -284,7 +284,7 @@ def test_sum_duplicates():
     # 4d case
     arr4d = coo_array(([2, 3, 7], ([1, 0, 1], [0, 2, 0], [1, 2, 1], [1, 0, 1])))
     assert arr4d.nnz == 3
-    expected = np.array(  # noqa: E501
+    expected = np.array(
         [[[[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [3, 0]]],
          [[[0, 0], [0, 9], [0, 0]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]]]]
     )
@@ -477,7 +477,7 @@ def test_nd_transpose(shape):
         trans_arr = arr.mT
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
-    
+
         trans_arr = matrix_transpose(arr)
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)

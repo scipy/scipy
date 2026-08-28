@@ -331,7 +331,7 @@ class TestKMeans:
         data = xp.asarray(TESTDATA_2D)
         data = xp.reshape(data, (20, 20))[:10, :]
         rng = np.random.default_rng(42)
-        kmeans2(data, 2, rng=rng)     
+        kmeans2(data, 2, rng=rng)
 
     def test_kmeans2_init(self, xp):
         rng = np.random.default_rng(12345678)

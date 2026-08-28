@@ -274,6 +274,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_array(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
 
+    @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_simple_pattern(self):
         a = scipy.sparse.csr_array([[0, 1.5], [3.0, 2.5]])
         p = np.zeros_like(a.toarray())
@@ -286,9 +287,10 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_array_almost_equal(p, b.toarray())
         assert isinstance(b, scipy.sparse.sparray)
 
-        b = mmread(self.fn, spmatrix=True)
-        assert_array_almost_equal(p, b.toarray())
-        assert isinstance(b, scipy.sparse.spmatrix)
+        with pytest.deprecated_call(match="The value `spmatrix=True"):
+            b = mmread(self.fn, spmatrix=True)
+            assert_array_almost_equal(p, b.toarray())
+            assert isinstance(b, scipy.sparse.spmatrix)
 
         with pytest.deprecated_call(match="The default value"):
             b = mmread(self.fn)  # chk default
