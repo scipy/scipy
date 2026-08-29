@@ -2851,6 +2851,69 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+def _deboor_derivative_matrix(t, order):
+    r"""
+    Build the matrix that differentiates a spline via de Boor's formula.
+
+    A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
+    :math:`\gamma` has a derivative which is a spline of order
+    :math:`m - 1` on the *same* knot vector :math:`\tau`:
+
+    .. math::
+
+        f'(u) = \sum_{j} (m - 1)\,
+                \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
+                B_{j,\,m-1}(u)
+
+    Differentiation is therefore a linear map on coefficients. This
+    function returns its matrix :math:`D`, so that the derivative has
+    coefficients :math:`D \gamma`.
+
+    This is the matrix form of the coefficient computation inside
+    `BSpline.derivative` (and FITPACK's ``splder``), with one
+    bookkeeping difference: those return the derivative on the trimmed
+    knot vector ``t[1:-1]``, dropping one boundary knot per end, while
+    here the full knot vector is kept, so the degenerate boundary
+    entries appear as explicit zero rows. Keeping ``t`` fixed is what
+    lets the two derivative matrices compose with each other and with
+    the hat-function mass matrix on the same knots in
+    `_penalty_matrix_banded`.
+
+    Notes
+    -----
+    Row :math:`j` holds :math:`+d_j` in column :math:`j` and
+    :math:`-d_j` in column :math:`j - 1`, where
+    :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
+    multiplying the coefficient difference in the formula above.
+
+    For a clamped knot vector the denominator vanishes at
+    :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
+    coincide. Those coefficients are set to zero, making the first and
+    last rows identically zero; this is why formulations assuming
+    clamped knots omit those terms from the sum entirely.
+
+    References
+    ----------
+    .. [1] C. de Boor, "B(asic)-Spline Basics", 1986, eq. (10.3)
+           (Algorithm 10); the Remark following it treats the
+           vanishing-denominator case at repeated knots.
+           https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
+    .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
+           for Computer Aided Design and Manufacturing", eq. (1.65).
+           :doi:`10.1007/978-3-642-04074-0`
+           https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
+
+    """
+    N = len(t) - order
+    d = np.zeros(N + 1)
+    j = np.arange(N + 1)
+    mask = np.where(t[j + order - 1] - t[j] > 0)
+    d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
+
+    # row j: +d_j at column j, -d_j at column j-1
+    return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
+
+
 def _penalty_matrix_banded(t):
     r"""Penalty matrix of a cubic smoothing spline on the knot vector ``t``.
 
@@ -2862,8 +2925,8 @@ def _penalty_matrix_banded(t):
     1. ``C = D2 @ D1`` expresses the second derivative of each cubic
        B-spline in the basis of linear B-splines ("hat functions") on the
        same knots; ``D1`` and ``D2`` apply de Boor's derivative formula
-       (stated and explained in the docstring of ``deboor_derivative``
-       below) once each.
+       (stated and explained in the docstring of
+       `_deboor_derivative_matrix`) once each.
     2. ``R`` is the mass (Gram) matrix of the hat functions,
        ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
        closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
@@ -2889,65 +2952,16 @@ def _penalty_matrix_banded(t):
     order = 4 # assuming a cubic spline
     m = len(t) - order # number of coefficients
 
-    def deboor_derivative(order):
-        r"""
-        Build the matrix that differentiates a spline via de Boor's formula.
-
-        A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
-        :math:`\gamma` has a derivative which is a spline of order
-        :math:`m - 1` on the *same* knot vector :math:`\tau`:
-
-        .. math::
-
-            f'(u) = \sum_{j} (m - 1)\,
-                    \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
-                    B_{j,\,m-1}(u)
-
-        Differentiation is therefore a linear map on coefficients. This
-        function returns its matrix :math:`D`, so that the derivative has
-        coefficients :math:`D \gamma`.
-
-        Notes
-        -----
-        Row :math:`j` holds :math:`+d_j` in column :math:`j` and
-        :math:`-d_j` in column :math:`j - 1`, where
-        :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
-        multiplying the coefficient difference in the formula above.
-
-        For a clamped knot vector the denominator vanishes at
-        :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
-        coincide. Those coefficients are set to zero, making the first and
-        last rows identically zero; this is why formulations assuming
-        clamped knots omit those terms from the sum entirely.
-
-        References
-        ----------
-        .. [1] C. de Boor, "B(asic)-Spline Basics", 1986.
-               https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
-        .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
-               for Computer Aided Design and Manufacturing", eq. (1.65).
-               https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
-
-        """
-        N = len(t) - order
-        d = np.zeros(N + 1)
-        j = np.arange(N + 1)
-        mask = np.where(t[j + order - 1] - t[j] > 0)
-        d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
-
-        # row j: +d_j at column j, -d_j at column j-1
-        return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
-
-    D1 = deboor_derivative(order)      # cubic
-    D2 = deboor_derivative(order - 1)  # quadratic
-    C = D2 @ D1  # sparse
+    D1 = _deboor_derivative_matrix(t, order)      # cubic to quadratic coeffs
+    D2 = _deboor_derivative_matrix(t, order - 1)  # quadratic to linear coeffs
+    C = D2 @ D1                                   # cubic to linear (f'') coeffs
     R_size = len(t) - 2 # len(t) - order (because linear)
 
     d0 = (t[2:] - t[:-2]) / 3.0
     d1 = (t[2:-1] - t[1:-2]) / 6.0
     R = diags_array([d1, d0, d1], offsets=[-1, 0, 1], shape=(R_size, R_size))
 
-    omega = (C.T @ R @ C).tocsc()
+    omega = C.T @ R @ C
     omega_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric lower-banded storage,
@@ -2992,15 +3006,22 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     if len(t) < 8:
         raise ValueError(
             "`t` must contain at least 8 knots (a cubic spline needs at "
-            f"least one basis interval); got {len(t)}")
+            f"least one base interval); got {len(t) = }")
     if not (t[0] == t[3] and t[-4] == t[-1]):
         raise ValueError(
             "`t` must be clamped: the first 4 and last 4 knots must each "
             "be equal (boundary knots repeated to multiplicity 4). "
             "Without clamping, the penalty integrates over regions the "
             "data cannot constrain and straight lines are penalized.")
-    # Interior multiplicity 3 allows kinks in f', which have infinite
-    # penalty but are invisible to Omega, so they would come for free.
+    # Each repeat of an interior knot removes one continuity requirement.
+    # A double knot lets f'' step at the knot: both one-sided values are
+    # finite and the penalty charges them through the neighboring
+    # intervals, so Omega stays exact. A triple knot lets f' have a
+    # corner, whose true penalty (integral of a delta squared) is
+    # infinite, yet Omega returns a finite value because the hat function
+    # at the triple knot has zero width and drops that contribution: the
+    # corner would come for free at every lam. Full derivation in the
+    # companion report, Sec. 15 FAQ 2 (link in make_smoothing_spline).
     vals, counts = np.unique(t, return_counts=True)
     if counts[0] != 4 or counts[-1] != 4:
         raise ValueError(
@@ -3037,15 +3058,19 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     try:
         c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
     except LinAlgError as e:
+        # why only the two extremes of lam can fail: companion report,
+        # Sec. 15 FAQ 1 (link in make_smoothing_spline)
         raise ValueError(
             "the system `X^T W X + lam * Omega` is not positive definite, so "
-            "the coefficients are not uniquely determined. Two causes are "
-            "possible: some knots of `t` have no `x` values nearby (use "
-            "fewer knots, or pass a larger `lam`), or `lam` is so large that "
-            "the system is numerically singular, since its condition number "
-            "grows proportionally to `lam` (use a smaller `lam`; the fit at "
-            "such `lam` is already indistinguishable from its straight-line "
-            "limit).") from e
+            "the coefficients are not uniquely determined. This happens only "
+            "at the two extremes of `lam`. At `lam` zero or near zero: the "
+            "support of some basis function contains no data, i.e. some "
+            "interval (t[j], t[j+4]) has no `x` in it (use fewer knots, or a "
+            "larger `lam`, which lets the penalty determine the coefficients "
+            "the data cannot see). At very large `lam`: the system is "
+            "numerically singular, since its condition number grows "
+            "proportionally to `lam` (use a smaller `lam`; the fit there is "
+            "already indistinguishable from its straight-line limit).") from e
     c = np.ascontiguousarray(c)
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, 3, axis=axis)
@@ -3128,23 +3153,22 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
 
     In cases when the initial problem is ill-posed (for example, the product
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
-    defined matrix) a ValueError is raised.
+    defined matrix) a ValueError is raised. This also happens when ``lam``
+    is very large: the condition number of the linear system solved
+    internally grows proportionally to ``lam``, so the achievable
+    accuracy degrades as ``eps * cond`` until, eventually, the system
+    becomes numerically singular.
 
-    When ``t`` is given, the returned spline minimizes the same
-    objective over all cubic splines on the knot vector ``t``
-    (sometimes called an O'Sullivan penalized spline [5]_). No boundary
-    conditions are imposed. If the knots contain all data sites, the
-    minimizer is the natural smoothing spline of the default path;
-    for other knot vectors, the boundary behavior is determined by the
-    objective alone.
-
-    For large ``lam`` the linear system solved internally becomes
-    increasingly ill-conditioned: its condition number grows
-    proportionally to ``lam``, since in the limit the system matrix
-    approaches the singular penalty matrix, whose null space is the
-    straight lines. The achievable accuracy therefore degrades as
-    ``eps * cond``. This is intrinsic to the problem, and reference
-    implementations exhibit the same behavior.
+    If ``t`` is not specified, the function returns a natural cubic
+    smoothing spline with knots at the data sites (zero second
+    derivative at the two boundary knots). If ``t`` is specified, the
+    function returns a cubic spline with these predefined knots
+    (sometimes referred to as an O'Sullivan penalized spline [5]_); no
+    boundary conditions are imposed. In particular, if the given ``t``
+    contains all the data sites, the natural boundary behavior is not
+    lost: the unconstrained minimizer satisfies the natural conditions
+    on its own, so the two paths return the same spline. The returned
+    `BSpline` has ``extrapolate=True``.
 
     References
     ----------
