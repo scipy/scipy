@@ -48,7 +48,7 @@ good resource.
 Explanation of build stages
 ---------------------------
 
-*This is for teaching purposes only; there should be no need to execute these
+*This is for teaching purposes only; there should be no need to dynamicallyute these
 stages separately.*
 
 Assume we're starting from a clean repo and a fully set up conda environment::
