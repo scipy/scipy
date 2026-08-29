@@ -900,7 +900,7 @@ python = {
   # path = "/Users/lucascolley/ghq/github.com/python/cpython/Tools/pixi-packages",
   git = "https://github.com/lucascolley/cpython",
   subdirectory = "Tools/pixi-packages",
-  rev = "71da576c49714f67a03f93ac07a0497990c8bfee",
+  rev = "3dbfe982db3a64a5b31fbd1fd63d2c94ee139c7e",
 }
 
 numpy = {
@@ -908,7 +908,7 @@ numpy = {
   # path = "/Users/lucascolley/ghq/github.com/rgommers/pixi-dev-scipystack/numpy/numpy/pixi-packages/asan",
   git = "https://github.com/lucascolley/numpy",
   subdirectory = "pixi-packages/asan",
-  rev = "8e58f4bbd4ad862f4218795c02dd9b4406af02be",
+  rev = "2207c61e3c0c99fa67829386ea0f470d43669278",
 }
 
 gmpy2 = {
@@ -932,7 +932,7 @@ gmpy2 = {
         # path = "/Users/lucascolley/ghq/github.com/python/cpython/Tools/pixi-packages",
         git = "https://github.com/lucascolley/cpython",
         subdirectory = "Tools/pixi-packages",
-        rev = "71da576c49714f67a03f93ac07a0497990c8bfee",
+        rev = "3dbfe982db3a64a5b31fbd1fd63d2c94ee139c7e",
       },
     },
   },
