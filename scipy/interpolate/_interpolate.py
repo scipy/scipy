@@ -935,7 +935,7 @@ class _PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            r2[:] = r
+            r2[...] = r
 
             return r2.reshape(self.c.shape[2:])
 
