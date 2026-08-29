@@ -4647,7 +4647,7 @@ class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        result = stats.kstest(x, special.ndtr, alternative=alternative, mode=mode)
         result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
         xp_assert_close(result.statistic, result_1samp.statistic)
@@ -4707,7 +4707,19 @@ class TestKSTest:
         xp_assert_equal(res.statistic_location, ref.statistic_location)
         xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
-    # missing: no test that uses *args
+    def test_gh25448(self):  # string `cdf` incompatible with other xp
+        # gh-25448 reported a failure with with `cdf='norm'` + use of `args`
+        rng = np.random.default_rng(254482544825448)
+        x = rng.normal(size=100)
+        loc, scale = stats.norm.fit(x)
+        ref = stats.kstest(x, lambda x: special.ndtr((x-loc)/scale))
+
+        res = stats.kstest(x, "norm", args=(loc, scale))
+        xp_assert_close(res.statistic, ref.statistic)
+
+        res = stats.kstest(x, lambda x, u, s: special.ndtr((x-u)/s),
+                           args=(loc, scale))
+        xp_assert_close(res.statistic, ref.statistic)
 
 
 @make_xp_test_case(stats.ks_1samp)

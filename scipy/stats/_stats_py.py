@@ -2338,7 +2338,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
 
-    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype)[()]
+    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype, device=xp_device(a))[()]
 
     hist = xp.asarray(hist, dtype=a.dtype)
     if density:
@@ -3204,7 +3204,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
         interpolation = '_' + interpolation
 
-    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp),
+                     device=xp_result_device(rng, x))
     pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 
@@ -8229,8 +8230,7 @@ def _parse_kstest_args(data1, data2, args, N):
         rvsfunc = data1
 
     if isinstance(data2, str):
-        special_distributions = {'norm': special.ndtr}
-        cdf = special_distributions.get(data2, getattr(distributions, data2).cdf)
+        cdf = getattr(distributions, data2).cdf
         data2 = None
     elif callable(data2):
         cdf = data2
@@ -8248,7 +8248,9 @@ def _kstest_n_samples(kwargs):
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
-                 marray=True)
+                 marray=True,
+                 extra_note="String arguments are compatible only "
+                            "with the NumPy backend.")
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
