@@ -275,7 +275,8 @@ def _castCopy(type, *arrays):
         return cast_arrays
 
 
-@_apply_over_batch(('T', 2), ('Z', 2), signature='(i,i),(i,i)->(i,i),(i,i)')
+@_apply_over_batch(('T', 2), ('Z', 2),
+                   signature='(i,i),(i,i)->complex(i,i),complex(i,i)')
 def rsf2csf(T, Z, check_finite=True):
     """
     Convert real Schur form to complex Schur form.
