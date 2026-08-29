@@ -22,12 +22,12 @@ See also `Meson's documentation on cross compilation
 <https://mesonbuild.com/Cross-compilation.html>`__ to learn what options you
 may need to pass to Meson to successfully cross compile.
 
-One common hiccup is that ``numpy`` and ``pythran`` require
-running Python code in order to obtain their include directories. This tends to
+One common hiccup is that ``pythran`` requires
+running Python code in order to obtain its include directory. This tends to
 not work well, either accidentally picking up the packages from the build
 (native) Python rather than the host (cross) Python or requiring ``crossenv``
 or QEMU to run the host Python. To avoid this problem, specify the paths to the
-relevant directories in your *cross file*:
+relevant directory in your *cross file*:
 
 .. code:: ini
 
@@ -35,8 +35,13 @@ relevant directories in your *cross file*:
     sitepkg = '/abspath/to/host-pythons/site-packages/'
 
     [properties]
-    numpy-include-dir = sitepkg + 'numpy/core/include'
     pythran-include-dir = sitepkg + 'pythran'
+
+``numpy`` used to have the same problem, but no longer does (since SciPy 2.0.0,
+when ``f2py`` got removed). For cross builds, provide a ``numpy.pc`` pkg-config
+file with the numpy to target; that will then take precedence over a ``numpy``
+found in the build environment, which is detected via the ``numpy-config``
+executable by Meson.
 
 For more details and the current status around cross compilation, see:
 
