@@ -809,6 +809,20 @@ class Testfirwin_2d:
         taps_hamming = firwin_2d(hsize, window, fc=fc)
         assert taps_hamming.shape == (51, 51)
 
+    def test_filter_options(self):
+        hsize = (11, 11)
+        window = ("hamming", "hamming")
+        fc = 0.3
+        fs = 2
+
+        taps = firwin_2d(hsize, window, fc=fc, fs=fs,
+                         pass_zero=False, scale=False)
+        row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs,
+                            pass_zero=False, scale=False)
+        col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs,
+                            pass_zero=False, scale=False)
+        xp_assert_close(taps, np.outer(row_filter, col_filter))
+
     def test_impulse_response(self):
         hsize = (31, 31)
         window = ("hamming", "hamming")
