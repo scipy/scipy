@@ -269,12 +269,62 @@ class _lil_base(_spbase, IndexMixin):
         _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     i, j, x)
-
     def _set_arrayXarray_sparse(self, row, col, x):
-        # Fall back to densifying x
-        x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = _broadcast_arrays(x, row)
-        self._set_arrayXarray(row, col, x)
+        # x is a sparse matrix, so we can avoid densifying it if possible.
+        M, N = row.shape
+        broadcast_row = M != 1 and x.shape[0] == 1
+        broadcast_col = N != 1 and x.shape[1] == 1
+
+        x = x.tocoo()
+        r, c = x.row, x.col
+        x_data = np.asarray(x.data, dtype=self.dtype)
+
+        if broadcast_row:
+            r = np.repeat(np.arange(M), len(r))
+            c = np.tile(c, M)
+            x_data = np.tile(x_data, M)
+        if broadcast_col:
+            r = np.repeat(r, N)
+            c = np.tile(np.arange(N), len(c))
+            x_data = np.tile(x_data, N)
+
+        is_rectilinear = (row.ndim == 2 and col.ndim == 2 and
+                          row.strides[1] == 0 and col.strides[0] == 0)
+
+        if is_rectilinear:
+            # It's an outer product assignment, e.g., from a slice
+            R = row[:, 0]
+            C = col[0, :]
+
+            # Optimization: Use a boolean mask for fast deletion
+            clear_cols = np.zeros(self.shape[1], dtype=bool)
+            clear_cols[C] = True
+
+            # clear the rows efficiently
+            for i_r in R:
+                old_cols = self.rows[i_r]
+                old_data = self.data[i_r]
+
+                keep = [idx for idx, col_idx in enumerate(old_cols) if not clear_cols[col_idx]]
+
+                self.rows[i_r] = [old_cols[idx] for idx in keep]
+                self.data[i_r] = [old_data[idx] for idx in keep]
+
+            # now add the non-zero elements of x
+            if len(r) > 0:
+                target_rows = R[r]
+                target_cols = C[c]
+                self._set_arrayXarray(target_rows, target_cols, x_data)
+
+        else:
+            # clear all entries first
+            self._set_arrayXarray(row, col, np.zeros_like(row, dtype=self.dtype))
+
+            # set the non-zero elements of x
+            if len(r) > 0:
+                target_rows = row[r, c]
+                target_cols = col[r, c]
+                self._set_arrayXarray(target_rows, target_cols, x_data)
 
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
