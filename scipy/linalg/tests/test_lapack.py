@@ -1780,12 +1780,12 @@ def test_syequb():
 
 
 @pytest.mark.skipif(True,
-                    reason="Failing on some OpenBLAS version, see gh-12276")
+                    reason="Failing on Intel MKL, see gh-12276")
 def test_heequb():
-    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # zheequb had a bug for versions between 3.7.x and 3.9.x
     # See Reference-LAPACK gh-61 and gh-408
-    # Hence the zheequb test is customized accordingly to avoid
-    # work scaling.
+    # However it seems like MKL did not pick up the fix and
+    # carried the bug to newer versions.
     A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
     s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
