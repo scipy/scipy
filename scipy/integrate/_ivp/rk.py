@@ -153,9 +153,6 @@ class RungeKutta(OdeSolver):
                     factor = min(MAX_FACTOR,
                                  SAFETY * error_norm ** self.error_exponent)
 
-                if step_rejected:
-                    factor = min(1, factor)
-
                 h_abs *= factor
 
                 step_accepted = True
