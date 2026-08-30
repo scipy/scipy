@@ -102,7 +102,7 @@ class TestBatch:
     def test_expm_cond(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4, 4)).astype(dtype)
-        self.batch_test(linalg.expm_cond, A, test_zero_size_dtype=False)
+        self.batch_test(linalg.expm_cond, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
@@ -193,8 +193,9 @@ class TestBatch:
     def test_matrix_balance(self, dtype, kwargs):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        test_zero_size_dtype = not kwargs.get("separate", False)
         self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs=kwargs,
-                        test_zero_size_dtype=False)
+                        test_zero_size_dtype=test_zero_size_dtype)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_bandwidth(self, dtype):
@@ -414,8 +415,7 @@ class TestBatch:
         E = get_random((2, 1, 4, 4), dtype=dtype, rng=rng)
         n_out = 2 if compute_expm else 1
         self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
-                        kwargs=dict(compute_expm=compute_expm),
-                        test_zero_size_dtype=False)
+                        kwargs=dict(compute_expm=compute_expm))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_subspace_angles(self, dtype):
@@ -709,8 +709,7 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
-                        kwargs=dict(sketch_size=3, rng=311224),
-                        test_zero_size_dtype=False)
+                        kwargs=dict(sketch_size=3, rng=311224))
 
     def test_clarkson_woodruff_transform_sparse(self):
         rng = np.random.default_rng(8342310302941288912051)
