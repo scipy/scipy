@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz,
+    _ensure_aligned_and_native, _ensure_dtype_cdsz, HAS_ILP64
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -771,12 +771,8 @@ def _solve_toeplitz_signature(c, r, b, check_finite):
 @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'),
                    signature=_solve_toeplitz_signature)
 def _solve_toeplitz(c, r, b, check_finite):
-    r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
+    r, c, b, _, _ = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
-
-    # accommodate empty arrays
-    if b.size == 0:
-        return np.empty_like(b)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
@@ -789,7 +785,7 @@ def _solve_toeplitz(c, r, b, check_finite):
     else:
         x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
                              for i in range(b.shape[1])])
-        x = x.reshape(*b_shape)
+        x = x.reshape(*b.shape)
 
     return x
 
@@ -1721,11 +1717,10 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
 
 def _matrix_balance_signature(*args, **kwargs):
-    return ("(i,i)->(i,i),(2,i)" if kwargs.get('separate')
+    return ("(i,i)->(i,i),(i),int(i)" if kwargs.get('separate')
             else "(i,i)->(i,i),(i,i)")
 
 
-@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
@@ -1822,7 +1817,16 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
            [  0. ,   0. ,  1. ]])
 
     """
+    res = _matrix_balance(A, permute=permute, scale=scale, separate=separate,
+                          overwrite_a=overwrite_a)
+    if not separate:
+        return res
+    else:
+        return res[0], (res[1], res[2])
 
+
+@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
+def _matrix_balance(A, permute, scale, separate, overwrite_a):
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
 
     if not np.equal(*A.shape):
@@ -1834,7 +1838,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         B = np.empty_like(A, dtype=b_n.dtype)
         if separate:
             scaling = np.ones_like(A, shape=len(A))
-            perm = np.arange(len(A))
+            perm = np.arange(len(A), dtype=np.int64 if HAS_ILP64 else np.int32)
             return B, (scaling, perm)
         return B, np.empty_like(A, dtype=t_n.dtype)
 
@@ -1848,13 +1852,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
                          'LAPACK documentation for the xGEBAL error codes.')
 
     # Separate the permutations from the scalings and then convert to int
-    scaling = np.ones_like(ps, dtype=float)
+    scaling = np.ones_like(ps, dtype=B.dtype)
     scaling[lo:hi+1] = ps[lo:hi+1]
 
     # gebal uses 1-indexing
-    ps = ps.astype(int, copy=False) - 1
+    ps = ps.astype(np.int64 if HAS_ILP64 else np.int32, copy=False) - 1
     n = A.shape[0]
-    perm = np.arange(n)
+    perm = np.arange(n, dtype=np.int64 if HAS_ILP64 else np.int32)
 
     # LAPACK permutes with the ordering n --> hi, then 0--> lo
     if hi < n:
@@ -1870,7 +1874,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
             perm[[x, ind]] = perm[[ind, x]]
 
     if separate:
-        return B, (scaling, perm)
+        return B, scaling, perm
 
     # get the inverse permutation
     iperm = np.empty_like(perm)
@@ -1940,16 +1944,14 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
         raise ValueError('Incompatible dimensions.')
 
-    is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.float64
-    r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
+    c, r, b = _ensure_dtype_cdsz(c, r, b)
 
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
         b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
-    return r, c, b, dtype, b_shape
+    return r, c, b, b.dtype, b_shape
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
