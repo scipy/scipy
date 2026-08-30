@@ -508,7 +508,7 @@ To find out the LAPACK name, read the python source of the SciPy function and
 use ``nm`` on the ``.so`` library to find out the exact name.
 For the Cholesky factorization above, the LAPACK function is ``?potrf``, and the
 C name on Ubuntu linux is ``dpotrf_`` (it may be spelled with or without the
-trailing underscore, in uppper case or lower case, depending on the system).
+trailing underscore, in upper case or lower case, depending on the system).
 
 Here is an example ``gdb`` session::
 

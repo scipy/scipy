@@ -57,7 +57,7 @@ class Hartmann3(Benchmark):
 
     .. math::
 
-        f_{\text{Hartmann3}}(x) = -\sum\limits_{i=1}^{4} c_i 
+        f_{\text{Hartmann3}}(x) = -\sum\limits_{i=1}^{4} c_i
         e^{-\sum\limits_{j=1}^{n}a_{ij}(x_j - p_{ij})^2}
 
 
@@ -79,7 +79,7 @@ class Hartmann3(Benchmark):
 
     with :math:`x_i \in [0, 1]` for :math:`i = 1, 2, 3`.
 
-    *Global optimum*: :math:`f(x) = -3.8627821478` 
+    *Global optimum*: :math:`f(x) = -3.8627821478`
     for :math:`x = [0.11461292,  0.55564907,  0.85254697]`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions

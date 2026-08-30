@@ -774,6 +774,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     RuntimeError
         if the least-squares minimization fails.
 
+    TypeError
+        if the number of data points is fewer than the number of parameters
+
     OptimizeWarning
         if covariance of the parameters can not be estimated.
 

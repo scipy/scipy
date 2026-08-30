@@ -31,17 +31,20 @@ def Asp(request):
 
 # Start of tests
 ################
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dict_methods_covered(d, Asp):
     d_methods = set(dir(d)) - {"__class_getitem__"}
     asp_methods = set(dir(Asp))
     assert d_methods < asp_methods
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_clear(d, Asp):
     assert d.items() == Asp.items()
     d.clear()
     Asp.clear()
     assert d.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_copy(d, Asp):
     assert d.items() == Asp.items()
     dd = d.copy()
@@ -71,18 +74,22 @@ def test_fromkeys_iterator():
     X = [[1, 0], [0, 1], [1, 0], [0, 1]]
     assert_equal(Xdok.toarray(), X)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_get(d, Asp):
     assert Asp.get((0, 1)) == d.get((0, 1))
     assert Asp.get((0, 0), 99) == d.get((0, 0), 99)
     with pytest.raises(IndexError, match="out of bounds"):
         Asp.get((0, 4), 99)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_items(d, Asp):
     assert Asp.items() == d.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_keys(d, Asp):
     assert Asp.keys() == d.keys()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_pop(d, Asp):
     assert d.pop((0, 1)) == 1
     assert Asp.pop((0, 1)) == 1
@@ -96,10 +103,12 @@ def test_pop(d, Asp):
     with pytest.raises(TypeError, match=msg):
         Asp.pop((22, 21), default=5)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_popitem(d, Asp):
     assert d.popitem() == Asp.popitem()
     assert d.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_setdefault(d, Asp):
     assert Asp.setdefault((0, 1), 4) == 1
     assert Asp.setdefault((2, 2), 4) == 4
@@ -107,6 +116,7 @@ def test_setdefault(d, Asp):
     d.setdefault((2, 2), 4)
     assert d.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_update(d, Asp):
     for input in [Asp, Asp._dict, Asp._dict.items()]:
         Bsp = dok_array(Asp.shape)
@@ -124,32 +134,39 @@ def test_update(d, Asp):
     with pytest.raises(IndexError, match="index .* is too large"):
         Asp.update({(0, 3): 1.2})
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_values(d, Asp):
     # Note: dict.values are strange: d={1: 1}; d.values() == d.values() is False
     # Using list(d.values()) makes them comparable.
     assert list(Asp.values()) == list(d.values())
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_getitem(d, Asp):
     assert Asp[(0, 1)] == d[(0, 1)]
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_setitem(d, Asp):
     Asp[(1, 1)] = 5
     d[(1, 1)] = 5
     assert d.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_delitem(d, Asp):
     del Asp[(0, 1)]
     del d[(0, 1)]
     assert d.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_contains(d, Asp):
     assert ((0, 1) in d) == ((0, 1) in Asp)
     assert ((0, 0) in d) == ((0, 0) in Asp)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_len(d, Asp):
     assert len(d) == len(Asp)
 
 # Note: dunders reversed, or, ror, ior work as dict for dok_matrix, raise for dok_array
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_reversed(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
@@ -157,6 +174,7 @@ def test_dunder_reversed(d, Asp):
     else:
         assert list(reversed(Asp)) == list(reversed(d))
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_ior(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
@@ -170,6 +188,7 @@ def test_dunder_ior(d, Asp):
         dd |= Asp
         assert dd.items() == Asp.items()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_or(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
@@ -178,6 +197,7 @@ def test_dunder_or(d, Asp):
         assert d | d == Asp | d
         assert d | d == Asp | Asp
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_ror(d, Asp):
     if isinstance(Asp, dok_array):
         with pytest.raises(TypeError):
@@ -190,30 +210,36 @@ def test_dunder_ror(d, Asp):
         assert d | Asp
 
 # Note: comparison dunders, e.g. ==, >=, etc follow np.array not dict
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_eq(A, Asp):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp == Asp).toarray().all()
         assert (A == Asp).all()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_ne(A, Asp):
     assert not (Asp != Asp).toarray().any()
     assert not (A != Asp).any()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_lt(A, Asp):
     assert not (Asp < Asp).toarray().any()
     assert not (A < Asp).any()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_gt(A, Asp):
     assert not (Asp > Asp).toarray().any()
     assert not (A > Asp).any()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_le(A, Asp):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp <= Asp).toarray().all()
         assert (A <= Asp).all()
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_ge(A, Asp):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
@@ -221,5 +247,6 @@ def test_dunder_ge(A, Asp):
         assert (A >= Asp).all()
 
 # Note: iter dunder follows np.array not dict
+@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_dunder_iter(A, Asp):
     assert all((a == asp).all() for a, asp in zip(A, Asp))

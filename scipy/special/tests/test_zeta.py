@@ -299,3 +299,9 @@ clang_macOS = cpp_compiler == "clang" and sys.platform == "darwin"
 )
 def test_riemann_zeta_complex_avoid_underflow(z, desired, rtol):
     assert_allclose(sc.zeta(z), desired, rtol=rtol)
+
+
+def test_gh15036():
+    # for q=1, the Hurwitz zeta function reduces to the Riemann zeta function
+    x = [1, 50, 500]
+    assert_equal(sc.zeta(x, 1), sc.zeta(x))

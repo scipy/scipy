@@ -162,7 +162,7 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
                 x[k] = x[k] + alpha*(zz[ip] - x[k]);
             }
 
-            // Modify a, b, and the indicies to move coefficient i from set p
+            // Modify a, b, and the indices to move coefficient i from set p
             // to set z. While loop simulates a goto in the original F77 code.
             i = indices[jj];
             while (1)

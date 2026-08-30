@@ -13,7 +13,7 @@ def pade(an, m, n=None):
     Return Pade approximation to a polynomial as the ratio of two polynomials.
 
     .. deprecated:: 1.18.0
-        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        This function is deprecated and will be removed in SciPy 2.1.0. Use
         `mpmath.pade` instead.
 
     Parameters
@@ -52,7 +52,7 @@ def pade(an, m, n=None):
 
     """
     _warn_skips = (os.path.dirname(__file__),)
-    msg = ("`pade` is deprecated and will be removed in SciPy 1.20.0. Use "
+    msg = ("`pade` is deprecated and will be removed in SciPy 2.1.0. Use "
            "`mpmath.pade` instead.")
     warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     an = asarray(an)

@@ -45,55 +45,38 @@ _NO_CACHE = "no_cache"
 # TODO:
 #  Test sample dtypes
 #  Add dtype kwarg (especially for distributions with no parameters)
-#  When drawing endpoint/out-of-bounds values of a parameter, draw them from
-#   the endpoints/out-of-bounds region of the full `domain`, not `typical`.
-#  Distributions without shape parameters probably need to accept a `dtype` parameter;
-#    right now they default to float64. If we have them default to float16, they will
-#    need to determine result_type when input is not float16 (overhead).
-#  Test _solve_bounded bracket logic, and decide what to do about warnings
-#  Get test coverage to 100%
-#  Raise when distribution method returns wrong shape/dtype?
-#  Consider ensuring everything is at least 1D for calculations? Would avoid needing
-#    to sprinkle `np.asarray` throughout due to indescriminate conversion of 0D arrays
-#    to scalars
-#  Break up `test_basic`: test each method separately
-#  Fix `sample` for QMCEngine (implementation does not match documentation)
-#  When a parameter is invalid, set only the offending parameter to NaN (if possible)?
+#  Rewrite `test_continuous` without Hypothesis, more modular tests that are easier to
+#    run individually.
+#  Add distribution-specific tests - just enough to confirm that distribution is the
+#    one it is supposed to be; maybe check finite vs undefined vs infinite moments.
 #  `_tanhsinh` special case when there are no abscissae between the limits
-#    example: cdf of uniform betweeen 1.0 and np.nextafter(1.0, np.inf)
-#  check behavior of moment methods when moments are undefined/infinite -
-#    basically OK but needs tests
-#  investigate use of median
-#  implement symmetric distribution
-#  implement composite distribution
-#  implement wrapped distribution
-#  profile/optimize
-#  general cleanup (choose keyword-only parameters)
-#  compare old/new distribution timing
-#  make video
-#  add array API support
-#  use `median` information to improve integration? In some cases this will
-#   speed things up. If it's not needed, it may be about twice as slow. I think
-#   it should depend on the accuracy setting (and whether median formula is available).
-#  in tests, check reference value against that produced using np.vectorize?
-#  User tips for faster execution:
+#     example: cdf of uniform between 1.0 and np.nextafter(1.0, np.inf)
+#  implement symmetric distribution (take advantage of symmetry)
+#  implement composite distribution (for using different implementations depending on
+#    shape parameters - e.g. t distribution with df = np.inf delegates to normal)
+#  Add array API support
+#  Investigate use `median` information throughout, e.g. to improve integration of
+#    CDF or to provide initial bracket for ICDF. (Only if `_median_formula` is
+#    provided.)
+#  Document user tips for faster execution:
 #  - pass NumPy arrays
 #  - pass inputs of floating point type (not integers)
 #  - prefer NumPy scalars or 0d arrays over other size 1 arrays
-#  - pass no invalid parameters and disable invalid parameter checks with iv_profile
+#  - pass no invalid parameters and disable invalid parameter checks (validation_policy)
 #  - provide a Generator if you're going to do sampling
-#  add options for drawing parameters: log-spacing
-#  accuracy benchmark suite
+#  Add options for drawing parameters: log-spacing
+#  Accuracy benchmark suite. Ideally, when all code is array API compatible and mparray
+#    provides an array-API compatible arbitrary precision array, we can just compare
+#    results when using NumPy backend against mparray backend.
 #  Should caches be attributes so we can more easily ensure that they are not
-#   modified when caching is turned off?
+#    modified when caching is turned off?
 #  Make ShiftedScaledDistribution more efficient - only process underlying
-#   distribution parameters as necessary.
-#  Reconsider `all_inclusive`
-#  Should process_parameters update kwargs rather than returning? Should we
-#   update parameters rather than setting to what process_parameters returns?
+#    distribution parameters as necessary.
+#  Reconsider `all_inclusive` - see comment in `contains` method of `_interval`
 # `validation_policy` needs testing
 # `tol` does not offer very fine-grained control; consider improving
-# report accuracy estimates?
+# report accuracy estimates? How?
+# reconsider distribution mutability
 
 # Originally, I planned to filter out invalid distribution parameters;
 # distribution implementation functions would always work with "compressed",
@@ -176,7 +159,7 @@ class _Domain(ABC):
     symbols = {np.inf: r"\infty", -np.inf: r"-\infty", np.pi: r"\pi", -np.pi: r"-\pi"}
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     @abstractmethod
     def contains(self, x):
@@ -359,7 +342,7 @@ class _Interval(_Domain):
             - NaN ('nan').
         min, max : ndarray
             The endpoints of the domain.
-        squeezed_based_shape : tuple of ints
+        squeezed_base_shape : tuple of ints
             See _RealParameter.draw.
         rng : np.Generator
             The Generator used for drawing random values.
@@ -389,7 +372,7 @@ class _Interval(_Domain):
             z[~i] = max
 
         elif type_ == 'out':
-            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitary; we just want
+            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitrary; we just want
             zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
@@ -552,7 +535,7 @@ class _Parameter(ABC):
    """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, name, *, domain, symbol=None, typical=None):
         self.name = name
@@ -836,7 +819,7 @@ class _Parameterization:
         ----------
         sizes : iterable of shape tuples
             The size of the array to be generated for each parameter in the
-            parameterization. Note that the order of sizes is arbitary; the
+            parameterization. Note that the order of sizes is arbitrary; the
             size of the array generated for a specific parameter is not
             controlled individually as written.
         rng : NumPy Generator
@@ -857,7 +840,7 @@ class _Parameterization:
             A dictionary of parameter name/value pairs.
         """
         # ENH: be smart about the order. The domains of some parameters
-        # depend on others. If the relationshp is simple (e.g. a < b < c),
+        # depend on others. If the relationships is simple (e.g. a < b < c),
         # we can draw values in order a, b, c.
         parameter_values = {}
 
@@ -1069,9 +1052,8 @@ def _set_invalid_nan_property(f):
         if needs_copy:
             res = res.astype(dtype=dtype, copy=True)
 
+        # Ensure invalid shape parameters produce NaN result
         if self._any_invalid:
-            # may be redundant when quadrature is used, but not necessarily
-            # when formulas are used.
             res[self._invalid] = np.nan
 
         return res[()]
@@ -1322,7 +1304,7 @@ def _generate_example(dist_family):
 
     p = 0.32
     x = round(X.icdf(p), 2)
-    y = round(X.icdf(2 * p), 2)  # noqa: F841
+    y = round(X.icdf(2 * p), 2)
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1524,7 +1506,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     """
     __array_priority__ = 1
-    _parameterizations = []  # type: ignore[var-annotated]
+    _parameterizations = []
 
     ### Initialization
 
@@ -1552,14 +1534,19 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         Parameters
         ----------
+        validation_policy : {None, "skip_all"}
+            Specifies the level of input validation to perform. Left unspecified,
+            input validation is performed to ensure appropriate behavior in edge
+            case (e.g. parameters out of domain, argument outside of distribution
+            support, etc.) and improve consistency of output dtype, shape, etc.
+            Pass ``'skip_all'`` to avoid the computational overhead of these
+            checks when rough edges are acceptable.
+
         **params : array_like
             Desired numerical values of the distribution parameters. Any or all
             of the parameters initially used to instantiate the distribution
             may be modified. Parameters used in alternative parameterizations
             are not accepted.
-
-        validation_policy : str
-            To be documented. See Question 3 at the top.
         """
 
         parameters = original_parameters = self._original_parameters.copy()
@@ -1586,7 +1573,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # distributions, the domain of a parameter doesn't depend on other
             # parameters, so parameters could safely be modified without
             # re-validating all other parameters. To handle these cases more
-            # efficiently, we could allow the developer  to override this
+            # efficiently, we could allow the developer to override this
             # behavior.
 
             # Currently the user can only update the original parameterization.
@@ -2278,8 +2265,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # bracket_minimum fails with status == -1 if the mode is at a boundary.
         # We have to consider this as a special case; there's no way to include
         # this logic in find_minimum; it has to treat the bracket as invalid.
-        mode_at_boundary = res_b.status == -1
-        fl, fm, fr = res_b.bracket
+        mode_at_boundary = res.status == -1
+        fl, fm, fr = res_b.f_bracket
         mode_at_left = mode_at_boundary & (fl <= fm)
         mode_at_right = mode_at_boundary & (fr < fm)
         mode[mode_at_left] = a[mode_at_left]
@@ -2564,12 +2551,17 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
 
     def _cdf2_subtraction_safe(self, x, y, **params):
+        # The "safe" version of this function may be used if `method` is unspecified,
+        # but if `method='subtraction'`, the regular version  above is used.
         cdf_x = self._cdf_dispatch(x, **params)
         cdf_y = self._cdf_dispatch(y, **params)
         ccdf_x = self._ccdf_dispatch(x, **params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
         out = np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+        # Can't just call `out = _cdf2_subtraction(self, x, y, **params)` here
+        # because we need the partial results below. Could refactor, but we'll leave
+        # that to future work, say if the improvements to _cdf2_subtraction are made.
 
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
@@ -3451,7 +3443,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             raise ValueError(message)
 
         try:
-            import matplotlib.pyplot as plt  # noqa: F401, E402
+            import matplotlib.pyplot as plt
         except ModuleNotFoundError as exc:
             message = ("`matplotlib` must be installed to use "
                        f"`{self.__class__.__name__}.plot`.")
@@ -3538,7 +3530,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     # treat the parameters as "fixed" and the quantile/percentile arguments
     # as "variable". There are a lot of advantages to this structure, and I
     # don't think the fact that a few methods reverse the fixed and variable
-    # quantities should make us question that choice. It can still accomodate
+    # quantities should make us question that choice. It can still accommodate
     # these methods reasonably efficiently.
 
 
@@ -3862,30 +3854,29 @@ _distribution_names = {
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object.
 
-    The argument may be an instance of `rv_continuous` or an instance of
+    The argument may be an instance of `rv_continuous`, `rv_discrete`, or an instance of
     another class that satisfies the interface described below.
 
-    The returned value is a `ContinuousDistribution` subclass if the input is an
-    instance of `rv_continuous` or a `DiscreteDistribution` subclass if the input
-    is an instance of `rv_discrete`. Like any subclass of `UnivariateDistribution`,
-    it must be instantiated (i.e. by passing all shape parameters as keyword
-    arguments) before use. Once instantiated, the resulting object will have the
-    same interface as any other instance of `UnivariateDistribution`; e.g.,
-    `scipy.stats.Normal`, `scipy.stats.Binomial`.
+    The returned value is a `ContinuousDistribution` subclass if the input defines a
+    ``pdf`` method or a `DiscreteDistribution` subclass if the input defines a ``pmf``
+    method. Like any subclass of `UnivariateDistribution`, it must be instantiated (i.e.
+    by passing all shape parameters as keyword arguments) before use. Once instantiated,
+    the resulting object will have the same interface as any other instance of
+    `UnivariateDistribution`; e.g., `scipy.stats.Normal`, `scipy.stats.Binomial`.
 
     .. note::
 
         `make_distribution` does not work perfectly with all instances of
-        `rv_continuous`. Known failures include `levy_stable`, `vonmises`,
-        `hypergeom`, 'nchypergeom_fisher', 'nchypergeom_wallenius', and
+        `rv_continuous` or `rv_discrete`. Known failures include `levy_stable`,
+        `vonmises`, `hypergeom`, 'nchypergeom_fisher', 'nchypergeom_wallenius', and
         `poisson_binom`. Some methods of some distributions will not support
         array shape parameters.
 
     Parameters
     ----------
     dist : `rv_continuous`
-        Instance of `rv_continuous`, `rv_discrete`, or an instance of any class with
-        the following attributes:
+        Instance of `rv_continuous`, `rv_discrete`, or an instance of any custom class
+        with the following attributes:
 
         __make_distribution_version__ : str
             A string containing the version number of SciPy in which this interface
@@ -3897,6 +3888,10 @@ def make_distribution(dist):
             and the corresponding value is either a dictionary or tuple.
             If the value is a dictionary, it may have the following items, with default
             values used for entries which aren't present.
+
+            domain_type : {'continuous', 'discrete'}, default: 'continuous'
+                A string identifying whether the domain of the parameter is continuous
+                or discrete (i.e. accepts only integral values).
 
             endpoints : tuple, default: (-inf, inf)
                 A tuple defining the lower and upper endpoints of the domain of the
@@ -3930,16 +3925,20 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above.
+            the values of the parameters dict described above. (``domain_type`` is
+            inferred from whether ``pdf`` or ``pmf`` is defined.)
 
-        The class **must** also define a ``pdf`` method and **may** define methods
-        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        The class **must** also define a ``pdf`` OR ``pmf`` method - not both - and
+        this determines whether the support of the distribution is continuous or
+        discrete (i.e. accepts only integral values). It **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``,
+        ``logpdf``, ``logpmf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
         ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
         ``moment``, ``lmoment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`.
+        the corresponding method of `ContinuousDistribution`/`DiscreteDistribution`.
         When multiple parameterizations are defined, these methods must accept
         all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
@@ -3972,8 +3971,7 @@ def make_distribution(dist):
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy import stats
-    >>> from scipy import special
+    >>> from scipy import stats, special
 
     Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
 
@@ -3987,7 +3985,7 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
-    Create a custom distribution.
+    Create a custom continuous distribution.
 
     >>> class MyLogUniform:
     ...     @property
@@ -4085,6 +4083,36 @@ def make_distribution(dist):
     >>> X = MyBeta(a=2.0, b=2.0)
     >>> Y = MyBeta(mu=0.5, nu=4.0)
     >>> np.isclose(X.pdf(0.3), Y.pdf(0.3))
+    np.True_
+
+    Create a custom discrete distribution with one continuous shape parameter and one
+    discrete shape parameter.
+
+    >>> class MyBinomial:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'n': {'domain_type': 'discrete',
+    ...                       'endpoints': (0., np.inf),
+    ...                       'inclusive': (True, False)},
+    ...                 'p': {'domain_type': 'continuous',
+    ...                       'endpoints': (0., 1.),
+    ...                       'inclusive': (True, True)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+    ...
+    ...     def pmf(self, x, n, p):
+    ...         return special.binom(n, x) * p**x * (1 - p)**(n-x)
+    >>>
+    >>> MyBinomial = stats.make_distribution(MyBinomial())
+    >>> X = stats.Binomial(n=10, p=0.4)
+    >>> Y = MyBinomial(n=10, p=0.4)
+    >>> np.isclose(Y.cdf(8.), X.cdf(8.))
     np.True_
 
     """
@@ -4236,8 +4264,14 @@ def _make_distribution_rv_generic(dist):
 
 def _get_domain_info(info):
     domain_info = {"endpoints": info} if isinstance(info, tuple) else info
+    domain_type_str = domain_info.pop("domain_type", "continuous")
+    if domain_type_str not in {"discrete", "continuous"}:
+        message = ("If specified, the `domain_type` value of a parameter "
+                   "must be either 'continuous' or 'discrete'.")
+        raise ValueError(message)
+    domain_type = _IntegerInterval if domain_type_str == 'discrete' else _RealInterval
     typical = domain_info.pop("typical", None)
-    return domain_info, typical
+    return domain_type, domain_info, typical
 
 
 def _make_distribution_custom(dist):
@@ -4254,18 +4288,32 @@ def _make_distribution_custom(dist):
         parameters = []
 
         for name, info in parameterization.items():
-            domain_info, typical = _get_domain_info(info)
-            domain = _RealInterval(**domain_info)
+            domain_type, domain_info, typical = _get_domain_info(info)
+            domain = domain_type(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
-        parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, typical = _get_domain_info(dist.support)
-    _x_support = _RealInterval(**domain_info)
+        if parameters:
+            parameterizations.append(_Parameterization(*parameters))
+
+    domain_type, domain_info, typical = _get_domain_info(dist.support)
+    _x_support = domain_type(**domain_info)
+
+    if hasattr(dist, 'pdf') and not hasattr(dist, 'pmf'):
+        pxf = 'PDF'
+        distribution_subclass = ContinuousDistribution
+    elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
+        pxf = 'PMF'
+        distribution_subclass = DiscreteDistribution
+    else:
+        message = ("The argument of `make_distribution` must implement "
+                   "either `pdf` OR `pmf` (not both).")
+        raise ValueError(message)
+
     _x_param = _RealParameter('x', domain=_x_support, typical=typical)
     repr_str = dist.__class__.__name__
 
-    class CustomDistribution(ContinuousDistribution):
+    class CustomDistribution(distribution_subclass):
         _parameterizations = parameterizations
         _variable = _x_param
 
@@ -4278,7 +4326,7 @@ def _make_distribution_custom(dist):
             return s.replace('CustomDistribution', repr_str)
 
     methods = {'sample', 'logentropy', 'entropy',
-               'median', 'mode', 'logpdf', 'pdf',
+               'median', 'mode', 'logpdf', 'pdf', 'logpmf', 'pmf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
                'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
@@ -4314,8 +4362,8 @@ def _make_distribution_custom(dist):
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
         f"This class represents `{repr_str}` as a subclass of "
-        "`ContinuousDistribution`.",
-        f"The PDF of the distribution is defined {support_etc}"
+        f"`{str(distribution_subclass)}`.",
+        f"The {pxf} of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
 
@@ -4334,18 +4382,21 @@ def _make_distribution_custom(dist):
 # components rather than all built into `ContinuousDistribution`.
 
 def _shift_scale_distribution_function_2arg(func):
-    def wrapped(self, x, y, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, x, y, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
         xt = self._transform(x, loc, scale)
         yt = self._transform(y, loc, scale)
-        fxy = f(xt, yt, *args, **kwargs)
-        fyx = f(yt, xt, *args, **kwargs)
-        return np.real_if_close(np.where(sign, fxy, fyx))[()]
+        res = xpx.apply_where(
+            sign,
+            (xt, yt, *args),
+            lambda xt, yt, *args, **kwargs: f(xt, yt, *args, method=method, **kwargs),
+            lambda xt, yt, *args, **kwargs: f(yt, xt, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return res[()]
 
     return wrapped
 
@@ -4355,18 +4406,21 @@ def _shift_scale_distribution_function(func):
              '_cdf_dispatch': '_ccdf_dispatch',
              '_logccdf_dispatch': '_logcdf_dispatch',
              '_ccdf_dispatch': '_cdf_dispatch'}
-    def wrapped(self, x, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, x, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
         cf = getattr(self._dist, citem[item])
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
         xt = self._transform(x, loc, scale)
-        fx = f(xt, *args, **kwargs)
-        cfx = cf(xt, *args, **kwargs)
-        return np.where(sign, fx, cfx)[()]
+        res = xpx.apply_where(
+            sign,
+            (xt, *args),
+            lambda xt, *args, **kwargs: f(xt, *args, method=method, **kwargs),
+            lambda xt, *args, **kwargs: cf(xt, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return res[()]
 
     return wrapped
 
@@ -4375,17 +4429,20 @@ def _shift_scale_inverse_function(func):
              '_icdf_dispatch': '_iccdf_dispatch',
              '_ilogccdf_dispatch': '_ilogcdf_dispatch',
              '_iccdf_dispatch': '_icdf_dispatch'}
-    def wrapped(self, p, *args, loc, scale, sign, **kwargs):
+    def wrapped(self, p, *args, loc, scale, sign, method=None, **kwargs):
         item = func.__name__
 
         f = getattr(self._dist, item)
         cf = getattr(self._dist, citem[item])
 
-        # Obviously it's possible to get away with half of the work here.
-        # Let's focus on correct results first and optimize later.
-        fx =  self._itransform(f(p, *args, **kwargs), loc, scale)
-        cfx = self._itransform(cf(p, *args, **kwargs), loc, scale)
-        return np.where(sign, fx, cfx)[()]
+        res = xpx.apply_where(
+            sign,
+            (p, *args),
+            lambda p, *args, **kwargs: f(p, *args, method=method, **kwargs),
+            lambda p, *args, **kwargs: cf(p, *args, method=method, **kwargs),
+            kwargs=kwargs
+        )
+        return self._itransform(res, loc, scale)[()]
 
     return wrapped
 
@@ -4445,7 +4502,7 @@ class TransformedDistribution(ContinuousDistribution):
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
     # TODO:
-    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - consider avoiding catastrophic cancellation by using appropriate tail
     # - if the mode of `_dist` is within the support, it's still the mode
     # - rejection sampling might be more efficient than inverse transform
 
@@ -5300,7 +5357,7 @@ class Mixture(_ProbabilityDistribution):
             out += moment * weight
         return out[()]
 
-    def lmoment(self, order=1, *, standardize=False, method=None):
+    def lmoment(self, order=1, *, standardize=True, method=None):
         message = "L-moments are not currently available for mixture distributions."
         raise NotImplementedError(message)
 

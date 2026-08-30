@@ -7,13 +7,13 @@ static PyObject* slsqp_error;
 
 #include <math.h>
 #include "src/slsqp.h"
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 
 // A simple destructor for buffer attached to a NumPy array via a capsule.
 static void
 capsule_destructor(PyObject *capsule) {
     void *ptr = PyCapsule_GetPointer(capsule, NULL);
-    free(ptr);
+    PyMem_RawFree(ptr);
 }
 
 
@@ -81,15 +81,15 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // A is m x n, b is m, x is n, w is n, zz is m
     // total m*(n+2) + 2*n
     //indices is n
-    buffer = malloc((m*(n+2) + 3*n)*sizeof(double));
+    buffer = PyMem_RawMalloc((m*(n+2) + 3*n)*sizeof(double));
     if (buffer == NULL)
     {
         PYERR(slsqp_error, "Memory allocation failed.");
     }
-    CBLAS_INT *indices = malloc(n*sizeof(CBLAS_INT));
+    CBLAS_INT *indices = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (indices == NULL)
     {
-        free(buffer);
+        PyMem_RawFree(buffer);
         PYERR(slsqp_error, "Memory allocation failed.");
     }
 
@@ -120,19 +120,19 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Call nnls
     __nnls((CBLAS_INT)m, (CBLAS_INT)n, a, b, x, w, zz, indices, maxiter, &rnorm, &info);
     // x is the first n elements of buffer, shrink buffer to n elements
-    free(indices);
-    double* mem_ret = realloc(buffer, n*sizeof(double));
+    PyMem_RawFree(indices);
+    double* mem_ret = PyMem_RawRealloc(buffer, n*sizeof(double));
     // Very unlikely, but just in case
     if (mem_ret == NULL)
     {
-        free(buffer);
+        PyMem_RawFree(buffer);
         PYERR(slsqp_error, "scipy.optimize._slsqplib: Memory reallocation failed.");
     }
 
     npy_intp shape_ret[1] = {n};
     PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_ret, NPY_FLOAT64, mem_ret);
     if (ap_ret == NULL) {
-        free(mem_ret);
+        PyMem_RawFree(mem_ret);
         PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create numpy array from data.");
     }
 
@@ -140,7 +140,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject* capsule = PyCapsule_New(mem_ret, NULL, capsule_destructor);
     if (capsule == NULL) {
         Py_DECREF(ap_ret);
-        free(mem_ret);
+        PyMem_RawFree(mem_ret);
         PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create capsule.");
     }
 

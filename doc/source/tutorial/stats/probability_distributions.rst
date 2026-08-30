@@ -348,14 +348,14 @@ Specific points for discrete distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Discrete distributions have mostly the same basic methods as the
-continuous distributions. However ``pdf`` is replaced by the probability
+continuous distributions. However, ``pdf`` is replaced by the probability
 mass function ``pmf``, no estimation methods, such as fit, are
 available, and ``scale`` is not a valid keyword parameter. The
 location parameter, keyword ``loc``, can still be used to shift the
 distribution.
 
 The computation of the cdf requires some extra attention. In the case
-of continuous distribution, the cumulative distribution function is, in
+of a continuous distribution, the cumulative distribution function is, in
 most standard cases, strictly monotonic increasing in the bounds (a,b)
 and has, therefore, a unique inverse. The cdf of a discrete
 distribution, however, is a step function, hence the inverse cdf,
@@ -455,7 +455,7 @@ and gained a considerable test suite; however, a few issues remain:
 Building specific distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The next examples shows how to build your own distributions. Further
+The next example shows how to build your own distributions. Further
 examples show the usage of the distributions and some statistical
 tests.
 
@@ -476,7 +476,7 @@ Making continuous distributions is fairly simple.
     >>> deterministic.cdf(np.arange(-3, 3, 0.5))
     array([ 0.,  0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,  1.])
 
-Interestingly,  the ``pdf`` is now computed automatically:
+Interestingly, the ``pdf`` is now computed automatically:
 
     >>> deterministic.pdf(np.arange(-3, 3, 0.5))
     array([  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -501,7 +501,7 @@ integration interval smaller:
     >>> quad(deterministic.pdf, -1e-3, 1e-3)  # warning removed
     (1.000076872229173, 0.0010625571718182458)
 
-This looks better. However, the problem originated from the fact that
+This looks better. However, the problem originates from the fact that
 the pdf is not specified in the class definition of the deterministic
 distribution.
 
@@ -522,7 +522,7 @@ From the docstring of rv_discrete, ``help(stats.rv_discrete)``,
   keyword) a tuple of sequences (xk, pk) which describes only those
   values of X (xk) that occur with nonzero probability (pk)."
 
-Next to this, there are some further requirements for this approach to
+Additionally, there are some further requirements for this approach to
 work:
 
 * The keyword `name` is required.

@@ -112,7 +112,7 @@ the function will fail when running inside ``jax.jit``.
 Additional caveats may be listed in the docstring of the function.
 
 Some functions also note support for `MArray <https://mdhaber.github.io/marray/tutorial.html>`__,
-a library that add a "missing data" awareness to the array library of your choice. MArray
+a library that adds "missing data" awareness to the array library of your choice. MArray
 is not an independent array library; rather, it wraps the namespace of an array API
 compatible library to add "mask" support. Consequently, where MArray support is noted,
 it is supported in conjunction with all backend/device combinations marked as supported
@@ -271,7 +271,7 @@ relevant restrictions for SciPy developers are:
 * Within the JIT, value based control flow with Python ``if`` statements is not permitted.
   Only static properties of arrays such as their ``shape`` and ``dtype`` are permitted to be
   used with ``if``. `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
-  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
+  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_
   provide some basic control flow that works with the JIT.
 
 * Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input arrays.
@@ -317,7 +317,7 @@ See `Common Gotchas in JAX <https://docs.jax.dev/en/latest/notebooks/Common_Gotc
 * `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
   and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ provide a level of basic control flow that works with the JIT
   and in some cases these can be used to replace the value dependent use of ``if``. In
-  some cases its also possible to wrap code using ``if`` within a pure function and use
+  some cases it's also possible to wrap code using ``if`` within a pure function and use
   ``lazy_apply``.
 
 **JAX Eager:**
@@ -338,7 +338,7 @@ into enabling eager-only support.
 A note on MArray support
 ````````````````````````
 MArray wraps array API compatible namespaces, so it is common for an array API compatible
-function to execute *without warnings or errors* provided MArray input. **This does
+function to execute *without warnings or errors* provided MArray input. **This does not
 necessarily mean that the function supports MArray input.** The mask of MArrays is used
 to denote missing values; therefore, to consider a function compatible with MArray,
 numerical output with masked input must equal the numerical output expected if the
@@ -411,7 +411,7 @@ for integers and real and complex floating point numbers which differ from the
 ``int64``, ``float64``, ``complex128`` defaults used by NumPy. Our aim is to
 have array API supporting SciPy functions with array inputs have behavior which
 is independent of the default dtype to the extent that this is practical. This means
-that any when using array creation functions from the ``xp`` namespace such as ``xp.zeros``
+that when using array creation functions from the ``xp`` namespace such as ``xp.zeros``
 or ``xp.arange``, one should take care to explicitly set a dtype with the ``dtype``
 kwarg; otherwise, the result will depend on the default dtype.
 
@@ -464,7 +464,7 @@ behave with respect to :ref:`default dtypes <dev-arrayapi_default_dtype>`.
 Should they respect default dtype or should the output dtype be fixed across
 backends and defaults? Should there be a ``dtype`` kwarg for controlling the output
 dtype or is being able to apply ``xp.astype`` on the output sufficient?
-Since there is not yet a consistent pattern to follow, for now its
+Since there is not yet a consistent pattern to follow, for now it's
 important to clearly document how such functions behave with respect to the
 default dtype in the :ref:`extra_note <dev-arrayapi_extra_note>` described below.
 
@@ -495,7 +495,7 @@ signature::
       # Extra note to inject into the docstring
       extra_note=None,
       # Dictionary mapping method names to dictionaries of method
-      # specific capabilities for use when when xp_capabilities is
+      # specific capabilities for use when xp_capabilities is
       # applied to a class with varying capabilities per method
       method_capabilities=None,
       # Whether the function supports MArrays (used only in documentation)
@@ -535,8 +535,8 @@ Note that in some modules a systematic process for delegation to native
 implementations is set up, where functions are replaced with wrappers
 that perform delegation. In this case, ``xp_capabilities`` is not always
 applied as a decorator with ``@`` syntax, but may instead be applied
-programatically on the wrappers. When working on array API standard
-support within a module, its important to be aware of how such delegation
+programmatically on the wrappers. When working on array API standard
+support within a module, it's important to be aware of how such delegation
 is set up, if any, and how ``xp_capabilities`` is being applied. A common
 practice currently is to have a file, ``_support_alternative_backends.py``
 within a module that sets up such delegation. See for instance
@@ -651,20 +651,9 @@ being followed are to exclude:
 * functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
 * functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
 
-As an example, the contents of `scipy.odr` are considered out-of-scope for a
-combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
-wrapper of the monolithic ODRPACK Fortran library, and its API is tied
-to the structure of this monolithic library. An efficient GPU
-accelerated implementation of nonlinear weighted orthogonal distance regression
-would benefit from not having to support an API so tightly coupled to ODRPACK
-but is also a challenging problem in its own right.
-
-(Since the previous paragraph was written `scipy.odr` has been slated for
-deprecation. Things that are deprecated are inherently out-of-scope).
-
 Considerations of what to consider in-scope are evolving, and something which is now
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
-interest and feasability are demonstrated.
+interest and feasibility are demonstrated.
 
 .. _dev-arrayapi_skip_xfail_backends:
 
@@ -938,7 +927,7 @@ strict checks to enforce this. If one had accidentally written::
       ...
 
 without using ``make_xp_pytest_param`` then running this test would result
-in an error with the the message::
+in an error with the message::
 
   ERROR scipy/my_module/tests/test_foo.py::test_foo[numpy] - UserWarning: test uses `xp`
   fixture without drawing from `xp_capabilities`  but is not explicitly marked with ``pytest.mark...
@@ -946,8 +935,8 @@ in an error with the the message::
 Since ``xp_capabilities`` is used to declare alternative backend support for the
 purpose of both testing and documentation, this strict check in the ``xp``
 fixture ensures that documentation of tested array API capabilities does not
-become out-of-date. There may be cases where one intentionally does cannot or
-does not want to use ``make_xp_test_case`` or an equivalent, such as for private
+become out-of-date. There may be cases where one cannot or intentionally does
+not want to use ``make_xp_test_case`` or an equivalent, such as for private
 functions which do not have associated ``xp_capabilities`` entries. To bypass
 the strict checks, one can explicitly mark a test with
 ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string can
@@ -1041,7 +1030,7 @@ backend which are actually unrelated to ``f`` but are instead due to bugs
 outside ``f`` exposed by other parts of the test body. To avoid such situations,
 we recommend as a general practice to attempt to isolate use of the alternative
 backend only to the function ``f`` being tested with a caveat that there are
-situations where or it is necessary or desired to do otherwise: see the section
+situations where it is necessary or desired to do otherwise: see the section
 on :ref:`backend isolation <dev-arrayapi_backend_isolation>` below for more
 information.
 
@@ -1110,7 +1099,7 @@ Running tests
 `````````````
 
 After applying these markers, either through ``make_xp_test_case`` or one of its
-equvilents, or directly,
+equivalents, or directly,
 ``spin test`` can be used with the option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
@@ -1192,7 +1181,7 @@ support for each function, it's usually vital to have tests which isolate use
 of the alternative backend only to the function being tested.
 
 To help facilitate such backend isolation, there is a function
-``_xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
+``xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
 ``xp`` array to a NumPy array, bypassing any device transfer guards, while
 preserving dtypes. It is essential that this function is only used in
 tests. Attempts to copy a device array to NumPy outside of tests should fail,
@@ -1200,7 +1189,7 @@ because otherwise it is opaque as to whether a function is working on GPU or
 not. Creation of input arrays and reference output arrays, and computations that
 verify that the output of the function being tested satisfies an invariant (such
 as round trip tests that a function composed with its inverse gives the identity
-function), should all be done with NumPy (using the ``_xp_copy_to_numpy``
+function), should all be done with NumPy (using the ``xp_copy_to_numpy``
 function if necessary).
 
 Such backend isolation should not be applied blindly. Consider for example a
@@ -1208,7 +1197,7 @@ vectorized root finding function like `scipy.optimize.elementwise.find_root`.
 When testing such a function on alternative backends, isolating use of the
 alternative backend only to ``find_root`` by using an input callable ``f`` (the
 function for which roots are sought) that converts to and from NumPy would not
-be desirable since since ``find_root`` and ``f`` are so tightly coupled in this
+be desirable since ``find_root`` and ``f`` are so tightly coupled in this
 case. In other cases, a function ``h`` used in the tests of a function ``g`` may
 be known to be so simple and rock solid that there is no point in going through
 the trouble of backend isolation. Maintainers are free to use their discretion to
@@ -1291,10 +1280,64 @@ functions with a decorator that disables ``compute()`` and ``persist()`` and ens
 that exceptions and warnings are raised eagerly. Similarly as for the JAX JIT,
 ``make_xp_test_case`` and friends will automatically do this when the associated
 ``xp_capabilities`` entry has ``allow_dask_compute=False``. The same warning about
-requiring ``lazy_xp_modules`` applies for tests Dask works with lazy evaluation just
-as it does for tests of the JAX JIT.
+requiring ``lazy_xp_modules`` applies to tests of lazy evaluation with Dask, just
+as it does to tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
+
+Testing device propagation with a torch meta default device
+````````````````````````````````````````````````````````````
+
+Under the array API standard, arrays created without an explicit ``device``
+land on the backend's *default* device. If SciPy code creates an array
+internally without propagating the input's device (``device=xp_device(x)``),
+the result only breaks when the input lives on a *non-default* device - a
+situation regular CPU test runs never exercise as there is only one CPU device.
+
+Using the PyTorch ``'meta'`` device (through ``SCIPY_DEVICE=meta``) closes that
+gap without needing extra hardware. E.g., running::
+
+  pixi run test-torch-meta
+
+makes torch's data-free ``meta`` device the default while the ``xp`` fixture
+hands tests a wrapper namespace that creates input arrays on CPU.
+SciPy-internal code resolves the real namespace from its input arrays, so any
+internal creation that omits ``device=`` lands on ``meta`` and fails with an
+exception (``Expected all tensors to be on the same device``) at the first
+combination with input data.
+
+In other words: testing with the PyTorch meta device provides a
+device-propagation leak detector. It simulates running the test suite on a
+machine whose default device is a GPU while all test arrays are created in CPU
+memory - a situation in which a missing ``device=`` actually breaks - without
+needing a GPU.
+This includes ``cpu_only`` functions: their NumPy round-trip must
+return results on the *input's* device (not the default device), so they run
+and are value-checked in this mode.
+
+When triaging a failure in this mode:
+
+* An ``Expected all tensors to be on the same device`` error (``meta`` and
+  ``cpu``) inside SciPy code is a real leak; fix it by propagating the input
+  device at the creation site.
+* ``Tensor.item() cannot be called on meta tensors`` / ``Cannot copy out of
+  meta tensor``: check where the offending tensor was created. Most often it
+  is also a real leak, one step removed: an internal conversion omitted
+  ``device=`` (e.g. a host parameter - one that lives in CPU memory - converted
+  with a bare ``xp.asarray(p)`` and then validated with ``xp.any(p <= 0)``),
+  and the fix is again to pin the creation site. Only when the device-to-host transfer
+  is inherent to the implementation - a computed value genuinely needed on the
+  host, which is a legal synchronization on real devices but impossible on the
+  data-free ``meta`` device - mark the test with
+  ``@pytest.mark.skip_xp_backends(skip_meta=True, reason=...)``.
+* A value assertion comparing a ``meta`` result against a ``cpu`` reference
+  means the function constructs its output on the default device because it
+  takes no array input (e.g. the window functions). If the function has a
+  ``device`` keyword, do not skip: pass the device of test-created arrays
+  explicitly (see the ``device`` fixture in ``test_windows.py``), which both
+  fixes the test and actively verifies the keyword is threaded through every
+  internal creation. Only functions without a ``device`` keyword need the
+  ``skip_meta=True`` mark.
 
 Adding tests for class methods
 ``````````````````````````````
@@ -1305,7 +1348,7 @@ one can pass a tuple of the form ``tuple[type, str]`` as an entry of
 the argument ``func`` of ``make_xp_pytest_param``. The tuple
 ``(A, "f")`` signifies that one is testing the method ``A.f`` of the
 class ``A``. Such a tuple is used rather than simply ``A.f``
-in order allow unambiguous specification of what is being tested in
+in order to allow unambiguous specification of what is being tested in
 cases where a method is inherited from a parent class.::
 
   @make_xp_test_case((Foo, "bar"))
@@ -1376,7 +1419,6 @@ considered out-of-scope.
    array_api_modules_tables/fft
    array_api_modules_tables/integrate
    array_api_modules_tables/interpolate
-   array_api_modules_tables/io
    array_api_modules_tables/linalg
    array_api_modules_tables/linalg_interpolative
    array_api_modules_tables/ndimage
@@ -1407,7 +1449,6 @@ Support on CPU
    :fft: array_api_support_fft_cpu
    :integrate: array_api_support_integrate_cpu
    :interpolate: array_api_support_interpolate_cpu
-   :io: array_api_support_io_cpu
    :linalg: array_api_support_linalg_cpu
    :linalg.interpolative: array_api_support_linalg_interpolative_cpu
    :ndimage: array_api_support_ndimage_cpu
@@ -1438,7 +1479,6 @@ Support on GPU
    :fft: array_api_support_fft_gpu
    :integrate: array_api_support_integrate_gpu
    :interpolate: array_api_support_interpolate_gpu
-   :io: array_api_support_io_gpu
    :linalg: array_api_support_linalg_gpu
    :linalg.interpolative: array_api_support_linalg_interpolative_gpu
    :ndimage: array_api_support_ndimage_gpu
@@ -1469,7 +1509,6 @@ Support with JIT
    :fft: array_api_support_fft_jit
    :integrate: array_api_support_integrate_jit
    :interpolate: array_api_support_interpolate_jit
-   :io: array_api_support_io_jit
    :linalg: array_api_support_linalg_jit
    :linalg.interpolative: array_api_support_linalg_interpolative_jit
    :ndimage: array_api_support_ndimage_jit

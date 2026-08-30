@@ -217,7 +217,7 @@ class TestOnenormest:
 
     def test_returns(self):
         np.random.seed(1234)
-        A = scipy.sparse.rand(50, 50, 0.1)
+        A = scipy.sparse.random_array((50, 50), density=0.1)
 
         s0 = scipy.linalg.norm(A.toarray(), 1)
         s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)

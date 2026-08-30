@@ -20,8 +20,8 @@ class MaximumBipartiteMatching(Benchmark):
         # disregarding duplicates is quite a bit faster.
         rng = np.random.default_rng(42)
         d = rng.integers(0, n, size=(int(n*n*density), 2))
-        graph = scipy.sparse.csr_matrix((np.ones(len(d)), (d[:, 0], d[:, 1])),
-                                        shape=(n, n))
+        graph = scipy.sparse.csr_array((np.ones(len(d)), (d[:, 0], d[:, 1])),
+                                       shape=(n, n))
         self.graph = graph
 
     def time_maximum_bipartite_matching(self, n, density):
@@ -32,7 +32,7 @@ class MaximumBipartiteMatching(Benchmark):
 # the classes defined in Burkard, Dell'Amico, Martello -- Assignment Problems,
 # 2009, Section 4.10.1.
 def random_uniform(shape, rng):
-    return scipy.sparse.csr_matrix(rng.uniform(1, 100, shape))
+    return scipy.sparse.csr_array(rng.uniform(1, 100, shape))
 
 
 def random_uniform_sparse(shape, rng):
@@ -41,23 +41,23 @@ def random_uniform_sparse(shape, rng):
 
 
 def random_uniform_integer(shape, rng):
-    return scipy.sparse.csr_matrix(rng.integers(1, 1000, shape))
+    return scipy.sparse.csr_array(rng.integers(1, 1000, shape))
 
 
 def random_geometric(shape, rng):
     P = rng.integers(1, 1000, size=(shape[0], 2))
     Q = rng.integers(1, 1000, size=(shape[1], 2))
-    return scipy.sparse.csr_matrix(cdist(P, Q, 'sqeuclidean'))
+    return scipy.sparse.csr_array(cdist(P, Q, 'sqeuclidean'))
 
 
 def random_two_cost(shape, rng):
-    return scipy.sparse.csr_matrix(rng.choice((1, 1000000), shape))
+    return scipy.sparse.csr_array(rng.choice((1, 1000000), shape))
 
 
 def machol_wien(shape, rng):
     # Machol--Wien instances being harder than the other examples, we cut
     # down the size of the instance by 5.
-    return scipy.sparse.csr_matrix(
+    return scipy.sparse.csr_array(
         np.outer(np.arange(shape[0]//5) + 1, np.arange(shape[1]//5) + 1))
 
 

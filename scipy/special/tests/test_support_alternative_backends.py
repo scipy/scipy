@@ -4,7 +4,7 @@ import pickle
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
-from packaging import version
+from scipy._external.packaging_version import version
 
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
@@ -23,8 +23,43 @@ pytestmark = pytest.mark.array_api_backends
 lazy_xp_modules = [special]
 
 
+def _fix_ref_dtype(ref, xp, dtypes):
+    # int64 promotes like float32 on torch with default dtype = float32
+    # cast reference if needed
+    if (
+            is_torch(xp)
+            and xpx.default_dtype(xp) == xp.float32
+            and "float64" not in dtypes
+    ):
+        if isinstance(ref, tuple):
+            ref = tuple(np.float32(r) for r in ref)
+        else:
+            ref = np.float32(ref)
+    return ref
+
+
+def _tuple_aware_to_xp(x, xp):
+    # convert array x to xp array and tuple of arrays to tuple of xp arrays
+    if isinstance(x, tuple):
+        return tuple(xp.asarray(x_i) for x_i in x)
+    return xp.asarray(x)
+
+
+def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
+    # like xp_assert_close, but can handle tuples of arrays. This inherits default
+    # ``kwarg`` values from `_array_api_no_0d.xp_assert_close` which is imported
+    # above in this test file.
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+    else:
+        actual, desired = (actual,), (desired,)
+    for actual_i, desired_i in zip(actual, desired):
+        xp_assert_close(actual_i, desired_i, **kwargs)
+
+
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
-    """Skip tests for specific intersections of scipy.special functions 
+    """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
 
@@ -193,24 +228,19 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and "float64" not in dtypes
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
+    ref = _fix_ref_dtype(ref, xp, dtypes)
     # When dtype_np is integer, the output dtype can be float
-    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
+    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
+    atol = 0 if ref_dtype.kind in 'iu' else 10 * np.finfo(ref_dtype).eps
     rtol = None
     if is_torch(xp) and func.__name__ == 'j1':
         # If we end up needing more function/backend specific tolerance
         # adjustments, this should be factored out properly.
         atol = 1e-7
         rtol = 1e-5
-    xp_assert_close(
-        res, xp.asarray(ref), rtol=rtol, atol=atol, check_0d=nfo.produces_0d
+    _tuple_aware_xp_assert_close(
+        res, _tuple_aware_to_xp(ref, xp), rtol=rtol, atol=atol,
+        check_0d=nfo.produces_0d
     )
 
 
@@ -221,7 +251,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
-                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
+                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri', 'boxcox', 'boxcox1p'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['intp', 'float32', 'float64', 'float64'][:nfo.n_args]
 
@@ -254,17 +284,10 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and "float64" not in dtypes
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
-
-    atol = 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol)
+    ref = _fix_ref_dtype(ref, xp, dtypes)
+    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
+    atol = 10 * np.finfo(ref_dtype).eps
+    _tuple_aware_xp_assert_close(res, _tuple_aware_to_xp(ref, xp), atol=atol)
 
 
 @pytest.mark.xslow
@@ -306,18 +329,11 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and dtype != "float64"
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
-
+    ref = _fix_ref_dtype(ref, xp, dtypes)
     # When dtype_np is integer, the output dtype can be float
-    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol)
+    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
+    atol = 0 if ref_dtype.kind in 'iu' else 10 * np.finfo(ref_dtype).eps
+    _tuple_aware_xp_assert_close(res, _tuple_aware_to_xp(ref, xp), atol=atol)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.core is deprecated:DeprecationWarning")
@@ -334,23 +350,23 @@ def test_repr(func):
 
 
 @pytest.mark.skipif(
-    version.parse(np.__version__) < version.parse("2.2"),
+    version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
-    """xp_capabilities updates the docstring in place. 
+    """xp_capabilities updates the docstring in place.
     Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
     """
-    match = "has experimental support for Python Array API"
+    match = "has support for Python Array API"
     assert func.__doc__.count(match) == 1
 
 
 @pytest.mark.parametrize(
-    'func,n_args,int_only,is_ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc)
+    'func,n_args,int_only,is_ufunc,ufunc',
+    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc, nfo.func)
      for nfo in _special_funcs]
 )
-def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
+def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
@@ -364,14 +380,24 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
         else np.asarray([1, 2])
         for needs_int in int_only
     ]
-    out = np.empty(2)
+
+    nout = ufunc.nout
+    if nout == 1:
+        out = np.empty(2)
+    else:
+        out = tuple(np.empty(2) for _ in range(nout))
+
     y = func(*args, out=out)
-    xp_assert_close(y, out)
+    _tuple_aware_xp_assert_close(y, out)
 
     # out= with out.dtype != args.dtype
-    out = np.empty(2, dtype=np.float32)
+    if nout == 1:
+        out = np.empty(2, dtype=np.float32)
+    else:
+        out = tuple(np.empty(2, dtype=np.float32) for _ in range(nout))
+
     y = func(*args, out=out)
-    xp_assert_close(y, out)
+    _tuple_aware_xp_assert_close(y, out)
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
         # The below function evaluation will trigger a deprecation warning
@@ -381,9 +407,14 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
 
     # dtype=
     y = func(*args, dtype=np.float32)
-    assert y.dtype == np.float32
+    if nout == 1:
+        assert y.dtype == np.float32
+    else:
+        for y_i in y:
+            assert y_i.dtype == np.float32
 
 
+@pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
 @make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311

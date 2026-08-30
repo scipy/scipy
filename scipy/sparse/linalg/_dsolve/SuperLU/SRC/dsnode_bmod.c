@@ -54,11 +54,11 @@ dsnode_bmod (
 	 ftcs2 = _cptofcd("N", strlen("N")),
 	 ftcs3 = _cptofcd("U", strlen("U"));
 #endif
-    int            incx = 1, incy = 1;
+    slu_blasint    incx = 1, incy = 1;
     double         alpha = -1.0, beta = 1.0;
 #endif
 
-    int     nsupc, nsupr, nrow;
+    slu_blasint nsupc, nsupr, nrow;
     int_t   isub, irow;
     int_t   ufirst, nextlu;
     int_t   *lsub, *xlsub;
@@ -104,13 +104,11 @@ dsnode_bmod (
 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
-#if SCIPY_FIX
-       if (nsupr < nsupc) {
-           /* Fail early rather than passing in invalid parameters to TRSV. */
-           ABORT("failed to factorize matrix");
-       }
-#endif
-	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+	if (nsupr < nsupc) {
+	    /* Fail early rather than passing in invalid parameters to TRSV. */
+	    ABORT("failed to factorize matrix");
+	}
+	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
 	      &lusup[ufirst], &incx );
 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );

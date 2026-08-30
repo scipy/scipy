@@ -38,7 +38,7 @@ double random_double(uint64_t* state);
  * @param V Right singular vectors matrix (n x ldv), updated if jobv != 0
  * @param ldv Leading dimension of V
  */
-void sbsvdstep(const int jobu, const int jobv, int m, int n, int k, float sigma, float* D, float* E, float* U, int ldu, float* V, int ldv);
+void sbsvdstep(const int jobu, const int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, float sigma, float* D, float* E, float* U, CBLAS_INT ldu, float* V, CBLAS_INT ldv);
 
 /**
  * Perform an implicit LQ SVD sweep with shift sigma (double precision).
@@ -59,7 +59,7 @@ void sbsvdstep(const int jobu, const int jobv, int m, int n, int k, float sigma,
  * @param V Right singular vectors matrix (n x ldv), updated if jobv != 0
  * @param ldv Leading dimension of V
  */
-void dbsvdstep(const int jobu, const int jobv, int m, int n, int k, double sigma, double* D, double* E, double* U, int ldu, double* V, int ldv);
+void dbsvdstep(const int jobu, const int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, double sigma, double* D, double* E, double* U, CBLAS_INT ldu, double* V, CBLAS_INT ldv);
 
 /**
  * QR factorization of a lower bidiagonal matrix using Givens rotations (single precision).
@@ -77,7 +77,7 @@ void dbsvdstep(const int jobu, const int jobv, int m, int n, int k, double sigma
  * @param Qt Orthogonal transformation matrix (n+1 x ldq), updated if jobq != 0
  * @param ldq Leading dimension of Qt
  */
-void sbdqr(const int ignorelast, const int jobq, const int n, float* restrict D, float* restrict E, float* c1, float* c2, float* restrict Qt, int ldq);
+void sbdqr(const CBLAS_INT ignorelast, const CBLAS_INT jobq, const CBLAS_INT n, float* restrict D, float* restrict E, float* c1, float* c2, float* restrict Qt, CBLAS_INT ldq);
 
 /**
  * QR factorization of a lower bidiagonal matrix using Givens rotations (double precision).
@@ -95,7 +95,7 @@ void sbdqr(const int ignorelast, const int jobq, const int n, float* restrict D,
  * @param Qt Orthogonal transformation matrix (n+1 x ldq), updated if jobq != 0
  * @param ldq Leading dimension of Qt
  */
-void dbdqr(const int ignorelast, const int jobq, const int n, double* restrict D, double* restrict E, double* c1, double* c2, double* restrict Qt, int ldq);
+void dbdqr(const CBLAS_INT ignorelast, const CBLAS_INT jobq, const CBLAS_INT n, double* restrict D, double* restrict E, double* c1, double* c2, double* restrict Qt, CBLAS_INT ldq);
 
 /**
  * Refine error bounds on Ritz values by clustering and gap analysis (single precision).
@@ -110,7 +110,7 @@ void dbdqr(const int ignorelast, const int jobq, const int n, double* restrict D
  * @param tol Tolerance for bound refinement
  * @param eps34 Clustering threshold (typically machine precision^(3/4))
  */
-void srefinebounds(const int n, const int k, float* restrict theta, float* restrict bound, const float tol, const float eps34);
+void srefinebounds(const CBLAS_INT n, const CBLAS_INT k, float* restrict theta, float* restrict bound, const float tol, const float eps34);
 
 /**
  * Refine error bounds on Ritz values by clustering and gap analysis (double precision).
@@ -125,7 +125,7 @@ void srefinebounds(const int n, const int k, float* restrict theta, float* restr
  * @param tol Tolerance for bound refinement
  * @param eps34 Clustering threshold (typically machine precision^(3/4))
  */
-void drefinebounds(const int n, const int k, double* restrict theta, double* restrict bound, const double tol, const double eps34);
+void drefinebounds(const CBLAS_INT n, const CBLAS_INT k, double* restrict theta, double* restrict bound, const double tol, const double eps34);
 
 /**
  * Find intervals where |mu| exceeds thresholds for reorthogonalization (single precision).
@@ -140,7 +140,7 @@ void drefinebounds(const int n, const int k, double* restrict theta, double* res
  * @param eta Interval boundary threshold
  * @param indices Output array of interval boundaries, terminated by j
  */
-void scompute_int(float* restrict mu, const int j, const float delta, const float eta, int* restrict indices);
+void scompute_int(float* restrict mu, const CBLAS_INT j, const float delta, const float eta, CBLAS_INT* restrict indices);
 
 /**
  * Set mu values to a constant within specified intervals (single precision).
@@ -150,7 +150,7 @@ void scompute_int(float* restrict mu, const int j, const float delta, const floa
  * @param indices Array of interval boundaries (pairs of start, end indices)
  * @param val Value to assign within the intervals
  */
-void sset_mu(const int k, float* restrict mu, int* const restrict indices, const float val);
+void sset_mu(const CBLAS_INT k, float* restrict mu, CBLAS_INT* const restrict indices, const float val);
 
 /**
  * Update mu recurrence relation for Lanczos reorthogonalization (single precision).
@@ -167,7 +167,7 @@ void sset_mu(const int k, float* restrict mu, int* const restrict indices, const
  * @param anorm Norm of the input matrix
  * @param eps1 Numerical precision parameter
  */
-void supdate_mu(float* mumax, float* restrict mu, float* restrict nu, const int j, float* restrict alpha, float* restrict beta, const float anorm, const float eps1);
+void supdate_mu(float* mumax, float* restrict mu, float* restrict nu, const CBLAS_INT j, float* restrict alpha, float* restrict beta, const float anorm, const float eps1);
 
 /**
  * Update nu recurrence relation for Lanczos reorthogonalization (single precision).
@@ -184,7 +184,7 @@ void supdate_mu(float* mumax, float* restrict mu, float* restrict nu, const int 
  * @param anorm Norm of the input matrix
  * @param eps1 Numerical precision parameter
  */
-void supdate_nu(float* numax, float* restrict mu, float* restrict nu, const int j, float* restrict alpha, float* restrict beta, const float anorm, const float eps1);
+void supdate_nu(float* numax, float* restrict mu, float* restrict nu, const CBLAS_INT j, float* restrict alpha, float* restrict beta, const float anorm, const float eps1);
 
 /**
  * Find intervals where |mu| exceeds thresholds for reorthogonalization (double precision).
@@ -199,7 +199,7 @@ void supdate_nu(float* numax, float* restrict mu, float* restrict nu, const int 
  * @param eta Interval boundary threshold
  * @param indices Output array of interval boundaries, terminated by j
  */
-void dcompute_int(double* restrict mu, const int j, const double delta, const double eta, int* restrict indices);
+void dcompute_int(double* restrict mu, const CBLAS_INT j, const double delta, const double eta, CBLAS_INT* restrict indices);
 
 /**
  * Set mu values to a constant within specified intervals (double precision).
@@ -209,7 +209,7 @@ void dcompute_int(double* restrict mu, const int j, const double delta, const do
  * @param indices Array of interval boundaries (pairs of start, end indices)
  * @param val Value to assign within the intervals
  */
-void dset_mu(const int k, double* restrict mu, int* const restrict indices, const double val);
+void dset_mu(const CBLAS_INT k, double* restrict mu, CBLAS_INT* const restrict indices, const double val);
 
 /**
  * Update mu recurrence relation for Lanczos reorthogonalization (double precision).
@@ -226,7 +226,7 @@ void dset_mu(const int k, double* restrict mu, int* const restrict indices, cons
  * @param anorm Norm of the input matrix
  * @param eps1 Numerical precision parameter
  */
-void dupdate_mu(double* mumax, double* restrict mu, double* restrict nu, const int j, double* restrict alpha, double* restrict beta, const double anorm, const double eps1);
+void dupdate_mu(double* mumax, double* restrict mu, double* restrict nu, const CBLAS_INT j, double* restrict alpha, double* restrict beta, const double anorm, const double eps1);
 
 /**
  * Update nu recurrence relation for Lanczos reorthogonalization (double precision).
@@ -243,7 +243,7 @@ void dupdate_mu(double* mumax, double* restrict mu, double* restrict nu, const i
  * @param anorm Norm of the input matrix
  * @param eps1 Numerical precision parameter
  */
-void dupdate_nu(double* numax, double* restrict mu, double* restrict nu, const int j, double* restrict alpha, double* restrict beta, const double anorm, const double eps1);
+void dupdate_nu(double* numax, double* restrict mu, double* restrict nu, const CBLAS_INT j, double* restrict alpha, double* restrict beta, const double anorm, const double eps1);
 
 
 #endif // PROPACK__COMMON_H

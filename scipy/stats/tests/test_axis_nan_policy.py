@@ -19,6 +19,7 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
 
@@ -107,7 +108,9 @@ axis_nan_policy_cases = [
     # args, kwds typically aren't needed; just showing that they work
     (stats.kruskal, tuple(), dict(), 3, 2, False, None),  # 4 samples is slow
     (stats.ranksums, ('less',), dict(), 2, 2, False, None),
-    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 2, False, None),
+    (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 3, False,
+     lambda res: (res.statistic, res.pvalue, res.zstatistic)),
+    (stats.mannwhitneyu, tuple(), {'method': 'auto'}, 2, 2, False, None),
     (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
@@ -213,6 +216,7 @@ axis_nan_policy_cases = [
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
@@ -230,7 +234,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "Not enough other observations",
                       "Not enough observations.",
                       "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
+                      "zero-size array to reduction operation",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty",
@@ -410,7 +414,7 @@ if SCIPY_XSLOW:
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
     @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-    @pytest.mark.parametrize(("axis"), range(-3, 3))
+    @pytest.mark.parametrize(("axis"), list(range(-3, 3)))
     @pytest.mark.parametrize(("data_generator"),
                              ("all_nans", "all_finite", "mixed"))
     def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
@@ -998,7 +1002,7 @@ def paired_non_broadcastable_cases():
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"),
-                         paired_non_broadcastable_cases())
+                         list(paired_non_broadcastable_cases()))
 def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
                            unpacker, axis):
     # test for correct error message when shapes are not broadcastable
@@ -1160,7 +1164,7 @@ def test_masked_stat_1d():
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
-@pytest.mark.parametrize(("axis"), range(-3, 3))
+@pytest.mark.parametrize(("axis"), list(range(-3, 3)))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
     rng = np.random.default_rng(3679428403)
@@ -1470,3 +1474,23 @@ def test_array_like_input(dtype):
     res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2
+
+
+@make_xp_test_case(stats._axis_nan_policy._broadcast_concatenate)
+def test__broadcast_concatenate(xp):
+    # test that _broadcast_concatenate properly broadcasts arrays along all
+    # axes except `axis`, then concatenates along axis
+    rng = np.random.default_rng(7544340069)
+    a = rng.random((5, 4, 4, 3, 1, 6))
+    b = rng.random((4, 1, 8, 2, 6))
+    arrays = (xp.asarray(a), xp.asarray(b))
+    c = stats._axis_nan_policy._broadcast_concatenate(arrays, axis=-3, xp=xp)
+    # broadcast manually as an independent check
+    a = np.tile(a, (1, 1, 1, 1, 2, 1))
+    b = np.tile(b[None, ...], (5, 1, 4, 1, 1, 1))
+    for index in product(*(range(i) for i in c.shape)):
+        i, j, k, l, m, n = index
+        if l < a.shape[-3]:
+            assert a[i, j, k, l, m, n] == c[i, j, k, l, m, n]
+        else:
+            assert b[i, j, k, l - a.shape[-3], m, n] == c[i, j, k, l, m, n]

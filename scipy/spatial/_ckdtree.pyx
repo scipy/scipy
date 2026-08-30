@@ -14,6 +14,7 @@ from scipy._lib._util import copy_if_needed
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libcpp.mutex cimport py_safe_call_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -407,6 +408,13 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
+cdef void init_pytree(void *void_tree):
+    cdef cKDTree tree = <cKDTree>void_tree
+    n = cKDTreeNode()
+    n._setup(tree, node=tree.cself.ctree, level=0)
+    tree._python_tree = n
+
+
 # Main cKDTree class
 # ==================
 
@@ -462,7 +470,11 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
+        with ``copy_data=True``. Concurrently modifying the contents of the
+        ``data`` array while the KDTree initializer is running may lead to data
+        corruption or crashes. If the data are not copied, modifying the
+        original ``data`` array after the tree is created may lead to crashes or
+        data corruption when searching the tree.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -481,6 +493,9 @@ cdef class cKDTree:
         query functions in Python.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
@@ -518,6 +533,7 @@ cdef class cKDTree:
         readonly np.ndarray      indices
         readonly object          boxsize
         np.ndarray               boxsize_data
+        py_safe_once_flag        flag
 
     property n:
         def __get__(self): return self.cself.n
@@ -534,15 +550,11 @@ cdef class cKDTree:
     property tree:
         # make the tree viewable from Python
         def __get__(cKDTree self):
-            cdef cKDTreeNode n
-            cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            # cast to void* is safe because it is either used to construct the
+            # python tree and then discarded or immediately discarded
+            cdef void *self_v = <void *>self
+            py_safe_call_once(self.flag, init_pytree, self_v)
+            return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -563,6 +575,11 @@ cdef class cKDTree:
         if not copy_data:
             copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
+
+        # read-only view so ban people modifying tree.data after the tree is
+        # constructed
+        data = data.view(np.ndarray)
+        data.flags.writeable = False
 
         if data.ndim != 2:
             raise ValueError("data must be of shape (n, m), where there are "
@@ -589,7 +606,8 @@ cdef class cKDTree:
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
-            self.boxsize = boxsize
+            self.boxsize = np.array(boxsize, copy=True)
+            self.boxsize.flags.writeable = False
             periodic_mask = self.boxsize > 0
             if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -599,10 +617,13 @@ cdef class cKDTree:
         self.maxes = np.ascontiguousarray(
             np.amax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.maxes.flags.writeable = False
         self.mins = np.ascontiguousarray(
             np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.mins.flags.writeable = False
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
+        self.indices.flags.writeable = False
 
         self._pre_init()
 
@@ -1503,8 +1524,8 @@ cdef class cKDTree:
 
                All new code using scipy sparse should use sparse array
                types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
+               `output_type` will be deprecated at v2.0 and switch from
+               'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
                to work, but will go away eventually.
 
@@ -1537,8 +1558,8 @@ cdef class cKDTree:
 
         You can check distances above the `max_distance` are zeros:
 
-        >>> from scipy.spatial import distance_matrix
-        >>> distance_matrix(points1, points2)
+        >>> from scipy.spatial.distance import cdist
+        >>> cdist(points1, points2)
         array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
            [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
            [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],

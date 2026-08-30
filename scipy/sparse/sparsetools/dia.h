@@ -90,7 +90,7 @@ void dia_matmat(const I A_rows,
     offsets->resize(N_ofs);
 
     // allocate output diagonals, filled with zeros
-    data->resize(N_ofs * L);
+    data->resize((size_t)N_ofs * L);
     // loop over diagonals in B
     for (I B_i = 0; B_i < B_diags; ++B_i) {
         const I B_ofs = B_offsets[B_i];
@@ -127,12 +127,12 @@ void dia_matmat(const I A_rows,
  *   I  n_col            - number of columns in A
  *   I  n_diags          - number of diagonals
  *   I  L                - length of each diagonal
- *   I  offsets[n_diags] - diagonal offsets 
- *   T  diags[n_diags,L] - nonzeros 
+ *   I  offsets[n_diags] - diagonal offsets
+ *   T  diags[n_diags,L] - nonzeros
  *   T  Xx[n_col]        - input vector
  *
  * Output Arguments:
- *   T  Yx[n_row]        - output vector 
+ *   T  Yx[n_row]        - output vector
  *
  * Note:
  *   Output array Yx must be preallocated
@@ -164,7 +164,7 @@ void dia_matvec(const I n_row,
               T * y = Yx + i_start;
 
         for (I n = 0; n < N; n++) {
-            y[n] += diag[n] * x[n]; 
+            y[n] += diag[n] * x[n];
         }
     }
 }

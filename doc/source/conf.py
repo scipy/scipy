@@ -3,6 +3,7 @@ import os
 from os.path import relpath, dirname
 import re
 import sys
+import importlib.machinery
 import warnings
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -18,6 +19,7 @@ from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
 import scipy._lib.uarray as ua
+from scipy.special._ufunc_tools import _UFuncWrapper
 from scipy.stats._distn_infrastructure import rv_generic
 from scipy.stats._multivariate import multi_rv_generic
 
@@ -64,7 +66,7 @@ plt.ioff()
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 # The main toctree document.
 master_doc = 'index'
@@ -121,7 +123,7 @@ add_function_parentheses = False
 # Ensure all our internal links work
 nitpicky = True
 nitpick_ignore = [
-    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # This ignores errors for classes (OptimizeResults, sparse.dok_array)
     # which inherit methods from `dict`. missing references to builtins get
     # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
     # but that fix doesn't work for inherited methods.
@@ -143,12 +145,6 @@ warnings.filterwarnings('error')
 # allow these and show them
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
-for key in (
-        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"distutils Version",  # distutils
-        ):
-    warnings.filterwarnings(  # deal with other modules having bad imports
-        'ignore', message=".*" + key, category=DeprecationWarning)
 warnings.filterwarnings(  # matplotlib<->pyparsing issue
     'ignore', message="Exception creating Regex for oneOf.*",
     category=SyntaxWarning)
@@ -191,9 +187,6 @@ warnings.filterwarnings(
     category=Warning,
 )
 
-warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
-                        category=DeprecationWarning)
-
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
     'autosummary.import_cycle',
@@ -212,7 +205,7 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
+html_js_files = [('custom-icons.js', {"defer": "defer"}),]  # for custom header icon(s)
 html_theme_options = {
     "header_links_before_dropdown": 6,
     "icon_links": [
@@ -307,12 +300,11 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 autosummary_generate = True
 
 # maps functions with a name same as a class name that is indistinguishable
-# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Ex: scipy.signal.czt and scipy.signal.CZT
 # Otherwise, the stubs are overwritten when the name is same for
 # OS (like MacOS) which has a filesystem that ignores the case
 # See https://github.com/sphinx-doc/sphinx/pull/7927
 autosummary_filename_map = {
-    "scipy.odr.odr": "odr-function",
     "scipy.signal.czt": "czt-function",
     "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
 }
@@ -353,10 +345,13 @@ plot_pre_code = """
 import warnings
 for key in (
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
-        'odr',
         'pade',
         'lagrange',
         'approximate_taylor_polynomial',
+        'tsearch',
+        'minkowski_distance_p',
+        'minkowski_distance',
+        'distance_matrix'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
@@ -480,6 +475,9 @@ def linkcode_resolve(domain, info):
     # class since it contains the implementation of all the methods.
     if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
+    # Much like ufuncs, ufunc_wrappers have no source location.
+    if isinstance(obj, _UFuncWrapper):
+        return None
     try:
         fn = inspect.getsourcefile(obj)
     except Exception:
@@ -576,5 +574,48 @@ class LegacyDirective(Directive):
         return [admonition_node]
 
 
+_EXT_SUFFIXES = tuple(importlib.machinery.EXTENSION_SUFFIXES)
+
+
+def _extension_origin(mod):
+    origin = getattr(getattr(mod, "__spec__", None), "origin", "") or ""
+    return origin if origin.endswith(_EXT_SUFFIXES) else ""
+
+
+def _note_extension_dependency(app, what, name, obj, options, lines):
+    """Rebuild pages when the extension module holding the docstring changes.
+
+    Sphinx records the Python source of the module an object is documented from,
+    and only falls back to the compiled module when that has no source at all. So
+    for anything re-exported into a pure-Python package -- ``scipy.special``
+    re-exporting ``loggamma`` from ``_special_ufuncs*.so``, say -- it records
+    ``scipy/special/__init__.py``, and rebuilding the extension never invalidates
+    the page. See gh-23440.
+    """
+    # an object that knows its own module is authoritative; scanning past it
+    # matches any extension that merely imports the object (gh-23440 review).
+    # This branch is redundant once sphinx-doc/sphinx#14594 is our minimum; the
+    # fallback below is not, as Sphinx cannot attribute a __module__-less object.
+    if modname := getattr(obj, "__module__", None):
+        if origin := _extension_origin(sys.modules.get(modname)):
+            app.env.note_dependency(origin)
+        return
+    # ufuncs carry no __module__, so fall back to locating the providing submodule
+    parent, _, attr = name.rpartition(".")
+    if not parent:
+        return
+    # an alias is exposed under a name the submodule does not know it by (digamma/psi)
+    attrs = {attr, getattr(obj, "__name__", "")} - {""}
+    prefix = parent + "."
+    for sub_name, sub in list(sys.modules.items()):
+        if sub_name.startswith(prefix) and any(
+            getattr(sub, a, None) is obj for a in attrs
+        ):
+            if origin := _extension_origin(sub):
+                app.env.note_dependency(origin)
+                return
+
+
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
+    app.connect("autodoc-process-docstring", _note_extension_dependency)

@@ -99,14 +99,18 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         Only relevant for sparse variables.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.20.
+            The default value for `spmatrix` is changing to False in v2.1.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
     **kwargs
-        The following aditional keyword arguments can be passed:
+        The following additional keyword arguments can be passed:
 
         byte_order : str or None, optional
             None by default, implying byte order guessed from mat
@@ -166,6 +170,13 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
     You will need an HDF5 Python library to read MATLAB 7.3 format mat
     files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
+
+    .. warning::
+        The MAT-file readers used by ``loadmat`` are not hardened against adversarial
+        input and should not be used to load files from untrusted sources. Malformed
+        files may cause excessive memory use or read errors. The reader does not execute
+        arbitrary code, but the format is complex and not all corruption modes are
+        caught explicitly.
 
     Examples
     --------
@@ -241,7 +252,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
 
-    warn_msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+    warn_msg = """The default value for `spmatrix` is changing to `False` in v2.1.
         That means the default return type will be a sparse array.
         Unless you use * instead of @, ** for matrix power, or you depend
         on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -256,6 +267,17 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
                 prefixes = (os.path.dirname(__file__),)
                 warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
                 spmatrix = True
+            elif spmatrix is True:
+                msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+                 The spmatrix classes are deprecated and will be removed then.
+                 The return value will always be a sparse array.
+                 Unless you use * instead of @, ** for matrix power, or you depend
+                 on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+                 See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+                 """
+                prefixes = (os.path.dirname(__file__),)
+                warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+
             if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
             else:

@@ -22,8 +22,13 @@ passing a pointer to a variable in which to store the computed result. Unlike
 return values, struct complex arguments work without segfaulting.
 */
 
-#include "npy_cblas.h"
+#include "scipy_blas_defines.h"
 #include "fortran_defs.h"
+
+#ifdef HAVE_BLAS_ILP64
+/* NB: this redefines F_FUNC */
+#include "_blas64_defines.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

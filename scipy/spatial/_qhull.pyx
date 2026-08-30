@@ -12,6 +12,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+import warnings
 
 import numpy as np
 cimport numpy as np
@@ -27,7 +28,8 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-from scipy.linalg.cython_lapack cimport dgetrf, dgetrs, dgecon
+from scipy.linalg.cython_lapack cimport blas_int, dgetrf, dgetrs, dgecon
+from scipy._lib._array_api import xp_capabilities
 
 np.import_array()
 
@@ -176,7 +178,6 @@ cdef extern from "<libqhull_r/libqhull_r.h>":
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
 cdef extern from "qhull_misc.h":
-    ctypedef int CBLAS_INT   # actual type defined in the header file
     void qhull_misc_lib_check()
     int qh_new_qhull_scipy(qhT *, int dim, int numpoints, realT *points,
                            boolT ismalloc, char* qhull_cmd, void *outfile,
@@ -1134,16 +1135,16 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
     cdef int i, j
-    cdef CBLAS_INT n, nrhs, lda, ldb
-    cdef CBLAS_INT info = 0
-    cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
+    cdef blas_int n, nrhs, lda, ldb
+    cdef blas_int info = 0
+    cdef blas_int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double anorm
     cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
-    cdef CBLAS_INT iwork[NPY_MAXDIMS]
+    cdef blas_int iwork[NPY_MAXDIMS]
 
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
@@ -1680,6 +1681,8 @@ class _QhullUser:
         self._qhull.add_points(points, interior_point)
         self._update(self._qhull)
 
+
+@xp_capabilities(np_only=True)
 class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2202,12 +2205,17 @@ class Delaunay(_QhullUser):
         return z
 
 
+@xp_capabilities(out_of_scope=True)
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
 
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
+
+    .. deprecated:: 1.18.0
+        `tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be removed
+        in SciPy 2.2.0.
 
     Parameters
     ----------
@@ -2252,6 +2260,9 @@ def tsearch(tri, xi):
     >>> plt.show()
 
     """
+    msg = ("`tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be "
+           "removed in SciPy 2.2.0.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return tri.find_simplex(xi)
 
 # Set docstring for foo to docstring of bar, working around change in Cython 0.28
@@ -2320,6 +2331,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 # Convex hulls
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class ConvexHull(_QhullUser):
     """
     ConvexHull(points, incremental=False, qhull_options=None)
@@ -2543,6 +2555,7 @@ _copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 # Voronoi diagrams
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class Voronoi(_QhullUser):
     """
     Voronoi(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2711,6 +2724,7 @@ _copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 # Halfspace Intersection
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class HalfspaceIntersection(_QhullUser):
     """
     HalfspaceIntersection(halfspaces, interior_point, incremental=False, qhull_options=None)

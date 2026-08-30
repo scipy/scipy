@@ -157,11 +157,13 @@ class TestVq:
         label1 = _py_vq(matrix(X), matrix(initc))[0]
         assert_array_equal(label1, LABEL1)
 
-    def test_vq(self, xp):
+    @pytest.mark.parametrize("dtype", ["float64", "int64"])
+    def test_vq(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         label1, _ = _vq.vq(X, initc)
         assert_array_equal(label1, LABEL1)
-        _, _ = vq(xp.asarray(X), xp.asarray(initc))
+        _, _ = vq(xp.asarray(X, dtype=dtype), xp.asarray(initc, dtype=dtype))
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
@@ -329,7 +331,7 @@ class TestKMeans:
         data = xp.asarray(TESTDATA_2D)
         data = xp.reshape(data, (20, 20))[:10, :]
         rng = np.random.default_rng(42)
-        kmeans2(data, 2, rng=rng)     
+        kmeans2(data, 2, rng=rng)
 
     def test_kmeans2_init(self, xp):
         rng = np.random.default_rng(12345678)

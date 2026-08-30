@@ -171,7 +171,7 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     Notes
     -----
     This function uses `argrelextrema` with np.greater as comparator. Therefore,
-    it  requires a strict inequality on both sides of a value to consider it a
+    it requires a strict inequality on both sides of a value to consider it a
     maximum. This means flat maxima (more than one sample wide) are not detected.
     In case of 1-D `data` `find_peaks` can be used to detect all
     local maxima, including flat ones.
@@ -743,13 +743,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     height : number or ndarray or sequence, optional
         Required height of peaks. Either a number, ``None``, an array matching
         `x` or a 2-element sequence of the former. The first element is
-        always interpreted as the  minimal and the second, if supplied, as the
+        always interpreted as the minimal and the second, if supplied, as the
         maximal required height.
     threshold : number or ndarray or sequence, optional
         Required threshold of peaks, the vertical distance to its neighboring
         samples. Either a number, ``None``, an array matching `x` or a
         2-element sequence of the former. The first element is always
-        interpreted as the  minimal and the second, if supplied, as the maximal
+        interpreted as the minimal and the second, if supplied, as the maximal
         required threshold.
     distance : number, optional
         Required minimal horizontal distance (>= 1) in samples between
@@ -758,12 +758,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     prominence : number or ndarray or sequence, optional
         Required prominence of peaks. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimal and the second, if
+        element is always interpreted as the minimal and the second, if
         supplied, as the maximal required prominence.
     width : number or ndarray or sequence, optional
         Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimal and the second, if
+        element is always interpreted as the minimal and the second, if
         supplied, as the maximal required width.
     wlen : int, optional
         Used for calculation of the peaks prominences, thus it is only used if
@@ -793,7 +793,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'peak_heights'
               If `height` is given, the height of each peak in `x`.
         * 'left_thresholds', 'right_thresholds'
-              If `threshold` is given, these keys contain a peaks vertical
+              If `threshold` is given, these keys contain a peak's vertical
               distance to its neighbouring samples.
         * 'prominences', 'right_bases', 'left_bases'
               If `prominence` is given, these keys are accessible. See
@@ -801,7 +801,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'widths', 'width_heights', 'left_ips', 'right_ips'
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
-        * 'plateau_sizes', left_edges', 'right_edges'
+        * 'plateau_sizes', 'left_edges', 'right_edges'
               If `plateau_size` is given, these keys are accessible and contain
               the indices of a peak's edges (edges are still part of the
               plateau) and the calculated plateau sizes.
@@ -852,7 +852,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       as well, which returns the matching properties without exclusion of peaks.
     * The border is always included in the interval used to select valid peaks.
     * For several conditions the interval borders can be specified with
-      arrays matching `x` in shape which enables dynamic constrains based on
+      arrays matching `x` in shape which enables dynamic constraints based on
       the sample position.
     * The conditions are evaluated in the following order: `plateau_size`,
       `height`, `threshold`, `distance`, `prominence`, `width`. In most cases

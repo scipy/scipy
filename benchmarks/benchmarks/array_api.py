@@ -10,7 +10,7 @@ class ArrayNamespace(XPBenchmark):
         def f(x):
             _ = array_namespace(x)
             return x
-    
+
         super().setup(backend, f)
         self.x = self.synchronize(self.xp.empty(0))
         # Populate @lru_cache and jax.jit. Note that this benefits all backends.
