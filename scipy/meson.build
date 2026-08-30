@@ -21,18 +21,22 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-np_dep = dependency('numpy')
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation.
-numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+# The undecorated `_numpy_dep` is kept around because `dependency_map` further
+# down needs the real dependency object - a `declare_dependency()`
+# wrapper reports the project's own name and version instead.
+_numpy_dep = dependency('numpy', version: '>=' + min_numpy_version)
 np_dep = declare_dependency(
-  dependencies: np_dep,
-  compile_args: numpy_nodepr_api,
+  dependencies: _numpy_dep,
+  # Don't use the deprecated NumPy C API. Define this to a fixed version instead
+  # of NPY_API_VERSION in order not to break compilation for released SciPy
+  # versions when NumPy introduces a new deprecation.
+  compile_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'],
 )
 
+# Note: the undecorated `_pybind11_dep` is kept around, like `_numpy_dep`.
+_pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 pybind11_dep = declare_dependency(
-  dependencies: dependency('pybind11', version: '>=2.13.2'),
+  dependencies: _pybind11_dep,
   # https://github.com/pybind/pybind11/pull/6155
   # https://github.com/pybind/pybind11/pull/6156
   compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
@@ -586,7 +590,8 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
-  'PYBIND11': pybind11_dep,
+  'NUMPY': _numpy_dep,
+  'PYBIND11': _pybind11_dep,
 }
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
