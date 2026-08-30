@@ -3006,6 +3006,29 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+    @pytest.mark.parametrize("dtype",
+        [int, np.float32, np.float64, np.complex64, np.complex128]
+    )
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_shape_dtype(self, dtype, n):
+        rng = np.random.default_rng(seed=12345)
+        atol = 1e-6 if dtype in [np.float32, np.complex64] else 1e-14
+
+        a = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=(n, n))
+
+        a = a.astype(dtype)
+
+        res_dtype = np.float64 if dtype is int else dtype
+        b, t = matrix_balance(a)
+
+        assert_allclose(b, solve(t, a @ t), atol=atol)
+        assert b.dtype == res_dtype
+        assert b.shape == (n, n)
+        assert t.dtype == res_dtype
+        assert t.shape == (n, n)
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:
