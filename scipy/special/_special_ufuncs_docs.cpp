@@ -1815,6 +1815,22 @@ const char *kl_div_doc = R"(
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import kl_div
+    >>> p = np.array([0.2, 0.8])
+    >>> q = np.array([0.3, 0.7])
+    >>> kl_div(p, q)
+    array([0.01890698, 0.00683058])
+
+    When `x` and `y` are discrete probability distributions, the total
+    Kullback-Leibler divergence is the sum of `kl_div(x, y)`. Note that
+    the extra `-x + y` terms cancel out because the arrays sum to 1.
+
+    >>> np.sum(kl_div(p, q))
+    0.02573755490453303
+
     )";
 
 const char *pseudo_huber_doc = R"(
