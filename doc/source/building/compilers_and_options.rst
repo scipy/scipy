@@ -4,8 +4,8 @@ Compiler selection and customizing a build
 Selecting a specific compiler
 -----------------------------
 
-Meson supports the standard environment variables ``CC``, ``CXX`` and ``FC`` to
-select specific C, C++ and/or Fortran compilers. These environment variables are
+Meson supports the standard environment variables ``CC`` and ``CXX`` to select
+specific C and/or C++ compilers. These environment variables are
 documented in `the reference tables in the Meson docs
 <https://mesonbuild.com/Reference-tables.html#compiler-and-linker-flag-environment-variables>`__.
 
@@ -35,7 +35,7 @@ For a comprehensive overview of options, see `Meson's builtin options docs page
 <https://mesonbuild.com/Builtin-options.html>`__.
 
 Meson also supports the standard environment variables ``CFLAGS``,
-``CXXFLAGS``, ``FFLAGS`` and ``LDFLAGS`` to inject extra flags - with the same
+``CXXFLAGS`` and ``LDFLAGS`` to inject extra flags - with the same
 caveat as in the previous section about those environment variables being
 picked up only for a clean build and not an incremental build.
 
