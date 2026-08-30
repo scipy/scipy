@@ -5621,6 +5621,10 @@ const char *_log1pmx_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_poisson_ppf_stats_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *log1p_doc = R"(
     log1p(x, out=None)
 

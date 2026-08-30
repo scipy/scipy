@@ -79,6 +79,7 @@ extern const char *_cauchy_isf_doc;
 extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
 extern const char *_cosine_invcdf_doc;
+extern const char *_poisson_ppf_stats_doc;
 extern const char *_sinpi_doc;
 extern const char *_skewnorm_cdf_doc;
 extern const char *_skewnorm_isf_doc;
@@ -703,6 +704,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(xsf::normalized_gen_harmonic)},
                           "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_normalized_gen_harmonic", _normalized_gen_harmonic);
+
+    PyObject *_poisson_ppf_stats =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::dd_d>(_poisson_ppf_stats_double),
+                           static_cast<xsf::numpy::ff_f>(_poisson_ppf_stats_float)},
+                          "_poisson_ppf_stats", _poisson_ppf_stats_doc);
+    PyModule_AddObjectRef(module, "_poisson_ppf_stats", _poisson_ppf_stats);
 
     PyObject *bdtrik =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(bdtrik_float),
