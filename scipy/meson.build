@@ -400,6 +400,7 @@ if cy.version().version_compare('>=3.1.0')
     cython_shared_src,
     subdir: 'scipy',
     cython_args: cython_args,
+    link_args: version_link_args,
     install: true,
     install_tag: 'python-runtime',
   )

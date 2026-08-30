@@ -255,6 +255,7 @@ py3.extension_module('_internal_matfuncs',
   ],
   include_directories: ['src/'],
   dependencies: [np_dep, lapack_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )
