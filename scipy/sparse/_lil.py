@@ -321,7 +321,7 @@ class _lil_base(_spbase, IndexMixin):
         _csparsetools.lil_clear_slice_block(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     r0, r1,rstep, c0, c1, cstep)
-        
+
         # Extract nnz structure from RHS and map to absolute indices
         x_coo = x.tocoo()
 
@@ -338,7 +338,7 @@ class _lil_base(_spbase, IndexMixin):
                                         self.rows, self.data,
                                         target_rows, target_cols,
                                         vals)
-    
+
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
             row, col = key

@@ -5021,7 +5021,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = self.lil_container(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
-        
+
     def _run_assign_case(self, row_slice, col_slice, nrows, ncols, checks):
         rows = [0, 0, 4, 7]
         cols = [1, 0, 3, 3]
@@ -5066,7 +5066,7 @@ class TestLIL(sparse_test_class(minmax=False)):
             nrows,
             ncols,
             [((1, 10), 1), ((1, 13), 2)],
-        )        
+        )
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestLILMatrix(_MatrixMixin, TestLIL):

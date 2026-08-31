@@ -458,7 +458,7 @@ cpdef lil_clear_slice_block(cnp.npy_intp M, cnp.npy_intp N,
                 if (c0 - col) % step_abs == 0:
                     del row[k]
                     del data[k]
-                    
+
 def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
                        const obj_fused[:] rows, const obj_fused[:] datas,
                        object[:] new_rows, object[:] new_datas,
