@@ -15,6 +15,7 @@ from . import _basic
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
+from . import _gufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
 
 
@@ -96,6 +97,12 @@ class _FuncInfo:
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True
+    # Whether or not this is an elementwise function, or behaves like a
+    # gufunc with nonzero core dimensionality in one or more inputs or outputs.
+    is_elementwise: bool = True
+    # For gufuncs, a function determining how output shapes depend on input shapes
+    # to allow gufunc fallback to work with JAX JIT through lazy_apply.
+    shape_mapper: Callable[..., ...] | None = None
     # Some non-ufunc special functions take only Python ints for some arguments.
     # If so, python_int_only should be a tuple of the same length as the number
     # of arguments,with value True if the corresponding argument needs to be a
@@ -208,10 +215,15 @@ class _FuncInfo:
                 return f_generic
 
         if is_marray(xp):
+            if not self.is_elementwise:
+                raise NotImplementedError(
+                    f"{self.name} is not supported with marray because it is "
+                    "not elementwise."
+                )
             # Unwrap the array, apply the function on the wrapped namespace,
             # and then re-wrap it.
-            # IMPORTANT: this only works because all functions in this module
-            # are elementwise. Otherwise, we would not be able to define a
+            # IMPORTANT: this only works because we exclude functions that are
+            # not elementwise. Otherwise, we would not be able to define a
             # general rule for mask propagation.
 
             _f = globals()[self.name]  # Allow nested wrapping
@@ -231,9 +243,14 @@ class _FuncInfo:
             return f
 
         if is_dask(xp):
+            if not self.is_elementwise:
+                raise NotImplementedError(
+                    f"{self.name} is not supported with dask.array because it is "
+                    "not elementwise."
+                )
             # Apply the function to each block of the Dask array.
-            # IMPORTANT: map_blocks works only because all functions in this module
-            # are elementwise. It would be a grave mistake to apply this to gufuncs
+            # IMPORTANT: map_blocks works only because we exclude functions which
+            # are not elementwise. It would be a grave mistake to apply this to gufuncs
             # or any other function with reductions, as they would change their
             # output depending on chunking!
 
@@ -261,31 +278,68 @@ class _FuncInfo:
             # promotion rules rather than getting promoted to the default currently
             # set in JAX. One cannot just use xp_promote for the input dtypes because
             # some ufuncs have integer only args.
-            def f(*args, _f=_f, xp=xp, **kwargs):
-                nin, nout = self.func.nin, self.func.nout
-                dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
-                # result_dtypes needs an arg for the dtype of the optional out params.
-                # Uses None to request output dtype inference.
-                dtypes = (*dtypes, *(None,) * nout)
-                # JAX uses NumPy dtypes so we can just pass these directly to
-                # resolve_dtypes. TODO: generalize to other lazy backends.
-                dtypes = self.func.resolve_dtypes(dtypes)
-                out_dtypes = dtypes[nin:]
-                out_dtype = tuple(out_dtypes) if nout > 1 else out_dtypes[0]
-                args = [
-                    xp.asarray(arg, dtype=dtype)
-                    for arg, dtype in zip(args, dtypes[:nin])
-                ]
+            nin, nout = self.func.nin, self.func.nout
+            if self.is_elementwise:
+                def f(*args, _f=_f, xp=xp, **kwargs):
 
-                if nout > 1:
-                    bshape = xp.broadcast_shapes(*(arg.shape for arg in args))
-                    shape = (bshape,) * nout
-                else:
-                    shape = None
-                return xpx.lazy_apply(
-                    _f, *args, shape=shape, xp=xp, as_numpy=True, dtype=out_dtype,
-                    **kwargs
-                )
+                    dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
+                    # result_dtypes needs an arg for the dtype of the optional out params.
+                    # Uses None to request output dtype inference.
+                    dtypes = (*dtypes, *(None,) * nout)
+                    # JAX uses NumPy dtypes so we can just pass these directly to
+                    # resolve_dtypes. TODO: generalize to other lazy backends.
+                    dtypes = self.func.resolve_dtypes(dtypes)
+                    out_dtypes = dtypes[nin:]
+                    out_dtype = tuple(out_dtypes) if nout > 1 else out_dtypes[0]
+                    args = [
+                        xp.asarray(arg, dtype=dtype)
+                        for arg, dtype in zip(args, dtypes[:nin])
+                    ]
+
+                    if nout > 1:
+                        bshape = xp.broadcast_shapes(*(arg.shape for arg in args))
+                        shape = (bshape,) * nout
+                    else:
+                        shape = None
+                    return xpx.lazy_apply(
+                        _f, *args, shape=shape, xp=xp, as_numpy=True, dtype=out_dtype,
+                        **kwargs
+                    )
+            else:
+                # gufunc path.
+                if self.shape_mapper is None:
+                    raise RuntimeError(
+                        f"No shape mapper is defined for non-elementwise ufunc "
+                        f"{self.name!r}; set `_FuncInfo.shape_mapper`."
+                    )
+                shape_mapper = self.shape_mapper
+                # The below function is the same as above but makes use of shape_mapper
+                # to get the output shape which can no longer be inferred directly by
+                # broadcasting the input shapes.
+                def f(*args, _f=_f, xp=xp, shape_mapper=shape_mapper, **kwargs):
+                    dtypes = (
+                        arg.dtype if is_jax_array(arg) else type(arg)
+                        for arg in args
+                    )
+                    dtypes = (*dtypes, *(None,) * nout)
+                    dtypes = self.func.resolve_dtypes(dtypes)
+
+                    out_dtypes = dtypes[nin:]
+                    out_dtype = tuple(out_dtypes) if nout > 1 else out_dtypes[0]
+
+                    args = [
+                        xp.asarray(arg, dtype=dtype)
+                        for arg, dtype in zip(args, dtypes[:nin])
+                    ]
+
+                    shape = shape_mapper(
+                        *(arg.shape for arg in args), **kwargs
+                    )
+
+                    return xpx.lazy_apply(
+                        _f, *args, shape=shape, xp=xp,
+                        as_numpy=True, dtype=out_dtype, **kwargs
+                    )
         else:
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
@@ -434,8 +488,18 @@ def _stdtrit(xp, spsx):
     return __stdtrit
 
 
+def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, **kwargs):
+    axis = kwargs.get("axis", -1)
+
+    if "axes" in kwargs:
+        axis = kwargs["axes"][1][0]
+
+    axis %= len(p_shape)
+    p_batch_shape = p_shape[:axis] + p_shape[axis + 1:]
+    return np.broadcast_shapes(k_shape, p_batch_shape)
+
+
 # Inventory of automatically dispatched functions
-# IMPORTANT: these must all be **elementwise** functions!
 
 # PyTorch doesn't implement `betainc`.
 # On torch CPU we can fall back to NumPy, but on GPU it won't work.
@@ -1035,6 +1099,17 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy", "jax.numpy"],
             extra_note=_ufunc_kwargs_extra_note("poch", ["torch"]),
         ),
+        test_large_ints=False, torch_native=False,
+    ),
+    _FuncInfo(
+        _spfun_stats.poisson_binom_cdf, ["k", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "not elementwise")],
+            extra_note=_ufunc_kwargs_extra_note("poisson_binom_cdf", ["torch"]),
+        ),
+        is_elementwise=False,
+        shape_mapper=_poisson_binom_cdf_shape_mapper,
         test_large_ints=False, torch_native=False,
     ),
     _FuncInfo(
