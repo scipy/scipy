@@ -957,7 +957,7 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
-        def_msg = """The default value for `output_type` will become `dok_array` in v2.2.
+        def_msg = """The default value for `output_type` will become `dok_array` in v2.2
              That means the default return type will become a sparse array.
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -965,7 +965,7 @@ class KDTree(cKDTree):
              https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
              To silence this message, set `output_type="dok_array"`.
              """
-        dok_msg = f"""The keyword output_type="dok_matrix" will not be supported in v2.2
+        dok_msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
              The intended replacement is output_type="dok_array".
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -974,7 +974,7 @@ class KDTree(cKDTree):
              To silence this message, set to "dok_array" and, if needed, wrap the
              return in dok_matrix().
              """
-        coo_msg = f"""The keyword output_type="coo_matrix" will not be supported in v2.2
+        coo_msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
              The intended replacement is output_type="coo_array".
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
