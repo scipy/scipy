@@ -235,6 +235,7 @@ extern const char *inv_boxcox1p_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
+extern const char *iv_ratioinv_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
@@ -1420,6 +1421,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c)}, "_iv_ratio_c",
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
+
+    PyObject *iv_ratioinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratioinv), static_cast<xsf::numpy::dd_d>(xsf::iv_ratioinv)},
+        "_iv_ratioinv", iv_ratioinv_doc);
+    PyModule_AddObjectRef(module, "_iv_ratioinv", iv_ratioinv);
 
     PyObject *ive = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_ie),
