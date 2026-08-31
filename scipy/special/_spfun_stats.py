@@ -39,7 +39,7 @@ from scipy.special import gammaln as loggam
 from scipy.special._ufunc_tools import _with_cache_optimization
 
 
-__all__ = ['multigammaln']
+__all__ = ['multigammaln', 'poisson_binom_cdf']
 
 
 def multigammaln(a, d):
@@ -169,10 +169,11 @@ _poisson_binom_cdf_doc = (
     """
 )
 
-_poisson_binom_cdf = _with_cache_optimization(
-    name="_poisson_binom_cdf",
+poisson_binom_cdf = _with_cache_optimization(
+    name="poisson_binom_cdf",
     arg_names=["k", "p"],
     docstring=_poisson_binom_cdf_doc,
     ufunc=_gufuncs._poisson_binom_cdf,
     cache_arg_indices=[1],
+    module="scipy.special._spfun_stats",
 )
