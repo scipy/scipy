@@ -1722,9 +1722,13 @@ class TestOptimizeSimple(CheckOptimize):
             # call to the callback
             assert res.fun == ref.fun
             assert_equal(res.x, ref.x)
-        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
-        if method != 'cobyqa':
-            assert not res.success
+        if method == 'trust-constr':
+            assert res.status == 3
+        elif method == 'cobyqa':
+            assert res.status == 4
+        else:
+            assert res.status == 99
+        assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
