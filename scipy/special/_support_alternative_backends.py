@@ -15,7 +15,6 @@ from . import _basic
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
-from . import _gufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
 
 
@@ -281,10 +280,11 @@ class _FuncInfo:
             nin, nout = self.func.nin, self.func.nout
             if self.is_elementwise:
                 def f(*args, _f=_f, xp=xp, **kwargs):
-
-                    dtypes = (arg.dtype if is_jax_array(arg) else type(arg) for arg in args)
-                    # result_dtypes needs an arg for the dtype of the optional out params.
-                    # Uses None to request output dtype inference.
+                    dtypes = (
+                        arg.dtype if is_jax_array(arg) else type(arg) for arg in args
+                    )
+                    # result_dtypes needs an arg for the dtype of the optional out
+                    # params. Uses None to request output dtype inference.
                     dtypes = (*dtypes, *(None,) * nout)
                     # JAX uses NumPy dtypes so we can just pass these directly to
                     # resolve_dtypes. TODO: generalize to other lazy backends.
