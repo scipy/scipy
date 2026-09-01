@@ -1,19 +1,25 @@
 # file for distribution-specific tests with new infrastructure (UnivariateDistribution)
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy import stats
 
 class TestBinomial:
-    def test_non_integer_cdf_and_ccdf(self):
-        # The binomial CDF is a step function between integer support points.
+    @pytest.mark.parametrize('fun', ['cdf', 'logcdf', 'ccdf', 'logccdf'])
+    @pytest.mark.parametrize('method', ['quadrature', 'log/exp',
+                                        'formula', 'complement'])
+    def test_gh26072_non_integer_cdf_and_ccdf(self, fun, method):
+        # gh-26072 found that cdf-like methods of discrete distributions
+        # did not produce the expected step behavior
         n, p = 10, 0.3
-        x = np.asarray([-0.1, 0.4, 4.7, 10.3])
+        x = np.arange(n+1)
+        x = np.concat((x, np.nextafter(x, np.inf), np.nextafter(x, -np.inf)))
         X = stats.Binomial(n=n, p=p)
-
-        assert_allclose(X.cdf(x), stats.binom.cdf(x, n, p))
-        assert_allclose(X.ccdf(x), stats.binom.sf(x, n, p))
-        assert_allclose(X.logcdf(x), stats.binom.logcdf(x, n, p))
-        assert_allclose(X.logccdf(x), stats.binom.logsf(x, n, p))
+        Y = stats.binom(n=n, p=p)
+        X_fun = getattr(X, fun)
+        Y_fun = getattr(Y, fun.replace('ccdf', 'sf'))
+        assert_allclose(X_fun(x, method=method), Y_fun(x))
+        assert_allclose(X_fun(x, method=method), X_fun(np.floor(x)))
 
     def test_gh23708_binomial_logcdf_method_complement(self):
         # gh-23708 found that `logcdf` method='complement' was inaccurate in the tails
