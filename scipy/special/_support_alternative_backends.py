@@ -1110,6 +1110,7 @@ _special_funcs = (
         ),
         is_elementwise=False,
         shape_mapper=_poisson_binom_cdf_shape_mapper,
+        int_only=(True, False),
         test_large_ints=False, torch_native=False,
     ),
     _FuncInfo(
