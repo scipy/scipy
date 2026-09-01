@@ -18,7 +18,71 @@ from scipy.special._spfun_stats import poisson_binom_cdf
 from scipy.special._ufuncs import betainc
 
 from scipy.special._ufunc_tools import _make_ufunc_wrapper
+from scipy.special._ufunc_tools import _with_cache_optimization
 
+
+def _make_passthrough(ufunc):
+    def wrapper(*args, **kwargs):
+        return ufunc(*args, **kwargs)
+    return wrapper
+
+
+def _assert_same_result(actual, desired):
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+        for actual_i, desired_i in zip(actual, desired):
+            _assert_same_result(actual_i, desired_i)
+        return
+
+    np.testing.assert_equal(actual, desired)
+
+    if isinstance(desired, np.ndarray):
+        assert type(actual) is type(desired)
+        assert actual.dtype == desired.dtype
+        assert actual.shape == desired.shape
+        assert actual.strides == desired.strides
+
+
+_vecmat_wrapper = _with_cache_optimization(
+    name="_vecmat_wrapper",
+    arg_names=["x1", "x2"],
+    docstring=np.vecmat.__doc__,
+    ufunc=np.vecmat,
+    cache_arg_indices=[0],
+)
+
+_betainc_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(betainc),
+            betainc,
+            "betainc",
+            ["a", "b", "x"],
+            "Wrapper for betainc.",
+)
+
+_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(poisson_binom_cdf),
+            poisson_binom_cdf,
+            "poisson_binom_cdf",
+            ["k", "p"],
+            "Wrapper for poisson_binom_cdf.",
+)
+
+_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(mathieu_sem_wrapper),
+    mathieu_sem_wrapper,
+    "mathieu_sem",
+    ["m", "q", "x"],
+    "Wrapper for wrapper of mathieu_sem",
+)
+
+_vecdot_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(np.vecdot),
+    np.vecdot,
+    "vecdot",
+    ["x1", "x2"],
+    "Wrapper for vecdot."
+)
 
 # Tests that ufunc kwargs still work when _with_cache_optimization is applied
 class TestWithCacheOptimization:
@@ -250,60 +314,23 @@ class TestWithCacheOptimization:
     def test_pickle(self, func):
         assert pickle.loads(pickle.dumps(func)) is func
 
+    def test_gufunc_output_core_dims(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(30.0).reshape(2, 1, 3, 5)
 
-def _make_passthrough(ufunc):
-    def wrapper(*args, **kwargs):
-        return ufunc(*args, **kwargs)
-    return wrapper
+        desired = np.vecmat(x1, x2)
+        actual = _vecmat_wrapper(x1, x2)
+        _assert_same_result(actual, desired)
 
-_betainc_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(betainc),
-            betainc,
-            "betainc",
-            ["a", "b", "x"],
-            "Wrapper for betainc.",
-)
+    def test_gufunc_output_core_dims_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(30.0).reshape(2, 1, 3, 5)
+        out = np.empty((2, 4, 5))
 
-_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(poisson_binom_cdf),
-            poisson_binom_cdf,
-            "poisson_binom_cdf",
-            ["k", "p"],
-            "Wrapper for poisson_binom_cdf.",
-)
-
-_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(mathieu_sem_wrapper),
-    mathieu_sem_wrapper,
-    "mathieu_sem",
-    ["m", "q", "x"],
-    "Wrapper for wrapper of mathieu_sem",
-)
-
-_vecdot_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(np.vecdot),
-    np.vecdot,
-    "vecdot",
-    ["x1", "x2"],
-    "Wrapper for vecdot."
-)
-
-
-def _assert_same_result(actual, desired):
-    if isinstance(desired, tuple):
-        assert isinstance(actual, tuple)
-        assert len(actual) == len(desired)
-        for actual_i, desired_i in zip(actual, desired):
-            _assert_same_result(actual_i, desired_i)
-        return
-
-    np.testing.assert_equal(actual, desired)
-
-    if isinstance(desired, np.ndarray):
-        assert type(actual) is type(desired)
-        assert actual.dtype == desired.dtype
-        assert actual.shape == desired.shape
-        assert actual.strides == desired.strides
+        desired = np.vecmat(x1, x2)
+        actual = _vecmat_wrapper(x1, x2, out=out)
+        assert actual is out
+        _assert_same_result(actual, desired)
 
 
 class TestMakeUFuncWrapper:
