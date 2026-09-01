@@ -446,3 +446,16 @@ def test_mixed_arrays_and_python_scalars(xp):
     res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
     ref = xp.asarray(0.4349004, dtype=xp.float32)
     xp_assert_close(res, ref)
+
+
+# gufuncs are currently rare enough that they can have their own tests rather than
+# relying on the machinery above.
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("int_dtype", [np.int32, np.int64])
+@pytest.mark.parametrize("float_dtype", [np.float32, np.float64])
+def test_poisson_binom_cdf(xp, int_dtype, float_dtype):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=int_dtype)
+    p = np.asarray([0.2, 0.2, 0.4, 0.4, 0.6, 0.6, 0.8, 0.8], dtype=float_dtype)
+    ref = special.poisson_binom_cdf(k, p)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p))
+    xp_assert_close(res, ref)
