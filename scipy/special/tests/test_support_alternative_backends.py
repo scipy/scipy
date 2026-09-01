@@ -58,7 +58,9 @@ def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
         xp_assert_close(actual_i, desired_i, **kwargs)
 
 
-def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
+def _skip_or_tweak_alternative_backends(
+        xp, nfo, dtypes, int_only, *, elementwise_only=False
+):
     """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
@@ -71,6 +73,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         dtype strings 'float64', 'int32', 'int64', etc. with integer types
         mapped to the type of the NumPy default int.
     """
+    if elementwise_only and not nfo.is_elementwise:
+        pytest.skip("test assumes elementwise broadcasting")
     f_name = nfo.name
     if isinstance(nfo.positive_only, dict):
         positive_only = nfo.positive_only.get(get_native_namespace_name(xp), False)
@@ -150,7 +154,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes, int_only
+        xp, nfo, dtypes, int_only, elementwise_only=True
     )
 
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
@@ -307,7 +311,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype], (False,)*nfo.n_args
+        xp, nfo, [dtype], (False,)*nfo.n_args, elementwise_only=True
     )
     dtype_np = getattr(np, dtypes[0])
     dtype_xp = getattr(xp, dtypes[0])
@@ -361,19 +365,17 @@ def test_doc(func):
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize(
-    'func,n_args,int_only,is_ufunc,ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc, nfo.func)
-     for nfo in _special_funcs]
-)
-def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
+@pytest.mark.parametrize('nfo', _special_funcs)
+def test_ufunc_kwargs(nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
-    if not is_ufunc:
-        pytest.skip(f"{func.__name__} is not a ufunc.")
+    int_only = nfo.int_only
+    if not nfo.is_ufunc:
+        pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
+    func, ufunc = nfo.wrapper, nfo.func
     if int_only is None:
-        int_only = (False, ) * n_args
+        int_only = (False, ) * nfo.n_args
     # out=
     args = [
         np.asarray([.1, .2]) if not needs_int
@@ -382,10 +384,17 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
     ]
 
     nout = ufunc.nout
-    if nout == 1:
-        out = np.empty(2)
+
+    if nfo.is_elementwise:
+        out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
     else:
-        out = tuple(np.empty(2) for _ in range(nout))
+        shape = nfo.shape_mapper(*(arg.shape for arg in args))
+        out_shapes = (shape,) if nout == 1 else shape
+
+    if nout == 1:
+        out = np.empty(out_shapes[0])
+    else:
+        out = tuple(np.empty(shape) for shape in out_shapes)
 
     y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
@@ -403,6 +412,10 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
         # The below function evaluation will trigger a deprecation warning
         # with dtype=np.float32. This will go away if the trigger is actually
         # pulled on the deprecation.
+        return
+
+    if func.__name__ in {"poisson_binom_cdf"}:
+        # dtype=np.float32 not available due to mixed integer and floating point inputs.
         return
 
     # dtype=
