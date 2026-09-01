@@ -10295,7 +10295,7 @@ const char *mathieu_a_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -10326,7 +10326,7 @@ const char *mathieu_b_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -10359,26 +10359,26 @@ const char *mathieu_modcem1_doc = R"(
     Even modified Mathieu function of the first kind and its derivative.
 
     Evaluates the even modified Mathieu function of the first kind,
-    ``Mc1m(x, q)``, and its derivative at `x` for order `m` and parameter
-    `q`.
+    :math:`\mathrm{Mc}_m^{(1)}(x, q)`, and its derivative at `x` for order
+    `m` and parameter `q`.
 
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
         Parameter of the function
     x : array_like
-        Argument of the function, *given in degrees, not radians*
+        Dimensionless argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results
 
     Returns
     -------
     y : scalar or ndarray
-        Value of the function
+        Value of the function.
     yp : scalar or ndarray
-        Value of the derivative vs x
+        Derivative with respect to `x`.
 
     See Also
     --------
@@ -10392,26 +10392,26 @@ const char *mathieu_modcem2_doc = R"(
     Even modified Mathieu function of the second kind and its derivative.
 
     Evaluates the even modified Mathieu function of the second kind,
-    Mc2m(x, q), and its derivative at `x` (given in degrees) for order `m`
-    and parameter `q`.
+    :math:`\mathrm{Mc}_m^{(2)}(x, q)`, and its derivative at `x` for order
+    `m` and parameter `q`.
 
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
-        Parameter of the function
+        Parameter of the function.
     x : array_like
-        Argument of the function, *given in degrees, not radians*
+        Dimensionless argument of the function.
     out : tuple of ndarray, optional
-        Optional output arrays for the function results
+        Optional output arrays for the function results.
 
     Returns
     -------
     y : scalar or ndarray
-        Value of the function
+        Value of the function.
     yp : scalar or ndarray
-        Value of the derivative vs x
+        Derivative with respect to `x`.
 
     See Also
     --------
@@ -10425,26 +10425,26 @@ const char *mathieu_modsem1_doc = R"(
     Odd modified Mathieu function of the first kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the first kind,
-    Ms1m(x, q), and its derivative at `x` (given in degrees) for order `m`
-    and parameter `q`.
+    :math:`\mathrm{Ms}_m^{(1)}(x, q)`, and its derivative at `x` for order
+    `m` and parameter `q`.
 
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
         Parameter of the function
     x : array_like
-        Argument of the function, *given in degrees, not radians*
+        Dimensionless argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results
 
     Returns
     -------
     y : scalar or ndarray
-        Value of the function
+        Value of the function.
     yp : scalar or ndarray
-        Value of the derivative vs x
+        Derivative with respect to `x`.
 
     See Also
     --------
@@ -10458,26 +10458,26 @@ const char *mathieu_modsem2_doc = R"(
     Odd modified Mathieu function of the second kind and its derivative.
 
     Evaluates the odd modified Mathieu function of the second kind,
-    Ms2m(x, q), and its derivative at `x` (given in degrees) for order `m`
-    and parameter q.
+    :math:`\mathrm{Ms}_m^{(2)}(x, q)`, and its derivative at `x` for order
+    `m` and parameter `q`.
 
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
-        Parameter of the function
+        Parameter of the function.
     x : array_like
-        Argument of the function, *given in degrees, not radians*
+        Dimensionless argument of the function.
     out : tuple of ndarray, optional
-        Optional output arrays for the function results
+        Optional output arrays for the function results.
 
     Returns
     -------
     y : scalar or ndarray
-        Value of the function
+        Value of the function.
     yp : scalar or ndarray
-        Value of the derivative vs x
+        Derivative with respect to `x`.
 
     See Also
     --------
