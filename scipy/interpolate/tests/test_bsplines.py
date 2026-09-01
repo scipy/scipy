@@ -2699,12 +2699,23 @@ class TestSmoothingSpline:
         # equidistant or not (de Boor, "B(asic)-Spline Basics",
         # eqs. (4.7)-(4.8)). Both products below must therefore be zero.
         greville = np.array([t[i+1:i+4].mean() for i in range(m)])
+        # these coefficient vectors reproduce the constant and identity
+        # functions
+        u = np.linspace(t[3], t[-4], 57)
+        xp_assert_close(BSpline(t, np.ones(m), 3)(u), np.ones_like(u),
+                        atol=1e-14)
+        xp_assert_close(BSpline(t, greville, 3)(u), u, atol=1e-11)
         # zero is meant relative to the size of Omega's entries, which
         # grow like 1/h^3 for narrow knot intervals
         scale = np.abs(omega).max()
         xp_assert_close(omega @ np.ones(m), np.zeros(m), atol=1e-15 * scale)
         xp_assert_close(omega @ greville, np.zeros(m),
                         atol=1e-13 * scale * np.abs(greville).max())
+        # and a general line a + b*u has coefficients a*ones + b*greville,
+        # so it is in the null space too
+        line = 2.5 * np.ones(m) - 1.5 * greville
+        xp_assert_close(omega @ line, np.zeros(m),
+                        atol=1e-13 * scale * np.abs(line).max())
 
     def test_penalty_matrix_matches_R(self):
         # Penalty matrix vs. R's fda::bsplinepen (values generated
