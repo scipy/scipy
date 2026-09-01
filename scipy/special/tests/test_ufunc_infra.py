@@ -14,7 +14,7 @@ from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
 # raw ufunc without cache optimization
 from scipy.special._ufuncs import _mathieu_sem
 
-from scipy.special._spfun_stats import _poisson_binom_cdf
+from scipy.special._spfun_stats import poisson_binom_cdf
 from scipy.special._ufuncs import betainc
 
 from scipy.special._ufunc_tools import _make_ufunc_wrapper
@@ -265,11 +265,11 @@ _betainc_wrapper = _make_ufunc_wrapper(
 )
 
 _poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(_poisson_binom_cdf),
-            _poisson_binom_cdf,
+            _make_passthrough(poisson_binom_cdf),
+            poisson_binom_cdf,
             "poisson_binom_cdf",
             ["k", "p"],
-            "Wrapper for _poisson_binom_cdf.",
+            "Wrapper for poisson_binom_cdf.",
 )
 
 _mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
@@ -312,7 +312,7 @@ class TestMakeUFuncWrapper:
         [
             [betainc, _betainc_wrapper],
             [mathieu_sem_wrapper, _mathieu_sem_wrapper_wrapper],
-            [_poisson_binom_cdf, _poisson_binom_cdf_wrapper],
+            [poisson_binom_cdf, _poisson_binom_cdf_wrapper],
             [np.vecdot, _vecdot_wrapper],
         ]
     )
@@ -389,7 +389,7 @@ class TestMakeUFuncWrapper:
         ])
 
         out_desired = np.empty((2, 3, 2))
-        _poisson_binom_cdf(k[:, :, None], p, out=out_desired)
+        poisson_binom_cdf(k[:, :, None], p, out=out_desired)
         out_actual = np.empty((2, 3, 2))
         actual = _poisson_binom_cdf_wrapper(k[:, :, None], p, out=out_actual)
         assert out_actual is actual
