@@ -102,6 +102,7 @@ special_ufuncs = [
     "_invgauss_ppf",
     "_iv_ratio",
     "_iv_ratio_c",
+    "_iv_ratioinv",
     "_kolmogc",
     "_kolmogci",
     "_kolmogp",

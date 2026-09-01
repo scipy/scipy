@@ -8522,6 +8522,55 @@ const char *iv_ratio_c_doc = R"(
 
     )";
 
+const char *iv_ratioinv_doc = R"(
+    _iv_ratioinv(v, r, out=None)
+
+    Internal function.
+
+    Return the nonnegative value `x` such that ``_iv_ratio(v, x) == r``.
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order. Must be finite and `>= 0.5`.
+    r : array_like of float
+        Ratio. Must be between `0` and `1`, inclusive.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        The argument of `_iv_ratio`. The returned value is nonnegative.
+
+        If either `v` or `r` is `nan`, `nan` is returned. Otherwise, the
+        special values are:
+
+        - If `v < 0.5`, `v == +inf`, `r < 0`, or `r > 1`, set "domain"
+          error and return `nan`.
+        - If `r == 0`, return `0`.
+        - If `r == 1`, return `+inf`.
+
+    See Also
+    --------
+    _iv_ratio : ratio of modified Bessel functions of adjacent orders
+    _iv_ratio_c : complement of the ratio of modified Bessel functions of
+        adjacent orders
+
+    Notes
+    -----
+    The root is computed using Chandrupatla's algorithm. Initial bounds are
+    obtained by inverting bounds on ratios of modified Bessel functions from
+    [1]_. If these bounds do not bracket the root due to rounding error, a
+    monotonic bracketing algorithm is used as a fallback.
+
+    References
+    ----------
+    .. [1] Amos, D. E. (1974). "Computation of Modified Bessel Functions and
+           Their Ratios." Mathematics of Computation, 28(125):239-251.
+
+    )";
+
 const char *ive_doc = R"(
     ive(v, z, out=None)
 

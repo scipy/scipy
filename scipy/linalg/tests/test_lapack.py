@@ -1779,7 +1779,13 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
+@pytest.mark.skipif(True,
+                    reason="Failing on Intel MKL, see gh-12276")
 def test_heequb():
+    # zheequb had a bug for versions between 3.7.x and 3.9.x
+    # See Reference-LAPACK gh-61 and gh-408
+    # However it seems like MKL did not pick up the fix and
+    # carried the bug to newer versions.
     A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
     s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
