@@ -1,3 +1,5 @@
+# The portion below involving multigammaln has the following copyright
+# information:
 # Last Change: Sat Mar 21 02:00 PM 2009 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
@@ -28,6 +30,8 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
+
+# The Poisson binomial distribution functions copyright SciPy developers 2026.
 
 """Some more special functions which may be useful for multivariate statistical
 analysis."""
@@ -121,7 +125,7 @@ _poisson_binom_pmf_doc = (
 
     p : array
         Success probabilities of independent Bernoulli trials.
-    
+
 
     """
 )
@@ -172,7 +176,7 @@ _poisson_binom_cdf_doc = (
     ----------
     .. [1] Poisson binomial distribution,
            https://en.wikipedia.org/wiki/Poisson_binomial_distribution
-        
+
 
     """
 )
