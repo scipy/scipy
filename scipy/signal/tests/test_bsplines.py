@@ -335,9 +335,9 @@ class TestSepfir2d:
         # gh-24681: the boundary sections reflect an out-of-range index only
         # once, so an axis shorter than 2*(len(filt)//2) used to read, and for
         # the last case above also write, outside the arrays instead of raising.
-        image = np.ones(shape)
+        image = xp.ones(shape)
         with pytest.raises(ValueError, match="must not be longer"):
-            signal.sepfir2d(image, np.ones(nrow), np.ones(ncol))
+            signal.sepfir2d(image, xp.ones(nrow), xp.ones(ncol))
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.parametrize('n', [2, 4, 6, 8])
@@ -345,9 +345,10 @@ class TestSepfir2d:
         # len(filt) == n + 1 is the longest filter the boundary handling
         # supports; mirroring a constant image is constant, so every output
         # sample must equal sum(hrow)*sum(hcol).
-        filt = np.arange(1.0, n + 2.0)
-        result = signal.sepfir2d(np.ones((n, n)), filt, filt)
-        xp_assert_close(result, np.full((n, n), filt.sum()**2), atol=1e-13)
+        filt = xp.arange(1.0, n + 2.0)
+        result = signal.sepfir2d(xp.ones((n, n)), filt, filt)
+        expected = xp.full((n, n), float(xp.sum(filt))**2)
+        xp_assert_close(result, expected, atol=1e-13)
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.parametrize('dtyp',
