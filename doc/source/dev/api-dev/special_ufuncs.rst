@@ -10,12 +10,9 @@ discusses the steps necessary to add a new vectorized special
 function.
 
 The first step in adding a new vectorized function is writing the
-corresponding scalar function. This can be done in Cython, C, C++, or
-Fortran. If starting from scratch then Cython should be preferred
-because the code is easier to maintain for developers only familiar
-with Python. If the primary code is in Fortran then it is necessary to
-write a C wrapper around the code; for examples of such wrappers see
-``specfun_wrappers.c``.
+corresponding scalar function. This is done in the
+`xsf repository <https://github.com/scipy/xsf>`_, see
+`here <https://github.com/scipy/xsf/blob/main/CONTRIBUTING.md>`_ for further details.
 
 After implementing the scalar function, create the ufunc in
 ``_special_ufuncs.cpp`` using ``xsf::numpy::ufunc``. Add the ufunc's

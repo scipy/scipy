@@ -418,10 +418,11 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
     xp = array_namespace(t)
-    t = xp_promote(t, xp=xp, force_floating=True)
-    # possibly use `xpx.deg2rad(phi)` in the future, see
-    # https://github.com/data-apis/array-api-extra/issues/876
-    phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp) + phi * xp.pi / 180
+    t, phi = xp_promote(t, phi, xp=xp, force_floating=True)
+    phase = (
+        _chirp_phase(t, f0, t1, f1, method, vertex_zero, xp=xp)
+        + xpx.deg2rad(phi, xp=xp)
+    )
     return xp.exp(1j*phase) if complex else xp.cos(phase)
 
 

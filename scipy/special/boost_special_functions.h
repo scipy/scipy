@@ -571,7 +571,7 @@ Real call_hypergeometric_pFq(Real a, Real b, Real x)
 
 template<typename Real>
 static inline
-Real hyp1f1_wrap(Real a, Real b, Real x)
+Real hyp1f1_boost_wrap(Real a, Real b, Real x)
 {
     Real y;
 
@@ -631,19 +631,14 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
 double
 hyp1f1_double(double a, double b, double x)
 {
-    return hyp1f1_wrap(a, b, x);
+    return hyp1f1_boost_wrap(a, b, x);
 }
 
-//
-// NOTE: It would be easy to also provide hyp1f1_float(...), but with the
-// current ufunc generation code, it would not be used.  The ufunc
-// generation code will implement the float types for the ufunc by
-// casting the floats to double and using the double implementation.
-// This is because we also have a complex version that is implemented
-// in a different file, and the ufunc generation code requires just one
-// kernel function per header when there are multiple headers (see the
-// comments in _generate_pyx.py).
-//
+float
+hyp1f1_float(float a, float b, float x)
+{
+    return static_cast<float>(hyp1f1_double(a, b, x));
+}
 
 // patch for boost::math::beta_distribution throwing exception for
 // x = 1, beta < 1 as well as x = 0, alpha < 1
@@ -2811,6 +2806,54 @@ double
 lgamma_q_double(double a, double z)
 {
     return lgamma_q_wrap(a, z);
+}
+
+template<typename Real>
+static inline
+Real stdtridf_wrap(Real p, Real t)
+{
+    if (std::isnan(p) || std::isnan(t)) {
+        return NAN;
+    }
+    if (p < 0 || p > 1) {
+        sf_error("stdtridf", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::students_t_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(t, p);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("stdtridf", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("stdtridf", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("stdtridf", SF_ERROR_UNDERFLOW, NULL);
+        y = std::numeric_limits<Real>::min(); 
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y <= 0) {
+        sf_error("stdtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+double
+stdtridf_double(double p, double t)
+{
+    return stdtridf_wrap(p, t);
+}
+
+float
+stdtridf_float(float p, float t)
+{
+    return stdtridf_wrap(p, t);
 }
 
 #endif

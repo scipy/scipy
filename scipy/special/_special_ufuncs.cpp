@@ -40,6 +40,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/mathieu_legacy.h>
+#include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
@@ -222,6 +223,7 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp0f1_doc;
+extern const char *hyp1f1_doc;
 extern const char *hyp2f1_doc;
 extern const char *hyperu_doc;
 extern const char *i0_doc;
@@ -233,6 +235,7 @@ extern const char *inv_boxcox1p_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
+extern const char *iv_ratioinv_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
@@ -324,6 +327,7 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *stdtr_doc;
+extern const char *stdtridf_doc;
 extern const char *stdtrit_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
@@ -1296,6 +1300,12 @@ _special_ufuncs_module_exec(PyObject *module)
                           "hyp0f1", hyp0f1_doc);
     PyModule_AddObjectRef(module, "hyp0f1", hyp0f1);
 
+    PyObject *hyp1f1 = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(hyp1f1_float), static_cast<xsf::numpy::ddd_d>(hyp1f1_double),
+         static_cast<xsf::numpy::ffF_F>(xsf::hyp1f1), static_cast<xsf::numpy::ddD_D>(xsf::hyp1f1)},
+        "hyp1f1", hyp1f1_doc);
+    PyModule_AddObjectRef(module, "hyp1f1", hyp1f1);
+
     PyObject *hyp2f1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
                            static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1)},
@@ -1412,6 +1422,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c)}, "_iv_ratio_c",
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
+
+    PyObject *iv_ratioinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratioinv), static_cast<xsf::numpy::dd_d>(xsf::iv_ratioinv)},
+        "_iv_ratioinv", iv_ratioinv_doc);
+    PyModule_AddObjectRef(module, "_iv_ratioinv", iv_ratioinv);
 
     PyObject *ive = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_ie),
@@ -1945,6 +1960,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(t_cdf_double)},
                           "stdtr", stdtr_doc);
     PyModule_AddObjectRef(module, "stdtr", stdtr);
+
+    PyObject *stdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(stdtridf_float),
+                           static_cast<xsf::numpy::dd_d>(stdtridf_double)},
+                          "stdtridf", stdtridf_doc);
+    PyModule_AddObjectRef(module, "stdtridf", stdtridf);
 
     PyObject *stdtrit =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_ppf_float),

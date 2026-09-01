@@ -39,7 +39,8 @@ from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, 
                            mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
                            tandg, cotdg)
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
+from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API,
+                                   make_xp_test_case)
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -1381,6 +1382,13 @@ class TestAiry:
             [-2.2944396826, -4.0731550891, -5.5123957297,
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
+    def test_gh26034(self):
+        z = np.asarray(-10 - 0j)
+        res = special.airy(z)
+        ref = special.airy(z.real)
+        for r, e in zip(res, ref):
+            assert_allclose(r, e)
+
 
 class TestAssocLaguerre:
     def test_assoc_laguerre(self):
@@ -1823,6 +1831,18 @@ class TestBetaInc:
         x = np.array(x, dtype=dtype)
         res = special.betainc(a, b, x)
         assert_allclose(res, reference, rtol=rtol)
+
+    def test_gh24566(self):
+        # test that betainc does not return NaN for these specific inputs
+        # As neither Mathematica nor mpmath are able to compute the result,
+        # we simply test that the result is not NaN
+        # Boost contains a more elaborate test that checks the monotonicity
+        # in this region, see
+        # https://github.com/boostorg/math/blob/64a8d75df2d570ab5eddde4bc383c66675d68611/test/test_ibeta.hpp#L492
+        value = 0.010000000000005001
+        a = 3.1622776601699636e16
+        b = 3.130654883566682e18
+        assert not np.isnan(special.betainc(a, b, value))
 
 
 class TestCombinatorics:
@@ -4314,6 +4334,11 @@ class TestBessel:
         with special.errstate(overflow="raise"):
             assert_allclose(special.j0(1e-200), 1.0, atol=0, rtol=0)
 
+    @pytest.mark.parametrize("func, expected", [(special.i0, 6.705128263670996e+307),
+                                                (special.i1, 6.700424559186402e+307)])
+    def test_gh_25823(self, func, expected):
+        assert_allclose(func(713.0), expected, rtol=5e-15, atol=0)
+
 
 class TestLaguerre:
     def test_laguerre(self):
@@ -4606,8 +4631,10 @@ class TestRiccati:
         assert_allclose(C, special.riccati_yn(n, x), atol=1.5e-8, rtol=0)
 
 
+@make_xp_test_case(softplus)
 class TestSoftplus:
-    def test_softplus(self):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softplus(self, dtype, xp):
         # Test cases for the softplus function. Selected based on Eq.(10) of:
         # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
         # Floating-Point Reliable. Retrieved from:
@@ -4632,11 +4659,16 @@ class TestSoftplus:
                [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
                [31.253760266045106, 27.758244090327832, 29.995959179643634],
                [73.26040086468937, 76.24944728617226, 37.83955519155184]]
+        dtype = getattr(xp, dtype)
+        ref = xp.asarray(ref, dtype=dtype)
+        a = xp.asarray(a, dtype=dtype)
 
         res = softplus(a)
-        assert_allclose(res, ref, rtol=2e-15)
+        rtol = 2e-15 if dtype == xp.float64 else 5e-6
+        xp_assert_close(res, ref, rtol=rtol, atol=1e-14)
 
     def test_softplus_with_kwargs(self):
+        # NumPy only as standard does not define any kwargs for logaddexp
         x = np.arange(5) - 2
         out = np.ones(5)
         ref = out.copy()

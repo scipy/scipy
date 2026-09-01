@@ -33,8 +33,9 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, array_namespace, make_xp_test_case,
-    make_xp_pytest_param, SCIPY_DEVICE, _xp_copy_to_numpy, xp_device
+    make_xp_pytest_param, SCIPY_DEVICE, xp_copy_to_numpy, xp_device
 )
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
@@ -473,8 +474,8 @@ class TestConvolve2d:
         # Compare np.convolve, signal.convolve, signal.convolve2d
         a = xp.arange(5)
         b = xp.asarray([3.2, 1.4, 3])
-        a_np = _xp_copy_to_numpy(a)
-        b_np = _xp_copy_to_numpy(b)
+        a_np = xp_copy_to_numpy(a)
+        b_np = xp_copy_to_numpy(b)
 
         for mode in ['full', 'valid', 'same']:
             xp_assert_close(
@@ -1347,7 +1348,6 @@ class TestMedFilt:
 @make_xp_test_case(signal.wiener)
 class TestWiener:
 
-    @skip_xp_backends("cupy", reason="XXX: can_cast in cupy <= 13.2")
     def test_basic(self, xp):
         g = xp.asarray([[5, 6, 4, 3],
                         [3, 5, 6, 2],
@@ -1817,6 +1817,33 @@ class TestOrderFilt:
         xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
 
+@make_xp_test_case(lfiltic)
+class TestLFiltic:
+    """_TestLinearFilter is parameterized by dtype so we collect the tests for lfiltic
+    which are not dtype-dependent here to avoid running them multiple times."""
+    def test_lfiltic_bad_coeffs(self):  # array-like is np-only
+        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
+        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
+
+    @skip_xp_backends('cupy', reason="CuPy does not support scalar initial conditions")
+    def test_lfiltic_scalar_ic(self, xp):
+        # regression test for gh-14664: scalar initial conditions must be
+        # accepted and give the same result as the equivalent length-1 array,
+        # independently of the filter length (a short filter used to raise).
+        b = xp.asarray([1 - 0.2])
+        a = xp.asarray([1.0, -0.2])
+        xp_assert_close(lfiltic(b, a, 3.0), lfiltic(b, a, xp.asarray([3.0])))
+
+        # a scalar `x` (with M > 0) is likewise accepted
+        b2 = xp.asarray([1.0, 0.5, 0.25])
+        a2 = xp.asarray([1.0, -0.3])
+        xp_assert_close(lfiltic(b2, a2, 2.0, 1.0),
+                        lfiltic(b2, a2, xp.asarray([2.0]), xp.asarray([1.0])))
+
+
 @make_xp_test_case(lfilter)
 class _TestLinearFilter:
     def generate(self, shape, xp):
@@ -1945,7 +1972,7 @@ class _TestLinearFilter:
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
         a = self.convert_dtype([0.5, 0.5], xp)
-        a_np, b_np, x_np = map(_xp_copy_to_numpy, (a, b, x))
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
@@ -1963,13 +1990,13 @@ class _TestLinearFilter:
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1], xp)
             y, zf = lfilter(b, a, x, axis, zi)
-            b_np, a_np, zi1_np = map(_xp_copy_to_numpy, (b, a, zi1))
+            b_np, a_np, zi1_np = map(xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[1]
-            y_r = np.apply_along_axis(lf0, axis, _xp_copy_to_numpy(x))
-            zf_r = np.apply_along_axis(lf1, axis, _xp_copy_to_numpy(x))
+            y_r = np.apply_along_axis(lf0, axis, xp_copy_to_numpy(x))
+            zf_r = np.apply_along_axis(lf1, axis, xp_copy_to_numpy(x))
             assert_array_almost_equal(y, xp.asarray(y_r))
             assert_array_almost_equal(zf, xp.asarray(zf_r))
 
@@ -1978,7 +2005,7 @@ class _TestLinearFilter:
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        a_np, b_np, x_np = map(_xp_copy_to_numpy, (a, b, x))
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
@@ -1990,15 +2017,15 @@ class _TestLinearFilter:
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        x_np, b_np, a_np = map(_xp_copy_to_numpy, (x, b, a))
+        x_np, b_np, a_np = map(xp_copy_to_numpy, (x, b, a))
         for axis in range(x.ndim):
             zi_shape = list(x.shape)
             zi_shape[axis] = 2
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1, 1], xp)
-            zi1_np = _xp_copy_to_numpy(zi1)
+            zi1_np = xp_copy_to_numpy(zi1)
             y, zf = lfilter(b, a, x, axis, zi)
-            b_np, a_np, zi1_np = map(_xp_copy_to_numpy, (b, a, zi1))
+            b_np, a_np, zi1_np = map(xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
                 return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
@@ -2218,14 +2245,6 @@ class _TestLinearFilter:
         # compare lfiltic's output with reference
         assert_array_almost_equal(zi_1, zi_2)
 
-    @make_xp_test_case(lfiltic)
-    def test_lfiltic_bad_coeffs(xp):
-        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
-        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
-        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
-
     @skip_xp_backends(
         'array_api_strict', reason='int64 and float64 cannot be promoted together'
     )
@@ -2334,8 +2353,7 @@ class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
 
-@make_xp_test_case(lfilter)
-def test_lfilter_bad_object(xp):
+def test_lfilter_bad_object():  # array-like is np-only
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
     if hasattr(sys, 'abiflags') and 'd' in sys.abiflags:
@@ -2345,22 +2363,23 @@ def test_lfilter_bad_object(xp):
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-@make_xp_test_case(lfilter)
-def test_lfilter_notimplemented_input(xp):
+def test_lfilter_notimplemented_input():  # array-like input is np-only
     # Should not crash, gh-7991
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-def test_lfilter_empty_input():
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10199")
+@make_xp_test_case(lfilter)
+def test_lfilter_empty_input(xp):
     """Verify that unchanged `zi` is returned for an empty input `x`
 
     This test ensures correct special handling for empty inputs,
     to prevent leaking internal state as reported in gh-22571.
     """
-    b = np.array([1.0, 0.5])
-    a = np.array([1.0, -0.5])
-    x = np.array([])
-    zi = np.array([0.25])
+    b = xp.asarray([1.0, 0.5])
+    a = xp.asarray([1.0, -0.5])
+    x = xp.asarray([])
+    zi = xp.asarray([0.25])
 
     y, zf = lfilter(b, a, x, zi=zi)
     assert y.shape == (0,)
@@ -2595,7 +2614,7 @@ def test_correlation_lags(mode, behind, input_size, xp):
     # identify the peak
     lag_index = np.argmax(correlation)
     # Check as expected
-    xp_assert_equal(lags[lag_index], expected)
+    xp_assert_equal(xp.asarray(lags[lag_index]), expected)
     # Correlation and lags shape should match
     assert lags.shape == correlation.shape
 
@@ -3821,7 +3840,7 @@ class TestPartialFractionExpansion:
         distance = xp.hypot(abs(p[:, None] - p_true),
                             abs(r[:, None] - r_true))
 
-        rows, cols = linear_sum_assignment(_xp_copy_to_numpy(distance))
+        rows, cols = linear_sum_assignment(xp_copy_to_numpy(distance))
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 

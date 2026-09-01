@@ -1390,6 +1390,7 @@ cdef extern from r"cython_special_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) nogil
     npy_cdouble special_chyp0f1(double v, npy_cdouble z) nogil
     double special_hyp0f1(double v, double z) nogil
     double special_hyperu(double a, double b, double x) nogil
@@ -1429,6 +1430,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_fdtrc_double(double dfn, double dfd, double x) nogil
     float boost_fdtri_float(float dfn, float dfd, float p) nogil
     double boost_fdtri_double(double dfn, double dfd, double p) nogil
+    double boost_hyp1f1_double(double a, double b, double x) nogil
     float boost_log_gammainc_float(float a, float x) nogil
     double boost_log_gammainc_double(double a, double x) nogil
     float boost_log_gammaincc_float(float a, float x) nogil
@@ -1452,6 +1454,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_powm1_double(double x, double y) nogil
     float boost_stdtr_float(float df, float t) nogil
     double boost_stdtr_double(double df, double t) nogil
+    double boost_stdtridf_double(double df, double t) nogil
     float boost_stdtrit_float(float df, float p) nogil
     double boost_stdtrit_double(double df, double p) nogil
 
@@ -1687,9 +1690,6 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
-
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j1 "j1"(npy_double)nogil
@@ -1741,10 +1741,6 @@ cdef _proto_smirnov_unsafe_t *_proto_smirnov_unsafe_t_var = &_func_smirnov_unsaf
 from ._legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) noexcept nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
-
-from ._cdflib_wrappers cimport stdtridf as _func_stdtridf
-ctypedef double _proto_stdtridf_t(double, double) noexcept nogil
-cdef _proto_stdtridf_t *_proto_stdtridf_t_var = &_func_stdtridf
 
 from ._legacy cimport yn_unsafe as _func_yn_unsafe
 ctypedef double _proto_yn_unsafe_t(double, double) noexcept nogil
@@ -2365,9 +2361,9 @@ cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.hyp1f1"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp1f1_double)(x0, x1, x2)
+        return boost_hyp1f1_double(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
+        return _complexstuff.double_complex_from_npy_cdouble(chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
@@ -3188,9 +3184,9 @@ cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
     elif df_number_t is double:
         return boost_stdtrit_double(x0, x1)
 
-cpdef double stdtridf(double x0, double x1) noexcept nogil:
+cpdef double stdtridf(double p, double t) noexcept nogil:
     """See the documentation for scipy.special.stdtridf"""
-    return _func_stdtridf(x0, x1)
+    return boost_stdtridf_double(p, t)
 
 cpdef double struve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.struve"""

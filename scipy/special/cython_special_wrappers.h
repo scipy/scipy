@@ -431,6 +431,7 @@ float boost_fdtrc_float(float dfn, float dfd, float x);
 double boost_fdtrc_double(double dfn, double dfd, double x);
 float boost_fdtri_float(float dfn, float dfd, float p);
 double boost_fdtri_double(double dfn, double dfd, double p);
+double boost_hyp1f1_double(double a, double b, double x);
 float boost_log_gammainc_float(float a, float x);
 double boost_log_gammainc_double(double a, double x);
 float boost_log_gammaincc_float(float a, float x);
@@ -454,6 +455,7 @@ float boost_powm1_float(float x, float y);
 double boost_powm1_double(double x, double y);
 float boost_stdtr_float(float df, float t);
 double boost_stdtr_double(double df, double t);
+double boost_stdtridf_double(double p, double t);
 float boost_stdtrit_float(float df, float p);
 double boost_stdtrit_double(double df, double p);
 

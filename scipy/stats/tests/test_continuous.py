@@ -615,32 +615,36 @@ def check_nans_and_edges(dist, fname, arg, res):
         ref = 0 if not is_discrete else np.inf
         assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
         assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
-    elif fname in {'logcdf'} and not is_discrete:
+    elif fname in {'logcdf'}:
         assert_equal(res[outside_arg_minus], -inf)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus], -inf)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], -inf)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'cdf'} and not is_discrete:
+    elif fname in {'cdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 1)
-        assert_equal(res[endpoint_arg_minus], 0)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], 1)
-    elif fname in {'logccdf'} and not is_discrete:
+    elif fname in {'logccdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], -inf)
-        assert_equal(res[endpoint_arg_minus], 0)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], -inf)
-    elif fname in {'ccdf'} and not is_discrete:
+    elif fname in {'ccdf'}:
         assert_equal(res[outside_arg_minus], 1)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus], 1)
+        if not is_discrete:
+            assert_equal(res[endpoint_arg_minus], 1)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'ilogcdf', 'icdf'} and not is_discrete:
+    elif fname in {'ilogcdf', 'icdf'}:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], a[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], b[endpoint_arg == 1])
-    elif fname in {'ilogccdf', 'iccdf'} and not is_discrete:
+    elif fname in {'ilogccdf', 'iccdf'}:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
@@ -732,7 +736,6 @@ def check_moment_funcs(dist, result_shape):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
 
-    variance = dist.variance()
     dist.reset_cache()
 
     # If we have standard moment formulas, or if there are
@@ -743,9 +746,9 @@ def check_moment_funcs(dist, result_shape):
     for i in range(3, 6):
         ref = dist.moment(i, 'central', method='quadrature')
         check(i, 'central', 'normalize', ref,
-              success=has_formula(i, 'standardized') and not np.any(variance == 0))
+              success=has_formula(i, 'standardized'))
         dist.moment(i, 'standardized')  # build up the cache
-        check(i, 'central', 'normalize', ref, success=not np.any(variance == 0))
+        check(i, 'central', 'normalize', ref)
 
     ### Check Standardized Moments ###
 
@@ -1468,6 +1471,54 @@ class TestMakeDistribution:
         assert_allclose(Y.icdf(p), Z.icdf(p))
         assert_allclose(Y.iccdf(p), Z.iccdf(p))
 
+    @pytest.mark.parametrize("n", [10, np.asarray([10., 11., 12.])])
+    @pytest.mark.parametrize("p", [0.4, np.asarray([0.4, 0.5, 0.6])])
+    def test_custom_discrete(self, n, p):
+        rng = np.random.default_rng(5875373614)
+
+        class MyBinomial:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'n': {'domain_type': 'discrete',
+                              'endpoints': (0., np.inf),
+                              'inclusive': (True, False)},
+                        'p': {'domain_type': 'continuous',
+                              'endpoints': (0., 1.),
+                              'inclusive': (True, True)}}
+
+            @property
+            def support(self):
+                return {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+
+            def pmf(self, x, n, p):
+                return special.binom(n, x) * p**x * (1 - p)**(n - x)
+
+        Binomial = stats.make_distribution(MyBinomial())
+
+        X = Binomial(n=n, p=p)
+        Y = stats.Binomial(n=n, p=p)
+
+        x = Y.sample(shape=10, rng=rng)
+        p = rng.random(x.shape)
+
+        assert_allclose(X.support(), Y.support())
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logpmf(x), Y.logpmf(x))
+        assert_allclose(X.pmf(x), Y.pmf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.icdf(p), Y.icdf(p))
+        assert_allclose(X.iccdf(p), Y.iccdf(p))
+
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
         with pytest.raises(NotImplementedError, match=message):
@@ -1480,6 +1531,24 @@ class TestMakeDistribution:
         message = "The argument must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
+
+        message = "If specified, the `domain_type` value..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'domain_type': 'other', 'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+            def pmf(self, x, n):
+                return np.full_like(x, 1/n)
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
+
+        message = "The argument of `make_distribution` must implement either..."
+        class MyTestDistribution:
+            __make_distribution_version__ = "1.16.0"
+            parameters = {'n': {'endpoints': (0, np.inf)}}
+            support = {'endpoints': (0, 'n'), 'inclusive': (True, True)}
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(MyTestDistribution())(n=10)
 
     def test_repr_str_docs(self):
         from scipy.stats._distribution_infrastructure import _distribution_names
@@ -1604,6 +1673,7 @@ class TestTransforms:
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         loc = dist.loc
+        # negative scale tested in test_abs_finite_support, test_reciprocal, etc.
         scale = dist.scale
         dist0 = StandardNormal()
         dist_ref = stats.norm(loc=loc, scale=scale)

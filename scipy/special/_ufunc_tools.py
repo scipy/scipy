@@ -1,11 +1,12 @@
 """Helpers for producing efficient wrappers of ufuncs.
 """
 
+import importlib
 import re
 import numpy as np
 import warnings
 
-from packaging import version
+from scipy._external.packaging_version import version
 
 
 def _parse_core_ndims(signature):
@@ -63,7 +64,7 @@ def _normalize_out(out, nout):
     matching the behavior of a plain ufunc.
 
     """
-    if out is None:
+    if out is _NO_VALUE:
         return (None,)*nout
     if not isinstance(out, tuple):
         if nout > 1:
@@ -80,6 +81,14 @@ def _normalize_out(out, nout):
         if entry is not None and not isinstance(entry, np.ndarray):
             raise TypeError("return arrays must be of ArrayType")
     return out_tuple
+
+
+class _NoValue:
+    def __repr__(self):
+        return "None"
+
+
+_NO_VALUE = _NoValue()
 
 
 def _with_cache_optimization(
@@ -107,10 +116,10 @@ def _with_cache_optimization(
     docstring : str
     ufunc : numpy.ufunc
     cache_arg_indices : list[int]
-       Arguments to ufunc which are used in the kernel to compute an output
-       which is being cached for reuse when iterating over other arguments.
+        Arguments to ufunc which are used in the kernel to compute an output
+        which is being cached for reuse when iterating over other arguments.
     module : str, optional
-       Value to use for the ``__module__`` attribute of the wrapper.
+        Value to use for the ``__module__`` attribute of the wrapper.
 
     Returns
     -------
@@ -118,8 +127,6 @@ def _with_cache_optimization(
         A wrapper for ufunc which transposes the axes of the inputs to ensure
         iteration precedes in such a way to allow the cache within the ufunc
         kernel to eliminate redundant computation.
-        The underlying ufunc can be accessed through the ``ufunc`` attribute
-        of the returned callable.
 
     Notes
     -----
@@ -156,32 +163,37 @@ def _with_cache_optimization(
         else (0,)*ufunc.nin
     )
 
-    # The kwarg ``where`` is only supported for elementwise ufuncs, while
-    # the kwarg ``axes` is only supported for non-elementwise gufuncs, so
-    # keep track of this here for later.
-    is_elementwise = sum(core_ndims) == 0
+    # ``where`` requires special handling for elementwise ufuncs because it
+    # participates in broadcasting and must undergo the same axis permutation.
+    is_elementwise = ufunc.signature is None
 
-    def _wrapper(
-            *args,
-            out=None,
-            where=True,
-            casting="same_kind",
-            order="K",
-            dtype=None,
-            subok=True,
-            signature=None,
-    ):
+    def wrapper(*args, **kwargs):
+        out = kwargs.pop("out", _NO_VALUE)
+        casting = kwargs.pop("casting", "same_kind")
+        order = kwargs.pop("order", "K")
+        dtype = kwargs.pop("dtype", None)
+        subok = kwargs.pop("subok", True)
+        signature = kwargs.pop("signature", None)
+
+        # ``where`` requires special handling because the iteration axes are
+        # rearranged below. It is only supported by elementwise ufuncs. For a
+        # gufunc, leave it in kwargs so that NumPy raises its usual error.
+        where = kwargs.pop("where", True) if is_elementwise else True
+
+        # Add back kwargs that we always pass explicitly to the underlying ufunc.
+        kwargs["casting"] = casting
+        kwargs["subok"] = subok
+
         asarray = np.asanyarray if subok else np.asarray
         args = [asarray(arg) for arg in args]
-        kwargs = dict(casting=casting, subok=subok)
 
         # ``where`` is normalized once, up front, so that the fast path and the
         # transposed path below agree on its meaning. ``True`` is the "no mask"
         # sentinel and is not forwarded, matching a plain ufunc call.
-        if is_elementwise and where is not True:
+        if where is not True:
             where = asarray(where)
             kwargs["where"] = where
-        if out is not None:
+        if out is not _NO_VALUE:
             kwargs["out"] = out
         if signature is not None:
             kwargs["signature"] = signature
@@ -197,8 +209,7 @@ def _with_cache_optimization(
         out_tuple = _normalize_out(out, ufunc.nout)
 
         if (
-                out is None
-                and is_elementwise
+                out is _NO_VALUE
                 and where is not True
                 and version.parse(np.__version__) >= version.parse("2.4.0")
         ):
@@ -217,7 +228,7 @@ def _with_cache_optimization(
             arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
-        if is_elementwise and where is not True:
+        if where is not True:
             batch_shapes.append(where.shape)
 
         batch_shapes.extend(
@@ -308,44 +319,158 @@ def _with_cache_optimization(
 
         return outputs[0] if ufunc.nout == 1 else outputs
 
-    # Do some metaprogramming with exec so that the arg names and func
-    # name are as expected.
-    arg_str = ", ".join(arg_names)
-
-    # Handle kwargs for function definition and call to wrapper.
-    kwarg_defs = [
-         "casting='same_kind'",
-         "order='K'",
-         "dtype=None",
-         "subok=True",
-         "signature=None",
-    ]
-    kwarg_calls = [
-        "out=out",
-        "casting=casting",
-        "order=order",
-        "dtype=dtype",
-        "subok=subok",
-        "signature=signature",
-    ]
-    if is_elementwise:
-        # where is only available for elementwise ufuncs, not gufuncs.
-        kwarg_defs.insert(1, "where=True")
-        kwarg_calls.insert(1, "where=where")
-    signature_kwargs = ", ".join(kwarg_defs)
-    call_kwargs = ", ".join(kwarg_calls)
-    code = (
-        f"""def {name}({arg_str}, /, out=None, *, {signature_kwargs}):
-            return _wrapper({arg_str}, {call_kwargs})
-        """
-        )
-    namespace = {"_wrapper": _wrapper}
-    exec(code, namespace)
-    wrapper = namespace[name]
-    wrapper.__doc__ = docstring
-    # The exec namespace has no __name__, so __module__ would otherwise be None,
-    # which confuses Sphinx, inspect, and pickling by reference.
-    wrapper.__module__ = module
     wrapper.__qualname__ = name
-    wrapper.ufunc = ufunc
+    return _make_ufunc_wrapper(
+        wrapper, ufunc, name, arg_names, docstring, module=module
+    )
+
+
+def _reconstruct_wrapper(module, name):
+    """Helper to allow pickling of dynamically generated ufunc wrappers."""
+    return getattr(importlib.import_module(module), name)
+
+
+class _UFuncWrapper:
+    """Base class for ufunc wrappers that preserve relevant ufunc-like behavior.
+
+
+    The attributes ``nin``, `nout``, ``nargs``, ``ntypes``, ``types`` and
+    ``signature`` are preserved. ``identity`` is not preserved because it is
+    not meaningful for special functions. The method ``resolve_dtypes`` is
+    preserved but not other methods.
+    """
+
+    def __init__(self, attributes):
+        self.__attributes = attributes
+
+    @property
+    def nin(self):
+        """The number of inputs."""
+        return self.__attributes["nin"]
+
+    @property
+    def nout(self):
+        """The number of outputs."""
+        return self.__attributes["nout"]
+
+    @property
+    def nargs(self):
+        """The number of arguments."""
+        return self.__attributes["nargs"]
+
+    @property
+    def ntypes(self):
+        """The number of types."""
+        return self.__attributes["ntypes"]
+
+    @property
+    def types(self):
+        """A list with types grouped input->output."""
+        # make a copy so that users cannot mutate the internal types list.
+        return self.__attributes["types"].copy()
+
+    @property
+    def signature(self):
+        """Definition of the core elements a generalized ufunc operates on."""
+        return self.__attributes["signature"]
+
+    def resolve_dtypes(
+            self, dtypes, *, signature=_NO_VALUE, casting=_NO_VALUE, reduction=False
+    ):
+        # The underlying wrapper/ufunc logic handles the actual type resolution
+        kwargs = {"reduction": reduction}
+        # although the defaults for signature and casting are ``None``,
+        # one cannot actually pass these kwargs with ``None`` values.
+        if casting is not _NO_VALUE:
+            kwargs["casting"] = casting
+        if signature is not _NO_VALUE:
+            kwargs["signature"] = signature
+        return self.__attributes["resolve_dtypes"](dtypes, **kwargs)
+
+    def __reduce__(self):
+        # Tells pickle exactly how to reconstruct this specific instance
+        return (_reconstruct_wrapper, (self.__module__, self.__name__,))
+
+    def __repr__(self):
+        return f"<wrapped_ufunc '{self.__name__}'>"
+
+
+_UFuncWrapper.resolve_dtypes.__doc__ = np.ufunc.resolve_dtypes.__doc__
+
+
+def _make_ufunc_wrapper(
+        func,
+        ufunc,
+        name,
+        arg_names,
+        docstring,
+        module="scipy.special",
+):
+    """Create new wrapper that gives ufunc-like behavior to ``func``.
+
+    Parameters
+    ----------
+    func : callable
+        The function to wrap.
+    ufunc : callable
+        The underlying ufunc or ufunc wrapper that ``func`` wraps.
+    name : str
+        Name of the function.
+    arg_names : list[str]
+        Names of the arguments. May include positional default values
+        (e.g., ``["z", "k=0"]``).
+    docstring : str
+        The docstring for the wrapper.
+    module : str, optional
+        Value to use for the ``__module__`` attribute of the wrapper.
+
+    Returns
+    -------
+    callable
+        A wrapper for func that maintains relevant ufunc kwargs, attributes,
+        and methods.
+    """
+    attributes = {
+        "nin": ufunc.nin,
+        "nout": ufunc.nout,
+        "nargs": ufunc.nargs,
+        "ntypes": ufunc.ntypes,
+        "types": ufunc.types,
+        "signature": ufunc.signature,
+        "resolve_dtypes": ufunc.resolve_dtypes
+    }
+
+    arg_str = ", ".join(arg_names)
+    clean_args = [arg.split("=")[0].strip() for arg in arg_names]
+    call_args = ", ".join(clean_args)
+
+    code = (
+        f"""class {name}(_UFuncWrapper):
+            def __call__(self, {arg_str}, /, out=_NO_VALUE, **kwargs):
+                if out is _NO_VALUE:
+                    return func({call_args}, **kwargs)
+                return func({call_args}, out=out, **kwargs)
+
+        """
+    )
+
+    namespace = {
+        "_NO_VALUE": _NO_VALUE,
+        "_UFuncWrapper": _UFuncWrapper,
+        "func": func
+    }
+
+    exec(code, namespace)
+    WrapperClass = namespace[name]
+    WrapperClass.__module__ = module
+    WrapperClass.__name__ = "ufunc_wrapper"
+    WrapperClass.__qualname__ = "ufunc_wrapper"
+
+    wrapper = WrapperClass(attributes)
+
+    wrapper.__doc__ = docstring
+    wrapper.__module__ = module
+    wrapper.__name__ = name
+    wrapper.__qualname__ = name
+
     return wrapper
