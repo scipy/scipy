@@ -2930,7 +2930,10 @@ def _penalty_matrix_banded(t):
     2. ``R`` is the mass (Gram) matrix of the hat functions,
        ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
        closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
-       ``(t[p+2] - t[p+1]) / 6`` off it.
+       ``(t[p+2] - t[p+1]) / 6`` off it. Here the hat function ``N_p``
+       is the degree-one B-spline built on the three knots
+       ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
+       ``t[p+2]``.
     3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
        lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
        accepted by ``scipy.linalg.solveh_banded``.
@@ -3221,9 +3224,12 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
-    xp = array_namespace(x, y)
+    # include the optional arrays so that a namespace or device mismatch
+    # between any of the inputs raises consistently
+    arrays = [x, y] + [a for a in (w, t) if a is not None]
+    xp = array_namespace(*arrays)
     # the NumPy round-trip must return the result on the inputs' device
-    device = xp_result_device(x, y)
+    device = xp_result_device(*arrays)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)

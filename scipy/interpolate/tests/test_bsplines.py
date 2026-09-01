@@ -2690,14 +2690,14 @@ class TestSmoothingSpline:
 
         omega = _dense_omega(ab, m)
 
-        # constants and straight lines have zero curvature: Omega must
-        # NOT penalize them (they span its null space). `greville` is
-        # not samples of a line: it is the *coefficient vector* of the
-        # identity function, sum_j greville[j] * B_j(u) == u exactly,
-        # where greville[j] is the average of three consecutive interior
-        # knots. This linear-reproduction identity holds for any knot
-        # vector, not just equidistant ones (de Boor, "B(asic)-Spline
-        # Basics", eqs. (4.7)-(4.8)).
+        # The null space of Omega is the coefficient vectors of splines
+        # with zero curvature, i.e. of the constant and linear functions.
+        # In the B-spline basis, the constant function 1 has coefficient
+        # vector `ones` (the basis sums to 1), and the linear function
+        # f(u) = u has coefficient vector `greville`, the knot averages:
+        # sum_j greville[j] * B_j(u) == u exactly, for any knot vector,
+        # equidistant or not (de Boor, "B(asic)-Spline Basics",
+        # eqs. (4.7)-(4.8)). Both products below must therefore be zero.
         greville = np.array([t[i+1:i+4].mean() for i in range(m)])
         # zero is meant relative to the size of Omega's entries, which
         # grow like 1/h^3 for narrow knot intervals
@@ -2945,8 +2945,23 @@ class TestSmoothingSpline:
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
 
-    @pytest.mark.parametrize("axis", [0, -1])
-    def test_user_defined_knots_axis(self, axis):
+    def test_mixed_namespaces_rejected(self):
+        # `w` and `t` take part in namespace and device resolution, so
+        # mixing array libraries between the inputs raises instead of
+        # silently coercing
+        # TypeError from array_namespace under SCIPY_ARRAY_API=1,
+        # ValueError from the device resolution otherwise
+        xp_strict = pytest.importorskip("array_api_strict")
+        x = np.linspace(0.0, 1.0, 12)
+        y = np.sin(3 * x)
+        t = xp_strict.asarray(np.r_[[0.0]*4, [0.5], [1.0]*4])
+        with assert_raises((TypeError, ValueError)):
+            make_smoothing_spline(x, y, lam=0.5, t=t)
+        w = xp_strict.asarray(np.ones_like(x))
+        with assert_raises((TypeError, ValueError)):
+            make_smoothing_spline(x, y, w=w, lam=0.5)
+
+    def test_user_defined_knots_axis(self):
         # batched (n-D) `y` is not supported on the user-knots path yet,
         # so for 1-D `y` the only valid axes are 0 and -1 and must give
         # identical results; -1 must be normalized before being stored on
@@ -2954,7 +2969,7 @@ class TestSmoothingSpline:
         x = np.linspace(0.0, 1.0, 12)
         y = np.sin(3 * x)
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
-        spl = make_smoothing_spline(x, y, lam=0.5, t=t, axis=axis)
+        spl = make_smoothing_spline(x, y, lam=0.5, t=t, axis=-1)
         assert spl.axis == 0
         ref = make_smoothing_spline(x, y, lam=0.5, t=t, axis=0)
         xp_assert_close(spl(x), ref(x), atol=1e-14)
