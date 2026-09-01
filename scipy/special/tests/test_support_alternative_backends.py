@@ -455,7 +455,13 @@ def test_mixed_arrays_and_python_scalars(xp):
 @pytest.mark.parametrize("float_dtype", [np.float32, np.float64])
 def test_poisson_binom_cdf(xp, int_dtype, float_dtype):
     k = np.asarray([0, 1, 2, 3, 4, 5], dtype=int_dtype)
-    p = np.asarray([0.2, 0.2, 0.4, 0.4, 0.6, 0.6, 0.8, 0.8], dtype=float_dtype)
+    p = np.asarray(
+        [
+            [0.2, 0.4, 0.6, 0.8],
+            [0.1, 0.3, 0.5, 0.7],
+        ],
+        dtype=float_dtype,
+    )
     ref = special.poisson_binom_cdf(k, p)
     res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p))
     xp_assert_close(res, ref)
