@@ -465,3 +465,21 @@ def test_poisson_binom_cdf(xp, int_dtype, float_dtype):
     ref = special.poisson_binom_cdf(k, p)
     res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p))
     xp_assert_close(res, ref)
+
+
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("axis", [-1, 0, 1])
+def test_poisson_binom_cdf_axis(xp, axis):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=np.int32)[:, None]
+    p = np.asarray(
+        [
+            [0.1, 0.2, 0.3, 0.4],
+            [0.2, 0.3, 0.4, 0.5],
+            [0.3, 0.4, 0.5, 0.6],
+            [0.4, 0.5, 0.6, 0.7],
+        ],
+        dtype=np.float64,
+    )
+    ref = special.poisson_binom_cdf(k, p, axis=axis)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p), axis=axis)
+    xp_assert_close(res, ref)
