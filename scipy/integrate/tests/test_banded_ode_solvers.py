@@ -181,9 +181,8 @@ def test_banded_ode_solvers():
              [False, True],      # use_jac
              [False, True],      # with_jacobian
              [False, True]]      # banded
-        for solver_method, use_jac, with_jac, banded in itertools.product(*p):
-            check_real(idx, solver_method[0], solver_method[1], use_jac, with_jac,
-                       banded)
+        for (solver, method), use_jac, with_jac, banded in itertools.product(*p):
+            check_real(idx, solver, method, use_jac, with_jac, banded)
 
     # --- Complex arrays for testing the "zvode" solver ---
 
