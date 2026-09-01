@@ -280,6 +280,11 @@ class _FuncInfo:
             nin, nout = self.func.nin, self.func.nout
             if self.is_elementwise:
                 def f(*args, _f=_f, xp=xp, **kwargs):
+                    if kwargs:
+                        raise NotImplementedError(
+                            "ufunc keyword arguments are not supported "
+                            f"for {self.name} with backend {xp.__name__}."
+                        )
                     dtypes = (
                         arg.dtype if is_jax_array(arg) else type(arg) for arg in args
                     )
@@ -302,8 +307,7 @@ class _FuncInfo:
                     else:
                         shape = None
                     return xpx.lazy_apply(
-                        _f, *args, shape=shape, xp=xp, as_numpy=True, dtype=out_dtype,
-                        **kwargs
+                        _f, *args, shape=shape, xp=xp, as_numpy=True, dtype=out_dtype
                     )
             else:
                 # gufunc path.
@@ -317,6 +321,12 @@ class _FuncInfo:
                 # to get the output shape which can no longer be inferred directly by
                 # broadcasting the input shapes.
                 def f(*args, _f=_f, xp=xp, shape_mapper=shape_mapper, **kwargs):
+                    axis = kwargs.pop("axis", -1)
+                    if kwargs:
+                        raise NotImplementedError(
+                            "ufunc keyword arguments other than `axis` are not "
+                            f"supported for {self.name} with backend {xp.__name__}."
+                        )
                     dtypes = (
                         arg.dtype if is_jax_array(arg) else type(arg)
                         for arg in args
@@ -332,14 +342,13 @@ class _FuncInfo:
                         for arg, dtype in zip(args, dtypes[:nin])
                     ]
 
-                    axis = kwargs.get("axis", -1)
                     shape = shape_mapper(
                         *(arg.shape for arg in args), axis
                     )
 
                     return xpx.lazy_apply(
                         _f, *args, shape=shape, xp=xp,
-                        as_numpy=True, dtype=out_dtype, **kwargs
+                        as_numpy=True, dtype=out_dtype, axis=axis
                     )
         else:
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
@@ -347,6 +356,11 @@ class _FuncInfo:
                     raise NotImplementedError(
                         f"`out` parameter is not supported for {self.name}"
                         f" with backend {xp.__name__}."
+                    )
+                if self.is_ufunc and kwargs:
+                    raise NotImplementedError(
+                        "ufunc keyword arguments are not supported "
+                        f"for {self.name} with backend {xp.__name__}."
                     )
                 # The NumPy round-trip must return results on the device of the
                 # input arrays, not on the backend's default device (see gh-22680)
