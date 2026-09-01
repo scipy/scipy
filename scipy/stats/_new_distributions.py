@@ -487,11 +487,12 @@ class Binomial(DiscreteDistribution):
         return combiln + special.xlogy(x, p) + special.xlog1py(n-x, -p)
 
     def _cdf_formula(self, x, *, n, p, **kwargs):
-        return scu._binom_cdf(x, n, p)
+        return scu._binom_cdf(np.floor(x), n, p)
 
     def _logcdf_formula(self, x, *, n, p, **kwargs):
         # todo: add this strategy to infrastructure more generally, but allow dist
         #   author to specify threshold other than median in case median is expensive
+        x = np.floor(x)
         median = self._icdf_formula(0.5, n=n, p=p)
         return xpx.apply_where(x < median, (x, n, p),
             lambda *args: np.log(scu._binom_cdf(*args)),
@@ -499,9 +500,10 @@ class Binomial(DiscreteDistribution):
         )
 
     def _ccdf_formula(self, x, *, n, p, **kwargs):
-        return scu._binom_sf(x, n, p)
+        return scu._binom_sf(np.floor(x), n, p)
 
     def _logccdf_formula(self, x, *, n, p, **kwargs):
+        x = np.floor(x)
         median = self._icdf_formula(0.5, n=n, p=p)
         return xpx.apply_where(x < median, (x, n, p),
             lambda *args: np.log1p(-scu._binom_cdf(*args)),
