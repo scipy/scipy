@@ -6,6 +6,7 @@ from numpy.testing import assert_equal, assert_allclose
 from scipy.special._ufuncs import (
     _iv_ratio as iv_ratio,
     _iv_ratio_c as iv_ratio_c,
+    _iv_ratioinv as iv_ratioinv,
 )
 
 
@@ -247,3 +248,42 @@ class TestIvRatioC:
         t = x / v
         expected = 1 - t / (1 + np.hypot(1, t))
         assert_allclose(iv_ratio_c(v, x), expected, rtol=4e-16, atol=0)
+
+
+class TestIvRatioInv:
+
+    @pytest.mark.parametrize('v,x,r', [
+        (10, 100000, 0.9999050040375403),
+        (1, 0.1, 0.04993760398793892),
+        (0.5, 0.001, 0.0009999996666668),
+        (1000, 500, 0.23607911616885813),
+        (100, 1e-15, 5e-18),
+        (1e5, 5, 2.4999999984375157e-05),
+        (1e5, 1e5, 0.41421399130458997),
+        (1e5, 1e10, 0.999990000099999),
+        (0.5, 18.714973875118524, np.nextafter(1.0, 0.0)),
+        (0.5, np.finfo(float).tiny, np.finfo(float).tiny),
+    ])
+    def test_against_reference_values(self, v, x, r):
+        """The ratios were computed using mpmath with 1000 digits."""
+        assert_allclose(iv_ratioinv(v, r), x, rtol=1e-10, atol=0)
+
+    @pytest.mark.parametrize('v,r', [
+        (np.nan, 0.5),
+        (1, np.nan),
+    ])
+    def test_nan_propagation(self, v, r):
+        assert_equal(iv_ratioinv(v, r), np.nan)
+
+    @pytest.mark.parametrize('v,r', [
+        (0.4, 0.5),
+        (1, -1),
+        (1, 2),
+        (np.inf, 0.5),
+    ])
+    def test_domain_error(self, v, r):
+        assert_equal(iv_ratioinv(v, r), np.nan)
+
+    def test_domain_boundary(self):
+        assert_equal(iv_ratioinv(1, 0), 0)
+        assert_equal(iv_ratioinv(1, 1), np.inf)
