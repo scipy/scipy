@@ -388,7 +388,7 @@ def test_ufunc_kwargs(nfo):
     if nfo.is_elementwise:
         out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
     else:
-        shape = nfo.shape_mapper(*(arg.shape for arg in args))
+        shape = nfo.shape_mapper(*(arg.shape for arg in args), -1)
         out_shapes = (shape,) if nout == 1 else shape
 
     if nout == 1:

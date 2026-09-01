@@ -332,8 +332,9 @@ class _FuncInfo:
                         for arg, dtype in zip(args, dtypes[:nin])
                     ]
 
+                    axis = kwargs.get("axis", -1)
                     shape = shape_mapper(
-                        *(arg.shape for arg in args), **kwargs
+                        *(arg.shape for arg in args), axis
                     )
 
                     return xpx.lazy_apply(
@@ -488,13 +489,12 @@ def _stdtrit(xp, spsx):
     return __stdtrit
 
 
-def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, **kwargs):
-    axis = kwargs.get("axis", -1)
-
-    if "axes" in kwargs:
-        axis = kwargs["axes"][1][0]
-
-    axis %= len(p_shape)
+def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis):
+    axis = operator.index(axis)
+    if axis < 0:
+        axis += len(p_shape)
+    if not 0 <= axis < len(p_shape):
+        raise np.exceptions.AxisError(axis, ndim=len(p_shape))
     p_batch_shape = p_shape[:axis] + p_shape[axis + 1:]
     return np.broadcast_shapes(k_shape, p_batch_shape)
 
