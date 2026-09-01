@@ -162,9 +162,7 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.4.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.4.0 to 3.6.0. It also provides some of the
-fixed-api auxiliary routines.
+in LAPACK 3.9.1. It also provides some of the fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.
@@ -666,7 +664,7 @@ def _get_pxd_preamble(lib_name, ilp64=False):
 
 def generate_decl_pxd(name, return_type, argnames, argtypes):
     """Create Cython header declaration for BLAS/LAPACK function."""
-    args = ', '.join([' *'.join(arg) for arg in zip(argtypes, argnames)])
+    args = ', '.join([t + '*' for t in argtypes])
     return f"cdef {return_type} {name}({args}) noexcept nogil\n"
 
 

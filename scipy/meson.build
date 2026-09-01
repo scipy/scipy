@@ -22,14 +22,6 @@ thread_dep = dependency('threads', required: false)
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
 _numpy_dep = dependency('numpy')
-f2py_freethreading_arg = []
-if _numpy_dep.version().version_compare('>=2.1.0')
-  f2py_freethreading_arg = ['--free-threading']
-  message('f2py free-threading enabled')
-else
-  message('f2py free-threading disabled; need numpy >=2.1.0.')
-  message('See https://github.com/mesonbuild/meson/issues/14651')
-endif
 
 # NumPy include directory - needed in all submodules
 # The chdir is needed because within numpy there's an `import signal`
@@ -80,11 +72,12 @@ inc_np = include_directories(incdir_numpy)
 numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
 np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
-incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
-inc_f2py = include_directories(incdir_f2py)
-fortranobject_c = incdir_f2py / 'fortranobject.c'
-
-pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+pybind11_dep = declare_dependency(
+  dependencies: dependency('pybind11', version: '>=2.13.2'),
+  # https://github.com/pybind/pybind11/pull/6155
+  # https://github.com/pybind/pybind11/pull/6156
+  compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
+)
 
 # Pythran include directory and build flags
 if use_pythran
@@ -123,19 +116,6 @@ cpp_args_pythran = [
   '-DPYTHRAN_BLAS_NONE'
 ]
 
-# Share this object across multiple modules.
-fortranobject_lib = static_library('_fortranobject',
-  fortranobject_c,
-  c_args: numpy_nodepr_api,
-  dependencies: py3_dep,
-  include_directories: [inc_np, inc_f2py],
-  gnu_symbol_visibility: 'hidden',
-)
-fortranobject_dep = declare_dependency(
-  link_with: fortranobject_lib,
-  include_directories: [inc_np, inc_f2py],
-)
-
 cdata = configuration_data()
 
 # Test variable attribute to use for thread-local storage;
@@ -148,7 +128,6 @@ check_tls_attrs = [
 if is_windows and not is_mingw
   check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
 endif
-f2py_tls_define = ''
 foreach tls_attrs: check_tls_attrs
   attr = tls_attrs[0]
   code = f'''
@@ -166,7 +145,6 @@ foreach tls_attrs: check_tls_attrs
   '''
   if cc.compiles(code, name: tls_attrs[0])
     cdata.set10(tls_attrs[1], true)
-    f2py_tls_define = tls_attrs[0]
   endif
 endforeach
 
@@ -177,35 +155,6 @@ scipy_config_h = configure_file(
   output: 'scipy_config.h',
   configuration: cdata,
   install: false
-)
-
-_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
-fortranobject_dep = declare_dependency(
-  dependencies: fortranobject_dep,
-  compile_args: _f2py_c_args,
-)
-
-f2py = find_program('f2py')
-# It should be quite rare for the `f2py` executable to not be the one from
-# `numpy` installed in the Python env we are building for (unless we are
-# cross-compiling). If it is from a different env, that is still fine as long
-# as it's not too old. We are only using f2py as a code generator, and the
-# output is not dependent on platform or Python version (see gh-20612 for more
-# details).
-# This should be robust enough. If not, we can make this more complex, using
-# a fallback to `python -m f2py` rather than erroring out.
-f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
-if f2py_version.version_compare('<'+min_numpy_version)
-  error(f'Found f2py executable is too old: @f2py_version@')
-endif
-
-# Note: this generator cannot handle:
-# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
-# 2. targets with #include's (due to no `depend_files` - see feature request
-#    at meson#8295)
-f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@', '@EXTRA_ARGS@'] + f2py_freethreading_arg,
-  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
 
@@ -558,6 +507,7 @@ _cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-
 _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
 _cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
 _cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
+_cpp_Wno_unused_template = cpp.get_supported_arguments('-Wno-unused-template')
 _cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
 _cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
 
@@ -567,28 +517,9 @@ cpp_args_pythran += [
   _cpp_Wno_unused_but_set_variable,
   _cpp_Wno_unused_function,
   _cpp_Wno_unused_variable,
+  _cpp_Wno_unused_template, # https://github.com/serge-sans-paille/pythran/issues/2477
   _cpp_Wno_int_in_bool_context,
 ]
-
-f2py_ilp64_opts = []
-if use_ilp64
-  # Write out a mapping file for f2py for defaulting to ILP64
-  conf_data = configuration_data()
-  if cc.sizeof('long') == 8
-    conf_data.set('int64_name', 'long')
-  elif cc.sizeof('long long') == 8
-    conf_data.set('int64_name', 'long long')
-  else
-    error('Neither `long` nor `long long` is 64-bit, giving up.')
-  endif
-  int64_f2cmap = configure_file(
-    input: '_build_utils/int64.f2cmap.in',
-    output: 'int64.f2cmap',
-    configuration: conf_data,
-    install: false,
-  )
-  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
-endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
@@ -640,7 +571,9 @@ if cc.get_id() != 'msvc'
 endif
 
 cython_c_args += [use_math_defines]
-cython_cpp_args = cython_c_args
+# this suppresses warnings fixed by
+# https://github.com/cython/cython/commit/8208a1658bb6a2c97fb30a9d53d8ac3addfb662a
+cython_cpp_args = cython_c_args + _cpp_Wno_unused_template
 
 compilers = {
   'C': cc,
@@ -661,6 +594,14 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
+    )
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
+    )
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran

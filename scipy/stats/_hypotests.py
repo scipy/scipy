@@ -12,7 +12,7 @@ from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array, _count_nonmasked, is_marray,
-                                   _masked_apply, xp_device)
+                                   _masked_apply, xp_device, xp_result_device)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -130,7 +130,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # x and y are converted to arrays by the decorator
     # and `axis` is guaranteed to be -1.
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    t = xp.asarray(t, dtype=x.dtype)
+    t = xp.asarray(t, dtype=x.dtype, device=xp_result_device(t, x))
     # check if x and y are valid inputs
     nx, ny = x.shape[-1], y.shape[-1]
     if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
@@ -541,11 +541,13 @@ def _cdf_cvm(x, n=None, *, xp=None):
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
         y = xp.zeros_like(x, dtype=x.dtype)
+        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype, device=xp_device(y)),
+                            y.shape)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
-        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n))
-                               + _psi1_mod(x[sup], xp=xp) / n)
+        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n[sup]))
+                               + _psi1_mod(x[sup], xp=xp) / n[sup])
         y = xpx.at(y)[x >= n/3].set(1.)
 
     return y[()] if y.ndim == 0 else y
@@ -1841,7 +1843,8 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
         if is_marray(xp):
             u, count_x, count_y = u.data, count_x.data, count_y.data
         p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
-        p = xp.asarray(p, dtype=dtype, device=xp_device(t))
+        mask = {'mask': t.mask} if is_marray(xp) else {}
+        p = xp.asarray(p, dtype=dtype, device=xp_device(t), **mask)
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 

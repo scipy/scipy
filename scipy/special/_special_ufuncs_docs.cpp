@@ -39,7 +39,7 @@ const char *_beta_ppf_doc = R"(
 const char *_binom_cdf_doc = R"(
     _binom_cdf(x, n, p)
 
-    Cumulative density function of binomial distribution.
+    Cumulative distribution function of binomial distribution.
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ const char *_hypergeom_pmf_doc = R"(
 const char *_hypergeom_cdf_doc = R"(
     _hypergeom_cdf(x, r, N, M)
 
-    Cumulative density function of hypergeometric distribution.
+    Cumulative distribution function of hypergeometric distribution.
 
     Parameters
     ----------
@@ -352,7 +352,7 @@ const char *_invgauss_isf_doc = R"(
     )";
 
 const char *_invgauss_ppf_doc = R"(
-    _invgauss_ppf(x, mu)
+    _invgauss_ppf(x, mu, s)
 
     Percent point function of inverse gaussian distribution.
 
@@ -361,6 +361,8 @@ const char *_invgauss_ppf_doc = R"(
     x : array_like
         Positive real-valued
     mu : array_like
+        Positive, real-valued parameters
+    s : array_like
         Positive, real-valued parameters
 
     Returns
@@ -479,7 +481,7 @@ const char *_landau_isf_doc = R"(
 const char *_nbinom_cdf_doc = R"(
     _nbinom_cdf(x, r, p)
 
-    Cumulative density function of negative binomial distribution.
+    Cumulative distribution function of negative binomial distribution.
 
     Parameters
     ----------
@@ -963,7 +965,7 @@ const char *_stirling2_inexact_doc = R"(
 const char *hyp0f1_doc = R"(
     hyp0f1(v, z, out=None)
 
-    Confluent hypergeometric limit function 0F1.
+    Confluent hypergeometric limit function :math:`{}_0F_1(; v; z)`.
 
     Parameters
     ----------
@@ -983,11 +985,12 @@ const char *hyp0f1_doc = R"(
     -----
     This function is defined as:
 
-    .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
+    .. math:: {}_0F_1(; v; z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
 
-    It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
-    and satisfies the differential equation :math:`f''(z) + vf'(z) =
-    f(z)`. See [1]_ for more information.
+    where :math:`(\cdot)_k` is the Pochhammer symbol; see `poch`. It is also
+    the limit as :math:`q \to \infty` of :math:`{}_1F_1(q; v; z/q)`,
+    and satisfies the differential equation :math:`z f''(z) + vf'(z) = f(z)`.
+    See [1]_ for more information.
 
     References
     ----------
@@ -1029,7 +1032,7 @@ const char *hyp0f1_doc = R"(
 const char *hyp1f1_doc = R"(
     hyp1f1(a, b, x, out=None)
 
-    Confluent hypergeometric function 1F1.
+    Confluent hypergeometric function :math:`{}_1F_1(a; b; x)`.
 
     The confluent hypergeometric function is defined by the series
 
@@ -1788,7 +1791,7 @@ const char *kl_div_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Values of the Kullback-Liebler divergence.
+        Values of the Kullback-Leibler divergence.
 
     See Also
     --------
@@ -2748,7 +2751,7 @@ const char *gdtrix_doc = R"(
         Probability values.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`. `out` is then the
+        matches the broadcast result of `a`, `b` and `p`. `out` is then the
         array returned by the function.
 
     Returns
@@ -3043,7 +3046,7 @@ const char *_gen_harmonic_doc = R"(
 
     Internal private function.
 
-    Compute sum_{i=1}^{n} i**-a for 1 <= m <= n.
+    Compute sum_{i=1}^{n} i**-a for n >= 1.
 
     This is the generalized harmonic number.
 
@@ -3065,7 +3068,7 @@ const char *_normalized_gen_harmonic_doc = R"(
     Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
 
     When j, k and n are type double, nan is returned if any are nan.
-    Otherwise when the type is double it is assumed that i, j and k have integer
+    Otherwise when the type is double it is assumed that j and k have integer
     values that are between 0 and 2**53.  This is not checked by the function.
     Failure to ensure this condition could result in invalid results and
     possibly an infinite loop in the underlying C++ code.
@@ -3313,7 +3316,7 @@ const char *betainc_doc = R"doc(
     >>> sc.betainc(a, b, x)
     0.8148904036225296
 
-    This functions satisfies the relationship
+    This function satisfies the relationship
     :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
 
     >>> sc.betainc(2.2, 3.1, 0.4)
@@ -3425,7 +3428,7 @@ const char *betainccinv_doc = R"doc(
     Returns
     -------
     scalar or ndarray
-        Value of the inverse of the regularized incomplete beta function
+        Value of the inverse of the complemented regularized incomplete beta function
 
     See Also
     --------
@@ -3586,7 +3589,7 @@ const char *btdtria_doc = R"doc(
     )doc";
 
 const char *btdtrib_doc = R"doc(
-    btdtria(a, p, x, out=None)
+    btdtrib(a, p, x, out=None)
 
     Inverse of `betainc` with respect to `b`.
 
@@ -3890,7 +3893,7 @@ const char *chndtrinc_doc = R"(
     --------
     chndtr : Noncentral chi-squared distribution CDF
     chndtridf : Inverse of `chndtr` with respect to `df`
-    chndtrinc : Inverse of `chndtr` with respect to `nc`
+    chndtrix : Inverse of `chndtr` with respect to `x`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
     Notes
@@ -3943,8 +3946,8 @@ const char *chndtrix_doc = R"(
     -------
     x : scalar or ndarray
         Value so that the probability a non-central Chi square random variable
-        with `df` degrees of freedom and non-centrality, `nc`, is greater than
-        `x` equals `p`.
+        with `df` degrees of freedom and non-centrality, `nc`, is less than or
+        equal to `x` equals `p`.
 
     See Also
     --------
@@ -4058,7 +4061,7 @@ const char *_sinpi_doc = R"(
 const char *_skewnorm_cdf_doc = R"(
     _skewnorm_cdf(x, l, sc, sh)
 
-    Cumulative density function of skewnorm distribution.
+    Cumulative distribution function of skewnorm distribution.
 
     Parameters
     ----------
@@ -5525,7 +5528,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
+        L = \frac{1}{n} \sum_{i=1}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
@@ -6704,7 +6707,7 @@ const char *gamma_doc = R"(
     which, combined with the fact that :math:`\Gamma(1) = 1`, implies
     the above identity for :math:`z = n`.
 
-    The gamma function has poles at non-negative integers and the sign
+    The gamma function has poles at non-positive integers and the sign
     of infinity as z approaches each pole depends upon the direction in
     which the pole is approached. For this reason, the consistent thing
     is for gamma(z) to return NaN at negative integers, and to return
@@ -7146,7 +7149,7 @@ const char *gammasgn_doc = R"(
     >>> sc.gammasgn([1, 2, 3, 4])
     array([1., 1., 1., 1.])
 
-    It alternates between -1 and 1 for negative integers.
+    It alternates between -1 and 1 for negative half-integers.
 
     >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
     array([-1.,  1., -1.,  1.])
@@ -7376,7 +7379,7 @@ const char *hankel2e_doc = R"(
 const char *hyp2f1_doc = R"(
     hyp2f1(a, b, c, z, out=None)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
+    Gauss hypergeometric function :math:`{}_2F_1(a, b; c; z)`.
 
     Parameters
     ----------
@@ -7403,22 +7406,23 @@ const char *hyp2f1_doc = R"(
 
     .. math::
 
-       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       {}_2F_1(a, b; c; z) = \sum_{n=0}^\infty
        \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
 
     and defined on the rest of the complex z-plane by analytic
     continuation [1]_.
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
-    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+    :math:`a` or :math:`b` is a nonpositive integer, the series terminates and
+    the result is a polynomial.
 
     The implementation for complex values of ``z`` is described in [2]_,
     except for ``z`` in the region defined by
 
     .. math::
 
-         0.9 <= \left|z\right| < 1.1,
-         \left|1 - z\right| >= 0.9,
-         \mathrm{real}(z) >= 0
+         0.9 \le \left|z\right| < 1.1,
+         \left|1 - z\right| \ge 0.9,
+         \mathrm{Re}(z) \ge 0
 
     in which the implementation follows [4]_.
 
@@ -7483,7 +7487,7 @@ const char *hyp2f1_doc = R"(
 const char *hyperu_doc = R"(
     hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U.
+    Confluent hypergeometric function :math:`U(a, b, x)`.
 
     It is defined as the solution to the equation
 
@@ -7511,7 +7515,7 @@ const char *hyperu_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Values of `U`
+        Values of :math:`U(a, b, x)`
 
     References
     ----------
@@ -7529,7 +7533,7 @@ const char *hyperu_doc = R"(
     >>> sc.hyperu(1, 1, x)
     array([nan, nan, nan, nan, nan])
 
-    It approaches zero as `x` goes to infinity.
+    For :math:`a = 1` and :math:`b = 1`, it approaches zero as `x` goes to infinity.
 
     >>> x = np.array([1, 10, 100])
     >>> sc.hyperu(1, 1, x)
@@ -8515,6 +8519,55 @@ const char *iv_ratio_c_doc = R"(
 
     The accuracy is tested numerically with 600,000 trials.  The peak
     relative error is `9.0e-16`; the RMSE is `1.5e-16`.
+
+    )";
+
+const char *iv_ratioinv_doc = R"(
+    _iv_ratioinv(v, r, out=None)
+
+    Internal function.
+
+    Return the nonnegative value `x` such that ``_iv_ratio(v, x) == r``.
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order. Must be finite and `>= 0.5`.
+    r : array_like of float
+        Ratio. Must be between `0` and `1`, inclusive.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        The argument of `_iv_ratio`. The returned value is nonnegative.
+
+        If either `v` or `r` is `nan`, `nan` is returned. Otherwise, the
+        special values are:
+
+        - If `v < 0.5`, `v == +inf`, `r < 0`, or `r > 1`, set "domain"
+          error and return `nan`.
+        - If `r == 0`, return `0`.
+        - If `r == 1`, return `+inf`.
+
+    See Also
+    --------
+    _iv_ratio : ratio of modified Bessel functions of adjacent orders
+    _iv_ratio_c : complement of the ratio of modified Bessel functions of
+        adjacent orders
+
+    Notes
+    -----
+    The root is computed using Chandrupatla's algorithm. Initial bounds are
+    obtained by inverting bounds on ratios of modified Bessel functions from
+    [1]_. If these bounds do not bracket the root due to rounding error, a
+    monotonic bracketing algorithm is used as a fallback.
+
+    References
+    ----------
+    .. [1] Amos, D. E. (1974). "Computation of Modified Bessel Functions and
+           Their Ratios." Mathematics of Computation, 28(125):239-251.
 
     )";
 
@@ -12354,6 +12407,51 @@ const char *stdtr_doc = R"(
     True
     )";
 
+const char *stdtridf_doc = R"(
+    stdtridf(p, t, out=None)
+
+    Inverse of `stdtr` vs df.
+
+    Returns the argument df such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    t : array_like
+        Upper bound of the integral
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Value of `df` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : Student t distribution
+
+    Examples
+    --------
+    Compute the student t cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import stdtr, stdtridf
+    >>> df, x = 5, 2
+    >>> cdf_value = stdtr(df, x)
+    >>> cdf_value
+    0.9490302605850709
+
+    Verify that `stdtridf` recovers the original value for `df` given
+    the CDF value and `x`.
+
+    >>> stdtridf(cdf_value, x)
+    5.000000000000012
+    )";
+    
 const char *stdtrit_doc = R"(
     stdtrit(df, p, out=None)
 
@@ -12411,7 +12509,7 @@ const char *stdtrit_doc = R"(
     >>> x = 1
     >>> cdf_value = stdtr(df, x)
     >>> stdtrit(df, cdf_value)
-    0.9999999994418539
+    1.0000000000000007
 
     Plot the function for three different degrees of freedom.
 

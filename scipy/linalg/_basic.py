@@ -1469,7 +1469,7 @@ lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
 def _pinv_signature(*args, **kwargs):
-    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
+    return "(i,j)->(i,j),int()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
 
 
 @_apply_over_batch(('a', 2), signature=_pinv_signature)
@@ -1706,7 +1706,8 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
 
 def _matrix_balance_signature(*args, **kwargs):
-    return "(i,i)->(i,i),(2,i)" if kwargs.get('separate') else "(i,i)->(i,i)"
+    return ("(i,i)->(i,i),(2,i)" if kwargs.get('separate')
+            else "(i,i)->(i,i),(i,i)")
 
 
 @_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
@@ -1769,10 +1770,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     LAPACK routines.
 
     The algorithm is based on the well-known technique of [1]_ and has
-    been modified to account for special cases. See [2]_ for details
-    which have been implemented since LAPACK v3.5.0. Before this version
-    there are corner cases where balancing can actually worsen the
-    conditioning. See [3]_ for such examples.
+    been modified to account for special cases. See [2]_ and [3]_
+    for details.
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.

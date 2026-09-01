@@ -65,6 +65,8 @@ if needs_lp64_fblas
   # LAPACK auxiliaries).
   py3.extension_module('_fblas',
     [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
       'src/blas/blas_calls.hpp',
       'src/blas/blas_helpers.hpp',
       'src/blas/blas_l1.cpp',
@@ -73,7 +75,7 @@ if needs_lp64_fblas
       'src/blas/blas_docs.cpp',
       'src/blas/blas_module.cpp',
     ],
-    include_directories: ['src/blas'],
+    include_directories: ['src/wrapper', 'src/blas'],
     link_args: version_link_args,
     dependencies: [np_dep, lapack_lp64_dep],
     link_with: blas_lapack_wrapper_lib_lp64,
@@ -81,30 +83,26 @@ if needs_lp64_fblas
     subdir: 'scipy/linalg'
   )
 
-  flapack_module = custom_target('flapack_module',
-    output: ['_flapackmodule.c'],
-    input: 'flapack.pyf.src',
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
-    depend_files:
-      [
-        'flapack_user.pyf.src',
-        'flapack_gen.pyf.src',
-        'flapack_gen_banded.pyf.src',
-        'flapack_gen_tri.pyf.src',
-        'flapack_sym_herm.pyf.src',
-        'flapack_pos_def.pyf.src',
-        'flapack_pos_def_tri.pyf.src',
-        'flapack_other.pyf.src',
-      ]
-  )
-
-  # Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
-  # in flapack_other.pyf.src
   py3.extension_module('_flapack',
-    flapack_module,
-    c_args: [Wno_empty_body],
+    [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
+      'src/lapack/lapack_callback.hpp',
+      'src/lapack/lapack_calls.hpp',
+      'src/lapack/lapack_helpers.hpp',
+      'src/lapack/lapack_docs.cpp',
+      'src/lapack/lapack_gen.cpp',
+      'src/lapack/lapack_gen_banded.cpp',
+      'src/lapack/lapack_gen_tri.cpp',
+      'src/lapack/lapack_pos_def.cpp',
+      'src/lapack/lapack_pos_def_tri.cpp',
+      'src/lapack/lapack_sym_herm.cpp',
+      'src/lapack/lapack_other.cpp',
+      'src/lapack/lapack_module.cpp',
+    ],
+    include_directories: ['src/wrapper', 'src/lapack'],
     link_args: version_link_args,
-    dependencies: [lapack_lp64_dep, fortranobject_dep],
+    dependencies: [np_dep, lapack_lp64_dep],
     link_with: blas_lapack_wrapper_lib_lp64,
     install: true,
     subdir: 'scipy/linalg'
@@ -127,7 +125,7 @@ if use_ilp64
       'src/blas/blas_docs.cpp',
       'src/blas/blas_module.cpp',
     ],
-    include_directories: ['src/blas'],
+    include_directories: ['src/wrapper', 'src/blas'],
     link_args: version_link_args,
     dependencies: [np_dep, lapack_dep],
     link_with: blas_lapack_wrapper_lib_ilp64,
@@ -135,32 +133,29 @@ if use_ilp64
     subdir: 'scipy/linalg'
   )
 
-  flapack64_module = custom_target('flapack64_module',
-    output: ['_flapack_64module.c'],
-    input: 'flapack_64.pyf.src',
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
-    depend_files:
-      [
-        'flapack_user.pyf.src',
-        'flapack_gen.pyf.src',
-        'flapack_gen_banded.pyf.src',
-        'flapack_gen_tri.pyf.src',
-        'flapack_sym_herm.pyf.src',
-        'flapack_pos_def.pyf.src',
-        'flapack_pos_def_tri.pyf.src',
-        'flapack_other.pyf.src',
-        int64_f2cmap,
-      ]
-  )
-
+  # ILP64 sibling of `_flapack`, same sources; the module name follows -DHAVE_BLAS_ILP64.
   py3.extension_module('_flapack_64',
-    flapack64_module,
-    c_args: [Wno_empty_body],
+    [
+      'src/wrapper/wrapper_types.hpp',
+      'src/wrapper/wrapper_helpers.hpp',
+      'src/lapack/lapack_callback.hpp',
+      'src/lapack/lapack_calls.hpp',
+      'src/lapack/lapack_helpers.hpp',
+      'src/lapack/lapack_docs.cpp',
+      'src/lapack/lapack_gen.cpp',
+      'src/lapack/lapack_gen_banded.cpp',
+      'src/lapack/lapack_gen_tri.cpp',
+      'src/lapack/lapack_pos_def.cpp',
+      'src/lapack/lapack_pos_def_tri.cpp',
+      'src/lapack/lapack_sym_herm.cpp',
+      'src/lapack/lapack_other.cpp',
+      'src/lapack/lapack_module.cpp',
+    ],
+    include_directories: ['src/wrapper', 'src/lapack'],
     link_args: version_link_args,
-    dependencies: [lapack_dep, fortranobject_dep],
+    dependencies: [np_dep, lapack_dep],
     link_with: blas_lapack_wrapper_lib_ilp64,
     install: true,
-    link_language: link_language_blas_lapack,
     subdir: 'scipy/linalg'
   )
 endif
