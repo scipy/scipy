@@ -9,11 +9,22 @@ import warnings
 from scipy._external.packaging_version import version
 
 
-def _parse_core_ndims(signature):
-    """Return tuple of num core dims per input from gufunc signature."""
-    input_sig = signature.split('->')[0]
-    groups = re.findall(r"\((.*?)\)", input_sig)
-    return tuple(0 if not g.strip() else g.count(',') + 1 for g in groups)
+def _parse_core_dims(signature):
+    input_sig, output_sig = signature.split("->")
+
+    input_groups = re.findall(r"\((.*?)\)", input_sig)
+    output_groups = re.findall(r"\((.*?)\)", output_sig)
+
+    input_core_dims = tuple(
+        tuple(dim.strip() for dim in group.split(",") if dim.strip())
+        for group in input_groups
+    )
+    output_core_dims = tuple(
+        tuple(dim.strip() for dim in group.split(",") if dim.strip())
+        for group in output_groups
+    )
+
+    return input_core_dims, output_core_dims
 
 
 def _resolve_alloc_order(args, order):
@@ -41,6 +52,28 @@ def _resolve_alloc_order(args, order):
                 return 'F'
             return 'C'
     return order  # Returns 'C' or 'F'
+
+
+def _resolve_out_shapes(
+    args, input_core_dims, output_core_dims, batch_shape
+):
+    """Resolve output shapes for a gufunc."""
+
+    core_dim_sizes = {}
+
+    for arg, core_dims in zip(args, input_core_dims):
+        for dim, size in zip(core_dims, arg.shape[-len(core_dims):]):
+            if dim in core_dim_sizes and core_dim_sizes[dim] != size:
+                raise ValueError(
+                    f"inconsistent size for core dimension {dim!r}: "
+                    f"{core_dim_sizes[dim]} vs {size}"
+                )
+            core_dim_sizes[dim] = size
+
+    return tuple(
+        batch_shape + tuple(core_dim_sizes[dim] for dim in core_dims)
+        for core_dims in output_core_dims
+    )
 
 
 def _allocate_out(args, shape, dtype, order, subok):
@@ -157,11 +190,14 @@ def _with_cache_optimization(
 
     # Need to keep track of the number of core dimensions for each input
     # since core dimensions don't participate in broadcasting.
-    core_ndims = (
-        _parse_core_ndims(ufunc.signature)
-        if ufunc.signature is not None
-        else (0,)*ufunc.nin
-    )
+    if ufunc.signature is not None:
+        input_core_dims, output_core_dims = _parse_core_dims(ufunc.signature)
+    else:
+        input_core_dims = ((),) * ufunc.nin
+        output_core_dims = ((),) * ufunc.nout
+
+    input_core_ndims = tuple(map(len, input_core_dims))
+    output_core_ndims = tuple(map(len, output_core_dims))
 
     # ``where`` requires special handling for elementwise ufuncs because it
     # participates in broadcasting and must undergo the same axis permutation.
@@ -202,7 +238,7 @@ def _with_cache_optimization(
 
         # Fast path for when the arguments which are used in the cached
         # computation don't have batches.
-        if all(args[i].ndim == core_ndims[i] for i in cache_arg_indices):
+        if all(args[i].ndim == input_core_ndims[i] for i in cache_arg_indices):
             kwargs["order"] = order
             return ufunc(*args, **kwargs)
 
@@ -225,14 +261,20 @@ def _with_cache_optimization(
         # To get batch_shapes, need to exclude core dimensions. Again, the core
         # dimensions won't participate in broadcasting.
         batch_shapes = [
-            arg.shape[:-core_ndims[i]] if core_ndims[i] > 0 else arg.shape
+            arg.shape[:-input_core_ndims[i]] if input_core_ndims[i] > 0 else arg.shape
             for i, arg in enumerate(args)
         ]
         if where is not True:
             batch_shapes.append(where.shape)
 
         batch_shapes.extend(
-            entry.shape for entry in out_tuple if entry is not None
+            (
+                entry.shape[:-output_core_ndims[i]]
+                if output_core_ndims[i] > 0
+                else entry.shape
+                for i, entry in enumerate(out_tuple)
+                if entry is not None
+            )
         )
 
         batch_shape = np.broadcast_shapes(*batch_shapes)
@@ -241,8 +283,11 @@ def _with_cache_optimization(
         # Broadcast each arg so that the batch shapes all agree, but the
         # core dimensions may still differ.
         args_b = [
-            np.broadcast_to(arg, batch_shape + arg.shape[-core_ndims[i]:], subok=subok)
-            if core_ndims[i] > 0 else np.broadcast_to(arg, batch_shape, subok=subok)
+            np.broadcast_to(
+                arg, batch_shape + arg.shape[-input_core_ndims[i]:], subok=subok
+            )
+            if input_core_ndims[i] > 0
+            else np.broadcast_to(arg, batch_shape, subok=subok)
             for i, arg in enumerate(args)
         ]
 
@@ -267,7 +312,7 @@ def _with_cache_optimization(
         args_t = []
         for i, arg_b in enumerate(args_b):
             axes = sorted_batch_axes + list(
-                range(batch_ndim, batch_ndim + core_ndims[i])
+                range(batch_ndim, batch_ndim + input_core_ndims[i])
             )
             args_t.append(np.transpose(arg_b, axes=axes))
 
@@ -299,17 +344,39 @@ def _with_cache_optimization(
                 out_dtypes = ufunc.resolve_dtypes(
                     input_dtypes, **resolve_kwargs
                 )[ufunc.nin:]
+
+            if is_elementwise:
+                out_shapes = (batch_shape,)*ufunc.nout
+            else:
+                out_shapes = _resolve_out_shapes(
+                    args,
+                    input_core_dims,
+                    output_core_dims,
+                    batch_shape,
+                )
             outputs = tuple(
-                _allocate_out(args, batch_shape, out_dtype, alloc_order, subok)
+                _allocate_out(args, out_shape, out_dtype, alloc_order, subok)
                 if entry is None else entry
-                for entry, out_dtype in zip(out_tuple, out_dtypes)
+                for entry, out_shape, out_dtype in zip(
+                        out_tuple, out_shapes, out_dtypes
+                )
             )
         else:
             outputs = out_tuple
 
         # Views of the output arrays with axes sorted as needed.
         kwargs["out"] = tuple(
-            np.transpose(x, axes=sorted_batch_axes) for x in outputs
+            np.transpose(
+                x,
+                axes=(
+                    sorted_batch_axes
+                    + list(range(
+                        batch_ndim,
+                        batch_ndim + output_core_ndims[i],
+                    ))
+                ),
+            )
+            for i, x in enumerate(outputs)
         )
         kwargs["order"] = "C"
 
