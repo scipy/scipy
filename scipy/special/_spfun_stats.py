@@ -112,7 +112,7 @@ def multigammaln(a, d):
 
 
 _poisson_binom_pmf_doc = (
-    """Returns pmf of Poisson Binomial distribution.
+    r"""Returns pmf of Poisson Binomial distribution.
 
     Parameters
     ----------
@@ -121,16 +121,7 @@ _poisson_binom_pmf_doc = (
 
     p : array
         Success probabilities of independent Bernoulli trials.
-
-    Notes
-    -----
-    This is equivalent to a gufunc with signature ``()(i)->()``.
-    The last dimension of `p` contains success probabilities and
-    the preceding dimensions are batch dimensions. The batch
-    dimensions are broadcast against ``k``.
-
-    The output will be C contiguous regardless of the contiguity of
-    `k` and `p`.
+    
 
     """
 )
@@ -146,25 +137,42 @@ _poisson_binom_pmf = _with_cache_optimization(
 
 
 _poisson_binom_cdf_doc = (
-    """Returns cdf of Poisson Binomial distribution.
+    r"""Poisson binomial cumulative distribution function.
+
+    The Poisson binomial distribution is the discrete probability
+    distribution of a sum of independent Bernoulli trials that are not
+    necessarily identically distributed [1]_.
+
+    .. math::
+
+        \sum_{l=0}^{k}\sum_{A \in F_l}\prod_{i \in A} p_i \prod_{j \in A^c} (1 - p_j)
+
+    where :math:`F_l` is the set of all subsets of size :math:`l` of
+    :math:`\{1, 2, \ldots, n\}` and :math:`A^c` is the complement of :math:`A` in
+    :math:`\{1, 2, \ldots, n\}`.
 
     Parameters
     ----------
-    k : array
+    k : array_like
         Number of successes at which to evaluate cdf.
-
-    p : array
+    p : array_like
         Success probabilities of independent Bernoulli trials.
+    out : ndarray, optional
+        Optional output array for the function results.
+    **kwargs
+        For other keyword-only arguments, see the
+        `NumPy ufunc docs <https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments>`_.
 
-    Notes
-    -----
-    This is equivalent to a gufunc with signature ``()(i)->()``.
-    The last dimension of `p` contains success probabilities and
-    the preceding dimensions are batch dimensions. The batch
-    dimensions are broadcast against ``k``.
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson binomial cumulative distribution function.
 
-    The output will be C contiguous regardless of the contiguity of
-    `k` and `p`.
+    References
+    ----------
+    .. [1] Poisson binomial distribution,
+           https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+        
 
     """
 )
