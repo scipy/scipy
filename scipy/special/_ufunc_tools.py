@@ -29,10 +29,16 @@ def _parse_core_dims(signature):
 
 
 def _normalize_gufunc_axes(
-    axis, axes, input_core_dims, output_core_dims
+    axis, axes, input_core_dims, output_core_dims, keepdims
 ):
     """Normalize ``axis``/``axes`` to one tuple per input and output."""
-    core_dims = input_core_dims + output_core_dims
+    if keepdims:
+        output_axis_dims = (
+            input_core_dims[0],
+        ) * len(output_core_dims)
+    else:
+        output_axis_dims = output_core_dims
+    axis_dims = input_core_dims + output_axis_dims
 
     if axis is not _NO_VALUE:
         if axes is not _NO_VALUE:
@@ -42,12 +48,12 @@ def _normalize_gufunc_axes(
 
         distinct_core_dims = {
             dim
-            for dims in core_dims
+            for dims in axis_dims
             for dim in dims
         }
         if (
             len(distinct_core_dims) != 1
-            or any(len(dims) > 1 for dims in core_dims)
+            or any(len(dims) > 1 for dims in axis_dims)
         ):
             raise TypeError(
                 "axis can only be used with a single shared core dimension"
@@ -56,7 +62,7 @@ def _normalize_gufunc_axes(
         shared_dim = next(iter(distinct_core_dims))
         return tuple(
             (axis,) if dims == (shared_dim,) else ()
-            for dims in core_dims
+            for dims in axis_dims
         )
 
     if axes is _NO_VALUE:
@@ -70,15 +76,20 @@ def _normalize_gufunc_axes(
         len(axes) == len(input_core_dims)
         and not any(output_core_dims)
     ):
-        axes = axes + [()] * len(output_core_dims)
+        if keepdims:
+            ncore = len(input_core_dims[0])
+            output_axes = tuple(range(-ncore, 0))
+            axes = axes + [output_axes] * len(output_core_dims)
+        else:
+            axes = axes + [()] * len(output_core_dims)
 
-    if len(axes) != len(core_dims):
+    if len(axes) != len(axis_dims):
         raise ValueError(
             "axes should have one entry for each input and output"
         )
 
     normalized = []
-    for i, (item, dims) in enumerate(zip(axes, core_dims)):
+    for i, (item, dims) in enumerate(zip(axes, axis_dims)):
         # A bare integer is allowed for a one-dimensional core.
         if len(dims) == 1:
             try:
@@ -318,17 +329,27 @@ def _with_cache_optimization(
         original_args = args
         original_out_tuple = out_tuple
         output_axes = None
+        keepdims = kwargs.get("keepdims", False)
+        call_output_core_ndims = output_core_ndims
 
         if not is_elementwise:
             # Support axis/axes kwargs for gufuncs.
             axis = kwargs.pop("axis", _NO_VALUE)
             axes = kwargs.pop("axes", _NO_VALUE)
 
+            if keepdims:
+                call_output_core_ndims = (
+                    input_core_ndims[0],
+                ) * ufunc.nout
+            else:
+                call_output_core_ndims = output_core_ndims
+
             gufunc_axes = _normalize_gufunc_axes(
                 axis,
                 axes,
                 input_core_dims,
                 output_core_dims,
+                keepdims=keepdims
             )
 
             if gufunc_axes is not None:
@@ -356,7 +377,7 @@ def _with_cache_optimization(
                             entry,
                             output_axes[i],
                             range(
-                                entry.ndim - output_core_ndims[i],
+                                entry.ndim - call_output_core_ndims[i],
                                 entry.ndim,
                             ),
                     )
@@ -388,8 +409,8 @@ def _with_cache_optimization(
 
         batch_shapes.extend(
             (
-                entry.shape[:-output_core_ndims[i]]
-                if output_core_ndims[i] > 0
+                entry.shape[:-call_output_core_ndims[i]]
+                if call_output_core_ndims[i] > 0
                 else entry.shape
                 for i, entry in enumerate(out_tuple)
                 if entry is not None
@@ -466,6 +487,10 @@ def _with_cache_optimization(
 
             if is_elementwise:
                 out_shapes = (batch_shape,)*ufunc.nout
+            elif keepdims:
+                out_shapes = (
+                    batch_shape + (1,) * input_core_ndims[0],
+                ) * ufunc.nout
             else:
                 out_shapes = _resolve_out_shapes(
                     args,
@@ -497,12 +522,12 @@ def _with_cache_optimization(
                     # The gufunc writes through the canonical view into this
                     # original user-supplied array.
                     restored.append(original)
-                elif output_core_ndims[i] > 0:
+                elif call_output_core_ndims[i] > 0:
                     restored.append(
                         np.moveaxis(
                             x,
                             range(
-                                x.ndim - output_core_ndims[i],
+                                x.ndim - call_output_core_ndims[i],
                                 x.ndim,
                             ),
                             output_axes[i],
@@ -521,7 +546,7 @@ def _with_cache_optimization(
                     sorted_batch_axes
                     + list(range(
                         batch_ndim,
-                        batch_ndim + output_core_ndims[i],
+                        batch_ndim + call_output_core_ndims[i],
                     ))
                 ),
             )
