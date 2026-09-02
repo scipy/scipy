@@ -67,6 +67,10 @@ def _validate_array_cls(cls: type, sparse_ok=False) -> _ArrayClsInfo:
     if issubclass(cls, int | float | complex | bool | type(None)):
         return _ArrayClsInfo.skip
 
+    # Allow mpmath objects for compatibility with mparray
+    if 'mpmath' in str(cls):
+        return _ArrayClsInfo.skip
+
     return _ArrayClsInfo.unknown
 
 

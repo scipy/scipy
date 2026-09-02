@@ -191,6 +191,8 @@ def xp_copy_to_numpy(x: Array) -> np.ndarray:
         return np.asarray(
             xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
         )
+    if is_mparray(xp):
+        return np.asarray(x._data, dtype=x.dtype)
     # Fall back to np.asarray. This works for dask.array. It
     # currently works for jax.numpy, but hopefully JAX will make
     # the transfer guard workable enough for use in scipy tests, in
@@ -253,6 +255,8 @@ def _convert_scalar_to_array(x, xp):
         bool,
     ):
         return xp.asarray(x)
+    elif is_mparray(xp):
+        x = np.asarray(x._data, dtype=x.dtype)
     return x
 
 
@@ -263,7 +267,7 @@ def xp_assert_equal(actual, desired, *, check_dtype=True,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-
+    xp = np_compat if is_mparray(xp) else xp
     return xpt.assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
@@ -275,7 +279,7 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-
+    xp = np_compat if is_mparray(xp) else xp
     return xpt.assert_close(actual, desired,rtol=rtol, atol=atol,
                             err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
@@ -290,7 +294,7 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-
+    xp = np_compat if is_mparray(xp) else xp
     return xpt.assert_close_nulp(actual, desired, nulp=nulp,
                             check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
@@ -303,6 +307,7 @@ def _assert_less(
 
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
+    xp = np_compat if is_mparray(xp) else xp
     xpt.assert_less(actual, desired, check_dtype=check_dtype,
                     check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg,
                     verbose=verbose, xp=xp)
@@ -384,6 +389,9 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
         return jax.scipy
 
     if is_torch(xp):
+        return xp
+
+    if is_mparray(xp):
         return xp
 
     return None
@@ -1193,3 +1201,7 @@ def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
 
 def xp_isscalar(x):
     return np.isscalar(x) or (is_array_api_obj(x) and x.ndim == 0)
+
+
+def is_mparray(xp):
+    return "mparray" in str(xp)
