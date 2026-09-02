@@ -2145,7 +2145,7 @@ def bernoulli(n):
 
     """
     if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative.")
+        raise ValueError("n must be non-negative.")
     n = int(n)
     len_bernoulli_even = len(_BERNOULLI_EVEN)
     i = min(n // 2, len_bernoulli_even - 1)
