@@ -357,7 +357,14 @@ class _FuncInfo:
                         f"`out` parameter is not supported for {self.name}"
                         f" with backend {xp.__name__}."
                     )
-                if self.is_ufunc and kwargs:
+                if self.is_ufunc and not self.is_elementwise:
+                    axis = kwargs.pop("axis", -1)
+                    if kwargs:
+                        raise NotImplementedError(
+                            "ufunc keyword arguments other than `axis` are not "
+                            f"supported for {self.name} with backend {xp.__name__}."
+                        )
+                elif self.is_ufunc and kwargs:
                     raise NotImplementedError(
                         "ufunc keyword arguments are not supported "
                         f"for {self.name} with backend {xp.__name__}."
