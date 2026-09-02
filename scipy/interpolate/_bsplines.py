@@ -2582,8 +2582,8 @@ def _compute_b_inv(A):
 
     Notes
     -----
-    The algorithm is based on the cholesky decomposition and, therefore,
-    in case matrix ``A`` is close to not positive defined, the function
+    The algorithm is based on the Cholesky decomposition and, therefore,
+    in case matrix ``A`` is close to not positive definite, the function
     raises LinalgError.
 
     Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
@@ -2935,7 +2935,7 @@ def _penalty_matrix_banded(t):
        ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
        ``t[p+2]``.
     3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
-       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       upper-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
        accepted by ``scipy.linalg.solveh_banded``.
 
     ``Omega`` depends on ``t`` only (no data enters), is symmetric
@@ -2967,19 +2967,11 @@ def _penalty_matrix_banded(t):
     omega = C.T @ R @ C
     omega_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        omega_banded[i, : m - i] = omega.diagonal(-i)
+        omega_banded[3 - i, i:] = omega.diagonal(i)
 
     return omega_banded
-
-def _lower_to_upper_banded(ab):
-    """Reorder LAPACK lower-banded symmetric storage into upper-banded."""
-    m = ab.shape[1]
-    upper = np.zeros_like(ab)
-    for d in range(ab.shape[0]):
-        upper[-1 - d, d:] = ab[d, :m - d]
-    return upper
 
 
 def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
@@ -2988,12 +2980,12 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
     # Eq. (32)
     n = y.shape[0]
-    xtwx_upper = _lower_to_upper_banded(xtwx_banded)
 
     def _gcv(lam):
         try:
             c, tr = _solve_smoothing_spline_coefficients(
-                xtwx_banded, lam, omega, xtwy, xtwx_upper=xtwx_upper)
+                xtwx_banded, lam, omega, xtwy, compute_trace=True,
+            )
         except LinAlgError:
             # numerically singular for this lam
             return np.inf
@@ -3008,16 +3000,16 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         xtwx_upper=None):
+                                         compute_trace=False):
     _lhs = XtWX_banded + lam * omega
-    c = solveh_banded(_lhs, XtWy, lower=True)
-    if xtwx_upper is None:
+    c = solveh_banded(_lhs, XtWy, lower=False)
+    if not compute_trace:
         return c, None
     # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
     # 7-banded, so only the central bands of the inverse are needed
     # (Hutchinson & de Hoog, upper-banded storage).
-    b_banded = _compute_b_inv(_lower_to_upper_banded(_lhs))
-    tr = b_banded * xtwx_upper
+    b_banded = _compute_b_inv(_lhs)
+    tr = b_banded * XtWX_banded
     tr[:-1] *= 2
     return c, tr.sum()
 
@@ -3099,9 +3091,9 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     XtWy = X.T @ (w * y)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+        XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
     if lam is None:
         lam = _make_smoothing_spline_user_knots_gcv(
             XtWX_banded, X, y, w, XtWy, omega)

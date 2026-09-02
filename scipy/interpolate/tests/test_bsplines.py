@@ -2476,7 +2476,7 @@ _t_mult5b = np.r_[[-2.0]*5, [0.0], [2.0]*4]               # boundary multiplicit
 _t_unclamped = np.r_[[-4., -3.5, -3., -2.], [0.], [2., 3., 3.5, 4.]]  # not clamped
 
 def _dense_omega(ab, m):
-    """Reconstruct a dense symmetric matrix from (4, m) lower-banded storage.
+    """Reconstruct a dense symmetric matrix from (4, m) upper-banded storage.
 
     Used for the penalty matrix Omega of the smoothing spline,
     ``Omega[i, j] = integral(B_i'' * B_j'')``, which
@@ -2484,9 +2484,9 @@ def _dense_omega(ab, m):
     """
     omega = np.zeros((m, m))
     for i in range(4):
-        omega += np.diag(ab[i, :m - i], -i)
+        omega += np.diag(ab[3 - i, i:], -i)
         if i > 0:
-            omega += np.diag(ab[i, :m - i], i)
+            omega += np.diag(ab[3 - i, i:], i)
     return omega
 
 @make_xp_test_case(make_smoothing_spline)
@@ -2987,6 +2987,30 @@ class TestSmoothingSpline:
         f_old = make_smoothing_spline(x, y)(x)          # existing GCV path
         f_new = make_smoothing_spline(x, y, t=t)(x)     # user-knots GCV path
         xp_assert_close(f_new, f_old, atol=5e-2)
+
+    @pytest.mark.xfail(
+        reason="pending review discussion on what to return for the "
+               "singular case")
+    def test_gcv_search_with_singular_lam_in_window(self):
+        """Auto lam selection succeeds even when part of the search window
+        is numerically singular for the given data scale."""
+        rng = np.random.default_rng(5)
+        x = np.sort(rng.uniform(0, 3e-6, 40))
+        y = np.sin(7e5 * x) + 0.1 * rng.normal(size=40)
+        tk = np.linspace(x[0], x[-1], 12)
+        tk[0], tk[-1] = x[0], x[-1]
+        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+
+        # the upper end of the search window is numerically singular for
+        # this data scale: an explicit fit there raises
+        with assert_raises(ValueError, match="not positive definite"):
+            make_smoothing_spline(x, y, lam=1e9, t=t)
+
+        # the automatic search must route around that region
+        f = make_smoothing_spline(x, y, t=t)
+        assert np.all(np.isfinite(f(x)))
+        # and select a fit that tracks the signal, not the flattened limit
+        assert np.sqrt(np.mean((f(x) - y)**2)) < 0.75 * np.std(y)
 
     def test_gcv_user_knots_weights(self):
         """Unit weights reproduce the unweighted GCV fit; nonuniform weights run."""
