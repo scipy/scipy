@@ -324,7 +324,17 @@ def kstat(data, n=2, *, axis=None):
 
     N = _count_nonmasked(data, axis, xp=xp)
 
-    S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
+    # Build the power sums from multiplications rather than a general power for
+    # each order: ``data**1`` only reproduces ``data``, and the square can be
+    # reused for the cube and the fourth power.
+    S = [None, xp.sum(data, axis=axis)]
+    if n >= 2:
+        data2 = data * data
+        S.append(xp.sum(data2, axis=axis))
+    if n >= 3:
+        S.append(xp.sum(data2 * data, axis=axis))
+    if n >= 4:
+        S.append(xp.sum(data2 * data2, axis=axis))
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
