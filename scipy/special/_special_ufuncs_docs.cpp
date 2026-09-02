@@ -6022,14 +6022,44 @@ const char *erfc_doc = R"(
 
     Examples
     --------
+
+    In this example we consider modelling the instantaneous heating of a semi-infinite
+    solid from its boundary at :math:`x=0`. This is governed by the heat equation
+
+    .. math::
+
+        \frac{\partial T}{\partial t} = \frac{\partial^2 T}{\partial x^2},
+        \qquad x > 0, \quad t > 0,
+
+    with boundary conditions :math:`T(0,t) = 1` and :math:`T(\infty,t) = 0` and
+    initial condition :math:`T(x,0) = 0`. Seeking a solution of the form
+    :math:`T(x,t) = f(\eta)` with :math:`\eta = x/\sqrt{t}` transforms the problem
+    into the following ordinary differential equation
+
+    .. math::
+
+        f'' + \frac{\eta}{2} f' = 0, \qquad f(0) = 1, \quad f(\infty) = 0,
+
+    which has the solution :math:`f(\eta) = \operatorname{erfc}(\eta/2)`.
+    We conclude by plotting the solution both as a function of :math:`\eta`
+    and as a function of :math:`x` for different times.
+
     >>> import numpy as np
-    >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erfc(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erfc(x)$')
+    >>> from scipy.special import erfc
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained")
+    >>> eta = np.linspace(0, 4)
+    >>> ax1.plot(eta, erfc(eta/2))
+    >>> ax1.set_xlabel(r'$\eta$')
+    >>> ax1.set_ylabel(r'$f(\eta)$')
+    >>> x = np.linspace(0, 2)
+    >>> for t in [0.001, 0.01, 0.1, 0.5, 1]:
+    ...     ax2.plot(x, erfc(x/(2*np.sqrt(t))), label=f't={t}')
+    >>> ax2.set_xlabel(r'$x$')
+    >>> ax2.set_ylabel(r'$T(x,t)$')
+    >>> ax2.legend()
     >>> plt.show()
+
     )";
 
 const char *erfi_doc = R"(
