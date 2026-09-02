@@ -395,7 +395,7 @@ Miscellaneous
 
    tklmbda                 -- Tukey-Lambda cumulative distribution function.
    owens_t                 -- Owen's T Function.
-   poisson_binom_cdf    -- Poisson binomial cumulative distribution function.
+   poisson_binom_cdf       -- Poisson binomial cumulative distribution function.
 
 
 Information Theory functions
