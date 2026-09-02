@@ -174,10 +174,6 @@ endif
 if not fs.exists('subprojects/xsf/README.md')
   error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/biteopt/biteopt/README.md')
-  error('Missing the `biteopt` submodule! Run `git submodule update --init` ' +
-        'to fix this.')
-endif
 
 external_dir = 'scipy/_external'
 
