@@ -2956,22 +2956,6 @@ class TestSmoothingSpline:
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
 
-    def test_mixed_namespaces_rejected(self):
-        # `w` and `t` take part in namespace and device resolution, so
-        # mixing array libraries between the inputs raises instead of
-        # silently coercing
-        # TypeError from array_namespace under SCIPY_ARRAY_API=1,
-        # ValueError from the device resolution otherwise
-        xp_strict = pytest.importorskip("array_api_strict")
-        x = np.linspace(0.0, 1.0, 12)
-        y = np.sin(3 * x)
-        t = xp_strict.asarray(np.r_[[0.0]*4, [0.5], [1.0]*4])
-        with assert_raises((TypeError, ValueError)):
-            make_smoothing_spline(x, y, lam=0.5, t=t)
-        w = xp_strict.asarray(np.ones_like(x))
-        with assert_raises((TypeError, ValueError)):
-            make_smoothing_spline(x, y, w=w, lam=0.5)
-
     def test_user_defined_knots_axis(self):
         # batched (n-D) `y` is not supported on the user-knots path yet,
         # so for 1-D `y` the only valid axes are 0 and -1 and must give

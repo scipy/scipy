@@ -3225,11 +3225,11 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
 
     """  # noqa:E501
     # include the optional arrays so that a namespace or device mismatch
-    # between any of the inputs raises consistently
-    arrays = [x, y] + [a for a in (w, t) if a is not None]
-    xp = array_namespace(*arrays)
+    # between any of the inputs raises consistently (both helpers
+    # ignore Nones)
+    xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
-    device = xp_result_device(*arrays)
+    device = xp_result_device(x, y, w, t)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
