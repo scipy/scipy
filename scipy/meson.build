@@ -30,7 +30,7 @@ np_dep = declare_dependency(
   # Don't use the deprecated NumPy C API. Define this to a fixed version instead
   # of NPY_API_VERSION in order not to break compilation for released SciPy
   # versions when NumPy introduces a new deprecation.
-  compile_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'],
+  compile_args: ['-DNPY_NO_DEPRECATED_API=NPY_2_0_API_VERSION'],
 )
 
 # Note: the undecorated `_pybind11_dep` is kept around, like `_numpy_dep`.
