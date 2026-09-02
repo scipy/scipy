@@ -236,19 +236,24 @@ def biteopt(
     # reported as successful.
     if f_min == -np.inf:
         success = True
-        message = "Maximum number of iterations reached."
+        status = 0
+        message = "Maximum number of function evaluations reached."
     else:
         if result["fun"] <= f_min:
             success = True
+            status = 0
             message = "Optimization terminated successfully: f_min reached."
         else:
             success = False
-            message = "Maximum number of iterations reached; f_min not reached."
+            status = 1
+            message = ("Maximum number of function evaluations reached; "
+                       "f_min not reached.")
 
     return OptimizeResult(
         x=np.asarray(result["x"]),
         fun=result["fun"],
         nfev=result["nfev"],
         success=success,
+        status=status,
         message=message,
     )

@@ -121,6 +121,8 @@ class TestSolver:
         assert res_early.fun <= target
         assert res_early.nfev < res_full.nfev
         assert res_early.success
+        assert res_early.status == 0
+        assert res_full.status == 0
 
     def test_f_min_unreachable_reports_failure(self):
         # An unreachable f_min (below the global minimum of 0) can never be met,
@@ -129,6 +131,7 @@ class TestSolver:
 
         assert res.fun > -1.0
         assert res.success is False
+        assert res.status == 1
 
     @pytest.mark.parametrize("exc_type", [ValueError, KeyError, OverflowError])
     def test_objective_exception_propagates(self, exc_type):
@@ -220,6 +223,7 @@ class TestCallback:
 
         assert callback.n_calls == stop_after
         assert res_callback.success is False
+        assert res_callback.status == 99
         assert res_callback.message.startswith("`callback` raised `StopIteration`")
         assert res_callback.nfev >= stop_after
         assert res_callback.nfev < res_full.nfev
