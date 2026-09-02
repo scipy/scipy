@@ -80,7 +80,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     // c- and z variants: lwork query segfaults with rwork=NULL, allocate it straight away
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(2*n*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
         }
@@ -88,10 +88,10 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
     // query LWORK
     call_geev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
-    if (info != 0) { free(rwork);  return -101; }
+    if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
-    if (lwork < 0) { free(rwork); return -102; }
+    if (lwork < 0) { PyMem_RawFree(rwork); return -102; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -118,8 +118,8 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     npy_intp vr_size = compute_vr ? ldvr*n : 0;
     bufsize += vl_size + vr_size;
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
-    if (buf == NULL) { free(rwork); return -103; }
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
+    if (buf == NULL) { PyMem_RawFree(rwork); return -103; }
 
     // partition the workspace
     T *work = &buf[0];
@@ -200,8 +200,8 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     }
 
  done:
-    free(buf);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(rwork);
 
     return 0;
 }
@@ -259,7 +259,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(8*n*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(8*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
         }
@@ -267,10 +267,10 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // query LWORK
     call_ggev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
-    if (info != 0) { free(rwork);  return -101; }
+    if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
-    if (lwork < 0) { free(rwork); return -102; }
+    if (lwork < 0) { PyMem_RawFree(rwork); return -102; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -299,8 +299,8 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     npy_intp bufsize = lwork + n + n + alphai_size + A_size + B_size  + vl_size + vr_size;
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
-    if (buf == NULL) { free(rwork); return -103; }
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
+    if (buf == NULL) { PyMem_RawFree(rwork); return -103; }
 
     T *work = &buf[0];
     T *alphar = &buf[lwork];
@@ -405,8 +405,8 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
 
  done:
-    free(buf);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(rwork);
 
     return 0;
 }
@@ -582,7 +582,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     CBLAS_INT Z_size = (jobz != 'N') ? N * M : 0;
     CBLAS_INT A_size = (!overwrite_a) ? N * N : 0;
     CBLAS_INT B_size = (ap_Bm != NULL && !overwrite_b) ? N * N : 0;
-    T *buffer = (T *)malloc((lwork + Z_size + A_size + B_size) * sizeof(T));
+    T *buffer = (T *)PyMem_RawMalloc((lwork + Z_size + A_size + B_size) * sizeof(T));
     if (buffer == NULL) { info = -102; return int(info); }
 
     T *work = &buffer[0];
@@ -619,9 +619,9 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     CBLAS_INT ibuffer_size = iwork_size + isuppz_size + ifail_size;
 
     if (ibuffer_size > 0) {
-        ibuffer = (CBLAS_INT *)malloc(ibuffer_size * sizeof(CBLAS_INT));
+        ibuffer = (CBLAS_INT *)PyMem_RawMalloc(ibuffer_size * sizeof(CBLAS_INT));
         if(ibuffer == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
             info = -103;
             return int(info);
         }
@@ -650,12 +650,12 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     CBLAS_INT w_size = (range == 'I' && M < N) ? N : 0;
     CBLAS_INT rbuffer_size = w_size + lrwork;
     if (rbuffer_size > 0) {
-        rbuffer = (real_type *)malloc(rbuffer_size * sizeof(real_type));
+        rbuffer = (real_type *)PyMem_RawMalloc(rbuffer_size * sizeof(real_type));
         if (rbuffer == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
 
             if (ibuffer != NULL) {
-                free(ibuffer);
+                PyMem_RawFree(ibuffer);
             }
 
             info = -104;
@@ -816,14 +816,14 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     } // End of batching loop
 
 free_exit:
-    free(buffer);
+    PyMem_RawFree(buffer);
 
     if (ibuffer != NULL) {
-        free(ibuffer);
+        PyMem_RawFree(ibuffer);
     }
 
     if (rbuffer != NULL) {
-        free(rbuffer);
+        PyMem_RawFree(rbuffer);
     }
 
     return 1;

@@ -2808,4 +2808,52 @@ lgamma_q_double(double a, double z)
     return lgamma_q_wrap(a, z);
 }
 
+template<typename Real>
+static inline
+Real stdtridf_wrap(Real p, Real t)
+{
+    if (std::isnan(p) || std::isnan(t)) {
+        return NAN;
+    }
+    if (p < 0 || p > 1) {
+        sf_error("stdtridf", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::students_t_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(t, p);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("stdtridf", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("stdtridf", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("stdtridf", SF_ERROR_UNDERFLOW, NULL);
+        y = std::numeric_limits<Real>::min(); 
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y <= 0) {
+        sf_error("stdtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+double
+stdtridf_double(double p, double t)
+{
+    return stdtridf_wrap(p, t);
+}
+
+float
+stdtridf_float(float p, float t)
+{
+    return stdtridf_wrap(p, t);
+}
+
 #endif

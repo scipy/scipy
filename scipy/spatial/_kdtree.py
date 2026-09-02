@@ -120,6 +120,7 @@ def minkowski_distance(x, y, p=2.0):
         return minkowski_distance_p(x, y, p)**(1./p)
 
 
+@xp_capabilities(np_only=True)
 class Rectangle:
     """Hyperrectangle class.
 
@@ -273,6 +274,7 @@ class Rectangle:
         return minkowski(np.zeros_like(delta), delta, p)
 
 
+@xp_capabilities(np_only=True)
 class KDTree(cKDTree):
     """
     kd-tree for quick nearest-neighbor lookup.

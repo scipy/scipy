@@ -1152,8 +1152,8 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_perm) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers (reused across slices)
-    scratch = PyMem_Malloc(m * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(minmn * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)m * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)minmn * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
@@ -1322,8 +1322,8 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_det) { PyErr_NoMemory(); goto fail; }
 
     // Allocate scratch buffers
-    scratch = PyMem_Malloc(n * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc(n * sizeof(CBLAS_INT));
+    scratch = PyMem_Malloc((size_t)n * n * elem_size);
+    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)n * sizeof(CBLAS_INT));
     slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
     if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
 
@@ -1562,17 +1562,16 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         }
     }
 
-    // 2D: return tuple of np.int64 scalars; N-d: return tuple of int64 arrays
+    // 2D: return tuple of int scalars; N-d: return tuple of int64 arrays
     if (ndim == 2) {
-        PyArray_Descr *descr = PyArray_DescrFromType(NPY_INT64);
-        PyObject *lb_obj = PyArray_Scalar(&lb_data[0], descr, NULL);
-        PyObject *ub_obj = PyArray_Scalar(&ub_data[0], descr, NULL);
-        Py_DECREF(descr);
+        // TODO: use PyLong_FromInt64 from py314+
+        PyObject *lb_obj = PyLong_FromSsize_t((Py_ssize_t)lb_data[0]);
+        PyObject *ub_obj = PyLong_FromSsize_t((Py_ssize_t)ub_data[0]);
         Py_DECREF(ap_lb); Py_DECREF(ap_ub);
-        return Py_BuildValue("(NN)", lb_obj, ub_obj);
+        return Py_BuildValue("NN", lb_obj, ub_obj);
     }
 
-    return Py_BuildValue("(NN)", (PyObject *)ap_lb, (PyObject *)ap_ub);
+    return Py_BuildValue("NN", (PyObject *)ap_lb, (PyObject *)ap_ub);
 }
 
 

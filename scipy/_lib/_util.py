@@ -416,7 +416,7 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-def _validate_int(k, name, minimum=None):
+def _validate_int(k, name, minimum=None, maximum=None):
     """
     Validate a scalar integer.
 
@@ -433,6 +433,8 @@ def _validate_int(k, name, minimum=None):
         The name of the parameter.
     minimum : int, optional
         An optional lower bound.
+    maximum : int, optional
+        An optional upper bound.
     """
     try:
         k = operator.index(k)
@@ -441,6 +443,9 @@ def _validate_int(k, name, minimum=None):
     if minimum is not None and k < minimum:
         raise ValueError(f'{name} must be an integer not less '
                          f'than {minimum}') from None
+    if maximum is not None and k > maximum:
+        raise ValueError(f'{name} must be an integer not greater '
+                         f'than {maximum}') from None
     return k
 
 
@@ -1117,9 +1122,10 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     dtype = xp.result_type(*arrays)
     device = xp_device(arrays[0]) if len(arrays) else None
 
-    # parse more efficiently with regex?
+    # ENH: parse more efficiently with regex.
+    # Preserve functions (e.g. max, min) and `eval` below.
     inputs, outputs = signature.split("->")
-    inputs, outputs = inputs[1:-1].split("),("), outputs[1:-1].split("),(")
+    inputs = inputs.lstrip("(").rstrip(")").split("),(")
     input_dim_to_letter = {}
     for i, input in enumerate(inputs):
         for j, l in enumerate(input.split(",")):
@@ -1134,13 +1140,30 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
             else:
                 letter_to_length[l] = length
 
-    # `eval` output shape specifications?
     results = []
+    # This is a hack to avoid having to rethink the parsing strategy, e.g.
+    # (i, i)->(i, i),bool(i) becomes (i, i)->(i, i),(booli).
+    # But then we can still separate the two outputs by splitting at ),(.
+    # TODO: use regular expression for more efficient, elegant parsing.
+    signature_dtypes = ['bool', 'int', 'float', 'complex']
+    for signature_dtype in signature_dtypes:
+        outputs = outputs.replace(f"{signature_dtype}(", f"({signature_dtype}")
+    outputs = outputs.lstrip("(").rstrip(")").split("),(")
     for output in outputs:
+        output_dtype = dtype
+        for signature_dtype in signature_dtypes:
+            if signature_dtype in output:
+                output_dtypes = {'bool': xp.bool,
+                                 'int': xp.result_type(1),
+                                 'float': xp.real(xp.asarray(1, dtype=dtype,
+                                                  device=device)).dtype,
+                                 'complex': xp.result_type(complex(1), dtype)}
+                output_dtype = output_dtypes[signature_dtype]
+                output = output.replace(signature_dtype, "")
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
         results.append(xp.empty(batch_shape + out_core_shape,
-                                dtype=dtype, device=device))
+                                dtype=output_dtype, device=device))
     return results[0] if len(results) == 1 else tuple(results)
 
 
@@ -1216,9 +1239,7 @@ def _apply_over_batch(*argdefs, signature=None):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # We can't support zero-size batches right now because without data with
-            # which to call the function, the decorator doesn't even know the *number*
-            # of outputs, let alone their core shapes or dtypes.
+            # Handle zero-size batches
             if math.prod(batch_shape) == 0:
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:

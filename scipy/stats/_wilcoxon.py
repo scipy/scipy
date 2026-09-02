@@ -51,7 +51,7 @@ class WilcoxonDistribution:
     def sf(self, k):
         k, mn, out = self._prep(k)
         return xpx.apply_where(
-            k <= mn, (k, self.n),
+            k > mn, (k, self.n),
             self._sf,
             lambda k, n: 1 - self._cdf(k-1, n))[()]
 

@@ -15,7 +15,26 @@ from scipy.signal import (ss2tf, tf2ss, lti,
                           TransferFunction, StateSpace, ZerosPolesGain)
 
 from scipy.signal._filter_design import BadCoefficients
+from scipy.signal._ltisys import _order_complex_poles
 import scipy.linalg as linalg
+
+class Test_OrderComplexPoles:
+    """Test for `_order_complex_poles` function. """
+
+    @pytest.mark.parametrize('p_in, p_ref', [
+        ([3, 2, 1], [1, 2, 3]), ([], []),
+        ([1j, 2j, -2j, -1j], [-2j, 2j, -1j, 1j]),
+        ([1j, -1j, 1+1j, 2, 1-1j], [2, -1j, 1j, 1-1j, 1+1j])])
+    def test_basic(self, p_in, p_ref):
+        p_in, p_ref = np.asarray(p_in), np.asarray(p_ref)
+
+        p = _order_complex_poles(p_in)
+        np.testing.assert_allclose(p, p_ref)
+
+    def test_exception(self):
+        p = np.asarray([1, 2-1j])
+        with pytest.raises(ValueError):
+            _order_complex_poles(p)
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -47,7 +66,7 @@ class TestPlacePoles:
         and return the Bunch object for further specific tests
         """
         fsf = place_poles(A, B, P, **kwargs)
-        expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
+        expected = linalg.eigvals(A - np.dot(B, fsf.gain_matrix))
         _assert_poles_close(expected, fsf.requested_poles)
         _assert_poles_close(expected, fsf.computed_poles)
         _assert_poles_close(P,fsf.requested_poles)
@@ -74,6 +93,20 @@ class TestPlacePoles:
         # value in divide (see gh-7590), so suppress it for now
         with np.errstate(invalid='ignore'):
             self._check(A, B, (2,2,3,3))
+
+    def test_computed_poles_dtype(self):
+        """Verify that the `computed_poles` are always complex-valued.
+
+        Before NumPy 2.5, `np.linalg.eig` would return either a real-valued or a
+        complex-valued array. PR #26004 enforces that the `computed_poles` are always
+        complex-valued by using SciPy's `eig` function.
+        """
+        A, B, P = np.eye(3), np.eye(3), np.array([-4., -3., -2.])
+        fsf = place_poles(A, B, P, method='YT')
+
+        xp_assert_equal(fsf.requested_poles, P)  # poles need to be in ascending order
+        complex_dtype =  np.result_type(P, np.complex64)  # complex64 or complex128
+        xp_assert_close(fsf.computed_poles, P.astype(complex_dtype))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.
@@ -1192,7 +1225,7 @@ class Test_bode:
         # Test that bode() return continuous phase, issues/2331.
         system = lti([], [-10, -30, -40, -60, -70], 1)
         w, mag, phase = system.bode(w=np.logspace(-3, 40, 100))
-        assert_almost_equal(min(phase), -450, decimal=15)
+        assert np.isclose(min(phase), -450, atol=1e-16, rtol=0)
 
     def test_from_state_space(self):
         # Ensure that bode works with a system that was created from the

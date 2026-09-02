@@ -196,6 +196,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
             else _clarkson_woodruff_transform(input_matrix, S))
 
 
-@_apply_over_batch(('input_matrix', 2))
+def _cwt_signature(_, S):
+    k = S.shape[0]
+    return f"(i,j)->({k},j)"
+
+
+@_apply_over_batch(('input_matrix', 2), signature=_cwt_signature)
 def _clarkson_woodruff_transform(input_matrix, S):
     return S @ input_matrix

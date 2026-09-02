@@ -93,6 +93,13 @@ CONFIG = _cleanup(
                 "pc file directory": r"@LAPACK_PCFILEDIR@",
                 "has ilp64": bool(r"@LAPACK_HAS_ILP64@".lower().replace('false', '')),
             },
+            # Note: no "include directory" here - the `numpy-config` tool does
+            # not expose one, so it would always be reported as unknown.
+            "numpy": {
+                "name": "@NUMPY_NAME@",
+                "version": "@NUMPY_VERSION@",
+                "detection method": "@NUMPY_TYPE_NAME@",
+            },
             "pybind11": {
                 "name": "@PYBIND11_NAME@",
                 "version": "@PYBIND11_VERSION@",

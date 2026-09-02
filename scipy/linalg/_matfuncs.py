@@ -95,7 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->complex(i,i)')
 def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.
@@ -143,7 +143,7 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')
 def logm(A):
     """
     Compute matrix logarithm.
@@ -846,7 +846,7 @@ def signm(A):
     return S0
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+@_apply_over_batch(('a', 2), ('b', 2), signature="(i,k),(j,k)->(i*j,k)")
 def khatri_rao(a, b):
     r"""
     Khatri-Rao product of two matrices.
