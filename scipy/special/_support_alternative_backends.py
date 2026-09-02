@@ -519,7 +519,8 @@ def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
     # Used to infer out shape for lazy_apply under JAX JIT.
     if kwargs:
         raise NotImplementedError(
-            "`poisson_binom_cdf` does not support gufunc kwargs other than `axis`"
+            "`poisson_binom_cdf` does not support gufunc kwargs other than "
+            " `axis` with the jax.numpy backend."
         )
     axis = operator.index(axis)
     if axis < 0:
