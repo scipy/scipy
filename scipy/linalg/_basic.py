@@ -278,7 +278,12 @@ def _to_banded(n_below, n_above, a):
     return ab
 
 
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+def _solve_triangular_signature(ab, b, overwrite_ab=False, overwrite_b=False,
+                                lower=False, check_finite=True):
+    return ("(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i,j)->(i,j)")
+
+
+@_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solve_triangular_signature)
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
@@ -474,7 +479,14 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                          overwrite_b=overwrite_b, check_finite=check_finite)
 
 
-@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'))
+def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
+                            overwrite_b, check_finite):
+    return (f"(i),(j),({nlower + nupper + 1}, m),(m)->(m)" if np.ndim(b) <= 1 else
+            f"(i),(j),({nlower + nupper + 1}, m),(m,n)->(m,n)")
+
+
+@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'),
+                   signature=_solve_banded_signature)
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -525,7 +537,12 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
     raise ValueError(f'illegal value in {-info}-th argument of internal gbsv/gtsv')
 
 
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+def _solveh_banded_signature(ab, b, overwrite_ab=False, overwrite_b=False,
+                             lower=False, check_finite=True):
+    return ("(i, j),(j)->(j)" if np.ndim(b) <= 1 else "(i, j),(j,k)->(j,k)")
+
+
+@_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solveh_banded_signature)
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
@@ -747,7 +764,11 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     return _solve_toeplitz(c, r, b, check_finite)
 
 
-@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+def _solve_toeplitz_signature(c, r, b, check_finite):
+    return "(i),(i),(i)->(i)" if np.ndim(b) <= 1 else "(i),(i),(i,j)->(i,j)"
+
+
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'), signature=_solve_toeplitz_signature)
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
@@ -2067,11 +2088,16 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     from ..fft import fft, ifft, rfft, irfft
     c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
 
-    return _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
+    return _matmul_toeplitz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
 
 
-@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'))
-def _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+def _matmul_toeplitz_signature(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+    return "(i),(j),(j)->(i)" if np.ndim(x) <= 1 else "(i),(j),(j,k)->(i,k)"
+
+
+@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'),
+                   signature=_matmul_toeplitz_signature)
+def _matmul_toeplitz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
     r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
                                                               keep_b_shape=False,
                                                               enforce_square=False)

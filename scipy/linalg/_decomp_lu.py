@@ -196,7 +196,11 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
                      check_finite=check_finite)
 
 
-@_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'))
+def _lu_solve_signature(lu, piv, b, trans, overwrite_b, check_finite):
+    return "(i, i),(i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i),(i,j)->(i,j)"
+
+
+@_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'), signature=_lu_solve_signature)
 def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)

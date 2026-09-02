@@ -296,7 +296,7 @@ class TestLUSolve:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt, dt_b):
-        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([]))
+        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([], dtype=dt))
         b = np.asarray([], dtype=dt_b)
         x = lu_solve(lu_and_piv, b)
         assert x.shape == (0,)

@@ -1119,7 +1119,7 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
 def output_from_signature(arrays, batch_shape, core_shapes, signature):
     xp = array_namespace(*arrays)
-    dtype = xp.result_type(*arrays)
+    dtype = xp.result_type(*arrays, xp.float32)
     device = xp_device(arrays[0]) if len(arrays) else None
 
     # ENH: parse more efficiently with regex.
@@ -1135,8 +1135,13 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     for i, core_shape in enumerate(core_shapes):
         for j, length in enumerate(core_shape):
             l = input_dim_to_letter[(i, j)]
-            if hasattr(letter_to_length, l):
-                assert letter_to_length[l] == length
+            if letter_to_length.get(l, None):
+                if letter_to_length[l] != length:
+                    message = (
+                        f"The core shape(s) of the array argument(s), {core_shapes}, "
+                        f"is/are incompatible with the function signature, {signature}."
+                    )
+                    raise ValueError(message)
             else:
                 letter_to_length[l] = length
 
@@ -1162,8 +1167,10 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                 output = output.replace(signature_dtype, "")
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
-        results.append(xp.empty(batch_shape + out_core_shape,
-                                dtype=output_dtype, device=device))
+        fill_value = 0 if xp.isdtype(output_dtype, ('integral', 'bool')) else xp.nan
+        results.append(xp.full(batch_shape + out_core_shape, fill_value=fill_value,
+                               dtype=output_dtype, device=device))
+
     return results[0] if len(results) == 1 else tuple(results)
 
 
@@ -1232,22 +1239,22 @@ def _apply_over_batch(*argdefs, signature=None):
             if is_numpy(xp):
                 _deprecate_dtypes(f.__name__, *arrays)
 
-            # Early exit if call is not batched
-            if not any(batch_shapes):
-                return f(*arrays, *other_args, **kwargs)
-
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # Handle zero-size batches
-            if math.prod(batch_shape) == 0:
+            # Handle zero-size input
+            if math.prod(batch_shape) == 0 or any(math.prod(shape) == 0 for shape in core_shapes):
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
                     return output_from_signature(arrays, batch_shape, core_shapes, sig)
                 f_name = f.__name__.lstrip('_')
-                message = f'`{f_name}` does not support zero-size batches.'
+                message = f'`{f_name}` does not support zero-size input.'
                 raise ValueError(message)
 
+            # Early exit if call is not batched
+            elif not any(batch_shapes):
+                return f(*arrays, *other_args, **kwargs)
+            
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
