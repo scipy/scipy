@@ -133,12 +133,14 @@ class TestSolver:
     @pytest.mark.parametrize("exc_type", [ValueError, KeyError, OverflowError])
     def test_objective_exception_propagates(self, exc_type):
         # An exception raised inside the objective must propagate out of the
-        # biteopt call unchanged, preserving the exact exception type.
+        # biteopt call unchanged, preserving the exact exception type. The
+        # large maxfun checks the raise is prompt, not delayed until the
+        # remaining iteration budget runs out.
         def objective(x):
             raise exc_type("Error")
 
         with pytest.raises(exc_type, match="Error"):
-            biteopt(objective, self.default_bounds, rng=0)
+            biteopt(objective, self.default_bounds, rng=0, maxfun=100_000_000)
 
     @pytest.mark.parametrize("bounds", [
         Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0]),

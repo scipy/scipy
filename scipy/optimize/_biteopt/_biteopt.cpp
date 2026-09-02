@@ -41,7 +41,8 @@ struct CallbackContext {
     // Mutable stop threshold read by biteopt each iteration (passed as f_minp).
     // NaN disables it (all comparisons with NaN are false); a finite value
     // enables early stop at that cost; the trampoline flips it to +inf to
-    // request a graceful stop after a StopIteration from the callback.
+    // request a graceful stop after a StopIteration from the callback or any
+    // exception from the objective/callback.
     double f_stop_value = std::numeric_limits<double>::quiet_NaN();
     std::exception_ptr eptr;  // first exception raised by the objective, if any
 };
@@ -56,11 +57,9 @@ double trampoline(int N, const double* x, void* data) {
     auto* ctx = static_cast<CallbackContext*>(data);
 
     // Short-circuit once an error has been seen: do not re-enter Python.
-    // biteopt has no clean mid-run abort, so it keeps iterating to the end of
-    // its budget; every remaining call lands here and returns NaN cheaply
-    // (no Python), and the captured exception is re-raised once biteopt_minimize
-    // returns. For very large maxfun this delays the raise, but the wasted
-    // iterations do no real work.
+    // Both stop paths arm the f_minp threshold, so biteopt exits at its next
+    // ``getBestCost() <= f_minp`` check; this guard covers any evaluation in
+    // between.
     if (ctx->eptr || ctx->callback_stopped) {
         return std::numeric_limits<double>::quiet_NaN();
     }
@@ -119,8 +118,11 @@ double trampoline(int N, const double* x, void* data) {
         return fx;
     } catch (...) {
         // Capture the live Python exception (or any C++ exception, e.g. a
-        // failed cast) and stop feeding biteopt real values.
+        // failed cast) and arm the stop threshold so biteopt exits at its
+        // next ``getBestCost() <= f_minp`` check -- always true, since costs
+        // pass through fixCostNaN so getBestCost() is never NaN.
         ctx->eptr = std::current_exception();
+        ctx->f_stop_value = std::numeric_limits<double>::infinity();
         return std::numeric_limits<double>::quiet_NaN();
     }
 }
