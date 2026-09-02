@@ -1468,6 +1468,22 @@ class TestSomeDistanceFunctions:
             dist = weuclidean(x, y)
             assert math.isclose(dist, math.sqrt(5.0), abs_tol=1.5e-7)
 
+    def test_hamming(self):
+        for x, y in self.cases:
+            # x and y differ in two of their three positions
+            assert math.isclose(hamming(x, y), 2.0 / 3.0, abs_tol=1.5e-7)
+
+        assert hamming([1, 0, 0], [0, 1, 0]) == 2.0 / 3.0
+        assert hamming([1, 0, 0], [1, 0, 0]) == 0.0
+
+        # weighted case
+        assert math.isclose(
+            hamming([1, 0, 0], [0, 1, 0], w=[1.0, 2.0, 3.0]), 0.5, abs_tol=1.5e-7
+        )
+
+        # an empty input has no positions to compare, and yields nan
+        assert np.isnan(hamming([], []))
+
     def test_sqeuclidean(self):
         for x, y in self.cases:
             dist = wsqeuclidean(x, y)
