@@ -1333,8 +1333,8 @@ class Rotation:
         rotations.
 
         For both Euler angles and Davenport angles, consecutive axes must
-        be orthogonal (``axis2`` is orthogonal to both ``axis1`` and ``axis3``). 
-        For Euler angles, there is an additional relationship between ``axis1`` 
+        be orthogonal (``axis2`` is orthogonal to both ``axis1`` and ``axis3``).
+        For Euler angles, there is an additional relationship between ``axis1``
         or ``axis3``, with two possibilities:
 
         - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
@@ -1381,12 +1381,12 @@ class Rotation:
             - First angle belongs to :math:`[-180°,\ 180°]` (both inclusive)
             - Third angle belongs to :math:`[-180°,\ 180°]` (both inclusive)
             - Second angle belongs to a set of size 180°,
-              given by: 
-              
+              given by:
+
                 - :math:`[-\lambda,\ 180° {-\lambda}]`, if :math:`\lambda ≥ 0`
                 - :math:`[-180° - \lambda,\ {-\lambda}]`, if :math:`\lambda < 0`
-                
-              Here :math:`\lambda` is the angle in :math:`[-180°,\ 180°]` that rotates 
+
+              Here :math:`\lambda` is the angle in :math:`[-180°,\ 180°]` that rotates
               axis 3 onto axis 1 using axis 2 as the rotation vector
               (all intervals inclusive on both sides).
 
