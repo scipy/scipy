@@ -27,6 +27,76 @@ def _parse_core_dims(signature):
     return input_core_dims, output_core_dims
 
 
+def _normalize_gufunc_axes(
+    axis, axes, input_core_dims, output_core_dims
+):
+    """Normalize ``axis``/``axes`` to one tuple per input and output."""
+    core_dims = input_core_dims + output_core_dims
+
+    if axis is not _NO_VALUE:
+        if axes is not _NO_VALUE:
+            raise TypeError("cannot specify both 'axis' and 'axes'")
+
+        axis = operator.index(axis)
+
+        distinct_core_dims = {
+            dim
+            for dims in core_dims
+            for dim in dims
+        }
+        if (
+            len(distinct_core_dims) != 1
+            or any(len(dims) > 1 for dims in core_dims)
+        ):
+            raise TypeError(
+                "axis can only be used with a single shared core dimension"
+            )
+
+        shared_dim = next(iter(distinct_core_dims))
+        return tuple(
+            (axis,) if dims == (shared_dim,) else ()
+            for dims in core_dims
+        )
+
+    if axes is _NO_VALUE:
+        return None
+
+    if not isinstance(axes, list):
+        raise TypeError("axes should be a list")
+
+    # NumPy allows scalar-output entries to be omitted.
+    if (
+        len(axes) == len(input_core_dims)
+        and not any(output_core_dims)
+    ):
+        axes = axes + [()] * len(output_core_dims)
+
+    if len(axes) != len(core_dims):
+        raise ValueError(
+            "axes should have one entry for each input and output"
+        )
+
+    normalized = []
+    for i, (item, dims) in enumerate(zip(axes, core_dims)):
+        # A bare integer is allowed for a one-dimensional core.
+        if len(dims) == 1:
+            try:
+                item = (operator.index(item),)
+            except TypeError:
+                pass
+
+        if not isinstance(item, tuple):
+            raise TypeError(f"axes item {i} should be a tuple")
+        if len(item) != len(dims):
+            raise ValueError(
+                f"axes item {i} should have length {len(dims)}"
+            )
+
+        normalized.append(tuple(operator.index(ax) for ax in item))
+
+    return tuple(normalized)
+
+
 def _resolve_alloc_order(args, order):
     """Determine contiguity of output when using in-ufunc caching.
 
@@ -244,6 +314,53 @@ def _with_cache_optimization(
 
         out_tuple = _normalize_out(out, ufunc.nout)
 
+        original_args = args
+        original_out_tuple = out_tuple
+        output_axes = None
+
+        if not is_elementwise:
+            axis = kwargs.pop("axis", _NO_VALUE)
+            axes = kwargs.pop("axes", _NO_VALUE)
+
+            gufunc_axes = _normalize_gufunc_axes(
+                axis,
+                axes,
+                input_core_dims,
+                output_core_dims,
+            )
+
+            if gufunc_axes is not None:
+                input_axes = gufunc_axes[:ufunc.nin]
+                output_axes = gufunc_axes[ufunc.nin:]
+
+                # Put all input core dimensions at the end.
+                args = [
+                    np.moveaxis(
+                        arg,
+                        input_axes[i],
+                        range(
+                            arg.ndim - input_core_ndims[i],
+                            arg.ndim,
+                        ),
+                    )
+                    for i, arg in enumerate(args)
+                ]
+
+                # Do the same for any output arrays supplied by the user.
+                out_tuple = tuple(
+                    None
+                    if entry is None
+                    else np.moveaxis(
+                            entry,
+                            output_axes[i],
+                            range(
+                                entry.ndim - output_core_ndims[i],
+                                entry.ndim,
+                            ),
+                    )
+                    for i, entry in enumerate(out_tuple)
+                )
+
         if (
                 out is _NO_VALUE
                 and where is not True
@@ -330,7 +447,7 @@ def _with_cache_optimization(
             # reproduces NumPy's layout rules from the untransposed inputs,
             # since we hijack the iteration order for the benefit of in-ufunc
             # caches and so can't let NumPy pick the layout itself.
-            alloc_order = _resolve_alloc_order(args, order)
+            alloc_order = _resolve_alloc_order(original_args, order)
             if dtype is not None:
                 out_dtypes = (np.dtype(dtype),)*ufunc.nout
             else:
@@ -355,7 +472,9 @@ def _with_cache_optimization(
                     batch_shape,
                 )
             outputs = tuple(
-                _allocate_out(args, out_shape, out_dtype, alloc_order, subok)
+                _allocate_out(
+                    original_args, out_shape, out_dtype, alloc_order, subok
+                )
                 if entry is None else entry
                 for entry, out_shape, out_dtype in zip(
                         out_tuple, out_shapes, out_dtypes
@@ -363,6 +482,34 @@ def _with_cache_optimization(
             )
         else:
             outputs = out_tuple
+
+        return_outputs = outputs
+
+        if output_axes is not None:
+            restored = []
+
+            for i, (x, original) in enumerate(
+                    zip(outputs, original_out_tuple)
+            ):
+                if original is not None:
+                    # The gufunc writes through the canonical view into this
+                    # original user-supplied array.
+                    restored.append(original)
+                elif output_core_ndims[i] > 0:
+                    restored.append(
+                        np.moveaxis(
+                            x,
+                            range(
+                                x.ndim - output_core_ndims[i],
+                                x.ndim,
+                            ),
+                            output_axes[i],
+                        )
+                    )
+                else:
+                    restored.append(x)
+
+            return_outputs = tuple(restored)
 
         # Views of the output arrays with axes sorted as needed.
         kwargs["out"] = tuple(
@@ -384,7 +531,7 @@ def _with_cache_optimization(
         # avoids having non-contiguous output.
         ufunc(*args_t, **kwargs)
 
-        return outputs[0] if ufunc.nout == 1 else outputs
+        return return_outputs[0] if ufunc.nout == 1 else return_outputs
 
     wrapper.__qualname__ = name
     return _make_ufunc_wrapper(
