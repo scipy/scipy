@@ -366,7 +366,7 @@ class _FuncInfo:
                             "ufunc keyword arguments other than `axis` are not "
                             f"supported for {self.name} with backend {xp.__name__}."
                         )
-                    kwargs[axis] = axis
+                    kwargs["axis"] = axis
                 elif self.is_ufunc and kwargs:
                     raise NotImplementedError(
                         "ufunc keyword arguments are not supported "
