@@ -1129,7 +1129,12 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             skip_backends=[("dask.array", "not elementwise")],
-            extra_note=_ufunc_kwargs_extra_note("poisson_binom_cdf", ["torch"]),
+            extra_note=_ufunc_kwargs_extra_note(
+                "poisson_binom_cdf",
+                ["torch"],
+                "``poisson_binom_cdf`` supports the ``axis`` kwarg for"
+                " all supported backends.",
+            ),
         ),
         is_elementwise=False,
         shape_mapper=_poisson_binom_cdf_shape_mapper,
