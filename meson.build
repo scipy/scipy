@@ -209,6 +209,9 @@ unuran = subproject('unuran')
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
+biteopt = subproject('biteopt')
+biteopt_dep = biteopt.get_variable('biteopt_dep')
+
 # System libraries / subprojects
 
 use_system_libraries = get_option('use-system-libraries')
@@ -254,5 +257,6 @@ else
   qhull_r = subproject('qhull_r', version : '8.0.2')
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
+
 
 subdir('scipy')
