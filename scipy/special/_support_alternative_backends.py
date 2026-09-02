@@ -23,7 +23,7 @@ def _special_namespace_for(xp):
     return getattr(spx, "special", None)
 
 
-def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=()):
+def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=(), additional_note=None):
     if (name is None) != (not out_unsupported_backends):
         raise ValueError(
             "`name` and `out_unsupported_backends` must either both be supplied "
@@ -45,20 +45,22 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=()):
         else:
             backend_text = f"the {' and '.join(backends)} backends"
 
-        extra = (
-            f"``{name}``\n    does not currently support ``out`` for {backend_text}."
+        out_note = (
+            f"``{name}``does not currently support ``out`` for {backend_text}."
         )
+        additional_note = "" if additional_note is None else additional_note
 
     return (
         "For the NumPy backend, this function supports all\n"
         "    `NumPy ufunc keyword arguments "
         "<https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments>`_.\n"
-        "    Other backends may support ``out``, but none of the other ufunc\n"
+        "    Other backends may support ``out``, but typically none of the other ufunc\n"
         "    kwargs. ``out`` is typically supported for CuPy and PyTorch, but not\n"
         "    currently in cases where SciPy relies on a generic Array API\n"
         "    implementation or, for PyTorch on CPU, falls back to the NumPy backend.\n"
         "    ``out`` is never supported for JAX because JAX arrays are immutable.\n"
-        f"    {extra}\n\n"
+        f"    {out_note}\n"
+        f"    {additional_note}\n\n"
     )
 
 
