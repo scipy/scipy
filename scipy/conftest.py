@@ -539,7 +539,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions",
+            "mparray"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 

@@ -152,9 +152,14 @@ solve-group = "array-api-cpu"
 features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray", "default-platforms"]
 solve-group = "array-api-cpu"
 
+[environments.mparray]
+# tasks: test-mparray
+features = ["run-deps", "test-deps", "mkl", "mparray", "mparray-tasks", "default-platforms"]
+solve-group = "array-api-cpu"
+
 [environments.array-api-cpu]
 # tasks: test-cpu, bench-cpu, ipython-cpu
-features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu", "ipython-dep", "ipython-cpu-task", "default-platforms"]
+features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "mparray", "torch-cpu", "ipython-dep", "ipython-cpu-task", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
@@ -851,6 +856,13 @@ marray-python = "*"
 [feature.sparse.dependencies]
 sparse = "*"
 
+[feature.mparray.dependencies]
+mparray = "*"
+
+[feature.mparray-tasks.tasks.test-mparray]
+cmd = "spin test --no-build --build-dir=build-cpu -b mparray -m 'array_api_backends and not slow'"
+depends-on = "build-cpu"
+description = "Test with mparray"
 
 ### Optional dependencies ###
 

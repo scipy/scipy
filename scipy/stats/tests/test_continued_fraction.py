@@ -17,6 +17,7 @@ skip_xp_torchmeta_continued_fraction = pytest.mark.skip_xp_backends(
 # n = int(xp.real(xp_ravel(n))[0])
 # (at some point in here the shape becomes nan)
 @pytest.mark.skip_xp_backends('dask.array', reason="dask has issues with the shapes")
+@pytest.mark.skip_xp_backends('mparray', reason="not supported for this function")
 @pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)

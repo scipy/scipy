@@ -777,6 +777,8 @@ def _make_sphinx_capabilities(
 
     # documentation doesn't display the reason
     for module, _ in list(skip_backends) + list(xfail_backends):
+        if module == "mparray":
+            continue  # don't document for now
         backend = capabilities[module]
         if backend.cpu is not None:
             backend.cpu = False
@@ -862,7 +864,7 @@ def xp_capabilities(
     # Generate pytest.mark.skip/xfail_xp_backends.
     # See documentation in conftest.py.
     # lists of tuples [(module name, reason), ...]
-    skip_backends=(), xfail_backends=(),
+    skip_backends=None, xfail_backends=None,
     cpu_only=False, np_only=False, reason=None,
     out_of_scope=False, exceptions=(),
     # lists of tuples [(module name, reason), ...]
@@ -878,6 +880,8 @@ def xp_capabilities(
     method_capabilities=None,
     # Whether the function supports MArrays that wrap one of the supported backends
     marray=False,
+    # Whether the function supports arbitrary precision via mparray.
+    mparray=False
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -896,6 +900,9 @@ def xp_capabilities(
     make_xp_pytest_param
     array_api_extra.testing.lazy_xp_function
     """
+    skip_backends = [] if skip_backends is None else skip_backends
+    xfail_backends = [] if xfail_backends is None else xfail_backends
+
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
@@ -908,8 +915,8 @@ def xp_capabilities(
         # Fill in missing entries of method capabilities with
         # defaults if any entries are missing.
         method_capabilities[method] = dict(
-            skip_backends=(),
-            xfail_backends=(),
+            skip_backends=[],
+            xfail_backends=[],
             cpu_only=False,
             np_only=False,
             out_of_scope=False,
@@ -919,8 +926,14 @@ def xp_capabilities(
             allow_dask_compute=False,
             jax_jit=True,
             marray=False,
+            mparray=False,
         ) | capabilities
+        if not method_capabilities[method]["mparray"]:
+            method_capabilities[method]["skip_backends"] += (
+                [("mparray", "mparray not supported for this method")])
 
+    if not mparray:
+        skip_backends += [("mparray", "mparray not supported for this function")]
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
