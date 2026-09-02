@@ -31,7 +31,7 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=(), additional_
         )
 
     out_note = ""
-    additional_note = ""
+    additional_note = "" if additional_note is None else additional_note
     if name is not None:
         backend_names = {
             "cupy": "CuPy",
@@ -47,9 +47,8 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=(), additional_
             backend_text = f"the {' and '.join(backends)} backends"
 
         out_note = (
-            f"``{name}``does not currently support ``out`` for {backend_text}."
+            f"``{name}`` does not currently support ``out`` for {backend_text}."
         )
-        additional_note = "" if additional_note is None else additional_note
 
     return (
         "For the NumPy backend, this function supports all\n"
@@ -367,6 +366,7 @@ class _FuncInfo:
                             "ufunc keyword arguments other than `axis` are not "
                             f"supported for {self.name} with backend {xp.__name__}."
                         )
+                    kwargs[axis] = axis
                 elif self.is_ufunc and kwargs:
                     raise NotImplementedError(
                         "ufunc keyword arguments are not supported "

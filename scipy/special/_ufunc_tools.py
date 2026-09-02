@@ -330,11 +330,11 @@ def _with_cache_optimization(
         original_out_tuple = out_tuple
         output_axes = None
         keepdims = kwargs.get("keepdims", False)
-        if "keepdims" in kwargs and type(keepdims) is not bool:
-            raise TypeError("'keepdims' must be a boolean")
         call_output_core_ndims = output_core_ndims
 
         if not is_elementwise:
+            if "keepdims" in kwargs and type(keepdims) is not bool:
+                raise TypeError("'keepdims' must be a boolean")
             # Support axis/axes kwargs for gufuncs.
             axis = kwargs.pop("axis", _NO_VALUE)
             axes = kwargs.pop("axes", _NO_VALUE)
