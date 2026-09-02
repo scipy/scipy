@@ -96,9 +96,11 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
    * read, and for Nh/2 > N also write, outside the arrays. Lifting the
    * restriction would require repeated reflection in the boundary sections.
    */
-  if (N < 2 * (PyArray_DIMS(a_hrow)[0] >> 1) || M < 2 * (PyArray_DIMS(a_hcol)[0] >> 1)) {
-    PYERR("hrow must not be longer than input.shape[1] + 1, and hcol must not "
-          "be longer than input.shape[0] + 1");
+  if (N < 2 * (PyArray_DIMS(a_hrow)[0] >> 1)) {
+    PYERR("hrow must not be longer than input.shape[1] + 1");
+  }
+  if (M < 2 * (PyArray_DIMS(a_hcol)[0] >> 1)) {
+    PYERR("hcol must not be longer than input.shape[0] + 1");
   }
 
   switch (thetype) {
