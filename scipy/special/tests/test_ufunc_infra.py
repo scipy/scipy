@@ -44,11 +44,28 @@ def _assert_same_result(actual, desired):
         assert actual.strides == desired.strides
 
 
-_vecmat_wrapper = _with_cache_optimization(
+_vecdot_cached_wrapper = _with_cache_optimization(
+    name="_vecdot_cached_wrapper",
+    arg_names=["x1", "x2"],
+    docstring="Wrapper for np.vecdot.",
+    ufunc=np.vecdot,
+    cache_arg_indices=[0],
+)
+
+_vecmat_cached_wrapper = _with_cache_optimization(
     name="_vecmat_wrapper",
     arg_names=["x1", "x2"],
-    docstring=np.vecmat.__doc__,
+    docstring="Wrapper for np.vecmat.",
     ufunc=np.vecmat,
+    cache_arg_indices=[0],
+)
+
+
+_solve_cached_wrapper = _with_cache_optimization(
+    name="_solve_wrapper",
+    arg_names=["a", "b"],
+    docstring="Wrapper for NumPy solve gufunc.",
+    ufunc=np.linalg._umath_linalg.solve,
     cache_arg_indices=[0],
 )
 
@@ -319,7 +336,7 @@ class TestWithCacheOptimization:
         x2 = np.arange(30.0).reshape(2, 1, 3, 5)
 
         desired = np.vecmat(x1, x2)
-        actual = _vecmat_wrapper(x1, x2)
+        actual = _vecmat_cached_wrapper(x1, x2)
         _assert_same_result(actual, desired)
 
     def test_gufunc_output_core_dims_out(self):
@@ -328,7 +345,87 @@ class TestWithCacheOptimization:
         out = np.empty((2, 4, 5))
 
         desired = np.vecmat(x1, x2)
-        actual = _vecmat_wrapper(x1, x2, out=out)
+        actual = _vecmat_cached_wrapper(x1, x2, out=out)
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axis(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+        
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+        
+        desired = np.vecdot(x1, x2, axis=1)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1)
+
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axis_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+        
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+        
+        out = np.empty((2, 4))
+        desired_out = np.empty_like(out)
+
+        desired = np.vecdot(x1, x2, axis=1, out=desired_out)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1, out=out)
+        
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        desired = np.linalg._umath_linalg.solve(a, b, axes=axes)
+        actual = _solve_cached_wrapper(a, b, axes=axes)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes_out(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+        
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+        
+        out = np.empty((2, 3, 4, 2))
+        desired_out = np.empty_like(out)
+        
+        desired = np.linalg._umath_linalg.solve(
+            a, b, axes=axes, out=desired_out
+        )
+        actual = _solve_cached_wrapper(
+            a, b, axes=axes, out=out
+        )
+
         assert actual is out
         _assert_same_result(actual, desired)
 
