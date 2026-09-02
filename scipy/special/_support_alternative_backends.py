@@ -30,7 +30,8 @@ def _ufunc_kwargs_extra_note(name=None, out_unsupported_backends=(), additional_
             "or both be omitted."
         )
 
-    extra = ""
+    out_note = ""
+    additional_note = ""
     if name is not None:
         backend_names = {
             "cupy": "CuPy",
