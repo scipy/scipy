@@ -21,6 +21,7 @@ py3.extension_module('_minpack',
   ],
   include_directories: 'src/',
   dependencies: [np_dep, ccallback_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
