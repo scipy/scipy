@@ -31,7 +31,9 @@ def biteopt(
         of fixed parameters.
     bounds : sequence or `Bounds`
         Bounds for variables, specified either as an instance of `Bounds` or as
-        ``(min, max)`` pairs for each element in ``x``. Bounds must be finite.
+        ``(min, max)`` pairs for each element in ``x``. Bounds must be finite
+        and satisfy ``min < max`` strictly for every variable; equal bounds
+        (fixing a variable) are not accepted.
     args : tuple, optional
         Additional fixed parameters passed to the objective function.
     callback : callable, optional
@@ -57,8 +59,9 @@ def biteopt(
         (-inf) this criterion is disabled and the full iteration budget is
         used.
     rng : {None, int, `numpy.random.Generator`}, optional
-        Controls reproducibility. Passed to `numpy.random.default_rng` to
-        derive the integer seed used by BiteOpt's internal PRNG.
+        Controls reproducibility. Passed to `numpy.random.default_rng`; the
+        resulting Generator's bit stream directly drives BiteOpt's internal
+        random draws.
 
     Returns
     -------
@@ -86,6 +89,9 @@ def biteopt(
     stochastic, results depend on the random stream; pass `rng` for
     reproducible runs. BiteOpt has proven to be very competitive especially
     for nonlinear least squares problems [2]_.
+
+    The lock of the Generator derived from `rng` is held for the duration of
+    the optimization. Drawing from the same Generator inside `func` is safe.
 
     .. versionadded:: 2.0.0
 
