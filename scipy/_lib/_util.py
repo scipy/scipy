@@ -416,7 +416,7 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-def _validate_int(k, name, minimum=None):
+def _validate_int(k, name, minimum=None, maximum=None):
     """
     Validate a scalar integer.
 
@@ -433,6 +433,8 @@ def _validate_int(k, name, minimum=None):
         The name of the parameter.
     minimum : int, optional
         An optional lower bound.
+    maximum : int, optional
+        An optional upper bound.
     """
     try:
         k = operator.index(k)
@@ -441,6 +443,9 @@ def _validate_int(k, name, minimum=None):
     if minimum is not None and k < minimum:
         raise ValueError(f'{name} must be an integer not less '
                          f'than {minimum}') from None
+    if maximum is not None and k > maximum:
+        raise ValueError(f'{name} must be an integer not greater '
+                         f'than {maximum}') from None
     return k
 
 
@@ -1136,12 +1141,29 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                 letter_to_length[l] = length
 
     results = []
+    # This is a hack to avoid having to rethink the parsing strategy, e.g.
+    # (i, i)->(i, i),bool(i) becomes (i, i)->(i, i),(booli).
+    # But then we can still separate the two outputs by splitting at ),(.
+    # TODO: use regular expression for more efficient, elegant parsing.
+    signature_dtypes = ['bool', 'int', 'float', 'complex']
+    for signature_dtype in signature_dtypes:
+        outputs = outputs.replace(f"{signature_dtype}(", f"({signature_dtype}")
     outputs = outputs.lstrip("(").rstrip(")").split("),(")
     for output in outputs:
+        output_dtype = dtype
+        for signature_dtype in signature_dtypes:
+            if signature_dtype in output:
+                output_dtypes = {'bool': xp.bool,
+                                 'int': xp.result_type(1),
+                                 'float': xp.real(xp.asarray(1, dtype=dtype,
+                                                  device=device)).dtype,
+                                 'complex': xp.result_type(complex(1), dtype)}
+                output_dtype = output_dtypes[signature_dtype]
+                output = output.replace(signature_dtype, "")
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
         results.append(xp.empty(batch_shape + out_core_shape,
-                                dtype=dtype, device=device))
+                                dtype=output_dtype, device=device))
     return results[0] if len(results) == 1 else tuple(results)
 
 

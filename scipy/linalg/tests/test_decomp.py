@@ -32,7 +32,6 @@ from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
-from scipy.__config__ import CONFIG
 
 from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
@@ -3037,11 +3036,6 @@ class TestHessenberg:
 
         assert q.shape == (0, 0)
         assert q.dtype == q3.dtype
-
-
-blas_provider = blas_version = None
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 class TestQZ:
