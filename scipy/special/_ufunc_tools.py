@@ -320,6 +320,7 @@ def _with_cache_optimization(
         output_axes = None
 
         if not is_elementwise:
+            # Support axis/axes kwargs for gufuncs.
             axis = kwargs.pop("axis", _NO_VALUE)
             axes = kwargs.pop("axes", _NO_VALUE)
 
