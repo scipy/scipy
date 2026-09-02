@@ -157,9 +157,9 @@ _poisson_binom_cdf_doc = (
 
     Parameters
     ----------
-    k : array_like
+    k : array_like of int
         Number of successes at which to evaluate cdf.
-    p : array_like
+    p : array_like of float
         Success probabilities of independent Bernoulli trials.
     out : ndarray, optional
         Optional output array for the function results.
@@ -172,11 +172,37 @@ _poisson_binom_cdf_doc = (
     scalar or ndarray
         Values of the Poisson binomial cumulative distribution function.
 
+    See Also
+    --------
+    scipy.stats.poisson_binom
+
+    Notes
+    -----
+    .. versionadded:: 2.0.0
+
     References
     ----------
     .. [1] Poisson binomial distribution,
            https://en.wikipedia.org/wiki/Poisson_binomial_distribution
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import poisson_binom_cdf
+
+    A batch of two Poisson binomial distributions involving three trials
+    each.
+
+    >>> p = np.asarray([[0.2, 0.4, 0.6], [0.3, 0.3, 0.1]])
+
+    Evaluate cdf across the entire support. An extra dimension is added to
+    ``k`` to broadcast against the batch dimension of ``p``.
+    >>> k = np.asarray([0, 1, 2])[:, None]
+    >>> poisson_binom_cdf(k, p)
+    array([[0.192, 0.441],
+           [0.656, 0.868],
+           [0.952, 0.991],
+           [1.   , 1.   ]])
 
     """
 )
