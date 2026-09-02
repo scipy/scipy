@@ -338,6 +338,12 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="float"):
             biteopt(rosen, self.default_bounds, f_min="not a float")
 
+    def test_f_min_nan(self):
+        # NaN would silently disable the early-stop criterion and then report
+        # failure; reject it up front instead.
+        with pytest.raises(ValueError, match="f_min must not be NaN"):
+            biteopt(rosen, self.default_bounds, f_min=np.nan)
+
     def test_func_returns_non_scalar(self):
         # The objective function must return a scalar; if it returns an array
         # or other non-scalar that cannot be converted to a single value,

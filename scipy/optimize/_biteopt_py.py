@@ -167,6 +167,8 @@ def biteopt(
         maxfun = 1000 * ndim
 
     f_min = float(f_min)
+    if np.isnan(f_min):
+        raise ValueError("f_min must not be NaN")
 
     # BiteOpt's internal PRNG is driven by the NumPy Generator's bit
     # generator. Keep a reference to ``generator`` alive for the duration of
@@ -179,7 +181,7 @@ def biteopt(
             _dt = getattr(fx, "dtype", np.dtype(np.float64))
             try:
                 fx = _dt.type(np.asarray(fx).item())
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError, AttributeError) as e:
                 raise ValueError(
                     "The user-provided objective function "
                     "must return a scalar value."
