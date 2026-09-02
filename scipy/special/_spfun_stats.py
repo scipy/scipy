@@ -197,12 +197,14 @@ _poisson_binom_cdf_doc = (
 
     Evaluate cdf across the entire support. An extra dimension is added to
     ``k`` to broadcast against the batch dimension of ``p``.
+
     >>> k = np.asarray([0, 1, 2])[:, None]
     >>> poisson_binom_cdf(k, p)
     array([[0.192, 0.441],
            [0.656, 0.868],
            [0.952, 0.991],
            [1.   , 1.   ]])
+
 
     """
 )
