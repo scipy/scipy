@@ -351,6 +351,26 @@ class TestSepfir2d:
         xp_assert_close(result, expected, atol=1e-13)
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
+    @pytest.mark.parametrize('nrow, ncol', [(3, 3), (5, 7), (9, 7)])
+    def test_sepfir2d_mirror_reference(self, nrow, ncol, xp):
+        # Compare against a brute-force mirror-symmetric convolution built
+        # with np.pad; the (9, 7) case uses the longest filters a 6x8 image
+        # supports, where the output consists of boundary sections only.
+        rng = np.random.default_rng(438272839)
+        image = rng.random((6, 8))
+        hrow = rng.random(nrow)
+        hcol = rng.random(ncol)
+
+        padded = np.pad(image, ((ncol // 2,), (nrow // 2,)), mode='symmetric')
+        rows = np.apply_along_axis(np.convolve, 1, padded, hrow, 'valid')
+        expected = xp.asarray(np.apply_along_axis(np.convolve, 0, rows, hcol,
+                                                  'valid'))
+
+        result = signal.sepfir2d(xp.asarray(image), xp.asarray(hrow),
+                                 xp.asarray(hcol))
+        xp_assert_close(result, expected, atol=1e-13)
+
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
