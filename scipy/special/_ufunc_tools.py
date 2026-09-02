@@ -270,8 +270,8 @@ def _with_cache_optimization(
 
     """
 
-    # Need to keep track of the number of core dimensions for each input
-    # since core dimensions don't participate in broadcasting.
+    # Need to keep track of the number of core dimensions for the
+    # inputs and outputs since core dimensions don't participate in broadcasting.
     if ufunc.signature is not None:
         input_core_dims, output_core_dims = _parse_core_dims(ufunc.signature)
     else:
@@ -330,6 +330,8 @@ def _with_cache_optimization(
         original_out_tuple = out_tuple
         output_axes = None
         keepdims = kwargs.get("keepdims", False)
+        if "keepdims" in kwargs and type(keepdims) is not bool:
+            raise TypeError("'keepdims' must be a boolean")
         call_output_core_ndims = output_core_ndims
 
         if not is_elementwise:
@@ -341,8 +343,6 @@ def _with_cache_optimization(
                 call_output_core_ndims = (
                     input_core_ndims[0],
                 ) * ufunc.nout
-            else:
-                call_output_core_ndims = output_core_ndims
 
             gufunc_axes = _normalize_gufunc_axes(
                 axis,
