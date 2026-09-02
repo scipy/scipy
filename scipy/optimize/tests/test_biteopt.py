@@ -289,6 +289,13 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="bounds must be a sequence"):
             biteopt(rosen, [])
 
+    def test_bounds_not_1d(self):
+        # Multi-dimensional bounds pass Bounds' own broadcasting validation but
+        # must be rejected here rather than silently optimizing over a slice.
+        bounds = Bounds(np.zeros((2, 2)), np.ones((2, 2)))
+        with pytest.raises(ValueError, match="must be one-dimensional"):
+            biteopt(rosen, bounds)
+
     @pytest.mark.parametrize("maxfun, exc_type, msg", [
         (0, ValueError, "must be an integer not less than 1"),
         (-1, ValueError, "must be an integer not less than 1"),

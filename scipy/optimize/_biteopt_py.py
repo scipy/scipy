@@ -142,6 +142,8 @@ def biteopt(
     lb = np.ascontiguousarray(bounds.lb, dtype=np.float64)
     ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
+    if lb.ndim != 1:
+        raise ValueError("bounds must be one-dimensional")
     if not np.all(lb < ub):
         raise ValueError("Bounds are not consistent min < max")
     if np.any(np.isinf(lb)) or np.any(np.isinf(ub)):
