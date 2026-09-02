@@ -1387,8 +1387,8 @@ class Rotation:
                 - :math:`[-180° - \lambda,\ {-\lambda}]`, if :math:`\lambda < 0`
                 
               Here :math:`\lambda` is the angle in :math:`[-180°,\ 180°]` that rotates 
-              axis 3 onto axis 1 using axis 2 as the rotation vector. (all intervals 
-              inclusive on both sides)
+              axis 3 onto axis 1 using axis 2 as the rotation vector
+              (all intervals inclusive on both sides).
 
         References
         ----------
