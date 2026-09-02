@@ -5978,14 +5978,45 @@ const char *erf_doc = R"(
 
     Examples
     --------
+    In this example we show how `erf` can be used to solve the heat equation.
+    Consider the problem
+
+    .. math::
+
+        \frac{\partial T}{\partial t} = \frac{\partial^2 T}{\partial x^2},
+        \qquad x \in (-\infty, \infty), \quad t > 0,
+
+    with boundary conditions :math:`T(x,t) \to 0` as :math:`x \to -\infty` and
+    :math:`T(x,t) \to 1` as :math:`x \to \infty` and initial condition. Seeking a
+    solution of the form :math:`T(x,t) = f(\eta)` with :math:`\eta = x/\sqrt{t}`
+    transforms the problem into the following ordinary differential equation
+
+    .. math::
+
+        f'' + \frac{\eta}{2} f' = 0,
+
+    with the boundary conditions :math:`f(\eta) \to 0` as :math:`\eta \to -\infty` and
+    :math:`f(\eta) \to 1` as :math:`\eta \to \infty`. This has the solution
+    :math:`f(\eta) = (1 + \operatorname{erf}(\eta/2))/2`.
+    We conclude the example by plotting the solution both as a function of :math:`\eta`
+    and as a function of :math:`x` for different times.
+
     >>> import numpy as np
-    >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> z = np.linspace(-3, 3)
-    >>> plt.plot(z, special.erf(z))
-    >>> plt.xlabel('$z$')
-    >>> plt.ylabel('$erf(z)$')
+    >>> from scipy.special import erf
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained", figsize=(5, 5))
+    >>> eta = np.linspace(-5, 5)
+    >>> ax1.plot(eta, (1 + erf(eta/2))/2)
+    >>> ax1.set_xlabel(r'$\eta$')
+    >>> ax1.set_ylabel(r'$f(\eta)$')
+    >>> x = np.linspace(-5, 5, num=500)
+    >>> for t in [0.001, 0.01, 0.1, 0.5, 1]:
+    ...     ax2.plot(x, (1 + erf(x/(2*np.sqrt(t))))/2, label=f't={t}')
+    >>> ax2.set_xlabel(r'$x$')
+    >>> ax2.set_ylabel(r'$T(x,t)$')
+    >>> ax2.legend()
     >>> plt.show()
+
     )";
 
 const char *erfc_doc = R"(
@@ -6022,7 +6053,6 @@ const char *erfc_doc = R"(
 
     Examples
     --------
-
     In this example we consider modelling the instantaneous heating of a semi-infinite
     solid from its boundary at :math:`x=0`. This is governed by the heat equation
 
@@ -6041,18 +6071,18 @@ const char *erfc_doc = R"(
         f'' + \frac{\eta}{2} f' = 0, \qquad f(0) = 1, \quad f(\infty) = 0,
 
     which has the solution :math:`f(\eta) = \operatorname{erfc}(\eta/2)`.
-    We conclude by plotting the solution both as a function of :math:`\eta`
+    We conclude the example by plotting the solution both as a function of :math:`\eta`
     and as a function of :math:`x` for different times.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.special import erfc
-    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained")
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained", figsize=(5, 5))
     >>> eta = np.linspace(0, 4)
     >>> ax1.plot(eta, erfc(eta/2))
     >>> ax1.set_xlabel(r'$\eta$')
     >>> ax1.set_ylabel(r'$f(\eta)$')
-    >>> x = np.linspace(0, 2)
+    >>> x = np.linspace(0, 2, num=100)
     >>> for t in [0.001, 0.01, 0.1, 0.5, 1]:
     ...     ax2.plot(x, erfc(x/(2*np.sqrt(t))), label=f't={t}')
     >>> ax2.set_xlabel(r'$x$')
