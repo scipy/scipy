@@ -325,12 +325,6 @@ class _FuncInfo:
                 # to get the output shape which can no longer be inferred directly by
                 # broadcasting the input shapes.
                 def f(*args, _f=_f, xp=xp, shape_mapper=shape_mapper, **kwargs):
-                    axis = kwargs.pop("axis", -1)
-                    if kwargs:
-                        raise NotImplementedError(
-                            "ufunc keyword arguments other than `axis` are not "
-                            f"supported for {self.name} with backend {xp.__name__}."
-                        )
                     dtypes = (
                         arg.dtype if is_jax_array(arg) else type(arg)
                         for arg in args
@@ -346,13 +340,15 @@ class _FuncInfo:
                         for arg, dtype in zip(args, dtypes[:nin])
                     ]
 
+                    # The shape mapper will decide if the kwargs are actually supported
+                    # for this backend with JAX and raise if not.
                     shape = shape_mapper(
-                        *(arg.shape for arg in args), axis
+                        *(arg.shape for arg in args), **kwargs
                     )
 
                     return xpx.lazy_apply(
                         _f, *args, shape=shape, xp=xp,
-                        as_numpy=True, dtype=out_dtype, axis=axis
+                        as_numpy=True, dtype=out_dtype, **kwargs
                     )
         else:
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
@@ -362,13 +358,17 @@ class _FuncInfo:
                         f" with backend {xp.__name__}."
                     )
                 if self.is_ufunc and not self.is_elementwise:
-                    axis = kwargs.pop("axis", -1)
+                    gufunc_kwargs = {}
+                    for kwarg in ("axis", "axes", "keepdims"):
+                        if kwarg in kwargs:
+                            gufunc_kwargs[kwarg] = kwargs.pop(kwarg)
                     if kwargs:
+                        kwarg_names = ", ".join(f"`{name}`" for name in kwargs)
                         raise NotImplementedError(
-                            "ufunc keyword arguments other than `axis` are not "
-                            f"supported for {self.name} with backend {xp.__name__}."
+                            f"received kwargs: {kwarg_names} that are not supported"
+                            f" for {self.name} with backend {xp.__name__}."
                         )
-                    kwargs["axis"] = axis
+                    kwargs = gufunc_kwargs
                 elif self.is_ufunc and kwargs:
                     raise NotImplementedError(
                         "ufunc keyword arguments are not supported "
@@ -515,7 +515,12 @@ def _stdtrit(xp, spsx):
     return __stdtrit
 
 
-def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis):
+def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
+    # Used to infer out shape for lazy_apply under JAX JIT.
+    if kwargs:
+        raise NotImplementedError(
+            "`poisson_binom_cdf` does not support gufunc kwargs other than `axis`"
+        )
     axis = operator.index(axis)
     if axis < 0:
         axis += len(p_shape)
