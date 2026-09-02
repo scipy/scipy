@@ -201,11 +201,6 @@ endforeach
 
 duccfft = subproject('duccfft')
 duccfft_dep = duccfft.get_variable('duccfft_dep')
-# https://github.com/scipy/scipy/issues/26043
-duccfft_dep = declare_dependency(
-  dependencies: duccfft_dep,
-  compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
-)
 
 pyprima = subproject('pyprima')
 pyprima_sources = pyprima.get_variable('sources')

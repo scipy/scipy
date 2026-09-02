@@ -21,59 +21,22 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-_numpy_dep = dependency('numpy')
+# The undecorated `_numpy_dep` is kept around because `dependency_map` further
+# down needs the real dependency object - a `declare_dependency()`
+# wrapper reports the project's own name and version instead.
+_numpy_dep = dependency('numpy', version: '>=' + min_numpy_version)
+np_dep = declare_dependency(
+  dependencies: _numpy_dep,
+  # Don't use the deprecated NumPy C API. Define this to a fixed version instead
+  # of NPY_API_VERSION in order not to break compilation for released SciPy
+  # versions when NumPy introduces a new deprecation.
+  compile_args: ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'],
+)
 
-# NumPy include directory - needed in all submodules
-# The chdir is needed because within numpy there's an `import signal`
-# statement, and we don't want that to pick up scipy's signal module rather
-# than the stdlib module. The try-except is needed because when things are
-# split across drives on Windows, there is no relative path and an exception
-# gets raised. There may be other such cases, so add a catch-all and switch to
-# an absolute path. Relative paths are needed when for example a virtualenv is
-# placed inside the source tree; Meson rejects absolute paths to places inside
-# the source tree.
-# For cross-compilation it is often not possible to run the Python interpreter
-# in order to retrieve numpy's include directory. It can be specified in the
-# cross file instead:
-#   [properties]
-#   numpy-include-dir = /abspath/to/host-pythons/site-packages/numpy/core/include
-#
-# This uses the path as is, and avoids running the interpreter.
-incdir_numpy = meson.get_external_property('numpy-include-dir', 'not-given')
-if incdir_numpy == 'not-given'
-  incdir_numpy = run_command(py3,
-    [
-      '-c',
-      '''import os
-os.chdir(os.path.join("..", "tools"))
-import numpy as np
-try:
-  incdir = os.path.relpath(np.get_include())
-except Exception:
-  incdir = np.get_include()
-print(incdir)
-  '''
-    ],
-    check: true
-  ).stdout().strip()
-
-  # We do need an absolute path to feed to `cc.find_library` below
-  _incdir_numpy_abs = run_command(py3,
-    ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
-    check: true
-  ).stdout().strip()
-else
-  _incdir_numpy_abs = incdir_numpy
-endif
-inc_np = include_directories(incdir_numpy)
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation.
-numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
-np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
-
+# Note: the undecorated `_pybind11_dep` is kept around, like `_numpy_dep`.
+_pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 pybind11_dep = declare_dependency(
-  dependencies: dependency('pybind11', version: '>=2.13.2'),
+  dependencies: _pybind11_dep,
   # https://github.com/pybind/pybind11/pull/6155
   # https://github.com/pybind/pybind11/pull/6156
   compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
@@ -437,6 +400,7 @@ if cy.version().version_compare('>=3.1.0')
     cython_shared_src,
     subdir: 'scipy',
     cython_args: cython_args,
+    link_args: version_link_args,
     install: true,
     install_tag: 'python-runtime',
   )
@@ -481,26 +445,17 @@ endif
 # C warning flags
 Wno_maybe_uninitialized = cc.get_supported_arguments('-Wno-maybe-uninitialized')
 Wno_discarded_qualifiers = cc.get_supported_arguments('-Wno-discarded-qualifiers')
-Wno_empty_body = cc.get_supported_arguments('-Wno-empty-body')
 Wno_implicit_function_declaration = cc.get_supported_arguments('-Wno-implicit-function-declaration')
 Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
-Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 
 # C++ warning flags
-_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
-_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
-_cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
-_cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
-_cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
-_cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
 _cpp_Wno_terminate = cpp.get_supported_arguments('-Wno-terminate')
 _cpp_Wno_uninitialized = cpp.get_supported_arguments('-Wno-uninitialized')
 _cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-set-variable')
@@ -594,6 +549,14 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
+    )
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
+    )
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -619,7 +582,8 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
-  'PYBIND11': pybind11_dep,
+  'NUMPY': _numpy_dep,
+  'PYBIND11': _pybind11_dep,
 }
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
