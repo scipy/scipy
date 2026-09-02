@@ -9,9 +9,8 @@ _mathieu_cem_doc = (
     Even Mathieu function and its derivative.
 
     Returns the even Mathieu function, ``ce_m(x, q)``, of order `m` and
-    parameter `q` evaluated at the angular argument `x`, given in degrees.
-    Also returns the derivative with respect to the corresponding argument
-    in radians.
+    parameter `q` evaluated at `x`, given in degrees. Also returns the
+    derivative with respect to `x` expressed in radians.
 
     Parameters
     ----------
@@ -20,7 +19,7 @@ _mathieu_cem_doc = (
     q : array_like
         Parameter of the function.
     x : array_like
-        Angular argument of the function, *given in degrees, not radians*.
+        Argument of the function, *given in degrees, not radians*.
     out : tuple of ndarray, optional
         Optional output arrays for the function results.
 
@@ -29,7 +28,7 @@ _mathieu_cem_doc = (
     y : scalar or ndarray
         Value of the function.
     yp : scalar or ndarray
-        Derivative with respect to the angular argument in radians.
+        Derivative with respect to `x` expressed in radians.
 
     See Also
     --------
@@ -37,19 +36,22 @@ _mathieu_cem_doc = (
 
     Notes
     -----
-    Let :math:`\theta = \pi x/180` be the angular argument in radians. The even
-    Mathieu functions are the solutions to Mathieu's differential equation
+    Let :math:`x_\mathrm{rad} = \pi x/180` denote the input expressed in
+    radians. The even Mathieu functions are the solutions to Mathieu's
+    differential equation
 
     .. math::
 
-        \frac{d^2y}{d\theta^2} + (a_m - 2q \cos(2\theta))y = 0
+        \frac{d^2y}{dx_\mathrm{rad}^2}
+        + (a_m - 2q \cos(2x_\mathrm{rad}))y = 0
 
     for which the characteristic number :math:`a_m` (calculated with `mathieu_a`)
-    results in an even, periodic solution :math:`y(\theta)` with period 180 degrees
-    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+    results in an even, periodic solution :math:`y(x_\mathrm{rad})` with period
+    :math:`\pi` radians (180 degrees) for even :math:`m`, or :math:`2\pi`
+    radians (360 degrees) for odd :math:`m`.
 
-    The returned derivative `yp` is :math:`dy/d\theta`. To obtain the derivative
-    with respect to the degree-valued input `x`, multiply `yp` by
+    The returned derivative `yp` is :math:`dy/dx_\mathrm{rad}`. To obtain the
+    derivative with respect to the degree-valued input `x`, multiply `yp` by
     :math:`\pi/180`.
 
     References
@@ -98,9 +100,8 @@ _mathieu_sem_doc = (
     Odd Mathieu function and its derivative.
 
     Returns the odd Mathieu function, ``se_m(x, q)``, of order `m` and
-    parameter `q` evaluated at the angular argument `x`, given in degrees.
-    Also returns the derivative with respect to the corresponding argument
-    in radians.
+    parameter `q` evaluated at `x`, given in degrees. Also returns the
+    derivative with respect to `x` expressed in radians.
 
     Parameters
     ----------
@@ -109,7 +110,7 @@ _mathieu_sem_doc = (
     q : array_like
         Parameter of the function.
     x : array_like
-        Angular argument of the function, *given in degrees, not radians*.
+        Argument of the function, *given in degrees, not radians*.
     out : tuple of ndarray, optional
         Optional output arrays for the function results.
 
@@ -118,7 +119,7 @@ _mathieu_sem_doc = (
     y : scalar or ndarray
         Value of the function.
     yp : scalar or ndarray
-        Derivative with respect to the angular argument in radians.
+        Derivative with respect to `x` expressed in radians.
 
     See Also
     --------
@@ -126,20 +127,23 @@ _mathieu_sem_doc = (
 
     Notes
     -----
-    Let :math:`\theta = \pi x/180` be the angular argument in radians. Odd
-    Mathieu functions are the solutions to Mathieu's differential equation
+    Let :math:`x_\mathrm{rad} = \pi x/180` denote the input expressed in
+    radians. Odd Mathieu functions are the solutions to Mathieu's differential
+    equation
 
     .. math::
 
-        \frac{d^2y}{d\theta^2} + (b_m - 2q \cos(2\theta))y = 0
+        \frac{d^2y}{dx_\mathrm{rad}^2}
+        + (b_m - 2q \cos(2x_\mathrm{rad}))y = 0
 
     for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
-    results in an odd, periodic solution :math:`y(\theta)` with period 180 degrees
-    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+    results in an odd, periodic solution :math:`y(x_\mathrm{rad})` with period
+    :math:`\pi` radians (180 degrees) for even :math:`m`, or :math:`2\pi`
+    radians (360 degrees) for odd :math:`m`.
 
     For ``m = 0``, both outputs are zero. The returned derivative `yp` is
-    :math:`dy/d\theta`. To obtain the derivative with respect to the degree-valued
-    input `x`, multiply `yp` by :math:`\pi/180`.
+    :math:`dy/dx_\mathrm{rad}`. To obtain the derivative with respect to the
+    degree-valued input `x`, multiply `yp` by :math:`\pi/180`.
 
     References
     ----------

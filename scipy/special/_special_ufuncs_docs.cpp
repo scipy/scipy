@@ -10367,9 +10367,9 @@ const char *mathieu_modcem1_doc = R"(
     m : array_like
         Order of the function. Must be a non-negative integer.
     q : array_like
-        Parameter of the function
+        Parameter of the function. Must be non-negative.
     x : array_like
-        Dimensionless argument of the function.
+        Argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results
 
@@ -10382,7 +10382,30 @@ const char *mathieu_modcem1_doc = R"(
 
     See Also
     --------
-    mathieu_modsem1
+    mathieu_a, mathieu_modsem1
+
+    Notes
+    -----
+    Replacing :math:`x` with :math:`\pm \mathrm{i}x` in Mathieu's equation gives
+    the modified Mathieu equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} - (a_m - 2q \cosh(2x))y = 0.
+
+    Here, :math:`a_m` is the characteristic number of the even Mathieu
+    function of order :math:`m`, calculated with `mathieu_a`.
+
+    `mathieu_modcem1` and `mathieu_modcem2` are linearly independent solutions
+    of this equation. For large `x`, the first- and second-kind solutions have
+    behavior analogous, up to normalization, to
+    :math:`J_m(2\sqrt{q}\cosh x)` and :math:`Y_m(2\sqrt{q}\cosh x)`,
+    respectively.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions, Section 28.20.
+           https://dlmf.nist.gov/28.20
 
     )";
 
@@ -10400,9 +10423,9 @@ const char *mathieu_modcem2_doc = R"(
     m : array_like
         Order of the function. Must be a non-negative integer.
     q : array_like
-        Parameter of the function.
+        Parameter of the function. Must be non-negative.
     x : array_like
-        Dimensionless argument of the function.
+        Argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results.
 
@@ -10415,7 +10438,30 @@ const char *mathieu_modcem2_doc = R"(
 
     See Also
     --------
-    mathieu_modsem2
+    mathieu_a, mathieu_modsem2
+
+    Notes
+    -----
+    Replacing :math:`x` with :math:`\pm \mathrm{i}x` in Mathieu's equation gives
+    the modified Mathieu equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} - (a_m - 2q \cosh(2x))y = 0.
+
+    Here, :math:`a_m` is the characteristic number of the even Mathieu
+    function of order :math:`m`, calculated with `mathieu_a`.
+
+    `mathieu_modcem1` and `mathieu_modcem2` are linearly independent solutions
+    of this equation. For large `x`, the first- and second-kind solutions have
+    behavior analogous, up to normalization, to
+    :math:`J_m(2\sqrt{q}\cosh x)` and :math:`Y_m(2\sqrt{q}\cosh x)`,
+    respectively.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions, Section 28.20.
+           https://dlmf.nist.gov/28.20
 
     )";
 
@@ -10433,9 +10479,9 @@ const char *mathieu_modsem1_doc = R"(
     m : array_like
         Order of the function. Must be a positive integer.
     q : array_like
-        Parameter of the function
+        Parameter of the function. Must be non-negative.
     x : array_like
-        Dimensionless argument of the function.
+        Argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results
 
@@ -10448,7 +10494,30 @@ const char *mathieu_modsem1_doc = R"(
 
     See Also
     --------
-    mathieu_modcem1
+    mathieu_b, mathieu_modcem1
+
+    Notes
+    -----
+    Replacing :math:`x` with :math:`\pm \mathrm{i}x` in Mathieu's equation gives
+    the modified Mathieu equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} - (b_m - 2q \cosh(2x))y = 0.
+
+    Here, :math:`b_m` is the characteristic number of the odd Mathieu
+    function of order :math:`m`, calculated with `mathieu_b`.
+
+    `mathieu_modsem1` and `mathieu_modsem2` are linearly independent solutions
+    of this equation. For large `x`, the first- and second-kind solutions have
+    behavior analogous, up to normalization, to
+    :math:`J_m(2\sqrt{q}\cosh x)` and :math:`Y_m(2\sqrt{q}\cosh x)`,
+    respectively.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions, Section 28.20.
+           https://dlmf.nist.gov/28.20
 
     )";
 
@@ -10466,9 +10535,9 @@ const char *mathieu_modsem2_doc = R"(
     m : array_like
         Order of the function. Must be a positive integer.
     q : array_like
-        Parameter of the function.
+        Parameter of the function. Must be non-negative.
     x : array_like
-        Dimensionless argument of the function.
+        Argument of the function.
     out : tuple of ndarray, optional
         Optional output arrays for the function results.
 
@@ -10481,7 +10550,30 @@ const char *mathieu_modsem2_doc = R"(
 
     See Also
     --------
-    mathieu_modcem2
+    mathieu_b, mathieu_modcem2
+
+    Notes
+    -----
+    Replacing :math:`x` with :math:`\pm \mathrm{i}x` in Mathieu's equation gives
+    the modified Mathieu equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} - (b_m - 2q \cosh(2x))y = 0.
+
+    Here, :math:`b_m` is the characteristic number of the odd Mathieu
+    function of order :math:`m`, calculated with `mathieu_b`.
+
+    `mathieu_modsem1` and `mathieu_modsem2` are linearly independent solutions
+    of this equation. For large `x`, the first- and second-kind solutions have
+    behavior analogous, up to normalization, to
+    :math:`J_m(2\sqrt{q}\cosh x)` and :math:`Y_m(2\sqrt{q}\cosh x)`,
+    respectively.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions, Section 28.20.
+           https://dlmf.nist.gov/28.20
 
     )";
 
