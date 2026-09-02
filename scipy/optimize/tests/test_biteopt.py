@@ -381,6 +381,7 @@ class TestRNG:
 class TestThreadSafety:
     default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrent_shared_generator_is_safe(self):
         # Sharing a single Generator across concurrent biteopt calls must not
         # crash or corrupt state. The wrapper holds bit_generator.lock for the
