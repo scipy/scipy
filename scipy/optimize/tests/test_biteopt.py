@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from scipy.optimize import biteopt, rosen, Bounds, OptimizeResult
-from scipy._lib._testutils import _run_concurrent_barrier
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 
 class TestSolver:
