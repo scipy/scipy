@@ -2095,7 +2095,7 @@ class TestLSQ:
         x, y = map(xp.asarray, (self.x, self.y))
         k = self.k
         # Make the data periodic
-        periodic_y = xp.copy(y)
+        periodic_y = xp.asarray(y, copy=True)
         periodic_y = xp.concat(
             (periodic_y[:-1], periodic_y[:1]),
             axis=0,

@@ -320,7 +320,7 @@ def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
 def _validate_periodic_knot_vector(t, k, xp):
     """Check that the knot vector is periodic."""
     T = t[-k-1] - t[k]
-    if not xp.allclose(t[:2*k+1] + T, t[-2*k-1:]):
+    if not np.allclose(t[:2*k+1] + T, t[-2*k-1:]):
         raise ValueError("The knot vector t is not periodic.")
 
 class _BSpline:
