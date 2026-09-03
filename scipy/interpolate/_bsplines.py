@@ -2419,7 +2419,8 @@ clamp_values=None, bc_type=None):
     if method == "norm-eq":
 
         if bc_type == "periodic":
-            raise NotImplementedError("Periodic boundary conditions are not implemented for method 'norm-eq'.")
+            raise NotImplementedError("Periodic boundary conditions are not "
+                                      "implemented for method 'norm-eq'.")
 
         # construct A.T @ A and rhs with A the colocation matrix, and
         # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
