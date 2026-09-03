@@ -52,15 +52,6 @@ _vecdot_cached_wrapper = _with_cache_optimization(
     cache_arg_indices=[0],
 )
 
-_vecmat_cached_wrapper = _with_cache_optimization(
-    name="_vecmat_wrapper",
-    arg_names=["x1", "x2"],
-    docstring="Wrapper for np.vecmat.",
-    ufunc=np.vecmat,
-    cache_arg_indices=[0],
-)
-
-
 _solve_cached_wrapper = _with_cache_optimization(
     name="_solve_wrapper",
     arg_names=["a", "b"],
@@ -332,21 +323,23 @@ class TestWithCacheOptimization:
         assert pickle.loads(pickle.dumps(func)) is func
 
     def test_gufunc_output_core_dims(self):
-        x1 = np.arange(12.0).reshape(1, 4, 3)
-        x2 = np.arange(30.0).reshape(2, 1, 3, 5)
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
 
-        desired = np.vecmat(x1, x2)
-        actual = _vecmat_cached_wrapper(x1, x2)
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b)
+
         _assert_same_result(actual, desired)
 
     def test_gufunc_output_core_dims_out(self):
-        x1 = np.arange(12.0).reshape(1, 4, 3)
-        x2 = np.arange(30.0).reshape(2, 1, 3, 5)
-        out = np.empty((2, 4, 5))
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+        out = np.empty((2, 4, 3, 2))
 
-        desired = np.vecmat(x1, x2)
-        actual = _vecmat_cached_wrapper(x1, x2, out=out)
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b, out=out)
         assert actual is out
+
         _assert_same_result(actual, desired)
 
     def test_gufunc_axis(self):
