@@ -11,7 +11,7 @@ def _polar_signature(a, side='right'):
             else "(i,j)->(i,j),(j,j)")
 
 
-@_apply_over_batch(('a', 2), signature=_polar_signature)
+@_apply_over_batch(('a', 2), signature=_polar_signature, zero_size_fill=0.0)
 def polar(a, side="right"):
     """
     Compute the polar decomposition.

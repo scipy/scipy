@@ -1117,7 +1117,7 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 """
 
 
-def output_from_signature(arrays, batch_shape, core_shapes, signature):
+def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill):
     xp = array_namespace(*arrays)
     dtype = xp.result_type(*arrays, xp.float32)
     device = xp_device(arrays[0]) if len(arrays) else None
@@ -1167,14 +1167,15 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
                 output = output.replace(signature_dtype, "")
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
-        fill_value = 0 if xp.isdtype(output_dtype, ('integral', 'bool')) else xp.nan
+        fill_value = (0 if xp.isdtype(output_dtype, ('integral', 'bool'))
+                      else zero_size_fill)
         results.append(xp.full(batch_shape + out_core_shape, fill_value=fill_value,
                                dtype=output_dtype, device=device))
 
     return results[0] if len(results) == 1 else tuple(results)
 
 
-def _apply_over_batch(*argdefs, signature=None):
+def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1191,6 +1192,13 @@ def _apply_over_batch(*argdefs, signature=None):
     *argdefs : tuple of (str, int)
         Definitions of array arguments: the keyword name of the argument, and
         the number of core dimensions.
+    signature : str or callable
+        NEP 5 signature of function, or callable that accepts all function arguments
+        and returns the NEP 5 signature.
+    zero_size_fill : float or None
+        Fill value of any non-zero size output array(s) when at least one
+        core dimension has zero length and output dtype is floating point.
+        If None, do not override the behavior of the function.
 
     Example:
     --------
@@ -1243,18 +1251,22 @@ def _apply_over_batch(*argdefs, signature=None):
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
             # Handle zero-size input
-            if math.prod(batch_shape) == 0 or any(math.prod(shape) == 0 for shape in core_shapes):
+            zero_size_batch = (math.prod(batch_shape) == 0)
+            zero_size_core = any(math.prod(shape) == 0 for shape in core_shapes)
+            if zero_size_batch or (zero_size_core and (zero_size_fill is not None)):
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
-                    return output_from_signature(arrays, batch_shape, core_shapes, sig)
-                f_name = f.__name__.lstrip('_')
-                message = f'`{f_name}` does not support zero-size input.'
-                raise ValueError(message)
+                    return output_from_signature(arrays, batch_shape, core_shapes,
+                                                 sig, zero_size_fill)
+                elif zero_size_batch:
+                    f_name = f.__name__.lstrip('_')
+                    message = f'`{f_name}` does not support zero-size batches.'
+                    raise ValueError(message)
 
             # Early exit if call is not batched
             elif not any(batch_shapes):
                 return f(*arrays, *other_args, **kwargs)
-            
+
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:

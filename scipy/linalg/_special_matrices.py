@@ -277,7 +277,7 @@ def hadamard(n, dtype=int):
 
 
 @xp_capabilities()
-@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
+@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)", zero_size_fill=None)
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -1022,7 +1022,7 @@ def fiedler(a):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)")
+@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)", zero_size_fill=None)
 def fiedler_companion(a):
     """Returns a Fiedler companion matrix.
 
@@ -1121,7 +1121,7 @@ def _convolution_matrix_signature(a, n, mode='full'):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature)
+@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature, zero_size_fill=None)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.

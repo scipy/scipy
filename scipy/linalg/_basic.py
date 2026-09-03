@@ -768,7 +768,8 @@ def _solve_toeplitz_signature(c, r, b, check_finite):
     return "(i),(i),(i)->(i)" if np.ndim(b) <= 1 else "(i),(i),(i,j)->(i,j)"
 
 
-@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'), signature=_solve_toeplitz_signature)
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'),
+                   signature=_solve_toeplitz_signature)
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
