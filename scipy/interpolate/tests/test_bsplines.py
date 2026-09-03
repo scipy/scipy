@@ -2094,10 +2094,15 @@ class TestLSQ:
     def test_periodic_not_implemented_for_method_norm_eq(self, xp):
         x, y = map(xp.asarray, (self.x, self.y))
         k = self.k
+        # Make the data periodic
         periodic_y = xp.copy(y)
-        periodic_y[-1] = periodic_y[0]
+        periodic_y = xp.concat(
+            (periodic_y[:-1], periodic_y[:1]),
+            axis=0,
+        )
 
         t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
+        t = xp.asarray(t)
 
         with assert_raises(NotImplementedError):
             make_lsq_spline(x, periodic_y, t, k, method="norm-eq", bc_type="periodic")
@@ -2108,6 +2113,7 @@ class TestLSQ:
 
         t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
         t[k + 1] += 0.1
+        t = xp.asarray(t)
 
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
@@ -2116,20 +2122,27 @@ class TestLSQ:
         # Compare to fitpack splprep
         x, y = map(xp.asarray, (self.x, self.y))
         k = self.k
-        periodic_y = xp.copy(y)
-        periodic_y[-1] = periodic_y[0]
+
+        # Make the data periodic
+        periodic_y = xp.asarray(y, copy=True)
+        periodic_y = xp.concat(
+            (periodic_y[:-1], periodic_y[:1]),
+            axis=0,
+        )
 
         t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
+        t = xp.asarray(t)
 
         spl = make_lsq_spline(x, periodic_y, t, k, method="qr", bc_type="periodic")
 
         # Check that the resulting spline is periodic
         xp_assert_close(spl(x[0]), spl(x[-1]))
 
-        tck, _ = splprep(y.reshape((1, y.shape[0])), k=k, u=x, t=t, task=-1, per=1)
+        tck, _ = splprep(np.array(y).reshape((1, y.shape[0])), k=k, u=np.array(x),
+                         t=np.array(t), task=-1, per=1)
 
-        xp_assert_close(spl.t, tck[0])
-        xp_assert_close(spl.c, tck[1][0])
+        xp_assert_close(spl.t, xp.asarray(tck[0]))
+        xp_assert_close(spl.c, xp.asarray(tck[1][0]))
 
     def test_weights_same(self, xp):
         # both methods treat weights
