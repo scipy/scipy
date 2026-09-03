@@ -2296,7 +2296,8 @@ clamp_values=None, bc_type=None):
     not-a-knot boundary conditions.
 
     When ``bc_type="periodic"`` is supplied, the knot vector has to be
-    periodic. This means a period ``T`` exists such that ``t[-k + j] - t[j]
+    periodic. This means a period ``T`` exists such that ``t[-k + j] - t[j] = T``
+    for all `j= 0, ..., k - 1`.
 
     Examples
     --------
