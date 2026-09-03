@@ -338,8 +338,8 @@ class TestWithCacheOptimization:
 
         desired = np.linalg._umath_linalg.solve(a, b)
         actual = _solve_cached_wrapper(a, b, out=out)
+        
         assert actual is out
-
         _assert_same_result(actual, desired)
 
     def test_gufunc_axis(self):
