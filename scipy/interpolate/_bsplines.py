@@ -2263,6 +2263,10 @@ clamp_values=None, bc_type=None):
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent. Currently not supported for method="norm-eq".
 
+        .. versionchanged:: 1.19.0
+            New keyword argument `bc_type`. Previously only `"not-a-knot"`
+            boundary conditions were supported.
+
     Returns
     -------
     b : `BSpline` object
@@ -2397,7 +2401,7 @@ clamp_values=None, bc_type=None):
         if not np.allclose(y[0], y[-1], atol=1e-15):
             raise ValueError("First and last points does not match which is required "
                              "for `bc_type='periodic'`.")
- 
+
     # number of coefficients
     n = t.size - k - 1
 
