@@ -260,7 +260,11 @@ class TestLUFactor:
         assert_equal(lu.shape, (m, n))
         assert_equal(lu.dtype, dtype)
         assert_equal(p.shape, (k,))
-        assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
+        # See https://github.com/scipy/scipy/issues/25964#issuecomment-5521651145
+        if m == 0 or n == 0:
+            assert p.dtype == np.int64
+        else:
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):

@@ -2030,7 +2030,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
                     raise MemoryError("Unable to allocate memory for array")
         return q1, rnew
 
-@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('v', '1|2'))
+@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('v', '1|2'), zero_size_fill=None)
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """

@@ -1491,7 +1491,7 @@ lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
 def _pinv_signature(*args, **kwargs):
-    return "(i,j)->(i,j),int()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
+    return "(i,j)->(j,i),int()" if kwargs.get('return_rank') else "(i,j)->(j, i)"
 
 
 @_apply_over_batch(('a', 2), signature=_pinv_signature)
@@ -1633,7 +1633,11 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2), signature=_pinv_signature)
+def _pinvh_signature(*args, **kwargs):
+    return "(i,i)->(i,i),int()" if kwargs.get('return_rank') else "(i,i)->(i, i)"
+
+
+@_apply_over_batch(('a', 2), signature=_pinvh_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -2089,16 +2093,16 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     from ..fft import fft, ifft, rfft, irfft
     c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
 
-    return _matmul_toeplitz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
+    return _matmul_toeplitz(c, r, x, workers, check_finite, fft, ifft, rfft, irfft)
 
 
-def _matmul_toeplitz_signature(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+def _matmul_toeplitz_signature(c, r, x, workers, check_finite, fft, ifft, rfft, irfft):
     return "(i),(j),(j)->(i)" if np.ndim(x) <= 1 else "(i),(j),(j,k)->(i,k)"
 
 
-@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'),
+@_apply_over_batch(('c', 1), ('r', 1), ('x', '1|2'),
                    signature=_matmul_toeplitz_signature)
-def _matmul_toeplitz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+def _matmul_toeplitz(c, r, x, workers, check_finite, fft, ifft, rfft, irfft):
     r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
                                                               keep_b_shape=False,
                                                               enforce_square=False)

@@ -1121,7 +1121,8 @@ def _convolution_matrix_signature(a, n, mode='full'):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature, zero_size_fill=None)
+@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature,
+                   zero_size_fill=None)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
