@@ -3944,16 +3944,6 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
 
-        .. warning::
-            When `y` is provided, `wilcoxon` calculates the test statistic
-            based on the ranks of the absolute values of ``d = x - y``.
-            Roundoff error in the subtraction can result in elements of ``d``
-            being assigned different ranks even when they would be tied with
-            exact arithmetic. Rather than passing `x` and `y` separately,
-            consider computing the difference ``x - y``, rounding as needed to
-            ensure that only truly unique elements are numerically distinct,
-            and passing the result as `x`, leaving `y` at the default (None).
-
     zero_method : {"wilcox", "pratt", "zsplit"}, optional
         There are different conventions for handling pairs of observations
         with equal values ("zero-differences", or "zeros").
@@ -4033,8 +4023,24 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       ``method='exact'`` is used when ``len(d) <= 50``, and
       ``method='asymptotic'`` is used otherwise.
 
-    The presence of "ties" (i.e. not all elements of ``d`` are unique) or
-    "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
+    .. warning::
+
+        The presence of "ties" (i.e. not all elements of ``d`` are unique) or
+        "zeros" (i.e. elements of ``d`` are zero) is determined based on exact
+        floating point equality. That is, elements are treated as zeros only
+        where ``d == 0``, and elements at indices ``i`` and ``j`` are only
+        treated as ties where ``d[i] == d[j]``. Adjust values as needed to
+        ensure that elements will be treated as ties or zeros as intended.
+
+        As an example of a potential pitfall, when `x` and `y` are provided,
+        roundoff error in the subtraction can result in elements of ``d``
+        being assigned different ranks even when they would be tied with
+        exact arithmetic. Rather than passing `x` and `y` separately,
+        consider computing the difference ``d = x - y`` explicitly. Adjust as
+        needed to ensure that only truly unique elements are numerically distinct,
+        then pass the result as `x`, leaving `y` at the default (None).
+
+    The presence of ties and zeros changes the null distribution
     of the test statistic, and ``method='exact'`` no longer calculates
     the exact p-value. If ``method='asymptotic'``, the z-statistic is adjusted
     for more accurate comparison against the standard normal, but still,
@@ -4044,7 +4050,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
 
-    The presence of ties and zeros affects the resolution of ``method='auto'``
+    The presence of ties and zeros also affects the resolution of ``method='auto'``
     accordingly: exhaustive permutations are performed when ``len(d) <= 13``,
     and the asymptotic method is used otherwise. Note that they asymptotic
     method may not be very accurate even for ``len(d) > 14``; the threshold
