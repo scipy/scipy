@@ -1707,6 +1707,7 @@ void lsoda(
             S->mxordn = mord[0];
             S->mxords = mord[1];
         }
+        S->hmin = hmin;
         // 60
 
         S->meth = 1;
@@ -1922,6 +1923,7 @@ void lsoda(
             S->hmxi = 0.0;
             hmin = 0.0;
         }
+        S->hmin = hmin;
         // 60
 
         S->lyh = 20;
