@@ -2975,14 +2975,20 @@ def _penalty_matrix_banded(t):
 
 
 def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
-    """Select `lam` by minimizing the GCV criterion V(lam) in log-space."""
+    """Select lam by minimizing the GCV criterion over the dimensionless
+    s = log10(lam / r), r = tr(X^T W X) / tr(Omega), so the fixed search
+    window is scale-free."""
     # Implementation decisions detailed in the following companion report:
     # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
     # Eq. (32)
     n = y.shape[0]
 
+    # `r` is the factor which upon division makes `lam`
+    # dimensionless.
+    r = xtwx_banded[3, :].sum() / omega[3, :].sum()
+
     def _gcv(lam):
-        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg, 
+        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
         # use it to estimate rcond of the banded system before solving
         c, tr = _solve_smoothing_spline_coefficients(
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
@@ -2991,10 +2997,13 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
         return rss / (1 - tr / n) ** 2
 
     def _gcv_log(s):
-        return _gcv(10 ** s)
+        return _gcv(r * 10 ** s)
 
-    res = minimize_scalar(_gcv_log, bounds=(-14, 9), method="bounded")
-    lam_hat = 10 ** res.x
+    # The bounds of `log(lam/r)` are (eps, 1/eps) where `eps`
+    # is the machine precision 2.2 * 1e-16, hence (-15, 15) is
+    # strictly in the live area for the bounds.
+    res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
+    lam_hat = r * 10 ** res.x
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,

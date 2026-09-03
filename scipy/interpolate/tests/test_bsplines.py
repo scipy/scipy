@@ -2954,6 +2954,25 @@ class TestSmoothingSpline:
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
 
+    @pytest.mark.parametrize("scale", [
+        pytest.param(4.0, id="normal"),
+        pytest.param(3e-6, id="tiny"),
+        pytest.param(1e6, id="huge"),
+    ])
+    def test_gcv_user_knots_scale_free(self, scale):
+        """Auto lam selection works at any data scale: the search window is
+        the dimensionless log10(lam / r), so it needs no absolute bounds."""
+        rng = np.random.default_rng(11)
+        x = np.sort(rng.uniform(0, scale, 50))
+        y = np.sin(2 * np.pi * 3 * x / scale) + 0.3 * rng.normal(size=50)
+        tk = np.linspace(x[0], x[-1], 15)
+        tk[0], tk[-1] = x[0], x[-1]
+        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        f = make_smoothing_spline(x, y, t=t)
+        assert np.all(np.isfinite(f(x)))
+        # the fit should be reasonable.
+        assert np.sqrt(np.mean((f(x) - y)**2)) < 0.75 * np.std(y)
+
     def test_gcv_user_knots_matches_grid_argmin(self):
         """GCV-selected fit agrees with the fit at the argmin of a log-lam grid."""
         rng = np.random.default_rng(42)
