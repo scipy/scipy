@@ -2982,13 +2982,11 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     n = y.shape[0]
 
     def _gcv(lam):
-        try:
-            c, tr = _solve_smoothing_spline_coefficients(
-                xtwx_banded, lam, omega, xtwy, compute_trace=True,
-            )
-        except LinAlgError:
-            # numerically singular for this lam
-            return np.inf
+        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg, 
+        # use it to estimate rcond of the banded system before solving
+        c, tr = _solve_smoothing_spline_coefficients(
+            xtwx_banded, lam, omega, xtwy, compute_trace=True,
+        )
         rss = np.sum(w * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
 
