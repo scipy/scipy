@@ -849,6 +849,7 @@ __all__ += [
     'spherical_kn',
     'mathieu_cem',
     'mathieu_sem',
+    'poisson_binom_cdf',
 ]
 
 from scipy._lib._testutils import PytestTester
