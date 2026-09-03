@@ -2574,12 +2574,9 @@ class TestOptimizeResultAttributes:
         self.bounds = [(0., 10.), (0., 10.)]
 
     def test_repr_with_empty_dict_value(self):
-        # gh-25893: an attribute whose value is an empty dict made repr raise
-        # "ValueError: max() arg is an empty sequence".
+        # gh-25893
         res = optimize.OptimizeResult(x=1, options={})
         assert 'options' in repr(res)
-
-        # a populated key is still aligned alongside the empty one
         res = optimize.OptimizeResult(options={}, info={'a': 1})
         assert 'a: 1' in repr(res)
 
