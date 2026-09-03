@@ -150,7 +150,7 @@ _poisson_binom_cdf_doc = (
     Parameters
     ----------
     k : array_like of int
-        Number of successes at which to evaluate cdf.
+        Number of successes at which to evaluate the CDF.
     p : array_like of float
         Success probabilities of independent Bernoulli trials.
     out : ndarray, optional
