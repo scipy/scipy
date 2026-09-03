@@ -2573,6 +2573,13 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    def test_repr_with_empty_dict_value(self):
+        # gh-25893
+        res = optimize.OptimizeResult(x=1, options={})
+        assert 'options' in repr(res)
+        res = optimize.OptimizeResult(options={}, info={'a': 1})
+        assert 'a: 1' in repr(res)
+
     @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
