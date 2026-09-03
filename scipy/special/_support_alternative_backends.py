@@ -1141,8 +1141,7 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note(
                 "poisson_binom_cdf",
                 ["torch"],
-                "``poisson_binom_cdf`` supports the ``axis`` kwarg for"
-                " all supported backends.",
+                "It supports the ``axis`` kwarg for all supported backends.",
             ),
         ),
         is_elementwise=False,

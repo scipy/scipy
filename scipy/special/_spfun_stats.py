@@ -147,14 +147,6 @@ _poisson_binom_cdf_doc = (
     distribution of a sum of independent Bernoulli trials that are not
     necessarily identically distributed [1]_.
 
-    .. math::
-
-        \sum_{l=0}^{k}\sum_{A \in F_l}\prod_{i \in A} p_i \prod_{j \in A^c} (1 - p_j)
-
-    where :math:`F_l` is the set of all subsets of size :math:`l` of
-    :math:`\{1, 2, \ldots, n\}` and :math:`A^c` is the complement of :math:`A` in
-    :math:`\{1, 2, \ldots, n\}`.
-
     Parameters
     ----------
     k : array_like of int
@@ -178,12 +170,24 @@ _poisson_binom_cdf_doc = (
 
     Notes
     -----
+    For :math:`\mathbf{p} = \left(p_1, p_2, \ldots, p_n\right)` giving
+    the success probabilities for a sequence of :math:`n` independent Bernoulli
+    trials
+
+    .. math::
+
+        \mathrm{CDF}(k, \mathbf{p}) =
+        \sum_{l=0}^{k}\sum_{A \in F_l}\prod_{i \in A} p_i \prod_{j \in A^c} (1 - p_j)
+
+    where :math:`F_l` is the set of all subsets of size :math:`l` of
+    :math:`\{1, 2, \ldots, n\}` and :math:`A^c` is the complement of :math:`A` in
+    :math:`\{1, 2, \ldots, n\}`.
+
     .. versionadded:: 2.0.0
 
     References
     ----------
-    .. [1] Poisson binomial distribution,
-           https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+    .. [1] https://en.wikipedia.org/wiki/Poisson_binomial_distribution
 
     Examples
     --------
@@ -195,10 +199,10 @@ _poisson_binom_cdf_doc = (
 
     >>> p = np.asarray([[0.2, 0.4, 0.6], [0.3, 0.3, 0.1]])
 
-    Evaluate cdf across the entire support. An extra dimension is added to
-    ``k`` to broadcast against the batch dimension of ``p``.
+    Evaluate the cdf across the entire support. An extra dimension is added
+    to ``k`` to broadcast against the batch dimension of ``p``.
 
-    >>> k = np.asarray([0, 1, 2])[:, None]
+    >>> k = np.asarray([0, 1, 2, 3])[:, None]
     >>> poisson_binom_cdf(k, p)
     array([[0.192, 0.441],
            [0.656, 0.868],
