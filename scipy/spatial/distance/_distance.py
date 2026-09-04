@@ -704,7 +704,7 @@ def hamming(u, v, w=None):
         return np.dot(u_ne_v, w)
     if u_ne_v.size == 0:
         # preserve the nan that np.mean returns for an empty input
-        return np.mean(u_ne_v)
+        return np.nan
     return np.count_nonzero(u_ne_v) / u_ne_v.size
 
 
