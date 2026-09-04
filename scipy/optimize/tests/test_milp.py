@@ -3,13 +3,14 @@ Unit test for Mixed Integer Linear Programming
 """
 import re
 import sys
+import copy
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
 
 from .test_linprog import magic_square
-from scipy.optimize import milp, Bounds, LinearConstraint
+from scipy.optimize import milp, Bounds, LinearConstraint, OptimizeWarning
 from scipy import sparse
 
 
@@ -75,20 +76,21 @@ def test_milp_iv():
         milp([1, 2, 3], bounds=([1, 2, 3], [set(), 4, 5]))
 
 
-@pytest.mark.xfail(run=False,
-                   reason="Needs to be fixed in `_highs_wrapper`")
 def test_milp_options(capsys):
-    # run=False now because of gh-16347
     message = "Unrecognized options detected: {'ekki'}..."
     options = {'ekki': True}
     with pytest.warns(RuntimeWarning, match=message):
-        milp(1, options=options)
+        with pytest.warns(OptimizeWarning):
+            milp(1, options=options)
 
     A, b, c, numbers, M = magic_square(3)
     options = {"disp": True, "presolve": False, "time_limit": 0.05}
+    options_to_pass = copy.deepcopy(options)
     res = milp(c=c, constraints=(A, b, b), bounds=(0, 1), integrality=1,
-               options=options)
+               options=options_to_pass)
+    assert options_to_pass == options
 
+    pytest.xfail("Needs to be fixed in `_highs_wrapper`, gh-16347")
     captured = capsys.readouterr()
     assert "Presolve is switched off" in captured.out
     assert "Time Limit Reached" in captured.out
