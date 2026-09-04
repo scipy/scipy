@@ -5987,9 +5987,11 @@ const char *erf_doc = R"(
         \qquad x \in (-\infty, \infty), \quad t > 0,
 
     with boundary conditions :math:`T(x,t) \to 0` as :math:`x \to -\infty` and
-    :math:`T(x,t) \to 1` as :math:`x \to \infty` and initial condition. Seeking a
-    solution of the form :math:`T(x,t) = f(\eta)` with :math:`\eta = x/\sqrt{t}`
-    transforms the problem into the following ordinary differential equation
+    :math:`T(x,t) \to 1` as :math:`x \to \infty` and initial condition
+    :math:`T(x,0) = \mathcal{H}(x)`, where :math:`\mathcal{H}` is the Heaviside step
+    function. Seeking a solution of the form :math:`T(x,t) = f(\eta)` with
+    :math:`\eta = x/\sqrt{t}` transforms the problem into the following ordinary
+    differential equation
 
     .. math::
 
