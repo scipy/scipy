@@ -45,7 +45,7 @@ class TestConstructUtils:
             cls(0)
 
     @pytest.mark.filterwarnings("ignore:.* output has been cast to:FutureWarning")
-    def test_spdiags(self):
+    def test_sparse_diags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
                          [6, 7, 8, 9,10]])
@@ -244,26 +244,8 @@ class TestConstructUtils:
         x = construct.diags_array([])
         assert_equal(x.shape, (0, 0))
 
-    def test_identity(self):
-        self.check_identity(construct.eye_array)
-
-    def check_identity(self, identity):
-        assert_equal(identity(1).toarray(), [[1]])
-        assert_equal(identity(2).toarray(), [[1,0],[0,1]])
-
-        I = identity(3, dtype='int8', format='dia')
-        assert_equal(I.dtype, np.dtype('int8'))
-        assert_equal(I.format, 'dia')
-
-        for fmt in sparse_formats:
-            I = identity(3, format=fmt)
-            assert_equal(I.format, fmt)
-            assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
-
     def test_eye(self):
-        self.check_eye(construct.eye_array)
-
-    def check_eye(self, eye):
+        eye = construct.eye_array
         assert_equal(eye(1,1).toarray(), [[1]])
         assert_equal(eye(2,3).toarray(), [[1,0,0],[0,1,0]])
         assert_equal(eye(3,2).toarray(), [[1,0],[0,1],[0,0]])
@@ -299,18 +281,15 @@ class TestConstructUtils:
                             )
 
     def test_eye_one(self):
-        self.check_eye_one(construct.eye_array)
+        assert_equal(construct.eye_array(1).toarray(), [[1]])
+        assert_equal(construct.eye_array(2).toarray(), [[1,0],[0,1]])
 
-    def check_eye_one(self, eye):
-        assert_equal(eye(1).toarray(), [[1]])
-        assert_equal(eye(2).toarray(), [[1,0],[0,1]])
-
-        I = eye(3, dtype='int8', format='dia')
+        I = construct.eye_array(3, dtype='int8', format='dia')
         assert_equal(I.dtype, np.dtype('int8'))
         assert_equal(I.format, 'dia')
 
         for fmt in sparse_formats:
-            I = eye(3, format=fmt)
+            I = construct.eye_array(3, format=fmt)
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
@@ -447,9 +426,8 @@ class TestConstructUtils:
             construct.kronsum([[0, 1], [1, 0]], [2])
 
     def test_vstack(self):
-        coo_cls = coo_array
-        A = coo_cls([[1,2],[3,4]])
-        B = coo_cls([[5,6]])
+        A = coo_array([[1,2],[3,4]])
+        B = coo_array([[5,6]])
 
         expected = array([[1, 2],
                           [3, 4],
@@ -519,9 +497,8 @@ class TestConstructUtils:
             construct.vstack([arr, np.array([0, 0])])
 
     def test_hstack(self):
-        coo_cls = coo_array
-        A = coo_cls([[1,2],[3,4]])
-        B = coo_cls([[5],[6]])
+        A = coo_array([[1,2],[3,4]])
+        B = coo_array([[5],[6]])
 
         expected = array([[1, 2, 5],
                           [3, 4, 6]])
