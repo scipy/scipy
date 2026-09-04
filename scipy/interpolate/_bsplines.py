@@ -2297,7 +2297,7 @@ clamp_values=None, bc_type=None):
 
     When ``bc_type="periodic"`` is supplied, the knot vector has to be
     periodic. This means a period ``T`` exists such that ``t[-k + j] - t[j] = T``
-    for all `j= 0, ..., k - 1`.
+    for all ``j= 0, ..., k - 1``.
 
     Examples
     --------
