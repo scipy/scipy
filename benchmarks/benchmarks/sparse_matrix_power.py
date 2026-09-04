@@ -1,7 +1,7 @@
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.sparse import random
+    from scipy.sparse import random_array
 
 
 class BenchMatrixPower(Benchmark):
@@ -13,7 +13,7 @@ class BenchMatrixPower(Benchmark):
     param_names = ['x', 'N', 'density']
 
     def setup(self, x: int, N: int, density: float):
-        self.A = random(N, N, density=density, format='csr')
+        self.A = random_array((N, N), density=density, format='csr')
 
     def time_matrix_power(self, x: int, N: int, density: float):
         self.A ** x

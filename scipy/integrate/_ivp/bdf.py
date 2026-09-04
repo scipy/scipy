@@ -282,12 +282,10 @@ class BDF(OdeSolver):
             self.njev += 1
             if issparse(J):
                 J = J.tocsc().astype(y0.dtype, copy=False)
-                csc_constructor = J.__class__
 
                 def jac_wrapped(t, y):
                     self.njev += 1
-                    # TODO: switch to csc_array after spmatrix is removed
-                    return csc_constructor(jac(t, y), dtype=y0.dtype)
+                    return jac(t, y).tocsc().astype(dtype=y0.dtype, copy=False)
             else:
                 J = np.asarray(J, dtype=y0.dtype)
 
