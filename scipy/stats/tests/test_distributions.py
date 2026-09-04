@@ -3114,6 +3114,14 @@ class TestPoisson:
         assert_allclose(stats.poisson.logsf(k, mu), logsf_reference,
                         rtol=1e-15, atol=1e-300)
 
+    @pytest.mark.parametrize("k", [0, 1, 5, 10, 20])
+    @pytest.mark.parametrize("mu", [0.6, 1.0, 2.8, 5, 10.0, 50, 100])
+    def test_ppf_roundtrip(self, k, mu):
+        poisson_dist = stats.poisson(mu)
+        cdf = poisson_dist.cdf(k)
+        quantile = poisson_dist.ppf(cdf)
+        assert_equal(cdf, poisson_dist.cdf(quantile))
+
 
 class TestKSTwo:
 

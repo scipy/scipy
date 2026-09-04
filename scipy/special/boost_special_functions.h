@@ -2689,6 +2689,47 @@ pdtrik_double(double p, double x)
 }
 
 template<typename Real>
+Real
+poisson_ppf_stats_wrap(const Real p, const Real n)
+{
+    if (std::isnan(p) || std::isnan(n)) {
+        return NAN;
+    }
+    // cdflib returns nan for p == 1, so we do the same
+    // for backwards compatibility
+    if (p == 1) {
+        return NAN;
+    }
+    // keep backwards compatible with cdflib which returns 0
+    // for p==0 or n==0
+    if ((p == 0) || (n == 0)) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(boost::math::poisson_distribution<Real, StatsPolicy>(n), p);
+    } 
+    catch (...) {
+        y = NAN;
+    }
+    // Guard against negative values, as the Poisson distribution's support starts at 0.
+    if (y < 0) {
+        return 0.0;
+    }
+    return y;
+}
+
+double _poisson_ppf_stats_double(double p, double n)
+{
+    return poisson_ppf_stats_wrap(p, n);
+}
+
+float _poisson_ppf_stats_float(float p, float n)
+{
+    return poisson_ppf_stats_wrap(p, n);
+}
+
+template<typename Real>
 static inline
 Real lgamma_p_wrap(Real a, Real z)
 {

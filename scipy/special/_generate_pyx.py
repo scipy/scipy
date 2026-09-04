@@ -144,6 +144,7 @@ special_ufuncs = [
     "_ncx2_pdf",
     "_ncx2_sf",
     "_normalized_gen_harmonic",
+    "_poisson_ppf_stats",
     "_riemann_zeta",
     "_scaled_exp1",
     "_sinpi",

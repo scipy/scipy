@@ -1022,7 +1022,7 @@ class poisson_gen(rv_discrete):
         return special.log_gammainc(k + 1, mu)
 
     def _ppf(self, q, mu):
-        vals = ceil(special.pdtrik(q, mu))
+        vals = scu._poisson_ppf_stats(q, mu)
         vals1 = np.maximum(vals - 1, 0)
         temp = special.pdtr(vals1, mu)
         return np.where(temp >= q, vals1, vals)
