@@ -2136,8 +2136,11 @@ class TestLSQ:
         spl = make_lsq_spline(x, periodic_y, t, k, method="qr", bc_type="periodic")
 
         # Check that the resulting spline is periodic
-        xp_assert_close(spl(x[0]), spl(x[-1]))
+        xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-14)
+        assert spl.extrapolate == "periodic"
+        xp_assert_close(spl(x[0] + 0.1), spl(x[-1] + 0.1), atol=1e-14)
 
+        # task=-1 means fitting a least square spline
         tck, _ = splprep(np.array(y).reshape((1, y.shape[0])), k=k, u=np.array(x),
                          t=np.array(t), task=-1, per=1)
 
