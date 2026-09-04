@@ -120,9 +120,12 @@ NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
      * If the input array is not aligned or is byteswapped, this call
      * will create a new aligned, native byte order array, and copy the
      * contents of object into it. For an output array, the copy is
-     * unnecessary, so this could be optimized. It is very easy to not
-     * do NPY_ARRAY_UPDATEIFCOPY right, so we let NumPy do it for us
-     * and pay the performance price.
+     * unnecessary, so this could be optimized.
+     *
+     * Callers must then call PyArray_ResolveWritebackIfCopy() on the result
+     * (or PyArray_DiscardWritebackIfCopy() on error) before dropping their
+     * reference; see gh-25641. Both accept NULL and are no-ops if no copy
+     * was made.
      */
     *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,
                                                    NULL);
@@ -1181,6 +1184,7 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
 
     NI_DistanceTransformBruteForce(input, metric, sampling, output, features);
     PyArray_ResolveWritebackIfCopy(output);
+    PyArray_ResolveWritebackIfCopy(features);
 
 exit:
     Py_XDECREF(input);
@@ -1316,9 +1320,13 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     }
     else {
         PyErr_SetString(PyExc_RuntimeError, "cannot convert CObject");
+        goto exit;
     }
     PyArray_ResolveWritebackIfCopy(array);
 exit:
+    if (PyErr_Occurred()) {
+        PyArray_DiscardWritebackIfCopy(array);
+    }
     Py_XDECREF(array);
     Py_XDECREF(strct);
     Py_XDECREF(mask);
