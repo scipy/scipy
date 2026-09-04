@@ -17,25 +17,6 @@ const char *_beta_pdf_doc = R"(
 
     )";
 
-const char *_beta_ppf_doc = R"(
-    _beta_ppf(x, a, b)
-
-    Percent point function of beta distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
-    a, b : array_like
-           Positive, real-valued parameters
-
-    Returns
-    -------
-    scalar or ndarray
-
-    )";
-
 const char *_binom_cdf_doc = R"(
     _binom_cdf(x, n, p)
 
