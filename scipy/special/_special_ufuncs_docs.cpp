@@ -3952,7 +3952,7 @@ const char *chndtrix_doc = R"(
     See Also
     --------
     chndtr : Noncentral chi-squared distribution CDF
-    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtridf : inverse of `chndtr` with respect to `df`
     chndtrinc : inverse of `chndtr` with respect to `nc`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
@@ -5127,7 +5127,7 @@ const char *ellipeinc_doc = R"(
     -----
     Wrapper for the Cephes [1]_ routine `ellie`.
 
-    Computation uses arithmetic-geometric means algorithm.
+    Computation uses arithmetic-geometric mean algorithm.
 
     The parameterization in terms of :math:`m` follows that of section
     17.2 in [2]_. Other parameterizations in terms of the
@@ -7421,7 +7421,7 @@ const char *hankel2e_doc = R"(
     computation using the relation,
 
     .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi}
-              \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
+              \exp(\frac{\imath \pi v}{2}) K_v(z \exp(\frac{\imath\pi}{2}))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -8443,7 +8443,7 @@ const char *iv_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
     (valid when the real part of `z` is positive).  For negative `v`, the
     formula
@@ -8678,7 +8678,7 @@ const char *ive_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
     (valid when the real part of `z` is positive).  For negative `v`, the
     formula
@@ -12735,7 +12735,7 @@ const char *struve_l_doc = R"(
     v : array_like
         Order of the modified Struve function (float).
     x : array_like
-        Argument of the Struve function (float; must be positive unless `v` is
+        Argument of the modified Struve function (float; must be positive unless `v` is
         an integer).
     out : ndarray, optional
         Optional output array for the function results
@@ -12851,7 +12851,7 @@ const char *voigt_profile_doc = R"(
     -----
     It can be expressed in terms of Faddeeva function
 
-    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: V(x; \sigma, \gamma) = \frac{\Re[w(z)]}{\sigma\sqrt{2\pi}},
     .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
 
     where :math:`w(z)` is the Faddeeva function.
@@ -13125,7 +13125,7 @@ const char *y0_doc = R"(
     See Also
     --------
     j0: Bessel function of the first kind of order 0
-    yv: Bessel function of the first kind
+    yv: Bessel function of the second kind
 
     Notes
     -----
