@@ -81,6 +81,7 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
     col[rows] = A_packed[rows, p[rows]]
     return col
 
+
 def _validate_bc_type(bc_type):
     if bc_type is None:
         return "not-a-knot"
@@ -91,6 +92,7 @@ def _validate_bc_type(bc_type):
                          f"found {bc_type}")
 
     return bc_type
+
 
 def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
     """
@@ -2263,9 +2265,8 @@ clamp_values=None, bc_type=None):
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent. Currently not supported for method="norm-eq".
 
-        .. versionchanged:: 1.19.0
-            New keyword argument `bc_type`. Previously only `"not-a-knot"`
-            boundary conditions were supported.
+        .. versionchanged:: 2.0.0
+            New keyword argument `bc_type`.
 
     Returns
     -------
