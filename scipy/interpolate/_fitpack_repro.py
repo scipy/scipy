@@ -27,7 +27,7 @@ from scipy._lib._array_api import (
 
 from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
-    _lsq_solve_qr_for_root_rati_periodic, _periodic_knots, _validate_bc_type
+    _lsq_solve_qr_for_root_rati_periodic, _periodic_knots
 )
 from . import _dierckx
 
@@ -60,6 +60,17 @@ def _get_residuals(x, y, t, k, w, periodic=False):
     if np.isnan(residuals.sum()):
         raise ValueError(_iermesg[1])
     return residuals, fp
+
+def _validate_bc_type(bc_type):
+    if bc_type is None:
+        return "not-a-knot"
+
+    if bc_type not in ("not-a-knot", "periodic"):
+        raise ValueError("Only 'not-a-knot' and 'periodic' "
+                         "boundary conditions are recognised, "
+                         f"found {bc_type}")
+
+    return bc_type
 
 
 def add_knot(x, t, k, residuals, periodic=False):

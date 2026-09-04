@@ -83,13 +83,9 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
 
 
 def _validate_bc_type(bc_type):
-    if bc_type is None:
-        return "not-a-knot"
-
-    if bc_type not in ("not-a-knot", "periodic"):
-        raise ValueError("Only 'not-a-knot' and 'periodic' "
-                         "boundary conditions are recognised, "
-                         f"found {bc_type}")
+    if bc_type is not None and bc_type != "periodic":
+        raise ValueError("Only None and 'periodic' boundary conditions "
+                         f"are recognised, found {bc_type}")
 
     return bc_type
 
@@ -2257,11 +2253,10 @@ clamp_values=None, bc_type=None):
         Default is None.
     bc_type : str, optional
         Boundary conditions.
-        Default is `"not-a-knot"`.
+        Default is ``None``.
         The following boundary conditions are recognized:
 
-        * ``"not-a-knot"`` (default): The first and second segments are the
-          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``None`` (default): No boundary conditions are applied.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent. Currently not supported for method="norm-eq".
 
