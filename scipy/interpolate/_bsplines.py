@@ -2395,10 +2395,6 @@ clamp_values=None, bc_type=None):
 
         _validate_periodic_knot_vector(t, k, xp)
 
-        if not np.allclose(y[0], y[-1], atol=1e-15):
-            raise ValueError("First and last points does not match which is required "
-                             "for `bc_type='periodic'`.")
-
     # number of coefficients
     n = t.size - k - 1
 
