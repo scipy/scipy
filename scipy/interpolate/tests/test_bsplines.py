@@ -2077,43 +2077,35 @@ class TestLSQ:
 
         make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
 
-    def test_periodic_and_clamp_values_raises(self, xp):
+    def test_periodic_and_clamp_values_raises(self):
         # Periodic boundary conditions raise when clamp values are specified
-        x, y, t = map(xp.asarray, (self.x, self.y, self.t))
+        x, y = self.x, self.y
         k = self.k
-        t = np.asarray(t).copy()
+        t = np.copy(self.t)
 
-        t[:k+1] = float(self.x[0])
-        t[-(k+1):] = float(self.x[-1])
-        t = xp.asarray(t)
+        t[:k+1] = float(x[0])
+        t[-(k+1):] = float(x[-1])
 
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method="qr", clamp_values=(5, 8),
             bc_type="periodic")
 
-    def test_periodic_not_implemented_for_method_norm_eq(self, xp):
-        x, y = map(xp.asarray, (self.x, self.y))
+    def test_periodic_not_implemented_for_method_norm_eq(self):
+        x = self.x
+        y = np.copy(self.y)
         k = self.k
-        # Make the data periodic
-        periodic_y = xp.asarray(y, copy=True)
-        periodic_y = xp.concat(
-            (periodic_y[:-1], periodic_y[:1]),
-            axis=0,
-        )
 
-        t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
-        t = xp.asarray(t)
+        t = _periodic_knots(x, k)
 
         with assert_raises(NotImplementedError):
-            make_lsq_spline(x, periodic_y, t, k, method="norm-eq", bc_type="periodic")
+            make_lsq_spline(x, y, t, k, method="norm-eq", bc_type="periodic")
 
-    def test_periodic_bc_type_invalid_knot_vector(self, xp):
-        x, y = map(xp.asarray, (self.x, self.y))
+    def test_periodic_bc_type_invalid_knot_vector(self):
+        x, y = self.x, self.y
         k = self.k
 
-        t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
+        t = _periodic_knots(x, k)
         t[k + 1] += 0.1
-        t = xp.asarray(t)
 
         with assert_raises(ValueError):
             make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
@@ -2123,17 +2115,10 @@ class TestLSQ:
         x, y = map(xp.asarray, (self.x, self.y))
         k = self.k
 
-        # Make the data periodic
-        periodic_y = xp.asarray(y, copy=True)
-        periodic_y = xp.concat(
-            (periodic_y[:-1], periodic_y[:1]),
-            axis=0,
-        )
-
-        t = _periodic_knots(np.linspace(x[0], x[-1], 7), k)
+        t = _periodic_knots(xp_copy_to_numpy(x), k)
         t = xp.asarray(t)
 
-        spl = make_lsq_spline(x, periodic_y, t, k, method="qr", bc_type="periodic")
+        spl = make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
 
         # Check that the resulting spline is periodic
         xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-14)
@@ -2141,8 +2126,9 @@ class TestLSQ:
         xp_assert_close(spl(x[0] + 0.1), spl(x[-1] + 0.1), atol=1e-14)
 
         # task=-1 means fitting a least square spline
-        tck, _ = splprep(np.array(y).reshape((1, y.shape[0])), k=k, u=np.array(x),
-                         t=np.array(t), task=-1, per=1)
+        tck, _ = splprep(xp_copy_to_numpy(y).reshape((1, y.shape[0])), k=k,
+                         u=xp_copy_to_numpy(x), t=xp_copy_to_numpy(t), task=-1,
+                         per=1)
 
         xp_assert_close(spl.t, xp.asarray(tck[0]))
         xp_assert_close(spl.c, xp.asarray(tck[1][0]))
