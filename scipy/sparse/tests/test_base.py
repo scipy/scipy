@@ -5048,14 +5048,15 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
-        assert peak < 30 * 1024**2 # 30MB limit
+        print(f"Peak memory: {peak / 1024**2:.1f}MB")
+        assert peak < 1024**2  # 1MB limit
 
         for (r, c), expected in checks:
             assert mat_lil[r, c] == expected
 
-    @pytest.mark.timeout(2)
     def test_lil_sparse_assignment_no_densify_memory_error(self):
-        mini_m, mini_n = int(5e3), int(1e7)
+        # array size float32, in MB: 4 * mini_m * mini_n / 1024**2
+        mini_m, mini_n = int(1e2), int(1e4)
         self._run_assign_case(
             slice(1, mini_m + 1),
             slice(10, mini_n + 10),
@@ -5064,9 +5065,9 @@ class TestLIL(sparse_test_class(minmax=False)):
             [((1, 10), 1), ((1, 11), 2)],
         )
 
-    @pytest.mark.timeout(2)
     def test_lil_sparse_assignment_with_step_no_densify_memory_error(self):
-        mini_m, mini_n = int(5e3), int(1e7)
+        # array size float32, in MB: 4 * mini_m * mini_n / 6 / 1024**2
+        mini_m, mini_n = int(1e3), int(5e3)
         nrows = len(range(1, mini_m + 1, 2))
         ncols = len(range(10, mini_n + 10, 3))
         self._run_assign_case(
