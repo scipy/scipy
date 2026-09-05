@@ -1020,6 +1020,8 @@ class DifferentialEvolutionSolver:
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
 
+        self._init_energized = False
+
         # an array to shuffle when selecting candidates. Create it here
         # rather than repeatedly creating it in _select_samples.
         self._random_population_index = np.arange(self.num_population_members)
@@ -1206,11 +1208,12 @@ class DifferentialEvolutionSolver:
         status_message = _status_message['success']
 
         # The population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies.
+        # np.inf and self._init_energized is False).
+        # If it has you have to calculate the initial energies.
         # Although this is also done in the evolve generator it's possible
         # that someone can set maxiter=0, at which point we still want the
         # initial energies to be calculated (the following loop isn't run).
-        if np.all(np.isinf(self.population_energies)):
+        if not self._init_energized:
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
@@ -1220,6 +1223,10 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+
+            # this attribute is used to prevent the codeblock above
+            # from being run again in __next__.
+            self._init_energized = True
 
         # do the optimization.
         for nit in range(1, self.maxiter + 1):
@@ -1610,8 +1617,9 @@ class DifferentialEvolutionSolver:
             Value of objective function obtained from the best solution.
         """
         # the population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies
-        if np.all(np.isinf(self.population_energies)):
+        # np.inf and self._init_energized is False).
+        # If it has you have to calculate the initial energies
+        if not self._init_energized:
             self.feasible, self.constraint_violation = (
                 self._calculate_population_feasibilities(self.population))
 
@@ -1622,6 +1630,7 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+            self._init_energized = True
 
         if self.dither is not None:
             self.scale = self.random_number_generator.uniform(self.dither[0],
