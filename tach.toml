@@ -128,7 +128,7 @@ depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.spatial.distance", "
 
 [[modules]]
 path = "scipy.spatial.distance"
-depends_on = ["scipy._lib", "scipy.linalg", "scipy.special", "scipy._external"]
+depends_on = ["scipy._lib", "scipy.special", "scipy._external"]
 
 [[modules]]
 path = "scipy.spatial.transform"
