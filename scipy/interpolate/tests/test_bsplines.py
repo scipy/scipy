@@ -2077,6 +2077,62 @@ class TestLSQ:
 
         make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
 
+    def test_periodic_and_clamp_values_raises(self):
+        # Periodic boundary conditions raise when clamp values are specified
+        x, y = self.x, self.y
+        k = self.k
+        t = np.copy(self.t)
+
+        t[:k+1] = float(x[0])
+        t[-(k+1):] = float(x[-1])
+
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method="qr", clamp_values=(5, 8),
+            bc_type="periodic")
+
+    def test_periodic_not_implemented_for_method_norm_eq(self):
+        x = self.x
+        y = np.copy(self.y)
+        k = self.k
+
+        t = _periodic_knots(x, k)
+
+        with assert_raises(NotImplementedError):
+            make_lsq_spline(x, y, t, k, method="norm-eq", bc_type="periodic")
+
+    def test_periodic_bc_type_invalid_knot_vector(self):
+        x, y = self.x, self.y
+        k = self.k
+
+        t = _periodic_knots(x, k)
+        t[k + 1] += 0.1
+
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
+
+    def test_periodic_bc_type(self, xp):
+        # Compare to fitpack splprep
+        x, y = map(xp.asarray, (self.x, self.y))
+        k = self.k
+
+        t = _periodic_knots(xp_copy_to_numpy(x), k)
+        t = xp.asarray(t)
+
+        spl = make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
+
+        # Check that the resulting spline is periodic
+        xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-14)
+        assert spl.extrapolate == "periodic"
+        xp_assert_close(spl(x[0] + 0.1), spl(x[-1] + 0.1), atol=1e-14)
+
+        # task=-1 means fitting a least square spline
+        tck, _ = splprep(xp_copy_to_numpy(y).reshape((1, y.shape[0])), k=k,
+                         u=xp_copy_to_numpy(x), t=xp_copy_to_numpy(t), task=-1,
+                         per=1)
+
+        xp_assert_close(spl.t, xp.asarray(tck[0]))
+        xp_assert_close(spl.c, xp.asarray(tck[1][0]))
+
     def test_weights_same(self, xp):
         # both methods treat weights
         x, y, t = map(xp.asarray, (self.x, self.y, self.t))
