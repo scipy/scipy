@@ -1255,6 +1255,7 @@ class SHGO:
     def sort_min_pool(self):
         # Sort to find minimum func value in min_pool
         self.ind_f_min = np.argsort(self.minimizer_pool_F)
+        self.X_min = np.array(self.X_min)[self.ind_f_min]
         self.minimizer_pool = np.array(self.minimizer_pool)[self.ind_f_min]
         self.minimizer_pool_F = np.array(self.minimizer_pool_F)[
             self.ind_f_min]
