@@ -18,6 +18,7 @@ import sys
 import warnings
 from typing import Any
 from collections.abc import Callable
+import tracemalloc
 
 import pytest
 from pytest import raises as assert_raises
@@ -5022,6 +5023,60 @@ class TestLIL(sparse_test_class(minmax=False)):
         a *= 2.
         a[0, :] = 0
 
+    def _run_assign_case(self, row_slice, col_slice, nrows, ncols, checks):
+        rows = [0, 0, 4, 7]
+        cols = [1, 0, 3, 3]
+        vals = [2, 1, 3, 9]
+        m, n = int(1e4), int(1e8)
+        mat = sparse.csr_array((vals, (rows, cols)), shape=(m, n), dtype=np.float32)
+
+        mini_rows = [0, 0, 2, 3]
+        mini_cols = [0, 1, 2, 2]
+        mini_vals = [1, 2, 3, 9]
+        mini_mat = sparse.csr_array(
+            (mini_vals, (mini_rows, mini_cols)),
+            shape=(nrows, ncols),
+            dtype=np.float32,
+        )
+
+        mat_lil = mat.tolil()
+        mini_mat_lil = mini_mat.tolil()
+
+        tracemalloc.start()
+
+        mat_lil[row_slice, col_slice] = mini_mat_lil
+
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        print(f"Peak memory: {peak / 1024**2:.1f}MB")
+        assert peak < 1024**2  # 1MB limit
+
+        for (r, c), expected in checks:
+            assert mat_lil[r, c] == expected
+
+    def test_lil_sparse_assignment_no_densify_memory_error(self):
+        # array size float32, in MB: 4 * mini_m * mini_n / 1024**2
+        mini_m, mini_n = int(1e2), int(1e4)
+        self._run_assign_case(
+            slice(1, mini_m + 1),
+            slice(10, mini_n + 10),
+            mini_m,
+            mini_n,
+            [((1, 10), 1), ((1, 11), 2)],
+        )
+
+    def test_lil_sparse_assignment_with_step_no_densify_memory_error(self):
+        # array size float32, in MB: 4 * mini_m * mini_n / 6 / 1024**2
+        mini_m, mini_n = int(1e3), int(5e3)
+        nrows = len(range(1, mini_m + 1, 2))
+        ncols = len(range(10, mini_n + 10, 3))
+        self._run_assign_case(
+            slice(1, mini_m + 1, 2),
+            slice(10, mini_n + 10, 3),
+            nrows,
+            ncols,
+            [((1, 10), 1), ((1, 13), 2)],
+        )
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestLILMatrix(_MatrixMixin, TestLIL):
