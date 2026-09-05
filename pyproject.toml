@@ -21,6 +21,7 @@ requires = [
     "meson-python>=0.15.0",
     "Cython>=3.2.0",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
+    "nanobind>=2.15",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.18.1",      # when updating version, also update check in meson.build
     "numpy>=2.0.0",
 ]
@@ -97,6 +98,7 @@ build = [
     "meson-python>=0.15.0",
     "Cython>=3.2.0",
     "pybind11>=2.13.2",
+    "nanobind>=2.15",
     "pythran>=0.18.1",
     "numpy>=2.0.0",
     "ninja>=1.8.2",
