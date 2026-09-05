@@ -2579,6 +2579,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     n = Z.shape[0] + 1
     T = np.zeros((n,), dtype='i')
 
+    if criterion in ('maxclust', 'maxclust_monocrit') and t < 1:
+        raise ValueError(f"'{criterion}' needs 't', the maximum number of "
+                         f"clusters, to be at least 1; got {t}.")
+
     if monocrit is not None:
         monocrit = np.asarray(monocrit, order='C', dtype=np.float64)
 
