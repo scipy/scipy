@@ -4,6 +4,10 @@ from scipy._lib._util import _RichResult, _validate_int
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
+from scipy.sparse import diags_array
+from scipy.sparse.linalg import LinearOperator, cg
+from functools import lru_cache
+import os
 
 
 def _solveh_banded(ab, b, calc_logdet=False):
@@ -79,19 +83,28 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     Parameters
     ----------
     signal : array_like
-        A one-dimensional array of length ``order + 1`` representing equidistant data
+        A one- or two-dimensional array representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
+        Each dimension must have a length of at least ``order + 1``.
+        For 2D input of shape ``(nx, nz)``, smoothing is applied along
+        both axes independently and ``nx`` must be greater than ``order``.
+        If ``nz <= order`` there are too few points to form differences
+        along the second axis, so no penalty is applied there.
 
-    lamb : str or float, optional
+    lamb : str, float or tuple of float, optional
         Smoothing or penalty parameter, default is ``"reml"`` which minimizes the
         restricted maximum likelihood (REML) criterion to find the parameter ``lamb``.
-        If a number is passed, it must be non-negative and it is used directly.
+        If a number is passed, it must be non-negative and it is used directly
+        (1D only). For a scalar float, the same penalty is applied to all axes/
+        dimensions. For 2D signals, a tuple ``(lamb_x, lamb_z)`` applies the different 
+        penalties. ``lamb='reml'`` is not supported for 2D signals.
 
     order : int, default: 2
         The order of the difference penalty, must be at least 1.
+        For 2D signals, the same order is applied along both axes.
 
     weights : array_like or None, optional
-        A one-dimensional array of case weights with the same length as `signal`.
+        A one-dimensional array of case weights with the same shape as `signal`.
         ``None`` is equivalent to an array of all ones, ``np.ones_like(signal)``.
 
     Returns
@@ -202,24 +215,22 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
     2026 that have not yet happened at the time of the data download in March 2026.
 
     """
-    order = _validate_int(order, name="order", minimum=1)
 
     signal = np.asarray(signal)
-    if signal.ndim != 1:
-        msg = f"Input array signal must be of shape (n,); got {signal.shape}"
-        raise ValueError(msg)
 
-    n = signal.shape[0]
-    if n < order + 1:
-        msg = f"Input array signal must be at least of shape ({order + 1},); got {n}."
-        raise ValueError(msg)
+    if signal.ndim not in (1, 2):
+        raise ValueError(
+            f"Input array signal should be 1D or 2D; got {signal.shape}"
+        )
+    
+    order = _validate_int(order, name="order", minimum=1)
 
     if weights is not None:
         weights = np.asarray(weights)
         if weights.shape != signal.shape:
             msg = "Input array weights must have the same shape as the signal array."
             raise ValueError(msg)
-
+        
     if weights is None:
         if not np.isfinite(signal).all():
             raise ValueError("Input array signal must be finite.")
@@ -234,11 +245,46 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
                                  "elements of signal.")
             signal = np.nan_to_num(signal)
 
+    if signal.ndim == 2:
+        if isinstance(lamb, str):
+            raise NotImplementedError(
+                "lamb = 'reml' not supported for 2D signals."
+            )
+        if not np.isscalar(lamb) and np.asarray(lamb).ndim == 1:
+            lamb = tuple(lamb)
+
+        if isinstance(lamb, tuple) and any(lam < 0 for lam in lamb):
+            raise ValueError(
+                "Penalty coefficients lambda must be non-negative."
+            )
+        
+        if np.isscalar(lamb) and lamb < 0.0:
+            raise ValueError(
+                f"Expected non-negative lamb; got lamb={lamb}"
+            )
+        
+        if lamb == 0.0 or lamb == (0.0, 0.0):
+            return _RichResult(x=np.array(signal).copy(), lamb=lamb)
+        
+        nx, nz = signal.shape
+        if nx <= order:
+            raise ValueError(
+                f"signal[0] has len {nx} with order {order}. "
+                "Axis length must be greater than order."
+            )
+        x = _solve_WH_sparse(signal, lamb=lamb, order=order, weights=weights)
+        return _RichResult(x=x, lamb=lamb)
+
+    n = signal.shape[0]
+    if n < order + 1:
+        msg = f"Input array signal must be at least of shape ({order + 1},); got {n}."
+        raise ValueError(msg)
 
     msg = f"Parameter lamb must be string 'reml' or a non-negative float; got {lamb=}."
     if isinstance(lamb, str):
         if lamb != "reml":
             raise ValueError(msg)
+
         def criterion(loglamb):
             return -_reml(lamb=np.exp(loglamb), y=signal, order=order, weights=weights)
         opt = minimize_scalar(criterion, bracket=[-10, 10])
@@ -449,3 +495,174 @@ def _reml(lamb, y, order, weights=None):
     reml += logdet  # +log|W + lambda D'D|
     reml *= -0.5
     return reml
+
+
+def _parse_axis_params(param, name):
+    """
+    Helper function that parses a scalar or 2-tuple parameter into
+    (x, z)
+    """
+    if np.isscalar(param):
+        return param, param
+    param = tuple(param)
+    if len(param) != 2:
+        raise ValueError(f"{name} must be a scalar or a 2 element tuple, got {param}")
+    return param[0], param[1]
+
+
+@lru_cache(maxsize=32)
+def _build_diff_array(n, order):
+    """
+    Builds a sparse difference array of shape ``(n - order, n)``
+    in CSR format.
+    Cached by ``(n, order)`` to avoid redundant construction.
+
+    Parameters
+    ----------
+    n : int
+        Length of the axis.
+    order : int
+        Order of the difference operator.
+
+    Returns
+    -------
+    csr_array of shape ``(n - order, n)``
+    """
+    D = diags_array([-1.0, 1.0], offsets=[0, 1], shape=(n - 1, n), format='csr')
+    for _ in range(order - 1):
+        m = D.shape[0]
+        D = diags_array([-1.0, 1.0], 
+                        offsets=[0, 1], 
+                        shape=(m - 1, m), 
+                        format='csr') @ D
+    return D
+
+
+def _solve_WH_sparse(y, lamb, order, weights=None):
+    """
+    Solve the 2D Whittaker Henderson smoothing problem using LinearOperator
+    with CG. Jacobi preconditioning is applied to ensure the solver converges
+    quickly. Penalty is applied via reshape-based matrix-vector products to
+    avoid explicit Kronecker matrix construction.
+
+    Parameters
+    ----------
+    y: np.ndarray, shape (nx, nz)
+        This is the 2D input signal
+    lamb: float/tuple (float, float)
+        Strength of penalty applied. If scalar, the same value
+        is applied to both axes. If tuple, difference penalties
+        are applied per axis.
+    order: int, default: 2
+        Order of difference penalty. Must be at least 1.
+        For 2D signals, same order is applied along both axes.
+    weights: np.ndarray, shape (nx, nz) or None, optional
+        Case weights. None is equivalent to an array of all 1s.
+
+    Returns
+    -------
+    x: np.ndarray, shape (nx, nz)
+        the smoothed signal
+
+    References
+    ----------
+    .. [1] Biessy, G. (2023).
+       "Whittaker-Henderson Smoothing Revisited: A Modern Statistical
+       Framework for Practical Use." arXiv:2306.06932v5.
+       Section 1.1: 2D penalty matrix, solution form, per-axis parameters.
+       https://arxiv.org/abs/2306.06932
+    .. [2] Currie, I.D., Durban, M., and Eilers, P.H.C. (2006).
+       "Generalized Linear Array Models with Applications to
+       Multidimensional Smoothing."
+       J. Royal Statistical Society Series B, 68(2), 259-280.
+       Eq. (2.5): Kronecker-vec identity for dimension-wise penalty
+       application; Eq. (2.10): 2D penalty Kronecker sum structure.
+       :doi:`10.1111/j.1467-9868.2006.00543.x`
+    """
+    nx, nz = y.shape
+    lamb_x, lamb_z = _parse_axis_params(lamb, "lamb")
+
+    # if any axis is less than equal to the order, there aren't enough
+    # points to calculate differences of that order along that axis.
+    # the penalty for that axis is skipped rather than raising
+    # this allows for signals of shape (n, 1) to behave consistently
+    # with the 1d smoother
+    x_pen = nx > order
+    z_pen = nz > order
+
+    if x_pen:
+        diff_x = _build_diff_array(nx, order)
+        diag_DtDx = np.asarray(diff_x.power(2).sum(axis=0)).ravel()
+    if z_pen:
+        diff_z = _build_diff_array(nz, order)
+        diag_DtDz = np.asarray(diff_z.power(2).sum(axis=0)).ravel()
+
+    dtype = np.result_type(y.dtype, np.float64)
+    y = y.astype(dtype, copy=False)
+
+    weights_arr = (weights.astype(dtype, copy=False) 
+                   if weights is not None else np.ones((nx, nz), dtype=dtype))
+    N = nx * nz
+
+    def mat_vec(v):
+        # computes (W + P) @ v without forming the penalty
+        # matrix explicitly
+        # kron(Inz, diff_x.T @ diff_x) = diffT_diff_x @ V (col-wise)
+        # kron(diff_z.T @ diff_z, Inx) = V @ diffT_diff_z (row-wise)
+        V = v.reshape(nx, nz)
+        result = weights_arr * V
+        if x_pen:
+            result += lamb_x * (diff_x.T @ (diff_x @ V))
+        if z_pen:
+            result += lamb_z * (diff_z.T @ (diff_z @ V.T)).T
+        return result.ravel()
+
+    # A = W + P is symmetric, each penalty term is of the form D.T @ D,
+    # which is also symmetric.
+    # A is PSD for any V, such that
+    # v.T @ P @ v = lamb_x * ||diff_x @ V||_F^2
+    #             + lamb_z * ||diff_z @ V.T||_F^2  >= 0
+    # W is a diagonal with non-negative entries (+ve when weights > 0)
+    # A is PD when the weights pin down the null space of P. This consists
+    # of signals that are polynomial whose degree < order along both axes.
+    # See Bisey (2023), Section 1.1 for exact condition on the weights.
+    A = LinearOperator(shape=(N, N), matvec=mat_vec, dtype=dtype)
+
+    # Preconditioner
+    # the diagnonal of (W + P) where W is the weights and P is the penalty
+    # diag(kron(Inz, diff_x.T @ diff_x)) = diag(diffT_diff_x) repeated nz times (rows)
+    # diag(kron(diff_z.T @ diff_z, Inx)) = diag(diffT_diff_z) repeated nx times (cols)
+    diagonal_P = np.zeros((nx, nz), dtype=dtype)
+    if x_pen:
+        diagonal_P += lamb_x * diag_DtDx[:, None]
+    if z_pen:
+        diagonal_P += lamb_z * diag_DtDz[None, :]
+    diagonal_A = weights_arr + diagonal_P
+
+    def precondition(v):
+        # add a small value to avoid division by 0
+        return v / (diagonal_A.ravel() + 1e-12)
+
+    M = LinearOperator((N, N), matvec=precondition, dtype=dtype)
+    rhs = (weights_arr * y).ravel()
+    x0 = y.ravel()  # start with a noisy signal
+
+    # CG is the solver used here as A is SPD and only mat-vec products are available.
+    # The scipy default rtol is too loose for this problem. CG stops when
+    # ||rhs - A @ x|| <= rtol * ||rhs||, so the solution still carries a
+    # relative error of order cond(A) * rtol. Here cond(A) reaches into the
+    # thousands, leaving an error of ~1e-2 that also breaks the linearity of the
+    # smoother. Smaller rtol removes this error, because the Jacobi preconditioner
+    # makes CG converge in only a handful of iterations.
+    # TODO: expose CG solver parameters via whittaker_henderson once 2D API stabilizes
+    x, info = cg(A, rhs, x0=x0, M=M, rtol=1e-9, atol=0.0)
+
+    # TODO: expose convergence info (iterations, residual) in a future PR
+    if info != 0:
+        warnings.warn(
+            f"CG solver did not converge (info = {info}). "
+            "Result may be inaccurate, try different lamb.",
+            UserWarning,
+            skip_file_prefixes=(os.path.dirname(__file__),)
+        )
+    return x.reshape(nx, nz)
