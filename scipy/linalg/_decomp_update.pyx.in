@@ -2047,9 +2047,9 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     R : (M, N) or (N, N) array_like
         Upper triangular matrix from the qr decomposition of A.
     u : (M,) or (M, k) array_like
-        Left update vector
+        Left update vector.
     v : (N,) or (N, k) array_like
-        Right update vector
+        Right update vector.
     overwrite_qruv : bool, optional
         If True, consume Q, R, u, and v, if possible, while performing the
         update, otherwise make copies as necessary. Defaults to False.
@@ -2062,9 +2062,9 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     Returns
     -------
     Q1 : ndarray
-        Updated unitary/orthogonal factor
+        Updated unitary/orthogonal factor.
     R1 : ndarray
-        Updated upper triangular factor
+        Updated upper triangular factor.
 
     See Also
     --------
@@ -2245,9 +2245,12 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     else:
         p = u1.shape[1]
 
-    # limit p to at most max(n, m)
+    # limit p to at most min(n, m)
     if p > n or p > m:
-        raise ValueError('Update rank larger than np.dot(Q, R).')
+        raise ValueError(
+            f"Invalid update rank p={p}: the inner dimension of u @ v^H "
+            f"cannot exceed min(m, n) = {min(m, n)}."
+        )
 
     u1 = validate_array(u1, chkfinite)
     v1 = validate_array(v1, chkfinite)
@@ -2292,6 +2295,11 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
                         <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
                 {{endfor}}
     else:
+        if m > n and p > m - n:
+            raise ValueError(
+                "For full QR updates with p > m - n, use "
+                "qr(Q @ R + u @ v.conj().T) directly."
+            )
         if m == 1:
             if p == 1:
                 r1 += q1.conj() * u1 * v1.T.conj()
