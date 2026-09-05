@@ -1125,7 +1125,8 @@ class ShortTimeFFT:
         ----------
         x : np.ndarray
             The input signal as real or complex valued array. For complex values, the
-            property `fft_mode` must be set to 'twosided' or 'centered'.
+            property `fft_mode` must be set to 'twosided' or 'centered'. Its length,
+            i.e., ``x.shape[axis]``, must be at least half the window length.
         p0 : int | None
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -1187,7 +1188,8 @@ class ShortTimeFFT:
         ----------
         x : np.ndarray
             The input signal as real or complex valued array. For complex values, the
-            property `fft_mode` must be set to 'twosided' or 'centered'.
+            property `fft_mode` must be set to 'twosided' or 'centered'. Its length,
+            i.e., ``x.shape[axis]``, must be at least half the window length.
         detr : 'linear' |  'constant' |  Callable[[np.ndarray], np.ndarray] | None
             If 'constant', the mean is subtracted, if set to "linear", the linear
             trend is removed from each segment. This is achieved by calling
@@ -1279,11 +1281,13 @@ class ShortTimeFFT:
         ----------
         x : np.ndarray
             The input signal as real or complex valued array. For complex values, the
-            property `fft_mode` must be set to 'twosided' or 'centered'.
+            property `fft_mode` must be set to 'twosided' or 'centered'. Its length,
+            i.e., ``x.shape[axis]``, must be at least half the window length.
         y : np.ndarray
             The second input signal of the same shape as `x`. If ``None``, it is
             assumed to be `x`. For complex values, the property `fft_mode` must be
-            set to 'twosided' or 'centered'.
+            set to 'twosided' or 'centered'. Its length, i.e., ``y.shape[axis]``, must
+            be at least half the window length.
         detr : 'linear' |  'constant' |  Callable[[np.ndarray], np.ndarray] | None
             If 'constant', the mean is subtracted, if set to "linear", the linear
             trend is removed from each segment. This is achieved by calling

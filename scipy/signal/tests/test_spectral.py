@@ -20,6 +20,8 @@ from scipy.signal._spectral_py import _spectral_helper
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 
+xfail_xp_backends = pytest.mark.xfail_xp_backends  # short-hand
+
 
 class TestPeriodogram:
     def test_real_onesided_even(self):
@@ -153,19 +155,21 @@ class TestPeriodogram:
         assert_array_equal(pp.shape, (17,))
 
     def test_empty_input(self):
-        f, p = periodogram([])
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
-        for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = periodogram(np.empty(shape))
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+        with pytest.raises(ValueError, match="^Parameter nfft=0 not positive"):
+            periodogram([])
+        for shape in [(0,), (3, 0)]:
+            with pytest.raises(ValueError, match="^Parameter nfft=0 not positive"):
+                periodogram(np.empty(shape))
+        f, p = welch(np.empty((0,5,2)))
+        assert f.shape == (129,)
+        assert p.shape == (0, 5, 129)
 
     def test_empty_input_other_axis(self):
-        for shape in [(3,0), (0,5,2)]:
-            f, p = periodogram(np.empty(shape), axis=1)
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+        with pytest.raises(ValueError, match="^Parameter nfft=0 not positive"):
+            periodogram(np.empty((3,0)), axis=1)
+        f, p = periodogram(np.empty((0,5,2)), axis=1)
+        assert f.shape == (3,)
+        assert p.shape == (0, 3, 2)
 
     def test_short_nfft(self):
         x = np.zeros(18)
@@ -190,11 +194,11 @@ class TestPeriodogram:
         assert_allclose(p, q)
 
     def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
+        x = np.zeros(16, dtype=np.float32)
         x[0] = 1
         f, p = periodogram(x)
         assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9, 'f')
+        q = np.ones(9, dtype=np.float32)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
@@ -202,32 +206,32 @@ class TestPeriodogram:
         assert_(p.dtype == q.dtype)
 
     def test_real_onesided_odd_32(self):
-        x = np.zeros(15, 'f')
+        x = np.zeros(15, dtype=np.float32)
         x[0] = 1
         f, p = periodogram(x)
         assert_allclose(f, np.arange(8.0)/15.0)
-        q = np.ones(8, 'f')
+        q = np.ones(8, dtype=np.float32)
         q[0] = 0
         q *= 2.0/15.0
         assert_allclose(p, q, atol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
+        x = np.zeros(16, dtype=np.float32)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 1/16.0, 'f')
+        q = np.full(16, 1/16.0, dtype=np.float32)
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
     def test_complex_32(self):
-        x = np.zeros(16, 'F')
+        x = np.zeros(16, dtype=np.complex64)
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 5.0/16.0, 'f')
+        q = np.full(16, 5.0/16.0, dtype=np.float32)
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
@@ -236,11 +240,9 @@ class TestPeriodogram:
         x = np.zeros(16)
         x[0] = 1
         win = signal.get_window('hann', 10)
-        expected_msg = ('the size of the window must be the same size '
-                        'of the input on the specified axis')
-        with assert_raises(ValueError, match=expected_msg):
-            periodogram(x, window=win)
-
+        f, p = periodogram(x, window=win)
+        assert f.shape == (6,)
+        assert p.shape == (6,)
 
 @make_xp_test_case(welch)
 class TestWelch:
@@ -382,6 +384,8 @@ class TestWelch:
         f0, p0 = welch(x[:,0,0], nperseg=10)
         xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
+    @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_window_external(self, xp):
         x = xp.zeros((16,), dtype=xp.float64)
         x = xpx.at(x)[0].set(1)
@@ -395,49 +399,55 @@ class TestWelch:
         assert pe.shape == (5,)
         assert_raises(ValueError, welch, x,
                       10, win, nperseg=4)  # because nperseg != win.shape[-1]
-        win_err = xp.asarray(signal.get_window('hann', 32))
-        assert_raises(ValueError, welch, x,
-                      10, win_err, nperseg=None)  # win longer than signal
+        win1 = xp.asarray(signal.get_window('hann', 32))
+        f1, p1 = welch(x, 10, win1, nperseg=None)
+        assert f1.shape == (17,)
+        assert p1.shape == (17,)
 
+    @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_empty_input(self, xp):
         f, p = welch(xp.asarray([]))
-        assert f.shape == (0,)
-        assert p.shape == (0,)
-        for shape in [(0,), (3,0), (0,5,2)]:
+        assert f.shape == (129,)
+        assert p.shape == (129,)
+        for shape in [[0,], [3,0], [0,5,2]]:
             f, p = welch(xp.empty(shape))
-            assert f.shape == shape
-            assert p.shape == shape
+            shape[-1] = 129
+            assert f.shape == (129,)
+            assert p.shape == tuple(shape)
 
+    @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_empty_input_other_axis(self, xp):
-        for shape in [(3,0), (0,5,2)]:
+        for shape in [[3,0], [0,5,2]]:
             f, p = welch(xp.empty(shape), axis=1)
-            assert f.shape == shape
-            assert p.shape == shape
+            shape[1] = 129
+            assert f.shape == (129,)
+            assert p.shape == tuple(shape)
 
+    @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_short_data(self, xp):
         x = xp.zeros((8,), dtype=xp.float64)
         x = xpx.at(x)[0].set(1)
-        #for string-like window, input signal length < nperseg value gives
-        #UserWarning, sets nperseg to x.shape[-1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                r"nperseg\s*=?\s*256 is greater than "
-                r"(?:input_length|input length|signal).*",
-                UserWarning,
-            )
-            f, p = welch(x, window="hann")  # default nperseg
-            f1, p1 = welch(x, window="hann", nperseg=256)  # user-specified nperseg
-        f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
-        xp_assert_close(f, f2)
-        xp_assert_close(p, p2)
-        xp_assert_close(f1, f2)
-        xp_assert_close(p1, p2)
 
+        f0, p0 = welch(x, window="hann")  # default nperseg
+        f1, p1 = welch(x, window="hann", nperseg=256)  # user-specified nperseg
+
+        xp_assert_close(f0, f1)
+        xp_assert_close(p0, p1)
+        f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
+        assert f2.shape == (5,)
+        assert p2.shape == (5,)
+
+    @xfail_xp_backends('jax.numpy', reason="Backend not updated yet.")
+    @xfail_xp_backends("cupy", reason="Backend not updated yet.")
     def test_window_long_or_nd(self, xp):
-        assert_raises(ValueError, welch, xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
-        assert_raises(ValueError, welch, xp.zeros((4,)), 1,
-                      xp.reshape(xp.arange(6), (2,3)))
+        f0, p0 = welch(xp.zeros((4,)), 1, xp.asarray([1,1,1,1,1]))
+        xp_assert_close(f0, xp.asarray([0., 0.2, 0.4], dtype=f0.dtype))
+        xp_assert_close(p0, xp.asarray([0., 0., 0.], dtype=p0.dtype))
+        with pytest.raises(ValueError, match="^Parameter win must be 1d,"):
+            welch(xp.zeros((4,)), 1, xp.reshape(xp.arange(6), (2,3)))
 
     def test_nondefault_noverlap(self, xp):
         x = xp.zeros((64,), dtype=xp.float64)
@@ -788,72 +798,71 @@ class TestCSD:
         assert_array_almost_equal_nulp(f, fe)
         assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
         assert_array_equal(pe.shape, (5,))
-        assert_raises(ValueError, csd, x, x,
-                      10, win, nperseg=256)  # because nperseg != win.shape[-1]
-        win_err = signal.get_window('hann', 32)
-        assert_raises(ValueError, csd, x, x,
-              10, win_err, nperseg=None)  # because win longer than signal
+
+        win1 = signal.get_window('hann', 32)
+        f1, p1 = csd(x, x, 1, win1, nperseg=None)
+        assert_equal(f1.shape, (17, ))
+        assert_equal(p1.shape, (17, ))
+
         with pytest.raises(ValueError, match="Parameter nperseg=0.*"):
             csd(x, x, 0, nperseg=0)
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (129,))
 
         f, p = csd(np.zeros(10),[])
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (129,))
 
-        for shape in [(0,), (3,0), (0,5,2)]:
+        for shape in [[0,], [3, 0], [0, 5, 2]]:
             f, p = csd(np.empty(shape), np.empty(shape))
-            assert_array_equal(f.shape, shape)
+            shape[-1] = 129
+            assert_array_equal(f.shape, (129,))
             assert_array_equal(p.shape, shape)
 
         f, p = csd(np.ones(10), np.empty((5,0)))
-        assert_array_equal(f.shape, (5,0))
-        assert_array_equal(p.shape, (5,0))
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (5, 129))
 
         f, p = csd(np.empty((5,0)), np.ones(10))
-        assert_array_equal(f.shape, (5,0))
-        assert_array_equal(p.shape, (5,0))
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (5, 129))
 
     def test_empty_input_other_axis(self):
-        for shape in [(3,0), (0,5,2)]:
+        for shape in [[3, 0], [0, 5, 2]]:
             f, p = csd(np.empty(shape), np.empty(shape), axis=1)
-            assert_array_equal(f.shape, shape)
+            shape[1] = 129
+            assert_array_equal(f.shape, (129,))
             assert_array_equal(p.shape, shape)
 
-        f, p = csd(np.empty((10,10,3)), np.zeros((10,0,1)), axis=1)
-        assert_array_equal(f.shape, (10,0,3))
-        assert_array_equal(p.shape, (10,0,3))
+        f, p = csd(np.empty((10, 10, 3)), np.zeros((10, 0, 1)), axis=1)
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (10, 129 ,3))
 
-        f, p = csd(np.empty((10,0,1)), np.zeros((10,10,3)), axis=1)
-        assert_array_equal(f.shape, (10,0,3))
-        assert_array_equal(p.shape, (10,0,3))
+        f, p = csd(np.empty((10, 0, 1)), np.zeros((10, 10, 3)), axis=1)
+        assert_array_equal(f.shape, (129,))
+        assert_array_equal(p.shape, (10, 129, 3))
 
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
 
-        #for string-like window, input signal length < nperseg value gives
-        #UserWarning, sets nperseg to x.shape[-1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "nperseg=256 is greater than signal length.*", UserWarning)
-            f, p = csd(x, x, window='hann')  # default nperseg
-            f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
-        f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f2)
-        assert_allclose(p1, p2)
+        f0, p0 = csd(x, x, window='hann')  # default nperseg=256
+        f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
+        assert_allclose(f0, f1)
+        assert_allclose(p0, p1)
+        f2, p2 = csd(x, x, nperseg=8)  # valid nperseg
+        assert f2.shape == (5,)
+        assert p2.shape == (5,)
 
     def test_window_long_or_nd(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                      np.array([1,1,1,1,1]))
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                      np.arange(6).reshape((2,3)))
+        f0, p0 = csd(np.zeros(4), np.ones(4), 1, np.array([1,1,1,1,1]))
+        assert_allclose(f0, np.array([0., 0.2, 0.4]))
+        assert_allclose(p0, np.array([0., 0., 0.]))
+        with pytest.raises(ValueError, match="^Parameter win must be 1d,"):
+            csd(np.zeros(4), np.ones(4), 1, np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -877,50 +886,49 @@ class TestCSD:
 
 
     def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
+        x = np.zeros(16, dtype=np.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f')
+                      0.11111111], dtype=np.complex64)
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_onesided_odd_32(self):
-        x = np.zeros(16, 'f')
+        x = np.zeros(16, dtype=np.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
         q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
-                      0.17072113], 'f')
+                      0.17072113], dtype=np.complex64)
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
+        x = np.zeros(16, dtype=np.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111,
-                      0.07638889], 'f')
+                      0.07638889], dtype=np.complex64)
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_complex_32(self):
-        x = np.zeros(16, 'F')
+        x = np.zeros(16, dtype=np.complex64)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
-                      0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
+        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 0.55555558,
+                      0.55555552, 0.55555552, 0.38194442], dtype=np.complex64)
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype,
-                f'dtype mismatch, {p.dtype}, {q.dtype}')
+        assert_(p.dtype == q.dtype,f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self):
         x = np.zeros(12)
