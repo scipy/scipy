@@ -260,7 +260,11 @@ class TestLUFactor:
         assert_equal(lu.shape, (m, n))
         assert_equal(lu.dtype, dtype)
         assert_equal(p.shape, (k,))
-        assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
+        # See https://github.com/scipy/scipy/issues/25964#issuecomment-5521651145
+        if m == 0 or n == 0:
+            assert p.dtype == np.int64
+        else:
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
@@ -296,7 +300,7 @@ class TestLUSolve:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt, dt_b):
-        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([]))
+        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([], dtype=dt))
         b = np.asarray([], dtype=dt_b)
         x = lu_solve(lu_and_piv, b)
         assert x.shape == (0,)

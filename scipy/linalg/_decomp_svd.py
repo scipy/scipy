@@ -408,7 +408,7 @@ def orth(A, rcond=None):
     return Q
 
 
-@_apply_over_batch(('A', 2), signature="(m,n)->(n,n)")
+@_apply_over_batch(('A', 2), signature="(m,n)->(n,n)", zero_size_fill=None)
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
