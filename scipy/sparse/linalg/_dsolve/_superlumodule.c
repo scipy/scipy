@@ -347,6 +347,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
             (PyArrayObject*)L_nzvals, (PyArrayObject*)L_rowind, (PyArrayObject*)L_colptr,
             L_type, SLU_SC, SLU_TRLU, L_col_to_sup, L_sup_to_col);
     if (L_conv_err) {
+        SUPERLU_FREE((void*)L_col_to_sup);
+        SUPERLU_FREE((void*)L_sup_to_col);
         return NULL;
     }
     int U_conv_err = SparseFormat_from_spMatrix(
@@ -354,6 +356,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
             (PyArrayObject*)U_nzvals, (PyArrayObject*)U_rowind, (PyArrayObject*)U_colptr,
             U_type, SLU_NC, SLU_TRU, NULL, NULL);
     if (U_conv_err) {
+        SUPERLU_FREE((void*)L_col_to_sup);
+        SUPERLU_FREE((void*)L_sup_to_col);
         Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
         return NULL;
     }
