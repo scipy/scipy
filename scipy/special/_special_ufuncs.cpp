@@ -67,7 +67,6 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 extern const char *_beta_pdf_doc;
-extern const char *_beta_ppf_doc;
 extern const char *_binom_cdf_doc;
 extern const char *_binom_isf_doc;
 extern const char *_binom_pmf_doc;
@@ -372,12 +371,6 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(beta_pdf_double)},
                           "_beta_pdf", _beta_pdf_doc);
     PyModule_AddObjectRef(module, "_beta_pdf", _beta_pdf);
-
-    PyObject *_beta_ppf =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_ppf_float),
-                           static_cast<xsf::numpy::ddd_d>(beta_ppf_double)},
-                          "_beta_ppf", _beta_ppf_doc);
-    PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
 
     PyObject *_binom_cdf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_cdf_float),
