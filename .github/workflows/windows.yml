@@ -82,7 +82,6 @@ jobs:
         run: |
           # 2.0.0 is currently our oldest supported NumPy version
           python -m pip install numpy==2.0.0 --group build --group dev-cli --group test-core --group openblas32
-          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
@@ -123,7 +122,6 @@ jobs:
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
           python -m pip install "numpy<2.4.3" --group build --group dev-cli --group test-core --group openblas32
-          python -m pip install -r requirements/pkgconf.txt
 
       - name: Build
         run: |
