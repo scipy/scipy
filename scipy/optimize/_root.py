@@ -300,10 +300,11 @@ def _root_leastsq(fun, x0, args=(), jac=None,
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
     eps : float
-        A suitable step length for the forward-difference approximation of
-        the Jacobian (for Dfun=None). If `eps` is less than the machine
-        precision, it is assumed that the relative errors in the functions
-        are of the order of the machine precision.
+        Passed to MINPACK as ``epsfcn``, a variable used in determining
+        a suitable step length for the forward-difference approximation
+        of the Jacobian (for Dfun=None). The step length for variable
+        ``i`` is ``sqrt(max(eps, machine precision)) * abs(x[i])``, or
+        ``sqrt(max(eps, machine precision))`` if ``x[i]`` is zero.
     factor : float
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
