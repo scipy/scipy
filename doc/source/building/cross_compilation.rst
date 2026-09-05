@@ -36,6 +36,8 @@ avoid this problem, specify the path to the relevant directory in your
 
     [properties]
     pythran-include-dir = sitepkg + 'pythran'
+    host-python-path = '/abspath/to/host-pythons/bin/python'
+    host-python-version = '3.14'
 
 ``numpy`` used to require the same treatment, through a ``numpy-include-dir``
 property. That is no longer needed: since SciPy 2.0.0 (when ``f2py`` was
