@@ -1179,6 +1179,19 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
+    def test_same_mode_preserves_broadcast_dimensions(self, convapproach, xp):
+        # gh-21876: in 'same' mode the output has the shape of the first
+        # input along the convolved axes, while broadcast dimensions not
+        # involved in the convolution must be taken from the full result.
+        a = xp.reshape(xp.arange(100), (1, 100))
+        b = xp.reshape(xp.arange(70), (7, 10))
+        res = convapproach(a, b, axes=1, mode='same')
+        xp_assert_equal(res.shape, (7, 100))
+        for i in range(7):
+            ref = convapproach(a[0], b[i], mode='same')
+            xp_assert_close(res[i], ref)
+
+
 
 @skip_xp_backends(np_only=True, reason="assertions may differ on backends")
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')

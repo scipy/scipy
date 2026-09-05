@@ -577,7 +577,14 @@ def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
     if mode == "full":
         return xp_copy(ret, xp=xp)
     elif mode == "same":
-        return xp_copy(_centered(ret, s1), xp=xp)
+        # In the "same" mode the output has the shape of s1 along the
+        # convolved axes. For axes not involved in the convolution the
+        # batch (broadcast) dimensions of the full result must be
+        # preserved; s1 only carries the shape of the first input along
+        # those axes (which may be 1 before broadcasting), so take them
+        # from the full result instead (gh-21876).
+        shape = [ret.shape[a] if a not in axes else s1[a] for a in range(ret.ndim)]
+        return xp_copy(_centered(ret, shape), xp=xp)
     elif mode == "valid":
         shape_valid = [ret.shape[a] if a not in axes else s1[a] - s2[a] + 1
                        for a in range(ret.ndim)]
