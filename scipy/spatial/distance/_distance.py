@@ -702,7 +702,9 @@ def hamming(u, v, w=None):
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
         w = w / w.sum()
         return np.dot(u_ne_v, w)
-    return np.mean(u_ne_v)
+    if u_ne_v.size == 0:
+        return np.nan
+    return np.count_nonzero(u_ne_v) / u_ne_v.size
 
 
 def jaccard(u, v, w=None):
