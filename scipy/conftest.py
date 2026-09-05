@@ -267,7 +267,7 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import mparray
+        import mparray  # pyrefly: ignore[missing-import]
         xp_available_backends.append(
             pytest.param(mparray, id='mparray',
                          marks=_array_api_backends))

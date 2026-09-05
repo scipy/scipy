@@ -166,7 +166,6 @@ class TestArrayAPI:
             assert id(x) != id(y)
 
 
-    @pytest.mark.skip_xp_backends("mparray", reason="XXX investiagate")
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
