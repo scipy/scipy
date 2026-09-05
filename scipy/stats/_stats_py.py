@@ -223,7 +223,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -316,7 +316,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -2915,7 +2915,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # working.
 
     like_zscore = (scores is compare)
-    xp = array_namespace(scores, compare)
+    xp = array_namespace(scores, compare, masked_ok=True)
     scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
@@ -7252,7 +7252,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs, f_exp, ddof)
+    xp = array_namespace(f_obs, f_exp, ddof, masked_ok=True)
     f_obs, f_exp, ddof = xp_promote(f_obs, f_exp, ddof,
                                     force_floating=True, xp=xp)
 

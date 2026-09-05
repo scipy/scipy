@@ -50,7 +50,7 @@ def _broadcast_arrays(arrays, axis=None, xp=None):
     arrays = tuple(arrays)
     if not arrays:
         return arrays
-    xp = array_namespace(*arrays) if xp is None else xp
+    xp = array_namespace(*arrays, masked_ok=True) if xp is None else xp
     arrays = [xp.asarray(arr) for arr in arrays]
     shapes = [arr.shape for arr in arrays]
     new_shapes = _broadcast_shapes(shapes, axis)
@@ -165,7 +165,7 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
 @xp_capabilities()
 def _broadcast_concatenate(arrays, axis, paired=False, xp=None):
     """Concatenate arrays along an axis with broadcasting."""
-    xp = array_namespace(*arrays) if xp is None else xp
+    xp = array_namespace(*arrays, masked_ok=True) if xp is None else xp
     arrays = _broadcast_arrays(arrays, axis if not paired else None, xp=xp)
     res = xp.concat(arrays, axis=axis)
     return res
@@ -174,7 +174,7 @@ def _broadcast_concatenate(arrays, axis, paired=False, xp=None):
 def _remove_nans(samples, paired, xp=None):
     "Remove nans from paired or unpaired 1D samples"
     # potential optimization: don't copy arrays that don't contain nans
-    xp = array_namespace(*samples)
+    xp = array_namespace(*samples, masked_ok=True)
     if not paired:
         return [sample[~xp.isnan(sample)] for sample in samples]
 
@@ -217,6 +217,10 @@ def _masked_arrays_2_sentinel_arrays(samples):
     if not has_mask:
         return samples, None  # None means there is no sentinel value
 
+    message = ("Support for NumPy masked arrays is deprecated as of SciPy 2.0.0 "
+                "and will be removed in SciPy 2.4.0. See function documentation "
+                "for alternatives.")
+    warnings.warn(message, DeprecationWarning, stacklevel=4)
     # Choose a sentinel value. We can't use `np.nan`, because sentinel (masked)
     # values are always omitted, but there are different nan policies.
     dtype = np.result_type(*samples)
@@ -265,7 +269,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     """
     Check for empty sample; return appropriate output for a vectorized hypotest
     """
-    xp = array_namespace(*samples) if xp is None else xp
+    xp = array_namespace(*samples, masked_ok=True) if xp is None else xp
     # if none of the samples are empty, we need to perform the test
     if not any(xp_size(sample) == 0 for sample in samples):
         return None
@@ -348,7 +352,14 @@ code) are converted to ``np.ndarray`` before the calculation is performed. In
 this case, the output will be a scalar or ``np.ndarray`` of appropriate shape
 rather than a 2D ``np.matrix``. Similarly, while masked elements of masked
 arrays are ignored, the output will be a scalar or ``np.ndarray`` rather than a
-masked array with ``mask=False``.""").split('\n')
+masked array with ``mask=False``.
+
+.. deprecated:: 2.0.0
+
+   Support for NumPy masked arrays is deprecated and will be removed in SciPy 2.4.0.
+   See Array API Standard Support table below for whether MArrays are accepted;
+   otherwise, use regular NumPy arrays, replacing masked values with NaNs,
+   and pass argument `nan_poliy='omit'`.""").split('\n')
 
 
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
@@ -444,7 +455,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             else:
                 temp = args[0]
 
-            if is_dask(array_namespace(temp)):
+            if is_dask(array_namespace(temp, masked_ok=True)):
                 msg = ("Use of `nan_policy` and `keepdims` "
                        "is incompatible with lazy arrays.")
                 if 'nan_policy' in kwds or 'keepdims' in kwds:
@@ -514,10 +525,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # Extract the things we need here
             try:  # if something is missing
                 samples = [kwds.pop(param) for param in (params[:n_samp] + kwd_samp)]
-                xp = array_namespace(*samples)
+                xp = array_namespace(*samples, masked_ok=True)
                 samples = xp_promote(*samples, xp=xp)
                 samples = (samples,) if not isinstance(samples, tuple) else samples
-                samples = [xpx.atleast_nd(sample, ndim=1) for sample in samples]
+                samples = [xpx.atleast_nd(sample, ndim=1, xp=xp) for sample in samples]
             except KeyError:  # let the function raise the right error
                 # might need to revisit this if required arg is not a "sample"
                 hypotest_fun_in(*args, **kwds)

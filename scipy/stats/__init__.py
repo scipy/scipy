@@ -233,8 +233,7 @@ Discrete distributions
    zipfian                  -- Zipfian
 
 
-An overview of statistical functions is given below.  Many of these functions
-have a similar version in `scipy.stats.mstats` which work for masked arrays.
+An overview of statistical functions is given below.
 
 Summary statistics
 ==================
@@ -486,7 +485,6 @@ Other statistical functionality
 
    stats.qmc
    stats.contingency
-   stats.mstats
    stats.sampling
 
 Transformations
@@ -594,6 +592,14 @@ Result classes used in :mod:`scipy.stats`
 
    stats._result_classes
 
+Deprecated Functionality
+------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   stats.mstats
+
 """  # noqa: E501
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
@@ -606,7 +612,6 @@ from ._multicomp import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
 from ._kde import gaussian_kde
-from . import mstats
 from . import qmc
 from ._multivariate import *
 from . import contingency
@@ -637,3 +642,16 @@ __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+def __getattr__(name):
+   # lazy import mstats to avoid DeprecationWarning when
+   # only `stats` is imported.
+   if name == 'mstats':
+      import importlib
+      return importlib.import_module("scipy.stats.mstats")
+   try:
+      return globals()[name]
+   except KeyError:
+      raise AttributeError(
+         f"module {__name__!r} has no attribute {name!r}"
+      ) from None

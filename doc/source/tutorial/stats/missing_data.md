@@ -1,0 +1,208 @@
+---
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.19.5
+kernelspec:
+  display_name: Python 3 (ipykernel)
+  language: python
+  name: python3
+---
+
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
+```{eval-rst}
+.. notebooklite:: missing_data.md
+   :new_tab: True
+```
+
+(missing_data)=
+
++++
+
+# Working with Missing Data
+## Motivation
+Suppose a longitudinal study is intended to measure some feature of a subject at a number of points in time. To keep track of which measured value corresponds with each time point, the data is stored in an array: index 0 corresponds with the first time, index 1 corresponds with the second, and so on.
+
+```{code-cell} ipython3
+import os
+os.environ['SCIPY_ARRAY_API'] = '1'
+import numpy as np
+
+# Measurements at each of five times
+data = np.asarray([1.2, 2.3, 3.4, 4.5, 5.6])
+```
+
+If no measurement is made at a designated time, how should the corresponding element of the array be filled? In general, how do we deal with missing data given the constraints that arrays must be rectanglar - not [ragged](https://awkward-array.org/doc/main/getting-started/jagged-ragged-awkward-arrays.html) - and all entries must be filled?
+
++++
+
+## Sentinel Values
+In the simplest approach, a "sentinel value", which does not appear elsewhere in the valid measurement data, is chosen to represent a missing measurement. Frequently, this is a value that lies outside the possible range of measurement, such as a negative value when the possible range is strictly positive.
+
+```{code-cell} ipython3
+# A sentinel value, -1., can be used to represent a
+# missing measurement of a positive quantity
+data = np.asarray([1.1, 1.2, 1.3, -1., 1.5])
+```
+
+This approach satisfies the requirements of arrays, and in principle we can track the fact that the data is missing. But how can we perform valid computations with this data, given than `-1` must not be interpreted as a measurement?
+
++++
+
+### Manual Sentinel Value Removal
+
++++
+
+Suppose we wish to take the harmonic mean of the valid measurements using {func}`scipy.stats.hmean<scipy.stats.hmean>`. One approach is to manually eliminate the sentinel values, producing a temporary array of a smaller size, and to pass this temporary array to {func}`hmean<scipy.stats.hmean>`.
+
+```{code-cell} ipython3
+from scipy import stats
+temp = data[data > 0]
+stats.hmean(temp)
+```
+
+But suppose we have more than one subject, with different missing measurements for each subject.
+
+```{code-cell} ipython3
+data = np.asarray([[1.1, 1.2, 1.3, -1., 1.5],   # four valid measurements, subject 1
+                   [2.9, -1., -1., 2.6, 2.5]])  # three valid measurements, subject 2
+```
+
+We cannot  follow the same approach here:
+
+```{code-cell} ipython3
+temp = data[data > 0]
+temp
+```
+
+```{code-cell} ipython3
+stats.hmean(temp, axis=-1)
+```
+
+`data[data > 0]` produces a one-dimensional array, so {func}`hmean<scipy.stats.hmean>` is not be able to produce separate harmonic means for each subject.
+
++++
+
+One solution is to loop manually over the rows:
+
+```{code-cell} ipython3
+res = []
+for row in data:
+    temp = row[row > 0]
+    res.append(stats.hmean(temp))
+res = np.asarray(res)
+res
+```
+
+This is valid, but cumbersome and potentially slow for datasets with many subjects. Fortunately, SciPy provides alternatives.
+
++++
+
+### A Common Choice: `nan_policy='omit'`
+
++++
+
+If the floating point value NaN (Not a Number) is used as the sentinel:
+
+```{code-cell} ipython3
+NaN = np.nan
+# data[data < 0] = NaN, or more explicitly:
+data = np.asarray([[1.1, 1.2, 1.3, NaN, 1.5],   # four valid measurements, subject 1
+                   [2.9, NaN, NaN, 2.6, 2.5]])  # three valid measurements, subject 2
+```
+
+then passing the option `nan_policy='omit'` instructs SciPy to automatically remove NaNs from each slice of the data while performing the computation.
+
+```{code-cell} ipython3
+stats.hmean(data, axis=-1, nan_policy='omit')
+```
+
+Almost all reducing statistics in {mod}`scipy.stats<scipy.stats>` support `nan_policy='omit'`. Coverage is nearly complete because it is implemented in the generic way: looping over the slices, and eliminating the NaNs before performing the operation for each slice. As discussed, this Python-level looping can be slow when there are many slices, so `nan_policy='omit'` is offered merely for batch calculation convenience, not for speed. Another problem with this approach is that it overloads the meaning of NaN, which is ordinarily used as the result of an *invalid calculation*, like `0 / 0`. Finally, this option is not offered for backends other than NumPy (e.g. CuPy, PyTorch).
+
+Fortunately, there is a more principled approach that can be compatible with alternative backends and faster for large batches.
+
++++
+
+## Masked Arrays
+
++++
+
+Instead of using sentinel values, fill the space of missing values with arbitrary data, and use a second, boolean array of the same shape - a "mask" - to keep track of which elements are missing.
+
+```{code-cell} ipython3
+data = np.asarray([[1.1, 1.2, 1.3, 1.4, 1.5],
+                   [2.9, 2.8, 2.7, 2.6, 2.5]])
+mask = np.asarray([[False, False, False,  True, False],
+                   [False,  True,  True, False, False]])
+```
+
+### The Traditional Option: {class}`MaskedArray<numpy.ma.MaskedArray>`
+
++++
+
+NumPy offers {class}`numpy.ma.MaskedArray<numpy.ma.MaskedArray>` for working with masked data, and functions in {mod}`scipy.stats.mstats` were provided to work with these NumPy masked arrays.
+
+In principle, the masked array approach is advantageous because it has the potential to avoid conflating *missing* NaN values with *invalid* NaN values. It can also be faster in batch calculations with many slices, because batched masked array calculations can be implemented to ignore masked values without introducing Python `for` loops.
+
+However, the {func}`mstats.hmean<scipy.stats.mstats.hmean>` function is now deprecated along with the {mod}`mstats<scipy.stats.mstats>` namespace and all other uses of {class}`MaskedArray<numpy.ma.MaskedArray>` in {mod}`scipy.stats<scipy.stats>`.
+
+```{code-cell} ipython3
+x = np.ma.MaskedArray(data, mask=mask)
+stats.mstats.hmean(x, axis=-1)
+```
+
+There are several reasons.
+
+The first is that NumPy masked arrays do, in fact, conflate invalid and missing values. Consider the following example:
+
+```{code-cell} ipython3
+x = np.asarray([0, 1, 2, 3, 4])
+np.sum(x / x)
+```
+
+Ordinary NumPy arrays warn that `0 / 0` produces NaN, and this invalid value propagates in the sum. It is impossible to get a valid numerical result when a NaN is involved in arithmetic.
+
+Yet NumPy masked arrays seem to provide a number.
+
+```{code-cell} ipython3
+y = np.ma.MaskedArray(x)
+np.sum(y / y)
+```
+
+This occurs because NaNs arising from invalid numerical calculations involving NumPy masked arrays are masked without warning (and subsequently ignored).
+
+```{code-cell} ipython3
+y / y
+```
+
+This can lead to invalid calculations producing apparently valid but actually bogus numerical results, which is clearly unsafe in scientific computing. Rather than alerting the user to the invalid result so it can be fixed, NumPy masked arrays hide the problem and produce erroneous values.
+
++++
+
+The second reason for deprecating {mod}`mstats<scipy.stats.mstats>` is that its function interfaces and implementations were entirely separate from those of {mod}`stats<scipy.stats>`, and often neglected in terms of maintenance and enhancements. Consider, for instance, the stark difference in documentation thoroughness and feature completeness between {func}`stats.mannwhitneyu<scipy.stats.mannwhitneyu>` and {func}`mstats.mannwhitneyu<scipy.stats.mstats.mannwhitneyu>`. Eliminating {mod}`mstats<scipy.stats.mstats>` in favor of adding missing data support to {mod}`stats<scipy.stats>` allows SciPy maintainers to provide users with one, complete implementation with a single interface.
+
++++
+
+The final reason for deprecating {mod}`mstats<scipy.stats.mstats>` and support for NumPy masked arrays is the rise in support for array API standard compatible arrays throughout SciPy. NumPy masked arrays themselves are mostly unmaintained and do not conform to the Array API Standard, so when adding support for high priority libraries like CuPy, JAX, and PyTorch, which *are* compatible with the standard, it is difficult to also preserve support for the legacy {class}`MaskedArray<numpy.ma.MaskedArray>` type.
+
++++
+
+### The Modern Option: [MArray](https://mdhaber.github.io/marray/tutorial.html)
+Fortunately, as support for the Array API Standard closes this window, it opens the door toward a new way of supporting masked data. Specifically, [MArray](https://mdhaber.github.io/marray/tutorial.html) is an array API standard compatible array type that *wraps* the functionality of other array backends and endows them with support for masks.
+
+```{code-cell} ipython3
+from marray import numpy as xp  # or:
+# from marray import torch as xp
+# from marray import cupy as xp
+x = xp.asarray(data, mask=mask)
+x
+```
+
+```{code-cell} ipython3
+stats.hmean(x, axis=-1)
+```
+
+Consequently, existing users of {mod}`mstats<scipy.stats.mstats>` and NumPy masked arrays are advised to begin using the corresponding {mod}`stats<scipy.stats>`  functions with MArrays where possible (see function documentation) and `nan_policy='omit'` otherwise.
