@@ -105,18 +105,20 @@ def shgo(
         criteria are met. However, the default algorithm does not require any
         to be specified:
 
-        maxfev : int (L)
+        maxfev : int
             Maximum number of function evaluations in the feasible domain.
-            (Note only methods that support this option will terminate
-            the routine at precisely exact specified value. Otherwise the
-            criterion will only terminate during a global iteration)
+            This limit applies only to global sampling and is not passed to the
+            local minimization routine. The specified value may be exceeded
+            before stopping because the criterion is checked between global
+            iterations.
         f_min : float
             Specify the minimum objective function value, if it is known.
+            Supplying this value enables the ``f_tol`` stopping criterion.
         f_tol : float
-            Precision goal for the value of f in the stopping
-            criterion. Note that the global routine will also
-            terminate if a sampling point in the global routine is
-            within this tolerance.
+            Precision goal used with ``f_min``. This option has no effect unless
+            ``f_min`` is also specified. When both are set, the global routine
+            terminates when a sampling point meets the tolerance around
+            ``f_min``.
         maxiter : int
             Maximum number of iterations to perform.
         maxev : int
@@ -130,9 +132,11 @@ def shgo(
             iteration. The rank of this group has a one-to-one correspondence
             with the number of locally convex subdomains in the objective
             function (after adequate sampling points each of these subdomains
-            contain a unique global minimum). If the difference in the hgr is 0
-            between iterations for ``maxhgrd`` specified iterations the
-            algorithm will terminate.
+            contain a unique global minimum). If the difference in the hgr
+            between iterations is less than or equal to ``minhgrd``, the
+            algorithm will terminate. This criterion is only effective when
+            ``minimize_every_iter`` is True, because the homology group rank is
+            updated from the local minimizer pool.
 
         Objective function knowledge:
 
