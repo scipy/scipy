@@ -11,7 +11,7 @@ from typing import Literal
 from numpy._typing import ArrayLike
 
 from scipy.spatial import cKDTree
-from . import _sigtools
+from . import _sigtools, _fftconv
 from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
@@ -125,7 +125,7 @@ def correlate(in1, in2, mode='full', method='auto'):
            Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
            Boundary effects may be visible.
-    method : str {'auto', 'direct', 'fft'}, optional
+    method : str {'auto', 'direct', 'fft', 'oa'}, optional
         A string indicating which method to use to calculate the correlation.
 
         ``direct``
@@ -134,6 +134,12 @@ def correlate(in1, in2, mode='full', method='auto'):
         ``fft``
            The Fast Fourier Transform is used to perform the correlation more
            quickly (only available for numerical arrays.)
+        ``oa``
+           The overlap-add method is used, by calling `oaconvolve`. This can
+           be much faster than ``fft`` when one input is much larger than the
+           other.
+
+           .. versionadded:: 1.19.0
         ``auto``
            Automatically chooses direct or Fourier method based on an estimate
            of which is faster (default).  See `convolve` Notes for more detail.
@@ -254,7 +260,7 @@ def correlate(in1, in2, mode='full', method='auto'):
                          " 'same', or 'full'.") from e
 
     # this either calls fftconvolve or this function with method=='direct'
-    if method in ('fft', 'auto'):
+    if method in ('fft', 'auto', 'oa'):
         return convolve(in1, _reverse_and_conj(in2, xp), mode, method)
 
     elif method == 'direct':
@@ -310,7 +316,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     else:
         raise ValueError("Acceptable method flags are 'auto',"
-                         " 'direct', or 'fft'.")
+                         " 'direct', 'fft', or 'oa'.")
 
 
 def correlation_lags(in1_len, in2_len, mode='full'):
@@ -956,6 +962,20 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     s1 = in1.shape
     s2 = in2.shape
 
+    # Fast path: whole overlap-add in C++ for numpy inputs convolved along a
+    # single axis (1-D, or N-D with len(axes)==1), matching real/complex dtype,
+    # and equal non-convolution dimensions. Everything else falls through.
+    if (is_numpy(xp)
+            and len(axes) == 1
+            and xp.isdtype(in1.dtype, ('real floating', 'complex floating'))
+            and in1.dtype == in2.dtype
+            and all(in1.shape[a] == in2.shape[a]
+                    for a in range(in1.ndim) if a != axes[0])):
+        res = _fftconv.oaconvolve(in1, in2, mode, axes[0])
+        if res is not None:
+            return res
+    # else: fall through to the existing Python overlap-add (unchanged).
+
     if not axes:
         ret = in1 * in2
         return _apply_conv_mode(ret, s1, s2, mode, axes, xp)
@@ -1286,8 +1306,13 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Returns
     -------
     method : str
-        A string indicating which convolution method is fastest, either
-        'direct' or 'fft'
+        A string indicating which convolution method is fastest, one of
+        'direct', 'fft', or 'oa'.
+
+        .. versionchanged:: 1.19.0
+            May now also return 'oa' (overlap-add) when ``measure=True``
+            finds `oaconvolve` fastest. The default (predicted) path
+            selects only 'direct' or 'fft'.
     times : dict, optional
         A dictionary containing the times (in seconds) needed for each method.
         This value is only returned if ``measure=True``.
@@ -1365,11 +1390,11 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     if measure:
         times = {}
-        for method in ['fft', 'direct']:
+        for method in ['fft', 'direct', 'oa']:
             times[method] = _timeit_fast(lambda: convolve(volume, kernel,
                                          mode=mode, method=method))
 
-        chosen_method = 'fft' if times['fft'] < times['direct'] else 'direct'
+        chosen_method = min(times, key=times.get)
         return chosen_method, times
 
     # for integer input,
@@ -1389,6 +1414,21 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
             return 'fft'
 
     return 'direct'
+
+
+def _finalize_freq_conv(out, volume, kernel, xp):
+    """Post-process an FFT-based convolution result (fftconvolve/oaconvolve):
+    round for integral result dtypes, warn on NaN/inf, and cast to result dtype.
+    """
+    result_type = xp.result_type(volume, kernel)
+    if xp.isdtype(result_type, 'integral'):
+        out = xp.round(out)
+    if xp.isnan(xp.reshape(out, (-1,))[0]) or xp.isinf(xp.reshape(out, (-1,))[0]):
+        warnings.warn("Use of FFT convolution on input with NAN or inf"
+                      " results in NAN or inf output. Consider using"
+                      " method='direct' instead.",
+                      category=RuntimeWarning, stacklevel=3)
+    return xp.astype(out, result_type)
 
 
 def convolve(in1, in2, mode='full', method='auto'):
@@ -1418,7 +1458,7 @@ def convolve(in1, in2, mode='full', method='auto'):
            Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
            Boundary effects may be visible.
-    method : str {'auto', 'direct', 'fft'}, optional
+    method : str {'auto', 'direct', 'fft', 'oa'}, optional
         A string indicating which method to use to calculate the convolution.
 
         ``direct``
@@ -1427,6 +1467,12 @@ def convolve(in1, in2, mode='full', method='auto'):
         ``fft``
            The Fourier Transform is used to perform the convolution by calling
            `fftconvolve`.
+        ``oa``
+           The overlap-add method is used, by calling `oaconvolve`. This can
+           be much faster than ``fft`` when one input is much larger than the
+           other.
+
+           .. versionadded:: 1.19.0
         ``auto``
            Automatically chooses direct or Fourier method based on an estimate
            of which is faster (default).  See Notes for more detail.
@@ -1518,17 +1564,10 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        result_type = xp.result_type(volume, kernel)
-        if xp.isdtype(result_type, 'integral'):
-            out = xp.round(out)
-
-        if xp.isnan(xp.reshape(out, (-1,))[0]) or xp.isinf(xp.reshape(out, (-1,))[0]):
-            warnings.warn("Use of fft convolution on input with NAN or inf"
-                          " results in NAN or inf output. Consider using"
-                          " method='direct' instead.",
-                          category=RuntimeWarning, stacklevel=2)
-
-        return xp.astype(out, result_type)
+        return _finalize_freq_conv(out, volume, kernel, xp)
+    elif method == 'oa':
+        out = oaconvolve(volume, kernel, mode=mode)
+        return _finalize_freq_conv(out, volume, kernel, xp)
     elif method == 'direct':
         # fastpath to faster numpy.convolve for 1d inputs when possible
         if _np_conv_ok(volume, kernel, mode, xp):
@@ -1540,8 +1579,8 @@ def convolve(in1, in2, mode='full', method='auto'):
 
         return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
     else:
-        raise ValueError("Acceptable method flags are 'auto',"
-                         " 'direct', or 'fft'.")
+        raise ValueError("Acceptable method flags are 'auto', 'direct',"
+                         " 'fft', or 'oa'.")
 
 
 def order_filter(a, domain, rank):
