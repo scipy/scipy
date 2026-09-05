@@ -167,6 +167,15 @@ cdef class VarReader5:
         int squeeze_me
         int chars_as_strings
 
+    cdef inline cnp.dtype _dtype_from_mdtype(self, cnp.uint32_t mdtype) except *:
+        cdef PyObject* dt_obj
+        if mdtype >= _N_MIS:
+            raise ValueError("Invalid MATLAB data type code %d" % mdtype)
+        dt_obj = self.dtypes[mdtype]
+        if dt_obj == NULL:
+            raise ValueError("Unsupported MATLAB data type code %d" % mdtype)
+        return <cnp.dtype><object>dt_obj
+
     def __cinit__(self, preader):
         byte_order = preader.byte_order
         self.is_swapped = byte_order == swapped_code
@@ -445,7 +454,7 @@ cdef class VarReader5:
         cdef cnp.ndarray el
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
-        cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
+        cdef cnp.dtype dt = self._dtype_from_mdtype(mdtype)
         if dt.itemsize != 1 and nnz != -1 and byte_count == nnz:
             el_count = <cnp.npy_intp> nnz
             dt = BOOL_DTYPE
