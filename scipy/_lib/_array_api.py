@@ -255,8 +255,6 @@ def _convert_scalar_to_array(x, xp):
         bool,
     ):
         return xp.asarray(x)
-    elif is_mparray(xp):
-        x = np.asarray(x._data, dtype=x.dtype)
     return x
 
 
@@ -267,7 +265,7 @@ def xp_assert_equal(actual, desired, *, check_dtype=True,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-    xp = np_compat if is_mparray(xp) else xp
+
     return xpt.assert_equal(actual, desired, err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
 
@@ -279,7 +277,7 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_dtype=True,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-    xp = np_compat if is_mparray(xp) else xp
+
     return xpt.assert_close(actual, desired,rtol=rtol, atol=atol,
                             err_msg=err_msg, check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
@@ -294,7 +292,7 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1,
     xp = _xp_or_default(xp, desired)
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-    xp = np_compat if is_mparray(xp) else xp
+
     return xpt.assert_close_nulp(actual, desired, nulp=nulp,
                             check_dtype=check_dtype,
                             check_shape=check_shape, check_scalar=check_0d, xp=xp)
@@ -307,7 +305,6 @@ def _assert_less(
 
     actual = _convert_scalar_to_array(actual, xp)
     desired = _convert_scalar_to_array(desired, xp)
-    xp = np_compat if is_mparray(xp) else xp
     xpt.assert_less(actual, desired, check_dtype=check_dtype,
                     check_shape=check_shape, check_scalar=check_0d, err_msg=err_msg,
                     verbose=verbose, xp=xp)
@@ -753,6 +750,8 @@ def _make_sphinx_capabilities(
     warnings = (),
     # Whether the function supports MArrays that wrap one of the supported backends
     marray=None,
+    # Whether the function support mparrays
+    mparray=None,
     # unused in documentation
     reason=None,
     method_capabilities=None,
@@ -777,8 +776,11 @@ def _make_sphinx_capabilities(
 
     # documentation doesn't display the reason
     for module, _ in list(skip_backends) + list(xfail_backends):
+        # Don't display mparray in tables for now. If desired in the future, add
+        # to `capabilities` table above, _make_capabilities_note below, and
+        # _process_capabilities_table_entry in _array_api_docs_tables.py
         if module == "mparray":
-            continue  # don't document for now
+             continue
         backend = capabilities[module]
         if backend.cpu is not None:
             backend.cpu = False
@@ -799,9 +801,10 @@ def _make_sphinx_capabilities(
         backend.warnings.append(warning)
 
     # MArrays are either supported or not. If supported, they work with all combinations
-    # of device + backend that are supported by the function and MArray itself. This is
-    # indicated with an extra note after the backend table.
-    capabilities.update({'marray': marray})
+    # of device + backend that are supported by the function and MArray itself.
+    # Support for MArray and MPArray are indicated with an extra note after the backend
+    # table.
+    capabilities.update({'marray': marray, 'mparray': mparray})
 
     return capabilities
 
@@ -826,6 +829,11 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         "backed by the backends indicated above; masked values will be treated as "
         "though they were not present." if capabilities.get("marray", False) else "")
 
+    mparray_note = (f"In addition, `{fun_name}` accepts "
+        "`MPArrays <https://github.com/mdhaber/mparray>`__; "
+        "calculations will be performed with the precision set by ``mpmath.mp.dps``. "
+        if capabilities.get("mparray", False) else "")
+
     # Note: deliberately not documenting array-api-strict
     note = f"""
 
@@ -847,6 +855,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         ====================  ====================  ====================
 
     {textwrap.indent(marray_note or "", ' '*4)}
+    {textwrap.indent(mparray_note or "", ' '*4)}
     {textwrap.indent(extra_note or "",  ' '*4)}
 
         See :ref:`dev-arrayapi` for more information.
@@ -947,6 +956,7 @@ def xp_capabilities(
         warnings=warnings,
         method_capabilities=method_capabilities,
         marray=marray,
+        mparray=mparray,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 

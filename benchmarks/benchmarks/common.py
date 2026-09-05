@@ -71,7 +71,7 @@ class XPBenchmark(Benchmark):
                 self.func(self.x, plus=False)
     """
     backends = ["numpy", "array_api_strict", "cupy", "torch:cpu", "torch:cuda",
-                "dask.array", "jax.numpy:cpu", "jax.numpy:cuda"]
+                "dask.array", "jax.numpy:cpu", "jax.numpy:cuda", "mparray"]
 
     # subclasses can override these
     param_names = ("backend",)
