@@ -222,9 +222,9 @@ ibetac_double(double a, double b, double x)
 }
 
 
-template<typename Real, typename Policy>
+template<typename Real>
 static inline
-Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
+Real ibeta_inv_wrap(Real a, Real b, Real p)
 {
     Real y;
 
@@ -236,7 +236,7 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
         return NAN;
     }
     try {
-        y = boost::math::ibeta_inv(a, b, p, policy_);
+        y = boost::math::ibeta_inv(a, b, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("betaincinv", SF_ERROR_DOMAIN, NULL);
         y = NAN;
@@ -256,13 +256,13 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
 float
 ibeta_inv_float(float a, float b, float p)
 {
-    return ibeta_inv_wrap(a, b, p, SpecialPolicy());
+    return ibeta_inv_wrap(a, b, p);
 }
 
 double
 ibeta_inv_double(double a, double b, double p)
 {
-    return ibeta_inv_wrap(a, b, p, SpecialPolicy());
+    return ibeta_inv_wrap(a, b, p);
 }
 
 template<typename Real>
@@ -669,30 +669,6 @@ double
 beta_pdf_double(double x, double a, double b)
 {
     return beta_pdf_wrap(x, a, b);
-}
-
-template<typename Real>
-Real beta_ppf_wrap(const Real x, const Real a, const Real b)
-{
-    typedef boost::math::policies::policy<
-        boost::math::policies::domain_error<boost::math::policies::ignore_error >,
-        boost::math::policies::overflow_error<boost::math::policies::user_error >,
-        boost::math::policies::evaluation_error<boost::math::policies::user_error >,
-        boost::math::policies::promote_double<false > > BetaPolicyForStats;
-
-    return ibeta_inv_wrap(a, b, x, BetaPolicyForStats());
-}
-
-float
-beta_ppf_float(float x, float a, float b)
-{
-    return beta_ppf_wrap(x, a, b);
-}
-
-double
-beta_ppf_double(double x, double a, double b)
-{
-    return beta_ppf_wrap(x, a, b);
 }
 
 template<typename Real>

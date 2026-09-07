@@ -781,7 +781,7 @@ class beta_gen(rv_continuous):
         return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        return scu._beta_ppf(q, a, b)
+        return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
         a_plus_b = a + b
