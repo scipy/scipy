@@ -4052,18 +4052,22 @@ class TestTTest_1samp:
         xp_assert_close(t, xp.asarray(self.T1_2))
         xp_assert_close(p, xp.asarray(self.P1_2))
 
-    @pytest.mark.parametrize("k", [-600, 0, 600])
+    @pytest.mark.parametrize("sign", [-1, 0, 1])
     @pytest.mark.parametrize(
         "sample, t_ref, p_ref",
         [([1., 2.], 3., 0.20483276469913345),
          ([2., 3., 4.], 3. * np.sqrt(3.), 0.03509871864598465)],
     )
-    def test_onesample_scale_invariance(self, sample, t_ref, p_ref, k, xp):
+    def test_onesample_scale_invariance(self, sample, t_ref, p_ref, sign, xp):
         # gh-26113: forming the variance from the raw data squares the scale of
         # the sample, so an exact power-of-two rescaling that leaves the
         # t-statistic representable could still underflow or overflow the
         # intermediate, returning t=inf/p=0 or t=0/p=1.
-        scale = 2. ** k
+        # The exponent has to keep the sample itself inside the dtype's range
+        # while putting its square outside, so it depends on the dtype: float32
+        # holds down to 2**-149 subnormal, float64 down to 2**-1074.
+        exponent = 100 if xpx.default_dtype(xp) == xp.float32 else 600
+        scale = 2. ** (sign * exponent)
         x = xp.asarray([value * scale for value in sample])
 
         res = stats.ttest_1samp(x, 0.)
