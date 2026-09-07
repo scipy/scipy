@@ -240,17 +240,15 @@ install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
 skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
-# We're only testing with essential test dependencies, not optional ones.
-# Some of those require binary wheels (often missing for some platforms),
-# or they slow down the test suite runs too much or simply aren't necessary.
-test-requires = [
-    "pytest",
-    "pytest-xdist",
-    "threadpoolctl",
-    "pooch",
-    "hypothesis",
-]
+
+# pin the tools cibuildwheel itself uses (pip, build, delocate, delvewheel). This is
+# the default, but state it explicitly - everything else here is pinned deliberately.
+dependency-versions = "pinned"
+
+# we install all build dependencies ourselves in the cibw_before_build step
+build-frontend = { name = "build", args = ["--no-isolation"] }
 before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
+before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
@@ -263,19 +261,14 @@ musllinux-aarch64-image = "musllinux_1_2"
 # RUNNER_OS is a GitHub Actions specific env var; define it here so it's
 # defined when running cibuildwheel locally
 RUNNER_OS="Linux"
-PKG_CONFIG_PATH = "/project/.openblas"
-
-[tool.cibuildwheel.macos.environment]
-PKG_CONFIG_PATH = "{project}"
+# /project will be the $PWD equivalent inside the Docker container used to build the wheel.
+# Linux is the only platform where this can be set here: macOS and Windows need a
+# CIBW_ENVIRONMENT_* from wheels.yml for values that depend on the build matrix, and that
+# replaces this table wholesale rather than merging into it.
+PKG_CONFIG_PATH="/project/.openblas"
 
 [tool.cibuildwheel.windows]
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
-
-[tool.cibuildwheel.windows.environment]
-# This does not work because pkg-config does not like backslashes,
-PKG_CONFIG_PATH = "{project}"
-# do this instead (which will override this setting)
-# set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
 
 [tool.cibuildwheel.pyodide]
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"

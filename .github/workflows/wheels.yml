@@ -3,10 +3,20 @@
 #
 # if: github.repository == 'scipy/scipy'
 #
-# in the get_commit_message job include [wheel build] in your commit
-# message to trigger the build. All files related to wheel building are located
+# All files related to wheel building are located
 # at tools/wheels/
+
+# The aim is to keep the workflow as close as possible to that of
+# scipy/scipy-release. This is why scipy-release is checked out.
+# The versions of all build dependencies are pinned by the uv.lock
+# file in scipy-release. If this workflow starts failing then inspect
+# scipy-release, the lock file probably needs updating.
 name: Wheel builder
+
+
+env:
+  UV_VERSION: "0.12.5"
+
 
 on:
   push:
@@ -30,16 +40,11 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  build_wheels:
-    name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-      ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
-      ${{ matrix.buildplat[4] }}
-    runs-on: ${{ matrix.buildplat[0] }}
-    needs: get_commit_message
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
 
+  build_wheels:
+    name: BLD > ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}-${{ matrix.buildplat[3] }}
+    runs-on: ${{ matrix.buildplat[0] }}
+    if: (github.repository == 'scipy/scipy' || github.repository == '')
     strategy:
       # Ensure that a wheel builder finishes even if another fails
       fail-fast: false
@@ -50,55 +55,58 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2025, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [ubuntu-24.04, manylinux, x86_64, "", ""]
+        - [ubuntu-24.04, musllinux, x86_64, "", ""]
         - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
         - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-15-intel, macosx, x86_64, openblas, "10.14" ]
-        - [macos-15-intel, macosx, x86_64, accelerate, "14.0" ]
+        - [macos-15-intel, macosx, x86_64, openblas, "10.15"]
+        - [macos-15-intel, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
-        python: [["cp312", "3.12"]]
-        # python[0] is used to specify the python versions made by cibuildwheel
+        python: ["cp312"]
 
     steps:
-      - name: Checkout scipy
+      - name: checkout scipy
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          submodules: true
+          submodules: recursive
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      # the version of python we'll run cibuildwheel with
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: 3.12
+          python-version: 3.13
 
-      - name: win_amd64 - configure rtools
-        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
-        shell: pwsh
-        run: |
-          # mingw-w64
-          echo "c:\rtools45\ucrt64\bin;" >> $env:GITHUB_PATH
+      # Used in cibw_before_build to install pinned build dependencies
+      # Note that cibuildwheel provides it in the Linux images, so this install
+      # is only useful on macOS/windows
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          # can't use checksum here, because there are different packages
+          # for different OS
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false
 
-      - name: win_arm64 - set environment variables
-        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        env:
-          BUILDPLAT: ${{ matrix.buildplat[2] }}
-        shell: pwsh
-        run: |
-            echo "C:\Program Files\LLVM\bin" >> $env:GIHUB_PATH
-            echo "CC=clang-cl" >> $env:GITHUB_ENV
-            echo "CXX=clang-cl" >> $env:GITHUB_ENV
-            echo "TARGET_ARCH=ARM64" >> $env:GITHUB_ENV
+      # create a lock file, to keep the workflow as close as possible to scipy-release
+      - name: Create uv.lock
+        run: | 
+          uv lock --exclude-newer "7 days"
 
-      - name: windows - set PKG_CONFIG_PATH
-        if: ${{ matrix.buildplat[1] == 'win' }}
-        env:
-          WORKSPACE_DIR: ${{ github.workspace }}
-        shell: pwsh
+      - name: Setup windows
+        if: matrix.buildplat[1] == 'win'
         run: |
-          $CIBW = "$env:WORKSPACE_DIR/.openblas"
+          echo "CC=clang-cl" >> $env:GITHUB_ENV
+          echo "CXX=clang-cl" >> $env:GITHUB_ENV
+          echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
+          
+          # workaround for https://github.com/scipy/scipy/issues/25067
+          rm -fo c:/Strawberry/c/lib/pkgconfig/*.pc
+          
+          # pkg-config setup
+          $CIBW = "${{ github.workspace }}/.openblas"
           # pkgconfig needs a complete path, and not just "./openblas since the
           # build is run in a tmp dir (?)
           # It seems somewhere in the env passing, `\` is not
@@ -109,55 +117,31 @@ jobs:
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         env:
-          TARGET_ARCH: ${{ matrix.buildplat[2] }}
           BLAS_VARIANT: ${{ matrix.buildplat[3] }}
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.buildplat[4] }}
-        run: |        
+        run: |
           if [[ "${BLAS_VARIANT}" == "accelerate" ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
-
+          
             # Builds with Accelerate only target macOS>=14.0
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
           else
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
-              MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
+              MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}""
           fi
           echo "$CIBW_ENV" >> "$GITHUB_ENV"
 
-      # - name: Inject environment variable for python dev version
-      #   if: ${{ matrix.python[1] == '3.14-dev'
-      #   shell: bash
-      #   run: |
-      #     # For dev versions of python need to use wheels from scientific-python-nightly-wheels
-      #     # When the python version is released please comment out this section, but do not remove
-      #     # (there will soon be another dev version to target).
-      #     DEPS0="pip install --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy"
-      #     DEPS1="pip install ninja meson-python pybind11 pythran cython"
-
-      #     CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-      #     echo "CIBW_BEFORE_BUILD_LINUX=$CIBW" >> "$GITHUB_ENV"
-
-      #     CIBW="$DEPS0 && $DEPS1 && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
-      #     echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW" >> "$GITHUB_ENV"
-
-      #     CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-      #     echo "CIBW_BEFORE_BUILD_MACOS=$CIBW" >> "$GITHUB_ENV"
-
-      #     echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
-
-      #     CIBW="build; args: --no-isolation"
-      #     echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
-
       - name: Build wheels
-        uses: pypa/cibuildwheel@298ed2fb2c105540f5ed055e8a6ad78d82dd3a7e # v3.3.1
+        uses: pypa/cibuildwheel@1828c10ab37f080699c7b81cea34097c684a7074 # v4.2.0
         env:
-          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_ENABLE: cpython-freethreading cpython-prerelease
-
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+          CIBW_ENABLE: cpython-prerelease
         with:
-          path: ./wheelhouse/*.whl
-          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
-            ${{ matrix.buildplat[4] }}
+          config-file: pyproject.toml
+          output-dir: dist
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ./dist/*.whl
+          name: ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}-${{ matrix.buildplat[3] }}-${{ matrix.buildplat[4] }}
