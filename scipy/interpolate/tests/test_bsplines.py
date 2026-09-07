@@ -2086,7 +2086,7 @@ class TestLSQ:
         t[:k+1] = float(x[0])
         t[-(k+1):] = float(x[-1])
 
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="[Pp]eriodic"):
             make_lsq_spline(x, y, t, k, method="qr", clamp_values=(5, 8),
             bc_type="periodic")
 

@@ -315,7 +315,7 @@ def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
 
     return ab_reduced, rhs
 
-def _validate_periodic_knot_vector(t, k, xp):
+def _validate_periodic_knot_vector(t, k):
     """Check that the knot vector is periodic."""
     T = t[-k-1] - t[k]
     if not np.allclose(t[:2*k+1] + T, t[-2*k-1:]):
@@ -2382,18 +2382,17 @@ clamp_values=None, bc_type=None):
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
+    bc_type = _validate_bc_type(bc_type)
     if clamp_values is not None:
+        if bc_type == "periodic":
+            raise ValueError("Periodic splines cannot have clamp values.")
         ci, cf = _validate_clamp_values(
             clamp_values, k, t, y, x, xp, check_finite=check_finite,
         )
     else:
         ci, cf = None, None
-    bc_type = _validate_bc_type(bc_type)
     if bc_type == "periodic":
-        if clamp_values is not None:
-            raise ValueError("Periodic splines cannot have clamp values.")
-
-        _validate_periodic_knot_vector(t, k, xp)
+        _validate_periodic_knot_vector(t, k)
 
     # number of coefficients
     n = t.size - k - 1
