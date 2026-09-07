@@ -973,7 +973,7 @@ def test_input_validation():
     with pytest.raises(ValueError, match=message):
         Test2(c=[1, 2], d=[1, 2, 3])
 
-    message = ("The argument provided to `Test2.pdf` cannot be be broadcast to "
+    message = ("The argument provided to `Test2.pdf` cannot be broadcast to "
               "the same shape as the distribution parameters.")
     with pytest.raises(ValueError, match=message):
         dist = Test2(c=[1, 2, 3], d=[1, 2, 3])

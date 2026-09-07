@@ -917,7 +917,7 @@ def _set_invalid_nan(f):
             except ValueError as e:
                 message = (
                     f"The argument provided to `{self.__class__.__name__}"
-                    f".{method_name}` cannot be be broadcast to the same "
+                    f".{method_name}` cannot be broadcast to the same "
                     "shape as the distribution parameters.")
                 raise ValueError(message) from e
 
