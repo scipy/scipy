@@ -208,11 +208,13 @@ class TestSolveBanded:
         x = solve_banded((0, 0), ab, b)
 
         assert x.shape == (0,)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
         b = np.empty((0, 0), dtype=dt_b)
         x = solve_banded((0, 0), ab, b)
 
         assert x.shape == (0, 0)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
 
 class TestSolveHBanded:

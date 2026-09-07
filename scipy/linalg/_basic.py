@@ -486,7 +486,7 @@ def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
 
 
 @_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'),
-                   signature=_solve_banded_signature)
+                   signature=_solve_banded_signature, ignore_dtypes=2)
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)

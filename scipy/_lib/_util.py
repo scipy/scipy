@@ -1118,9 +1118,10 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 """
 
 
-def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill):
+def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill,
+                          ignore_dtypes):
     xp = array_namespace(*arrays)
-    dtype = xp.result_type(*arrays, xp.float32)
+    dtype = xp.result_type(*arrays[ignore_dtypes:], xp.float32)
     device = xp_device(arrays[0]) if len(arrays) else None
 
     # ENH: parse more efficiently with regex.
@@ -1178,7 +1179,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size
     return results[0] if len(results) == 1 else tuple(results)
 
 
-def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan):
+def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
+                      ignore_dtypes=0):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1202,6 +1204,9 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan):
         Fill value of any non-zero size output array(s) when at least one
         core dimension has zero length and output dtype is floating point.
         If None, do not override the behavior of the function.
+    ignore_dtypes : int
+        The number of consecutive array arguments (from the left) that are to be
+        ignored when computing the output dtype (e.g. for zero-size batches).
 
     Example:
     --------
@@ -1261,7 +1266,7 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan):
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
                     return output_from_signature(arrays, batch_shape, core_shapes,
-                                                 sig, zero_size_fill_)
+                                                 sig, zero_size_fill_, ignore_dtypes)
                 elif zero_size_batch:
                     f_name = f.__name__.lstrip('_')
                     message = f'`{f_name}` does not support zero-size batches.'
