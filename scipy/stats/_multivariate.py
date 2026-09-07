@@ -1086,7 +1086,7 @@ The dimensions of this matrix are inferred from the shape of `rowcov` and
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
@@ -1557,7 +1557,7 @@ The dimensions of this matrix are inferred from the shape of `row_spread` and
 
 `row_spread` and `col_spread` can be two-dimensional array_likes specifying the
 spread matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
