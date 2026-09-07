@@ -4057,6 +4057,22 @@ index 1afb1900f1..d817e51ad8 100644
 
         xp_assert_close(tt, t, atol=1e-15)
 
+    @pytest.mark.parametrize("npts", [30, 100])
+    @pytest.mark.parametrize("s", [1e-6, 1e-3, 0.1])
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+    def test_vs_splrep_degrees(self, k, s, npts):
+        # gh-26035: knots are added in batches out of a single residual
+        # computation, the way fpcurf/fpknot do it, so the knots follow splrep
+        # for every degree and every s, not only in the easy cases.
+        rndm = np.random.RandomState(12345)
+        x = 10*np.sort(rndm.uniform(size=npts))
+        y = np.sin(x*np.pi/10) + np.exp(-(x-6)**2)
+
+        t = splrep(x, y, k=k, s=s)[0]
+        tt = list(generate_knots(x, y, k=k, s=s))[-1]
+
+        xp_assert_close(tt, t, atol=1e-15)
+
     def test_s_too_small(self):
         n = 14
         x = np.arange(n)
