@@ -295,7 +295,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
     Also note that a step of the generator may add multiple knots:
 
     >>> [len(t) for t in knots]
-    [8, 9, 10, 12, 16, 24, 40, 48, 52, 54]
+    [8, 9, 10, 12, 16, 24, 39, 47, 51, 53, 54]
 
     Notes
     -----
