@@ -199,6 +199,21 @@ families = continuous_families + discrete_families
 
 
 class TestDistributions:
+    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                      'ccdf', 'logccdf'])
+    def test_normal_standardization_overflow(self, method):
+        # gh-26120: subtraction can overflow even when (x - mu)/sigma is finite.
+        largest = np.finfo(np.float64).max
+        X = Normal(mu=[-largest, largest, largest],
+                   sigma=[largest, largest, 0.5])
+        x = [largest/2, -largest/2, largest]
+        ref = getattr(Normal(), method)([1.5, -1.5, 0.])
+        if method == 'pdf':
+            ref /= X.sigma
+        elif method == 'logpdf':
+            ref -= np.log(X.sigma)
+        assert_allclose(getattr(X, method)(x), ref, rtol=1e-14, atol=0)
+
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
