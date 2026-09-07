@@ -226,7 +226,7 @@ trlib_int_t trlib_tri_factor_min(
                 (3) L*w = h0/||h0||
                 (4) compute increment (||h0||-Delta)/Delta/||w||_{D^-1}^2 */
 
-            // steps (1) and (2) have already been performed on initializaton or previous iteration
+            // steps (1) and (2) have already been performed on initialization or previous iteration
 
             /* step (3) L*w = h/||h||
                compute ||w||_{D^-1}^2 in same loop */
@@ -520,7 +520,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
     jj = 0;
     TRLIB_PRINTLN_2("%ld\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
 
-    // check if accetable
+    // check if acceptable
     if( *norm_sol * sigma_l <= *lam && *lam <= *norm_sol * sigma_u ) {
         TRLIB_PRINTLN_1("Exit with Regularization Factor %e and Reg/Norm %e", *lam, *lam/(*norm_sol))
         TRLIB_RETURN(TRLIB_TTR_CONV_INTERIOR);
@@ -572,7 +572,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
             jj++;
             TRLIB_PRINTLN_2("%ld\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
 
-            // check if accetable
+            // check if acceptable
             if( *norm_sol * sigma_l <= *lam && *lam <= *norm_sol * sigma_u ) {
                 TRLIB_PRINTLN_1("Exit with Regularization Factor %e and Reg/Norm %e", *lam, *lam/(*norm_sol))
                 TRLIB_RETURN(TRLIB_TTR_CONV_INTERIOR);

@@ -36,7 +36,7 @@ from ._complexstuff cimport (
 from . cimport sf_error
 
 
-cdef extern from "xsf_wrappers.h" nogil:
+cdef extern from "cython_special_wrappers.h" nogil:
     npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
     double xsf_binom(double n, double k)
     double xsf_hyp2f1(double a, double b, double c, double x)
@@ -189,12 +189,9 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
 
 @cython.cdivision(True)
 cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcept nogil:
-    cdef long long ni
-
     # If n is an integer, use more stable `eval_gegenbauer_l`
-    ni = <long long> n
-    if number_t is double and n == ni and n < 1e10:
-        return <number_t> eval_gegenbauer_l(<Py_ssize_t> ni, alpha, <double> x)
+    if number_t is double and n >= 0 and n < 1e10 and n == <long long> n:
+        return <number_t> eval_gegenbauer_l(<Py_ssize_t> n, alpha, <double> x)
 
     cdef double a, b, c, d
     cdef number_t g

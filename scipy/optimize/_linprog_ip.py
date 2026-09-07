@@ -115,24 +115,28 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                     solve = sps.linalg.factorized(M)
                 else:  # factorized doesn't pass permc_spec
                     solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
+            return solve
 
         else:
             if lstsq:  # sometimes necessary as solution is approached
-                def solve(r):
+                def _solve(r):
                     return sp.linalg.lstsq(M, r)[0]
+                return _solve
             elif cholesky:
                 L = sp.linalg.cho_factor(M)
 
-                def solve(r):
+                def _solve(r):
                     return sp.linalg.cho_solve(L, r)
+                return _solve
             else:
                 # this seems to cache the matrix factorization, so solving
                 # with multiple right hand sides is much faster
-                def solve(r, sym_pos=sym_pos):
+                def solve_sym_pos_option(r, sym_pos=sym_pos):
                     if sym_pos:
                         return sp.linalg.solve(M, r, assume_a="pos")
                     else:
                         return sp.linalg.solve(M, r)
+                return solve_sym_pos_option
     # There are many things that can go wrong here, and it's hard to say
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
@@ -141,7 +145,6 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
         raise
     except Exception:
         return None
-    return solve
 
 
 def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
@@ -748,7 +751,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
             # [4] Section 4.4
             gamma = 1
 
-            def eta(g):
+            def eta(g=gamma):
                 return 1
         else:
             # gamma = 0 in predictor step according to [4] 4.1

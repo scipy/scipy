@@ -36,7 +36,7 @@ cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noe
 # ============================================================================
 
 
-@_apply_over_batch(('a', 2))
+@_apply_over_batch(('a', 2), signature="(i,i)->bool()")
 @cython.embedsignature(True)
 def issymmetric(a, atol=None, rtol=None):
     """Check if a square 2D array is symmetric.
@@ -167,7 +167,7 @@ cdef inline bint is_sym_her_real_noncontig_internal(const np_numeric_t[:, :]A) n
     return True
 
 
-@_apply_over_batch(('a', 2))
+@_apply_over_batch(('a', 2), signature="(i,i)->bool()")
 @cython.embedsignature(True)
 def ishermitian(a, atol=None, rtol=None):
     """Check if a square 2D array is Hermitian.

@@ -1,0 +1,421 @@
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_array_equal
+
+from scipy.optimize import biteopt, rosen, Bounds, OptimizeResult
+from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
+
+
+class TestSolver:
+    def setup_method(self):
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+
+    def test_rosenbrock(self):
+        res = biteopt(rosen, self.default_bounds, rng=1234)
+
+        assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
+        assert_allclose(res.fun, 0.0, atol=1e-6)
+
+    def test_styblinski_tang(self):
+        def styblinski_tang(pos):
+            x, y = pos
+            return 0.5 * (x**4 - 16 * x**2 + 5 * x
+                          + y**4 - 16 * y**2 + 5 * y)
+
+        bounds = Bounds(lb=[-4.0, -4.0], ub=[4.0, 4.0])
+        res = biteopt(styblinski_tang, bounds, rng=1234)
+
+        assert_allclose(res.x, [-2.903534, -2.903534], rtol=1e-3, atol=1e-3)
+        assert_allclose(res.fun, -39.16617 * 2, rtol=1e-4)
+
+    def test_args_are_passed(self):
+        # Extra fixed parameters supplied via ``args`` must reach the
+        # objective. Here they shift the location of the minimum.
+        # Also exercises the traditional list-of-tuples form for bounds.
+        def shifted(x, center):
+            return np.sum((x - center) ** 2)
+
+        center = np.array([1.5, -2.0])
+        bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+        res = biteopt(shifted, bounds, args=(center,), rng=0)
+
+        assert_allclose(res.x, center, rtol=1e-3, atol=1e-3)
+        assert_allclose(res.fun, 0.0, atol=1e-6)
+
+    def test_single_precision_objective(self):
+        # An objective returning a single-precision (float32) value must be
+        # handled correctly: the wrapper promotes it to a Python float.
+        def rosen_f32(x):
+            return np.float32(rosen(x))
+
+        res = biteopt(rosen_f32, self.default_bounds, rng=1234)
+
+        assert_allclose(res.x, [1.0, 1.0], rtol=1e-2, atol=1e-2)
+        assert np.isfinite(res.fun)
+
+    def test_nfev_counts_objective_calls_correctly(self):
+        class CountingObjective:
+            def __init__(self):
+                self.nfev = 0
+
+            def __call__(self, x):
+                self.nfev += 1
+                return rosen(x)
+
+        objective = CountingObjective()
+        res = biteopt(objective, self.default_bounds, maxfun=200, rng=0)
+        assert res.nfev == objective.nfev
+
+    def test_biteopt_stays_within_bounds(self):
+        lower_bound = 2
+        upper_bound = 3
+        def fun(x):
+            assert (x >= lower_bound).all()
+            assert (x <= upper_bound).all()
+            return np.square(x).sum()
+
+        bounds = Bounds(lb=[lower_bound] * 3, ub=[upper_bound] * 3)
+        res = biteopt(fun, bounds, rng=0)
+        assert np.all(res.x >= lower_bound)
+        assert np.all(res.x <= upper_bound)
+        assert_allclose(res.x, lower_bound, rtol=1e-3, atol=1e-3)
+
+    @pytest.mark.parametrize("depth", [1, 2, 4, 9])
+    def test_depth(self, depth):
+        res = biteopt(rosen, self.default_bounds, depth=depth, rng=0, maxfun=10000)
+        assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
+
+    @pytest.mark.parametrize("depth", [1, 2, 4, 9])
+    def test_maxfun_respected_across_depths(self, depth):
+        # biteopt internally scales its iteration count by sqrt(depth);
+        # the wrapper must pre-divide so nfev never exceeds the budget.
+        maxfun = 500
+        res = biteopt(rosen, self.default_bounds, maxfun=maxfun, depth=depth, rng=0)
+
+        assert res.nfev <= maxfun
+
+    def test_nan_objective_does_not_crash(self):
+        # A NaN return is sanitized to a large sentinel internally, so the
+        # optimization must complete without raising.
+        res = biteopt(lambda x: np.nan, self.default_bounds, rng=0)
+        assert isinstance(res, OptimizeResult)
+
+    def test_inf_objective_does_not_crash(self):
+        # An objective returning +inf in some regions must not crash the optimizer
+        def pathological_obj(x):
+            if np.any(x > 0):
+                return np.inf
+            else:
+                return rosen(x)
+        res = biteopt(pathological_obj, self.default_bounds, rng=0)
+        assert isinstance(res, OptimizeResult)
+
+    def test_f_min_stops_early(self):
+        # With a generous f_min threshold the optimizer should stop well before
+        # exhausting its full iteration budget, using far fewer evaluations
+        # than an unconstrained run.
+        target = 1.0
+        res_full = biteopt(rosen, self.default_bounds, rng=0)
+        res_early = biteopt(rosen, self.default_bounds, f_min=target, rng=0)
+
+        assert res_early.fun <= target
+        assert res_early.nfev < res_full.nfev
+        assert res_early.success
+        assert res_early.status == 0
+        assert res_full.status == 0
+
+    def test_f_min_unreachable_reports_failure(self):
+        # An unreachable f_min (below the global minimum of 0) can never be met,
+        # so the run is reported as unsuccessful.
+        res = biteopt(rosen, self.default_bounds, f_min=-1.0, rng=0)
+
+        assert res.fun > -1.0
+        assert res.success is False
+        assert res.status == 1
+
+    @pytest.mark.parametrize("exc_type", [ValueError, KeyError, OverflowError])
+    def test_objective_exception_propagates(self, exc_type):
+        # An exception raised inside the objective must propagate out of the
+        # biteopt call unchanged, preserving the exact exception type. The
+        # large maxfun checks the raise is prompt, not delayed until the
+        # remaining iteration budget runs out.
+        def objective(x):
+            raise exc_type("Error")
+
+        with pytest.raises(exc_type, match="Error"):
+            biteopt(objective, self.default_bounds, rng=0, maxfun=100_000_000)
+
+    @pytest.mark.parametrize("bounds", [
+        Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0]),
+        [(-5.0, 5.0), (-5.0, 5.0)],
+        np.array([[-5.0, 5.0], [-5.0, 5.0]]),
+    ])
+    def test_accepted_bounds_types(self, bounds):
+        res = biteopt(rosen, bounds, rng=0)
+        assert res.success is True
+
+    def test_f_mutates_input_does_not_crash(self):
+        # The objective function is allowed to mutate its input array, but the
+        # optimizer must not crash or misbehave if it does so.
+        # Users should not rely on this behavior, but it must be tolerated.
+        def mutating_objective(x):
+            x[0] = 42.0
+            return rosen(x)
+
+        res = biteopt(mutating_objective, self.default_bounds, rng=0)
+        assert isinstance(res, OptimizeResult)
+
+
+class TestCallback:
+    def setup_method(self):
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+        self.eggholder_bounds = Bounds(lb=[-512.0, -512.0], ub=[512.0, 512.0])
+
+    def eggholder(self, pos):
+        x, y = pos
+        return (-(y + 47) * np.sin(np.sqrt(abs(x / 2 + (y + 47))))
+                - x * np.sin(np.sqrt(abs(x - (y + 47)))))
+
+    def test_callback_called_once_per_evaluation(self):
+        class CountingCallback:
+            def __init__(self):
+                self.n_calls = 0
+
+            def __call__(self, x):
+                self.n_calls += 1
+                assert x.shape == (2,)
+
+        callback = CountingCallback()
+        res = biteopt(rosen, self.default_bounds, maxfun=200, rng=0,
+                      callback=callback)
+
+        assert callback.n_calls == res.nfev
+
+    @pytest.mark.parametrize("depth", [1, 2, 4])
+    @pytest.mark.parametrize("stop_after", [10, 50, 200])
+    def test_callback_stopiteration_stops_early(self, depth, stop_after):
+        bounds = self.eggholder_bounds
+
+        class StopAfter:
+            def __init__(self, stop_after, eggholder_func):
+                self.stop_after = stop_after
+                self.n_calls = 0
+                self.best_x = None
+                self.best_fun = np.inf
+                self.eggholder_func = eggholder_func
+
+            def __call__(self, x):
+                self.n_calls += 1
+                # Re-evaluate to track the best seen so far independently
+                # of biteopt's internal bookkeeping.
+                fx = self.eggholder_func(x)
+                if fx < self.best_fun:
+                    self.best_fun = fx
+                    self.best_x = x.copy()
+                if self.n_calls == self.stop_after:
+                    raise StopIteration
+
+        callback = StopAfter(stop_after, self.eggholder)
+        maxfun = callback.stop_after + 1000
+        res_full = biteopt(self.eggholder, bounds, maxfun=maxfun, rng=0, depth=depth)
+        res_callback = biteopt(self.eggholder, bounds, maxfun=maxfun, rng=0,
+                               callback=callback, depth=depth)
+
+        assert callback.n_calls == stop_after
+        assert res_callback.success is False
+        assert res_callback.status == 99
+        assert res_callback.message.startswith("`callback` raised `StopIteration`")
+        assert res_callback.nfev >= stop_after
+        assert res_callback.nfev < res_full.nfev
+        assert res_callback.fun == callback.best_fun
+        assert_array_equal(res_callback.x, callback.best_x)
+
+    @pytest.mark.parametrize("exc", [ValueError, KeyError, OverflowError])
+    def test_callback_exception_propagates(self, exc):
+        def callback(x):
+            raise exc("callback error")
+
+        with pytest.raises(exc, match="callback error"):
+            biteopt(rosen, self.default_bounds, rng=0, callback=callback)
+
+    def test_callback_mutates_input_does_not_crash(self):
+        # The callback is allowed to mutate its input array, but the optimizer
+        # must not crash or misbehave if it does so. Users should not rely on
+        # this behavior, but it must be tolerated.
+        def mutating_callback(x):
+            x[0] = 42.0
+        res = biteopt(rosen, self.default_bounds, rng=0,
+                      callback=mutating_callback)
+        assert isinstance(res, OptimizeResult)
+
+    def test_f_min_parameter_respected_with_callback(self):
+        # The f_min parameter must take priority over the callback
+        target_callback = -800.0
+        f_min = -750.0
+
+        def callback(x):
+            if self.eggholder(x) <= target_callback:
+                raise StopIteration
+
+        res = biteopt(self.eggholder, self.eggholder_bounds, rng=0,
+                      f_min=f_min, callback=callback)
+        assert res.fun <= f_min
+        assert res.success is True
+
+
+class TestInputValidation:
+    def setup_method(self):
+        self.default_bounds = [(-5.0, 5.0), (-5.0, 5.0)]
+
+    @pytest.mark.parametrize("not_callable", [42, "func", None, [1, 2, 3]])
+    def test_func_not_callable(self, not_callable):
+        with pytest.raises(TypeError, match="func must be callable"):
+            biteopt(not_callable, self.default_bounds)
+
+    @pytest.mark.parametrize("not_callable", [42, "callback", [1, 2, 3]])
+    def test_callback_not_callable(self, not_callable):
+        with pytest.raises(TypeError, match="callback must be callable"):
+            biteopt(rosen, self.default_bounds, callback=not_callable)
+
+    def test_bounds_invalid_type(self):
+        with pytest.raises(ValueError, match="bounds must be a sequence"):
+            biteopt(rosen, 5)
+
+    def test_bounds_inconsistent(self):
+        with pytest.raises(ValueError, match="Bounds are not consistent"):
+            biteopt(rosen, [(5.0, -5.0), (-5.0, 5.0)])
+
+    def test_bounds_inf(self):
+        with pytest.raises(ValueError, match="Bounds must not be inf"):
+            biteopt(rosen, [(-np.inf, 5.0), (-5.0, 5.0)])
+
+    def test_bounds_empty(self):
+        with pytest.raises(ValueError, match="bounds must be a sequence"):
+            biteopt(rosen, [])
+
+    def test_bounds_not_1d(self):
+        # Multi-dimensional bounds pass Bounds' own broadcasting validation but
+        # must be rejected here rather than silently optimizing over a slice.
+        bounds = Bounds(np.zeros((2, 2)), np.ones((2, 2)))
+        with pytest.raises(ValueError, match="must be one-dimensional"):
+            biteopt(rosen, bounds)
+
+    @pytest.mark.parametrize("maxfun, exc_type, msg", [
+        (0, ValueError, "must be an integer not less than 1"),
+        (-1, ValueError, "must be an integer not less than 1"),
+        (1.5, TypeError, "must be an integer"),
+        (np.iinfo(np.intc).max + 1, ValueError,
+         "maxfun must be an integer not greater than"),
+    ])
+    def test_invalid_maxfun(self, maxfun, exc_type, msg):
+        with pytest.raises(exc_type, match=msg):
+            biteopt(rosen, self.default_bounds, maxfun=maxfun)
+
+    @pytest.mark.parametrize("kwargs, exc_type, msg", [
+        ({"depth": 0}, ValueError, "must be an integer not less than 1"),
+        ({"depth": -1}, ValueError, "must be an integer not less than 1"),
+        ({"depth": 37}, ValueError, "depth must be an integer not greater than 36"),
+        ({"depth": 1.5}, TypeError, "must be an integer"),
+    ])
+    def test_invalid_depth(self, kwargs, exc_type, msg):
+        with pytest.raises(exc_type, match=msg):
+            biteopt(rosen, self.default_bounds, **kwargs)
+
+    def test_maxfun_too_small_for_depth(self):
+        # A single biteopt iteration costs int(sqrt(depth)) evaluations; if that
+        # already exceeds maxfun the call must refuse rather than overshoot.
+        with pytest.raises(ValueError, match="too small for depth"):
+            biteopt(rosen, self.default_bounds, maxfun=5, depth=36)
+
+    def test_maxfun_too_large(self):
+        # maxfun is passed to the C++ layer as a C int; an oversized value must
+        # raise a clear error rather than a pybind11 overflow.
+        too_big = int(np.iinfo(np.intc).max) + 1
+        with pytest.raises(ValueError, match="maxfun must be an integer not greater"):
+            biteopt(rosen, self.default_bounds, maxfun=too_big)
+
+    def test_f_min_not_float(self):
+        with pytest.raises(ValueError, match="float"):
+            biteopt(rosen, self.default_bounds, f_min="not a float")
+
+    def test_f_min_nan(self):
+        # NaN would silently disable the early-stop criterion and then report
+        # failure; reject it up front instead.
+        with pytest.raises(ValueError, match="f_min must not be NaN"):
+            biteopt(rosen, self.default_bounds, f_min=np.nan)
+
+    def test_func_returns_non_scalar(self):
+        # The objective function must return a scalar; if it returns an array
+        # or other non-scalar that cannot be converted to a single value,
+        # it must raise a ValueError.
+        def non_scalar(x):
+            return np.array([1.0, 2.0])
+
+        with pytest.raises(ValueError, match="must return a scalar value"):
+            biteopt(non_scalar, self.default_bounds, rng=0)
+
+
+class TestRNG:
+    def setup_method(self):
+        self.default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+
+    def test_reproducible(self):
+        # Two generators seeded identically must yield bit-for-bit identical
+        # results.
+        res1 = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(42))
+        res2 = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(42))
+        assert_array_equal(res1.x, res2.x)
+        assert res1.fun == res2.fun
+        assert res1.nfev == res2.nfev
+
+    def test_generator_equivalent_to_seed(self):
+        # Passing a Generator must be accepted and must be equivalent to
+        # passing the integer seed used to construct that Generator.
+        res_seed = biteopt(rosen, self.default_bounds, rng=7)
+        res_gen = biteopt(rosen, self.default_bounds, rng=np.random.default_rng(7))
+        assert_array_equal(res_seed.x, res_gen.x)
+        assert res_seed.fun == res_gen.fun
+
+    def test_different_seeds_differ(self):
+        # Generators seeded differently drive different PRNG trajectories, so
+        # the returned minimizers should not be identical. Use a small budget
+        # so the runs do not both collapse onto the exact same float optimum.
+        res1 = biteopt(rosen, self.default_bounds, maxfun=50,
+                       rng=np.random.default_rng(1))
+        res2 = biteopt(rosen, self.default_bounds, maxfun=50,
+                       rng=np.random.default_rng(2))
+        assert not np.array_equal(res1.x, res2.x)
+
+    def test_rng_none_runs(self):
+        # An unseeded run must still complete successfully.
+        res = biteopt(rosen, self.default_bounds, rng=None)
+        assert res.success is True
+
+    def test_accepts_bit_generator(self):
+        # default_rng also accepts a bare BitGenerator.
+        res = biteopt(rosen, self.default_bounds, rng=np.random.PCG64(0))
+        assert_allclose(res.x, [1.0, 1.0], rtol=1e-3, atol=1e-3)
+
+
+class TestThreadSafety:
+    default_bounds = Bounds(lb=[-5.0, -5.0], ub=[5.0, 5.0])
+
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
+    def test_concurrent_shared_generator_is_safe(self):
+        # Sharing a single Generator across concurrent biteopt calls must not
+        # crash or corrupt state. The wrapper holds bit_generator.lock for the
+        # whole run, serializing the otherwise lock-free C-level PRNG draws
+        # against any concurrent use of the same generator. The interleave order
+        # is nondeterministic, so we can only assert that every run completes and
+        # returns a finite result (no segfault, no NaN from a torn read).
+        n_workers = 4
+        gen = np.random.default_rng(0)
+
+        def worker(i):
+            return biteopt(rosen, self.default_bounds, rng=gen, maxfun=200)
+
+        results = _run_concurrent_barrier(n_workers, worker)
+        for res in results:
+            assert isinstance(res, OptimizeResult)
+            assert np.all(np.isfinite(res.x))
+            assert np.isfinite(res.fun)

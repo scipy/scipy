@@ -14,7 +14,7 @@ compliance before pushing your code:
    automatically check for PEP8 compliance. In Spyder, for example,
    `enable Real-time code style analysis`_ in Tools |rarr| Preferences |rarr|
    Editor |rarr| Code Introspection/Analysis and "Automatically remove
-   trailing spaces when saving files" in in Tools |rarr| Preferences |rarr|
+   trailing spaces when saving files" in Tools |rarr| Preferences |rarr|
    Editor |rarr| Advanced Settings. This can help you fix PEP8 issues as you
    write your code.
 
@@ -43,7 +43,7 @@ compliance before pushing your code:
 
    You can also run the linter on specific files, using the ``--files`` option::
 
-      python tools/lint.py --files scipy/odr/models.py scipy/ndimage
+      python tools/linting/lint.py --files scipy/ndimage
 
 -  If you have existing code with a lot of PEP8 issues, consider using
    |autopep8|_ to automatically fix them before incorporating the code into

@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
     is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case,
     make_xp_pytest_param
 )
+from scipy._lib._testutils import IS_WASM
 
 lazy_xp_modules = [fft]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -424,6 +425,7 @@ def test_fft_with_order(dtype, order, fft):
         raise ValueError
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 @skip_xp_backends(cpu_only=True)
 class TestFFTThreadSafe:
     threads = 16
@@ -481,6 +483,8 @@ class TestFFTThreadSafe:
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
+@pytest.mark.fail_slow(2)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)

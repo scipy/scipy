@@ -7,9 +7,12 @@ from scipy._lib._array_api import array_namespace
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_less, xp_assert_equal
 from scipy.stats._continued_fraction import _continued_fraction
 
+skip_xp_torchmeta_continued_fraction = pytest.mark.skip_xp_backends(
+    skip_meta=True,
+    reason='internal host transfer (term-index `int()` in _continued_fraction)')
+
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing assignment')
-@pytest.mark.skip_xp_backends('jax.numpy', reason="Don't support mutation")
 # dask doesn't like lines like this
 # n = int(xp.real(xp_ravel(n))[0])
 # (at some point in here the shape becomes nan)
@@ -93,6 +96,7 @@ class TestContinuedFraction:
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
+    @skip_xp_torchmeta_continued_fraction
     def test_basic(self, shape, dtype, xp):
         np_dtype = getattr(np, dtype)
         xp_dtype = getattr(xp, dtype)
@@ -119,6 +123,7 @@ class TestContinuedFraction:
         ref = xp.tan(x)
         xp_assert_close(xp.exp(xp.real(res.f)), ref)
 
+    @skip_xp_torchmeta_continued_fraction
     def test_maxiter(self, xp):
         rng = np.random.default_rng(2435908729190400)
         x = xp.asarray(rng.random(), dtype=xp.float64)
@@ -132,6 +137,7 @@ class TestContinuedFraction:
 
         xp_assert_less(xp.abs(res2.f - ref), xp.abs(res1.f - ref))
 
+    @skip_xp_torchmeta_continued_fraction
     def test_eps(self, xp):
         x = xp.asarray(1.5, dtype=xp.float64)  # x = 1.5 is the default defined above
         ref = xp.tan(x)
@@ -141,6 +147,7 @@ class TestContinuedFraction:
         xp_assert_less(res1.nit, res2.nit)
         xp_assert_less(xp.abs(res2.f - ref), xp.abs(res1.f - ref))
 
+    @skip_xp_torchmeta_continued_fraction
     def test_feval(self, xp):
         def a(n, x):
             a.nfev += 1
@@ -155,6 +162,7 @@ class TestContinuedFraction:
         res = _continued_fraction(a, b, args=(xp.asarray(1.),))
         assert res.nfev == a.nfev == b.nfev == res.nit + 1
 
+    @skip_xp_torchmeta_continued_fraction
     def test_status(self, xp):
         x = xp.asarray([1, 10, np.nan], dtype=xp.float64)
         res = _continued_fraction(self.a1, self.b1, args=(x,), maxiter=15)

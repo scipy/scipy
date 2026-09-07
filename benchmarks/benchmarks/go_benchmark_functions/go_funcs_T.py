@@ -12,7 +12,7 @@ class TestTubeHolder(Benchmark):
 
     .. math::
 
-        f_{\text{TestTubeHolder}}(x) = - 4 \left | {e^{\left|{\cos 
+        f_{\text{TestTubeHolder}}(x) = - 4 \left | {e^{\left|{\cos
         \left(\frac{1}{200} x_{1}^{2} + \frac{1}{200} x_{2}^{2}\right)}
         \right|}\sin\left(x_{1}\right) \cos\left(x_{2}\right)}\right|
 

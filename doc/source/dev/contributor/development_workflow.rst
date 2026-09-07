@@ -155,7 +155,7 @@ In more detail
      #	INSTALL
      no changes added to commit (use "git add" and/or "git commit -a")
 
-#. Optional: Compare the changes with the previous version using with ``git
+#. Optional: Compare the changes with the previous version using ``git
    diff`` (`git diff`_). This brings up a simple text browser interface that
    highlights the difference between your files and the previous version.
 

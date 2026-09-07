@@ -44,6 +44,7 @@ class TestExtract:
             for k in [-3,-2,-1,0,1,2,3]:
                 assert_equal(_extract.triu(A,k=k).toarray(), np.triu(B,k=k))
 
+    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_array_vs_matrix(self):
         for A in self.cases:
             assert isinstance(_extract.tril(A), sparray)
@@ -53,6 +54,7 @@ class TestExtract:
             assert not isinstance(_extract.triu(M), sparray)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_deprecated_warnings_output_defaults_switch_from_spmatrix():
     A = np.array([[1, 2], [3, 0]])
     with pytest.deprecated_call(match=".*switching.*sparse array int"):

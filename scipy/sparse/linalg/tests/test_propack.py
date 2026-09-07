@@ -28,7 +28,7 @@ for dtype_flavour in TOLS.keys():
         marks = [pytest.mark.slow]
     _dtypes.append(pytest.param(dtype_flavour, marks=marks,
                                 id=dtype_flavour.__name__))
-_dtypes = tuple(_dtypes)  # type: ignore[assignment]
+_dtypes = tuple(_dtypes)
 
 
 # The test function here is adapted from the original Fortran PROPACK tests.

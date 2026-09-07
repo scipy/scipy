@@ -23,7 +23,7 @@ with safe_import() as exc:
     pyfftw.interfaces.cache.enable()
     has_pyfftw = True
 if exc.error:
-    pyfftw_fft = {}  # noqa: F811
+    pyfftw_fft = {}
     has_pyfftw = False
 
 

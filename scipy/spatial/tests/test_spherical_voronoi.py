@@ -127,7 +127,7 @@ class TestSphericalVoronoi:
         assert_equal(s4.radius, radius)
 
         # Test a non-sequence/-ndarray based array-like
-        s5 = SphericalVoronoi(memoryview(self.points))  # type: ignore[arg-type]
+        s5 = SphericalVoronoi(memoryview(self.points))
         assert_array_equal(s5.center, np.array([0, 0, 0]))
         assert_equal(s5.radius, 1)
 
@@ -160,7 +160,7 @@ class TestSphericalVoronoi:
         expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],
                            [4, 8, 7, 5, 6], [9, 11, 10], [2, 7, 5],
                            [1, 4, 8, 11, 9], [0, 3, 10, 9, 1]])
-        expected = list(itertools.chain(*sorted(expected)))  # type: ignore
+        expected = list(itertools.chain(*sorted(expected)))
         sv = SphericalVoronoi(self.points)
         sv.sort_vertices_of_regions()
         actual = list(itertools.chain(*sorted(sv.regions)))

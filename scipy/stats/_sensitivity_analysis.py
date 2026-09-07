@@ -607,7 +607,7 @@ def sobol_indices(
             "saltelli_2010": saltelli_2010,
         }
         try:
-            method = method.lower()  # type: ignore[assignment]
+            method = method.lower()
             indices_method_ = indices_methods[method]
         except KeyError as exc:
             message = (

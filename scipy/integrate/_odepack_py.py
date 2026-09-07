@@ -62,6 +62,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Computes the derivative of y at t.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        When `func` is called, `y` will be a one-dimensional array, even if the
+        value `y0` provided to ``odeint`` is a scalar.
         `func` must not modify the data in `y`, as it is a
         view of the data used internally by the ODE solver.
     y0 : array
@@ -77,6 +79,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Gradient (Jacobian) of `func`.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        When `Dfun` is called, `y` will be a one-dimensional array, even if the
+        value `y0` provided to ``odeint`` is a scalar.
         `Dfun` must not modify the data in `y`, as it is a
         view of the data used internally by the ODE solver.
     col_deriv : bool, optional

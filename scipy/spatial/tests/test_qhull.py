@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
 import itertools
@@ -1212,7 +1212,7 @@ class Test_HalfspaceIntersection:
                                            [-1., 1.],
                                            [-1., -1.]])
         actual_intersections = hs.intersections
-        # They may be in any order, so just check that under some permutation 
+        # They may be in any order, so just check that under some permutation
         # expected=actual.
 
         ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))

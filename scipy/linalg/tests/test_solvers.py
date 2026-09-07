@@ -316,7 +316,7 @@ class TestSolveContinuousAre:
     min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
                    None, 9, 14, 13, 14, None, 12, None, None)
 
-    @pytest.mark.parametrize("j, case", enumerate(cases))
+    @pytest.mark.parametrize("j, case", list(enumerate(cases)))
     def test_solve_continuous_are(self, j, case):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
@@ -545,7 +545,7 @@ class TestSolveDiscreteAre:
     # bump not needed for OpenBLAS 3.26
     max_tol[16] = 2.0e-4
 
-    @pytest.mark.parametrize("j, case", enumerate(cases))
+    @pytest.mark.parametrize("j, case", list(enumerate(cases)))
     def test_solve_discrete_are(self, j, case):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case

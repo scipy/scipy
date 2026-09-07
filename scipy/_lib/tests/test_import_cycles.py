@@ -4,6 +4,7 @@ import sys
 
 import pytest
 
+from scipy._lib._testutils import IS_WASM
 from .test_public_api import PUBLIC_MODULES
 
 # Regression tests for gh-6793.
@@ -17,6 +18,7 @@ def _check_single_module(module):
     assert pid.wait() == 0, f'Failed to import {module}'
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 @pytest.mark.fail_slow(40)
 @pytest.mark.slow
 def test_public_modules_importable_2():

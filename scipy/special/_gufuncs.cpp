@@ -3,6 +3,7 @@
 #include <xsf/sph_harm.h>
 #include <xsf/stats.h>
 
+#include "mdspan_helpers.h"
 #include "sf_error.h"
 
 extern const char *lpn_all_doc;
@@ -57,18 +58,6 @@ void _poisson_binom_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[0] = dims[0];
 }
 
-
-// Helper to wrap a 1D std::vector in a contiguous mdspan
-template <typename T>
-auto _as_mdspan(std::vector<T>& vec) {
-    return std::mdspan<T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
-}
-
-template <typename T>
-auto _as_mdspan(const std::vector<T>& vec) {
-    return std::mdspan<const T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
-}
-
 /* gufunc kernels which use internal caches.
  *
  * Such caches live only during the course of a single call to the ufunc
@@ -98,11 +87,11 @@ struct _poisson_binom_pmf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
              * this will yield a cache hit for each inner iteration. The cache is
              * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_pmf_all(p, _as_mdspan(dist));
+            xsf::poisson_binom_pmf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_pmf(_as_mdspan(dist), k);
+        return xsf::take_from_pmf(special::as_mdspan(dist), k);
     }
 };
 
@@ -120,11 +109,11 @@ struct _poisson_binom_cdf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
             * this will yield a cache hit for each inner iteration. The cache is
             * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_cdf_all(p, _as_mdspan(dist));
+            xsf::poisson_binom_cdf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_discrete_cdf(_as_mdspan(dist), k);
+        return xsf::take_from_discrete_cdf(special::as_mdspan(dist), k);
     }
 };
 

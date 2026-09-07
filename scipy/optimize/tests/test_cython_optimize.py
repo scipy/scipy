@@ -10,7 +10,7 @@ and ``brentq`` in `scipy.optimize.cython_optimize`, by finding the roots of a
 
 The 3rd order polynomial function is written in Cython and called in a Python
 wrapper named after the zero function. See the private ``_zeros`` Cython module
-in `scipy.optimize.cython_optimze` for more information.
+in `scipy.optimize.cython_optimize` for more information.
 """
 
 import numpy.testing as npt

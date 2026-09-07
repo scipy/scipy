@@ -14,7 +14,7 @@ class Zacharov(Benchmark):
 
         f_{\text{Zacharov}}(x) = \sum_{i=1}^{n} x_i^2 + \left ( \frac{1}{2}
                                  \sum_{i=1}^{n} i x_i \right )^2
-                                 + \left ( \frac{1}{2} \sum_{i=1}^{n} i x_i 
+                                 + \left ( \frac{1}{2} \sum_{i=1}^{n} i x_i
                                  \right )^4
 
     Here, :math:`n` represents the number of dimensions and

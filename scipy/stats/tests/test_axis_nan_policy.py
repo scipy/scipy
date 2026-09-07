@@ -216,6 +216,11 @@ axis_nan_policy_cases = [
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='bisecting'),
+     1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='geometric'),
+     1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
@@ -233,7 +238,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "Not enough other observations",
                       "Not enough observations.",
                       "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
+                      "zero-size array to reduction operation",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty",
@@ -413,7 +418,7 @@ if SCIPY_XSLOW:
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
     @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-    @pytest.mark.parametrize(("axis"), range(-3, 3))
+    @pytest.mark.parametrize(("axis"), list(range(-3, 3)))
     @pytest.mark.parametrize(("data_generator"),
                              ("all_nans", "all_finite", "mixed"))
     def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
@@ -703,6 +708,8 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
                            stats.differential_entropy, stats.epps_singleton_2samp,
                            stats.shapiro}
+    if hypotest == stats.circmedian:
+        sample_shape = (2, 3, 4, 3)  # slow convergence along axis of size 4!
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
@@ -1001,7 +1008,7 @@ def paired_non_broadcastable_cases():
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"),
-                         paired_non_broadcastable_cases())
+                         list(paired_non_broadcastable_cases()))
 def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
                            unpacker, axis):
     # test for correct error message when shapes are not broadcastable
@@ -1163,7 +1170,7 @@ def test_masked_stat_1d():
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
-@pytest.mark.parametrize(("axis"), range(-3, 3))
+@pytest.mark.parametrize(("axis"), list(range(-3, 3)))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
     rng = np.random.default_rng(3679428403)

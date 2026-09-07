@@ -13,10 +13,10 @@
 .. image:: https://img.shields.io/conda/dn/conda-forge/scipy.svg?label=Conda%20downloads
   :target: https://anaconda.org/conda-forge/scipy
 
-.. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg
+.. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg?
   :target: https://stackoverflow.com/questions/tagged/scipy
 
-.. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue.svg
+.. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue.svg?
   :target: https://www.nature.com/articles/s41592-019-0686-2
 
 .. image:: https://insights.linuxfoundation.org/api/badge/health-score?project=scipy
@@ -58,7 +58,8 @@ Call for Contributions
 
 We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
-guide <https://scipy.github.io/devdocs/dev/index.html>`__.
+guide <https://scipy.github.io/devdocs/dev/index.html>`__ and familiarize yourself
+with `our AI policy <https://scipy.github.io/devdocs/dev/conduct/ai_policy.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
 

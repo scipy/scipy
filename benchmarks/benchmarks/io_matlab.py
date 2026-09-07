@@ -77,9 +77,9 @@ class MemUsage(Benchmark):
         from scipy.io import savemat
         x = np.random.rand({size}//8).view(dtype=np.uint8)
         savemat(
-            '{self.filename}', 
-            dict(x=x), 
-            do_compression={compressed}, 
+            '{self.filename}',
+            dict(x=x),
+            do_compression={compressed},
             oned_as='row'
         )
         """

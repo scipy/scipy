@@ -1,16 +1,11 @@
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
-if not get_option('_without-fortran')
-  if is_mingw and ff.get_id() != 'gcc'
-    error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
-  endif
-endif
 
 cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
-  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp', 'fortran'])
+  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp'])
   # Force gcc to float64 long doubles for compatibility with MSVC
   # builds, for C only.
   add_project_arguments('-mlong-double-64', language: 'c')
@@ -20,81 +15,32 @@ if is_mingw
   # https://github.com/rgommers/scipy/issues/118.
   # Use as c_args for extensions containing Cython code
   cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
-  # Flag needed to work around BLAS and LAPACK Gfortran dependence on
-  # undocumented C feature when passing single character string arguments. See:
-  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
-  #   https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
-  add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
 endif
 
 thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-_numpy_dep = dependency('numpy')
-f2py_freethreading_arg = []
-if _numpy_dep.version().version_compare('>=2.1.0')
-  f2py_freethreading_arg = ['--free-threading']
-  message('f2py free-threading enabled')
-else
-  message('f2py free-threading disabled; need numpy >=2.1.0.')
-  message('See https://github.com/mesonbuild/meson/issues/14651')
-endif
+# The undecorated `_numpy_dep` is kept around because `dependency_map` further
+# down needs the real dependency object - a `declare_dependency()`
+# wrapper reports the project's own name and version instead.
+_numpy_dep = dependency('numpy', version: '>=' + min_numpy_version)
+np_dep = declare_dependency(
+  dependencies: _numpy_dep,
+  # Don't use the deprecated NumPy C API. Define this to a fixed version instead
+  # of NPY_API_VERSION in order not to break compilation for released SciPy
+  # versions when NumPy introduces a new deprecation.
+  compile_args: ['-DNPY_NO_DEPRECATED_API=NPY_2_0_API_VERSION'],
+)
 
-# NumPy include directory - needed in all submodules
-# The chdir is needed because within numpy there's an `import signal`
-# statement, and we don't want that to pick up scipy's signal module rather
-# than the stdlib module. The try-except is needed because when things are
-# split across drives on Windows, there is no relative path and an exception
-# gets raised. There may be other such cases, so add a catch-all and switch to
-# an absolute path. Relative paths are needed when for example a virtualenv is
-# placed inside the source tree; Meson rejects absolute paths to places inside
-# the source tree.
-# For cross-compilation it is often not possible to run the Python interpreter
-# in order to retrieve numpy's include directory. It can be specified in the
-# cross file instead:
-#   [properties]
-#   numpy-include-dir = /abspath/to/host-pythons/site-packages/numpy/core/include
-#
-# This uses the path as is, and avoids running the interpreter.
-incdir_numpy = meson.get_external_property('numpy-include-dir', 'not-given')
-if incdir_numpy == 'not-given'
-  incdir_numpy = run_command(py3,
-    [
-      '-c',
-      '''import os
-os.chdir(os.path.join("..", "tools"))
-import numpy as np
-try:
-  incdir = os.path.relpath(np.get_include())
-except Exception:
-  incdir = np.get_include()
-print(incdir)
-  '''
-    ],
-    check: true
-  ).stdout().strip()
-
-  # We do need an absolute path to feed to `cc.find_library` below
-  _incdir_numpy_abs = run_command(py3,
-    ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
-    check: true
-  ).stdout().strip()
-else
-  _incdir_numpy_abs = incdir_numpy
-endif
-inc_np = include_directories(incdir_numpy)
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation.
-numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
-np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
-
-incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
-inc_f2py = include_directories(incdir_f2py)
-fortranobject_c = incdir_f2py / 'fortranobject.c'
-
-pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+# Note: the undecorated `_pybind11_dep` is kept around, like `_numpy_dep`.
+_pybind11_dep = dependency('pybind11', version: '>=2.13.2')
+pybind11_dep = declare_dependency(
+  dependencies: _pybind11_dep,
+  # https://github.com/pybind/pybind11/pull/6155
+  # https://github.com/pybind/pybind11/pull/6156
+  compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
+)
 
 # Pythran include directory and build flags
 if use_pythran
@@ -133,19 +79,6 @@ cpp_args_pythran = [
   '-DPYTHRAN_BLAS_NONE'
 ]
 
-# Share this object across multiple modules.
-fortranobject_lib = static_library('_fortranobject',
-  fortranobject_c,
-  c_args: numpy_nodepr_api,
-  dependencies: py3_dep,
-  include_directories: [inc_np, inc_f2py],
-  gnu_symbol_visibility: 'hidden',
-)
-fortranobject_dep = declare_dependency(
-  link_with: fortranobject_lib,
-  include_directories: [inc_np, inc_f2py],
-)
-
 cdata = configuration_data()
 
 # Test variable attribute to use for thread-local storage;
@@ -158,7 +91,6 @@ check_tls_attrs = [
 if is_windows and not is_mingw
   check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
 endif
-f2py_tls_define = ''
 foreach tls_attrs: check_tls_attrs
   attr = tls_attrs[0]
   code = f'''
@@ -176,7 +108,6 @@ foreach tls_attrs: check_tls_attrs
   '''
   if cc.compiles(code, name: tls_attrs[0])
     cdata.set10(tls_attrs[1], true)
-    f2py_tls_define = tls_attrs[0]
   endif
 endforeach
 
@@ -187,35 +118,6 @@ scipy_config_h = configure_file(
   output: 'scipy_config.h',
   configuration: cdata,
   install: false
-)
-
-_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
-fortranobject_dep = declare_dependency(
-  dependencies: fortranobject_dep,
-  compile_args: _f2py_c_args,
-)
-
-f2py = find_program('f2py')
-# It should be quite rare for the `f2py` executable to not be the one from
-# `numpy` installed in the Python env we are building for (unless we are
-# cross-compiling). If it is from a different env, that is still fine as long
-# as it's not too old. We are only using f2py as a code generator, and the
-# output is not dependent on platform or Python version (see gh-20612 for more
-# details).
-# This should be robust enough. If not, we can make this more complex, using
-# a fallback to `python -m f2py` rather than erroring out.
-f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
-if f2py_version.version_compare('<'+min_numpy_version)
-  error(f'Found f2py executable is too old: @f2py_version@')
-endif
-
-# Note: this generator cannot handle:
-# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
-# 2. targets with #include's (due to no `depend_files` - see feature request
-#    at meson#8295)
-f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@', '@EXTRA_ARGS@'] + f2py_freethreading_arg,
-  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
 
@@ -441,7 +343,7 @@ scipy_dir = py3.get_install_dir() / 'scipy'
 
 # Generate version.py for sdist
 meson.add_dist_script(
-   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
+   ['../tools/building/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
 if not fs.exists('version.py')
   generate_version = custom_target(
@@ -450,8 +352,8 @@ if not fs.exists('version.py')
     build_always_stale: true,
     build_by_default: true,
     output: 'version.py',
-    input: '../tools/gitversion.py',
-    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    input: '../tools/building/gitversion.py',
+    command: ['../tools/building/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
     install_dir: scipy_dir,
     install_tag: 'python-runtime',
   )
@@ -498,6 +400,7 @@ if cy.version().version_compare('>=3.1.0')
     cython_shared_src,
     subdir: 'scipy',
     cython_args: cython_args,
+    link_args: version_link_args,
     install: true,
     install_tag: 'python-runtime',
   )
@@ -538,37 +441,28 @@ endif
 # The standard convention used here is:
 #   - for C, drop the leading dash and turn remaining dashes into underscores
 #   - for C++, prepend `_cpp` and turn remaining dashes into underscores
-#   - for Fortran, prepend `_fflags` and turn remaining dashes into underscores
 
 # C warning flags
 Wno_maybe_uninitialized = cc.get_supported_arguments('-Wno-maybe-uninitialized')
 Wno_discarded_qualifiers = cc.get_supported_arguments('-Wno-discarded-qualifiers')
-Wno_empty_body = cc.get_supported_arguments('-Wno-empty-body')
 Wno_implicit_function_declaration = cc.get_supported_arguments('-Wno-implicit-function-declaration')
 Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
-Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 
 # C++ warning flags
-_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
-_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
-_cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
-_cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
-_cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
-_cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
 _cpp_Wno_terminate = cpp.get_supported_arguments('-Wno-terminate')
 _cpp_Wno_uninitialized = cpp.get_supported_arguments('-Wno-uninitialized')
 _cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-set-variable')
 _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
 _cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
 _cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
+_cpp_Wno_unused_template = cpp.get_supported_arguments('-Wno-unused-template')
 _cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
 _cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
 
@@ -578,74 +472,9 @@ cpp_args_pythran += [
   _cpp_Wno_unused_but_set_variable,
   _cpp_Wno_unused_function,
   _cpp_Wno_unused_variable,
+  _cpp_Wno_unused_template, # https://github.com/serge-sans-paille/pythran/issues/2477
   _cpp_Wno_int_in_bool_context,
 ]
-
-if not get_option('_without-fortran')
-  # Fortran warning flags
-  _fflag_Wno_argument_mismatch = ff.get_supported_arguments('-Wno-argument-mismatch')
-  _fflag_Wno_conversion = ff.get_supported_arguments('-Wno-conversion')
-  _fflag_Wno_intrinsic_shadow = ff.get_supported_arguments('-Wno-intrinsic-shadow')
-  _fflag_Wno_maybe_uninitialized = ff.get_supported_arguments('-Wno-maybe-uninitialized')
-  _fflag_Wno_surprising = ff.get_supported_arguments('-Wno-surprising')
-  _fflag_Wno_uninitialized = ff.get_supported_arguments('-Wno-uninitialized')
-  _fflag_Wno_unused_dummy_argument = ff.get_supported_arguments('-Wno-unused-dummy-argument')
-  _fflag_Wno_unused_label = ff.get_supported_arguments('-Wno-unused-label')
-  _fflag_Wno_unused_variable = ff.get_supported_arguments('-Wno-unused-variable')
-  _fflag_Wno_tabs = ff.get_supported_arguments('-Wno-tabs')
-  # The default list of warnings to ignore from Fortran code. There is a lot of
-  # old, vendored code that is very bad and we want to compile it silently (at
-  # least with GCC and Clang)
-  fortran_ignore_warnings = ff.get_supported_arguments(
-   _fflag_Wno_argument_mismatch,
-   _fflag_Wno_conversion,
-   _fflag_Wno_maybe_uninitialized,
-   _fflag_Wno_unused_dummy_argument,
-   _fflag_Wno_unused_label,
-   _fflag_Wno_unused_variable,
-   _fflag_Wno_tabs,
-  )
-
-  # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
-  # code uses preprocessor statements, add this compile flag to it.
-
-  # Gfortran does run the preprocessor for .F files, and PROPACK is the only
-  # component which needs the preprocessor (unless we need symbol renaming for
-  # blas_symbol_suffix).
-  _fflag_preprocess = []
-  _gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
-  if ff.has_multi_arguments(_gfortran_preprocess)
-    _fflag_preprocess = _gfortran_preprocess
-  else
-    _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
-  endif
-  if use_ilp64
-    _fflag_ilp64 = []
-    # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
-    # default, all other known compilers use `-i8`
-    _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
-  endif
-endif
-
-f2py_ilp64_opts = []
-if use_ilp64
-  # Write out a mapping file for f2py for defaulting to ILP64
-  conf_data = configuration_data()
-  if cc.sizeof('long') == 8
-    conf_data.set('int64_name', 'long')
-  elif cc.sizeof('long long') == 8
-    conf_data.set('int64_name', 'long long')
-  else
-    error('Neither `long` nor `long long` is 64-bit, giving up.')
-  endif
-  int64_f2cmap = configure_file(
-    input: '_build_utils/int64.f2cmap.in',
-    output: 'int64.f2cmap',
-    configuration: conf_data,
-    install: false,
-  )
-  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
-endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
@@ -697,18 +526,15 @@ if cc.get_id() != 'msvc'
 endif
 
 cython_c_args += [use_math_defines]
-cython_cpp_args = cython_c_args
+# this suppresses warnings fixed by
+# https://github.com/cython/cython/commit/8208a1658bb6a2c97fb30a9d53d8ac3addfb662a
+cython_cpp_args = cython_c_args + _cpp_Wno_unused_template
 
 compilers = {
   'C': cc,
   'CPP': cpp,
   'CYTHON': meson.get_compiler('cython'),
 }
-if get_option('_without-fortran')
-  compilers += {'FORTRAN': meson.get_compiler('c')}
-else
-  compilers += {'FORTRAN': meson.get_compiler('fortran')}
-endif
 
 machines = {
   'HOST': host_machine,
@@ -723,20 +549,14 @@ foreach name, compiler : compilers
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  if get_option('_without-fortran') and name == 'FORTRAN'
-    conf_data.set('FORTRAN_COMP_ARGS', 'n/a')
-    conf_data.set('FORTRAN_COMP_LINK_ARGS', 'n/a')
-  else
-    # backslash replacement for https://github.com/conda-forge/flang-activation-feedstock/issues/49
-    conf_data.set(name + '_COMP_ARGS', ', '.join(
-        get_option(name.to_lower() + '_args')
-      ).replace('\\', '/')
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
     )
-    conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
-        get_option(name.to_lower() + '_link_args')
-      ).replace('\\', '/')
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
     )
-  endif
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -762,7 +582,8 @@ conf_data.set('PYTHON_VERSION', py3.language_version())
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
-  'PYBIND11': pybind11_dep,
+  'NUMPY': _numpy_dep,
+  'PYBIND11': _pybind11_dep,
 }
 foreach name, dep : dependency_map
   conf_data.set(name + '_NAME', dep.name())
@@ -792,7 +613,7 @@ configure_file(
 # subdirs with the most heavy builds should come first (that parallelizes a
 # little better).
 #
-subdir('_build_utils')  
+subdir('_build_utils')
 subdir('_external')
 subdir('_lib')
 subdir('linalg')
@@ -811,8 +632,4 @@ subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
-if not get_option('_without-fortran')
-  subdir('odr')
-endif
 subdir('datasets')
-subdir('misc')

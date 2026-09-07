@@ -86,7 +86,7 @@
  *  :type tol_newton_tiny: trlib_flt_t, input
  *  :param pos_def: set ``1`` if you know :math:`T` to be positive definite, otherwise ``0``
  *  :type pos_def: trlib_int_t, input
- *  :param equality: set ``1`` if you want to enfore trust region constraint as equality, otherwise ``0``
+ *  :param equality: set ``1`` if you want to enforce trust region constraint as equality, otherwise ``0``
  *  :type equality: trlib_int_t, input
  *  :param warm0: set ``1`` if you provide a valid value in :c:data:`lam0`, otherwise ``0``
  *  :type warm0: trlib_int_t, input/output

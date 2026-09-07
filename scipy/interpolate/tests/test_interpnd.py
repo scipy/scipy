@@ -238,7 +238,7 @@ class TestEstimateGradients2DGlobal:
 
             assert dz.shape == (6, 2)
             xp_assert_close(
-                dz, np.array(grad)[None, :] + 0*dz, rtol=1e-5, atol=1e-5, 
+                dz, np.array(grad)[None, :] + 0*dz, rtol=1e-5, atol=1e-5,
                 err_msg=f"item {j}"
             )
 
@@ -308,16 +308,16 @@ class TestCloughTocher2DInterpolator:
                 func, tol=1e-13, atol=1e-7, rtol=1e-7, err_msg=f"Function {j}"
             )
             self._check_accuracy(
-                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, 
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True,
                 err_msg=f"Function (alternate) {j}"
             )
             # check rescaling
             self._check_accuracy(
-                func, tol=1e-13, atol=1e-7, rtol=1e-7, 
+                func, tol=1e-13, atol=1e-7, rtol=1e-7,
                 err_msg=f"Function (rescaled) {j}", rescale=True
             )
             self._check_accuracy(
-                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, rescale=True, 
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, rescale=True,
                 err_msg=f"Function (alternate, rescaled) {j}"
             )
 
@@ -394,7 +394,7 @@ class TestCloughTocher2DInterpolator:
                 func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, err_msg=f"Function {j}"
             )
             self._check_accuracy(
-                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, 
+                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
                 err_msg=f"Function {j}", rescale=True
             )
 

@@ -3,6 +3,8 @@ from collections import Counter
 from itertools import combinations, product
 
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal, assert_array_equal,
     assert_array_less)
@@ -144,6 +146,12 @@ class TestUtils:
         with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
             qmc.discrepancy(sample, method="toto")
 
+    @pytest.mark.skipif(
+        IS_WASM,
+        reason="spawns worker threads whose C-level destructor triggers a fatal "
+               "interpreter crash during pytest's GC cleanup under WASM. See "
+               "pyodide/pyodide-recipes#619"
+    )
     def test_discrepancy_parallel(self, monkeypatch):
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
@@ -389,10 +397,12 @@ class TestVDC:
                0.375, 0.875, 0.0625, 0.5625]
         assert_allclose(sample, out)
 
-        sample = van_der_corput(10, workers=4)
+        # Run serially on WASM to avoid spawning threads
+        w1, w2 = (1, 1) if IS_WASM else (4, 8)
+        sample = van_der_corput(10, workers=w1)
         assert_allclose(sample, out)
 
-        sample = van_der_corput(10, workers=8)
+        sample = van_der_corput(10, workers=w2)
         assert_allclose(sample, out)
 
         sample = van_der_corput(7, start_index=3)
@@ -405,13 +415,15 @@ class TestVDC:
         sample = van_der_corput(7, start_index=3, scramble=True, rng=rng)
         assert_allclose(sample, out[3:])
 
+        # Run serially on WASM to avoid spawning threads
+        w1, w2 = (1, 1) if IS_WASM else (4, 8)
         sample = van_der_corput(
-            7, start_index=3, scramble=True, rng=rng, workers=4
+            7, start_index=3, scramble=True, rng=rng, workers=w1
         )
         assert_allclose(sample, out[3:])
 
         sample = van_der_corput(
-            7, start_index=3, scramble=True, rng=rng, workers=8
+            7, start_index=3, scramble=True, rng=rng, workers=w2
         )
         assert_allclose(sample, out[3:])
 
@@ -519,9 +531,9 @@ def test_integers_nd():
 class QMCEngineTests:
     """Generic tests for QMC engines."""
     qmce = NotImplemented
-    can_scramble = NotImplemented
-    unscramble_nd = NotImplemented
-    scramble_nd = NotImplemented
+    can_scramble: bool = NotImplemented
+    unscramble_nd: np.ndarray = NotImplemented
+    scramble_nd: np.ndarray = NotImplemented
 
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]
@@ -709,9 +721,10 @@ class TestHalton(QMCEngineTests):
                             [0.37746036, 0.04493592]])
 
     def test_workers(self):
+        workers = 1 if IS_WASM else 8
         ref_sample = self.reference(scramble=True)
         engine = self.engine(d=2, scramble=True)
-        sample = engine.random(n=len(ref_sample), workers=8)
+        sample = engine.random(n=len(ref_sample), workers=workers)
 
         assert_allclose(sample, ref_sample, atol=1e-3)
 
@@ -719,7 +732,7 @@ class TestHalton(QMCEngineTests):
         engine.reset()
         ref_sample = engine.integers(10)
         engine.reset()
-        sample = engine.integers(10, workers=8)
+        sample = engine.integers(10, workers=workers)
         assert_equal(sample, ref_sample)
 
 
@@ -1227,6 +1240,7 @@ class TestNormalQMC:
 
 class TestMultivariateNormalQMC:
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_validations(self):
 
         message = r"Dimension of `engine` must be consistent"
@@ -1425,6 +1439,12 @@ class TestMultivariateNormalQMC:
         cov = np.cov(samples.transpose())
         assert np.abs(cov[0, 1] - 0.5) < 1e-2
 
+    @pytest.mark.xfail(
+        IS_WASM,
+        reason="NumPy's Cholesky reports a non-positive-definite matrix"
+        " via floating-point exception modes, which WASM does not support,"
+        " see https://github.com/pyodide/pyodide#4859"
+    )
     def test_MultivariateNormalQMCDegenerate(self):
         # X, Y iid standard Normal and Z = X + Y, random vector (X, Y, Z)
         rng = np.random.default_rng(16320637417581448357869821654290448620)

@@ -75,7 +75,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 @xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
-          workers=None, orthogonalize=None):
+          workers=None, *, orthogonalize=None):
     """
     Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
@@ -207,7 +207,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 @xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
-          workers=None, orthogonalize=None):
+          workers=None, *, orthogonalize=None):
     """
     Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 

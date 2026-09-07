@@ -31,7 +31,7 @@ class TestBLASLevel1:
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([4.0, 5.0, 6.0])
         consumer_daxpy(2.0, x, y)
-        assert_allclose(y, [6.0, 9.0, 12.0])     
+        assert_allclose(y, [6.0, 9.0, 12.0])
 
     def test_dnrm2_large_vector(self):
         x = np.zeros(2**31, dtype=np.float64)

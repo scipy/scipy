@@ -566,10 +566,10 @@ stop-band attenuation of :math:`\approx 60` dB.
    >>> import numpy as np
    >>> import scipy.signal as signal
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> b, a = signal.iirfilter(4, Wn=0.2, rp=5, rs=60, btype='lowpass', ftype='ellip')
    >>> w, h = signal.freqz(b, a)
-
+   ...
    >>> plt.title('Digital filter frequency response')
    >>> plt.plot(w, 20*np.log10(np.abs(h)))
    >>> plt.title('Digital filter frequency response')
@@ -591,7 +591,7 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> import numpy as np
         >>> from matplotlib import pyplot as plt
         >>> from scipy import signal as sig
-
+        ...
         >>> fs = 16000
         >>> b = sig.firwin(101, 2500, fs=fs)
         >>> f, h_fft = sig.freqz(b, fs=fs)
@@ -599,8 +599,8 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> _, ax = plt.subplots(layout="constrained")
         >>> ax.plot(f, h_amp, label="FIR")
         >>> ax.grid(True)
-
-        >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
+        ...
+        >>> b, a = sig.iirfilter(15, 2500, btype="lowpass", fs=fs)
         >>> f, h_fft = sig.freqz(b, a, fs=fs)
         >>> h_amp = 20 * np.log10(np.abs(h_fft))
         >>> ax.plot(f, h_amp, label="IIR")
@@ -1529,9 +1529,9 @@ is marked by a light blue background. Per definition the zeroth slice
 (`m_num_mid`), here being the sample ``6//2=3``, is marked by the text "mid".
 By default the `stft` calculates all slices which have some overlap with the
 signal. Hence the first slice is at `p_min` = -1 with the lowest sample index
-being `k_min` = -5. The first sample index unaffected by a slice not sticking
-out to the left of the signal is :math:`p_{lb} = 2` and the first sample index
-unaffected by border effects is :math:`k_{lb} = 5`. The property
+being `k_min` = -5. The first slice index not sticking out to the left of the
+signal is :math:`p_{lb} = 2` and the first sample index unaffected by border
+effects is :math:`k_{lb} = 5`. The property
 `lower_border_end` returns the tuple :math:`(k_{lb}, p_{lb})`.
 
 The behavior at the end of the signal is depicted for a signal with
@@ -1749,7 +1749,7 @@ Eq. :math:numref:`eq_STFT_istftM`, i.e.,
 .. math::
    :label: eq_STFT_WindDualCond0
 
-    \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
+   \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
                                                  \vb{F}\,\vb{W}_{\!p}\,\vb{x}
         = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
 

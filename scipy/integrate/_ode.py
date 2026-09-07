@@ -768,11 +768,11 @@ class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
-    supports_run_relax = None
-    supports_step = None
+    supports_run_relax: int | None = None
+    supports_step: int | None = None
     supports_solout = False
-    integrator_classes = []
-    scalar = float
+    integrator_classes: list[type] = []
+    scalar: type = float
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(types.GenericAlias)

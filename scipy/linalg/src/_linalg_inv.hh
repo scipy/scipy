@@ -1,15 +1,7 @@
 /*
  * Templated loops for `linalg.inv`
  */
-#include "Python.h"
-#include <iostream>
-#include <vector>
-#include "numpy/arrayobject.h"
-#include "numpy/npy_math.h"
-#include "scipy_blas_defines.h"
-#include "_npymath.hh"
-#include "_common_array_utils.hh"
-
+#pragma once
 
 namespace sp_linalg {
 
@@ -90,7 +82,7 @@ void invert_slice_cholesky(
 template<typename T>
 void invert_slice_sym_herm(
     char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
-    bool is_symm_not_herm, 
+    bool is_symm_not_herm,
     SliceStatus& status
 ) {
     using real_type = typename detail::type_traits<T>::real_type;
@@ -191,8 +183,10 @@ inline void invert_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = maxa * maxinva > 1./ detail::numeric_limits<real_type>::eps;
-    status.rcond = maxa * maxinva;
+    double cond = (double)maxa * (double)maxinva;
+    double rcond = 1.0 / cond;
+    status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
+    status.rcond = rcond;
 }
 
 
@@ -285,12 +279,12 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      */
     CBLAS_INT buf_size = overwrite_a ? lwork : 2*n*n + lwork;
 
-    T* buffer = (T *)malloc(buf_size*sizeof(T));
+    T* buffer = (T *)PyMem_RawMalloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
     T *data=NULL, *scratch=NULL, *work=NULL;
     if (overwrite_a) {
-        // work in-place 
+        // work in-place
         data = ret_data;
         work = &buffer[0];
     }
@@ -301,9 +295,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         work = &buffer[2*n*n];
     }
 
-    CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
+    CBLAS_INT* ipiv = (CBLAS_INT *)PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
-        free(buffer);
+        PyMem_RawFree(buffer);
         info = -102;
         return (int)info;
     }
@@ -311,13 +305,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
     if constexpr(detail::type_traits<T>::is_complex) {
-        irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
+        irwork = PyMem_RawMalloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
-        irwork = malloc(n*sizeof(CBLAS_INT));
+        irwork = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     }
     if (irwork == NULL) {
-        free(buffer);
-        free(ipiv);
+        PyMem_RawFree(buffer);
+        PyMem_RawFree(ipiv);
         info = -102;
         return (int)info;
     }
@@ -374,8 +368,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 if constexpr (!detail::type_traits<T>::is_complex) {
                     // Real: is_symm and is_herm are always equal
                     if (is_symm) {
-                        // try Cholesky first, fall back to sytrf if it fails
-                        slice_structure = St::POS_DEF;
+                        /*
+                         * If working on a copy (overwrite_a is False):
+                         *    try Cholesky first, fall back to sytrf if it fails
+                         * If working in-place, do the inversion in one go,
+                         *    (if Cholesky failed, it already destroyed the input)
+                         */
+                        slice_structure = overwrite_a ? St::SYM : St::POS_DEF ;
                     }
                     else {
                         slice_structure = St::GENERAL;
@@ -389,7 +388,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     else if (is_herm) {
                         // Hermitian (may also be symmetric if entries are real)
                         // try Cholesky first, fall back to hetrf if it fails
-                        slice_structure = St::POS_DEF;
+                        slice_structure = overwrite_a ? St::HER : St::POS_DEF ;
                     }
                     else {
                         // is_symm && !is_herm: complex symmetric, not hermitian
@@ -501,11 +500,10 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     } // end of `for(idx=...)`
 
 free_exit:
-    free(buffer);
-    free(irwork);
-    free(ipiv);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(irwork);
+    PyMem_RawFree(ipiv);
     return 1;
 }
 
 } // namespace sp_linalg
-

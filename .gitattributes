@@ -5,7 +5,7 @@
 # before they take effect (can be confusing during testing)
 #
 # Note: git submodules cannot be handled in this file. For removing
-# files and directories from git submodules, see `tools/trim_sdist_content.py`
+# files and directories from git submodules, see `tools/building/trim_sdist_content.py`
 # This is a Meson "dist script", run during sdist generation only.
 
 .circleci/* export-ignore

@@ -140,7 +140,7 @@ def shortest_path(csgraph, method='auto',
 
     See Also
     --------
-    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaninful example.
+    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaningful example.
                                   It also reconstructs the shortest path by using predecessors matrix returned
                                   by this function.
 
@@ -748,7 +748,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
         unsigned int j_current
         DTYPE_t next_val
 
-    # v is a dist_index_pair_t poped from the queue
+    # v is a dist_index_pair_t popped from the queue
     # v.first: the distance of the vertex
     # v.second: index of the vertex
     for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
@@ -758,7 +758,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
             if dist_matrix[j_current] > next_val:
                 dist_matrix[j_current] = next_val
                 # The same vertex may be pushed multiple times to the queue, but
-                # anything with suboptimal distance is ignored when poped
+                # anything with suboptimal distance is ignored when popped
                 heap.push(dist_index_pair_t(-next_val, j_current))
                 if return_pred:
                     pred[j_current] = v.second
@@ -1465,7 +1465,7 @@ def yen(
     by Jin Y. Yen in 1971 and employs any shortest path algorithm to find the best path,
     then proceeds to find ``K - 1`` deviations of the best path.
 
-    The algorithm is based on Dijsktra's algorithm for finding each shortest path.
+    The algorithm is based on Dijkstra's algorithm for finding each shortest path.
     In case there are negative edges in the graph, Johnson's algorithm is applied.
 
     If multiple valid solutions are possible, output may vary with SciPy and

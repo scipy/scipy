@@ -1,9 +1,13 @@
 """
 Sane parameters for stats.distributions.
 """
+from collections.abc import Sequence
+
 import numpy as np
 
-distcont = [
+distcont: list[
+    Sequence[object]
+] = [
     ['alpha', (3.5704770516650459,)],
     ['anglit', ()],
     ['arcsine', ()],

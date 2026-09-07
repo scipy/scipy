@@ -22,11 +22,6 @@ cdef extern from "cdflib.h" nogil:
     TupleDID cdff_which4(double, double, double, double);
     TupleDID cdffnc_which3(double, double, double, double, double);
     TupleDID cdffnc_which4(double, double, double, double, double);
-    TupleDID cdffnc_which5(double, double, double, double, double);
-    TupleDID cdft_which3(double, double, double);
-    TupleDID cdftnc_which3(double, double, double, double);
-    TupleDID cdftnc_which4(double, double, double, double);
-
 
 cdef inline double get_result(
         char *name,
@@ -127,87 +122,3 @@ cdef inline double ncfdtridfn(double p, double dfd, double nc, double f) noexcep
     ret = cdffnc_which3(p, q, f, dfd, nc)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("ncfdtridfn", argnames, result, status, bound, 1)
-
-
-cdef inline double ncfdtrinc(double dfn, double dfd, double p, double f) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[5]
-        TupleDID ret
-
-    if isnan(dfn) or isnan(dfd) or isnan(p) or isnan(f):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "f"
-    argnames[3] = "dfn"
-    argnames[4] = "dfd"
-
-    ret = cdffnc_which5(p, q, f, dfn, dfd)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("ncfdtrinc", argnames, result, status, bound, 1)
-
-
-cdef inline double nctdtridf(double p, double nc, double t) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(p) or isnan(nc) or isnan(t):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "t"
-    argnames[3] = "nc"
-
-    ret = cdftnc_which3(p, q, t, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("nctdtridf", argnames, result, status, bound, 1)
-
-
-cdef inline double nctdtrinc(double df, double p, double t) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(df) or isnan(p) or isnan(t):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "t"
-    argnames[3] = "df"
-
-    ret = cdftnc_which4(p, q, t, df)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("nctdtrinc", argnames, result, status, bound, 1)
-
-
-cdef inline double stdtridf(double p, double t) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isnan(p) or isnan(q) or isnan(t):
-        return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "t"
-
-    ret = cdft_which3(p, q, t)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("stdtridf", argnames, result, status, bound, 1)

@@ -10,6 +10,7 @@ from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
@@ -18,7 +19,6 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
-from ._comb import _comb_int
 
 
 __all__ = [
@@ -1315,6 +1315,38 @@ def riccati_jn(n, x):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
 
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the first kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_jn
+    >>> n = 5
+    >>> z = 1.2
+    >>> psi_n, psi_n_p = riccati_jn(n, z)
+    >>> psi_n
+    array([9.32039086e-01, 4.14341484e-01, 1.03814624e-01, 1.82194479e-02,
+           2.46548893e-03, 2.71719094e-04])
+    >>> psi_n_p
+    array([0.36235775, 0.58675452, 0.24131711, 0.058266  , 0.01000115,
+           0.00133333])
+    >>> psi_n_p[5]/psi_n[5]
+    np.float64(4.9070016327063115)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_jn
+    >>> jn = spherical_jn(n, z)
+    >>> jnp = spherical_jn(n, z, derivative=True)
+    >>> jnp/jn + 1/z
+    np.float64(4.907001632706311)
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1371,6 +1403,38 @@ def riccati_yn(n, x):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.51.E1
+
+    Examples
+    --------
+    In practical applications, frequently the logarithmic derivative of the
+    Riccati-Bessel functions is needed. We determine the logarithmic derivative
+    of the Riccati-Bessel function of the second kind for order 5 and argument 1.2.
+    The logarithmic derivative is obtained by dividing the derivative of the
+    Riccati-Bessel function by the Riccati-Bessel function itself.
+
+    >>> from scipy.special import riccati_yn
+    >>> n = 5
+    >>> z = 1.2
+    >>> chi_n, chi_n_p = riccati_yn(n, z)
+    >>> chi_n
+    array([-3.62357754e-01, -1.23400388e+00, -2.72265195e+00, -1.01103792e+01,
+           -5.62545603e+01, -4.11798823e+02])
+    >>> chi_n_p
+    array([9.32039086e-01, 6.65978813e-01, 3.30374937e+00, 2.25532961e+01,
+           1.77404822e+02, 1.65957387e+03])
+    >>> chi_n_p[5]/chi_n[5]
+    np.float64(-4.030059767479337)
+
+    Alternatively, the logarithmic derivative of the Riccati-Bessel functions
+    could be obtained from the corresponding spherical Bessel functions by making
+    use of the definition of the Riccati-Bessel function in terms of the
+    spherical Bessel function as given above.
+
+    >>> from scipy.special import spherical_yn
+    >>> yn = spherical_yn(n, z)
+    >>> ynp = spherical_yn(n, z, derivative=True)
+    >>> ynp/yn + 1/z
+    np.float64(-4.030059767479337)
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -1648,20 +1712,69 @@ def mathieu_even_coef(m, q):
     -------
     Ak : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_cem
+    mathieu_odd_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_cem(5, 14, x)``, the even Mathieu function of order `m = 5` and
+    parameter `q = 14`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_even_coef, mathieu_cem
+    >>> m = 5
+    >>> q = 14
+
+    ``a`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_even_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    29 coefficients.
+
+    >>> a = mathieu_even_coef(m, q)
+    >>> a.shape
+    (29,)
+
+    Sum the Fourier cosine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)             # x has shape (5000,)
+    >>> k = np.arange(len(a)).reshape((-1, 1))       # k has shape (len(a), 1)
+    >>> c = np.cos((2*k + m % 2) * (np.pi/180) * x)  # c has shape (len(a), 5000)
+    >>> y = a @ c                                    # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_cem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> ce, _dce = mathieu_cem(m, q, x)
+    >>> plt.plot(x, ce, alpha=0.35, linewidth=3.5, label="mathieu_cem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{ce_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m < 0):
         raise ValueError("m must be an integer >=0.")
 
@@ -1709,18 +1822,69 @@ def mathieu_odd_coef(m, q):
     -------
     Bk : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
+        The number of coefficients returned is determined by an empirical formula
+        that depends on `m` and `q` [1]_.
+
+    See Also
+    --------
+    mathieu_sem
+    mathieu_even_coef
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
+           Original source code hosted by John Burkardt:
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/28.4#i
 
+    Examples
+    --------
+    We use the Fourier coefficients to construct an approximation of
+    ``mathieu_sem(5, 11, x)``, the odd Mathieu function of order `m = 5` and
+    parameter `q = 11`.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import mathieu_odd_coef, mathieu_sem
+    >>> m = 5
+    >>> q = 11
+
+    ``b`` holds the Fourier coefficients.  As noted above, the number of
+    coefficients returned by ``mathieu_odd_coef(m, q)`` is based on an
+    empirical formula that depends on `m` and `q`.  In this case, we get
+    28 coefficients.
+
+    >>> b = mathieu_odd_coef(m, q)
+    >>> b.shape
+    (28,)
+
+    Sum the Fourier sine series on a grid of ``x`` values.
+
+    >>> period = 180 if m % 2 == 0 else 360
+    >>> x = np.linspace(0, period, 5000)               # x has shape (5000,)
+    >>> k = np.arange(1, len(b) + 1).reshape((-1, 1))  # k has shape (len(b), 1)
+    >>> c = np.sin((2*k - m % 2) * (np.pi/180) * x)    # c has shape (len(b), 5000)
+    >>> y = b @ c                                      # y has shape (5000,)
+
+    Plot the approximation, along with the function computed directly by
+    ``mathieu_sem(m, q, x)``.
+
+    >>> plt.plot(x, y, 'k--', label="Fourier sum")
+    >>> se, _sce = mathieu_sem(m, q, x)
+    >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_sem")
+    >>> plt.grid(True)
+    >>> plt.title(f'Mathieu Function $\\rm{{se_{m}}}(x, {q})$')
+    >>> plt.xlabel('x [degrees]')
+    >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
-    if (q < 0):
-        raise ValueError("q >=0")
+    if q < 0:
+        raise ValueError(f"q must not be less than 0; got {q = }.")
     if (m != floor(m)) or (m <= 0):
         raise ValueError("m must be an integer > 0")
 
@@ -1803,14 +1967,152 @@ def lqmn(m, n, z):
 
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
+# Generated using:
+# from mpmath import mp
+# mp.dps = 50  # Set precision (optional)
+# n = 259  # Number of Bernoulli numbers to print
+# res = []
+# for k in range(0, n, 2):
+#     res.append(float(mp.bernoulli(k)))
+_BERNOULLI_EVEN = [1.0,
+                   0.16666666666666666,
+                   -0.03333333333333333,
+                   0.023809523809523808,
+                   -0.03333333333333333,
+                   0.07575757575757576,
+                   -0.2531135531135531,
+                   1.1666666666666667,
+                   -7.092156862745098,
+                   54.971177944862156,
+                   -529.1242424242424,
+                   6192.123188405797,
+                   -86580.25311355312,
+                   1425517.1666666667,
+                   -27298231.067816094,
+                   601580873.9006424,
+                   -15116315767.092157,
+                   429614643061.1667,
+                   -13711655205088.332,
+                   488332318973593.2,
+                   -1.9296579341940068e+16,
+                   8.416930475736826e+17,
+                   -4.0338071854059454e+19,
+                   2.1150748638081993e+21,
+                   -1.2086626522296526e+23,
+                   7.500866746076964e+24,
+                   -5.038778101481069e+26,
+                   3.6528776484818122e+28,
+                   -2.849876930245088e+30,
+                   2.3865427499683627e+32,
+                   -2.1399949257225335e+34,
+                   2.0500975723478097e+36,
+                   -2.093800591134638e+38,
+                   2.2752696488463515e+40,
+                   -2.6257710286239577e+42,
+                   3.212508210271803e+44,
+                   -4.159827816679471e+46,
+                   5.692069548203528e+48,
+                   -8.218362941978458e+50,
+                   1.2502904327166994e+53,
+                   -2.001558323324837e+55,
+                   3.3674982915364376e+57,
+                   -5.947097050313545e+59,
+                   1.1011910323627977e+62,
+                   -2.1355259545253502e+64,
+                   4.3328896986641194e+66,
+                   -9.188552824166933e+68,
+                   2.0346896776329074e+71,
+                   -4.700383395803573e+73,
+                   1.131804344548425e+76,
+                   -2.8382249570693707e+78,
+                   7.406424897967885e+80,
+                   -2.0096454802756605e+83,
+                   5.665717005080594e+85,
+                   -1.6584511154136216e+88,
+                   5.036885995049238e+90,
+                   -1.5861468237658186e+93,
+                   5.1756743617545625e+95,
+                   -1.7488921840217116e+98,
+                   6.116051999495218e+100,
+                   -2.2122776912707833e+103,
+                   8.272277679877097e+105,
+                   -3.195892511141571e+108,
+                   1.2750082223387793e+111,
+                   -5.250092308677413e+113,
+                   2.2301817894241627e+116,
+                   -9.76845219309552e+118,
+                   4.409836197845295e+121,
+                   -2.050857088646409e+124,
+                   9.821443327979128e+126,
+                   -4.841260079820888e+129,
+                   2.4553088801480982e+132,
+                   -1.2806926804084748e+135,
+                   6.867616710466858e+137,
+                   -3.7846468581969106e+140,
+                   2.142610125066529e+143,
+                   -1.2456727137183695e+146,
+                   7.434578755100016e+148,
+                   -4.5535795304641704e+151,
+                   2.861211281685887e+154,
+                   -1.843772355203387e+157,
+                   1.2181154536221047e+160,
+                   -8.248218718531412e+162,
+                   5.722587793783294e+165,
+                   -4.0668530525059105e+168,
+                   2.9596092064642052e+171,
+                   -2.2049522565189457e+174,
+                   1.68125970728896e+177,
+                   -1.3116736213556958e+180,
+                   1.0467894009478039e+183,
+                   -8.543289357883371e+185,
+                   7.128782132248655e+188,
+                   -6.08029314555359e+191,
+                   5.299677642484992e+194,
+                   -4.719425916874586e+197,
+                   4.292841379140298e+200,
+                   -3.9876744968232205e+203,
+                   3.781978041935888e+206,
+                   -3.661423368368119e+209,
+                   3.617609027237286e+212,
+                   -3.647077264519136e+215,
+                   3.750875543645441e+218,
+                   -3.934586729643903e+221,
+                   4.208821114819008e+224,
+                   -4.590229622061792e+227,
+                   5.103172577262957e+230,
+                   -5.782276230365695e+233,
+                   6.676248216783588e+236,
+                   -7.853530764445042e+239,
+                   9.410689406705872e+242,
+                   -1.1484933873465185e+246,
+                   1.4272958742848785e+249,
+                   -1.805955958690931e+252,
+                   2.3261535307660807e+255,
+                   -3.0495751715499594e+258,
+                   4.068580607643398e+261,
+                   -5.523103132197436e+264,
+                   7.6277279396434395e+267,
+                   -1.0715571119697886e+271,
+                   1.5310200895969188e+274,
+                   -2.2244891682179836e+277,
+                   3.286267919069014e+280,
+                   -4.935592895596035e+283,
+                   7.534957120083251e+286,
+                   -1.1691485154584178e+290,
+                   1.843526146783894e+293,
+                   -2.953682617296808e+296,
+                   4.807932127750157e+299,
+                   -7.950212504588525e+302,
+                   1.3352784187354634e+306]
 
 def bernoulli(n):
-    """Bernoulli numbers B0..Bn (inclusive).
+    """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
     Parameters
     ----------
     n : int
-        Indicated the number of terms in the Bernoulli series to generate.
+        Index of the last Bernoulli number to return. Non-integer values are cast to
+        integers.  Must be non-negative.
 
     Returns
     -------
@@ -1819,10 +2121,7 @@ def bernoulli(n):
 
     References
     ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
+    .. [1] "Bernoulli number", Wikipedia, https://en.wikipedia.org/wiki/Bernoulli_number
 
     Examples
     --------
@@ -1831,7 +2130,7 @@ def bernoulli(n):
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
 
-    The Wikipedia article ([2]_) points out the relationship between the
+    The Wikipedia article ([1]_) points out the relationship between the
     Bernoulli numbers and the zeta function, ``B_n^+ = -n * zeta(1 - n)``
     for ``n > 0``:
 
@@ -1839,20 +2138,26 @@ def bernoulli(n):
     >>> -n * zeta(1 - n)
     array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
 
-    Note that, in the notation used in the wikipedia article,
+    Note that, in the notation used in the Wikipedia article,
     `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
     ``B_1`` is -1/2).  The relation given above is for ``B_n^+``, so the
     sign of 0.5 does not match the output of ``bernoulli(4)``.
 
     """
     if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+        raise ValueError("n must be non-negative.")
     n = int(n)
-    if (n < 2):
-        n1 = 2
-    else:
-        n1 = n
-    return _specfun.bernob(int(n1))[:(n+1)]
+    len_bernoulli_even = len(_BERNOULLI_EVEN)
+    i = min(n // 2, len_bernoulli_even - 1)
+    res = np.zeros(n + 1)
+    res[:2*i + 1:2] = _BERNOULLI_EVEN[:i + 1]
+    if n > 0:
+        res[1] = -0.5
+    if n >= (twice_len_bernoulli_even := 2*len_bernoulli_even):
+        res[twice_len_bernoulli_even::4] = -np.inf
+        if n >= twice_len_bernoulli_even + 2:
+            res[twice_len_bernoulli_even + 2::4] = np.inf
+    return res
 
 
 def euler(n):
@@ -2666,8 +2971,12 @@ def comb(N, k, *, exact=False, repetition=False):
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
-            # _comb_int casts inputs to integers, which is safe & intended here
-            return _comb_int(N, k)
+            # cast inputs to integers, which is safe & intended here
+            N = int(N)
+            k = int(k)
+            if k > N or N < 0 or k < 0:
+                return 0
+            return math.comb(N, k)
         else:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
@@ -2938,7 +3247,7 @@ def _is_subdtype(dtype, dtypes):
 
     Also allows specifying a list instead of just a single dtype.
 
-    Additionaly, the most important supertypes from
+    Additionally, the most important supertypes from
         https://numpy.org/doc/stable/reference/arrays.scalars.html
     can optionally be specified using abbreviations as follows:
         "i": np.integer
@@ -3402,8 +3711,9 @@ def zeta(x, q=None, out=None):
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
-        then currently only real inputs `x` with ``x >= 1`` are supported,
-        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
+        then currently only real inputs `x` (complex dtypes are
+        allowed but `x` must have zero imaginary part) with ``x >= 1`` are supported,
+        except when ``q = 1.0`` (corresponding to the Riemann zeta function).
 
     out : ndarray, optional
         Output array for the computed values.
@@ -3471,6 +3781,7 @@ def zeta(x, q=None, out=None):
         return _ufuncs._zeta(x, q, out)
 
 
+@xp_capabilities()
 def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
@@ -3501,4 +3812,6 @@ def softplus(x, **kwargs):
     >>> special.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
-    return np.logaddexp(0, x, **kwargs)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    return xp.logaddexp(xp.asarray(0., dtype=x.dtype, device=xp_device(x)), x, **kwargs)

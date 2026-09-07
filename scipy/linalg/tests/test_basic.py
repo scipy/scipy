@@ -1265,6 +1265,42 @@ class TestSolve:
         with pytest.raises(LinAlgError):
             solve(A, b, assume_a="banded")
 
+    def test_sym_overwrite(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # the issue reported a segfault in `inv` due to a conspiracy between
+        # overwrite_a and try-except-Cholesky routine for a symmetric input;
+        # The same problem exists for solve---which we test for here.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+
+        soln = solve(a3, b3, overwrite_a=True)
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it complex symmetric
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_s = a3 + 1j*a3.T
+
+        soln = solve(a_s, b3, overwrite_a=True)
+        expected = np.asarray([[-1.5+1.5j,  1. -1.j , -0. +0.j ],
+                               [ 1. -1.j , -0.5+0.5j,  0. +0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  0.5-0.5j]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it hermitian
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_h = a3 + np.triu(a3)*1j - np.tril(a3)*1j
+
+        soln = solve(a_h, b3, overwrite_a=True)
+        expected = np.asarray([[-0.6-0.j ,  0.4+0.4j, -0. -0.j ],
+                               [ 0.4-0.4j, -0.2+0.j ,  0. -0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  1. +0.j ]])
+        assert_allclose(soln, expected, atol=1e-14)
+
 
 class TestSolveTriangular:
 
@@ -1519,7 +1555,7 @@ class TestInv:
         with assert_raises(LinAlgError):
             inv(np.ones((2, 2)))
 
-        # batched case: If all slices are singlar, raise
+        # batched case: If all slices are singular, raise
         with assert_raises(LinAlgError):
             inv(np.ones((3, 2, 2)))
 
@@ -1726,7 +1762,7 @@ class TestInv:
         y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
         assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
 
-        # repeat for the lower traingular matrix
+        # repeat for the lower triangular matrix
         y_inv_0_l = inv(np.tril(y))
         assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
 
@@ -1754,6 +1790,26 @@ class TestInv:
         a = np.asarray([[0, 0], [0, 1]])
         with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
+
+    def test_sym_overwrite_a(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # setting overwrite_a makes it work in-place; for symmetric inputs this
+        # conflicts with trying Cholesky first.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], order='F')
+        a3inv = inv(a3)
+
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # the same bug triggers with a float `a` and an explicit overwrite_a=True
+        a3inv = inv(a3.astype(float), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # for completeness, cover the complex input
+        a3inv = inv(a3.astype(complex), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
 
 
 class TestDet:

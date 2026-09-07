@@ -828,10 +828,10 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
         max_label = 0;
     if (max_label > 0) {
         if (PyArray_NDIM(input) > 0) {
-            regions = (npy_intp*)malloc(2 * max_label * PyArray_NDIM(input) *
+            regions = (npy_intp*)PyMem_RawMalloc(2 * max_label * PyArray_NDIM(input) *
                                         sizeof(npy_intp));
         } else {
-            regions = (npy_intp*)malloc(max_label * sizeof(npy_intp));
+            regions = (npy_intp*)PyMem_RawMalloc(max_label * sizeof(npy_intp));
         }
         if (!regions) {
             PyErr_NoMemory();
@@ -893,7 +893,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     Py_XDECREF(start);
     Py_XDECREF(end);
     Py_XDECREF(slc);
-    free(regions);
+    PyMem_RawFree(regions);
     if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -928,7 +928,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 }
 #define CASE_VALUEINDICES_MAKEHISTOGRAM(valType) {\
     numPossibleVals = (VALUEINDICES_MAXVAL(valType) - VALUEINDICES_MINVAL(valType) + 1); \
-    hist = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp)); \
+    hist = (npy_intp *)PyMem_RawCalloc(numPossibleVals, sizeof(npy_intp)); \
     if (hist != NULL) { \
         NI_InitPointIterator(arr, &ndiIter); \
         arrData = (char *)PyArray_DATA(arr); \
@@ -1032,8 +1032,8 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     if (hist != NULL) {
         /* Allocate local data structures to track where we are up to while
            assigning index values */
-        valCtr = (npy_intp *)calloc(numPossibleVals, sizeof(npy_intp));
-        ndxPtr = (PyObject **)calloc(numPossibleVals, sizeof(PyObject  *));
+        valCtr = (npy_intp *)PyMem_RawCalloc(numPossibleVals, sizeof(npy_intp));
+        ndxPtr = (PyObject **)PyMem_RawCalloc(numPossibleVals, sizeof(PyObject  *));
         if (valCtr == NULL)
             PyErr_SetString(PyExc_MemoryError, "Couldn't allocate valCtr");
         else if (ndxPtr == NULL)
@@ -1131,9 +1131,9 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
     }
 
     /* Clean up everything */
-    if (hist != NULL) free(hist);
-    if (valCtr != NULL) free(valCtr);
-    if (ndxPtr != NULL) free(ndxPtr);
+    if (hist != NULL) PyMem_RawFree(hist);
+    if (valCtr != NULL) PyMem_RawFree(valCtr);
+    if (ndxPtr != NULL) PyMem_RawFree(ndxPtr);
     Py_DECREF(minMaxArr);
 
     if (PyErr_Occurred()) {
@@ -1201,6 +1201,8 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_DistanceTransformOnePass(strct, distances, features);
+    PyArray_ResolveWritebackIfCopy(distances);
+    PyArray_ResolveWritebackIfCopy(features);
 
 exit:
     Py_XDECREF(strct);
@@ -1221,6 +1223,7 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
         goto exit;
 
     NI_EuclideanFeatureTransform(input, sampling, features);
+    PyArray_ResolveWritebackIfCopy(features);
 
 exit:
     Py_XDECREF(input);
@@ -1314,6 +1317,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     else {
         PyErr_SetString(PyExc_RuntimeError, "cannot convert CObject");
     }
+    PyArray_ResolveWritebackIfCopy(array);
 exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);

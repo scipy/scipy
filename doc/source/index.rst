@@ -2,7 +2,6 @@
 
 .. template taken from Pandas
 
-.. module:: scipy
 
 *******************
 SciPy documentation
@@ -102,7 +101,6 @@ science, and engineering.
             To the development guide
 
 .. toctree::
-   :maxdepth: 1
    :hidden:
 
    Installing <https://scipy.org/install/>

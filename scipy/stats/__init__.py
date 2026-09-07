@@ -539,6 +539,7 @@ Directional statistical functions
    circmean
    circvar
    circstd
+   circmedian
 
 Sensitivity Analysis
 --------------------
@@ -611,6 +612,7 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
+from ._circstats import *
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
@@ -629,13 +631,6 @@ from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
-
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
-)
-
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

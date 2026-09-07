@@ -56,11 +56,6 @@ scipy.ndimage:
   - any-glob-to-any-file:
     - scipy/ndimage/**
 
-scipy.odr:
-- changed-files:
-  - any-glob-to-any-file:
-    - scipy/odr/**
-
 scipy.optimize:
 - changed-files:
   - any-glob-to-any-file:

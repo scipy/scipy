@@ -110,8 +110,8 @@ class TestExpi:
             atol=0,
             rtol=1e-15
         )
-    
-    @pytest.mark.parametrize('x, expected', [(0, -np.inf), (np.inf, np.inf)]) 
+
+    @pytest.mark.parametrize('x, expected', [(0, -np.inf), (np.inf, np.inf)])
     def test_limits(self, x, expected):
         y = sc.expi(x)
         assert y == expected

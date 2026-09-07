@@ -2,8 +2,6 @@
 SciPy 1.18.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.18.0 is not released yet!
-
 .. contents::
 
 SciPy 1.18.0 is the culmination of 6 months of hard work. It contains
@@ -88,6 +86,8 @@ New features
   providing a substantial speedup for batched input.
 - The performance of `scipy.linalg.expm` has been improved.
 - The performance for `scipy.linalg.solve` has improved for batched inputs.
+- `scipy.linalg.bandwidth` now supports batching for greater than or equal to
+  2 dimensional input.
 
 
 ``scipy.optimize`` improvements
@@ -129,7 +129,8 @@ New features
 - Added ILP64 BLAS/LAPACK support to SuperLU and PROPACK extensions.
 - All sparse array/matrix formats now support ``matrix_transpose``/``.mT``.
 - Support for n-dimensional linear operators has been added to
-  `scipy.sparse.linalg.LinearOperator`.
+  `scipy.sparse.linalg.LinearOperator`, and ``LinearOperator`` now has
+  a new ``rdot`` method.
 - `scipy.sparse.linalg.minres` now supports complex hermitian matrices.
 
 
@@ -144,7 +145,7 @@ New features
 ==============================
 - 3D area calculations are now faster in `scipy.spatial.SphericalVoronoi`.
 - N-dimensional input is now supported for `scipy.spatial.distance.minkowski`,
-  `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.seuclidean`.
+  `scipy.spatial.distance.euclidean`, and `scipy.spatial.distance.sqeuclidean`.
 - It is now possible to return sparse arrays rather than matrices from
   ``KDTree.sparse_distance_matrix``.
 - It is now possible to compose ``Rotation`` and ``RigidTransform`` directly,
@@ -173,9 +174,20 @@ New features
 - Support for the ``nan_policy`` keyword argument has been added to:
   `scipy.stats.obrientransform`, `scipy.stats.boxcox`,
   `scipy.stats.boxcox_normmax`, `scipy.stats.yeojohnson`,
-  `scipy.stats.yeojohnson_normmax`, and `scipy.stats.sigmaclip`.
+  `scipy.stats.yeojohnson_normmax`, `scipy.stats.sigmaclip`, and
+  `scipy.stats.expectile`.
 - ``scipy.stats.ContinuousDistribution.lmoment`` has been added for computing
   population L-moments.
+- The new function `scipy.stats.estimated_cdf` has been added. It reproduces
+  much of the functionality of ``stats.mstats.plotting_positions``,
+  ``stats.percentileofscore``, ``stats.ecdf.cdf``, and ``stats.cumfreq``, but
+  is also vectorized.
+- `scipy.stats.ansari` accepts a new ``method`` argument.
+- `scipy.stats.bws_test`, `scipy.stats.expectile`, and
+  `scipy.stats.quantile_test` now accept an ``axis`` argument.
+- `scipy.stats.expectile` and `scipy.stats.quantile_test` accept a new
+  ``keepdims`` argument.
+- `scipy.stats.binomtest` now supports batching of ``k``, ``n``, and ``p``.
 
 
 *********************************
@@ -222,7 +234,7 @@ Deprecated features and future changes
   functionality was rarely used; the function computes the optimal size of the
   work arrays automatically, therefore users should simply remove their uses
   of the ``lwork`` parameter.
-- The sparse construction functions ``kron``, ``kronsum`` and ``build_diag``
+- The sparse construction functions ``kron``, ``kronsum`` and ``block_diag``
   choose return type ``sparray`` or ``spmatrix`` depending on the type of the
   sparse input arrays. When no inputs are sparse, the output is chosen to be
   ``spmatrix``. That has been deprecated. The return type when no inputs are
@@ -282,6 +294,15 @@ Backwards incompatible changes
   ``blocksize``) parameters were removed (expired deprecations).
 - The deprecated ``atol`` argument of `scipy.optimize.nnls` has been
   removed.
+- For 2D input, the return type of `scipy.linalg.bandwidth` has changed from
+  ``(int, int)`` to ``(np.int64, np.int64)``.
+- The second return type of `scipy.linalg.cho_factor` changed from ``bool``
+  to ``NDArray[np.bool]``.
+- The second return type of `scipy.interpolate.splint` changed from a 1D
+  ``float64`` array to ``None`` when ``full_output=True``.
+- The types of the ``k`` and ``n`` attributes of the ``BinomTestResult``
+  object returned by `scipy.stats.binomtest` have changed from ``int`` to
+  ``np.float64``.
 
 
 *************
@@ -298,12 +319,17 @@ Other changes
   interest. It provides an interface for 2-D smoothing B-spline fitting via
   separable 1-D FITPACK kernels. It is under consideraton for public exposure
   in some form in the future.
+- Previously, return values of `scipy.linalg.eig` were always Fortran-ordered, and in
+  SciPy 1.18.0 they may or may not be. If the ordering is important (for example,
+  when interfacing with compiled code which expects specific array strides), users
+  should ensure the desired ordering manually.
 
 
 *******
 Authors
 *******
 * Name (commits)
+* h-vetinari (1)
 * Joseph Adams (1) +
 * Adrián Raso González (1) +
 * Virgile Andreani (1)
@@ -313,14 +339,14 @@ Authors
 * Richie Bendall (1) +
 * J Berg (7) +
 * Florian Bourgey (50)
-* Jake Bowhay (98)
+* Jake Bowhay (99)
 * Jonathan Brodrick (1) +
 * Dietrich Brunn (36)
 * Evgeni Burovski (200)
 * Matthias Bussonnier (6)
 * CJ Carey (9)
 * Christine P. Chai (2)
-* Lucas Colley (89)
+* Lucas Colley (90)
 * Dan (3) +
 * devdanzin (2) +
 * Martin Diehl (4)
@@ -339,10 +365,10 @@ Authors
 * Christoph Gohlke (1)
 * Nathan Goldbaum (20)
 * Ludmila Golomozin (11) +
-* Ralf Gommers (172)
+* Ralf Gommers (173)
 * Mathieu Guay-Paquet (1) +
 * Matt Haberland (147)
-* Joren Hammudoglu (24)
+* Joren Hammudoglu (30)
 * Jacob Hass (4)
 * Maya Horii (1) +
 * Guido Imperiale (1)
@@ -366,15 +392,16 @@ Authors
 * Zhang Maiyun (1) +
 * Diego Medina Medina (1) +
 * Elle Musoke (11) +
-* Andrew Nelson (102)
-* Nick ODell (28)
+* Andrew Nelson (103)
+* Nick ODell (29)
 * Dimitri Papadopoulos Orfanos (1)
 * partev (1)
 * Matti Picus (7)
 * Ilhan Polat (190)
+* Pradyot Ranjan (2) +
 * Adrian Raso (3)
 * Aditya Rawat (1) +
-* Tyler Reddy (94)
+* Tyler Reddy (99)
 * Martin Reinecke (1)
 * Lucas Roberts (6)
 * Pamphile Roy (1)
@@ -391,10 +418,11 @@ Authors
 * Taylor (1) +
 * thecaptain789 (1) +
 * Adam Turner (1)
+* Jacob Vanderplas (1)
 * Christian Veenhuis (2)
 * Sebastiano Vigna (1)
 * Rivka Walles (14) +
-* Warren Weckesser (10)
+* Warren Weckesser (11)
 * Soeren Wolfers (1) +
 * wongaokay (1) +
 * Xuefeng Xu (1)
@@ -405,7 +433,7 @@ Authors
 * Simon Zwieback (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (19)
 
-    A total of 100 people contributed to this release.
+    A total of 103 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -521,11 +549,15 @@ Issues closed for 1.18.0
 * `#24943 <https://github.com/scipy/scipy/issues/24943>`__: CI: linalg: dev deps failing due to NumPy deprecation of generic...
 * `#25056 <https://github.com/scipy/scipy/issues/25056>`__: DOC: ``scipy.interpolate.interpn`` with method='linear' accepts...
 * `#25066 <https://github.com/scipy/scipy/issues/25066>`__: DOC: replace broken UiO spline notes references in ``scipy.interpolate``
+* `#25069 <https://github.com/scipy/scipy/issues/25069>`__: BUG: ``scipy.sparse.linalg.svds`` rng argument issue when using...
 * `#25076 <https://github.com/scipy/scipy/issues/25076>`__: BUG: ``cython_lapack`` signatures: ``bint`` variables become...
 * `#25086 <https://github.com/scipy/scipy/issues/25086>`__: BUG: optimize.direct: interpreter crash on empty Bounds
 * `#25106 <https://github.com/scipy/scipy/issues/25106>`__: BUG: ``nct.cdf`` return ``nan``
 * `#25133 <https://github.com/scipy/scipy/issues/25133>`__: BUG: signal savgol_filter fails for large >20000 window_length...
 * `#25162 <https://github.com/scipy/scipy/issues/25162>`__: MAINT, TST: a few test failures against NumPy ``2.4.5``
+* `#25180 <https://github.com/scipy/scipy/issues/25180>`__: CI: stats: ``test_continuous.py::TestDistributions::test_funcs``...
+* `#25374 <https://github.com/scipy/scipy/issues/25374>`__: TST, CI: errors with ``pytest`` ``9.1.0`` release
+* `#25409 <https://github.com/scipy/scipy/issues/25409>`__: MAINT: mypy failing in CI
 
 ************************
 Pull requests for 1.18.0
@@ -993,6 +1025,7 @@ Pull requests for 1.18.0
 * `#25109 <https://github.com/scipy/scipy/pull/25109>`__: DOC: sparse: add doc-string warnings to match kron/kronsum/block_diag...
 * `#25114 <https://github.com/scipy/scipy/pull/25114>`__: MAINT: special: Remove tabs from boost_special_functions.h
 * `#25119 <https://github.com/scipy/scipy/pull/25119>`__: MAINT/TST: sparse: Require 64 GiB for test_large_assignments()
+* `#25120 <https://github.com/scipy/scipy/pull/25120>`__: DOC: update SciPy 1.18.0 release notes
 * `#25121 <https://github.com/scipy/scipy/pull/25121>`__: DOC: fix typo of "firwin" in iirdesign
 * `#25127 <https://github.com/scipy/scipy/pull/25127>`__: BUG: special: fix subtle ufunc loop bug by updating xsf
 * `#25129 <https://github.com/scipy/scipy/pull/25129>`__: BUG: sparse: Add defensive checks to sparsetools
@@ -1019,3 +1052,22 @@ Pull requests for 1.18.0
 * `#25191 <https://github.com/scipy/scipy/pull/25191>`__: DOC: special: Improve documentation for ``boxcox`` functions
 * `#25193 <https://github.com/scipy/scipy/pull/25193>`__: DOC: stats: Note that halfgennorm is a special case of gengamma.
 * `#25194 <https://github.com/scipy/scipy/pull/25194>`__: interpolate: parametrize ``test_spline_large_2d*`` over ``spl_apis``\...
+* `#25197 <https://github.com/scipy/scipy/pull/25197>`__: MAINT: version pins/prep for 1.18.0rc1
+* `#25204 <https://github.com/scipy/scipy/pull/25204>`__: BUG: sparse.linalg.svds: fix ``random_state`` regression for...
+* `#25210 <https://github.com/scipy/scipy/pull/25210>`__: BUG: ``UnivariateDistribution`` mode calculation
+* `#25224 <https://github.com/scipy/scipy/pull/25224>`__: REL: set 1.18.0rc2 unreleased
+* `#25226 <https://github.com/scipy/scipy/pull/25226>`__: MAINT: ``_lib._util``\ : remove trivial ``np_[u]long`` aliases
+* `#25227 <https://github.com/scipy/scipy/pull/25227>`__: BUG: linalg.fiedler_companion: fix output shape for length-1...
+* `#25228 <https://github.com/scipy/scipy/pull/25228>`__: BUG: linalg: Fix return shape of fiedler([])
+* `#25231 <https://github.com/scipy/scipy/pull/25231>`__: MAINT: fix some minor tolerance violations
+* `#25233 <https://github.com/scipy/scipy/pull/25233>`__: TYP: remove orphaned ``linalg._matfuncs_expm`` stubs
+* `#25237 <https://github.com/scipy/scipy/pull/25237>`__: MAINT: ``stats._distn_infrastructure``\ : namespace pollution
+* `#25240 <https://github.com/scipy/scipy/pull/25240>`__: BUG: ``stats``\ : ``DunnettResult.__class_getitem__`` dataclass...
+* `#25243 <https://github.com/scipy/scipy/pull/25243>`__: BUG: ``stats``\ : fix new distribution ``lmoment`` method signatures
+* `#25275 <https://github.com/scipy/scipy/pull/25275>`__: BUG: interpolate: fix missing DECREF in curfit and percur
+* `#25281 <https://github.com/scipy/scipy/pull/25281>`__: BUG: cluster.vq: fix calling deprecated ``py_vq``
+* `#25297 <https://github.com/scipy/scipy/pull/25297>`__: MAINT: backports/preparation for SciPy ``1.18.0rc2``
+* `#25347 <https://github.com/scipy/scipy/pull/25347>`__: REL: set version to ``1.18.0rc3`` unreleased
+* `#25376 <https://github.com/scipy/scipy/pull/25376>`__: TST, MAINT: modernize spatial tests for pytest 10
+* `#25378 <https://github.com/scipy/scipy/pull/25378>`__: MAINT: Bump ``pytest`` to v9.1.0
+* `#25410 <https://github.com/scipy/scipy/pull/25410>`__: TYP: Fix mypy errors with ``pytest==9.1.0``

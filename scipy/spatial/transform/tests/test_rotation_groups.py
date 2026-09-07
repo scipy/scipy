@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 
 
 TOL = 1E-12
-NS = range(1, 13)
+NS = list(range(1, 13))
 NAMES = ["I", "O", "T"] + [f"C{n}" for n in NS] + [f"D{n}" for n in NS]
 SIZES = [60, 24, 12] + list(NS) + [2 * n for n in NS]
 
@@ -131,19 +131,19 @@ def test_cyclic(n, axis):
         assert _calculate_rmsd(P, g.apply(P)) < TOL
 
 
-@pytest.mark.parametrize("name, size", zip(NAMES, SIZES))
+@pytest.mark.parametrize("name, size", list(zip(NAMES, SIZES)))
 def test_group_sizes(name, size):
     assert len(Rotation.create_group(name)) == size
 
 
-@pytest.mark.parametrize("name, size", zip(NAMES, SIZES))
+@pytest.mark.parametrize("name, size", list(zip(NAMES, SIZES)))
 def test_group_no_duplicates(name, size):
     g = Rotation.create_group(name)
     kdtree = cKDTree(g.as_quat())
     assert len(kdtree.query_pairs(1E-3)) == 0
 
 
-@pytest.mark.parametrize("name, size", zip(NAMES, SIZES))
+@pytest.mark.parametrize("name, size", list(zip(NAMES, SIZES)))
 def test_group_symmetry(name, size):
     g = Rotation.create_group(name)
     q = np.concatenate((-g.as_quat(), g.as_quat()))

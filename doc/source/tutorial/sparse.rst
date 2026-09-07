@@ -23,8 +23,8 @@ Sparse arrays are a special kind of array where only a few locations in the arra
    >>> sparse = sp.sparse.coo_array(dense)
    >>> dense
    array([[1, 0, 0, 2],
-       [0, 4, 1, 0],
-       [0, 0, 5, 0]])
+          [0, 4, 1, 0],
+          [0, 0, 5, 0]])
    >>> sparse
    <COOrdinate sparse array of dtype 'int64'
         with 5 stored elements and shape (3, 4)>
@@ -99,8 +99,8 @@ All formats of `scipy.sparse` arrays can be constructed directly from a `numpy.n
 
    >>> dense
    array([[1, 0, 0, 2],
-       [0, 4, 1, 0],
-       [0, 0, 5, 0]])
+          [0, 4, 1, 0],
+          [0, 0, 5, 0]])
 
 The ``row``, ``column``, and ``data`` arrays describe the rows, columns, and values where our sparse array has entries: 
 
@@ -139,12 +139,12 @@ The "extra" element is our *explicit zero*. The two are still identical when con
 
    >>> csr.todense()
    array([[1, 0, 0, 2],
-       [0, 4, 1, 0],
-       [0, 0, 5, 0]])
+          [0, 4, 1, 0],
+          [0, 0, 5, 0]])
    >>> dense
    array([[1, 0, 0, 2],
-       [0, 4, 1, 0],
-       [0, 0, 5, 0]])
+          [0, 4, 1, 0],
+          [0, 0, 5, 0]])
 
 But, for sparse arithmetic, linear algebra, and graph methods, the value at ``2,3`` will be considered an *explicit zero*. To remove this explicit zero, we can use the ``csr.eliminate_zeros()`` method. This operates on the sparse array *in place*, and removes any zero-value stored elements: 
 
@@ -175,8 +175,8 @@ Note that there are six stored elements in this sparse array, despite only havin
 
    >>> dupes.todense()
    array([[1, 0, 0, 2],
-         [0, 4, 1, 0],
-         [0, 0, 5, 0]])
+          [0, 4, 1, 0],
+          [0, 0, 5, 0]])
 
 To remove duplicate values within the sparse array itself and thus reduce the number of stored elements, we can use the ``.sum_duplicates()`` method:
 

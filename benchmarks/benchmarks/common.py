@@ -421,6 +421,24 @@ def get_mem_info():
     }
 
 
+def require_memory(nbytes, headroom=1.2):
+    """Skip rather than get OOM-killed on machines that can't fit the benchmark.
+
+    Pass the benchmark's own measured peak as `nbytes`; the headroom covers asv's
+    own processes, which share the same cgroup as the benchmark on CI.
+    """
+    try:
+        available = get_mem_info()["memavailable"]
+    except Exception:
+        # without psutil we can't tell; run it rather than skipping everywhere
+        return
+    needed = nbytes * headroom
+    if needed > available:
+        raise NotImplementedError(
+            f"needs ~{needed / 1e9:.1f} GB, only {available / 1e9:.1f} GB available"
+        )
+
+
 def set_mem_rlimit(max_mem=None):
     """
     Set address space rlimit

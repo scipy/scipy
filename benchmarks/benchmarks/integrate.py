@@ -24,7 +24,7 @@ if exc.error:
 with safe_import() as exc:
     import cffi
 if exc.error:
-    cffi = None  # noqa: F811
+    cffi = None
 
 with safe_import():
     from scipy.integrate import solve_bvp

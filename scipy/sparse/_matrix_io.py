@@ -66,7 +66,9 @@ def save_npz(file, matrix, compressed=True):
         else:
             arrays_dict.update(coords=matrix.coords)
     else:
-        msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
+        msg = (f'Save is not implemented for sparse matrix of format {matrix.format}; '
+               'convert to a supported format with e.g. .tocsr() or '
+               '.tocoo() before saving.')
         raise NotImplementedError(msg)
     arrays_dict.update(
         format=matrix.format.encode('ascii'),
@@ -130,10 +132,10 @@ def load_npz(file):
            [4, 0, 0]], dtype=int64)
 
     In this example we force the result to be csr_array from csr_matrix
-    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
-    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
-    >>> tmp = sp.sparse.load_npz('/tmp/sparse_matrix.npz')
-    >>> sparse_array = sp.sparse.csr_array(tmp)
+    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])  # doctest: +SKIP
+    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)  # doctest: +SKIP
+    >>> tmp = sp.sparse.load_npz('/tmp/sparse_matrix.npz')  # doctest: +SKIP
+    >>> sparse_array = sp.sparse.csr_array(tmp)  # doctest: +SKIP
     """
     with np.load(file, **PICKLE_KWARGS) as loaded:
         sparse_format = loaded.get('format')

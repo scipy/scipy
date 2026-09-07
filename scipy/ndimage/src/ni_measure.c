@@ -231,7 +231,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     size = PyArray_SIZE(input);
     /* Storage for the temporary queue data. */
-    temp = malloc(size * sizeof(NI_WatershedElement));
+    temp = PyMem_RawMalloc(size * sizeof(NI_WatershedElement));
     if (!temp) {
         PyErr_NoMemory();
         goto exit;
@@ -262,8 +262,8 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     pi = (void *)PyArray_DATA(input);
     /* Allocate and initialize the storage for the queue. */
-    first = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
-    last = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
+    first = PyMem_RawMalloc((maxval + 1) * sizeof(NI_WatershedElement*));
+    last = PyMem_RawMalloc((maxval + 1) * sizeof(NI_WatershedElement*));
     if (NPY_UNLIKELY(!first || !last)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -366,7 +366,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for (kk = 0; kk < ssize; kk++)
         if (ps[kk] && kk != (ssize / 2))
             ++nneigh;
-    nstrides = malloc(nneigh * sizeof(npy_intp));
+    nstrides = PyMem_RawMalloc(nneigh * sizeof(npy_intp));
     if (NPY_UNLIKELY(!nstrides)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -612,9 +612,9 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
  exit:
     NPY_END_THREADS;
-    free(temp);
-    free(first);
-    free(last);
-    free(nstrides);
+    PyMem_RawFree(temp);
+    PyMem_RawFree(first);
+    PyMem_RawFree(last);
+    PyMem_RawFree(nstrides);
     return PyErr_Occurred() ? 0 : 1;
 }
