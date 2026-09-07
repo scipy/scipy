@@ -11,8 +11,10 @@
 //
 // Memory footprint per kernel invocation is O(W) (not O(N + W)): the heaps
 // and per-slot index maps are W-sized circular structures keyed by
-// window-slot in [0, W), and the boundary-extended signal is read on the
-// fly rather than materialised.
+// window-slot in [0, W). Interior incoming samples are signal[i + Z]
+// (same split as _rank_filter_1d); only the right-hand pad is read through
+// the mode-aware helper. `changed` may be NULL when the caller does not
+// need replaced-index output.
 
 #include "Python.h"
 #include "numpy/arrayobject.h"
@@ -119,22 +121,25 @@ static inline T read_padded(const T *signal, npy_intp N, npy_intp j, int Z,
     }
 }
 
-// Indexed binary heap with O(log W) eager deletion and O(log W) in-place
-// update by external window-slot id in [0, W).
-template <typename T>
+// Indexed binary heap with O(log W) in-place update by external
+// window-slot id in [0, W), and O(log W) root transfer.
+template <typename T, bool IsMax>
 class IndexedHeap {
 public:
     struct Node { T value; int slot; };
 
     std::vector<Node> heap;
     std::vector<int>& pos_map;   // pos_map[slot] = heap index, or -1
-    bool is_max_heap;
 
-    IndexedHeap(std::vector<int>& p_map, bool max_h)
-        : pos_map(p_map), is_max_heap(max_h) {}
+    IndexedHeap(std::vector<int>& p_map, int capacity)
+        : pos_map(p_map) { heap.reserve(capacity); }
 
     inline bool compare(T a, T b) const {
-        return is_max_heap ? (a > b) : (a < b);
+        if constexpr (IsMax) {
+            return a > b;
+        } else {
+            return a < b;
+        }
     }
 
     inline void swap_nodes(int i, int j) {
@@ -180,24 +185,6 @@ public:
         shift_up(idx);
     }
 
-    void erase(int slot) {
-        int idx = pos_map[slot];
-        if (idx < 0) return;
-        int n = (int)heap.size();
-        if (idx == n - 1) {
-            heap.pop_back();
-            pos_map[slot] = -1;
-            return;
-        }
-        swap_nodes(idx, n - 1);
-        heap.pop_back();
-        pos_map[slot] = -1;
-        if (idx < (int)heap.size()) {
-            shift_up(idx);
-            shift_down(idx);
-        }
-    }
-
     // Overwrite the value held at `slot` and re-establish heap order. The
     // caller guarantees `slot` is currently in this heap. The value moves
     // either up or down (not both): if the new value is "better" for this
@@ -216,10 +203,31 @@ public:
 
     inline T peek() const {
         if (!heap.empty()) return heap[0].value;
-        return is_max_heap ? Sentinel<T>::neg() : Sentinel<T>::pos();
+        if constexpr (IsMax) {
+            return Sentinel<T>::neg();
+        } else {
+            return Sentinel<T>::pos();
+        }
     }
 
     inline int size() const { return (int)heap.size(); }
+
+    // Remove and return the root. Used when transferring one element
+    // across the dual-heap boundary.
+    Node pop_root() {
+        Node node = heap[0];
+        int n = (int)heap.size();
+        if (n == 1) {
+            heap.pop_back();
+            pos_map[node.slot] = -1;
+            return node;
+        }
+        swap_nodes(0, n - 1);
+        heap.pop_back();
+        pos_map[node.slot] = -1;
+        shift_down(0);
+        return node;
+    }
 };
 
 // Tracks the kth-smallest value of a sliding W-element multiset using two
@@ -230,13 +238,13 @@ class RankTracker {
 public:
     std::vector<int> pos_max;   // sized W
     std::vector<int> pos_min;   // sized W
-    IndexedHeap<T> max_heap;
-    IndexedHeap<T> min_heap;
+    IndexedHeap<T, true> max_heap;
+    IndexedHeap<T, false> min_heap;
     int target_k;
 
     RankTracker(int W, int target_k_init)
         : pos_max(W, -1), pos_min(W, -1),
-          max_heap(pos_max, true), min_heap(pos_min, false),
+          max_heap(pos_max, W), min_heap(pos_min, W),
           target_k(target_k_init) {}
 
     void insert(T val, int slot) {
@@ -272,13 +280,11 @@ public:
 
     void balance() {
         while (max_heap.size() > target_k && max_heap.size() > 0) {
-            auto node = max_heap.heap[0];
-            max_heap.erase(node.slot);
+            auto node = max_heap.pop_root();
             min_heap.push(node.value, node.slot);
         }
         while (max_heap.size() < target_k && min_heap.size() > 0) {
-            auto node = min_heap.heap[0];
-            min_heap.erase(node.slot);
+            auto node = min_heap.pop_root();
             max_heap.push(node.value, node.slot);
         }
     }
@@ -308,11 +314,11 @@ private:
 // Core Hampel kernel. Returns 0 on success, -1 on memory failure.
 //
 // For every position i in [0, N) the local median M = median_in[i] is
-// already known. We slide a window of width W centred on i (over the
-// boundary-extended signal, read on the fly) and use the equilibrium loop
-// to extract MAD(i) in O(log W). If |signal[i] - M| > threshold * MAD(i)
-// the sample is flagged as an outlier and replaced by M in `filtered`;
-// otherwise the original value is kept.
+// already known. We slide a window of width W centred on i and use the
+// equilibrium loop to extract MAD(i) in O(log W). If
+// |signal[i] - M| > threshold * MAD(i) the sample is flagged as an
+// outlier and replaced by M in `filtered`; otherwise the original value
+// is kept.
 template <typename T>
 int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                double threshold, int mode, T cval,
@@ -326,7 +332,7 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
     if (W <= 1 || N == 0) {
         for (npy_intp i = 0; i < N; ++i) {
             filtered[i] = signal[i];
-            changed[i] = 0;
+            if (changed) changed[i] = 0;
         }
         return 0;
     }
@@ -351,19 +357,13 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
         const double D_NEG_INF = -std::numeric_limits<double>::infinity();
         const double D_POS_INF =  std::numeric_limits<double>::infinity();
 
-        // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
-        // Per slide (i >= 1) one value is replaced in-place at slot
-        // ((i - 1) % W) == ((i + W - 1) % W): padded[i-1] leaves,
-        // padded[i+W-1] enters.
-        for (npy_intp i = 0; i < N; ++i) {
-            if (i > 0) {
-                int slot = (int)((i - 1) % W);
-                T new_val = read_padded(signal, N, i + W - 1, Z, mode, cval);
-                upper_tracker.replace(slot, new_val);
-                lower_tracker.replace(slot, new_val);
-            }
-
+        // Compute MAD at position i from the current window and write
+        // filtered[i]. `changed` may be NULL when the caller does not
+        // need replaced-index output; if non-NULL it is assumed already
+        // zeroed, so we only write ones.
+        auto emit = [&](npy_intp i) {
             T M = median_in[i];
+            double A_km1 = 0.0, B_km1 = 0.0;
 
             // Re-balance k_U / k_L until the (k_U)th value above M and the
             // (k_L)th value below M jointly bracket the same rank distance.
@@ -375,9 +375,9 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 T X_lower_k = lower_tracker.get_kplus1_value();
                 T X_lower_prev = lower_tracker.get_kth_value();
 
-                double A_km1 = (k_U > 0) ? signed_dist(X_upper_k, M) : D_NEG_INF;
+                A_km1 = (k_U > 0) ? signed_dist(X_upper_k, M) : D_NEG_INF;
                 double A_k   = ((M_rank + k_U) < W) ? signed_dist(X_upper_next, M) : D_POS_INF;
-                double B_km1 = (k_L > 0) ? signed_dist(M, X_lower_k) : D_NEG_INF;
+                B_km1 = (k_L > 0) ? signed_dist(M, X_lower_k) : D_NEG_INF;
                 double B_k   = ((M_rank - k_L - 1) > 0) ? signed_dist(M, X_lower_prev) : D_POS_INF;
 
                 if (k_U > 0 && A_km1 > B_k) {
@@ -395,20 +395,39 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
                 }
             }
 
-            double cand_A = (k_U > 0) ? signed_dist(upper_tracker.get_kth_value(), M) : 0.0;
-            double cand_B = (k_L > 0) ? signed_dist(M, lower_tracker.get_kplus1_value()) : 0.0;
-            double mad = std::max({cand_A, cand_B, 0.0});
-
-            double abs_dev = abs_diff(signal[i], M);
+            double mad = std::max({k_U > 0 ? A_km1 : 0.0,
+                                   k_L > 0 ? B_km1 : 0.0,
+                                   0.0});
             // All operands are double, avoiding int64 overflow on
             // threshold * mad and giving a dtype-agnostic comparison.
-            if (abs_dev > threshold * mad) {
+            if (abs_diff(signal[i], M) > threshold * mad) {
                 filtered[i] = M;
-                changed[i] = 1;
+                if (changed) changed[i] = 1;
             } else {
                 filtered[i] = signal[i];
-                changed[i] = 0;
             }
+        };
+
+        // Window i covers padded[i .. i+W-1]; its centre maps to signal[i].
+        // Per slide one value is replaced in-place at a wrapping slot:
+        // padded[i-1] leaves, padded[i+W-1] enters. Incoming samples in
+        // the interior are just signal[i+Z], matching _rank_filter_1d.
+        emit(0);
+        int slot = 0;
+        auto slide = [&](T new_val) {
+            upper_tracker.replace(slot, new_val);
+            lower_tracker.replace(slot, new_val);
+            if (++slot == W) slot = 0;
+        };
+        npy_intp i = 1;
+        const npy_intp interior_end = N - Z;
+        for (; i < interior_end; ++i) {
+            slide(signal[i + Z]);
+            emit(i);
+        }
+        for (; i < N; ++i) {
+            slide(read_padded(signal, N, i + W - 1, Z, mode, cval));
+            emit(i);
         }
     } catch (std::bad_alloc&) {
         return -1;
@@ -421,7 +440,9 @@ int _hampel_1d(const T *signal, const T *median_in, npy_intp N, int win_len,
 //            filtered_out, changed_out)
 // - signal, median, filtered_out: same length, same dtype
 //   (float32 / float64 / int64).
-// - changed_out: bool array, same length.
+// - changed_out: bool array of the same length, or None if the caller
+//   does not need replaced-index output. If an array is passed it must
+//   already be zero-filled; this function only writes ones.
 static PyObject *hampel(PyObject *self, PyObject *args)
 {
     PyObject *sig_obj, *med_obj, *cval_obj, *out_obj, *chg_obj;
@@ -435,46 +456,44 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyArrayObject *signal = (PyArrayObject *)PyArray_FROM_OTF(
+    PyArrayObject *signal = NULL;
+    PyArrayObject *median = NULL;
+    PyArrayObject *filt = NULL;
+    PyArrayObject *chg = NULL;
+    npy_bool *c_chg = NULL;
+
+    signal = (PyArrayObject *)PyArray_FROM_OTF(
         sig_obj, NPY_NOTYPE, NPY_ARRAY_IN_ARRAY);
     if (signal == NULL) return NULL;
-    PyArrayObject *median = (PyArrayObject *)PyArray_FROM_OTF(
+    median = (PyArrayObject *)PyArray_FROM_OTF(
         med_obj, NPY_NOTYPE, NPY_ARRAY_IN_ARRAY);
-    if (median == NULL) { Py_DECREF(signal); return NULL; }
-    PyArrayObject *filt = (PyArrayObject *)PyArray_FROM_OTF(
+    if (median == NULL) goto error;
+    filt = (PyArrayObject *)PyArray_FROM_OTF(
         out_obj, NPY_NOTYPE, NPY_ARRAY_INOUT_ARRAY2);
-    if (filt == NULL) { Py_DECREF(signal); Py_DECREF(median); return NULL; }
-    PyArrayObject *chg = (PyArrayObject *)PyArray_FROM_OTF(
-        chg_obj, NPY_BOOL, NPY_ARRAY_INOUT_ARRAY2);
-    if (chg == NULL) {
-        Py_DECREF(signal); Py_DECREF(median); Py_DECREF(filt);
-        return NULL;
+    if (filt == NULL) goto error;
+    if (chg_obj != Py_None) {
+        chg = (PyArrayObject *)PyArray_FROM_OTF(
+            chg_obj, NPY_BOOL, NPY_ARRAY_INOUT_ARRAY2);
+        if (chg == NULL) goto error;
+        c_chg = (npy_bool *)PyArray_DATA(chg);
     }
 
     if (PyArray_TYPE(signal) != PyArray_TYPE(median) ||
         PyArray_TYPE(signal) != PyArray_TYPE(filt)) {
-        PyArray_DiscardWritebackIfCopy(filt);
-        PyArray_DiscardWritebackIfCopy(chg);
-        Py_DECREF(signal); Py_DECREF(median);
-        Py_DECREF(filt); Py_DECREF(chg);
         PyErr_SetString(PyExc_TypeError,
                         "signal, median and filtered arrays must share dtype");
-        return NULL;
+        goto error;
     }
 
+    {
     npy_intp N = PyArray_SIZE(signal);
     if (PyArray_SIZE(median) != N || PyArray_SIZE(filt) != N ||
-        PyArray_SIZE(chg) != N) {
-        PyArray_DiscardWritebackIfCopy(filt);
-        PyArray_DiscardWritebackIfCopy(chg);
-        Py_DECREF(signal); Py_DECREF(median);
-        Py_DECREF(filt); Py_DECREF(chg);
+        (chg != NULL && PyArray_SIZE(chg) != N)) {
         PyErr_SetString(PyExc_ValueError,
                         "input arrays must all have the same size");
-        return NULL;
+        goto error;
     }
     int type = PyArray_TYPE(signal);
-    npy_bool *c_chg = (npy_bool *)PyArray_DATA(chg);
 
     switch (type) {
     case NPY_FLOAT: {
@@ -482,13 +501,7 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         float *m = (float *)PyArray_DATA(median);
         float *f = (float *)PyArray_DATA(filt);
         double cval_d = PyFloat_AsDouble(cval_obj);
-        if (cval_d == -1.0 && PyErr_Occurred()) {
-            PyArray_DiscardWritebackIfCopy(filt);
-            PyArray_DiscardWritebackIfCopy(chg);
-            Py_DECREF(signal); Py_DECREF(median);
-            Py_DECREF(filt); Py_DECREF(chg);
-            return NULL;
-        }
+        if (cval_d == -1.0 && PyErr_Occurred()) goto error;
         float cval = (float)cval_d;
         Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<float>(s, m, N, win_len, threshold,
@@ -501,13 +514,7 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         double *m = (double *)PyArray_DATA(median);
         double *f = (double *)PyArray_DATA(filt);
         double cval = PyFloat_AsDouble(cval_obj);
-        if (cval == -1.0 && PyErr_Occurred()) {
-            PyArray_DiscardWritebackIfCopy(filt);
-            PyArray_DiscardWritebackIfCopy(chg);
-            Py_DECREF(signal); Py_DECREF(median);
-            Py_DECREF(filt); Py_DECREF(chg);
-            return NULL;
-        }
+        if (cval == -1.0 && PyErr_Occurred()) goto error;
         Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<double>(s, m, N, win_len, threshold,
                                     mode, cval, f, c_chg);
@@ -519,13 +526,7 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         npy_int64 *m = (npy_int64 *)PyArray_DATA(median);
         npy_int64 *f = (npy_int64 *)PyArray_DATA(filt);
         npy_int64 cval = (npy_int64)PyLong_AsLongLong(cval_obj);
-        if (cval == -1 && PyErr_Occurred()) {
-            PyArray_DiscardWritebackIfCopy(filt);
-            PyArray_DiscardWritebackIfCopy(chg);
-            Py_DECREF(signal); Py_DECREF(median);
-            Py_DECREF(filt); Py_DECREF(chg);
-            return NULL;
-        }
+        if (cval == -1 && PyErr_Occurred()) goto error;
         Py_BEGIN_ALLOW_THREADS
         status = _hampel_1d<npy_int64>(s, m, N, win_len, threshold,
                                        mode, cval, f, c_chg);
@@ -536,7 +537,8 @@ static PyObject *hampel(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError,
                         "hampel filter only supports float32, float64, "
                         "and int64");
-        break;
+        goto error;
+    }
     }
 
     if (status == -1 && !PyErr_Occurred()) {
@@ -544,17 +546,30 @@ static PyObject *hampel(PyObject *self, PyObject *args)
                         "failed to allocate memory for hampel filter");
     }
 
-    if (PyErr_Occurred()) {
-        PyArray_DiscardWritebackIfCopy(filt);
-        PyArray_DiscardWritebackIfCopy(chg);
-    } else {
-        PyArray_ResolveWritebackIfCopy(filt);
+    if (PyErr_Occurred()) goto error;
+
+    PyArray_ResolveWritebackIfCopy(filt);
+    Py_DECREF(filt);
+    if (chg) {
         PyArray_ResolveWritebackIfCopy(chg);
+        Py_DECREF(chg);
     }
-    Py_DECREF(signal); Py_DECREF(median);
-    Py_DECREF(filt); Py_DECREF(chg);
-    if (PyErr_Occurred()) return NULL;
+    Py_DECREF(signal);
+    Py_DECREF(median);
     Py_RETURN_NONE;
+
+error:
+    if (filt) {
+        PyArray_DiscardWritebackIfCopy(filt);
+        Py_DECREF(filt);
+    }
+    if (chg) {
+        PyArray_DiscardWritebackIfCopy(chg);
+        Py_DECREF(chg);
+    }
+    Py_XDECREF(signal);
+    Py_XDECREF(median);
+    return NULL;
 }
 
 static PyMethodDef hampel_methods[] = {

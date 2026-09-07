@@ -2247,6 +2247,10 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
 
     Notes
     -----
+    The sliding-window outlier-detection form implemented here follows
+    Liu, Shah and Jiang [1]_; generalizations to other location and
+    scale estimators are discussed by Pearson et al. [2]_.
+
     NaN and Inf values in ``input`` produce undefined results.  Both the
     underlying `median_filter` and the MAD computation use heap-based
     comparisons where IEEE NaN has no well-defined ordering, so the
@@ -2255,15 +2259,11 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
 
     References
     ----------
-    .. [1] F. R. Hampel, "The influence curve and its role in robust
-       estimation," *Journal of the American Statistical Association*,
-       vol. 69, no. 346, pp. 383-393, 1974.
-       :doi:`10.1080/01621459.1974.10482962`
-    .. [2] H. Liu, S. Shah and W. Jiang, "On-line outlier detection and
+    .. [1] H. Liu, S. Shah and W. Jiang, "On-line outlier detection and
        data cleaning," *Computers & Chemical Engineering*, vol. 28,
        no. 9, pp. 1635-1647, 2004.
        :doi:`10.1016/j.compchemeng.2004.01.009`
-    .. [3] R. K. Pearson, Y. Neuvo, J. Astola and M. Gabbouj,
+    .. [2] R. K. Pearson, Y. Neuvo, J. Astola and M. Gabbouj,
        "Generalized Hampel Filters," *EURASIP Journal on Advances in
        Signal Processing*, 2016:87, 2016.
        :doi:`10.1186/s13634-016-0383-6`
@@ -2310,15 +2310,22 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
         kernel_dtype = in_dtype
     elif in_dtype == np.float16:
         kernel_dtype = np.dtype(np.float32)
-    elif np.result_type(in_dtype, np.int64) == np.int64:
-        kernel_dtype = np.dtype(np.int64)
     elif in_dtype.kind in 'biu':
-        # any remaining bool / integer / unsigned type
         kernel_dtype = np.dtype(np.int64)
     else:
         raise RuntimeError('Unsupported array type')
 
     x = np.ascontiguousarray(input_arr, dtype=kernel_dtype)
+
+    def pack(filtered, median=None, indices=None):
+        if not return_median and not return_indices:
+            return filtered
+        result = [filtered]
+        if return_median:
+            result.append(median)
+        if return_indices:
+            result.append(indices)
+        return tuple(result)
 
     # Degenerate inputs: no filtering possible. Warn and pass the signal
     # through unchanged (with the same return-tuple shape the caller asked
@@ -2341,22 +2348,15 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
         )
         filtered = np.empty(x.shape, dtype=in_dtype)
         np.copyto(filtered, x, casting='unsafe')
-        median = filtered.copy()
-        changed_mask = np.zeros(x.shape, dtype=bool)
-        if not return_median and not return_indices:
-            return filtered
-        result = [filtered]
-        if return_median:
-            result.append(median)
-        if return_indices:
-            result.append(np.flatnonzero(changed_mask))
-        return tuple(result)
+        median = filtered.copy() if return_median else None
+        indices = np.empty(0, dtype=np.intp) if return_indices else None
+        return pack(filtered, median, indices)
 
     median = median_filter(x, size=size, mode=mode, cval=cval)
     median = np.ascontiguousarray(median, dtype=x.dtype)
 
     kernel_out = np.empty_like(x)
-    changed_mask = np.zeros(x.shape, dtype=bool)
+    changed_mask = np.zeros(x.shape, dtype=bool) if return_indices else None
     mode_code = _ni_support._extend_mode_to_code(mode, is_filter=True)
     cval_cast = x.dtype.type(cval)
     _hampel_1d.hampel(x, median, int(size), float(threshold),
@@ -2367,18 +2367,13 @@ def hampel_filter(input, size, threshold=3.0, mode="reflect", cval=0.0,
     else:
         filtered = np.empty(x.shape, dtype=in_dtype)
         np.copyto(filtered, kernel_out, casting='unsafe')
-        median_out = np.empty(x.shape, dtype=in_dtype)
-        np.copyto(median_out, median, casting='unsafe')
-        median = median_out
+        if return_median:
+            median_out = np.empty(x.shape, dtype=in_dtype)
+            np.copyto(median_out, median, casting='unsafe')
+            median = median_out
 
-    if not return_median and not return_indices:
-        return filtered
-    result = [filtered]
-    if return_median:
-        result.append(median)
-    if return_indices:
-        result.append(np.flatnonzero(changed_mask))
-    return tuple(result)
+    indices = np.flatnonzero(changed_mask) if return_indices else None
+    return pack(filtered, median, indices)
 
 
 @_ni_docstrings.docfiller
