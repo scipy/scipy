@@ -6320,8 +6320,22 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     except ValueError as e:
         raise ValueError("`popmean.shape[axis]` must equal 1.") from e
     d = mean - popmean
-    v = _var(a, axis=axis, ddof=1)
-    denom = xp.sqrt(v / n)
+    # Rescale the deviations from the mean to O(1) before forming the variance.
+    # Computing it from the raw data squares the scale of the sample, which can
+    # underflow to zero or overflow to infinity for data that is merely very
+    # small or very large, sending `t` to infinity or zero even though the
+    # standard error and `t` are both representable. See gh-26113.
+    # `_demean` keeps the catastrophic cancellation warning of gh-15905, which
+    # is about the original data and would not fire on the rescaled deviations.
+    dev = _demean(a, xp.mean(a, axis=axis, keepdims=True), axis, xp=xp)
+    scale = xp.max(xp.abs(dev), axis=axis, keepdims=True)
+    # A constant sample (`scale == 0`) or a non-finite one leaves the deviations
+    # unscaled, so those cases behave exactly as before.
+    scale = xp.where((scale > 0) & xp.isfinite(scale), scale, xp.ones_like(scale))
+    # The deviations are already centered, so pass a zero center rather than
+    # letting `_var` demean them a second time.
+    v = _var(dev / scale, axis=axis, ddof=1, mean=xp.zeros_like(scale))
+    denom = xp.squeeze(scale, axis=axis) * xp.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = xp.divide(d, denom)

@@ -4052,6 +4052,29 @@ class TestTTest_1samp:
         xp_assert_close(t, xp.asarray(self.T1_2))
         xp_assert_close(p, xp.asarray(self.P1_2))
 
+    @pytest.mark.parametrize("k", [-600, 0, 600])
+    @pytest.mark.parametrize(
+        "sample, t_ref, p_ref",
+        [([1., 2.], 3., 0.20483276469913345),
+         ([2., 3., 4.], 3. * np.sqrt(3.), 0.03509871864598465)],
+    )
+    def test_onesample_scale_invariance(self, sample, t_ref, p_ref, k, xp):
+        # gh-26113: forming the variance from the raw data squares the scale of
+        # the sample, so an exact power-of-two rescaling that leaves the
+        # t-statistic representable could still underflow or overflow the
+        # intermediate, returning t=inf/p=0 or t=0/p=1.
+        scale = 2. ** k
+        x = xp.asarray([value * scale for value in sample])
+
+        res = stats.ttest_1samp(x, 0.)
+        xp_assert_close(res.statistic, xp.asarray(t_ref))
+        xp_assert_close(res.pvalue, xp.asarray(p_ref))
+
+        # ttest_rel defers to ttest_1samp on the paired difference
+        res_rel = stats.ttest_rel(x, xp.zeros_like(x))
+        xp_assert_close(res_rel.statistic, xp.asarray(t_ref))
+        xp_assert_close(res_rel.pvalue, xp.asarray(p_ref))
+
     def test_onesample_nan_policy_propagate(self, xp):
         x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
