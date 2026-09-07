@@ -377,6 +377,9 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
 # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
 @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                            'RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
@@ -414,6 +417,9 @@ if SCIPY_XSLOW:
     @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
     # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                                'RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)

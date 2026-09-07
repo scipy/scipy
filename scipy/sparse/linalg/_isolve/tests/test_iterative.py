@@ -563,7 +563,9 @@ def test_maxiter_worsening(solver, xp):
                   [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
     v = np.ones(4)
     dtype = xpx.default_dtype(xp)
-    A, v = (xp.asarray(arr, dtype=dtype) for arr in [A, v])
+    complex_dtype = xp.complex128 if dtype == xp.float64 else xp.complex64
+    A = xp.asarray(A, dtype=complex_dtype)
+    v = xp.asarray(v, dtype=dtype)
     best_error = np.inf
 
     # Unable to match the Fortran code tolerance levels with this example
