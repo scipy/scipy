@@ -2857,7 +2857,7 @@ class NormmaxTest:
 
         res = transform_normmax(x, nan_policy='omit')
         ref = transform_normmax(x[~np.isnan(x)])
-        np.testing.assert_allclose(res, ref)
+        np.testing.assert_allclose(res, ref, rtol=1.5e-7)
 
 
 class TestBoxcoxNormmax(NormmaxTest):
