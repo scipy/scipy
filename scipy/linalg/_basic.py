@@ -1685,7 +1685,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     maxS = np.max(np.abs(s), initial=0., axis=-1, keepdims=True)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+    rtol = max(a.shape[-2:]) * np.finfo(t).eps if (rtol is None) else rtol
 
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
