@@ -1314,3 +1314,33 @@ def test_initial_maxstep():
                                             method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+
+def test_lsoda_min_step_honored():
+    # Regression test for gh-25827: LSODA silently ignored min_step because
+    # the local hmin variable was never written to S->hmin in lsoda.c.
+    # When min_step is large enough, LSODA must return status=-1 (step size
+    # too small) after far fewer function evaluations than the unconstrained run.
+    nfe = [0]
+
+    def f(t, y):
+        nfe[0] += 1
+        return -0.5 * y
+
+    # Unconstrained baseline
+    nfe[0] = 0
+    sol0 = solve_ivp(f, [1, 8], [1.0], t_eval=np.linspace(1, 8, 10),
+                     method="LSODA", rtol=1e-7, atol=1e-9)
+    nfe_unconstrained = nfe[0]
+    assert sol0.success
+
+    # With a large min_step the solver must hit the step-too-small condition
+    nfe[0] = 0
+    sol1 = solve_ivp(f, [1, 8], [1.0], t_eval=np.linspace(1, 8, 10),
+                     method="LSODA", rtol=1e-7, atol=1e-9,
+                     min_step=5, max_step=np.inf)
+    # Before the fix min_step was ignored and nfe matched the unconstrained run.
+    assert not sol1.success, "LSODA should fail when min_step forces too-large steps"
+    assert nfe[0] < nfe_unconstrained, (
+        f"min_step ignored: used {nfe[0]} evals, same as unconstrained ({nfe_unconstrained})"
+    )
