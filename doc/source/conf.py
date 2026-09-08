@@ -186,6 +186,11 @@ warnings.filterwarnings(
     message=r'.*py:obj reference target not found: scipy.misc.*',
     category=Warning,
 )
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*`scipy.stats.mstats` is deprecated.*',
+    category=DeprecationWarning,
+)
 
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
