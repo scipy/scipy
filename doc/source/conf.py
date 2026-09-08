@@ -307,6 +307,8 @@ autosummary_generate = True
 autosummary_filename_map = {
     "scipy.signal.czt": "czt-function",
     "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
+    "scipy.stats.logistic": "scipy.stats.logistic.lower",
+    "scipy.stats.uniform": "scipy.stats.uniform.lower",
 }
 
 
