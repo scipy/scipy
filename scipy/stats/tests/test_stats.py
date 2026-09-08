@@ -4077,6 +4077,50 @@ class TestTTest_1samp:
         with pytest.raises(ValueError, match="nan_policy must be one of"):
             stats.ttest_1samp(x, 5.0, nan_policy='foobar')
 
+    @skip_xp_backends('jax.numpy', reason='needs stdtrit')
+    @pytest.mark.parametrize('dtype, exponent', [
+        ('float64', -600), ('float64', 0), ('float64', 600),
+        ('float32', -80), ('float32', 0), ('float32', 80),
+    ])
+    def test_scale_invariance(self, xp, dtype, exponent):
+        rtol = 5e-14 if dtype == 'float64' else 5e-6
+        dtype = getattr(xp, dtype)
+        cases = [
+            ([1, 2], 3., 0.20483276469913345, 0.5),
+            ([2, 3, 4], 3*np.sqrt(3), 1 - np.sqrt(27/29), 1/np.sqrt(3)),
+        ]
+
+        for a, statistic, pvalue, standard_error in cases:
+            a = xp.asarray(a, dtype=dtype)
+            ref = stats.ttest_1samp(a, 0.)
+            xp_assert_close(ref.statistic, xp.asarray(statistic, dtype=dtype),
+                            rtol=rtol)
+            xp_assert_close(ref.pvalue, xp.asarray(pvalue, dtype=dtype), rtol=rtol)
+            ref_ci = ref.confidence_interval()
+
+            scale = xp.asarray(2.**exponent, dtype=dtype)
+            res = stats.ttest_1samp(scale * a, 0.)
+            xp_assert_close(res.statistic, xp.asarray(statistic, dtype=dtype),
+                            rtol=rtol)
+            xp_assert_close(res.pvalue, xp.asarray(pvalue, dtype=dtype), rtol=rtol)
+            xp_assert_close(res._standard_error,
+                            xp.asarray(standard_error, dtype=dtype) * scale,
+                            rtol=rtol, atol=0)
+            ci = res.confidence_interval()
+            xp_assert_close(ci.low, ref_ci.low * scale, rtol=rtol, atol=0)
+            xp_assert_close(ci.high, ref_ci.high * scale, rtol=rtol, atol=0)
+
+        a = xp.asarray([[1, 2], [2, 3]], dtype=dtype)
+        popmean = xp.asarray([[0.5], [1.5]], dtype=dtype)
+        # Opposite scales in the same array require a separate scale per slice.
+        scales = xp.asarray([[2.**exponent], [2.**-exponent]], dtype=dtype)
+        a, popmean = scales * a, scales * popmean
+        for axis in (1, 0):
+            res = stats.ttest_1samp(a, popmean, axis=axis)
+            xp_assert_close(res.statistic, xp.full(2, 2., dtype=dtype), rtol=rtol)
+            xp_assert_close(res.pvalue,
+                            xp.full(2, 0.2951672353008665, dtype=dtype), rtol=rtol)
+            a, popmean = xp.permute_dims(a, (1, 0)), xp.permute_dims(popmean, (1, 0))
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered in divide")
     def test_1samp_alternative(self, xp):
@@ -5310,6 +5354,40 @@ class TestTTestRel:
         message = "nan_policy must be one of"
         with pytest.raises(ValueError, match=message):
             stats.ttest_rel(x, y, nan_policy='foobar')
+
+    @skip_xp_backends('jax.numpy', reason='needs stdtrit')
+    @pytest.mark.parametrize('dtype, exponent', [
+        ('float64', -600), ('float64', 0), ('float64', 600),
+        ('float32', -80), ('float32', 0), ('float32', 80),
+    ])
+    def test_scale_invariance(self, xp, dtype, exponent):
+        cases = [
+            ([1, 2], 3., 0.20483276469913345, 0.5),
+            ([2, 3, 4], 3*np.sqrt(3), 1 - np.sqrt(27/29), 1/np.sqrt(3)),
+        ]
+        rtol = 5e-14 if dtype == 'float64' else 5e-6
+        dtype = getattr(xp, dtype)
+
+        for a, statistic, pvalue, standard_error in cases:
+            a = xp.asarray(a, dtype=dtype)
+            b = xp.zeros(a.shape, dtype=dtype)
+            ref = stats.ttest_rel(a, b)
+            xp_assert_close(ref.statistic, xp.asarray(statistic, dtype=dtype),
+                            rtol=rtol)
+            xp_assert_close(ref.pvalue, xp.asarray(pvalue, dtype=dtype), rtol=rtol)
+            ref_ci = ref.confidence_interval()
+
+            scale = xp.asarray(2.**exponent, dtype=dtype)
+            res = stats.ttest_rel(scale * a, scale * b)
+            xp_assert_close(res.statistic, xp.asarray(statistic, dtype=dtype),
+                            rtol=rtol)
+            xp_assert_close(res.pvalue, xp.asarray(pvalue, dtype=dtype), rtol=rtol)
+            xp_assert_close(res._standard_error,
+                            xp.asarray(standard_error, dtype=dtype) * scale,
+                            rtol=rtol, atol=0)
+            ci = res.confidence_interval()
+            xp_assert_close(ci.low, ref_ci.low * scale, rtol=rtol, atol=0)
+            xp_assert_close(ci.high, ref_ci.high * scale, rtol=rtol, atol=0)
 
     def test_edge_cases(self, xp):
         # test zero division problem
