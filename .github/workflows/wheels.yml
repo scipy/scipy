@@ -7,10 +7,7 @@
 # at tools/wheels/
 
 # The aim is to keep the workflow as close as possible to that of
-# scipy/scipy-release. This is why scipy-release is checked out.
-# The versions of all build dependencies are pinned by the uv.lock
-# file in scipy-release. If this workflow starts failing then inspect
-# scipy-release, the lock file probably needs updating.
+# scipy/scipy-release.
 name: Wheel builder
 
 
@@ -43,6 +40,9 @@ jobs:
 
   build_wheels:
     name: BLD > ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}-${{ matrix.buildplat[3] }}
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
     runs-on: ${{ matrix.buildplat[0] }}
     if: (github.repository == 'scipy/scipy' || github.repository == '')
     strategy:
