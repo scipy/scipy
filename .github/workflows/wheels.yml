@@ -68,10 +68,10 @@ jobs:
         python: ["cp312"]
 
     steps:
-      - name: checkout scipy
+      - name: Checkout scipy
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          submodules: recursive
+          submodules: true
           persist-credentials: false
 
       # the version of python we'll run cibuildwheel with
@@ -122,7 +122,7 @@ jobs:
         run: |
           if [[ "${BLAS_VARIANT}" == "accelerate" ]]; then
             echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
-          
+
             # Builds with Accelerate only target macOS>=14.0
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
           else
