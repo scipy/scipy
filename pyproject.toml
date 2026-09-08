@@ -271,6 +271,7 @@ PKG_CONFIG_PATH="/project/.openblas"
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
 [tool.cibuildwheel.pyodide]
+build-frontend = { name = "pyodide-build" }
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
 test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
