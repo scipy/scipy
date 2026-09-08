@@ -6363,7 +6363,7 @@ const char *dawsn_doc = R"(
     >>> x = np.linspace(-15, 15, num=1000)
     >>> plt.plot(x, dawsn(x))
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$dawsn(x)$')
+    >>> plt.ylabel('$F(x)$')
     >>> plt.show()
     )";
 
