@@ -383,33 +383,32 @@ py3.install_sources(
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [fs.copyfile('__init__.py')]
 
-cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
-if cy.version().version_compare('>=3.1.0')
-  cython_args += ['-Xfreethreading_compatible=True']
-
-  cython_shared_src = custom_target(
-    install: false,
-    output: '_cyutility.c',
-    command: [
-      cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
-      '--generate-shared=' + meson.current_build_dir()/'_cyutility.c'
-    ],
-  )
-
-  cython_shared_module = py3.extension_module('_cyutility',
-    cython_shared_src,
-    subdir: 'scipy',
-    cython_args: cython_args,
-    link_args: version_link_args,
-    install: true,
-    install_tag: 'python-runtime',
-  )
-
-  cython_args += ['--shared=scipy._cyutility']
-else
-  cython_shared_module = []
-endif
+cython_args = [
+  '-3', '--fast-fail',
+  '-Xfreethreading_compatible=True',
+  '--shared=scipy._cyutility',
+  '--output-file', '@OUTPUT@',
+  '--include-dir', '@BUILD_ROOT@', '@INPUT@'
+]
 cython_cplus_args = ['--cplus'] + cython_args
+
+cython_shared_src = custom_target(
+  install: false,
+  output: '_cyutility.c',
+  command: [
+    cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
+    '--working', '@OUTDIR@', '--generate-shared=_cyutility.c'
+  ],
+)
+
+cython_shared_module = py3.extension_module('_cyutility',
+  cython_shared_src,
+  subdir: 'scipy',
+  cython_args: cython_args,
+  link_args: version_link_args,
+  install: true,
+  install_tag: 'python-runtime',
+)
 
 cython_gen = generator(cython,
   arguments : cython_args,
