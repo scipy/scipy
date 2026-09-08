@@ -134,6 +134,22 @@ class TestSolveLyapunov:
         assert res.shape == (0, 0)
         assert res.dtype == ref.dtype
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                        np.complex64, np.complex128])
+    @pytest.mark.parametrize("method", [None, 'direct', 'bilinear'])
+    def test_solve_discrete_lyapunov_dtype_preservation(self, dtype, method):
+        # gh-25964: solve_discrete_lyapunov upcasts float32/complex64 to float64
+        rng = np.random.default_rng(12345)
+        a = rng.random((4, 4)).astype(dtype)
+        q = rng.random((4, 4)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.random((4, 4)).astype(dtype)
+            q = q + 1j * rng.random((4, 4)).astype(dtype)
+        # Make a stable (spectral radius < 1)
+        a /= np.linalg.norm(a, ord=2) * 1.1
+        x = solve_discrete_lyapunov(a, q, method=method)
+        assert x.dtype == dtype, f"Expected {dtype}, got {x.dtype}"
+
 
 class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')

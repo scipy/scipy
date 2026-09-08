@@ -101,6 +101,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     else:
         A = np.asarray(A)
         E = np.asarray(E)
+    out_dtype = np.result_type(A.dtype, E.dtype)
     if A.ndim != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be a square matrix')
     if E.ndim != 2 or E.shape[0] != E.shape[1]:
@@ -116,9 +117,9 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     else:
         raise ValueError(f'Unknown implementation {method}')
     if compute_expm:
-        return expm_A, expm_frechet_AE
+        return expm_A.astype(out_dtype, copy=False), expm_frechet_AE.astype(out_dtype, copy=False)
     else:
-        return expm_frechet_AE
+        return expm_frechet_AE.astype(out_dtype, copy=False)
 
 
 def expm_frechet_block_enlarge(A, E):

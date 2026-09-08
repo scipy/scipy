@@ -1809,6 +1809,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     """
 
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
+    out_dtype = np.result_type(A.dtype)
 
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
@@ -1855,13 +1856,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
             perm[[x, ind]] = perm[[ind, x]]
 
     if separate:
-        return B, (scaling, perm)
+        return B, (scaling.astype(out_dtype, copy=False), perm)
 
     # get the inverse permutation
     iperm = np.empty_like(perm)
     iperm[perm] = np.arange(n)
 
-    return B, np.diag(scaling)[iperm, :]
+    return B, np.diag(scaling.astype(out_dtype, copy=False))[iperm, :]
 
 
 def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,

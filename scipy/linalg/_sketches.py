@@ -185,15 +185,16 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
         message = "Batch support for sparse arrays is not available."
         raise NotImplementedError(message)
 
+    out_dtype = np.result_type(input_matrix.dtype)
     S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
     if input_matrix.ndim <= 2:
         # transposes are cheap and ensure output class matches input_matrix
-        return (input_matrix.T @ S.T).T
-
-    # Despite argument order (required by decorator), this is  S @ input_matrix
-    # Can avoid _clarkson_woodruff_transform when gh-22153 is resolved.
-    return (S @ input_matrix if input_matrix.ndim <= 2
-            else _clarkson_woodruff_transform(input_matrix, S))
+        result = (input_matrix.T @ S.T).T
+    else:
+        # Despite argument order (required by decorator), this is  S @ input_matrix
+        # Can avoid _clarkson_woodruff_transform when gh-22153 is resolved.
+        result = _clarkson_woodruff_transform(input_matrix, S)
+    return result.astype(out_dtype, copy=False)
 
 
 def _cwt_signature(_, S):

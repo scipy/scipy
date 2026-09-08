@@ -3006,6 +3006,16 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_dtype_preservation(self, dtype):
+        # gh-25964: matrix_balance should preserve float32 input dtype
+        A = np.array([[1000., 1.], [1000., 0.]], dtype=dtype)
+        B, T = matrix_balance(A)
+        assert B.dtype == dtype, f"B: expected {dtype}, got {B.dtype}"
+        assert T.dtype == dtype, f"T: expected {dtype}, got {T.dtype}"
+        _, (scale, perm) = matrix_balance(A, separate=True)
+        assert scale.dtype == dtype, f"scale: expected {dtype}, got {scale.dtype}"
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:

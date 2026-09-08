@@ -781,6 +781,17 @@ class TestFractionalMatrixPower:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                        np.complex64, np.complex128])
+    def test_dtype_preservation(self, dtype):
+        # gh-25964: fractional_matrix_power upcasts float32/complex64 to float64
+        rng = np.random.default_rng(42)
+        A = (rng.random((3, 3)) + 0.5 * np.eye(3)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            A = A + 1j * rng.random((3, 3)).astype(dtype)
+        result = fractional_matrix_power(A, 0.5)
+        assert result.dtype == dtype, f"Expected {dtype}, got {result.dtype}"
+
 
 class TestExpM:
     def test_zero(self):
@@ -996,6 +1007,21 @@ class TestExpmFrechet:
                 A, E, method='blockEnlarge')
         assert_allclose(sps_expm, blockEnlarge_expm)
         assert_allclose(sps_frechet, blockEnlarge_frechet)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                        np.complex64, np.complex128])
+    @pytest.mark.parametrize("method", [None, 'SPS', 'blockEnlarge'])
+    def test_dtype_preservation(self, dtype, method):
+        # gh-25964: expm_frechet upcasts float32/complex64 to float64
+        rng = np.random.default_rng(99)
+        A = rng.random((3, 3)).astype(dtype)
+        E = rng.random((3, 3)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            A = A + 1j * rng.random((3, 3)).astype(dtype)
+            E = E + 1j * rng.random((3, 3)).astype(dtype)
+        expm_A, expm_AE = expm_frechet(A, E, method=method)
+        assert expm_A.dtype == dtype, f"expm_A: expected {dtype}, got {expm_A.dtype}"
+        assert expm_AE.dtype == dtype, f"expm_AE: expected {dtype}, got {expm_AE.dtype}"
 
 
 def _help_expm_cond_search(A, A_norm, X, X_norm, eps, p):

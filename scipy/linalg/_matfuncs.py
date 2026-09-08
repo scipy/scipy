@@ -139,8 +139,10 @@ def fractional_matrix_power(A, t):
     # This fixes some issue with imports;
     # this function calls onenormest which is in scipy.sparse.
     A = _asarray_square(A)
+    out_dtype = np.result_type(A.dtype)
     import scipy.linalg._matfuncs_inv_ssq
-    return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
+    result = scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
+    return result.astype(out_dtype, copy=False)
 
 
 @_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')

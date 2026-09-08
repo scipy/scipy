@@ -320,6 +320,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     """
     a = np.asarray(a)
     q = np.asarray(q)
+    out_dtype = np.result_type(a.dtype, q.dtype)
     if method is None:
         # Select automatically based on size of matrices
         if a.shape[0] >= 10:
@@ -336,7 +337,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     else:
         raise ValueError(f'Unknown solver {method}')
 
-    return x
+    return x.astype(out_dtype, copy=False)
 
 
 def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):

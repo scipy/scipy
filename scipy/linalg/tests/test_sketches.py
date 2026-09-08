@@ -110,3 +110,17 @@ class TestClarksonWoodruffTransform:
             if np.abs(true_norm - sketch_norm) > 0.5 * true_norm:
                 n_errors += 1
         assert_(n_errors == 0)
+
+
+import pytest
+
+
+class TestClarksonWoodruffTransformDtype:
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_dtype_preservation(self, dtype):
+        # gh-25964: clarkson_woodruff_transform upcasts float32 to float64
+        # because the sketch matrix S uses int64 internally.
+        rng = np.random.default_rng(7)
+        A = rng.random((100, 20)).astype(dtype)
+        sketch = clarkson_woodruff_transform(A, 30, rng=rng)
+        assert sketch.dtype == dtype, f"Expected {dtype}, got {sketch.dtype}"
