@@ -41,10 +41,10 @@ jobs:
   build_wheels:
     name: BLD > ${{ matrix.python }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}-${{ matrix.buildplat[3] }}
     needs: get_commit_message
+    runs-on: ${{ matrix.buildplat[0] }}
     if: >
       needs.get_commit_message.outputs.message == 1
-    runs-on: ${{ matrix.buildplat[0] }}
-    if: (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     strategy:
       # Ensure that a wheel builder finishes even if another fails
       fail-fast: false
@@ -97,6 +97,7 @@ jobs:
 
       - name: Setup windows
         if: matrix.buildplat[1] == 'win'
+        shell: pwsh
         run: |
           echo "CC=clang-cl" >> $env:GITHUB_ENV
           echo "CXX=clang-cl" >> $env:GITHUB_ENV
@@ -126,8 +127,7 @@ jobs:
             # Builds with Accelerate only target macOS>=14.0
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
           else
-            CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas \
-              MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}""
+            CIBW_ENV="CIBW_ENVIRONMENT_MACOS=PKG_CONFIG_PATH=$PWD/.openblas MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
           fi
           echo "$CIBW_ENV" >> "$GITHUB_ENV"
 
