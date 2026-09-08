@@ -1170,7 +1170,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
         fill_value = (0 if (zero_size_fill is not None
-                            and xp.isnan(xp.asarray(zero_size_fill))
+                            and math.isnan(zero_size_fill)
                             and xp.isdtype(output_dtype, ('integral', 'bool')))
                       else zero_size_fill)
         results.append(xp.full(batch_shape + out_core_shape, fill_value=fill_value,
