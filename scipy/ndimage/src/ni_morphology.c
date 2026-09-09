@@ -647,7 +647,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     case NI_DISTANCE_EUCLIDIAN:
         for(jj = 0; jj < size; jj++) {
             if (*(npy_int8*)pi > 0) {
-                double distance = DBL_MAX;
+                double distance = INFINITY;
                 temp = border_elements;
                 while(temp) {
                     double d = 0.0, t;
