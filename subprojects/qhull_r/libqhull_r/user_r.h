@@ -103,15 +103,15 @@ Code flags --
     set the size of floating point numbers
 
   qh_REALdigits
-    maximimum number of significant digits
+    maximum number of significant digits
 
   qh_REAL_1, qh_REAL_2n, qh_REAL_3n
     format strings for printf
 
-  qh_REALmax, qh_REALmin
+  REALmax, REALmin
     maximum and minimum (near zero) values
 
-  qh_REALepsilon
+  REALepsilon
     machine roundoff.  Maximum roundoff error for addition and multiplication.
 
   notes:
@@ -333,7 +333,7 @@ typedef int countT;
   qh_RANDOMdist
     define for random perturbation of qh_distplane and qh_setfacetplane (qh.RANDOMdist, 'QRn')
 
-  For testing qh.DISTround.  Qhull should not depend on computations always producing the same roundoff error 
+  For testing qh.DISTround.  Qhull should not depend on computations always producing the same roundoff error
 
   #define qh_RANDOMdist 1e-13
 */
@@ -596,7 +596,7 @@ try twice at the original value in case of bad luck the first time
     For MSVC compiles, use qhull_r-exports-nomerge.def instead of qhull_r-exports.def
 
   notes:
-    This saves about 25% space, 30% space in combination with qh_NOtrace, 
+    This saves about 25% space, 30% space in combination with qh_NOtrace,
     and 36% with qh_NOtrace and qh_KEEPstatistics 0
 
     Unless option 'Q0' is used
