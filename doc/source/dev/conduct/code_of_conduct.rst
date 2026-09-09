@@ -118,14 +118,11 @@ scipy-conduct@googlegroups.com. Currently, the committee consists of:
 - Nathaniel J. Smith
 - Ralf Gommers
 
-If your report involves any members of the committee, or if they feel they have
-a conflict of interest in handling it, then they will recuse themselves from
-considering your report. Alternatively, if, for any reason, you feel
-uncomfortable making a report to the committee, then you can also contact:
-
-- Chair of the SciPy Steering Committee: Ralf Gommers, or
-- Senior `NumFOCUS staff <https://numfocus.org/code-of-conduct#persons-responsible>`__: conduct@numfocus.org
-
+If your report involves any members of the committee, or if they feel they
+have a conflict of interest in handling it, then they will recuse themselves
+from considering your report. Alternatively, if, for any reason, you feel
+uncomfortable making a report to the committee, then you can also contact the
+chair of the SciPy Steering Committee: Ralf Gommers.
 
 Incident reporting resolution & Code of Conduct enforcement
 -----------------------------------------------------------
