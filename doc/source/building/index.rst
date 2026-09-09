@@ -434,7 +434,6 @@ Background information
 
    understanding_meson
    introspecting_a_build
-   distutils_equivalents
 
 
 .. _Miniforge: https://github.com/conda-forge/miniforge#miniforge

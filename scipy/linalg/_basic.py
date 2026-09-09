@@ -1469,7 +1469,7 @@ lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
 def _pinv_signature(*args, **kwargs):
-    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
+    return "(i,j)->(i,j),int()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
 
 
 @_apply_over_batch(('a', 2), signature=_pinv_signature)
@@ -1611,7 +1611,6 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1623,7 +1622,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     Parameters
     ----------
-    a : (N, N) array_like
+    a : (..., N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
 
     atol : float, optional
@@ -1649,7 +1648,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     Returns
     -------
-    B : (N, N) ndarray
+    B : (..., N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix.  Returned if `return_rank` is True.
@@ -1683,10 +1682,10 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = _decomp.eigh(a, lower=lower, check_finite=False, driver='ev')
     t = u.dtype.char.lower()
-    maxS = np.max(np.abs(s), initial=0.)
+    maxS = np.max(np.abs(s), initial=0., axis=-1, keepdims=True)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+    rtol = max(a.shape[-2:]) * np.finfo(t).eps if (rtol is None) else rtol
 
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
@@ -1694,19 +1693,19 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     val = atol + maxS * rtol
     above_cutoff = (abs(s) > val)
 
-    psigma_diag = 1.0 / s[above_cutoff]
-    u = u[:, above_cutoff]
-
-    B = (u * psigma_diag) @ u.conj().T
+    psigma_diag = np.zeros_like(s)
+    np.divide(1.0, s, where=above_cutoff, out=psigma_diag)
+    B = (u * psigma_diag[..., None, :]) @ u.conj().mT
 
     if return_rank:
-        return B, len(psigma_diag)
+        return B, np.count_nonzero(above_cutoff, axis=-1)
     else:
         return B
 
 
 def _matrix_balance_signature(*args, **kwargs):
-    return "(i,i)->(i,i),(2,i)" if kwargs.get('separate') else "(i,i)->(i,i)"
+    return ("(i,i)->(i,i),(2,i)" if kwargs.get('separate')
+            else "(i,i)->(i,i),(i,i)")
 
 
 @_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
@@ -1769,10 +1768,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     LAPACK routines.
 
     The algorithm is based on the well-known technique of [1]_ and has
-    been modified to account for special cases. See [2]_ for details
-    which have been implemented since LAPACK v3.5.0. Before this version
-    there are corner cases where balancing can actually worsen the
-    conditioning. See [3]_ for such examples.
+    been modified to account for special cases. See [2]_ and [3]_
+    for details.
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.

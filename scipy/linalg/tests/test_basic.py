@@ -1265,6 +1265,42 @@ class TestSolve:
         with pytest.raises(LinAlgError):
             solve(A, b, assume_a="banded")
 
+    def test_sym_overwrite(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # the issue reported a segfault in `inv` due to a conspiracy between
+        # overwrite_a and try-except-Cholesky routine for a symmetric input;
+        # The same problem exists for solve---which we test for here.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+
+        soln = solve(a3, b3, overwrite_a=True)
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it complex symmetric
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_s = a3 + 1j*a3.T
+
+        soln = solve(a_s, b3, overwrite_a=True)
+        expected = np.asarray([[-1.5+1.5j,  1. -1.j , -0. +0.j ],
+                               [ 1. -1.j , -0.5+0.5j,  0. +0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  0.5-0.5j]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it hermitian
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_h = a3 + np.triu(a3)*1j - np.tril(a3)*1j
+
+        soln = solve(a_h, b3, overwrite_a=True)
+        expected = np.asarray([[-0.6-0.j ,  0.4+0.4j, -0. -0.j ],
+                               [ 0.4-0.4j, -0.2+0.j ,  0. -0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  1. +0.j ]])
+        assert_allclose(soln, expected, atol=1e-14)
+
 
 class TestSolveTriangular:
 
@@ -1754,6 +1790,26 @@ class TestInv:
         a = np.asarray([[0, 0], [0, 1]])
         with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
+
+    def test_sym_overwrite_a(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # setting overwrite_a makes it work in-place; for symmetric inputs this
+        # conflicts with trying Cholesky first.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], order='F')
+        a3inv = inv(a3)
+
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # the same bug triggers with a float `a` and an explicit overwrite_a=True
+        a3inv = inv(a3.astype(float), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # for completeness, cover the complex input
+        a3inv = inv(a3.astype(complex), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
 
 
 class TestDet:
@@ -2555,6 +2611,9 @@ class TestPinvSymmetric:
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+        aa = np.stack([a, 2*a])
+        assert_equal(pinv(aa), np.stack([pinv(aa[0]), pinv(aa[1])]))
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -2596,6 +2655,26 @@ class TestPinvSymmetric:
         # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
+
+    def test_rank(self):
+        a = np.diag([0, 1, 2])
+        a_p, rank = pinvh(a, return_rank=True)
+        assert rank == 2
+        assert_allclose(
+            a_p,
+            np.asarray([[0. , 0. , 0. ],
+                        [0. , 1. , 0. ],
+                        [0. , 0. , 0.5]]),
+            atol=1e-15
+        )
+
+        aa = np.stack([a, 2*a, np.diag([1, 2, 3])])
+        _, rank = pinvh(aa, return_rank=True)
+        assert_equal(rank, np.asarray([2, 2, 3]))
+
+        aaa = np.stack([aa, aa])
+        _, rank = pinvh(aaa, return_rank=True)
+        assert_equal(rank, np.asarray([[2, 2, 3], [2, 2, 3]]))
 
     @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
     def test_empty(self, dt):

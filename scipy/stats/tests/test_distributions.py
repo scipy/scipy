@@ -460,6 +460,17 @@ class TestBinom:
         res = stats.binom.pmf(3, 2000, 0.999)
         assert_allclose(res, 0, atol=1e-16)
 
+    def test_gh22622(self):
+        # check that gh-22622 is resolved:
+        # for extreme values of n and p the survival and inverse survival
+        # functions most pass a roundtrip test
+        k = 16
+        n = 10000
+        p = 4e-5
+        sf_res = stats.binom.sf(k, n, p)
+        isf_res = stats.binom.isf(sf_res, n, p)
+        assert_allclose(isf_res, k, rtol=1e-15)
+
 
 class TestArcsine:
 
@@ -3467,6 +3478,11 @@ class TestInvgauss:
         assert_allclose(dist.sf(x), dist0.sf(x))
         assert_allclose(dist.ppf(p), dist0.ppf(p))
         assert_allclose(dist.isf(p), dist0.isf(p))
+
+    def test_gh25096(self):
+        # Regression test for gh-25096: invgauss.ppf should not raise a warning
+        # for the given inputs
+        stats.invgauss.ppf(0.97969, 66.99652081)
 
 
 class TestLandau:

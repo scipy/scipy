@@ -508,7 +508,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
      work  (dimsize+1)*6
 
   */
-  tempstor = (double *)malloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
+  tempstor = (double *)PyMem_RawMalloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
   if (tempstor == NULL) return -2;
 
   des = tempstor; grid = des + wrksize+1;
@@ -549,7 +549,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 	    wt[j] = wate(temp,fx,wtx,lband,jtype);
 	    if (++j > wrksize) {
                 /* too many points, or too dense grid */
-                free(tempstor);
+                PyMem_RawFree(tempstor);
                 return -1;
             }
 	    grid[j] = temp + delf;
@@ -574,7 +574,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     if (ngrid < nfcns + 1) {
 	*ngrid_out = ngrid;
 	*nfcns_out = nfcns;
-	free(tempstor);
+	PyMem_RawFree(tempstor);
 	return -3;
     }
 
@@ -617,7 +617,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 
     if (remez(&dev, des, grid, edge, wt, ngrid, numbands, iext, alpha, nfcns,
               maxiter, work, dimsize, niter_out) < 0) {
-        free(tempstor);
+        PyMem_RawFree(tempstor);
         return -1;
     }
 
@@ -665,7 +665,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     }
     if (neg == 1 && nodd == 1) h[nz] = 0.0;
 
-  free(tempstor);
+  PyMem_RawFree(tempstor);
   return 0;
 
 }
@@ -745,7 +745,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
         if (afill == NULL) goto fail;
     }
 
-    aout_dimens = (npy_intp *)malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    aout_dimens = (npy_intp *)PyMem_RawMalloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
     if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
@@ -796,7 +796,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
 
     switch (ret) {
     case 0:
-      free(aout_dimens);
+      PyMem_RawFree(aout_dimens);
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
@@ -821,7 +821,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
     }
 
 fail:
-    free(aout_dimens);
+    PyMem_RawFree(aout_dimens);
     Py_XDECREF(ain1);
     Py_XDECREF(ain2);
     Py_XDECREF(aout);

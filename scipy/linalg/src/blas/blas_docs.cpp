@@ -721,19 +721,27 @@ namespace blas {
         static std::string doc_geru(const char *name, const Dtype &t) { return doc_ger_family(name, t, "outer(x, y)"); }
         static std::string doc_gerc(const char *name, const Dtype &t) { return doc_ger_family(name, t, "outer(x, conj(y))"); }
 
-        /* Triangular matrix-vector product (trmv) or solve (trsv). */
+        /* Triangular matrix-vector product (trmv) or solve (trsv).
+         *
+         * The two do not share an argument order: the `.pyf` declared `trmv` as
+         * `(n,a,x,offx,incx,...)` and `trsv` as `(n,a,lda,x,incx,offx,...)`, so `trmv` alone
+         * takes `offx` first.  Every other triangular routine here follows `trsv`.  That is
+         * part of the public signature, so `offx_first` selects it rather than hiding it. */
         static std::string
-        doc_trmv_trsv(const char *name, const char *action, const char *result) noexcept
+        doc_trmv_trsv(const char *name, const char *action, const char *result,
+                      bool offx_first) noexcept
         {
             std::string s;
-            s += std::string(name) + "(a, x, offx=0, incx=1, lower=0, trans=0, diag=0, overwrite_x=0)\n\n";
+            s += std::string(name) + "(a, x, "
+               + (offx_first ? "offx=0, incx=1" : "incx=1, offx=0")
+               + ", lower=0, trans=0, diag=0, overwrite_x=0)\n\n";
             s += std::string(action) + " (BLAS ``" + std::string(name) + "``).\n\n";
 
             s += "Parameters\n----------\n";
             s += "a : ndarray\n    Triangular matrix; only the triangle selected by `lower` is referenced.\n";
             s += "x : ndarray\n    Input/output vector.\n";
-            s += P_OFFX;
-            s += P_INCX;
+            if (offx_first) { s += P_OFFX; s += P_INCX; }
+            else            { s += P_INCX; s += P_OFFX; }
             s += P_LOWER;
             s += P_TRANS;
             s += P_DIAG;
@@ -743,8 +751,8 @@ namespace blas {
             s += std::string("x : ndarray\n    ") + result + "\n";
             return s;
         }
-        static std::string doc_trmv(const char *name, const Dtype &) { return doc_trmv_trsv(name, "Compute the triangular matrix-vector product ``x = op(a)@x``", "The product ``op(a)@x``."); }
-        static std::string doc_trsv(const char *name, const Dtype &) { return doc_trmv_trsv(name, "Solve the triangular system ``op(a)@x = b`` in place", "The solution ``x``."); }
+        static std::string doc_trmv(const char *name, const Dtype &) { return doc_trmv_trsv(name, "Compute the triangular matrix-vector product ``x = op(a)@x``", "The product ``op(a)@x``.", true); }
+        static std::string doc_trsv(const char *name, const Dtype &) { return doc_trmv_trsv(name, "Solve the triangular system ``op(a)@x = b`` in place", "The solution ``x``.", false); }
 
         /* Banded triangular matrix-vector product (tbmv) or solve (tbsv). */
         static std::string

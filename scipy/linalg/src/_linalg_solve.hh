@@ -309,7 +309,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
 
     // General allocations
-    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(intn * sizeof(CBLAS_INT));
+    CBLAS_INT *ipiv = (CBLAS_INT *)PyMem_RawMalloc(intn * sizeof(CBLAS_INT));
     if (ipiv == NULL) {
         info = -102;
         return int(info);
@@ -317,13 +317,13 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
     void *irwork;
     if constexpr (detail::type_traits<T>::is_complex) {
-        irwork = malloc(intn * sizeof(real_type));
+        irwork = PyMem_RawMalloc(intn * sizeof(real_type));
     } else {
-        irwork = malloc(intn * sizeof(CBLAS_INT));
+        irwork = PyMem_RawMalloc(intn * sizeof(CBLAS_INT));
     }
 
     if (irwork == NULL) {
-        free(ipiv);
+        PyMem_RawFree(ipiv);
         info = -102;
         return int(info);
     }
@@ -333,11 +333,11 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // have. To avoid having to call `bandwidth` twice per slice, the results
     // are stored in these arrays.
     npy_intp ldab_max = 0;
-    ks = (npy_intp *)malloc(2 * outer_size * sizeof(npy_intp));
+    ks = (npy_intp *)PyMem_RawMalloc(2 * outer_size * sizeof(npy_intp));
 
     if (ks == NULL) {
-        free(ipiv);
-        free(irwork);
+        PyMem_RawFree(ipiv);
+        PyMem_RawFree(irwork);
         info = -102;
         return (int)info;
     }
@@ -359,12 +359,12 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
      * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
      */
     npy_intp b_data_size = overwrite_b ? 0 : n * nrhs;
-    buffer = (T *)malloc((ldab_max * n + 3 * n + b_data_size) * sizeof(T));
+    buffer = (T *)PyMem_RawMalloc((ldab_max * n + 3 * n + b_data_size) * sizeof(T));
 
     if (buffer == NULL) {
-        free(ipiv);
-        free(irwork);
-        free(ks);
+        PyMem_RawFree(ipiv);
+        PyMem_RawFree(irwork);
+        PyMem_RawFree(ks);
         info = -102;
         return int(info);
     }
@@ -409,10 +409,10 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     }
 
 free_exit_banded:
-    free(ipiv);
-    free(irwork);
-    free(ks);
-    free(buffer);
+    PyMem_RawFree(ipiv);
+    PyMem_RawFree(irwork);
+    PyMem_RawFree(ks);
+    PyMem_RawFree(buffer);
 
     return 1;
 }
@@ -485,7 +485,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
     CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
 
-    T* buffer = (T *)malloc(buf_size*sizeof(T));
+    T* buffer = (T *)PyMem_RawMalloc(buf_size*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
     /*
@@ -524,9 +524,9 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
     T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
 
-    CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
+    CBLAS_INT* ipiv = (CBLAS_INT *)PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) {
-        free(buffer);
+        PyMem_RawFree(buffer);
         info = -102;
         return (int)info;
     }
@@ -534,13 +534,13 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
     if constexpr (detail::type_traits<T>::is_complex) {
-        irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
+        irwork = PyMem_RawMalloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
-        irwork = malloc(n*sizeof(CBLAS_INT));
+        irwork = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
     }
     if (irwork == NULL) {
-        free(buffer);
-        free(ipiv);
+        PyMem_RawFree(buffer);
+        PyMem_RawFree(ipiv);
         info = -102;
         return (int)info;
     }
@@ -603,7 +603,14 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 if (is_herm || (is_symm && !detail::type_traits<T>::is_complex)) {
                     // either real symmetric or complex hermitian; try Cholesky first,
                     // fall back to sym/her if it fails
-                    slice_structure = St::POS_DEF;
+                    if (!overwrite_a) {
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        // working in-place: cannot try Cholesky, have to use the
+                        // right structure straight away
+                        slice_structure = is_symm ? St::SYM : St::HER;
+                    }
                 }
                 else if (is_symm && detail::type_traits<T>::is_complex) {
                     // complex symmetric, not hermitian
@@ -699,9 +706,9 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     }
 
 free_exit:
-    free(buffer);
-    free(irwork);
-    free(ipiv);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(irwork);
+    PyMem_RawFree(ipiv);
     return 1;
 }
 

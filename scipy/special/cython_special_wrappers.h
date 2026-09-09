@@ -455,6 +455,7 @@ float boost_powm1_float(float x, float y);
 double boost_powm1_double(double x, double y);
 float boost_stdtr_float(float df, float t);
 double boost_stdtr_double(double df, double t);
+double boost_stdtridf_double(double p, double t);
 float boost_stdtrit_float(float df, float p);
 double boost_stdtrit_double(double df, double p);
 

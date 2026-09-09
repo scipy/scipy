@@ -15,6 +15,7 @@ import numpy as np
 import scipy
 from . import _voronoi
 from scipy.spatial import cKDTree
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['SphericalVoronoi']
 
@@ -33,6 +34,7 @@ def calculate_solid_angles(R):
     return np.abs(2 * np.arctan2(numerator, denominator))
 
 
+@xp_capabilities(np_only=True)
 class SphericalVoronoi:
     """
     Voronoi diagrams on the surface of a sphere.

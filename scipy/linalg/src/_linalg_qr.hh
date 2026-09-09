@@ -124,7 +124,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      */
     CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
     CBLAS_INT buf_size = ((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE) ? 0 : (mode == QR_mode::FULL) ? M * max_dim : M * N;
-    T *buffer = (T *)malloc((lwork + tau_size + buf_size) * sizeof(T));
+    T *buffer = (T *)PyMem_RawMalloc((lwork + tau_size + buf_size) * sizeof(T));
     if ( buffer == NULL ) { info = -101; return int(info); }
 
     T *work = &buffer[0];
@@ -134,10 +134,10 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
     if (pivoting && detail::type_traits<T>::is_complex) {
-        rwork = malloc(2 * N * sizeof(real_type));
+        rwork = PyMem_RawMalloc(2 * N * sizeof(real_type));
 
         if (rwork == NULL) {
-            free(buffer);
+            PyMem_RawFree(buffer);
             info = -102;
             return int(info);
         }
@@ -243,8 +243,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     } // End of batching loop
 
 free_exit:
-    free(buffer);
-    free(rwork);
+    PyMem_RawFree(buffer);
+    PyMem_RawFree(rwork);
 
     return 1;
 }

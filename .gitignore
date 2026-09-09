@@ -72,9 +72,6 @@ dist
 # The shelf plugin uses this dir
 ./.shelf
 MANIFEST
-# distutils configuration
-site.cfg
-setup.cfg
 # other temporary files
 .coverage
 .deps

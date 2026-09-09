@@ -348,7 +348,7 @@ static void data_capsule_destructor(PyObject *capsule)
 {
     void *data;
     data = PyCapsule_GetPointer(capsule, NULL);
-    free(data);
+    PyMem_RawFree(data);
 }
 
 static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args)
@@ -359,7 +359,7 @@ static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    data = (double *)malloc(sizeof(double));
+    data = (double *)PyMem_RawMalloc(sizeof(double));
     if (data == NULL) {
         return PyErr_NoMemory();
     }

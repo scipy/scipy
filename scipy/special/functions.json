@@ -280,11 +280,6 @@
             "cephes_smirnovp_wrap": "pd->d"
         }
     },
-    "stdtridf": {
-        "_cdflib_wrappers.pxd": {
-            "stdtridf": "dd->d"
-        }
-    },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"

@@ -10,8 +10,6 @@ from ._sputils import (asmatrix, check_shape,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
 
-from ._matrix import spmatrix
-
 __all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
@@ -137,7 +135,7 @@ class _spbase(SparseABC):
 
     def __init__(self, arg1, *, maxprint=None):
         self._shape = None
-        if self.__class__.__name__ == '_spbase':
+        if self.__class__.__name__ in {'_spbase', 'sparray', 'spmatrix'}:
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         if isinstance(self, sparray) and np.isscalar(arg1):
@@ -1717,11 +1715,12 @@ class _spbase(SparseABC):
                                (check_contents and not isinstance(self, sparray)))
 
 
-class sparray:
+class sparray(_spbase):  # numpydoc ignore=PR01
     """A namespace class to separate sparray from spmatrix.
 
     This class serves as the namespace for SciPy sparse array types.
-    It cannot be instantiated and is designed as a mixin class.
+    It cannot be instantiated. Most of the work is provided by subclasses.
+    Use a subclass that overrides at least one of ``tocoo`` or ``tocsr``.
     """
 
     @classmethod
@@ -1789,4 +1788,6 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
+    from ._matrix import spmatrix
+
     return isinstance(x, spmatrix)

@@ -1681,6 +1681,8 @@ class _QhullUser:
         self._qhull.add_points(points, interior_point)
         self._update(self._qhull)
 
+
+@xp_capabilities(np_only=True)
 class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2329,6 +2331,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 # Convex hulls
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class ConvexHull(_QhullUser):
     """
     ConvexHull(points, incremental=False, qhull_options=None)
@@ -2552,6 +2555,7 @@ _copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 # Voronoi diagrams
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class Voronoi(_QhullUser):
     """
     Voronoi(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2720,6 +2724,7 @@ _copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 # Halfspace Intersection
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class HalfspaceIntersection(_QhullUser):
     """
     HalfspaceIntersection(halfspaces, interior_point, incremental=False, qhull_options=None)

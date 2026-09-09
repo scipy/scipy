@@ -1544,8 +1544,8 @@ def _get_sparse_data_and_coords(x, new_shape, dtype):
     if len_diff > 0:
         # prepend ones to shape of x to match ndim
         x_shape = [1] * len_diff + list(x_shape)
-        coord_zeros = np.zeroslike(x_coords[0])
-        x_coords = tuple([coord_zeros] * len_diff + x_coords)
+        coord_zeros = np.zeros_like(x_coords[0])
+        x_coords = [coord_zeros] * len_diff + x_coords
     # taking away axes (squeezing) is not part of broadcasting, but long
     # spmatrix history of using 2d vectors in 1d space, so we manually
     # squeeze the front and back axes here to be compatible

@@ -660,8 +660,8 @@ zStackCompress(GlobalLU_t *Glu)
     
     last = (char*)usub + xusub[ndim] * iword;
     fragment = (char*) (((char*)Glu->stack.array + Glu->stack.top1) - last);
-    Glu->stack.used -= (long int) fragment;
-    Glu->stack.top1 -= (long int) fragment;
+    Glu->stack.used -= (int_t)(intptr_t) fragment;
+    Glu->stack.top1 -= (int_t)(intptr_t) fragment;
 
     Glu->ucol = ucol;
     Glu->lsub = lsub;

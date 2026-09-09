@@ -93,14 +93,14 @@ namespace ellint_carlson { namespace rjimpl
 {
 
 template<typename T>
-static inline constexpr typing::real_only<T, bool>
+inline constexpr typing::real_only<T, bool>
 asymp_zero(const T& r)
 {
     return ( (0.0 < r) && (r <= config::asym_zero_ul) );
 }
 
 template<typename T>
-static inline constexpr typing::real_only<T, bool>
+inline constexpr typing::real_only<T, bool>
 abs_close_zero(const T& r)
 {
     return ( (0.0 < r) && (r <= config::asym_close_ul) );
@@ -130,7 +130,7 @@ struct ArgCases
 
 /* Comparison function by the real part. */
 template<typename T>
-static inline bool rcmp(const T& a, const T& b)
+inline bool rcmp(const T& a, const T& b)
 {
     return ( std::real(a) < std::real(b) );
 }
@@ -142,7 +142,7 @@ static inline bool rcmp(const T& a, const T& b)
  * NOTE: x, y, z must be in-order by real parts.
  */
 template<typename T>
-static bool
+bool
 good_args(const T& x, const T& y, const T& z, const T& p,
           ArgCases& classify)
 {
@@ -237,7 +237,7 @@ good_args(const T& x, const T& y, const T& z, const T& p,
 /* Cauchy principal value dispatcher
  * Ref[1], Eq. 2.26 */
 template<typename T, typename Tres>
-static ExitStatus
+ExitStatus
 rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
 		const double& rerr, Tres& res)
 {
@@ -303,7 +303,7 @@ struct AsymConfig
 };
 
 template<typename T>
-static typing::real_only<T, AsymFlag>
+typing::real_only<T, AsymFlag>
 rj_asym_conf(const T& x, const T& y, const T& z, const T& p,
              AsymConfig<T>& conf)
 {
@@ -375,7 +375,7 @@ rj_asym_conf(const T& x, const T& y, const T& z, const T& p,
 /* Prevent division by zero due to underflow in atan(sqrt(z)) / sqrt(z) and
  * square root of negative number in the real context. */
 template<typename T>
-static inline typing::cplx_only<T, T>
+inline typing::cplx_only<T, T>
 safe_atan_sqrt_div(T z)
 {
     if ( argcheck::too_small(z) )
@@ -387,7 +387,7 @@ safe_atan_sqrt_div(T z)
 }
 
 template<typename T>
-static inline typing::real_only<T, T>
+inline typing::real_only<T, T>
 safe_atan_sqrt_div(T x)
 {
     if ( argcheck::too_small(x) )

@@ -116,7 +116,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
@@ -138,9 +138,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     CBLAS_INT *iwork = NULL;
     real_type *rwork = NULL;
     // iwork
-    iwork = (CBLAS_INT *)malloc(8*min_mn*sizeof(CBLAS_INT));
+    iwork = (CBLAS_INT *)PyMem_RawMalloc(8*min_mn*sizeof(CBLAS_INT));
     if (iwork == NULL) {
-        free(buf);
+        PyMem_RawFree(buf);
         info = -102;
         return (int)info;
     }
@@ -152,10 +152,10 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             5*min_mn*min_mn + 5*min_mn,
             2*max_mn*min_mn + 2*min_mn*min_mn + min_mn
         );
-        rwork = (real_type *)malloc(lrwork * sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(lrwork * sizeof(real_type));
         if (rwork == NULL) {
-            free(buf);
-            free(iwork);
+            PyMem_RawFree(buf);
+            PyMem_RawFree(iwork);
             info = -103;
             return (int)info;
         }
@@ -199,9 +199,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
  done:
-    free(buf);
-    free(iwork);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(iwork);
+    PyMem_RawFree(rwork);
     return 0;
 }
 
@@ -279,7 +279,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
@@ -300,9 +300,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
         if (rwork == NULL) {
-            free(buf);
+            PyMem_RawFree(buf);
             info = -103;
             return (int)info;
         }
@@ -346,8 +346,8 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
  done:
-    free(buf);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(rwork);
     return 0;
 }
 

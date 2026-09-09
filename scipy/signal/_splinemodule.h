@@ -336,7 +336,7 @@ int _separable_2Dconvolve_mirror(T *in, T *out, int M, int N, T *hr, T *hc, int 
     T *inptr = NULL;
     T *outptr = NULL;
 
-    tmpmem = (T *)malloc((size_t)M*N*sizeof(T));
+    tmpmem = (T *)PyMem_RawMalloc((size_t)M*N*sizeof(T));
     if (tmpmem == NULL) {
         return -1;
     }
@@ -365,6 +365,6 @@ int _separable_2Dconvolve_mirror(T *in, T *out, int M, int N, T *hr, T *hc, int 
     } else
         memmove(out, tmpmem, (size_t)M*N*sizeof(T));
 
-    free(tmpmem);
+    PyMem_RawFree(tmpmem);
     return 0;
 }
