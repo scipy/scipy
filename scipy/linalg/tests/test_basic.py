@@ -2611,6 +2611,9 @@ class TestPinvSymmetric:
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+        aa = np.stack([a, 2*a])
+        assert_equal(pinv(aa), np.stack([pinv(aa[0]), pinv(aa[1])]))
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -2652,6 +2655,26 @@ class TestPinvSymmetric:
         # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
+
+    def test_rank(self):
+        a = np.diag([0, 1, 2])
+        a_p, rank = pinvh(a, return_rank=True)
+        assert rank == 2
+        assert_allclose(
+            a_p,
+            np.asarray([[0. , 0. , 0. ],
+                        [0. , 1. , 0. ],
+                        [0. , 0. , 0.5]]),
+            atol=1e-15
+        )
+
+        aa = np.stack([a, 2*a, np.diag([1, 2, 3])])
+        _, rank = pinvh(aa, return_rank=True)
+        assert_equal(rank, np.asarray([2, 2, 3]))
+
+        aaa = np.stack([aa, aa])
+        _, rank = pinvh(aaa, return_rank=True)
+        assert_equal(rank, np.asarray([[2, 2, 3], [2, 2, 3]]))
 
     @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
     def test_empty(self, dt):

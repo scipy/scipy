@@ -1,8 +1,8 @@
 import math
 from math import pi
 import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (array_namespace, xp_promote, xp_capabilities,
-                                   xp_vector_norm, is_marray, xp_size)
+from scipy._lib._array_api import (array_namespace, xp_promote, xp_capabilities, is_jax,
+                                   xp_vector_norm, is_marray, xp_size, xp_device)
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 from scipy.stats._stats_py import _xp_mean
 
@@ -81,7 +81,7 @@ def _circmeandev(sample, alpha, *, high=2*math.pi, low=0):
     return _xp_mean(xp.minimum(y, T - y), axis=-1)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=None,
                           result_to_tuple=lambda x, _: (x,))
 def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis=0):
@@ -97,7 +97,7 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     ----------
     sample : array_like
         Input array of angle observations.
-    convention : {'arc-distance', 'bisecting'}
+    convention : {'arc-distance', 'bisecting', 'geometric'}
         Definition of the circular median, following the terminology of [3]_.
 
         - An ``'arc-distance'`` median minimizes the circular mean deviation: the
@@ -109,6 +109,12 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
           minimize the circular mean deviation. Instead, the number of observations
           within 90 degrees of a bisecting median is greater than the number of
           observations within 90 degrees of its antipode.
+        - A ``'geometric'`` median treats angle observations extrinsically: it maps
+          them to points on the unit circle in the ambient two-dimensional vector space,
+          computes their vector median, and extracts the angular phase of the result.
+          A geometric median does not necessarily have the bisecting property, but it
+          is unique unless all points lie on a line, and it is the only convention here
+          that is defined extrinsically, like the circular mean and circular variance.
 
         See [3]_ for precise mathematical definitions.
 
@@ -142,7 +148,7 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     Although the two definitions produce the same circular median in many cases
     (unimodal distribution, no ties), [3]_ demonstrates that the two definitions can
     lead to different - and in fact, entirely opposite - results. [3]_ also compares the
-    arc-distance and bisecting medians with two other definitions adopted from
+    arc-distance, bisecting, and geometric medians with one other definition from
     vector-space literature, and it concludes that the arc-distance median is the only
     one that provides all four properties under consideration. This, and the fact that
     the arc-distance definition is used by default in other circular statistics software
@@ -150,7 +156,8 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     default convention.
 
     [7]_ addresses the fact that many points - even continuous arcs of the unit circle -
-    may satisfy the definition of a circular median. It proposes that "the estimate of
+    may satisfy the definition of an arc-distance or bisecting circular median. It
+    proposes that "the estimate of
     the population circular median be the average (circular mean) of all angles
     satisfying the definition of median", and that "for odd samples, the candidate
     values are the observations themselves". However, it suggests that "for even
@@ -229,6 +236,11 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
     """
     xp = array_namespace(sample)
     sample, high, low = _circfuncs_common_input_validation(sample, high, low, xp=xp)
+    conventions = {'arc-distance', 'bisecting', 'geometric'}
+    if convention not in conventions:
+        raise ValueError(f"`convention` must be one of {conventions}.")
+    if is_jax(xp) and convention == 'geometric':
+        raise ValueError("`method='geometric'` is not compatible with JAX arrays.")
 
     tol = 10*xp.finfo(sample).eps
     T = high - low
@@ -256,12 +268,28 @@ def circmedian(sample, *, convention='arc-distance', high=2*math.pi, low=0, axis
         count_left = xp.astype(xp.count_nonzero(i_left, axis=-1), sample.dtype)
         count_right = xp.astype(xp.count_nonzero(i_right, axis=-1), sample.dtype)
         i = (count_left >= n/2) & (count_right >= n/2)
-    else:
-        raise ValueError("`convention` must be either 'arc-distance' or 'bisecting'.")
 
+    # work in complex plane
     phi = xp.exp(1j * (sample - low) * two_pi / T)
-    median = _xp_mean(phi, weights=xp.astype(i, phi.dtype), axis=-1)
+    if convention == 'geometric':
+        y = xp.mean(phi, axis=-1, keepdims=True)
+        delta = xp.full_like(xp.real(y), xp.inf, device=xp_device(sample))
+        while xp.any(delta > tol*10) and phi.shape[axis] > 1:
+            distances = abs(phi - y)
+            yk = (xp.sum(phi / distances, axis=-1, keepdims=True)
+                  / xp.sum(1 / distances, axis=-1, keepdims=True))
+            delta = abs(y - yk)
+            y = yk
+        median = xp.squeeze(y, axis=-1)
+    else:
+        # It's surprising that the typical way of defining a unique circular median
+        # is to take an extrinsic mean of an intrinsic median. Then again, it is also
+        # surprising that the typical definitions of circular median are intrinsic
+        # while the typical circular mean/variance/std. dev. are extrinsic.
+        median = _xp_mean(phi, weights=xp.astype(i, phi.dtype), axis=-1)
     median = xpx.at(median)[xp.abs(median) < tol].set(xp.nan)
+
+    # back to angles
     median = xp.atan2(xp.imag(median), xp.real(median)) % (2*math.pi)
     median = median * T / two_pi + low
     return median[()]

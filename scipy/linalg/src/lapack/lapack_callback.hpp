@@ -160,6 +160,14 @@ namespace lapack {
      * Any failure -- a null scalar, a raising callable, a result whose `__bool__` raises, or the
      * recursion guard tripping -- leaves the exception set and jumps back to the wrapper, so LAPACK
      * stops instead of continuing with a synthetic "do not select".
+     *
+     * @warning The failure path leaves this function by `longjmp`.  C++ only defines that when
+     *          replacing the `setjmp`/`longjmp` pair with `catch`/`throw` would run no
+     *          non-trivial destructor ([csetjmp.syn]), so no C++ frame that the jump abandons -
+     *          `discard_and_abort`, this one, or the trampoline - may hold an automatic object
+     *          with one: no `std::string`, no `py_ref`, no container.  Raw pointers are fine,
+     *          which is also why `combined_argv` has to be freed by hand before every jump:
+     *          nothing else will.
      */
     inline CBLAS_INT invoke_or_abort(PyObject *const *argv, Py_ssize_t argc) noexcept
     {

@@ -680,7 +680,7 @@ def estimated_cdf(x, y, *, method='linear',
     3. ``closest_observation``: ``m = -1/2`` and
        ``g = 1 - int((index == j) & (j%2 == 1))``
 
-    When all the data in ``x`` are unique, `estimated_cdf` and `quantile` are are
+    When all the data in ``x`` are unique, `estimated_cdf` and `quantile` are
     inverses of one another within a certain domain.
     Although `quantile` with ``method='linear'`` is invertible over the whole domain
     of ``p`` from ``0`` to ``1``, this is not true of other methods.

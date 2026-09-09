@@ -17,25 +17,6 @@ const char *_beta_pdf_doc = R"(
 
     )";
 
-const char *_beta_ppf_doc = R"(
-    _beta_ppf(x, a, b)
-
-    Percent point function of beta distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
-    a, b : array_like
-           Positive, real-valued parameters
-
-    Returns
-    -------
-    scalar or ndarray
-
-    )";
-
 const char *_binom_cdf_doc = R"(
     _binom_cdf(x, n, p)
 
@@ -5982,14 +5963,47 @@ const char *erf_doc = R"(
 
     Examples
     --------
+    In this example we show how `erf` can be used to solve the heat equation.
+    Consider the problem
+
+    .. math::
+
+        \frac{\partial T}{\partial t} = \frac{\partial^2 T}{\partial x^2},
+        \qquad x \in (-\infty, \infty), \quad t > 0,
+
+    with boundary conditions :math:`T(x,t) \to 0` as :math:`x \to -\infty` and
+    :math:`T(x,t) \to 1` as :math:`x \to \infty` and initial condition
+    :math:`T(x,0) = \mathcal{H}(x)`, where :math:`\mathcal{H}` is the Heaviside step
+    function. Seeking a solution of the form :math:`T(x,t) = f(\eta)` with
+    :math:`\eta = x/\sqrt{t}` transforms the problem into the following ordinary
+    differential equation
+
+    .. math::
+
+        f'' + \frac{\eta}{2} f' = 0,
+
+    with the boundary conditions :math:`f(\eta) \to 0` as :math:`\eta \to -\infty` and
+    :math:`f(\eta) \to 1` as :math:`\eta \to \infty`. This has the solution
+    :math:`f(\eta) = (1 + \operatorname{erf}(\eta/2))/2`.
+    We conclude the example by plotting the solution both as a function of :math:`\eta`
+    and as a function of :math:`x` for different times.
+
     >>> import numpy as np
-    >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> z = np.linspace(-3, 3)
-    >>> plt.plot(z, special.erf(z))
-    >>> plt.xlabel('$z$')
-    >>> plt.ylabel('$erf(z)$')
+    >>> from scipy.special import erf
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained", figsize=(5, 5))
+    >>> eta = np.linspace(-5, 5)
+    >>> ax1.plot(eta, (1 + erf(eta/2))/2)
+    >>> ax1.set_xlabel(r'$\eta$')
+    >>> ax1.set_ylabel(r'$f(\eta)$')
+    >>> x = np.linspace(-5, 5, num=500)
+    >>> for t in [0.001, 0.01, 0.1, 0.5, 1]:
+    ...     ax2.plot(x, (1 + erf(x/(2*np.sqrt(t))))/2, label=f't={t}')
+    >>> ax2.set_xlabel(r'$x$')
+    >>> ax2.set_ylabel(r'$T(x,t)$')
+    >>> ax2.legend()
     >>> plt.show()
+
     )";
 
 const char *erfc_doc = R"(
@@ -6026,14 +6040,43 @@ const char *erfc_doc = R"(
 
     Examples
     --------
+    In this example we consider modelling the instantaneous heating of a semi-infinite
+    solid from its boundary at :math:`x=0`. This is governed by the heat equation
+
+    .. math::
+
+        \frac{\partial T}{\partial t} = \frac{\partial^2 T}{\partial x^2},
+        \qquad x > 0, \quad t > 0,
+
+    with boundary conditions :math:`T(0,t) = 1` and :math:`T(\infty,t) = 0` and
+    initial condition :math:`T(x,0) = 0`. Seeking a solution of the form
+    :math:`T(x,t) = f(\eta)` with :math:`\eta = x/\sqrt{t}` transforms the problem
+    into the following ordinary differential equation
+
+    .. math::
+
+        f'' + \frac{\eta}{2} f' = 0, \qquad f(0) = 1, \quad f(\infty) = 0,
+
+    which has the solution :math:`f(\eta) = \operatorname{erfc}(\eta/2)`.
+    We conclude the example by plotting the solution both as a function of :math:`\eta`
+    and as a function of :math:`x` for different times.
+
     >>> import numpy as np
-    >>> from scipy import special
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erfc(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erfc(x)$')
+    >>> from scipy.special import erfc
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained", figsize=(5, 5))
+    >>> eta = np.linspace(0, 4)
+    >>> ax1.plot(eta, erfc(eta/2))
+    >>> ax1.set_xlabel(r'$\eta$')
+    >>> ax1.set_ylabel(r'$f(\eta)$')
+    >>> x = np.linspace(0, 2, num=100)
+    >>> for t in [0.001, 0.01, 0.1, 0.5, 1]:
+    ...     ax2.plot(x, erfc(x/(2*np.sqrt(t))), label=f't={t}')
+    >>> ax2.set_xlabel(r'$x$')
+    >>> ax2.set_ylabel(r'$T(x,t)$')
+    >>> ax2.legend()
     >>> plt.show()
+
     )";
 
 const char *erfi_doc = R"(
@@ -6250,16 +6293,18 @@ const char *dawsn_doc = R"(
 
     Dawson's integral.
 
-    Computes::
+    Computes
 
-        exp(-x**2) * integral(exp(t**2), t=0..x).
+    .. math::
+
+        F(x) = e^{-x^2} \int_0^x e^{t^2} \, dt.
 
     Parameters
     ----------
     x : array_like
-        Function parameter.
+        Real or complex-valued argument.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
@@ -6270,20 +6315,59 @@ const char *dawsn_doc = R"(
     --------
     wofz, erf, erfc, erfcx, erfi
 
+    Notes
+    -----
+    Dawson's integral is related to the imaginary error function by
+
+    .. math::
+
+        F(x) = \frac{\sqrt{\pi}}{2} e^{-x^2} \operatorname{erfi}(x).
+
+    It satisfies the ordinary differential equation
+
+    .. math::
+
+        F'(x) + 2xF(x) = 1, \qquad F(0) = 0.
+
+    For more details, see [1]_ and [2]_.
+
     References
     ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
+    .. [1] NIST Digital Library of Mathematical Functions, "Dawson's
+           Integral". https://dlmf.nist.gov/7.2
+    .. [2] Wikipedia, "Dawson function".
+           https://en.wikipedia.org/wiki/Dawson_function
+    .. [3] Steven G. Johnson, Faddeeva W function implementation.
+           http://ab-initio.mit.edu/Faddeeva
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy import special
+    >>> from scipy.special import dawsn, erfi
+
+    Verify the relation between Dawson's integral and `erfi`:
+
+    >>> x = np.linspace(-1, 1, 21)
+    >>> y = dawsn(x)
+    >>> y_erfi = np.sqrt(np.pi) * np.exp(-x**2) * erfi(x) / 2
+    >>> np.allclose(y, y_erfi)
+    True
+
+    The differential equation can also be checked numerically using a centered
+    finite difference:
+
+    >>> eps = 1e-8
+    >>> dy = (dawsn(x + eps) - dawsn(x - eps)) / (2*eps)
+    >>> np.allclose(dy + 2*x*y, 1, rtol=0, atol=2e-8)
+    True
+
+    Plot the function over a wider interval:
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
-    >>> plt.plot(x, special.dawsn(x))
+    >>> plt.plot(x, dawsn(x))
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$dawsn(x)$')
+    >>> plt.ylabel('$F(x)$')
     >>> plt.show()
     )";
 
@@ -8523,6 +8607,55 @@ const char *iv_ratio_c_doc = R"(
 
     The accuracy is tested numerically with 600,000 trials.  The peak
     relative error is `9.0e-16`; the RMSE is `1.5e-16`.
+
+    )";
+
+const char *iv_ratioinv_doc = R"(
+    _iv_ratioinv(v, r, out=None)
+
+    Internal function.
+
+    Return the nonnegative value `x` such that ``_iv_ratio(v, x) == r``.
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order. Must be finite and `>= 0.5`.
+    r : array_like of float
+        Ratio. Must be between `0` and `1`, inclusive.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    scalar or ndarray
+        The argument of `_iv_ratio`. The returned value is nonnegative.
+
+        If either `v` or `r` is `nan`, `nan` is returned. Otherwise, the
+        special values are:
+
+        - If `v < 0.5`, `v == +inf`, `r < 0`, or `r > 1`, set "domain"
+          error and return `nan`.
+        - If `r == 0`, return `0`.
+        - If `r == 1`, return `+inf`.
+
+    See Also
+    --------
+    _iv_ratio : ratio of modified Bessel functions of adjacent orders
+    _iv_ratio_c : complement of the ratio of modified Bessel functions of
+        adjacent orders
+
+    Notes
+    -----
+    The root is computed using Chandrupatla's algorithm. Initial bounds are
+    obtained by inverting bounds on ratios of modified Bessel functions from
+    [1]_. If these bounds do not bracket the root due to rounding error, a
+    monotonic bracketing algorithm is used as a fallback.
+
+    References
+    ----------
+    .. [1] Amos, D. E. (1974). "Computation of Modified Bessel Functions and
+           Their Ratios." Mathematics of Computation, 28(125):239-251.
 
     )";
 
@@ -12362,6 +12495,51 @@ const char *stdtr_doc = R"(
     True
     )";
 
+const char *stdtridf_doc = R"(
+    stdtridf(p, t, out=None)
+
+    Inverse of `stdtr` vs df.
+
+    Returns the argument df such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    t : array_like
+        Upper bound of the integral
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Value of `df` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtrit : inverse of stdtr with respect to `t`
+    scipy.stats.t : Student t distribution
+
+    Examples
+    --------
+    Compute the student t cumulative distribution function for one
+    parameter set.
+
+    >>> from scipy.special import stdtr, stdtridf
+    >>> df, x = 5, 2
+    >>> cdf_value = stdtr(df, x)
+    >>> cdf_value
+    0.9490302605850709
+
+    Verify that `stdtridf` recovers the original value for `df` given
+    the CDF value and `x`.
+
+    >>> stdtridf(cdf_value, x)
+    5.000000000000012
+    )";
+    
 const char *stdtrit_doc = R"(
     stdtrit(df, p, out=None)
 
@@ -12419,7 +12597,7 @@ const char *stdtrit_doc = R"(
     >>> x = 1
     >>> cdf_value = stdtr(df, x)
     >>> stdtrit(df, cdf_value)
-    0.9999999994418539
+    1.0000000000000007
 
     Plot the function for three different degrees of freedom.
 

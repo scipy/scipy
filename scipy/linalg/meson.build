@@ -56,8 +56,6 @@ linalg_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py, cython_blas_pxd])#, cython_linalg])
 
-link_language_blas_lapack = 'c'
-
 if needs_lp64_fblas
   # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
   # the float/double routines are in BLAS while the complex routines are in
@@ -65,10 +63,6 @@ if needs_lp64_fblas
   # LAPACK auxiliaries).
   py3.extension_module('_fblas',
     [
-      'src/wrapper/wrapper_types.hpp',
-      'src/wrapper/wrapper_helpers.hpp',
-      'src/blas/blas_calls.hpp',
-      'src/blas/blas_helpers.hpp',
       'src/blas/blas_l1.cpp',
       'src/blas/blas_l2.cpp',
       'src/blas/blas_l3.cpp',
@@ -85,11 +79,6 @@ if needs_lp64_fblas
 
   py3.extension_module('_flapack',
     [
-      'src/wrapper/wrapper_types.hpp',
-      'src/wrapper/wrapper_helpers.hpp',
-      'src/lapack/lapack_callback.hpp',
-      'src/lapack/lapack_calls.hpp',
-      'src/lapack/lapack_helpers.hpp',
       'src/lapack/lapack_docs.cpp',
       'src/lapack/lapack_gen.cpp',
       'src/lapack/lapack_gen_banded.cpp',
@@ -117,8 +106,6 @@ if use_ilp64
   # `g77_abi_wrappers`), same as the old f2py `_fblas_64` did.
   py3.extension_module('_fblas_64',
     [
-      'src/blas/blas_calls.hpp',
-      'src/blas/blas_helpers.hpp',
       'src/blas/blas_l1.cpp',
       'src/blas/blas_l2.cpp',
       'src/blas/blas_l3.cpp',
@@ -136,11 +123,6 @@ if use_ilp64
   # ILP64 sibling of `_flapack`, same sources; the module name follows -DHAVE_BLAS_ILP64.
   py3.extension_module('_flapack_64',
     [
-      'src/wrapper/wrapper_types.hpp',
-      'src/wrapper/wrapper_helpers.hpp',
-      'src/lapack/lapack_callback.hpp',
-      'src/lapack/lapack_calls.hpp',
-      'src/lapack/lapack_helpers.hpp',
       'src/lapack/lapack_docs.cpp',
       'src/lapack/lapack_gen.cpp',
       'src/lapack/lapack_gen_banded.cpp',
@@ -255,6 +237,7 @@ py3.extension_module('_internal_matfuncs',
   ],
   include_directories: ['src/'],
   dependencies: [np_dep, lapack_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
 )

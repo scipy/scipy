@@ -78,7 +78,6 @@ import textwrap
 
 special_ufuncs = [
     "_beta_pdf",
-    "_beta_ppf",
     "_binom_cdf",
     "_binom_isf",
     "_binom_pmf",
@@ -102,6 +101,7 @@ special_ufuncs = [
     "_invgauss_ppf",
     "_iv_ratio",
     "_iv_ratio_c",
+    "_iv_ratioinv",
     "_kolmogc",
     "_kolmogci",
     "_kolmogp",
@@ -339,6 +339,7 @@ special_ufuncs = [
     "sindg",
     "spence",
     "stdtr",
+    "stdtridf",
     "stdtrit",
     "struve",
     "tandg",

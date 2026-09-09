@@ -154,7 +154,6 @@ static double bup(double, double, double, double, int, double);
 static struct TupleDD cumbet(double, double, double, double);
 static struct TupleDD cumf(double, double, double);
 static struct TupleDDI cumfnc(double, double, double, double);
-static struct TupleDD cumt(double, double);
 static double devlpl(double *, int, double);
 static void dinvr(struct DinvrState *, struct DzrorState *);
 static void dzror(struct DzrorState *);
@@ -1627,134 +1626,6 @@ struct TupleDID cdffnc_which4(double p, double q, double f, double dfn, double p
 
 
     //               Cumulative Distribution Function
-    //                         T distribution
-    //
-    //
-    //                              Function
-    //
-    //
-    //     Calculates any one parameter of the t distribution given
-    //     values for the others.
-    //
-    //
-    //                              Arguments
-    //
-    //
-    //     WHICH --> Integer indicating which  argument
-    //               values is to be calculated from the others.
-    //               Legal range: 1..3
-    //               iwhich = 1 : Calculate P and Q from T and DF
-    //               iwhich = 2 : Calculate T from P,Q and DF
-    //               iwhich = 3 : Calculate DF from P,Q and T
-    //                    INTEGER WHICH
-    //
-    //        P <--> The integral from -infinity to t of the t-density.
-    //              Input range: (0,1].
-    //                    DOUBLE PRECISION P
-    //
-    //     Q <--> 1-P.
-    //            Input range: (0, 1].
-    //            P + Q = 1.0.
-    //                    DOUBLE PRECISION Q
-    //
-    //        T <--> Upper limit of integration of the t-density.
-    //               Input range: ( -infinity, +infinity).
-    //               Search range: [ -1E100, 1E100 ]
-    //                    DOUBLE PRECISION T
-    //
-    //        DF <--> Degrees of freedom of the t-distribution.
-    //                Input range: (0 , +infinity).
-    //                Search range: [1e-100, 1E10]
-    //                    DOUBLE PRECISION DF
-    //
-    //     STATUS <-- 0 if calculation completed correctly
-    //               -I if input parameter number I is out of range
-    //                1 if answer appears to be lower than lowest
-    //                  search bound
-    //                2 if answer appears to be higher than greatest
-    //                  search bound
-    //                3 if P + Q .ne. 1
-    //                    INTEGER STATUS
-    //
-    //     BOUND <-- Undefined if STATUS is 0
-    //
-    //               Bound exceeded by parameter number I if STATUS
-    //               is negative.
-    //
-    //               Lower search bound if STATUS is 1.
-    //
-    //               Upper search bound if STATUS is 2.
-    //
-    //
-    //                              Method
-    //
-    //
-    //     Formula  26.5.27  of   Abramowitz   and  Stegun,   Handbook   of
-    //     Mathematical Functions  (1966) is used to reduce the computation
-    //     of the cumulative distribution function to that of an incomplete
-    //     beta.
-    //
-    //     Computation of other parameters involve a search for a value that
-    //     produces  the desired  value  of P.   The search relies  on  the
-    //     monotinicity of P with the other parameter.
-    //
-    //**********************************************************************
-
-
-struct TupleDID cdft_which3(double p, double q, double t)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    int qporq = (p <= q);
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-    struct TupleDD tret;
-    struct TupleDID ret = {0};
-
-    DS.small = 1e-100;
-    DS.big = 1e10;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.0;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.0;
-
-    if (!((0 <= p) && (p <= 1))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (!((0 <= q) && (q <= 1))) {
-        ret.i1 = -2;
-        ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        ret.i1 = 3;
-        ret.d2 = (p+q < 0 ? 0.0 : 1.0);
-        return ret;
-    }
-
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        tret = cumt(t, DS.x);
-        DS.fx = (qporq ? tret.d1 - p : tret.d2 - q);
-        dinvr(&DS, &DZ);
-    }
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? -1e100 : 1e10);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
-    //               Cumulative Distribution Function
     //                  Non-Central T distribution
     //
     //                               Function
@@ -2093,60 +1964,6 @@ struct TupleDDI cumfnc(double f, double dfn, double dfd, double pnonc)
     }
 
     return (struct TupleDDI){.d1 = ssum, .d2 = 0.5 + (0.5 - ssum), .i1 = status};
-}
-
-
-struct TupleDD cumt(double t, double df)
-{
-    //                CUMulative T-distribution
-    //
-    //
-    //                            Function
-    //
-    //
-    //    Computes the integral from -infinity to T of the t-density.
-    //
-    //
-    //                            Arguments
-    //
-    //
-    //    T --> Upper limit of integration of the t-density.
-    //                                                T is DOUBLE PRECISION
-    //
-    //    DF --> Degrees of freedom of the t-distribution.
-    //                                                DF is DOUBLE PRECISION
-    //
-    //    CUM <-- Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECISION
-    //
-    //    CCUM <-- Compliment of Cumulative t-distribution.
-    //                                                CCUM is DOUBLE PRECISION
-    //
-    //
-    //                            Method
-    //
-    //
-    //    Formula 26.5.27   of     Abramowitz  and   Stegun,    Handbook  of
-    //    Mathematical Functions  is   used   to  reduce the  t-distribution
-    //    to an incomplete beta.
-
-    double a, oma, tt, dfptt, xx, yy, cum, ccum;
-
-    tt = t*t;
-    dfptt = df + tt;
-    xx = df / dfptt;
-    yy = tt / dfptt;
-    struct TupleDD res = cumbet(xx, yy, 0.5*df, 0.5);
-    a = res.d1;
-    oma = res.d2;
-    if (t > 0.0) {
-        ccum = 0.5 * a;
-        cum = oma + ccum;
-    } else {
-        cum = 0.5 * a;
-        ccum = oma + cum;
-    }
-    return (struct TupleDD){.d1 = cum, .d2 = ccum};
 }
 
 
