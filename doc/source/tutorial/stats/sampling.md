@@ -74,8 +74,8 @@ These generators are based on important concepts:
   method which uses minimal bounding rectangles to construct the hat
   function. See {class}`~scipy.stats.sampling.SimpleRatioUniforms`.
   Note that there is also {class}`~scipy.stats.sampling.RatioUniforms`,
-  a pure Python implementation that is not *universal* in the sense that
-  the user needs to specify the bounding rectangle.
+  a pure Python implementation where the user needs to specify the bounding
+  rectangle.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that $F$ is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -104,10 +104,11 @@ different methods is shown in the table below.
 
 Methods for continuous distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ------------------------------------- | --------------- | --------------- | ----------- | --------------
-{class}`scipy.stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
-{class}`scipy.stats.sampling.NumericalInverseHermite`     | cdf             | pdf, dpdf       | (very) slow | (very) fast
-{class}`scipy.stats.sampling.NumericalInversePolynomial`  | pdf             | cdf             | (very) slow | (very) fast
-{class}`scipy.stats.sampling.SimpleRatioUniforms`         | pdf             | none            | fast        | slow
+{class}`~scipy.stats.sampling.TransformedDensityRejection` | pdf, dpdf       | none            | slow        | fast
+{class}`~scipy.stats.sampling.NumericalInverseHermite`     | cdf             | pdf, dpdf       | (very) slow | (very) fast
+{class}`~scipy.stats.sampling.NumericalInversePolynomial`  | pdf             | cdf             | (very) slow | (very) fast
+{class}`~scipy.stats.sampling.SimpleRatioUniforms`         | pdf             | none            | fast        | slow
+{class}`~scipy.stats.sampling.RatioUniforms`               | pdf, bounds     | none            | fast        | moderate
 
 where
 
@@ -121,8 +122,8 @@ at {class}`~scipy.stats.sampling.FastGeneratorInversion`.
 
 Methods for discrete distributions  | Required Inputs | Optional Inputs | Setup Speed | Sampling Speed
 ----------------------------------- | --------------- | --------------- | ----------- | --------------
-{class}`scipy.stats.sampling.DiscreteAliasUrn`   | pv |      pmf        |     slow    |    very fast
-{class}`scipy.stats.sampling.DiscreteGuideTable` | pv |      pmf        |     slow    |    very fast
+{class}`~scipy.stats.sampling.DiscreteAliasUrn`   | pv |      pmf        |     slow    |    very fast
+{class}`~scipy.stats.sampling.DiscreteGuideTable` | pv |      pmf        |     slow    |    very fast
 
 
 where
@@ -146,12 +147,6 @@ random variates of the given distribution. This is done by passing a `random_sta
 parameter with a NumPy BitGenerator as the uniform random number generator.
 `random_state` can either be an integer, {class}`numpy.random.Generator`,
 or {class}`numpy.random.RandomState`.
-
-```{warning}
-   Use of NumPy < 1.19.0 is discouraged as it doesn't have a fast
-   Cython API for generating uniform random numbers and might be
-   too slow for practical use.
-```
 
 All the generators have a common `rvs` method that can be used to draw
 samples from the given distribution.
