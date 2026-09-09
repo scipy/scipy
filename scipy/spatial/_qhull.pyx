@@ -2491,6 +2491,9 @@ class ConvexHull(_QhullUser):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
+        if points.ndim != 2:
+            raise ValueError("Input `points` array must have 2 dimensions.")
+
         if qhull_options is None:
             qhull_options = b""
             if points.shape[1] >= 5:

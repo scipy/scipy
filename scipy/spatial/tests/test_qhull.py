@@ -611,6 +611,11 @@ class TestConvexHull:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
+    @pytest.mark.parametrize("points", [np.ones((5,)), np.ones((5, 1, 3))])
+    def test_points_wrong_dim_fails(self, points):
+        with pytest.raises(ValueError, match="have 2 dimensions"):
+            qhull.ConvexHull(points)
+
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
