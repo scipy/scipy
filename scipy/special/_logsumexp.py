@@ -114,25 +114,30 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     axis = tuple(range(a.ndim)) if axis is None else axis
 
     if xp_size(a) != 0:
-        with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
-            # Where result is infinite, we use the direct logsumexp calculation to
-            # delegate edge case handling to the behavior of `xp.log` and `xp.exp`,
-            # which should follow the C99 standard for complex values.
-            b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
-            sum_ = xp.sum(b_exp_a, axis=axis, keepdims=True)
-            sgn_inf = xp.sign(sum_) if return_sign else None
-            sum_ = xp.abs(sum_) if return_sign else sum_
-            out_inf = xp.log(sum_)
-
         with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
             out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
 
         # Replace infinite results. This probably could be done with an
         # `apply_where`-like strategy to avoid redundant calculation, but currently
         # `apply_where` itself is only for elementwise functions.
+        # As a shortcut, for a plain NumPy array we skip the fallback entirely when
+        # `out` is already finite. Only works for exact `np.ndarray`s, `is_numpy()`
+        # or isinstance would admit subclasses like masked arrays, which would break
+        # all()/where() equivalence. Other eager backends like torch CPU could use
+        # the same trick in theory, but NumPy shows the biggest perf win.
         out_finite = xp.isfinite(out)
-        out = xp.where(out_finite, out, out_inf)
-        sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
+        if not (type(out) is np.ndarray and out_finite.all()):
+            with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+                # Where result is infinite, we use the direct logsumexp calculation to
+                # delegate edge case handling to the behavior of `xp.log` and `xp.exp`,
+                # which should follow the C99 standard for complex values.
+                b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
+                sum_ = xp.sum(b_exp_a, axis=axis, keepdims=True)
+                sgn_inf = xp.sign(sum_) if return_sign else None
+                sum_ = xp.abs(sum_) if return_sign else sum_
+                out_inf = xp.log(sum_)
+            out = xp.where(out_finite, out, out_inf)
+            sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         shape[axis] = 1
