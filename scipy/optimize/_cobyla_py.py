@@ -221,6 +221,12 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             Python version from the PRIMA package, with bug fixes and
             improvements being made.
 
+    Notes
+    -----
+    COBYLA, by its nature, is an infeasible method, meaning that it may explore points
+    that violate constraints, although the iterates are supposed to satisfy the
+    constraints asymptotically. Since bounds are applied via inequality constraints,
+    this may also mean that points lying outside the bounds are also explored.
 
     References
     ----------
