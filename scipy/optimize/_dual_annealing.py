@@ -49,7 +49,7 @@ class VisitingDistribution:
 
     def __init__(self, lb, ub, visiting_param, rng_gen):
         # if you wish to make _visiting_param adjustable during the life of
-        # the object then _factor2, _factor3, _factor5, _d1, _factor6 will
+        # the object then _factor2, _factor3, _factor5, _log_factor6 will
         # have to be dynamically calculated in `visit_fn`. They're factored
         # out here so they don't need to be recalculated all the time.
         self._visiting_param = visiting_param
@@ -67,9 +67,11 @@ class VisitingDistribution:
             3.0 - self._visiting_param))
 
         self._factor5 = 1.0 / (self._visiting_param - 1.0) - 0.5
-        self._d1 = 2.0 - self._factor5
-        self._factor6 = np.pi * (1.0 - self._factor5) / np.sin(
-            np.pi * (1.0 - self._factor5)) / np.exp(gammaln(self._d1))
+        # Via the reflection formula Γ(z)Γ(1-z) = π/sin(πz), the original
+        # expression π*(1-factor5)/sin(π*(1-factor5))/Γ(2-factor5) simplifies
+        # exactly to Γ(factor5). Storing the log avoids overflow when
+        # visiting_param is close to 1 (where factor5 → +∞).
+        self._log_factor6 = gammaln(self._factor5)
 
     def visiting(self, x, step, temperature):
         """ Based on the step in the strategy chain, new coordinates are
@@ -116,9 +118,10 @@ class VisitingDistribution:
         factor1 = np.exp(np.log(temperature) / (self._visiting_param - 1.0))
         factor4 = self._factor4_p * factor1
 
-        # sigmax
-        x *= np.exp(-(self._visiting_param - 1.0) * np.log(
-            self._factor6 / factor4) / (3.0 - self._visiting_param))
+        # sigmax — use log_factor6 directly to avoid materialising a
+        # potentially huge intermediate value near visiting_param ≈ 1
+        x *= np.exp(-(self._visiting_param - 1.0) * (
+            self._log_factor6 - np.log(factor4)) / (3.0 - self._visiting_param))
 
         den = np.exp((self._visiting_param - 1.0) * np.log(np.fabs(y)) /
                      (3.0 - self._visiting_param))
