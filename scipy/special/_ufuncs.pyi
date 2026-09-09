@@ -260,6 +260,7 @@ _cospi: np.ufunc
 _ellip_harm: np.ufunc
 _gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
+_iv_ratioinv: np.ufunc
 _kolmogc: np.ufunc
 _kolmogci: np.ufunc
 _kolmogp: np.ufunc

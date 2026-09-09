@@ -7,9 +7,8 @@
  *
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_blas_ARRAY_API
-#include <Python.h>
 #include <cstddef>
-#include "numpy/arrayobject.h"
+#include "blas_helpers.hpp"   /* Python.h, numpy, and FBLAS_MODULE_STR / FBLAS_PYINIT */
 
 namespace blas{
     namespace capi {
@@ -19,25 +18,8 @@ namespace blas{
 }
 
 
-/**
- * The LP64 build generates the module `_fblas` and the ILP64 build generates `_fblas_64`,
- * mirroring the legacy f2py naming. The ILP64 lapack dependency passes `-DHAVE_BLAS_ILP64`,
- * which already selects `CBLAS_INT = int64_t` and the ILP64 `BLAS_FUNC` symbol suffix in
- * `scipy_blas_defines.h`; the module name is the only difference so it is selected here.
- */
-#ifdef HAVE_BLAS_ILP64
-#define FBLAS_MODULE_NAME _fblas_64
-#else
-#define FBLAS_MODULE_NAME _fblas
-#endif
-
-#define FBLAS_PASTE_(a, b) a ## b
-#define FBLAS_PASTE(a, b) FBLAS_PASTE_(a, b)
-#define FBLAS_STR_(s) #s
-#define FBLAS_STR(s) FBLAS_STR_(s)
-
-#define FBLAS_MODULE_STR FBLAS_STR(FBLAS_MODULE_NAME)      /* "_fblas" or "_fblas_64" */
-#define FBLAS_PYINIT     FBLAS_PASTE(PyInit_, FBLAS_MODULE_NAME)
+/* `FBLAS_MODULE_STR` and `FBLAS_PYINIT` come from `blas_helpers.hpp`, which is also where the
+ * error messages pick the module name up. */
 
 
 /**

@@ -19,8 +19,7 @@ except ImportError:
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax, is_torch,
-)
+    is_cupy, is_dask, is_jax, is_torch, xp_result_device)
 from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._external.packaging_version import version
@@ -63,12 +62,12 @@ def pytest_configure(config):
          "(and not covered by the suppressions file)"))
     config.addinivalue_line("markers",
         ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
-         "eager_only=False, exceptions=None): mark the desired skip configuration " +
-         "for the `skip_xp_backends` fixture"))
+         "eager_only=False, skip_meta=False, exceptions=None): mark the desired " +
+         "skip configuration for the `skip_xp_backends` fixture"))
     config.addinivalue_line("markers",
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
-         "eager_only=False, exceptions=None): mark the desired xfail configuration " +
-         "for the `xfail_xp_backends` fixture"))
+         "eager_only=False, skip_meta=False, exceptions=None): mark the desired " +
+         "xfail configuration for the `xfail_xp_backends` fixture"))
     config.addinivalue_line("markers",
                             ("uses_xp_capabilities(status, funcs=None, " +
                              "reason=None): mark " +
@@ -248,6 +247,7 @@ xp_available_backends = [
 ]
 xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
+xp_skip_meta_backends = set()
 
 if SCIPY_ARRAY_API:
     device_and_backend_compatible = True
@@ -281,8 +281,16 @@ if SCIPY_ARRAY_API:
             xp_available_backends.append(
                 pytest.param(torch, id='torch',
                 marks=_array_api_backends))
-            if SCIPY_DEVICE != "cpu":
+            # In the meta leak-check mode (SCIPY_DEVICE=meta; see the `xp`
+            # fixture) test inputs are real cpu tensors and `cpu_only` functions
+            # preserve the input device across their NumPy round-trip, so they
+            # run and are value-checked - unlike on an actual non-default
+            # device such as cuda, where their inputs cannot be converted to
+            # NumPy.
+            if SCIPY_DEVICE not in ("cpu", "meta"):
                 xp_skip_cpu_only_backends.add('torch')
+            if SCIPY_DEVICE == "meta":
+                xp_skip_meta_backends.add('torch')
 
             # default to float64 unless explicitly requested
             default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float64')
@@ -388,6 +396,68 @@ if SCIPY_ARRAY_API:
             ]
 
 
+class _CpuPinningNamespace:
+    """Test-facing namespace wrapper for the torch meta leak-check mode.
+
+    With ``SCIPY_DEVICE=meta``, the default torch device is the data-free
+    ``meta`` device, while tests must create real input arrays. This wrapper
+    delegates everything to the wrapped (compat) namespace, but pins array
+    creation to ``device='cpu'`` unless the caller passes an explicit device.
+
+    SciPy-internal code resolves the real namespace from its input arrays via
+    ``array_namespace`` (or normalizes an ``xp=`` argument through a probe
+    array) and is therefore not pinned: any internal creation that omits
+    ``device=`` lands on ``meta`` - with no data - and raises loudly at the
+    first combination with input data. This is an effective device-propagation
+    leak detector on CPU, mirroring testing on a machine with a GPU with
+    cpu-device inputs. See gh-22680.
+    """
+
+    # pure creation: no array argument to infer a device from -> always pin.
+    # `asarray` is special-cased below (an array argument keeps its device);
+    # the `*_like` functions always infer from their argument and are not
+    # wrapped at all.
+    _CREATION = frozenset({
+        "arange", "empty", "eye", "full", "linspace", "ones", "zeros",
+        # not in the array API standard, but provided by torch and used in tests
+        "geomspace", "logspace",
+    })
+
+    def __init__(self, xp, creation=None):
+        self._xp = xp
+        self._creation = self._CREATION if creation is None else creation
+
+    def __getattr__(self, name):
+        attr = getattr(self._xp, name)
+        if name in self._creation:
+            def _pin_cpu(*args, device=None, **kwargs):
+                device = "cpu" if device is None else device
+                return attr(*args, device=device, **kwargs)
+            return _pin_cpu
+        if name == "asarray":
+            def _asarray_pin_cpu(obj, *args, device=None, **kwargs):
+                # Arrays keep their own device; device-less input (Python
+                # scalars/sequences, NumPy arrays) is created on CPU.
+                if device is None and xp_result_device(obj) is None:
+                    device = "cpu"
+                return attr(obj, *args, device=device, **kwargs)
+            return _asarray_pin_cpu
+        if name == "fft" and self._creation is self._CREATION:
+            # Wrap the fft extension namespace (but only at the top level:
+            # inside the fft wrapper, `fft` would be the fft function)
+            return _CpuPinningNamespace(
+                attr, creation=frozenset({"fftfreq", "rfftfreq"}))
+        return attr
+
+    # `array_namespace(actual) == xp` comparisons in the assertion helpers
+    # must treat the wrapper as equal to the namespace it wraps.
+    def __eq__(self, other):
+        return other is self._xp or other is self
+
+    def __hash__(self):
+        return hash(self._xp)
+
+
 @pytest.fixture(params=xp_available_backends)
 def xp(request):
     """Run the test that uses this fixture on each available array API library.
@@ -425,6 +495,13 @@ def xp(request):
     # Potentially wrap namespace with array_api_compat
     xp = array_namespace(xp.empty(0))
 
+    if SCIPY_DEVICE == "meta" and is_torch(xp):
+        # torch meta leak-check mode: the default device is the data-free
+        # `meta` device; hand the test a namespace that creates input arrays
+        # on cpu. Tests that legitimately cannot run in this mode are skipped
+        # via `skip_xp_backends(skip_meta=True)` above.
+        xp = _CpuPinningNamespace(xp)
+
     if SCIPY_ARRAY_API:
         # If xp==jax.numpy, wrap tested functions in jax.jit
         # If xp==dask.array, wrap tested functions to test that graph is not computed
@@ -454,7 +531,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 
@@ -483,6 +560,12 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             for backend in xp_skip_eager_only_backends - exceptions:
                 reasons[backend].append(reason)
 
+        elif marker.kwargs.get('skip_meta', False):
+            reason = marker.kwargs.get("reason") or (
+                "not compatible with the torch meta-device leak-check mode")
+            for backend in xp_skip_meta_backends - exceptions:
+                reasons[backend].append(reason)
+
         # add backends, if any
         if len(marker.args) == 1:
             backend = marker.args[0]
@@ -495,7 +578,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             # This is regardless of order of appearance of the markers.
             reasons[backend].insert(0, reason)
 
-            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+            for kwarg in ("cpu_only", "np_only", "eager_only", "skip_meta",
+                          "exceptions"):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 
@@ -515,7 +599,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 # This is regardless of order of appearance of the markers.
                 reasons[backend].insert(0, reason)
 
-            for kwarg in ("cpu_only", "np_only", "eager_only", "exceptions"):
+            for kwarg in ("cpu_only", "np_only", "eager_only", "skip_meta",
+                          "exceptions"):
                 if kwarg in marker.kwargs:
                     raise ValueError(f"{kwarg} is mutually exclusive with {backend}")
 

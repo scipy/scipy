@@ -1101,13 +1101,9 @@ class _TestCommon:
                     dat = np.matrix(dat)
 
             for output_dtype in self.checked_dtypes:
-                # Skip problematic dtype combinations (complex to real, etc.)
-                # by catching exceptions when numpy itself fails
-                try:
-                    with np.errstate(all='raise'):
-                        _ = dat.sum(dtype=output_dtype)
-                except Exception:
-                    # Skip this combination if NumPy can't handle it
+                input_is_complex = np.isdtype(input_dtype, "complex floating")
+                output_is_complex = np.isdtype(output_dtype, "complex floating")
+                if input_is_complex and not output_is_complex:
                     continue
 
                 # Check axis=None

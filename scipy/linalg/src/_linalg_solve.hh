@@ -603,7 +603,14 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 if (is_herm || (is_symm && !detail::type_traits<T>::is_complex)) {
                     // either real symmetric or complex hermitian; try Cholesky first,
                     // fall back to sym/her if it fails
-                    slice_structure = St::POS_DEF;
+                    if (!overwrite_a) {
+                        slice_structure = St::POS_DEF;
+                    }
+                    else {
+                        // working in-place: cannot try Cholesky, have to use the
+                        // right structure straight away
+                        slice_structure = is_symm ? St::SYM : St::HER;
+                    }
                 }
                 else if (is_symm && detail::type_traits<T>::is_complex) {
                     // complex symmetric, not hermitian

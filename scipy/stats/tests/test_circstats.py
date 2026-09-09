@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 import numpy as np
 from numpy.testing import assert_, assert_allclose
 from scipy._external import array_api_extra as xpx
-from scipy._lib._array_api import (make_xp_test_case, eager_warns)
+from scipy._lib._array_api import make_xp_test_case, eager_warns, is_jax
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_1d_omit,
                                           too_small_nd_omit, too_small_1d_not_omit)
@@ -18,6 +18,13 @@ lazy_xp_modules = [stats]
 
 @make_xp_test_case(stats.circmedian)
 class TestCircMedian:
+    conventions = [
+        pytest.param('arc-distance'),
+        pytest.param('bisecting'),
+        # JAX is not compatible with `convention='geometric'`
+        pytest.param('geometric', marks=skip_xp_backends('jax.numpy'))
+    ]
+
     # Example data from references; e.g. `example_3_2` is [3] Example #2
     example_2 = [43, 45, 52, 61, 75, 88, 88, 279, 375]
     example_3_1 = [-9 * pi / 16, -9 * pi / 16, 0, 9 * pi / 16, 9 * pi / 16]
@@ -37,6 +44,8 @@ class TestCircMedian:
                    160, 285, 200, 210, 220, 225, 270]
     example_8_3 = [67, 66, 74, 61, 58, 60, 100, 89, 171, 166, 98, 60, 197, 98, 86, 123,
                    165, 133, 101, 105, 71, 84, 75, 98, 83, 71, 74, 91, 38, 200, 56]
+    # [9] is Ducharme and Milasevic "Spatial Median and Directional Data"
+    example_9_1 = example_7_1
     _bisect = dict(convention='bisecting')
     _deg_bisect = dict(high=360, convention='bisecting')
 
@@ -60,6 +69,30 @@ class TestCircMedian:
         # Test against examples from references
         res = stats.circmedian(xp.asarray(sample), **kwargs)
         xp_assert_close(res, xp.asarray(ref))
+
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_geometric(self, dtype, xp):
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        kwargs = dict(high=360, convention='geometric')
+        example_9_1 = xp.asarray(self.example_9_1, dtype=dtype)
+
+        if is_jax(xp):
+            message = "`method='geometric'` is not compatible with JAX arrays."
+            with assert_raises(ValueError, match=message):
+                res = stats.circmedian(example_9_1, **kwargs)
+            return
+
+        res = stats.circmedian(example_9_1, **kwargs)
+        xp_assert_close(res, xp.asarray(135.6, dtype=dtype), rtol=1e-3)
+
+        example_9_2 = example_9_1[:-1]
+        res = stats.circmedian(example_9_2, **kwargs)
+        xp_assert_close(res, xp.asarray(135.4, dtype=dtype), rtol=1e-3)
+
+        example_9_3 = example_9_1
+        example_9_3[-1] = 10
+        res = stats.circmedian(example_9_3, **kwargs)
+        xp_assert_close(res, xp.asarray(134.1, dtype=dtype), rtol=1e-3)
 
     @pytest.mark.parametrize("sample, ref", [
         (example_2, 52.00000000000002), (example_7_1, 136.99714451257873),
@@ -91,24 +124,32 @@ class TestCircMedian:
 
     def test_input_validation(self, xp):
         # high/low input validation done in TestCircfuncs
-        message = "`convention` must be either 'arc-distance' or 'bisecting'."
+        message = "`convention` must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.circmedian(xp.asarray([1., 2., 3.]), convention='ekki-ekki')
 
-    @pytest.mark.parametrize('convention', ['arc-distance', 'bisecting'])
+    @pytest.mark.parametrize('convention', conventions)
     def test_edge_cases(self, convention, xp):
         x = xp.empty((0,))
         with eager_warns(SmallSampleWarning, match="One or more sample...", xp=xp):
             res = stats.circmedian(x, convention=convention)
-        xp_assert_close(res, xp.asarray(xp.nan))
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
         rng = np.random.default_rng(1664271345)
         x = xp.asarray(rng.uniform(0, 2*np.pi, size=1))
         res = stats.circmedian(x, convention=convention)
         xp_assert_close(res, x[0])
 
+        x = xp.asarray([0., xp.pi])
+        res = stats.circmedian(x, convention=convention)
+        xp_assert_equal(res, xp.asarray(xp.nan))
+
+        x = xp.asarray([0., xp.pi, xp.pi])
+        res = stats.circmedian(x, convention=convention)
+        xp_assert_close(res, xp.asarray(xp.pi))
+
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
-    @pytest.mark.parametrize('convention', ['arc-distance', 'bisecting'])
+    @pytest.mark.parametrize('convention', conventions)
     def test_circle_parameterization(self, dtype, convention, xp):
         # test that result is independent of parametrization of unit circle
         # also convenient to test here that dtypes are respected

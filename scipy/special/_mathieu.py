@@ -46,13 +46,6 @@ _mathieu_cem_doc = (
     results in an even, periodic solution :math:`y(x)` with period 180 degrees
     (for even :math:`m`) or 360 degrees (for odd :math:`m`).
 
-    Computing ``mathieu_cem(m, q, x)`` involves generating fourier coefficients based
-    on `m` and `q`, and then evaluating a fourier series in ``x``. SciPy employs
-    performance optimizations to avoid repeated recalculation of the expensive fourier
-    coefficients during the iterations of a single ufunc call. Enabling these
-    optimizations requires replacing `mathieu_cem` with a wrapper function. To
-    access the underlying non-wrapped `ufunc` use ``mathieu_cem.ufunc``.
-
     References
     ----------
     .. [1] 'Mathieu function'. *Wikipedia*.
@@ -89,6 +82,7 @@ mathieu_cem = _with_cache_optimization(
     docstring=_mathieu_cem_doc,
     ufunc=_mathieu_cem,
     cache_arg_indices=[0, 1],
+    module="scipy.special._mathieu",
 )
 
 
@@ -135,13 +129,6 @@ _mathieu_sem_doc = (
     results in an odd, periodic solution :math:`y(x)` with period 180 degrees
     (for even :math:`m`) or 360 degrees (for odd :math:`m`).
 
-    Computing ``mathieu_sem(m, q, x)`` involves generating fourier coefficients based
-    on `m` and `q`, and then evaluating a fourier series in ``x``. SciPy employs
-    performance optimizations to avoid repeated recalculation of the expensive fourier
-    coefficients during the iterations of a single ufunc call. Enabling these
-    optimizations requires replacing `mathieu_sem` with a wrapper function. To
-    access the underlying non-wrapped `ufunc` use ``mathieu_sem.ufunc``.
-
     References
     ----------
     .. [1] 'Mathieu function'. *Wikipedia*.
@@ -177,4 +164,5 @@ mathieu_sem = _with_cache_optimization(
     docstring=_mathieu_sem_doc,
     ufunc=_mathieu_sem,
     cache_arg_indices=[0, 1],
+    module="scipy.special._mathieu",
 )

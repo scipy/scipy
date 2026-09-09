@@ -8,4 +8,6 @@ if not fs.exists('math/README.md')
   error('Missing the `boost_math` submodule! Run `git submodule update --init` to fix this.')
 endif
 
-boost_math_dep = declare_dependency(include_directories: 'math/include')
+boost_math_dep = declare_dependency(
+  include_directories: 'math/include',
+)

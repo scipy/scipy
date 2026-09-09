@@ -2563,6 +2563,74 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 #  Smoothing spline helpers #
 #############################
 
+def _compute_b_inv(A):
+    """
+    Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
+    ``U`` is a unit upper triangular banded matrix using an algorithm
+    proposed in [1].
+
+    Parameters
+    ----------
+    A : array, shape (4, n)
+        Matrix to inverse, stored in LAPACK banded storage.
+
+    Returns
+    -------
+    B : array, shape (4, n)
+        3 unique bands of the symmetric matrix that is an inverse to ``A``.
+        The first row is filled with zeros.
+
+    Notes
+    -----
+    The algorithm is based on the cholesky decomposition and, therefore,
+    in case matrix ``A`` is close to not positive defined, the function
+    raises LinalgError.
+
+    Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
+
+    References
+    ----------
+    .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+        spline functions," Numerische Mathematik, vol. 47, no. 1,
+        pp. 99-106, 1985.
+        :doi:`10.1007/BF01389878`
+
+    """
+
+    def find_b_inv_elem(i, j, U, D, B):
+        rng = min(3, n - i - 1)
+        rng_sum = 0.
+        if j == 0:
+            # use 2-nd formula from [1]
+            for k in range(1, rng + 1):
+                rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
+            rng_sum += D[i]
+            B[-1, i] = rng_sum
+        else:
+            # use 1-st formula from [1]
+            for k in range(1, rng + 1):
+                diag = abs(k - j)
+                ind = i + min(k, j)
+                rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
+            B[-j - 1, i + j] = rng_sum
+
+    U = cholesky_banded(A)
+    for i in range(2, 5):
+        U[-i, i-1:] /= U[-1, :-i+1]
+    D = 1. / (U[-1])**2
+    U[-1] /= U[-1]
+
+    n = U.shape[1]
+
+    B = np.zeros(shape=(4, n))
+    for i in range(n - 1, -1, -1):
+        for j in range(min(3, n - i - 1), -1, -1):
+            find_b_inv_elem(i, j, U, D, B)
+    # the first row contains garbage and should be removed
+    B[0] = [0.] * n
+    return B
+
+
 def _compute_optimal_gcv_parameter(X, wE, y, w):
     """
     Returns an optimal regularization parameter from the GCV criteria [1].
@@ -2639,73 +2707,6 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
                 res[-j-1, i + j] = sum(X[j:, i] * W_Y[:5-j, i + j])
         return res
 
-    def compute_b_inv(A):
-        """
-        Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
-        ``U`` is a unit upper triangular banded matrix using an algorithm
-        proposed in [1].
-
-        Parameters
-        ----------
-        A : array, shape (4, n)
-            Matrix to inverse, stored in LAPACK banded storage.
-
-        Returns
-        -------
-        B : array, shape (4, n)
-            3 unique bands of the symmetric matrix that is an inverse to ``A``.
-            The first row is filled with zeros.
-
-        Notes
-        -----
-        The algorithm is based on the cholesky decomposition and, therefore,
-        in case matrix ``A`` is close to not positive defined, the function
-        raises LinalgError.
-
-        Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
-
-        References
-        ----------
-        .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
-            spline functions," Numerische Mathematik, vol. 47, no. 1,
-            pp. 99-106, 1985.
-            :doi:`10.1007/BF01389878`
-
-        """
-
-        def find_b_inv_elem(i, j, U, D, B):
-            rng = min(3, n - i - 1)
-            rng_sum = 0.
-            if j == 0:
-                # use 2-nd formula from [1]
-                for k in range(1, rng + 1):
-                    rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
-                rng_sum += D[i]
-                B[-1, i] = rng_sum
-            else:
-                # use 1-st formula from [1]
-                for k in range(1, rng + 1):
-                    diag = abs(k - j)
-                    ind = i + min(k, j)
-                    rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
-                B[-j - 1, i + j] = rng_sum
-
-        U = cholesky_banded(A)
-        for i in range(2, 5):
-            U[-i, i-1:] /= U[-1, :-i+1]
-        D = 1. / (U[-1])**2
-        U[-1] /= U[-1]
-
-        n = U.shape[1]
-
-        B = np.zeros(shape=(4, n))
-        for i in range(n - 1, -1, -1):
-            for j in range(min(3, n - i - 1), -1, -1):
-                find_b_inv_elem(i, j, U, D, B)
-        # the first row contains garbage and should be removed
-        B[0] = [0.] * n
-        return B
-
     def _gcv(lam, X, XtWX, wE, XtE, y):
         r"""
         Computes the generalized cross-validation criteria [1].
@@ -2773,7 +2774,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         # compute the denominator
         lhs = XtWX + lam * XtE
         try:
-            b_banded = compute_b_inv(lhs)
+            b_banded = _compute_b_inv(lhs)
             # compute the trace of the product b_banded @ XtX
             tr = b_banded * XtWX
             tr[:-1] *= 2

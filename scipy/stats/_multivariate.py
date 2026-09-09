@@ -9,6 +9,7 @@ import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
+from scipy.special._ufuncs import _iv_ratioinv
 from scipy import special
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import check_random_state
@@ -18,7 +19,6 @@ from ._discrete_distns import binom
 from . import _covariance, _rcont
 from ._qmvnt import _qmvt, _qmvn, _qauto
 from ._circstats import directional_stats
-from scipy.optimize import root_scalar
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -1086,7 +1086,7 @@ The dimensions of this matrix are inferred from the shape of `rowcov` and
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
@@ -1557,7 +1557,7 @@ The dimensions of this matrix are inferred from the shape of `row_spread` and
 
 `row_spread` and `col_spread` can be two-dimensional array_likes specifying the
 spread matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
@@ -7610,20 +7610,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         mu = dirstats.mean_direction
         r = dirstats.mean_resultant_length
 
-        # kappa is the solution to the equation:
-        # r = I[dim/2](kappa) / I[dim/2 -1](kappa)
-        #   = I[dim/2](kappa) * exp(-kappa) / I[dim/2 -1](kappa) * exp(-kappa)
-        #   = ive(dim/2, kappa) / ive(dim/2 -1, kappa)
-
         halfdim = 0.5 * dim
-
-        def solve_for_kappa(kappa):
-            bessel_vals = ive([halfdim, halfdim - 1], kappa)
-            return bessel_vals[0]/bessel_vals[1] - r
-
-        root_res = root_scalar(solve_for_kappa, method="brentq",
-                               bracket=(1e-8, 1e9))
-        kappa = root_res.root
+        kappa = _iv_ratioinv(halfdim, r)
         return mu, kappa
 
 

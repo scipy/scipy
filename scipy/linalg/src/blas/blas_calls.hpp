@@ -6,7 +6,7 @@
  * scalar type -- a wrong argument list is a compile error, where f2py's `char*`-cast function
  * pointer made it a silent ABI bug.  Scalars and single-character flags are taken by value;
  * each overload passes their addresses to Fortran (everything by reference).  No Python.h,
- * no numpy: this layer speaks only the width aliases below, `CBLAS_INT` and `char`.
+ * no numpy: this layer speaks only the shared width aliases, `CBLAS_INT` and `char`.
  *
  * Everything -- including the `extern "C"` prototypes -- lives in `namespace blas`: C linkage
  * governs only the symbol name (unmangled), not the C++ scope, so nothing here leaks into the
@@ -18,7 +18,7 @@
  */
 #pragma once
 
-#include <complex>
+#include "wrapper_types.hpp"   /* f32..c128; like this layer, it needs no Python.h */
 #include "scipy_blas_defines.h"
 #include "fortran_defs.h"   /* F_FUNC, for the non-BLAS shim symbols of wrap_*_g77_abi.c */
 /**
@@ -43,12 +43,13 @@
 
 namespace blas {
 
-/* numpy-style width aliases (float32, ..., complex128); the s/d/c/z flavor columns below
- * stay short and aligned. */
-using f32  = float;
-using f64  = double;
-using c64  = std::complex<float>;
-using c128 = std::complex<double>;
+/* The shared width aliases, so the s/d/c/z flavor columns below stay short and aligned.
+ * `blas_helpers.hpp` re-exports the same names, which is redundant but legal and lets either
+ * header be included on its own. */
+using wrapper::f32;
+using wrapper::f64;
+using wrapper::c64;
+using wrapper::c128;
 
 extern "C" {
 f32 BLAS_FUNC(sasum)(CBLAS_INT *, f32 *,  CBLAS_INT *);
