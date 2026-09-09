@@ -8445,8 +8445,8 @@ const char *iv_doc = R"(
 
     .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
-    (valid when the real part of `z` is positive).  For negative `v`, the
-    formula
+    (valid when the real part of `z` is positive; see [3]_).  For negative
+    `v`, the formula
 
     .. math:: I_{-v}(z) = I_v(z) + \frac{2}{\pi} \sin(\pi v) K_v(z)
 
@@ -8459,6 +8459,8 @@ const char *iv_doc = R"(
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+    .. [3] NIST Digital Library of Mathematical Functions,
+           Eq. 10.34.1. https://dlmf.nist.gov/10.34.E1
 
     Examples
     --------
