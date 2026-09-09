@@ -2252,6 +2252,9 @@ def _swilk(y, *, xp):
 
 # Values from [8]
 _Avals_norm = array([0.561, 0.631, 0.752, 0.873, 1.035])
+# Case 0: mean and variance known, so no parameters are estimated. Quantiles of
+# the asymptotic A^2 distribution, from [9].
+_Avals_gauss = array([1.62123854, 1.93295783, 2.49236716, 3.07746418, 3.87812502])
 _Avals_expon = array([0.916, 1.062, 1.321, 1.591, 1.959])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
@@ -2371,17 +2374,22 @@ def anderson(x, dist='norm', *, method=None):
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
-    for normal, exponential, logistic, weibull_min, or Gumbel (Extreme Value
-    Type I) distributions.
+    for normal, standard normal, exponential, logistic, weibull_min, or Gumbel
+    (Extreme Value Type I) distributions.
 
     Parameters
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
+    dist : {'norm', 'gauss', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
-        same distribution.
+        same distribution.  'norm' estimates the mean and standard deviation
+        from the data; 'gauss' tests against the standard normal, holding the
+        mean at 0 and the standard deviation at 1.
+
+        .. versionadded:: 2.0.0
+            The ``'gauss'`` option.
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
         If `method` is ``"interpolated"``, the p-value is interpolated from
@@ -2441,7 +2449,7 @@ def anderson(x, dist='norm', *, method=None):
     Critical values provided when `method` is unspecified are for the following
     significance levels:
 
-    normal/exponential
+    normal/standard normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
@@ -2490,6 +2498,9 @@ def anderson(x, dist='norm', *, method=None):
            In: Goodness-of-Fit Techniques. Ed. by Ralph B. D'Agostino and
            Michael A. Stephens. New York: Marcel Dekker, pp. 122-141. ISBN:
            0-8247-7487-6.
+    .. [9] Marsaglia, G., & Marsaglia, J. (2004). Evaluating the
+           Anderson-Darling Distribution. Journal of Statistical Software,
+           9(2), 1-5. :doi:`10.18637/jss.v009.i02`
 
     Examples
     --------
@@ -2513,7 +2524,7 @@ def anderson(x, dist='norm', *, method=None):
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
-    dists = {'norm', 'expon', 'gumbel_l',
+    dists = {'norm', 'gauss', 'expon', 'gumbel_l',
              'gumbel_r', 'logistic', 'weibull_min'}
 
     if dist not in dists:
@@ -2529,6 +2540,13 @@ def anderson(x, dist='norm', *, method=None):
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 0.75/N + 2.25/N/N), 3)
+    elif dist == 'gauss':
+        w = y
+        fit_params = 0.0, 1.0
+        logcdf = distributions.norm.logcdf(w)
+        logsf = distributions.norm.logsf(w)
+        sig = array([15, 10, 5, 2.5, 1])
+        critical = _Avals_gauss
     elif dist == 'expon':
         w = y / xbar
         fit_params = 0, xbar
@@ -2596,7 +2614,8 @@ def anderson(x, dist='norm', *, method=None):
     message = '`anderson` successfully fit the distribution to the data.'
     res = optimize.OptimizeResult(success=True, message=message)
     res.x = np.array(fit_params)
-    fit_result = FitResult(getattr(distributions, dist), y,
+    fit_dist = 'norm' if dist == 'gauss' else dist
+    fit_result = FitResult(getattr(distributions, fit_dist), y,
                            discrete=False, res=res)
 
     if method is None:
@@ -2627,6 +2646,8 @@ def _anderson_simulate_pvalue(x, dist, method):
     method['n_mc_samples'] = method.pop('n_resamples')
 
     kwargs= {'known_params': {'loc': 0}} if dist == 'expon' else {}
+    if dist == 'gauss':
+        kwargs, dist = {'known_params': {'loc': 0, 'scale': 1}}, 'norm'
     dist = getattr(stats, dist)
     res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
     return res.pvalue
