@@ -386,3 +386,30 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
                 barrier.abort()
 
     return [f.result() for f in futures]
+
+
+def mutually_broadcastable_shapes(nshapes, *, base_shape=None, min_dims=2,
+                                  max_dims=None, min_side=0, max_side=10, rng=None):
+    rng = np.random.default_rng(rng)
+    ndim = rng.integers(min_dims, max_dims or min_dims, endpoint=True)
+    min_side = np.broadcast_to(min_side, ndim)  # so min_side and max_side
+    max_side = np.broadcast_to(max_side, ndim)  # can be scalars or array-like
+    base_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in
+                       zip(min_side, max_side)) if base_shape is None else base_shape
+    shapes = np.repeat([base_shape], nshapes, axis=0)
+
+    # make some elements of some shapes 1 (while preserving overall batch shape)
+    for column in shapes.T:
+        column[rng.integers(1, nshapes):] = 1
+    # permute elements between shapes (while preserving overall batch shape)
+    shapes = list(rng.permuted(shapes, axis=0))
+    # potentially trim preceding 1s from a shape
+    for i in range(len(shapes)):
+        shape = shapes[i]
+        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
+        if rng.random() < 0.25:
+            shapes[i] = shape[rng.integers(j+1):]
+            break
+
+    assert np.broadcast_shapes(*shapes) == base_shape
+    return [tuple(int(el) for el in shape) for shape in shapes]
