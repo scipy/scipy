@@ -289,13 +289,20 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  PyArrayObject *in_arr = (PyArrayObject *)PyArray_FROM_OTF(
-      in_arr_obj, NPY_NOTYPE, NPY_ARRAY_IN_ARRAY);
+  // The filter dereferences the buffers directly, so the input must be in
+  // native byte order.
+  PyArrayObject *in_arr = (PyArrayObject *)PyArray_FROM_OF(
+      in_arr_obj, NPY_ARRAY_IN_ARRAY | NPY_ARRAY_NOTSWAPPED);
   if (in_arr == NULL) {
     return NULL;
   }
+  // Both buffers are reinterpreted as PyArray_TYPE(in_arr) below, so the output
+  // must have that dtype too; otherwise we would write doubles into, say, a
+  // float32 buffer and run off the end of it. NumPy supplies a correctly typed
+  // temporary and casts the results back on writeback.
   PyArrayObject *out_arr = (PyArrayObject *)PyArray_FROM_OTF(
-      out_arr_obj, NPY_NOTYPE, NPY_ARRAY_INOUT_ARRAY2);
+      out_arr_obj, PyArray_TYPE(in_arr),
+      NPY_ARRAY_INOUT_ARRAY2 | NPY_ARRAY_FORCECAST);
   if (out_arr == NULL) {
     Py_DECREF(in_arr);
     return NULL;
@@ -335,6 +342,14 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
   }
   if (rank_filter_status == -1) {
     PyErr_SetString(PyExc_MemoryError, "failed to allocate memory for rank filter");
+  }
+  // NPY_ARRAY_INOUT_ARRAY2 implies NPY_ARRAY_WRITEBACKIFCOPY, so any temporary
+  // copy has to be flushed back explicitly. No-ops if no copy was made.
+  if (PyErr_Occurred()) {
+    PyArray_DiscardWritebackIfCopy(out_arr);
+  }
+  else {
+    PyArray_ResolveWritebackIfCopy(out_arr);
   }
   Py_DECREF(in_arr);
   Py_DECREF(out_arr);

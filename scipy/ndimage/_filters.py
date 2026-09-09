@@ -2010,10 +2010,13 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # if algorithmic fixes are found.
         lim2 = input.size - ((footprint.size - 1) // 2 - origin)
         if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
-            if input.dtype in (np.int64, np.float64, np.float32):
+            # Dispatch on `dtype.type` so that non-native byte order takes the
+            # same route as native; the C code converts to native order.
+            input_type = input.dtype.type
+            if input_type in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
-            elif input.dtype == np.float16:
+            elif input_type == np.float16:
                 x = input.astype('float32')
                 x_out = np.empty(x.shape, dtype='float32')
             elif np.result_type(input, np.int64) == np.int64:
@@ -2028,7 +2031,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             cval = x.dtype.type(cval)
             _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
                                         origin)
-            if input.dtype not in (np.int64, np.float64, np.float32):
+            if input_type not in (np.int64, np.float64, np.float32):
                 np.copyto(output, x_out, casting='unsafe')
         else:
             _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)
