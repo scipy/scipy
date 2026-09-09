@@ -202,7 +202,9 @@ uniform_filter1d_signature = maximum_filter1d_signature
 
 
 def maximum_signature(input, labels=None, index=None):
-    return array_namespace(input, labels, index)
+    # `index` only selects labels and doesn't affect the result namespace;
+    # passing it to `array_namespace` made a list `index` raise (gh-25357).
+    return array_namespace(input, labels)
 
 minimum_signature = maximum_signature
 median_signature = maximum_signature
