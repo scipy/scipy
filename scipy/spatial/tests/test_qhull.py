@@ -613,7 +613,7 @@ class TestConvexHull:
 
     @pytest.mark.parametrize("points", [np.ones((5,)), np.ones((5, 1, 3))])
     def test_points_wrong_dim_fails(self, points):
-        with pytest.raises(ValueError, match="have 2 dimensions"):
+        with pytest.raises(ValueError, match="shape"):
             qhull.ConvexHull(points)
 
     def test_array_with_nans_fails(self):

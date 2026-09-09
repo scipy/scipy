@@ -2492,7 +2492,7 @@ class ConvexHull(_QhullUser):
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if points.ndim != 2:
-            raise ValueError("Input `points` array must have 2 dimensions.")
+            raise ValueError("Input `points` array must be of shape (npoints, ndim).")
 
         if qhull_options is None:
             qhull_options = b""
