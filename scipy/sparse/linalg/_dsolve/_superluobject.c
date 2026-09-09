@@ -369,6 +369,13 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
+    int i;
+    int *ri, *pi;
+    /* CSR is row-oriented, CSC (both plain and supernodal) column-oriented */
+    int npointers = (csr == 1 ? m : n) + 1;
+    /* CSR stores column indices, CSC stores row indices */
+    int index_bound = (csr == 1 ? n : m);
+
     ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
           PyArray_EquivTypenums(PyArray_TYPE(indices), NPY_INT) &&
           PyArray_EquivTypenums(PyArray_TYPE(pointers), NPY_INT) &&
@@ -380,12 +387,48 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
           PyArray_IS_C_CONTIGUOUS(pointers) &&
           nnz <= PyArray_DIM(nzvals, 0) &&
           nnz <= PyArray_DIM(indices, 0) &&
-          (csr ? (m+1) : (n+1)) <= PyArray_DIM(pointers, 0));
+          npointers <= PyArray_DIM(pointers, 0));
     if (!ok) {
         PyErr_SetString(PyExc_ValueError,
                         "sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
         return -1;
+    }
+
+    /*
+     * Validate the index arrays.  SuperLU indexes into them without any bounds
+     * checking, and they may have been mutated in place after the sparse array
+     * was constructed, so the checks done by `check_format` at construction
+     * time are not sufficient.  Check `pointers` first: it is the cheaper scan
+     * (O(n) rather than O(nnz)), and it is what bounds the range of `indices`
+     * that SuperLU actually reads.
+     */
+    pi = (int *)PyArray_DATA(pointers);
+    if (pi[0] != 0) {
+        PyErr_SetString(PyExc_ValueError, "SuperLU: indptr should start with 0");
+        return -1;
+    }
+    for (i = 0; i < npointers - 1; ++i) {
+        if (pi[i] > pi[i + 1]) {
+            PyErr_SetString(PyExc_ValueError,
+                            "SuperLU: indptr must be a non-decreasing sequence");
+            return -1;
+        }
+    }
+    if (pi[npointers - 1] > nnz) {
+        PyErr_Format(PyExc_ValueError,
+                     "SuperLU: last value of indptr should be <= nnz (%d)", nnz);
+        return -1;
+    }
+
+    ri = (int *)PyArray_DATA(indices);
+    for (i = 0; i < nnz; ++i) {
+        if (ri[i] < 0 || ri[i] >= index_bound) {
+            PyErr_Format(PyExc_ValueError,
+                         "SuperLU: %s indices must be >= 0 and < %d",
+                         csr == 1 ? "column" : "row", index_bound);
+            return -1;
+        }
     }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
