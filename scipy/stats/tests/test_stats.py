@@ -7401,53 +7401,56 @@ class TestGSTD:
         xp_assert_close(gstd_actual, gstd_desired)
 
 
+@make_xp_test_case(stats.trimboth, stats.trim1)
 class TestTrim:
     # test trim functions
-    def test_trim1(self):
-        a = np.arange(11)
-        assert_equal(np.sort(stats.trim1(a, 0.1)), np.arange(10))
-        assert_equal(np.sort(stats.trim1(a, 0.2)), np.arange(9))
-        assert_equal(np.sort(stats.trim1(a, 0.2, tail='left')),
-                     np.arange(2, 11))
-        assert_equal(np.sort(stats.trim1(a, 3/11., tail='left')),
-                     np.arange(3, 11))
-        assert_equal(stats.trim1(a, 1.0), [])
-        assert_equal(stats.trim1(a, 1.0, tail='left'), [])
+    def test_trim1(self, xp):
+        a = xp.arange(11)
+        empty = xp.asarray([])
+        xp_assert_equal(xp.sort(stats.trim1(a, 0.1)), xp.arange(10))
+        xp_assert_equal(xp.sort(stats.trim1(a, 0.2)), xp.arange(9))
+        xp_assert_equal(xp.sort(stats.trim1(a, 0.2, tail='left')),
+                     xp.arange(2, 11))
+        xp_assert_equal(xp.sort(stats.trim1(a, 3/11., tail='left')),
+                     xp.arange(3, 11))
+        xp_assert_equal(stats.trim1(a, 1.0), empty)
+        xp_assert_equal(stats.trim1(a, 1.0, tail='left'), empty)
 
         # empty input
-        assert_equal(stats.trim1([], 0.1), [])
-        assert_equal(stats.trim1([], 3/11., tail='left'), [])
-        assert_equal(stats.trim1([], 4/6.), [])
+        xp_assert_equal(stats.trim1(empty, 0.1), empty)
+        xp_assert_equal(stats.trim1(empty, 3/11., tail='left'), empty)
+        xp_assert_equal(stats.trim1(empty, 4/6.), empty)
 
         # test axis
-        a = np.arange(24).reshape(6, 4)
-        ref = np.arange(4, 24).reshape(5, 4)  # first row trimmed
+        a = xp.reshape(xp.arange(24), (6, 4))
+        ref = xp.reshape(xp.arange(4, 24), (5, 4))  # first row trimmed
 
         axis = 0
         trimmed = stats.trim1(a, 0.2, tail='left', axis=axis)
-        assert_equal(np.sort(trimmed, axis=axis), ref)
+        xp_assert_equal(xp.sort(trimmed, axis=axis), ref)
 
         axis = 1
         trimmed = stats.trim1(a.T, 0.2, tail='left', axis=axis)
-        assert_equal(np.sort(trimmed, axis=axis), ref.T)
+        xp_assert_equal(xp.sort(trimmed, axis=axis), ref.T)
 
-    def test_trimboth(self):
-        a = np.arange(11)
-        assert_equal(np.sort(stats.trimboth(a, 3/11.)), np.arange(3, 8))
-        assert_equal(np.sort(stats.trimboth(a, 0.2)),
-                     np.array([2, 3, 4, 5, 6, 7, 8]))
-        assert_equal(np.sort(stats.trimboth(np.arange(24).reshape(6, 4), 0.2)),
-                     np.arange(4, 20).reshape(4, 4))
-        assert_equal(np.sort(stats.trimboth(np.arange(24).reshape(4, 6).T,
-                                            2/6.)),
-                     np.array([[2, 8, 14, 20], [3, 9, 15, 21]]))
+    def test_trimboth(self, xp):
+        a = xp.arange(11)
+        xp_assert_equal(xp.sort(stats.trimboth(a, 3/11.)), xp.arange(3, 8))
+        xp_assert_equal(xp.sort(stats.trimboth(a, 0.2)),
+                        xp.asarray([2, 3, 4, 5, 6, 7, 8]))
+        xp_assert_equal(xp.sort(stats.trimboth(xp.reshape(xp.arange(24), (6, 4)), 0.2)),
+                        xp.reshape(xp.arange(4, 20), (4, 4)))
+        xp_assert_equal(xp.sort(stats.trimboth(xp.reshape(xp.arange(24), (4, 6)).T,
+                                               2/6.)),
+                        xp.asarray([[2, 8, 14, 20], [3, 9, 15, 21]]))
         assert_raises(ValueError, stats.trimboth,
-                      np.arange(24).reshape(4, 6).T, 4/6.)
+                      xp.reshape(xp.arange(24), (4, 6)).T, 4/6.)
 
         # empty input
-        assert_equal(stats.trimboth([], 0.1), [])
-        assert_equal(stats.trimboth([], 3/11.), [])
-        assert_equal(stats.trimboth([], 4/6.), [])
+        empty = xp.asarray([])
+        xp_assert_equal(stats.trimboth(empty, 0.1), empty)
+        xp_assert_equal(stats.trimboth(empty, 3/11.), empty)
+        xp_assert_equal(stats.trimboth(empty, 4/6.), empty)
 
 
 @make_xp_test_case(stats.trim_mean)

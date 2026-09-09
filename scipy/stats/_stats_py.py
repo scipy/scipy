@@ -3482,7 +3482,7 @@ def sigmaclip(a, low=4., high=4., *, nan_policy='propagate'):
     return SigmaclipResult(c, critlower, critupper)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def trimboth(a, proportiontocut, axis=0):
     """Slice off a proportion of items from both ends of an array.
 
@@ -3547,13 +3547,14 @@ def trimboth(a, proportiontocut, axis=0):
     (6,)
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
+    a = xp.asarray(a)
 
-    if a.size == 0:
+    if xp_size(a) == 0:
         return a
 
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
@@ -3562,14 +3563,15 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def trim1(a, proportiontocut, tail='right', axis=0):
     """Slice off a proportion from ONE end of the passed array distribution.
 
@@ -3631,16 +3633,17 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     (6,)
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
+    a = xp.asarray(a)
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
 
     # avoid possible corner case
     if proportiontocut >= 1:
-        return []
+        return xp.asarray([])
 
     if tail.lower() == 'right':
         lowercut = 0
@@ -3650,7 +3653,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
