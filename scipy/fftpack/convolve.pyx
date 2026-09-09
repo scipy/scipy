@@ -48,6 +48,8 @@ def convolve(inout, omega, swap_real_imag=False, overwrite_x=False):
     if X_arr.ndim != 1 or w.ndim != 1 or w.shape[0] != n:
         raise ValueError(
             "inout and omega must be 1-dimensional arrays of the same length")
+    if n == 0:
+        return X_arr
 
     r2r_fftpack(X_arr, None, True, True, out=X_arr)
 
@@ -107,6 +109,8 @@ def convolve_z(inout, omega_real, omega_imag, overwrite_x=False):
         or wi.ndim != 1 or wi.shape[0] != n):
         raise ValueError(
             "inout and omega must be 1-dimensional arrays of the same length")
+    if n == 0:
+        return X_arr
 
     r2r_fftpack(X_arr, None, True, True, out=X_arr)
 
