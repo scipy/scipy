@@ -340,7 +340,6 @@ def test_compute_bc_jac():
     assert_(dbc_dp is None)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_compute_jac_indices():
     n = 2
     m = 4
@@ -362,7 +361,6 @@ def test_compute_jac_indices():
     assert_array_equal(s, s_true)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_compute_global_jac():
     n = 2
     m = 5
@@ -442,7 +440,6 @@ def test_parameter_validation():
     assert_raises(ValueError, solve_bvp, exp_fun, exp_bc, x, y, S=S)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_no_params():
     x = np.linspace(0, 1, 5)
     x_test = np.linspace(0, 1, 100)
@@ -472,7 +469,6 @@ def test_no_params():
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_with_params():
     x = np.linspace(0, np.pi, 5)
     x_test = np.linspace(0, np.pi, 100)
@@ -506,7 +502,6 @@ def test_with_params():
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_singular_term():
     x = np.linspace(0, 1, 10)
     x_test = np.linspace(0.05, 1, 100)
@@ -538,7 +533,6 @@ def test_singular_term():
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_complex():
     # The test is essentially the same as test_no_params, but boundary
     # conditions are turned into complex.
@@ -570,7 +564,6 @@ def test_complex():
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_failures():
     x = np.linspace(0, 1, 2)
     y = np.zeros((2, x.size))
@@ -585,7 +578,6 @@ def test_failures():
     assert_(not res.success)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_big_problem():
     n = 30
     x = np.linspace(0, 1, 5)
@@ -610,7 +602,6 @@ def test_big_problem():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_big_problem_with_parameters():
     n = 30
     x = np.linspace(0, np.pi, 5)
@@ -648,7 +639,6 @@ def test_big_problem_with_parameters():
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_shock_layer():
     x = np.linspace(-1, 1, 5)
     x_test = np.linspace(-1, 1, 100)
@@ -673,7 +663,6 @@ def test_shock_layer():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_nonlin_bc():
     x = np.linspace(0, 0.1, 5)
     x_test = x
@@ -698,7 +687,6 @@ def test_nonlin_bc():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.thread_unsafe(reason="multithreaded sys.stdout parsing is not thread-safe")
 def test_verbose():
     # Smoke test that checks the printing does something and does not crash

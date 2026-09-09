@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from ..sparse import issparse, spmatrix, find, csc_array, csr_array, csr_matrix
+from ..sparse import issparse, find, csc_array, csr_array
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace, xp_result_type
 from scipy._lib._util import MapWrapper
@@ -390,8 +390,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         with shape (m, n). Otherwise it returns a dense array or sparse
         array depending on how `sparsity` is defined. If `sparsity`
         is None then an ndarray with shape (m, n) is returned. If
-        `sparsity` is not None returns a csr_array or csr_matrix with
-        shape (m, n) following the array/matrix type of the incoming structure.
+        `sparsity` is not None returns a csr_array with
+        shape (m, n) following the array type of the incoming structure.
         For sparse arrays and linear operators it is always returned as
         a 2-D structure. For ndarrays, if m=1 it is returned
         as a 1-D gradient array with shape (n,).
@@ -880,12 +880,6 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     col_indices = np.hstack(col_indices)
     fractions = np.hstack(fractions)
 
-    if isinstance(structure, spmatrix):
-        return csr_matrix(
-            (fractions, (row_indices, col_indices)),
-            shape=(m, n),
-            dtype=result_type
-        ), nfev
     return csr_array(
         (fractions, (row_indices, col_indices)),
         shape=(m, n),
