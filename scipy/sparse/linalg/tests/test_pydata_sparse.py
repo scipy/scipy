@@ -11,8 +11,10 @@ try:
 except Exception:
     sparse = None
 
-pytestmark = pytest.mark.skipif(sparse is None,
-                                reason="pydata/sparse not installed")
+pytestmark = [
+    pytest.mark.skipif(sparse is None, reason="pydata/sparse not installed"),
+    pytest.mark.array_api_backends, # include in array-api environment tests
+]
 
 
 msg = "pydata/sparse (0.15.1) does not implement necessary operations"
