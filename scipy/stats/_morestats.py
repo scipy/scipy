@@ -474,6 +474,10 @@ def _calc_uniform_order_statistic_medians(n):
     >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
 
     """
+    if n < 1:
+        # A sample of zero has no order statistics, and 0.5**(1/n) divides here.
+        raise ValueError("`x` must contain at least one observation.")
+
     v = np.empty(n, dtype=np.float64)
     v[-1] = 0.5**(1.0 / n)
     v[0] = 1 - v[-1]
