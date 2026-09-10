@@ -14,11 +14,83 @@ from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
 # raw ufunc without cache optimization
 from scipy.special._ufuncs import _mathieu_sem
 
-from scipy.special._spfun_stats import _poisson_binom_cdf
+from scipy.special._spfun_stats import poisson_binom_cdf
 from scipy.special._ufuncs import betainc
 
 from scipy.special._ufunc_tools import _make_ufunc_wrapper
+from scipy.special._ufunc_tools import _with_cache_optimization
 
+
+def _make_passthrough(ufunc):
+    def wrapper(*args, **kwargs):
+        return ufunc(*args, **kwargs)
+    return wrapper
+
+
+def _assert_same_result(actual, desired):
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+        for actual_i, desired_i in zip(actual, desired):
+            _assert_same_result(actual_i, desired_i)
+        return
+
+    np.testing.assert_equal(actual, desired)
+
+    if isinstance(desired, np.ndarray):
+        assert type(actual) is type(desired)
+        assert actual.dtype == desired.dtype
+        assert actual.shape == desired.shape
+        assert actual.strides == desired.strides
+
+
+_vecdot_cached_wrapper = _with_cache_optimization(
+    name="_vecdot_cached_wrapper",
+    arg_names=["x1", "x2"],
+    docstring="Wrapper for np.vecdot.",
+    ufunc=np.vecdot,
+    cache_arg_indices=[0],
+)
+
+_solve_cached_wrapper = _with_cache_optimization(
+    name="_solve_wrapper",
+    arg_names=["a", "b"],
+    docstring="Wrapper for NumPy solve gufunc.",
+    ufunc=np.linalg._umath_linalg.solve,
+    cache_arg_indices=[0],
+)
+
+_betainc_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(betainc),
+            betainc,
+            "betainc",
+            ["a", "b", "x"],
+            "Wrapper for betainc.",
+)
+
+_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(poisson_binom_cdf),
+            poisson_binom_cdf,
+            "poisson_binom_cdf",
+            ["k", "p"],
+            "Wrapper for poisson_binom_cdf.",
+)
+
+_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(mathieu_sem_wrapper),
+    mathieu_sem_wrapper,
+    "mathieu_sem",
+    ["m", "q", "x"],
+    "Wrapper for wrapper of mathieu_sem",
+)
+
+_vecdot_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(np.vecdot),
+    np.vecdot,
+    "vecdot",
+    ["x1", "x2"],
+    "Wrapper for vecdot."
+)
 
 # Tests that ufunc kwargs still work when _with_cache_optimization is applied
 class TestWithCacheOptimization:
@@ -250,60 +322,182 @@ class TestWithCacheOptimization:
     def test_pickle(self, func):
         assert pickle.loads(pickle.dumps(func)) is func
 
+    def test_gufunc_output_core_dims(self):
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
 
-def _make_passthrough(ufunc):
-    def wrapper(*args, **kwargs):
-        return ufunc(*args, **kwargs)
-    return wrapper
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b)
 
-_betainc_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(betainc),
-            betainc,
-            "betainc",
-            ["a", "b", "x"],
-            "Wrapper for betainc.",
-)
+        _assert_same_result(actual, desired)
 
-_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(_poisson_binom_cdf),
-            _poisson_binom_cdf,
-            "poisson_binom_cdf",
-            ["k", "p"],
-            "Wrapper for _poisson_binom_cdf.",
-)
+    def test_gufunc_output_core_dims_out(self):
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+        out = np.empty((2, 4, 3, 2))
 
-_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(mathieu_sem_wrapper),
-    mathieu_sem_wrapper,
-    "mathieu_sem",
-    ["m", "q", "x"],
-    "Wrapper for wrapper of mathieu_sem",
-)
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b, out=out)
 
-_vecdot_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(np.vecdot),
-    np.vecdot,
-    "vecdot",
-    ["x1", "x2"],
-    "Wrapper for vecdot."
-)
+        assert actual is out
+        _assert_same_result(actual, desired)
 
+    def test_gufunc_axis(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
 
-def _assert_same_result(actual, desired):
-    if isinstance(desired, tuple):
-        assert isinstance(actual, tuple)
-        assert len(actual) == len(desired)
-        for actual_i, desired_i in zip(actual, desired):
-            _assert_same_result(actual_i, desired_i)
-        return
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
 
-    np.testing.assert_equal(actual, desired)
+        desired = np.vecdot(x1, x2, axis=1)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1)
 
-    if isinstance(desired, np.ndarray):
-        assert type(actual) is type(desired)
-        assert actual.dtype == desired.dtype
-        assert actual.shape == desired.shape
-        assert actual.strides == desired.strides
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axis_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        out = np.empty((2, 4))
+        desired_out = np.empty_like(out)
+
+        desired = np.vecdot(x1, x2, axis=1, out=desired_out)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1, out=out)
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        desired = np.linalg._umath_linalg.solve(a, b, axes=axes)
+        actual = _solve_cached_wrapper(a, b, axes=axes)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes_out(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        out = np.empty((2, 3, 4, 2))
+        desired_out = np.empty_like(out)
+
+        desired = np.linalg._umath_linalg.solve(
+            a, b, axes=axes, out=desired_out
+        )
+        actual = _solve_cached_wrapper(
+            a, b, axes=axes, out=out
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_keepdims(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        desired = np.vecdot(x1, x2, keepdims=True)
+        actual = _vecdot_cached_wrapper(x1, x2, keepdims=True)
+
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_keepdims_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        out = np.empty((2, 4, 1))
+        desired_out = np.empty_like(out)
+
+        desired = np.vecdot(
+            x1, x2, keepdims=True, out=desired_out
+        )
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, out=out
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"axis": 1},
+            {"axes": [(1,), (1,), (1,)]},
+            {"axes": [(1,), (1,)]},
+        ],
+    )
+    def test_gufunc_keepdims_axes(self, kwargs):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        desired = np.vecdot(x1, x2, keepdims=True, **kwargs)
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, **kwargs
+        )
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"axis": 1},
+            {"axes": [(1,), (1,), (1,)]},
+            {"axes": [(1,), (1,)]},
+        ],
+    )
+    def test_gufunc_keepdims_axes_out(self, kwargs):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        desired = np.vecdot(x1, x2, keepdims=True, **kwargs)
+        out = np.empty_like(desired)
+        desired_out = np.empty_like(desired)
+
+        desired = np.vecdot(
+            x1, x2, keepdims=True, out=desired_out, **kwargs
+        )
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, out=out, **kwargs
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
 
 
 class TestMakeUFuncWrapper:
@@ -312,7 +506,7 @@ class TestMakeUFuncWrapper:
         [
             [betainc, _betainc_wrapper],
             [mathieu_sem_wrapper, _mathieu_sem_wrapper_wrapper],
-            [_poisson_binom_cdf, _poisson_binom_cdf_wrapper],
+            [poisson_binom_cdf, _poisson_binom_cdf_wrapper],
             [np.vecdot, _vecdot_wrapper],
         ]
     )
@@ -389,7 +583,7 @@ class TestMakeUFuncWrapper:
         ])
 
         out_desired = np.empty((2, 3, 2))
-        _poisson_binom_cdf(k[:, :, None], p, out=out_desired)
+        poisson_binom_cdf(k[:, :, None], p, out=out_desired)
         out_actual = np.empty((2, 3, 2))
         actual = _poisson_binom_cdf_wrapper(k[:, :, None], p, out=out_actual)
         assert out_actual is actual

@@ -73,13 +73,13 @@ void _poisson_binom_map_dims(const npy_intp *dims, npy_intp *new_dims) {
  * more information.
  */
 
-template <typename T_1d>
+template <typename Int, typename T_1d>
 struct _poisson_binom_pmf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
     T* last_p_ptr = nullptr;
-    T operator()(long long int k, T_1d p) {
+    T operator()(Int k, T_1d p) {
         if (!last_p_ptr) {
             dist.resize(p.extent(0) + 1);
         }
@@ -95,13 +95,13 @@ struct _poisson_binom_pmf_kernel {
     }
 };
 
-template <typename T_1d>
+template <typename Int, typename T_1d>
 struct _poisson_binom_cdf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
     T* last_p_ptr = nullptr;
-    T operator()(long long int k, T_1d p) {
+    T operator()(Int k, T_1d p) {
         if (!last_p_ptr) {
             dist.resize(p.extent(0) + 1);
         }
@@ -296,8 +296,9 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_pmf = xsf::numpy::gufunc(
         {
-            _poisson_binom_pmf_kernel<xsf::numpy::float_1d>{},
-            _poisson_binom_pmf_kernel<xsf::numpy::double_1d>{}
+            _poisson_binom_pmf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_kernel<std::int64_t, xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_pmf",
@@ -309,8 +310,9 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_cdf = xsf::numpy::gufunc(
         {
-            _poisson_binom_cdf_kernel<xsf::numpy::float_1d>{},
-            _poisson_binom_cdf_kernel<xsf::numpy::double_1d>{}
+            _poisson_binom_cdf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_kernel<std::int64_t, xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_cdf",
