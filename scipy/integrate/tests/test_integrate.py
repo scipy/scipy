@@ -117,7 +117,7 @@ class TestOde(TestODEClass):
             problem = problem_cls()
             if problem.cmplx:
                 continue
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -129,7 +129,7 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -141,7 +141,7 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
 
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
@@ -220,7 +220,7 @@ class TestComplexOde(TestODEClass):
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -230,7 +230,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -240,7 +240,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
 
 
 class TestSolout:
