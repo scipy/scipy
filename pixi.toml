@@ -445,7 +445,7 @@ description = "Build the documentation"
 [feature.docs.tasks.refguide-check]
 cmd = "spin refguide-check --no-build"
 depends-on = "build"
-description = "Build the documentation"
+description = "Check docs reference guide matches `__all__` attributes"
 
 
 ### IPython ###
