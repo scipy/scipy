@@ -122,10 +122,10 @@ your system.
     A compatible set of C and C++ compilers is needed to build SciPy.
     You will need one of these sets of compilers:
 
-    1. Mingw-w64 compilers (``gcc``, ``g++``) - *recommended,
+    1. clang-cl - *recommended,
        because it's easiest to install and is what we use for SciPy's own CI
        and binaries*
-    2. Clang-cl
+    2. mingw-w64 compilers (``gcc``, ``g++``)
     3. Intel compilers (``icc``)
 
     Compared to macOS and Linux, building SciPy on Windows is a little more
