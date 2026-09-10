@@ -6885,7 +6885,7 @@ class lognorm_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `lognorm` is:
+    The probability density function for `lognorm` ([1]_, [2]_, [3]_) is:
 
     .. math::
 
@@ -6901,6 +6901,15 @@ class lognorm_gen(rv_continuous):
     Suppose a normally distributed random variable ``X`` has  mean ``mu`` and
     standard deviation ``sigma``. Then ``Y = exp(X)`` is lognormally
     distributed with ``s = sigma`` and ``scale = exp(mu)``.
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, Balakrishnan, "Continuous Univariate Distributions, Volume 1",
+           Second Edition, John Wiley and Sons, p. 208 (1994).
+    .. [2] "Log-normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Log-normal_distribution
+    .. [3] "Log Normal Distribution", Wolfram MathWorld,
+            https://mathworld.wolfram.com/LogNormalDistribution.html
 
     %(example)s
 
