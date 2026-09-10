@@ -60,6 +60,14 @@ py3.extension_module('_spline',
   subdir: 'scipy/signal'
 )
 
+py3.extension_module('_fftconv',
+  ['_fftconv_pybind.cc'],
+  dependencies: [np_dep, pybind11_dep, duccfft_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/signal'
+)
+
 py3.install_sources([
     '__init__.py',
     '_support_alternative_backends.py',
