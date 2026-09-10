@@ -85,7 +85,7 @@ Controlling installed configuration details
 and build machine/configuration. This is quite useful for diagnostics, but
 not reproducible across machines - at least for relocatable packages - because
 it embeds build machine paths and compiler options (which can also contain
-paths. There is a build option to achieve reproducible builds:
+paths). There is a build option to achieve reproducible builds:
 ``-Dconfig-output``.
 
 The default, ``-Dconfig-output=auto``, selects portable output when
