@@ -1482,6 +1482,8 @@ class _spbase(SparseABC):
             if hasattr(self, 'sum_duplicates'):
                 self.sum_duplicates()
             temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
+            if out is not None:
+                return out
             return temp.astype(dtype, copy=False)
 
         # Note: all valid 1D axis values are canonically `None`.

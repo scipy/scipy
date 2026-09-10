@@ -1106,8 +1106,8 @@ class _TestCommon:
                 if input_is_complex and not output_is_complex:
                     continue
 
-                # Check axis=None
                 with np.errstate(over='ignore'):
+                    # Check axis=None
                     dat_sum = dat.sum(dtype=output_dtype)
                     datsp_sum = datsp.sum(dtype=output_dtype)
                     assert_allclose(datsp_sum, dat_sum)
@@ -1124,6 +1124,18 @@ class _TestCommon:
                     datsp_sum = datsp.sum(axis=1, dtype=output_dtype)
                     assert_allclose(datsp_sum, dat_sum)
                     assert_equal(datsp_sum.dtype, dat_sum.dtype)
+
+    def test_sum_dtype_out_preserves_identity(self):
+        if not self.is_array_test:
+            pytest.skip("sparse matrices are not affected")
+
+        datsp = self.spcreator([[0, 1], [2, 0]], dtype=np.float32)
+        out = np.empty(2, dtype=np.float64)
+
+        result = datsp.sum(axis=0, dtype=np.float32, out=out)
+
+        assert result is out
+        assert_array_equal(result, [2, 1])
 
     def test_sum_dtype_fractional_to_int(self):
         # Test sum with dtype=int on data of float input dtype
