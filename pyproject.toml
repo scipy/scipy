@@ -251,6 +251,9 @@ before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
 before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
+[tool.cibuildwheel.config-settings]
+setup-args = ["-Dconfig-output=portable"]
+
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
@@ -278,7 +281,7 @@ repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib -
 test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
 test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
 [tool.cibuildwheel.pyodide.config-settings]
-setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack"]
+setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack", "-Dconfig-output=portable"]
 build-dir = "build/pyodide"
 
 [tool.cibuildwheel.pyodide.environment]
