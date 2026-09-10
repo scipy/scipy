@@ -175,6 +175,18 @@ class LinearOperator:
     is always a new, composite `LinearOperator`, that defers linear
     operations to the original operators and combines the results.
 
+    .. versionchanged:: 1.18.0
+        It is assumed that subclasses of `LinearOperator`
+        call ``super().__init__`` in their ``__init__`` method, as this handles
+        setting of some private attributes correctly.
+        (For some discussion of this pattern, see
+        https://rhettinger.wordpress.com/2011/05/26/super-considered-super/.)
+
+        ``super().__init__`` should be provided with a ``shape`` argument,
+        a ``dtype`` argument (optionally ``None`` for automatic selection),
+        and, optionally, an ``xp`` argument for the array namespace
+        (defaults to ``numpy``).
+
     More details regarding how to subclass a `LinearOperator` and several
     examples of concrete `LinearOperator` instances can be found in the
     external project `PyLops <https://pylops.readthedocs.io>`_.
