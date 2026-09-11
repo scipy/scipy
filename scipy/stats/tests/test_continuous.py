@@ -23,6 +23,7 @@ from scipy.stats._distribution_infrastructure import (
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
 from scipy.stats import Normal, Logistic, Uniform, Binomial
+from scipy._lib._testutils import mutually_broadcastable_shapes
 
 
 class Test_RealInterval:
@@ -150,12 +151,13 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
     n_parameterizations = family._num_parameterizations()
+    rng.random()
     if n_parameterizations > 0:
-        i = data.draw(strategies.integers(0, max_value=n_parameterizations-1))
+        i = rng.integers(0, n_parameterizations)
         n_parameters = family._num_parameters(i)
-        shapes, result_shape = data.draw(
-            npst.mutually_broadcastable_shapes(num_shapes=n_parameters,
-                                               min_side=min_side))
+        shapes = mutually_broadcastable_shapes(num_shapes=n_parameters,
+                                               min_side=min_side, rng=rng)
+        result_shape = np.broadcast_shapes(*shapes)
         dist = family._draw(shapes, rng=rng, proportions=proportions,
                             i_parameterization=i)
     else:
@@ -164,13 +166,13 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
 
     # Draw a broadcastable shape for the arguments, and draw values for the
     # arguments.
-    x_shape = data.draw(npst.broadcastable_shapes(result_shape,
-                                                  min_side=min_side))
+    x_shape, = mutually_broadcastable_shapes(1, base_shape=result_shape,
+                                             min_side=min_side)
     x = dist._variable.draw(x_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     x_result_shape = np.broadcast_shapes(x_shape, result_shape)
-    y_shape = data.draw(npst.broadcastable_shapes(x_result_shape,
-                                                  min_side=min_side))
+    y_shape, = mutually_broadcastable_shapes(1, base_shape=x_result_shape,
+                                             min_side=min_side)
     y = dist._variable.draw(y_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     xy_result_shape = np.broadcast_shapes(y_shape, x_result_shape)
