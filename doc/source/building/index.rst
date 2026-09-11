@@ -3,30 +3,26 @@
 Building from source
 ====================
 
-Building SciPy from source requires setting up system-level dependencies
-(compilers, BLAS/LAPACK libraries, etc.) first, and then invoking a build. The
-build may be done in order to install SciPy for local usage, develop SciPy
-itself, or build redistributable binary packages.
-
-If you are building SciPy in order to contribute to SciPy,
-please see `the contributor building guide <contributor.html>`__.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-
-   contributor
-
-Otherwise, read on for guidance on builds for local usage,
-redistribution, and advanced customisation of builds.
-
-Building from source to use SciPy
----------------------------------------
-
 .. note::
 
    If you are only trying to install SciPy, we recommend using binaries - see
    `Installation <https://scipy.org/install>`__ for details on that.
+
+.. note::
+
+    If you are building SciPy in order to contribute to SciPy,
+    please see instead `the contributor building guide <contributor.html>`__.
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    contributor
+
+Building SciPy from source requires setting up system-level dependencies
+(compilers, BLAS/LAPACK libraries, etc.) first, and then invoking a build. The
+build may be done in order to install SciPy for local usage, develop SciPy
+itself, or build redistributable binary packages.
 
 To build SciPy from source to use SciPy, there are two steps:
 setting up system-level dependencies, and building SciPy itself.
