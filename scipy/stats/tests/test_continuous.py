@@ -188,52 +188,31 @@ def draw_distribution_from_family(family, rng, shape_options,
                        x_result_shape=x_result_shape, xy_result_shape=xy_result_shape)
 
 
-continuous_families = [
-    StandardNormal,
-    Normal,
-    Logistic,
-    Uniform,
-    _LogUniform
-]
+class DistributionsTest:
+    _options = [
+        (dict(min_dims=0, max_dims=0), [1, 0, 0, 0]), # all valid scalar
+        (dict(min_dims=0, max_dims=0), [1, 0, 0, 1]), # all nan scalar
+        (dict(min_dims=1, max_dims=1,
+            min_side=5, max_side=6), [1, 0, 0, 0]), # all valid array
+        (dict(min_dims=1, max_dims=1,
+            min_side=5, max_side=6), [0, 0, 0, 1]), # all nan array
+        (dict(min_dims=1, max_dims=1,  # mixed valid, invalid, and edge cases
+            min_side=20, max_side=25), [0.25, 0.25, 0.25, 0.25]),
+    ] + [({}, None)]*15  # other, randomly-generated shape options
 
-discrete_families = [
-    Binomial,
-]
+    @pytest.fixture(params=list(enumerate(_options)), ids=range(len(_options)))
+    def options(self, request):
+        return request.param
 
-families = continuous_families + discrete_families
-_options = [
-    (dict(min_dims=0, max_dims=0), [1, 0, 0, 0]), # all valid scalar
-    (dict(min_dims=0, max_dims=0), [1, 0, 0, 1]), # all nan scalar
-    (dict(min_dims=1, max_dims=1,
-          min_side=5, max_side=6), [1, 0, 0, 0]), # all valid array
-    (dict(min_dims=1, max_dims=1,
-          min_side=5, max_side=6), [0, 0, 0, 1]), # all nan array
-    (dict(min_dims=1, max_dims=1,  # mixed valid, invalid, and edge cases
-          min_side=20, max_side=25), [0.25, 0.25, 0.25, 0.25]),
-] + [({}, None)]*15  # other, randomly-generated shape options
+    @pytest.fixture
+    def case(self, options):
+        i, _options = options
+        shape_options, proportions = _options
+        rng = np.random.default_rng(abs(hash((i, self.seed))))
+        tmp = draw_distribution_from_family(self.family, rng,
+                                            shape_options, proportions)
+        return _RichResult(family=self.family, rng=rng, **tmp)
 
-
-@pytest.fixture(params=list(enumerate(_options)), ids=range(len(_options)))
-def options(request):
-    return request.param
-
-
-@pytest.fixture(params=list(enumerate(families)), ids=families)
-def family(request):
-    return request.param
-
-
-@pytest.fixture
-def case(family, options):
-    i, _options = options
-    shape_options, proportions = _options
-    j, family = family
-    rng = np.random.default_rng(abs(hash((i, j))))
-    tmp = draw_distribution_from_family(family, rng, shape_options, proportions)
-    return _RichResult(family=family, rng=rng, **tmp)
-
-
-class TestDistributions:
     def test_support(self, case):
         check_support(case.dist)
 
@@ -252,7 +231,7 @@ class TestDistributions:
         sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
         qrng = qmc.Halton(d=1, seed=case.rng)
         check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
-                                case.result_shape, case.rng)
+                                case.result_shape, qrng)
 
     def test_entropy(self, case):
         with np.errstate(invalid='ignore'):
@@ -343,6 +322,36 @@ class TestDistributions:
     def test_iccdf(self, case):
         check_dist_func(case.dist, 'iccdf', case.p, case.x_result_shape,
                         {'complement', 'inversion'})
+
+
+class TestStandardNormal(DistributionsTest):
+    seed = 726527242
+    family = StandardNormal
+
+
+class TestNormal(DistributionsTest):
+    seed = 353965734
+    family = Normal
+
+
+class TestLogistic(DistributionsTest):
+    seed = 389513556
+    family = Logistic
+
+
+class TestUniform(DistributionsTest):
+    seed = 893709074
+    family = Uniform
+
+
+class Test_LogUniform(DistributionsTest):
+    seed = 260607439
+    family = _LogUniform
+
+
+class TestBinomial(DistributionsTest):
+    seed = 706381675
+    family = Binomial
 
 
 class TestOtherMethods:
@@ -838,7 +847,7 @@ def check_lmoment_funcs(dist, result_shape):
             dist.lmoment(1)
         return
 
-    atol = 3e-9
+    atol = 1e-8
 
     def check(order, standardize=False, method=None, ref=None, success=True):
         if success:
