@@ -180,6 +180,10 @@ add_wrapped_table(PyObject *module, PyTypeObject *tp, const PyMethodDef *defs) {
 
         Py_INCREF(tp);   // the reference the instance owns
 
+        /* Every row is invoked through this one pointer type by `blasfunc_call`, which -- unlike
+         * CPython's own dispatch -- never consults `ml_flags`.  So every entry in these tables
+         * must genuinely be `METH_VARARGS | METH_KEYWORDS`: a `METH_NOARGS` or `METH_O` row
+         * would be called through the wrong function-pointer type. */
         f->meth = reinterpret_cast<PyCFunctionWithKeywords>(reinterpret_cast<void (*)()>(d->ml_meth));
         f->dict = nullptr;
         f->doc = nullptr;

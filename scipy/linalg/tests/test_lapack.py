@@ -40,6 +40,21 @@ def test_wrapper_traverses_its_type():
     assert any(ref is func for ref in gc.get_referrers(type(func)))
 
 
+def test_ilaver():
+    # `ilaver` is the only routine taking no arguments at all.  The tables are
+    # dispatched through a single function-pointer type that never consults
+    # ml_flags, so its empty kwlist -- not METH_NOARGS -- is what rejects
+    # anything it is passed.
+    version = lapack.ilaver()
+    assert len(version) == 3
+    assert all(isinstance(v, int) for v in version)
+    assert version[0] >= 3, version
+
+    for args, kwargs in [((1,), {}), ((1, 2, 3), {}), ((), {'spam': 'eggs'})]:
+        with assert_raises(TypeError):
+            lapack.ilaver(*args, **kwargs)
+
+
 def generate_random_dtype_array(shape, dtype, rng):
     # generates a random matrix of desired data type of shape
     if dtype in COMPLEX_DTYPES:
