@@ -566,7 +566,7 @@ class RK45(RungeKutta):
 
 
 class DOP853(RungeKutta):
-    """Explicit Runge-Kutta method of order 8.
+    r"""Explicit Runge-Kutta method of order 8.
 
     This is a Python implementation of "DOP853" algorithm originally written
     in Fortran [1]_, [2]_. Note that this is not a literal translation, but
@@ -642,12 +642,141 @@ class DOP853(RungeKutta):
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
 
+    Examples
+    --------
+    Compute one orbit of a satellite around Earth using `Cowell's
+    method
+    <https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method>`_
+    for orbit simulations.
+
+    >>> import numpy as np
+    >>> import scipy.integrate as itg
+    >>> import matplotlib.pyplot as plt
+
+    Import the Newtonian constant of gravitation and create variables
+    for earth's mass and radius, and the satellite's mass and altitude
+    in kilograms and meters. Calculate the satellite's orbital velocity.
+
+    >>> from scipy.constants import G
+    >>> mass_e, radius_e = 5.9722E24, 6.371E6
+    >>> mass_s, alt_s = 6E3, 2E6
+    >>> v_orbit = np.sqrt((G*mass_e)/(radius_e+alt_s))
+
+    Cowell's equations for simulating two interacting bodies are a
+    system of second-order ODEs.
+
+    .. math::
+
+        \begin{align*}
+            \ddot{r_1} &=\frac{Gm_2(r_2-r_1)}{d^3}\\
+            \ddot{r_2} &= \frac{Gm_1(r_1-r_2)}{d^3}
+        \end{align*}
+
+    Where :math:`r_1` and :math:`r_2` are the position vectors of the
+    centers of the two bodies, :math:`G` is the Newtonian constant of
+    gravitation, and :math:`m_1` and :math:`m_2` are the masses of the
+    two bodies. The distance between the centers of the two bodies is
+    :math:`d = ||r_1 - r_2||`.
+
+    To convert Cowell's equations into a system of first-order ODEs,
+    introduce variables :math:`k_1` and :math:`k_2` for the velocity of
+    each body.
+
+    .. math::
+
+        \begin{align*}
+            \dot{r_1} &= k_1\\
+            \dot{r_2} &= k_2\\
+            \dot{k_1} &=\frac{Gm_2(r_2-r_1)}{d^3}\\
+            \dot{k_2} &=\frac{Gm_1(r_1-r_2)}{d^3}
+        \end{align*}
+
+    Then, define a function that returns the right-hand side of the
+    expanded system.
+
+    >>> def cowell(t, r):
+    ...    # location and velocity vectors
+    ...    r1, k1, r2, k2 = r.reshape(4,3)
+    ...    # system coefficient
+    ...    dist = r2 - r1
+    ...    coeff = (G*dist/(np.linalg.norm(dist)**3))
+    ...    # system equations
+    ...    return np.concatenate([k1, coeff*mass_s, k2, -coeff*mass_e])
+
+    ``cowell`` accepts a vector containing the coordinates for first
+    body's position and velocity followed by the coordinates for the
+    second body's position and velocity.
+
+    Set the Earth's initial position and velocity to zero. Set the
+    satellite's initial position to be the sum of the Earth's radius
+    and the satellite's altitude on the ``x``-axis, and its initial
+    velocity to be its orbital velocity in the ``y``-direction.
+    Combine the initial conditions for both bodies in an initial
+    conditions vector.
+
+    >>> init_e = np.zeros(6)
+    >>> init_s = [radius_e + alt_s, 0, 0, 0, v_orbit, 0]
+    >>> inits = np.concatenate((init_e, init_s))
+
+    Create a solver object using the initial conditions.
+
+    >>> solver = itg.DOP853(cowell, 0, inits, 1E8, max_step=50)
+
+    Use the initial state to create an array in which to store the
+    estimated solution.
+
+    >>> solr = solver.y
+
+    Run the solver for a trial ``120`` integration steps, then plot
+    earth's trajectory in blue and the satellite's trajectory in orange.
+
+    >>> for _ in range(120):
+    ...     solver.step()
+    ...     solr = np.vstack((solr, solver.y))
+
+    >>> x_e, y_e, z_e = solr.T[0:3]
+    >>> x_s, y_s, z_s = solr.T[6:9]
+
+    >>> fig1 = plt.figure()
+    >>> ax1 = fig1.add_subplot(projection='3d')
+    >>> ax1.plot(x_e, y_e, z_e, 'bo')
+    >>> ax1.plot(x_s, y_s, z_s, color='orange')
+    >>> ax1.set(xlabel='x', ylabel='y', zlabel='z')
+    >>> plt.show()
+
+    The figure shows that the Earth is approximately stationary and the
+    satellite orbits around it in an ellipse. The satellite orbit has a
+    gap.
+
+    To calculate the rest of the orbit, run the solver for another
+    ``40`` integration steps.
+
+    >>> for _ in range(40):
+    ...     solver.step()
+    ...     solr = np.vstack((solr, solver.y))
+
+    Plot the updated solution.
+
+    >>> x_e, y_e, z_e = solr.T[0:3]
+    >>> x_s, y_s, z_s = solr.T[6:9]
+
+    >>> fig2 = plt.figure()
+    >>> ax2 = fig2.add_subplot(projection='3d')
+    >>> ax2.plot(x_e, y_e, z_e, 'bo')
+    >>> ax2.plot(x_s, y_s, z_s, color='orange')
+    >>> ax2.set(xlabel='x', ylabel='y', zlabel='z')
+    >>> plt.show()
+
+    The additional ``40`` integration steps close the gap in the orbit.
+
     References
     ----------
     .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
            Equations I: Nonstiff Problems", Sec. II.
     .. [2] `Page with original Fortran code of DOP853
             <http://www.unige.ch/~hairer/software.html>`_.
+    .. [3] "Cowell's method", Wikipedia
+            https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method
     """
     n_stages = dop853_coefficients.N_STAGES
     order = 8
