@@ -1635,6 +1635,19 @@ class BaseQRupdate(BaseQRdeltas):
         a1 = np.dot(q, r) + np.outer(u, v.conj())
         check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
+    def test_qr_update_full_qr_high_rank_raises(self):
+        # gh-22200 - Rank-p updates with p > m-n are unsupported for full QR
+        # factors of tall matrices.
+        rng = np.random.default_rng(1234)
+        m, n, p = 5, 3, 3
+        a = rng.random((m, n))
+        u = rng.random((m, p))
+        v = rng.random((n, p))
+        q, r = linalg.qr(a)
+
+        with assert_raises(ValueError, match=r"p > m - n"):
+            linalg.qr_update(q, r, u, v)
+
 class TestQRupdate_f(BaseQRupdate):
     dtype = np.dtype('f')
 
