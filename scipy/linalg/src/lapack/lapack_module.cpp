@@ -65,6 +65,7 @@ static PyObject *lapackfunc_repr(PyObject *self) {
 
 
 static int lapackfunc_traverse(PyObject *self, visitproc visit, void *arg) {
+    Py_VISIT(Py_TYPE(self));   // heap type: instances own a reference to their type
     Py_VISIT(((LapackFunc *)self)->dict);
     Py_VISIT(((LapackFunc *)self)->doc);
     return 0;

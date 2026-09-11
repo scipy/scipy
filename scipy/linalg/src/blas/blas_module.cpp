@@ -60,6 +60,7 @@ blasfunc_repr(PyObject *self) {
 
 static int
 blasfunc_traverse(PyObject *self, visitproc visit, void *arg) {
+    Py_VISIT(Py_TYPE(self));   // heap type: instances own a reference to their type
     Py_VISIT(((BlasFunc *)self)->dict);
     Py_VISIT(((BlasFunc *)self)->doc);
     return 0;

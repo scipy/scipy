@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, April 2002
 #
 
+import gc
 import math
 import pytest
 import numpy as np
@@ -115,6 +116,22 @@ def test_get_blas_funcs_alias():
     f, g, h = get_blas_funcs(('dot', 'dotc', 'dotu'), dtype=np.float64)
     assert f is g
     assert f is h
+
+
+@pytest.mark.parametrize('module', [
+    pytest.param(fblas, id='fblas',
+                 marks=pytest.mark.skipif(not HAS_LP64_FBLAS,
+                                          reason='LP64 fblas not available')),
+    pytest.param(fblas_64, id='fblas_64',
+                 marks=pytest.mark.skipif(not HAS_ILP64,
+                                          reason='ILP64 fblas not available')),
+])
+def test_wrapper_traverses_its_type(module):
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    func = module.daxpy
+    assert any(ref is func for ref in gc.get_referrers(type(func)))
 
 
 def _dt_from_prefix(prefix):
