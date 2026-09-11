@@ -452,6 +452,7 @@ description = "Check docs reference guide matches `__all__` attributes"
 
 [feature.ipython-dep.dependencies]
 ipython = "*"
+matplotlib = "*"
 
 [feature.ipython-task.tasks.ipython]
 cmd = "spin ipython --no-build"
