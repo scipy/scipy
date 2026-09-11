@@ -327,27 +327,27 @@ class TestStandardNormal(DistributionsTest):
     seed = 726527242
     family = StandardNormal
 
+    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_cdf2(self, case):
-        with np.errstate(divide='ignore'):
-            return super().test_cdf2(case)
+        return super().test_cdf2(case)
 
 
 class TestNormal(DistributionsTest):
     seed = 353965734
     family = Normal
 
+    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case):
-        with np.errstate(divide='ignore'):
-            return super().test_logpdf(case)
+        return super().test_logpdf(case)
 
 
 class TestLogistic(DistributionsTest):
     seed = 389513556
     family = Logistic
 
+    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_cdf2(self, case):
-        with np.errstate(divide='ignore'):
-            return super().test_cdf2(case)
+        return super().test_cdf2(case)
 
 
 class TestUniform(DistributionsTest):
@@ -355,7 +355,7 @@ class TestUniform(DistributionsTest):
     family = Uniform
 
     def test_mode(self, case):
-        pytest.skip("mode of Uniform distribution is not unique")
+        assert_allclose(case.dist.mode(), case.dist.a + case.dist.ab/2)
 
 
 class Test_LogUniform(DistributionsTest):
