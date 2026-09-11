@@ -549,7 +549,6 @@ legacy_functions = [
     "scipy.interpolate.UnivariateSpline",
     "scipy.interpolate.splder",
     "scipy.interpolate.Rbf",
-    "scipy.interpolate.interp2d",
     "scipy.sparse.lil_matrix",
     "scipy.sparse.dok_matrix",
     "scipy.sparse.dia_matrix",
