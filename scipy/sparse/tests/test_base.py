@@ -1159,6 +1159,19 @@ class _TestCommon:
         datsp.sum(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
 
+        # check when out and dtype do not agree. See gh-26149
+        # convert to dtype before summing, then put into out
+        for ax in (1, 0):
+            out_shape = (3,) if self.is_array_test else (3, 1) if ax else (1, 3)
+            dat_out = np.zeros(out_shape)
+            datsp_out = np.zeros(out_shape) if not keep else matrix(np.zeros(out_shape))
+            for dtype in (np.int32, np.float32):
+                ret = (dat * 0.1).sum(axis=ax, dtype=dtype, out=dat_out, keepdims=keep)
+                retsp = (datsp * 0.1).sum(axis=ax, dtype=dtype, out=datsp_out)
+                assert ret is dat_out
+                assert retsp is datsp_out
+                assert_array_almost_equal(dat_out, datsp_out)
+
         # check that wrong shape out parameter raises
         with assert_raises(ValueError, match="output parameter"):
             datsp.sum(out=array([0]))
