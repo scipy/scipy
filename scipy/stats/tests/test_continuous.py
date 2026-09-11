@@ -147,11 +147,10 @@ class Test_RealInterval:
         assert domain1.symbols is not domain2.symbols
 
 
-def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
+def draw_distribution_from_family(family, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
     n_parameterizations = family._num_parameterizations()
-    rng.random()
     if n_parameterizations > 0:
         i = rng.integers(0, n_parameterizations)
         n_parameters = family._num_parameters(i)
@@ -204,16 +203,16 @@ class TestDistributions:
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_support_moments_sample(self, family, data, seed):
+    @given(seed=strategies.integers(min_value=0))
+    def test_support_moments_sample(self, family, seed):
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
         proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, data, rng, proportions)
+        tmp = draw_distribution_from_family(family, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
-        sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
-                                                   max_side=20))
+        sample_shape, = mutually_broadcastable_shapes(1, min_dims=0, min_side=0,
+                                                      max_side=20)
 
         with np.errstate(invalid='ignore', divide='ignore'):
             check_support(dist)
@@ -244,8 +243,8 @@ class TestDistributions:
                               ('iccdf', {'complement', 'inversion'}, 'p'),
                               ])
     @settings(max_examples=20)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_funcs(self, family, data, seed, func, methods, arg):
+    @given(seed=strategies.integers(min_value=0))
+    def test_funcs(self, family, seed, func, methods, arg):
         if family == Uniform and func == 'mode':
             pytest.skip("Mode is not unique; `method`s disagree.")
 
@@ -253,7 +252,7 @@ class TestDistributions:
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
         proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, data, rng, proportions)
+        tmp = draw_distribution_from_family(family, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         args = {'x': x, 'p': p, 'logp': p}
@@ -1569,13 +1568,13 @@ class TestMakeDistribution:
 
     @pytest.mark.slow  # just in case
     @settings(max_examples=20)  # no need for more
-    @given(data=strategies.data())
-    def test_draw_distribution(self, data):
-        # `draw_distribution_from_family` is a private function right now, but we will
+    @given(seed=strategies.integers(min_value=0))
+    def test_draw_distribution(self, seed):
+        # `draw_distribution_from_family` is a private function right now, but we may
         # want that functionality to be public someday. It was broken for custom
         # distributions because the `typical` parameter of the support was ignored.
         # Check that this is resolved.
-        rng = np.random.default_rng(8465652168548465121)
+        rng = np.random.default_rng(seed)
         u_typical = tuple(np.sort(rng.standard_normal(2)))
         s_typical = tuple(np.sort(rng.random(2)*2))
         x_typical = tuple(np.sort(rng.standard_normal(2)))
@@ -1591,7 +1590,7 @@ class TestMakeDistribution:
 
         family = stats.make_distribution(MyNormal())
         proportions = (1.0, 0., 0., 0.)
-        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
+        tmp = draw_distribution_from_family(family, rng, proportions, min_side=1)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
         assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
@@ -1661,8 +1660,8 @@ class TestTransforms:
         assert np.all((sample > lb) & (sample < ub))
 
     @pytest.mark.fail_slow(10)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_loc_scale(self, data, seed):
+    @given(seed=strategies.integers(min_value=0))
+    def test_loc_scale(self, seed):
         # Need tests with negative scale
         rng = np.random.default_rng(seed)
 
@@ -1671,7 +1670,7 @@ class TestTransforms:
                 super().__init__(StandardNormal(), *args, **kwargs)
 
         tmp = draw_distribution_from_family(
-            TransformedNormal, data, rng, proportions=(1, 0, 0, 0), min_side=1)
+            TransformedNormal, rng, proportions=(1, 0, 0, 0), min_side=1)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         loc = dist.loc
