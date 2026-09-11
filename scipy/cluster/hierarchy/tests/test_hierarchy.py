@@ -350,6 +350,19 @@ class TestFcluster:
         assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
                            xp.asarray([1, 2, 3]))
 
+    @make_xp_test_case(single, maxdists)
+    @pytest.mark.parametrize("criterion", ["maxclust", "maxclust_monocrit"])
+    @pytest.mark.parametrize("t", [0, -1, 0.5])
+    def test_fcluster_maxclust_t_less_than_one_gh_21206(self, t, criterion, xp):
+        # No threshold can give fewer than one cluster, so the search for one
+        # ran off the end of the criterion array and the result was whatever
+        # happened to be in memory there.
+        y = xp.asarray([[1.], [4.], [5.], [9.]])
+        Z = single(y)
+        kwargs = {'monocrit': maxdists(Z)} if 'monocrit' in criterion else {}
+        with assert_raises(ValueError, match="at least 1"):
+            fcluster(Z, t=t, criterion=criterion, **kwargs)
+
 
 @make_xp_test_case(leaders)
 class TestLeaders:
