@@ -1191,6 +1191,16 @@ class TestAllFreqConvolves:
             ref = convapproach(a[0], b[i], mode='same')
             xp_assert_close(res[i], ref)
 
+        # along a convolved axis the output keeps the size of the first
+        # input even when it is 1; a size-1 axis not involved in the
+        # convolution is broadcast
+        xp_assert_equal(convapproach(xp.arange(1), xp.arange(50),
+                                     mode='same').shape, (1,))
+        xp_assert_equal(convapproach(xp.arange(50), xp.arange(1),
+                                     mode='same').shape, (50,))
+        xp_assert_equal(convapproach(xp.ones((1, 1)), xp.ones((5, 7)),
+                                     mode='same').shape, (1, 1))
+
 
 
 @skip_xp_backends(np_only=True, reason="assertions may differ on backends")
