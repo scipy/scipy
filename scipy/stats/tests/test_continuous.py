@@ -217,12 +217,12 @@ class DistributionsTest:
         check_support(case.dist)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_moment(self, case):
-        check_moment_funcs(case.dist, case.result_shape)  # this needs to get split up
+    def test_moment(self, case, tol_override=None):
+        check_moment_funcs(case.dist, case.result_shape, tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_lmoment(self, case):
-        check_lmoment_funcs(case.dist, case.result_shape)
+    def test_lmoment(self, case, tol_override=None):
+        check_lmoment_funcs(case.dist, case.result_shape, tol_override=tol_override)
 
     def test_random_sample(self, case):
         sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
@@ -235,92 +235,107 @@ class DistributionsTest:
         check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
                                 case.result_shape, qrng)
 
-    def test_entropy(self, case):
+    def test_entropy(self, case, tol_override=None):
         check_dist_func(case.dist, 'entropy', None, case.result_shape,
-                        {'log/exp', 'quadrature'})
+                        {'log/exp', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_logentropy(self, case):
+    def test_logentropy(self, case, tol_override=None):
         check_dist_func(case.dist, 'logentropy', None, case.result_shape,
-                        {'log/exp', 'quadrature'})
+                        {'log/exp', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_median(self, case):
-        check_dist_func(case.dist, 'median', None, case.result_shape, {'icdf'})
+    def test_median(self, case, tol_override=None):
+        check_dist_func(case.dist, 'median', None, case.result_shape, {'icdf'},
+                        tol_override=tol_override)
 
-    def test_mode(self, case):
+    def test_mode(self, case, tol_override=None):
+        tol_override = {'atol': 1e-6} if tol_override is None else tol_override
         check_dist_func(case.dist, 'mode', None, case.result_shape,
-                        {'optimization'}, tol_override={'atol': 1e-6})
+                        {'optimization'}, tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_mean(self, case):
-        check_dist_func(case.dist, 'mean', None, case.result_shape, {'cache'})
+    def test_mean(self, case, tol_override=None):
+        check_dist_func(case.dist, 'mean', None, case.result_shape, {'cache'},
+                        tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_variance(self, case):
-        check_dist_func(case.dist, 'variance', None, case.result_shape, {'cache'})
+    def test_variance(self, case, tol_override=None):
+        check_dist_func(case.dist, 'variance', None, case.result_shape, {'cache'},
+                        tol_override=tol_override)
 
-    def test_standard_deviation(self, case):
-        assert_allclose(case.dist.standard_deviation()**2, case.dist.variance())
+    def test_standard_deviation(self, case, tol_override=None):
+        tol_override = {} if tol_override is None else tol_override
+        assert_allclose(case.dist.standard_deviation()**2, case.dist.variance(),
+                        **tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_skewness(self, case):
-        check_dist_func(case.dist, 'skewness', None, case.result_shape, {'cache'})
+    def test_skewness(self, case, tol_override=None):
+        check_dist_func(case.dist, 'skewness', None, case.result_shape,
+                        {'cache'}, tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_kurtosis(self, case):
-        check_dist_func(case.dist, 'kurtosis', None, case.result_shape, {'cache'})
+    def test_kurtosis(self, case, tol_override=None):
+        check_dist_func(case.dist, 'kurtosis', None, case.result_shape,
+                        {'cache'}, tol_override=tol_override)
 
-    def test_pdf(self, case):
-        check_dist_func(case.dist, 'pdf', case.x, case.x_result_shape, {'log/exp'})
+    def test_pdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'pdf', case.x, case.x_result_shape,
+                        {'log/exp'}, tol_override=tol_override)
 
-    def test_logpdf(self, case):
+    def test_logpdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'logpdf', case.x, case.x_result_shape,
-                        {'log/exp'})
+                        {'log/exp'}, tol_override=tol_override)
 
-    def test_logcdf(self, case):
+    def test_logcdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'logcdf', case.x, case.x_result_shape,
-                        {'log/exp', 'complement', 'quadrature'})
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_cdf(self, case):
+    def test_cdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'cdf', case.x, case.x_result_shape,
-                        {'log/exp', 'complement', 'quadrature'})
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_cdf2(self, case):
+    def test_cdf2(self, case, tol_override=None):
         check_cdf2(case.dist, False, case.x, case.y,
-                    case.xy_result_shape, {'quadrature'})
+                    case.xy_result_shape, {'quadrature'}, tol_override=tol_override)
         check_cdf2(case.dist, True, case.x, case.y,
-                    case.xy_result_shape, {'quadrature'})
+                    case.xy_result_shape, {'quadrature'}, tol_override=tol_override)
 
-    def test_logccdf(self, case):
+    def test_logccdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'logccdf', case.x, case.x_result_shape,
-                        {'log/exp', 'complement', 'quadrature'})
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_ccdf(self, case):
+    def test_ccdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'ccdf', case.x, case.x_result_shape,
-                        {'log/exp', 'complement', 'quadrature'})
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
 
-    def test_ccdf2(self, case):
+    def test_ccdf2(self, case, tol_override=None):
         check_ccdf2(case.dist, False, case.x, case.y,
-                    case.xy_result_shape, {'addition'})
+                    case.xy_result_shape, {'addition'}, tol_override=tol_override)
         check_ccdf2(case.dist, True, case.x, case.y,
-                    case.xy_result_shape, {'addition'})
+                    case.xy_result_shape, {'addition'}, tol_override=tol_override)
 
-    def test_ilogcdf(self, case):
+    def test_ilogcdf(self, case, tol_override=None):
         with np.errstate(divide='ignore', over='ignore'):
             check_dist_func(case.dist, 'ilogcdf', case.logp, case.x_result_shape,
-                            {'complement', 'inversion'})
+                            {'complement', 'inversion'}, tol_override=tol_override)
 
-    def test_icdf(self, case):
+    def test_icdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'icdf', case.p, case.x_result_shape,
-                        {'complement', 'inversion'})
+                        {'complement', 'inversion'}, tol_override=tol_override)
 
-    def test_ilogccdf(self, case):
+    def test_ilogccdf(self, case, tol_override=None):
         with np.errstate(divide='ignore', over='ignore'):
             check_dist_func(case.dist, 'ilogccdf', case.logp, case.x_result_shape,
-                            {'complement', 'inversion'})
+                            {'complement', 'inversion'}, tol_override=tol_override)
 
-    def test_iccdf(self, case):
+    def test_iccdf(self, case, tol_override=None):
         check_dist_func(case.dist, 'iccdf', case.p, case.x_result_shape,
-                        {'complement', 'inversion'})
+                        {'complement', 'inversion'}, tol_override=tol_override)
 
 
 class TestStandardNormal(DistributionsTest):
@@ -339,6 +354,9 @@ class TestNormal(DistributionsTest):
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case):
         return super().test_logpdf(case)
+
+    def test_lmoment(self, case):
+        return super().test_lmoment(case, tol_override={'atol': 1e-8})
 
 
 class TestLogistic(DistributionsTest):
@@ -360,6 +378,9 @@ class TestUniform(DistributionsTest):
     @pytest.mark.fail_slow(10)
     def test_quasi_random_sample(self, case):
         return super().test_quasi_random_sample(case)
+
+    def test_moment(self, case):
+        return super().test_moment(case, tol_override={'atol': 1e-10})
 
 
 class Test_LogUniform(DistributionsTest):
@@ -537,12 +558,11 @@ def check_support(dist):
 
 
 def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None):
-    tol_override = {'atol': 0} if tol_override is None else tol_override
-
     # Check that all computation methods of all distribution functions agree
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
+    tol_override = {'atol': 0} if tol_override is None else tol_override
 
     args = tuple() if arg is None else (arg,)
     methods = methods.copy()
@@ -581,12 +601,13 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None):
             assert np.isscalar(res)
 
 
-def check_cdf2(dist, log, x, y, result_shape, methods):
+def check_cdf2(dist, log, x, y, result_shape, methods, tol_override=None):
     # Specialized test for 2-arg cdf since the interface is a bit different
     # from the other methods. Here, we'll use 1-arg cdf as a reference, and
     # since we have already checked 1-arg cdf in `check_nans_and_edges`, this
     # checks the equivalent of both `check_dist_func` and
     # `check_nans_and_edges`.
+    tol_override = {'atol' : 0} if tol_override is None else tol_override
     methods = methods.copy()
 
     if log:
@@ -624,7 +645,7 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
             # np.exp(np.nan) raises on some platforms?
             res = (np.exp(dist.logcdf(x, y, method=method)) if log
                 else dist.cdf(x, y, method=method))
-        np.testing.assert_allclose(res, ref, atol=1e-14)
+        np.testing.assert_allclose(res, ref, **tol_override)
         if log:
             np.testing.assert_equal(res.dtype, (ref + 0j).dtype)
         else:
@@ -634,10 +655,11 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
             assert np.isscalar(res)
 
 
-def check_ccdf2(dist, log, x, y, result_shape, methods):
+def check_ccdf2(dist, log, x, y, result_shape, methods, tol_override=None):
     # Specialized test for 2-arg ccdf since the interface is a bit different
     # from the other methods. Could be combined with check_cdf2 above, but
     # writing it separately is simpler.
+    tol_override = {'atol' : 0} if tol_override is None else tol_override
     methods = methods.copy()
 
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
@@ -659,7 +681,7 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
             continue
         res = (np.exp(dist.logccdf(x, y, method=method)) if log
                else dist.ccdf(x, y, method=method))
-        np.testing.assert_allclose(res, ref, atol=1e-14)
+        np.testing.assert_allclose(res, ref, **tol_override)
         np.testing.assert_equal(res.dtype, ref.dtype)
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
@@ -753,18 +775,21 @@ def check_nans_and_edges(dist, fname, arg, res):
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
-def check_moment_funcs(dist, result_shape):
+def check_moment_funcs(dist, result_shape, tol_override=None):
     # Check that all computation methods of all distribution functions agree
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-
-    atol = 1e-9  # make this tighter (e.g. 1e-13) after fixing `draw`
+    _tol_override = {'rtol': 1e-7, 'atol': 1e-13}
+    if tol_override is not None:
+        _tol_override.update(tol_override)
+    tol_override = _tol_override
 
     def check(order, kind, method=None, ref=None, success=True):
         if success:
             res = dist.moment(order, kind, method=method)
-            assert_allclose(res, ref, atol=atol*10**order)
+            assert_allclose(res, ref, rtol=tol_override['rtol'],
+                            atol=tol_override['atol']*10**order)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
@@ -862,8 +887,9 @@ def check_moment_funcs(dist, result_shape):
     dist.reset_cache()
 
 
-def check_lmoment_funcs(dist, result_shape):
+def check_lmoment_funcs(dist, result_shape, tol_override=None):
     # Perform consistency check for L-moments similar to check_moment_funcs above
+    tol_override = {'atol' : 5e-13} if tol_override is None else tol_override
 
     if not isinstance(dist, ContinuousDistribution):
         message = "L-moments are currently available only for continuous..."
@@ -871,12 +897,10 @@ def check_lmoment_funcs(dist, result_shape):
             dist.lmoment(1)
         return
 
-    atol = 1e-8
-
     def check(order, standardize=False, method=None, ref=None, success=True):
         if success:
             res = dist.lmoment(order, standardize=standardize, method=method)
-            assert_allclose(res, ref, atol=atol)
+            assert_allclose(res, ref, **tol_override)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
