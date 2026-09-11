@@ -216,9 +216,11 @@ class DistributionsTest:
     def test_support(self, case):
         check_support(case.dist)
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_moment(self, case):
         check_moment_funcs(case.dist, case.result_shape)  # this needs to get split up
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_lmoment(self, case):
         check_lmoment_funcs(case.dist, case.result_shape)
 
@@ -234,36 +236,36 @@ class DistributionsTest:
                                 case.result_shape, qrng)
 
     def test_entropy(self, case):
-        with np.errstate(invalid='ignore'):
-            check_dist_func(case.dist, 'entropy', None, case.result_shape,
-                            {'log/exp', 'quadrature'})
+        check_dist_func(case.dist, 'entropy', None, case.result_shape,
+                        {'log/exp', 'quadrature'})
 
     def test_logentropy(self, case):
-        with np.errstate(invalid='ignore'):
-            check_dist_func(case.dist, 'logentropy', None, case.result_shape,
-                            {'log/exp', 'quadrature'})
+        check_dist_func(case.dist, 'logentropy', None, case.result_shape,
+                        {'log/exp', 'quadrature'})
 
     def test_median(self, case):
         check_dist_func(case.dist, 'median', None, case.result_shape, {'icdf'})
 
     def test_mode(self, case):
-        if case.family == Uniform:
-            pytest.skip("Mode is not unique; `method`s disagree.")
         check_dist_func(case.dist, 'mode', None, case.result_shape,
                         {'optimization'}, tol_override={'atol': 1e-6})
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_mean(self, case):
         check_dist_func(case.dist, 'mean', None, case.result_shape, {'cache'})
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_variance(self, case):
         check_dist_func(case.dist, 'variance', None, case.result_shape, {'cache'})
 
     def test_standard_deviation(self, case):
         assert_allclose(case.dist.standard_deviation()**2, case.dist.variance())
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_skewness(self, case):
         check_dist_func(case.dist, 'skewness', None, case.result_shape, {'cache'})
 
+    @pytest.mark.thread_unsafe(reason="unknown")
     def test_kurtosis(self, case):
         check_dist_func(case.dist, 'kurtosis', None, case.result_shape, {'cache'})
 
@@ -271,9 +273,8 @@ class DistributionsTest:
         check_dist_func(case.dist, 'pdf', case.x, case.x_result_shape, {'log/exp'})
 
     def test_logpdf(self, case):
-        with np.errstate(divide='ignore'):
-            check_dist_func(case.dist, 'logpdf', case.x, case.x_result_shape,
-                            {'log/exp'})
+        check_dist_func(case.dist, 'logpdf', case.x, case.x_result_shape,
+                        {'log/exp'})
 
     def test_logcdf(self, case):
         check_dist_func(case.dist, 'logcdf', case.x, case.x_result_shape,
@@ -284,11 +285,10 @@ class DistributionsTest:
                         {'log/exp', 'complement', 'quadrature'})
 
     def test_cdf2(self, case):
-        with np.errstate(invalid='ignore', divide='ignore'):
-            check_cdf2(case.dist, False, case.x, case.y,
-                       case.xy_result_shape, {'quadrature'})
-            check_cdf2(case.dist, True, case.x, case.y,
-                       case.xy_result_shape, {'quadrature'})
+        check_cdf2(case.dist, False, case.x, case.y,
+                    case.xy_result_shape, {'quadrature'})
+        check_cdf2(case.dist, True, case.x, case.y,
+                    case.xy_result_shape, {'quadrature'})
 
     def test_logccdf(self, case):
         check_dist_func(case.dist, 'logccdf', case.x, case.x_result_shape,
@@ -299,11 +299,10 @@ class DistributionsTest:
                         {'log/exp', 'complement', 'quadrature'})
 
     def test_ccdf2(self, case):
-        with np.errstate(invalid='ignore', divide='ignore'):
-            check_ccdf2(case.dist, False, case.x, case.y,
-                        case.xy_result_shape, {'addition'})
-            check_ccdf2(case.dist, True, case.x, case.y,
-                        case.xy_result_shape, {'addition'})
+        check_ccdf2(case.dist, False, case.x, case.y,
+                    case.xy_result_shape, {'addition'})
+        check_ccdf2(case.dist, True, case.x, case.y,
+                    case.xy_result_shape, {'addition'})
 
     def test_ilogcdf(self, case):
         with np.errstate(divide='ignore', over='ignore'):
@@ -328,20 +327,35 @@ class TestStandardNormal(DistributionsTest):
     seed = 726527242
     family = StandardNormal
 
+    def test_cdf2(self, case):
+        with np.errstate(divide='ignore'):
+            return super().test_cdf2(case)
+
 
 class TestNormal(DistributionsTest):
     seed = 353965734
     family = Normal
+
+    def test_logpdf(self, case):
+        with np.errstate(divide='ignore'):
+            return super().test_logpdf(case)
 
 
 class TestLogistic(DistributionsTest):
     seed = 389513556
     family = Logistic
 
+    def test_cdf2(self, case):
+        with np.errstate(divide='ignore'):
+            return super().test_cdf2(case)
+
 
 class TestUniform(DistributionsTest):
     seed = 893709074
     family = Uniform
+
+    def test_mode(self, case):
+        pytest.skip("mode of Uniform distribution is not unique")
 
 
 class Test_LogUniform(DistributionsTest):

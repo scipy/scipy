@@ -2166,8 +2166,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logentropy_logexp(self, **params):
-        res = np.log(self._entropy_dispatch(**params)+0j)
-        return _log_real_standardize(res)
+        with np.errstate(invalid='ignore'):
+            # np.log warns with complex NaN argument
+            res = np.log(self._entropy_dispatch(**params)+0j)
+            return _log_real_standardize(res)
 
     def _logentropy_logexp_safe(self, **params):
         out = self._logentropy_logexp(**params)
@@ -2445,7 +2447,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         case_central = ~(case_left | case_right)
         log_mass = _logexpxmexpy(logcdf_y, logcdf_x)
         log_mass[case_right] = _logexpxmexpy(logccdf_x, logccdf_y)[case_right]
-        log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
+        with np.errstate(invalid='ignore'):
+            # np.logaddexp warns with NaN argument
+            log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
         return log_mass[()] if np.any(flip_sign) else log_mass.real[()]
