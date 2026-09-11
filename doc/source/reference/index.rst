@@ -157,6 +157,24 @@ with parts of SciPy out of the box, with with the main
 principle being *"array type in equals array type out"*.
 Currently, SciPy supports NumPy, PyTorch, JAX, Dask and CuPy arrays.
 
+This clustering example shows usage with PyTorch tensors as inputs and return
+values:
+
+.. code:: python
+
+    >>> import torch
+    >>> from scipy.cluster.vq import vq
+    >>> code_book = torch.tensor([[1., 1., 1.],
+    ...                           [2., 2., 2.]])
+    >>> features  = torch.tensor([[1.9, 2.3, 1.7],
+    ...                           [1.5, 2.5, 2.2],
+    ...                           [0.8, 0.6, 1.7]])
+    >>> code, dist = vq(features, code_book)
+    >>> code
+    tensor([1, 1, 0], dtype=torch.int32)
+    >>> dist
+    tensor([0.4359, 0.7348, 0.8307])
+
 The below tables show the current state of alternative backend support across
 SciPy's modules. Public functions, function-like callables, and classes are
 included in the tables. Parts of the public API which are deemed out-of-scope
