@@ -3,8 +3,8 @@
 
 This page contains three sets of demonstrations:
 
-- lower-level FITPACK replacements for {class}`scipy.interpolate.interp2d` for legacy bug-for-bug compatible {class}`scipy.interpolate.interp2d` replacements;
-- recommended replacements for {class}`scipy.interpolate.interp2d` for use in new code;
+- lower-level FITPACK replacements for `scipy.interpolate.interp2d` for legacy bug-for-bug compatible `scipy.interpolate.interp2d` replacements;
+- recommended replacements for `scipy.interpolate.interp2d` for use in new code;
 - a demonstration of failure modes of 2D FITPACK-based linear interpolation and recommended replacements.
 
 ## 1. How to transition away from using  `interp2d`

@@ -1,4 +1,4 @@
-__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
+__all__ = ['interp1d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 import functools
 import os
 from math import prod
@@ -122,47 +122,6 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-err_mesg = """\
-`interp2d` has been removed in SciPy 1.14.0.
-
-For legacy code, nearly bug-for-bug compatible replacements are
-`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-scattered 2D data.
-
-In new code, for regular grids use `RegularGridInterpolator` instead.
-For scattered data, prefer `LinearNDInterpolator` or
-`CloughTocher2DInterpolator`.
-
-For more details see
-https://scipy.github.io/devdocs/tutorial/interpolate/interp_transition_guide.html
-"""
-
-class interp2d:
-    """
-    interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
-             fill_value=None)
-
-    Class for 2D interpolation (deprecated and removed).
-
-    .. versionremoved:: 1.14.0
-
-        `interp2d` has been removed in SciPy 1.14.0.
-
-        For legacy code, nearly bug-for-bug compatible replacements are
-        `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-        scattered 2D data.
-
-        In new code, for regular grids use `RegularGridInterpolator` instead.
-        For scattered data, prefer `LinearNDInterpolator` or
-        `CloughTocher2DInterpolator`.
-
-        For more details see :ref:`interp-transition-guide`.
-    """
-    def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
-                 fill_value=None):
-        raise NotImplementedError(err_mesg)
-
-
 def _check_broadcast_up_to(arr_from, shape_to, name):
     """Helper to check that arr_from broadcasts up to shape_to"""
     shape_from = arr_from.shape
@@ -265,7 +224,6 @@ class interp1d(_Interpolator1D):
     splrep, splev
         Spline interpolation/smoothing based on FITPACK.
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
-    interp2d : 2-D interpolation
 
     Notes
     -----
