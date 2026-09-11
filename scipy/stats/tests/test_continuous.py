@@ -216,11 +216,11 @@ class DistributionsTest:
     def test_support(self, case):
         check_support(case.dist)
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case):
         check_moment_funcs(case.dist, case.result_shape)  # this needs to get split up
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case):
         check_lmoment_funcs(case.dist, case.result_shape)
 
@@ -250,22 +250,22 @@ class DistributionsTest:
         check_dist_func(case.dist, 'mode', None, case.result_shape,
                         {'optimization'}, tol_override={'atol': 1e-6})
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_mean(self, case):
         check_dist_func(case.dist, 'mean', None, case.result_shape, {'cache'})
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_variance(self, case):
         check_dist_func(case.dist, 'variance', None, case.result_shape, {'cache'})
 
     def test_standard_deviation(self, case):
         assert_allclose(case.dist.standard_deviation()**2, case.dist.variance())
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_skewness(self, case):
         check_dist_func(case.dist, 'skewness', None, case.result_shape, {'cache'})
 
-    @pytest.mark.thread_unsafe(reason="unknown")
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_kurtosis(self, case):
         check_dist_func(case.dist, 'kurtosis', None, case.result_shape, {'cache'})
 
