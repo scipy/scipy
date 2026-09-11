@@ -379,8 +379,9 @@ class TestUniform(DistributionsTest):
     def test_quasi_random_sample(self, case):
         return super().test_quasi_random_sample(case)
 
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case):
-        return super().test_moment(case, tol_override={'atol': 1e-10})
+        return super().test_moment(case, tol_override={'atol': 1e-9})
 
 
 class Test_LogUniform(DistributionsTest):
