@@ -198,7 +198,7 @@ class TestZlibInputStream:
         assert_(stream.all_data_read())
 
     @pytest.mark.skipif(
-            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
+            (sys.version_info >= (3, 14)),
             reason='gh-23185')
     def test_all_data_read_overlap(self):
         COMPRESSION_LEVEL = 6
@@ -217,7 +217,7 @@ class TestZlibInputStream:
         assert_(stream.all_data_read())
 
     @pytest.mark.skipif(
-            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
+            (sys.version_info >= (3, 14)),
             reason='gh-23185')
     def test_all_data_read_bad_checksum(self):
         COMPRESSION_LEVEL = 6
