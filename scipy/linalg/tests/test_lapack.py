@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import gc
 from functools import reduce
 import sysconfig
 
@@ -29,6 +30,14 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+def test_wrapper_traverses_its_type():
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    func = get_lapack_funcs('gesv', dtype=np.float64)
+    assert any(ref is func for ref in gc.get_referrers(type(func)))
 
 
 def generate_random_dtype_array(shape, dtype, rng):
