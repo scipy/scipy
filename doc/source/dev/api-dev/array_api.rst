@@ -1401,11 +1401,38 @@ helped during the development phase:
 
 API Coverage
 ------------
-The below tables show the current state of alternative backend support across
-SciPy's modules. Public functions, function-like callables, and classes are
-included in the tables. Parts of the public API which are deemed out-of-scope
-are excluded from consideration when calculating coverage percentages. If a
-module or submodule contains no in-scope functions, it is excluded from the
-tables. For example, `scipy.datasets` is excluded because its contents are
-considered out-of-scope.
+
+The state of alternative backend support across SciPy's modules is summarized in the
+following tables: :ref:`array-api-coverage`.
+
+
+.. _array_api_support_signal_caveats:
+
+``scipy.signal`` specific caveats
+---------------------------------
+
+`JAX <https://docs.jax.dev/en/latest/jax.scipy.html>`__ and `CuPy
+<https://docs.cupy.dev/en/stable/reference/scipy_signal.html>`__ provide alternative
+implementations for some `~scipy.signal` functions. When such a function is called, a
+decorator decides which implementation to use by inspecting the `xp` parameter.
+
+Hence, there can be, especially during CI testing, discrepancies in behavior between
+the default NumPy-based implementation and the JAX and CuPy backends. Skipping the
+incompatible backends in unit tests, as described in the
+:ref:`dev-arrayapi_adding_tests` section, is the currently recommended workaround.
+
+The functions are decorated by the code in file
+``scipy/signal/_support_alternative_backends.py``:
+
+.. literalinclude:: ../../../../scipy/signal/_support_alternative_backends.py
+    :lineno-match:
+
+Note that a function will only be decorated if the environment variable
+``SCIPY_ARRAY_API`` is set and its signature is listed in the file
+``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
+function looks like this:
+
+.. literalinclude:: ../../../../scipy/signal/_delegators.py
+    :pyobject: firwin_signature
+    :lineno-match:
 
