@@ -32,7 +32,6 @@ from scipy._lib._array_api import (
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
-from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency  # noqa:F401
@@ -2347,24 +2346,8 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-AndersonResult = _make_tuple_bunch('AndersonResult',
-                                   ['statistic', 'critical_values',
-                                    'significance_level'], ['fit_result'])
-
-
-_anderson_warning_message = (
-"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
-`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
-tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
-p-value via Monte Carlo simulation. When `method` is specified, the result object will
-include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
-available, and a p-value will always be computed according to one of the available
-`method` options.""".replace('\n', ' '))
-
-
 @xp_capabilities(np_only=True)
-def anderson(x, dist='norm', *, method=None):
+def anderson(x, dist='norm', *, method="interpolate"):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2390,15 +2373,6 @@ def anderson(x, dist='norm', *, method=None):
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
 
-        .. versionadded:: 1.17.0
-            If `method` is not specified, `anderson` will emit a ``FutureWarning``
-            specifying that the user must opt into a p-value calculation method.
-            When `method` is specified, the object returned will include a ``pvalue``
-            attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
-            no longer be available, and a p-value will always be computed according to
-            one of the available `method` options.
-
     Returns
     -------
     result : AndersonResult
@@ -2409,28 +2383,6 @@ def anderson(x, dist='norm', *, method=None):
         pvalue: float
             The p-value corresponding with the test statistic, calculated according to
             the specified `method`.
-
-        If `method` is unspecified, this is an object with the following attributes:
-
-        statistic : float
-            The Anderson-Darling test statistic.
-        critical_values : list
-            The critical values for this distribution.
-        significance_level : list
-            The significance levels for the corresponding critical values
-            in percents.  The function returns critical values for a
-            differing set of significance levels depending on the
-            distribution that is being tested against.
-        fit_result : `~scipy.stats._result_classes.FitResult`
-            An object containing the results of fitting the distribution to
-            the data.
-
-        .. deprecated:: 1.17.0
-            The tuple-unpacking behavior of the return object and attributes
-            ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
-            available, and the object returned will have attributes ``statistic`` and
-            ``pvalue``.
 
     See Also
     --------
@@ -2591,17 +2543,6 @@ def anderson(x, dist='norm', *, method=None):
 
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
-
-    # FitResult initializer expects an optimize result, so let's work with it
-    message = '`anderson` successfully fit the distribution to the data.'
-    res = optimize.OptimizeResult(success=True, message=message)
-    res.x = np.array(fit_params)
-    fit_result = FitResult(getattr(distributions, dist), y,
-                           discrete=False, res=res)
-
-    if method is None:
-        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
-        return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
