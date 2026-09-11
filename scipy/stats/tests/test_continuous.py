@@ -7,7 +7,7 @@ import numpy as np
 from numpy import inf
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from hypothesis import strategies, given, reproduce_failure, settings  # noqa: F401
+from hypothesis import strategies, given
 import hypothesis.extra.numpy as npst
 
 from scipy import special
@@ -147,7 +147,7 @@ class Test_RealInterval:
         assert domain1.symbols is not domain2.symbols
 
 
-def draw_distribution_from_family(family, rng, proportions, min_side=0):
+def draw_distribution_from_family(family, rng, shape_options, proportions):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
     n_parameterizations = family._num_parameterizations()
@@ -155,7 +155,7 @@ def draw_distribution_from_family(family, rng, proportions, min_side=0):
         i = rng.integers(0, n_parameterizations)
         n_parameters = family._num_parameters(i)
         shapes = mutually_broadcastable_shapes(num_shapes=n_parameters,
-                                               min_side=min_side, rng=rng)
+                                               rng=rng, **shape_options)
         result_shape = np.broadcast_shapes(*shapes)
         dist = family._draw(shapes, rng=rng, proportions=proportions,
                             i_parameterization=i)
@@ -166,12 +166,12 @@ def draw_distribution_from_family(family, rng, proportions, min_side=0):
     # Draw a broadcastable shape for the arguments, and draw values for the
     # arguments.
     x_shape, = mutually_broadcastable_shapes(1, base_shape=result_shape,
-                                             min_side=min_side)
+                                             rng=rng, **shape_options)
     x = dist._variable.draw(x_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     x_result_shape = np.broadcast_shapes(x_shape, result_shape)
     y_shape, = mutually_broadcastable_shapes(1, base_shape=x_result_shape,
-                                             min_side=min_side)
+                                             rng=rng, **shape_options)
     y = dist._variable.draw(y_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     xy_result_shape = np.broadcast_shapes(y_shape, x_result_shape)
@@ -197,19 +197,18 @@ discrete_families = [
 ]
 
 families = continuous_families + discrete_families
+shape_options = [{}]*20
 
 
 class TestDistributions:
-    @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
-    @settings(max_examples=20)
-    @pytest.mark.parametrize('family', families)
-    @given(seed=strategies.integers(min_value=0))
-    def test_support_moments_sample(self, family, seed):
-        rng = np.random.default_rng(seed)
+    @pytest.mark.parametrize('i, shape_options', list(enumerate(shape_options)))
+    @pytest.mark.parametrize('j, family',  list(enumerate(families)))
+    def test_support_moments_sample(self, i, shape_options, j, family):
+        rng = np.random.default_rng(abs(hash((i, j))))
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
         proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, rng, proportions)
+        tmp = draw_distribution_from_family(family, rng, shape_options, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         sample_shape, = mutually_broadcastable_shapes(1, min_dims=0, min_side=0,
                                                       max_side=20)
@@ -223,36 +222,35 @@ class TestDistributions:
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.parametrize('family', families)
-    @pytest.mark.parametrize('func, methods, arg',
-                             [('entropy', {'log/exp', 'quadrature'}, None),
-                              ('logentropy', {'log/exp', 'quadrature'}, None),
-                              ('median', {'icdf'}, None),
-                              ('mode', {'optimization'}, None),
-                              ('mean', {'cache'}, None),
-                              ('variance', {'cache'}, None),
-                              ('skewness', {'cache'}, None),
-                              ('kurtosis', {'cache'}, None),
-                              ('pdf', {'log/exp'}, 'x'),
-                              ('logpdf', {'log/exp'}, 'x'),
-                              ('logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('logccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('ccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('ilogccdf', {'complement', 'inversion'}, 'logp'),
-                              ('iccdf', {'complement', 'inversion'}, 'p'),
-                              ])
-    @settings(max_examples=20)
-    @given(seed=strategies.integers(min_value=0))
-    def test_funcs(self, family, seed, func, methods, arg):
+    @pytest.mark.parametrize('i, family',  list(enumerate(families)))
+    @pytest.mark.parametrize('j, func, methods, arg', [
+        (1, 'entropy', {'log/exp', 'quadrature'}, None),
+        (2, 'logentropy', {'log/exp', 'quadrature'}, None),
+        (3, 'median', {'icdf'}, None),
+        (4, 'mode', {'optimization'}, None),
+        (5, 'mean', {'cache'}, None),
+        (6, 'variance', {'cache'}, None),
+        (7, 'skewness', {'cache'}, None),
+        (8, 'kurtosis', {'cache'}, None),
+        (9, 'pdf', {'log/exp'}, 'x'),
+        (10, 'logpdf', {'log/exp'}, 'x'),
+        (11, 'logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
+        (12, 'cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
+        (13, 'logccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
+        (14, 'ccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
+        (15, 'ilogccdf', {'complement', 'inversion'}, 'logp'),
+        (16, 'iccdf', {'complement', 'inversion'}, 'p'),
+    ])
+    @pytest.mark.parametrize('k, shape_options',  list(enumerate(shape_options)))
+    def test_funcs(self, i, family, j, func, methods, arg, k, shape_options):
         if family == Uniform and func == 'mode':
             pytest.skip("Mode is not unique; `method`s disagree.")
 
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(abs(hash((i, j, k))))
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
         proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, rng, proportions)
+        tmp = draw_distribution_from_family(family, rng, shape_options, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         args = {'x': x, 'p': p, 'logp': p}
@@ -390,6 +388,7 @@ class TestDistributions:
         assert res1[1] == res2[1]
         assert res1[1] != ref[1]
 
+
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape
     if fname == 'sample':
@@ -488,6 +487,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
             assert np.isscalar(res)
+
 
 def check_cdf2(dist, log, x, y, result_shape, methods):
     # Specialized test for 2-arg cdf since the interface is a bit different
@@ -889,6 +889,7 @@ def get_valid_parameters(dist):
     assert_equal(~all_valid, dist._invalid)
 
     return all_valid
+
 
 def classify_arg(dist, arg, arg_domain):
     if arg is None:
@@ -1567,8 +1568,7 @@ class TestMakeDistribution:
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
     @pytest.mark.slow  # just in case
-    @settings(max_examples=20)  # no need for more
-    @given(seed=strategies.integers(min_value=0))
+    @pytest.mark.parametrize('seed', 777603258 + np.arange(20))
     def test_draw_distribution(self, seed):
         # `draw_distribution_from_family` is a private function right now, but we may
         # want that functionality to be public someday. It was broken for custom
@@ -1590,7 +1590,7 @@ class TestMakeDistribution:
 
         family = stats.make_distribution(MyNormal())
         proportions = (1.0, 0., 0., 0.)
-        tmp = draw_distribution_from_family(family, rng, proportions, min_side=1)
+        tmp = draw_distribution_from_family(family, rng, {'min_side': 1}, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
         assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
@@ -1660,7 +1660,7 @@ class TestTransforms:
         assert np.all((sample > lb) & (sample < ub))
 
     @pytest.mark.fail_slow(10)
-    @given(seed=strategies.integers(min_value=0))
+    @pytest.mark.parametrize('seed', 9116796398 + np.arange(20))
     def test_loc_scale(self, seed):
         # Need tests with negative scale
         rng = np.random.default_rng(seed)
@@ -1670,7 +1670,7 @@ class TestTransforms:
                 super().__init__(StandardNormal(), *args, **kwargs)
 
         tmp = draw_distribution_from_family(
-            TransformedNormal, rng, proportions=(1, 0, 0, 0), min_side=1)
+            TransformedNormal, rng, {'min_side': 1}, proportions=(1, 0, 0, 0))
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
         loc = dist.loc
@@ -2019,6 +2019,7 @@ class TestTransforms:
         assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         sample = Y.sample(10)
         assert np.all(sample > 0)
+
 
 class TestOrderStatistic:
     @pytest.mark.fail_slow(20)  # Moments require integration
