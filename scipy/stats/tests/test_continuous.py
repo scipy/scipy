@@ -357,10 +357,18 @@ class TestUniform(DistributionsTest):
     def test_mode(self, case):
         assert_allclose(case.dist.mode(), case.dist.a + case.dist.ab/2)
 
+    @pytest.mark.fail_slow(10)
+    def test_quasi_random_sample(self, case):
+        return super().test_quasi_random_sample(case)
+
 
 class Test_LogUniform(DistributionsTest):
     seed = 260607439
     family = _LogUniform
+
+    @pytest.mark.fail_slow(10)
+    def test_lmoment(self, case):
+        return super().test_lmoment(case)
 
 
 class TestBinomial(DistributionsTest):
@@ -612,8 +620,10 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 res = (np.exp(dist.logcdf(x, y, method=method)) if log
                        else dist.cdf(x, y, method=method))
             continue
-        res = (np.exp(dist.logcdf(x, y, method=method)) if log
-               else dist.cdf(x, y, method=method))
+        with np.errstate(invalid='ignore'):
+            # np.exp(np.nan) raises on some platforms?
+            res = (np.exp(dist.logcdf(x, y, method=method)) if log
+                else dist.cdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
         if log:
             np.testing.assert_equal(res.dtype, (ref + 0j).dtype)

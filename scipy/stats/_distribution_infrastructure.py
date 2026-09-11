@@ -2205,7 +2205,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _entropy_logexp(self, **params):
-        return np.real(np.exp(self._logentropy_dispatch(**params)))
+        with np.errstate(invalid='ignore'):
+            # np.exp(np.nan) raises on some platforms?
+            return np.real(np.exp(self._logentropy_dispatch(**params)))
 
     def _entropy_quadrature(self, **params):
         def integrand(x, **params):
