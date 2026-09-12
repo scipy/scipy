@@ -161,12 +161,15 @@ static PyType_Slot blasfunc_slots[] = {
     {0, nullptr},
 };
 
+/* `add_wrapped_table` is the only constructor: DISALLOW_INSTANTIATION keeps
+ * `object.__new__` from handing back an instance whose `meth` and `name` are still
+ * null, which every method below would then dereference. */
 static PyType_Spec blasfunc_spec = {
-    "scipy.linalg." FBLAS_MODULE_STR ".blas_function", /* name      */
-    sizeof(BlasFunc),                                  /* basicsize */
-    0,                                                 /* itemsize  */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,           /* flags     */
-    blasfunc_slots,                                    /* slots     */
+    "scipy.linalg." FBLAS_MODULE_STR ".blas_function",                           /* name      */
+    sizeof(BlasFunc),                                                            /* basicsize */
+    0,                                                                           /* itemsize  */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* flags     */
+    blasfunc_slots,                                                              /* slots     */
 };
 
 /** @brief Wrap every row of a PyMethodDef table in a BlasFunc and add it to the module. */

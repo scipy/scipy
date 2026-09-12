@@ -157,12 +157,15 @@ static PyType_Slot lapackfunc_slots[] = {
     {0, nullptr},
 };
 
+/* `add_wrapped_table` is the only constructor: DISALLOW_INSTANTIATION keeps
+ * `object.__new__` from handing back an instance whose `meth` and `name` are still
+ * null, which every method below would then dereference. */
 static PyType_Spec lapackfunc_spec = {
-    "scipy.linalg." FLAPACK_MODULE_STRING ".lapack_function", /* name      */
-    sizeof(LapackFunc),                                           /* basicsize */
-    0,                                                            /* itemsize  */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                      /* flags     */
-    lapackfunc_slots,                                             /* slots     */
+    "scipy.linalg." FLAPACK_MODULE_STRING ".lapack_function",                    /* name      */
+    sizeof(LapackFunc),                                                          /* basicsize */
+    0,                                                                           /* itemsize  */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* flags     */
+    lapackfunc_slots,                                                            /* slots     */
 };
 
 
@@ -175,8 +178,8 @@ static int add_wrapped_table(PyObject *module, PyTypeObject *tp, const PyMethodD
 
         Py_INCREF(tp);   // the reference the instance owns
 
-        /* Every row is invoked through this one pointer type by `lapackfunc_call`, which -- unlike
-         * CPython's own dispatch -- never consults `ml_flags`.  So every entry in these tables
+        /* Every row is invoked through this one pointer type by `lapackfunc_call` which, unlike
+         * CPython's own dispatch, never consults `ml_flags`.  So every entry in these tables
          * must genuinely be `METH_VARARGS | METH_KEYWORDS`: a `METH_NOARGS` or `METH_O` row
          * would be called through the wrong function-pointer type. */
         f->meth = reinterpret_cast<PyCFunctionWithKeywords>(reinterpret_cast<void (*)()>(d->ml_meth));
