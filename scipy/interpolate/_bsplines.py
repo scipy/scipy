@@ -3105,7 +3105,9 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         lam = _make_smoothing_spline_user_knots_gcv(
             XtWX_banded, X, y, w, XtWy, omega)
     try:
-        c, _ = _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy)
+        c, _ = _solve_smoothing_spline_coefficients(
+            XtWX_banded, lam, omega, XtWy, compute_trace=False,
+        )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
