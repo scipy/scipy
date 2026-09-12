@@ -1385,7 +1385,7 @@ namespace lapack {
             ARRAY_OUT(T, u2, 2, true, ctx.zeros(compute_u2 ? mmp : 0, compute_u2 ? mmp : 0));
             ARRAY_OUT(T, v1t, 2, true, ctx.zeros(compute_v1t ? q : 0, compute_v1t ? q : 0));
             ARRAY_OUT(T, v2t, 2, true, ctx.zeros(compute_v2t ? mmq : 0, compute_v2t ? mmq : 0));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, p + mmp - r);
+            ARRAY_HIDDEN(CBLAS_INT, iwork, m - r);   /* == p + mmp - r, and r <= m */
 
             const char u1c = compute_u1 ? 'Y' : 'N', u2c = compute_u2 ? 'Y' : 'N';
             const char v1c = compute_v1t ? 'Y' : 'N', v2c = compute_v2t ? 'Y' : 'N';
@@ -1495,7 +1495,7 @@ namespace lapack {
             CHECK(lwork >= 7, lwork);
 
             ARRAY_HIDDEN(T, work, lwork);
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(3, m + 3 * n));
+            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max(3LL, 1LL * m + 3LL * n));
 
             lapack::gejsv("CEFGAR"[joba], "UFWN"[jobu], "VJWN"[jobv], jobr ? 'R' : 'N',
                           jobt ? 'T' : 'N', jobp ? 'P' : 'N', m, n, a.data<T>(), lda,
@@ -1801,9 +1801,9 @@ namespace lapack {
             ARRAY_IN(T, a, 2);
             CBLAS_INT m = shape(a, 0), n = shape(a, 1);
             CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
-            /* The infinity norm is the only one that needs scratch, and it needs `m` of it; the
+            /* The infinity norm is the only one that needs scratch, and it needs `m`; the
              * `.pyf` allocates `m + 1` for every norm and this keeps that. */
-            ARRAY_HIDDEN(R, work, m + 1);
+            ARRAY_HIDDEN(R, work, 1LL * m + 1);
 
             return make_result(lapack::lange(norm, m, n, a.data<T>(), lda, work.data<R>()));
         }
