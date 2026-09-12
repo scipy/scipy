@@ -222,11 +222,14 @@ with 8 interior knots, uniform versus placed around the bump:
     ...                          x[0], x[-1])
     >>>
     >>> xnew = np.linspace(x[0], x[-1], 400)
-    >>> for t, label in [(t_uniform, 'uniform knots'), (t_placed, 'placed knots')]:
+    >>> fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+    >>> for ax, t, title in [(axes[0], t_uniform, 'uniform knots'),
+    ...                      (axes[1], t_placed, 'placed knots')]:
     ...     spl = make_smoothing_spline(x, y, lam=1e-9, t=t)
-    ...     plt.plot(xnew, spl(xnew), label=label)
-    >>> plt.plot(x, y, 'o', alpha=0.3, markersize=3)
-    >>> plt.legend()
+    ...     ax.plot(x, y, 'o', alpha=0.3, markersize=3)
+    ...     ax.plot(xnew, spl(xnew))
+    ...     ax.plot(t[4:-4], np.full(len(t) - 8, 0.15), '|', markersize=10)
+    ...     ax.set_title(title)
     >>> plt.show()
 
 The uniform knots oversmooth the bump and wiggle in the quiet region. The
