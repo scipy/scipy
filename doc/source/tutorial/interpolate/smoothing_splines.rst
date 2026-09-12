@@ -204,6 +204,35 @@ curve traces the local structure on the dense left side better. Note the
 ``method='nearest'`` argument, with it, `numpy.quantile` returns actual
 elements of ``x``, so the knots are members of the data sites.
 
+Quantiles follow the density of the data. Another option is to follow the
+signal itself, more knots where the signal has features, fewer where it is
+quiet. Here the signal is flat except for a sharp bump, and we fit it twice
+with 8 interior knots, uniform versus placed around the bump:
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(42)
+    >>> x = np.sort(rng.uniform(0, 1, 400))
+    >>> y = (0.3 + 0.25 * x + 0.45 * np.exp(-((x - 0.7) / 0.045)**2)
+    ...      + rng.normal(0, 0.05, x.size))
+    >>>
+    >>> t_uniform = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1], x[0], x[-1])
+    >>> t_placed = clamped_knots([0.25, 0.5, 0.62, 0.66, 0.70, 0.74, 0.78, 0.9],
+    ...                          x[0], x[-1])
+    >>>
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> for t, label in [(t_uniform, 'uniform knots'), (t_placed, 'placed knots')]:
+    ...     spl = make_smoothing_spline(x, y, lam=1e-9, t=t)
+    ...     plt.plot(xnew, spl(xnew), label=label)
+    >>> plt.plot(x, y, 'o', alpha=0.3, markersize=3)
+    >>> plt.legend()
+    >>> plt.show()
+
+The uniform knots oversmooth the bump and wiggle in the quiet region. The
+placed knots are clustered around the bump, so the bump comes out clean and
+the rest stays calm.
+
 The knots do not need to be a subset of the data sites, or coincide with
 them at all. Any non-decreasing knot vector works, as long as the boundary
 knots have multiplicity four and all data sites lie within the base
