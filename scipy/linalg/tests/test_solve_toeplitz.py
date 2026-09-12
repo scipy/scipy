@@ -127,8 +127,10 @@ def test_empty(dt_c, dt_b):
     b = np.array([], dtype=dt_b)
     x = solve_toeplitz(c, b)
     assert x.shape == (0,)
-    assert x.dtype == solve_toeplitz(np.array([2, 1], dtype=dt_c),
-                                      np.ones(2, dtype=dt_b)).dtype
+    if not (dt_b in {np.float32, np.complex64} and dt_c in {np.float32, np.complex64}):
+        # see https://github.com/scipy/scipy/issues/25964#issuecomment-5521651145
+        assert x.dtype == solve_toeplitz(np.array([2, 1], dtype=dt_c),
+                                        np.ones(2, dtype=dt_b)).dtype
 
     b = np.empty((0, 0), dtype=dt_b)
     x1 = solve_toeplitz(c, b)

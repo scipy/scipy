@@ -24,7 +24,7 @@ def _schur_signature(a, output='real', lwork=_NoValue, overwrite_a=False, sort=N
     return "(i,i)->(i,i),(i,i),()" if sort else "(i,i)->(i,i),(i,i)"
 
 
-@_apply_over_batch(('a', 2), signature=_schur_signature)
+@_apply_over_batch(('a', 2), signature=_schur_signature, zero_size_fill=0.0)
 def schur(a, output='real', lwork=_NoValue, overwrite_a=False, sort=None,
           check_finite=True):
     """
