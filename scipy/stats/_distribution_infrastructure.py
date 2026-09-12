@@ -2574,7 +2574,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         cdf_max = np.maximum(cdf_x, cdf_y)
         ccdf_max = np.maximum(ccdf_x, ccdf_y)
-        spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
+        with np.errstate(invalid='ignore'):
+            spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
         mask = np.abs(tol * out) < spacing
 
         if np.any(mask):
@@ -2617,7 +2618,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = 1 - ccdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * out < np.spacing(ccdf)
+        with np.errstate(invalid='ignore'):
+            mask = tol * out < np.spacing(ccdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2755,7 +2757,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = 1 - cdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * out < np.spacing(cdf)
+        with np.errstate(invalid='ignore'):
+            mask = tol * out < np.spacing(cdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2817,7 +2820,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = self._icdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * x < np.spacing(1 - x)
+        with np.errstate(invalid='ignore'):
+            mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2875,7 +2879,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = self._iccdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * x < np.spacing(1 - x)
+        with np.errstate(invalid='ignore'):
+            mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
