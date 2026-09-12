@@ -2459,7 +2459,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
         expres = expres + 0j if np.any(x > y) else expres
-        return np.log(expres)
+        with np.errstate(divide='ignore'):
+            return np.log(expres)
 
     def _logcdf2_logexp_safe(self, x, y, **params):
         out = self._logcdf2_logexp(x, y, **params)
