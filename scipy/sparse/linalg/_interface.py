@@ -263,13 +263,25 @@ class LinearOperator:
         self._xp = xp
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        state["_xp"] = state["_xp"].empty(0)
-        return state
+        result = super().__getstate__()
+        if isinstance(result, tuple):
+            dict_state, slots_state = result
+        else:
+            dict_state, slots_state = result, None
+        dict_state = dict(dict_state) if dict_state else {}
+        dict_state["_xp"] = dict_state["_xp"].empty(0)
+        return dict_state, slots_state
 
     def __setstate__(self, state):
-        self._xp = array_namespace(state.pop("_xp"))
-        self.__dict__.update(state)
+        # scipy 1.18.{0,1} pickled state as a flat dict with no `__slots__` support;
+        # keep loading those without crashing.
+        dict_state, slots_state = state if isinstance(state, tuple) else (state, None)
+        dict_state = dict(dict_state) if dict_state else {}
+        self._xp = array_namespace(dict_state.pop("_xp"))
+        self.__dict__.update(dict_state)
+        if slots_state:
+            for slot, value in slots_state.items():
+                setattr(self, slot, value)
 
     def _init_dtype(self):
         """Determine the dtype by executing `matvec` on an `int8` test vector.
