@@ -53,9 +53,14 @@ Here the first term penalizes the deviation of the spline function from the data
 and the second term penalizes large values of the second derivative---which is
 taken as the criterion for the smoothness of a curve.
 
-The target function, :math:`g(x)`, is taken to be a natural cubic spline *with
-knots at the data points*, :math:`x_j`, and the minimization is carried over
-the spline coefficients at a given value of :math:`\lambda`.
+There is a classic theorem (see, for example, Chapter 2 of [GS]_) which says
+that the minimizer of this objective over all possible smooth curves is a
+natural cubic spline *with knots at the data points*, :math:`x_j`. The target function, :math:`g(x)`, is therefore
+taken to be exactly that, and the minimization is carried over the spline
+coefficients at a given value of :math:`\lambda`. (It is also possible to
+choose the knots differently, see
+:ref:`the section on user provided knots <tutorial-interpolate_user_knots>`
+below.)
 
 Clearly, :math:`\lambda = 0` corresponds to the interpolation problem---the result
 is a *natural interpolating spline*; in the opposite limit, :math:`\lambda \gg 1`,
@@ -110,6 +115,267 @@ of ``lam`` flatten out the resulting curve towards a straight line; and the GCV
 result, ``lam=None``, is close to the underlying sine curve.
 
 
+.. _tutorial-interpolate_user_knots:
+
+User provided knot vectors
+``````````````````````````
+
+So far we never passed a knot vector to `make_smoothing_spline`, and
+rightly so. As discussed above, the minimizer of the smoothing objective
+has its knots at the data sites, so internally the knot vector was built
+to include all of ``x``.
+
+The fundamental issue with this is that the size of the system of
+equations is now in the hands of the size of the data. Every data site
+adds one basis function and one unknown to solve for. For large datasets
+it makes sense to sacrifice a little accuracy of the fitted curve for a
+smaller problem. For this reason `make_smoothing_spline` also accepts
+a user defined knot vector ``t``. If the knots are chosen smartly, in
+most cases the harm is minimal.
+
+A valid knot vector has its boundary knots repeated four times (more on
+this below), so throughout this section we use a small helper which adds
+the boundary knots to a vector of interior knots:
+
+.. plot::
+    :context:
+    :nofigs:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import make_smoothing_spline
+    >>> import matplotlib.pyplot as plt
+    >>>
+    >>> def clamped_knots(interior, xmin, xmax):
+    ...     return np.concatenate([[xmin] * 4, interior, [xmax] * 4])
+
+Here is a minimal example:
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(12345)
+    >>> x = np.linspace(0, 10, 50)
+    >>> y = np.sin(x) + 0.4 * rng.normal(size=len(x))
+    >>> # every other, third and fourth interior data site as knots
+    >>> t1 = clamped_knots(x[1:-1:2], x[0], x[-1])
+    >>> t2 = clamped_knots(x[1:-1:3], x[0], x[-1])
+    >>> t3 = clamped_knots(x[1:-1:4], x[0], x[-1])
+    >>>
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> for i, t in enumerate([t1, t2, t3]):
+    ...     spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
+    ...     plt.plot(xnew, spl(xnew), label=f'$t_{i+1}$')
+    >>> plt.plot(x, y, 'o', alpha=0.4)
+    >>> plt.legend()
+    >>> plt.show()
+
+As seen in the plot above, the curves are pretty close to each other,
+even with roughly a quarter of the number of knots.
+
+How do you select knots when the data is not equally distributed?
+Usually it is best to have more knots in the regions where the data is
+dense and fewer knots in the other places. A simple recipe is to place
+the knots at quantiles of ``x``:
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(12345)
+    >>> # data sites concentrated near the left end
+    >>> x = np.sort(10 * rng.random(100)**2)
+    >>> y = np.sin(x) + 0.4 * rng.normal(size=len(x))
+    >>>
+    >>> # 8 interior knots, placed two ways
+    >>> qs = np.linspace(0, 1, 10)[1:-1]
+    >>> t_eq = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1], x[0], x[-1])
+    >>> t_qt = clamped_knots(np.quantile(x, qs, method='nearest'), x[0], x[-1])
+    >>>
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> for t, label in [(t_eq, 'equispaced knots'), (t_qt, 'knots at quantiles')]:
+    ...     spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
+    ...     plt.plot(xnew, spl(xnew), label=label)
+    >>> plt.plot(x, y, 'o', alpha=0.4)
+    >>> plt.legend()
+    >>> plt.show()
+
+Both knot vectors have the same size and differ only in placement. The
+quantile based knots follow the density of the data, which is why that
+curve traces the local structure on the dense left side better. Note the
+``method='nearest'`` argument, with it, `numpy.quantile` returns actual
+elements of ``x``, so the knots are members of the data sites.
+
+Quantiles follow the density of the data. Another option is to follow the
+signal itself, more knots where the signal has features, fewer where it is
+quiet. Here the signal is flat except for a sharp bump, and we fit it twice
+with 8 interior knots, uniform versus placed around the bump:
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(42)
+    >>> x = np.sort(rng.uniform(0, 1, 400))
+    >>> y = (0.3 + 0.25 * x + 0.45 * np.exp(-((x - 0.7) / 0.045)**2)
+    ...      + rng.normal(0, 0.05, x.size))
+    >>>
+    >>> t_uniform = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1], x[0], x[-1])
+    >>> t_placed = clamped_knots([0.25, 0.5, 0.62, 0.66, 0.70, 0.74, 0.78, 0.9],
+    ...                          x[0], x[-1])
+    >>>
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+    >>> for ax, t, title in [(axes[0], t_uniform, 'uniform knots'),
+    ...                      (axes[1], t_placed, 'placed knots')]:
+    ...     spl = make_smoothing_spline(x, y, lam=1e-9, t=t)
+    ...     ax.plot(x, y, 'o', alpha=0.3, markersize=3)
+    ...     ax.plot(xnew, spl(xnew))
+    ...     ax.plot(t[4:-4], np.full(len(t) - 8, 0.15), '|', markersize=10)
+    ...     ax.set_title(title)
+    >>> plt.show()
+
+The uniform knots oversmooth the bump and wiggle in the quiet region. The
+placed knots are clustered around the bump, so the bump comes out clean and
+the rest stays calm.
+
+The knots do not need to be a subset of the data sites, or coincide with
+them at all. Any non-decreasing knot vector works, as long as the boundary
+knots have multiplicity four and all data sites lie within the base
+interval, ``t[3] <= x <= t[-4]``. For instance, we can place the interior
+knots on a uniform grid that shares no points with ``x``:
+
+    >>> t = clamped_knots(np.linspace(x[0], x[-1], 12)[1:-1], x[0], x[-1])
+    >>> spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
+
+Finally, the default ``t=None`` corresponds to a specific choice of the knot
+vector, knots at all data sites, with the boundary ones repeated four times.
+Passing that vector explicitly reproduces the default result:
+
+    >>> t = clamped_knots(x[1:-1], x[0], x[-1])
+    >>> spl_default = make_smoothing_spline(x, y, lam=1e-3)
+    >>> spl_user = make_smoothing_spline(x, y, lam=1e-3, t=t)
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> np.allclose(spl_default(xnew), spl_user(xnew), atol=1e-12)
+    True
+
+In other words, providing ``t`` generalizes the classic smoothing spline,
+you keep the same penalized least-squares problem, and additionally choose
+where the spline is allowed to bend.
+
+Repeated interior knots
+```````````````````````
+
+An interior knot may be repeated twice. Each repetition removes one
+continuity requirement, so a double knot allows the second derivative of
+the spline to jump at that point, while the spline and its slope stay
+continuous. This is useful when the underlying signal is known to change
+curvature abruptly somewhere, a single doubled knot at the breakpoint
+captures the feature, without spending extra knots everywhere else.
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(12345)
+    >>> x = np.linspace(0, 10, 100)
+    >>> # flat for x < 5, parabolic for x > 5: the curvature jumps at 5
+    >>> signal = np.where(x < 5, 0.0, (x - 5)**2 / 5)
+    >>> y = signal + 0.15 * rng.normal(size=len(x))
+    >>>
+    >>> t_single = clamped_knots(np.linspace(1, 9, 5), x[0], x[-1])
+    >>> # same knots, plus a second knot at the breakpoint x = 5
+    >>> t_double = np.sort(np.concatenate([t_single, [5.0]]))
+    >>>
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    >>> for t, label in [(t_single, 'single knot at 5'),
+    ...                  (t_double, 'double knot at 5')]:
+    ...     spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
+    ...     ax1.plot(xnew, spl(xnew), label=label)
+    ...     ax2.plot(xnew, spl.derivative(2)(xnew), label=label)
+    >>> ax1.plot(x, y, 'o', alpha=0.4)
+    >>> ax1.set_title('the fits (nearly identical)')
+    >>> ax2.axvline(5, color='k', ls=':', lw=1)
+    >>> ax2.set_title('second derivative')
+    >>> ax1.legend()
+    >>> plt.show()
+
+Notice that the two fits look nearly the same, the real difference shows
+up in the second derivative plot. With a single knot the second
+derivative has to change continuously, so the curvature change gets
+spread over the neighboring intervals. With the double knot it simply
+jumps at the breakpoint, which is exactly what the true signal does. So
+the fitted values barely change, but the double knot gets the curvature
+right. This matters when you care about the derivatives of the fit, for
+example when estimating velocities or accelerations from position data.
+
+Higher multiplicity is not allowed, repeating an interior knot three times
+would permit a jump in the first derivative, that is, a corner point.
+Recall that the penalty integrates the squared second derivative, which
+is not defined at a corner. Since the penalty cannot account for such a
+point, ``make_smoothing_spline`` raises a ``ValueError`` for interior
+multiplicity greater than two.
+
+The rules for a valid knot vector are as follows:
+
+- ``t`` must be non-decreasing.
+- The boundary knots must have multiplicity four (this is what the
+  ``clamped_knots`` helper above takes care of).
+- Every data site must lie within the base interval,
+  ``t[3] <= x <= t[-4]``.
+
+The boundary knots themselves need not be data sites, they only need to
+be at or beyond the data extremes.
+
+Choosing the knots and ``lam`` freely comes with two limits to be aware
+of, one at each extreme of ``lam``.
+
+At ``lam=0`` there is no penalty, so the data alone must determine every
+coefficient. This requires the knots to satisfy the Schoenberg-Whitney
+conditions, every basis function must have at least one data site inside
+its support, i.e. every interval ``(t[j], t[j+4])`` must contain some
+``x``. With many knots and few data points this fails, and
+``make_smoothing_spline`` raises a ``ValueError``. Any positive ``lam``
+reduces this requirement, the penalty determines the coefficients that the
+data cannot see, so in some sense some work is taken off the data. The
+only condition in that case is that the dataset should contain at least
+two distinct ``x`` values.
+
+At the other extreme, a very large ``lam`` makes the linear system
+numerically singular, the data term is massively dominated out by the penalty, 
+whose matrix is itself singular (a straight line has zero penalty). In practice
+the useful range of ``lam`` is bounded by machine precision on both ends,
+and values far outside it fail with a linear algebra error.
+
+Automatic selection of ``lam``
+``````````````````````````````
+
+In all the examples above we picked ``lam`` by hand. Just like in the
+default case, you can pass ``lam=None`` together with your knot vector,
+and the smoothing parameter is selected automatically by minimizing the
+generalized cross-validation (GCV) criterion:
+
+.. plot::
+    :context: close-figs
+
+    >>> rng = np.random.default_rng(12345)
+    >>> x = np.linspace(0, 10, 100)
+    >>> y = np.sin(x) + 0.4 * rng.normal(size=len(x))
+    >>> t = clamped_knots(x[1:-1:4], x[0], x[-1])
+    >>>
+    >>> spl = make_smoothing_spline(x, y, t=t)   # lam=None is the default
+    >>> xnew = np.linspace(x[0], x[-1], 400)
+    >>> plt.plot(xnew, spl(xnew), label='GCV-selected $\\lambda$')
+    >>> plt.plot(x, y, 'o', alpha=0.4)
+    >>> plt.legend()
+    >>> plt.show()
+
+The search is scale free. Internally the criterion is minimized over a
+dimensionless ratio, so rescaling ``x`` or ``y`` by a constant does not
+change the quality of the selected fit.
+
+.. [GS] P. J. Green and B. W. Silverman, *Nonparametric Regression and
+   Generalized Linear Models: A Roughness Penalty Approach*,
+   Chapman and Hall, 1993.
+
+
 .. _tutorial-interpolate_GCV_batching:
 
 Batching of ``y`` arrays
@@ -120,7 +386,6 @@ optional ``axis`` parameter and interprets them exactly the same way the
 interpolating spline constructor, `make_interp_spline` does. See the
 :ref:`interpolation section <tutorial-interpolate_batching>` for a discussion and
 examples.
-
 
 .. _tutorial_make_splrep:
 
