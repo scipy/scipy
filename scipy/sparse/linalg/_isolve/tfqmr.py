@@ -1,14 +1,19 @@
-import numpy as np
+import math
 
-from scipy._lib._array_api import xp_capabilities
-from .iterative import _get_atol_rtol
+from scipy._lib._array_api import xp_capabilities, xp_copy, xp_vector_norm
+from .iterative import _get_atol_rtol, _cg_setup
 from .utils import make_system
 
 
 __all__ = ['tfqmr']
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "data-dependent branching"),
+        ("jax.numpy", "data-dependent branching"),
+    ]
+)
 def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
           callback=None, show=False):
     """
@@ -66,6 +71,14 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     implementation supports left preconditioner, and the "residual norm"
     to compute in convergence criterion is actually an upper bound on the
     actual residual norm ``||b - Axk||``.
+    
+    `A`, `b`, `x0`, and `M` may have additional "batch" dimensions prepended to
+    the core shape. In this case, the array is treated as a
+    batch of slices of the core shape; see :ref:`linalg_batch`.
+    The core shape of `A` and `M`  is ``(N, N)``,
+    while the core shape of `b` and `x0` is ``(N,)``.
+    'Column vector' input of shape ``(N, 1)`` is restricted to
+    the un-batched case.
 
     References
     ----------
@@ -91,62 +104,57 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
+    A, M, x, b, xp, batched = make_system(A, M, x0, b, nd_support=True)
 
-    # Check data type
-    dtype = A.dtype
-    if np.issubdtype(dtype, np.int64):
-        dtype = float
-        A = A.astype(dtype)
-    if np.issubdtype(b.dtype, np.int64):
-        b = b.astype(dtype)
-
-    A, M, x, b = make_system(A, M, x0, b)
+    bnrm2, dotprod, maxiter, r = _cg_setup(
+        A, b, x, maxiter=maxiter, xp=xp
+    )
 
     # Check if the R.H.S is a zero vector
-    if np.linalg.norm(b) == 0.:
-        x = b.copy()
-        return (x, 0)
+    if not xp.any(bnrm2):
+        return xp_copy(b, xp=xp), 0
 
-    ndofs = A.shape[0]
+    ndofs = A.shape[-1]
     if maxiter is None:
         maxiter = min(10000, ndofs * 10)
 
     if x0 is None:
-        r = b.copy()
+        r = xp_copy(b, xp=xp)
     else:
         r = b - A.matvec(x)
     u = r
-    w = r.copy()
+    w = xp_copy(r, xp=xp)
     # Take rstar as b - Ax0, that is rstar := r = b - Ax0 mathematically
     rstar = r
     v = M.matvec(A.matvec(r))
     uhat = v
     d = theta = eta = 0.
     # at this point we know rstar == r, so rho is always real
-    rho = np.inner(rstar.conjugate(), r).real
+    rho = xp.real(dotprod(rstar, r))
     rhoLast = rho
-    r0norm = np.sqrt(rho)
-    tau = r0norm
-    if r0norm == 0:
+    r0norm = xp.sqrt(rho)
+    tau = r0norm[..., xp.newaxis]
+    if not xp.any(r0norm):
         return (x, 0)
 
     # we call this to get the right atol and raise errors as necessary
-    atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol)
+    atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol, xp=xp)
 
     for iter in range(maxiter):
         even = iter % 2 == 0
         if (even):
-            vtrstar = np.inner(rstar.conjugate(), v)
+            vtrstar = dotprod(rstar, v)
             # Check breakdown
-            if vtrstar == 0.:
+            if not xp.any(vtrstar):
                 return (x, -1)
             alpha = rho / vtrstar
+            alpha = alpha[..., xp.newaxis]
             uNext = u - alpha * v  # [1]-(5.6)
         w -= alpha * uhat  # [1]-(5.8)
         d = u + (theta**2 / alpha) * eta * d  # [1]-(5.5)
         # [1]-(5.2)
-        theta = np.linalg.norm(w) / tau
-        c = np.sqrt(1. / (1 + theta**2))
+        theta = xp_vector_norm(w, axis=-1, xp=xp)[..., xp.newaxis] / tau
+        c = xp.sqrt(1. / (1 + theta**2))
         tau *= theta * c
         # Calculate step and direction [1]-(5.4)
         eta = (c**2) * alpha
@@ -157,7 +165,8 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
             callback(x)
 
         # Convergence criterion
-        if tau * np.sqrt(iter+1) < atol:
+        converged = tau * xp.asarray(math.sqrt(iter+1)) < atol[..., xp.newaxis]
+        if xp.all(converged):
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
                       f"iterations {iter+1}")
@@ -165,8 +174,9 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
         if (not even):
             # [1]-(5.7)
-            rho = np.inner(rstar.conjugate(), w)
+            rho = dotprod(rstar, w)
             beta = rho / rhoLast
+            beta = beta[..., xp.newaxis]
             u = w + beta * u
             v = beta * uhat + (beta**2) * v
             uhat = M.matvec(A.matvec(u))
