@@ -81,7 +81,6 @@ Building SciPy itself
 Customizing builds
 ------------------
 
-It may be desired to customize aspects of how the build is done.
 See the following pages for guidance on various customization options.
 
 .. toctree::

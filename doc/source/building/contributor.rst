@@ -1,3 +1,5 @@
+.. _building-contributor:
+
 Building SciPy for Contributors
 ```````````````````````````````
 
@@ -115,7 +117,7 @@ To build SciPy in an activated development environment, run::
 This will install SciPy inside the repository (by default in a
 ``build-install`` directory). You can then run tests (``spin test``),
 drop into IPython (``spin ipython``), or take other development steps
-like build the html documentation or running benchmarks. The ``spin``
+like build the HTML documentation or running benchmarks. The ``spin``
 interface is self-documenting, so please see ``spin --help`` and
 ``spin <subcommand> --help`` for detailed guidance.
 
