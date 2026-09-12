@@ -55,6 +55,14 @@ def test_ilaver():
             lapack.ilaver(*args, **kwargs)
 
 
+def test_wrapper_type_cannot_be_instantiated():
+    # The module builds every wrapper itself and fills in fields no constructor could
+    # supply, so `object.__new__` must not hand out a blank one; every method would
+    # dereference its null `meth` and `name`.
+    with assert_raises(TypeError):
+        type(get_lapack_funcs('gesv', dtype=np.float64))()
+
+
 def generate_random_dtype_array(shape, dtype, rng):
     # generates a random matrix of desired data type of shape
     if dtype in COMPLEX_DTYPES:
