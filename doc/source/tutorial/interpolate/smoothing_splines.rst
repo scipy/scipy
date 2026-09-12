@@ -53,9 +53,9 @@ Here the first term penalizes the deviation of the spline function from the data
 and the second term penalizes large values of the second derivative---which is
 taken as the criterion for the smoothness of a curve.
 
-There is a classic theorem which says that the minimizer of this objective
-over all possible smooth curves is a natural cubic spline *with knots at the
-data points*, :math:`x_j`. The target function, :math:`g(x)`, is therefore
+There is a classic theorem (see, for example, Chapter 2 of [GS]_) which says
+that the minimizer of this objective over all possible smooth curves is a
+natural cubic spline *with knots at the data points*, :math:`x_j`. The target function, :math:`g(x)`, is therefore
 taken to be exactly that, and the minimization is carried over the spline
 coefficients at a given value of :math:`\lambda`. (It is also possible to
 choose the knots differently, see
@@ -146,7 +146,7 @@ the boundary knots to a vector of interior knots:
     >>> import matplotlib.pyplot as plt
     >>>
     >>> def clamped_knots(interior, xmin, xmax):
-    ...     return np.r_[[xmin] * 4, interior, [xmax] * 4]
+    ...     return np.concatenate([[xmin] * 4, interior, [xmax] * 4])
 
 Here is a minimal example:
 
@@ -281,7 +281,7 @@ captures the feature, without spending extra knots everywhere else.
     >>>
     >>> t_single = clamped_knots(np.linspace(1, 9, 5), x[0], x[-1])
     >>> # same knots, plus a second knot at the breakpoint x = 5
-    >>> t_double = np.sort(np.r_[t_single, 5.0])
+    >>> t_double = np.sort(np.concatenate([t_single, [5.0]]))
     >>>
     >>> xnew = np.linspace(x[0], x[-1], 400)
     >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
@@ -370,6 +370,10 @@ generalized cross-validation (GCV) criterion:
 The search is scale free. Internally the criterion is minimized over a
 dimensionless ratio, so rescaling ``x`` or ``y`` by a constant does not
 change the quality of the selected fit.
+
+.. [GS] P. J. Green and B. W. Silverman, *Nonparametric Regression and
+   Generalized Linear Models: A Roughness Penalty Approach*,
+   Chapman and Hall, 1993.
 
 
 .. _tutorial-interpolate_GCV_batching:
