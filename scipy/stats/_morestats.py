@@ -11,7 +11,6 @@ from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib.deprecation import _NoValue
 import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
@@ -2753,7 +2752,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 
 
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
+def anderson_ksamp(samples, *, variant="midrank", method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2766,14 +2765,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     ----------
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
-    midrank : bool, optional
-        Variant of Anderson-Darling test which is computed. Default
-        (True) is the midrank test applicable to continuous and
-        discrete populations. If False, the right side empirical
-        distribution is used.
-
-        .. deprecated:: 1.17.0
-            Use parameter `variant` instead.
     variant : {'midrank', 'right', 'continuous'}
         Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
         to both continuous and discrete populations. ``'discrete'`` and ``'continuous'``
@@ -2795,13 +2786,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
         statistic : float
             Normalized k-sample Anderson-Darling test statistic.
-        critical_values : array
-            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-            0.5%, 0.1%.
-
-            .. deprecated:: 1.17.0
-                 Present only when `variant` is unspecified.
-
         pvalue : float
             The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
@@ -2895,18 +2879,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if variant == _NoValue or midrank != _NoValue:
-        message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
-                   "silence this warning. Note that the returned object will no longer "
-                   "be unpackable as a tuple, and `critical_values` will be omitted.")
-        warnings.warn(message, category=UserWarning, stacklevel=2)
-
-    return_critical_values = False
-    if variant == _NoValue:
-        return_critical_values = True
-        variant = 'midrank' if midrank else 'right'
-
     if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
     elif variant == 'right':
@@ -2967,14 +2939,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     else:
         p = res.pvalue if method is not None else p
 
-    if return_critical_values:
-        # create result object with alias for backward compatibility
-        res = Anderson_ksampResult(A2, critical, p)
-        res.significance_level = p
-    else:
-        res = SignificanceResult(statistic=A2, pvalue=p)
-
-    return res
+    return SignificanceResult(statistic=A2, pvalue=p)
 
 
 
