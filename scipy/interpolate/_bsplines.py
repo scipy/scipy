@@ -2582,8 +2582,8 @@ def _compute_b_inv(A):
 
     Notes
     -----
-    The algorithm is based on the cholesky decomposition and, therefore,
-    in case matrix ``A`` is close to not positive defined, the function
+    The algorithm is based on the Cholesky decomposition and, therefore,
+    in case matrix ``A`` is close to not positive definite, the function
     raises LinalgError.
 
     Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
@@ -2935,7 +2935,7 @@ def _penalty_matrix_banded(t):
        ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
        ``t[p+2]``.
     3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
-       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       upper-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
        accepted by ``scipy.linalg.solveh_banded``.
 
     ``Omega`` depends on ``t`` only (no data enters), is symmetric
@@ -2967,12 +2967,58 @@ def _penalty_matrix_banded(t):
     omega = C.T @ R @ C
     omega_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        omega_banded[i, : m - i] = omega.diagonal(-i)
+        omega_banded[3 - i, i:] = omega.diagonal(i)
 
     return omega_banded
 
+
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
+    """Select lam by minimizing the GCV criterion over the dimensionless
+    s = log10(lam / r), r = tr(X^T W X) / tr(Omega), so the fixed search
+    window is scale-free."""
+    # Implementation decisions detailed in the following companion report:
+    # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
+    # Eq. (32)
+    n = y.shape[0]
+
+    # `r` is the factor which upon division makes `lam`
+    # dimensionless.
+    r = xtwx_banded[3, :].sum() / omega[3, :].sum()
+
+    def _gcv(lam):
+        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
+        # use it to estimate rcond of the banded system before solving
+        c, tr = _solve_smoothing_spline_coefficients(
+            xtwx_banded, lam, omega, xtwy, compute_trace=True,
+        )
+        rss = np.sum(w * np.square(y - X @ c)) / n
+        return rss / (1 - tr / n) ** 2
+
+    def _gcv_log(s):
+        return _gcv(r * 10 ** s)
+
+    # The bounds of `log(lam/r)` are (eps, 1/eps) where `eps`
+    # is the machine precision 2.2 * 1e-16, hence (-15, 15) is
+    # strictly in the live area for the bounds.
+    res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
+    lam_hat = r * 10 ** res.x
+    return lam_hat
+
+def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
+                                         compute_trace=False):
+    _lhs = XtWX_banded + lam * omega
+    c = solveh_banded(_lhs, XtWy, lower=False)
+    if not compute_trace:
+        return c, None
+    # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
+    # 7-banded, so only the central bands of the inverse are needed
+    # (Hutchinson & de Hoog, upper-banded storage).
+    b_banded = _compute_b_inv(_lhs)
+    tr = b_banded * XtWX_banded
+    tr[:-1] *= 2
+    return c, tr.sum()
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -2986,17 +3032,14 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     symmetric, so the system is solved with a banded Cholesky factorization.
     Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
     """
-    if lam is None:
-        raise NotImplementedError(
-            "automatic GCV selection of `lam` is not supported with user knots, "
-            "pass `lam` explicitly")
-    if np.ndim(lam) != 0:
-        raise NotImplementedError(
-            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
-            f"got an array of shape {np.shape(lam)}."
-        )
-    if lam < 0.:
-        raise ValueError('Regularization parameter should be non-negative')
+    if lam is not None:
+        if np.ndim(lam) != 0:
+            raise NotImplementedError(
+                "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+                f"got an array of shape {np.shape(lam)}."
+            )
+        if lam < 0.:
+            raise ValueError('Regularization parameter should be non-negative')
     if np.ndim(y) > 1:
         raise NotImplementedError(
             "batched `y` is not supported with user-provided knots yet; "
@@ -3055,11 +3098,16 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     XtWy = X.T @ (w * y)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+        XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
+    if lam is None:
+        lam = _make_smoothing_spline_user_knots_gcv(
+            XtWX_banded, X, y, w, XtWy, omega)
     try:
-        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+        c, _ = _solve_smoothing_spline_coefficients(
+            XtWX_banded, lam, omega, XtWy, compute_trace=False,
+        )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
@@ -3123,9 +3171,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         repeated 4 times (clamped), and interior knots may repeat only to
         multiplicity 2 (higher multiplicity would allow kinks or jumps,
         for which the penalty :math:`\int (f'')^2` is not defined).
-        ``t`` can only be passed when ``lam``
-        is given explicitly. Default is None, in which case a clamped knot
-        vector at the data sites is used,
+        If ``lam`` is not given, it is selected automatically by
+        generalized cross-validation. Default is None, in which case a
+        clamped knot vector at the data sites is used,
         ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
