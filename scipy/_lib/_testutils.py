@@ -386,3 +386,44 @@ def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
                 barrier.abort()
 
     return [f.result() for f in futures]
+
+
+def mutually_broadcastable_shapes(num_shapes, *, base_shape=(), min_dims=0,
+                                  max_dims=3, min_side=0, max_side=5, rng=None):
+    # We ignore incompatibilities between base_shape and min_side/max_side
+
+    rng = np.random.default_rng(rng)
+    ndim = rng.integers(min_dims, max_dims or min_dims, endpoint=True)
+    min_side = np.broadcast_to(min_side, ndim)  # so min_side and max_side
+    max_side = np.broadcast_to(max_side, ndim)  # can be scalars or array-like
+
+    new_base_shape = rng.integers(min_side, max_side)
+    if base_shape == () and num_shapes == 1:
+        return [tuple(new_base_shape)]
+
+    shapes = np.repeat([new_base_shape], num_shapes, axis=0)
+    # make some elements of some shapes 1 (while preserving overall batch shape)
+    for column in shapes.T:
+        column[rng.integers(1 if base_shape == () else 0, num_shapes+1):] = 1
+    # permute elements between shapes (while preserving overall batch shape)
+    shapes = list(rng.permuted(shapes, axis=0))
+    if base_shape != ():
+        # resolve any non-broadcastabilities
+        for i, shape in enumerate(shapes):
+            j = min(ndim, len(base_shape))
+            cond1 = shape[ndim - j:] == base_shape[len(base_shape) - j:]
+            cond2 = shape[ndim - j:] == 1
+            mask = ~(cond1 | cond2)
+            replacements = np.asarray(base_shape[len(base_shape) - j:])
+            replacements[rng.random(len(replacements)) > 0.5] = 1
+            shapes[i][ndim - j:][mask] = replacements[mask]
+    # potentially trim preceding 1s from a shape
+    for i, shape in enumerate(shapes):
+        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
+        if rng.random() < 0.25:
+            shapes[i] = shape[rng.integers(j+1):]
+            break
+
+    if base_shape == ():
+        assert np.broadcast_shapes(*shapes) == tuple(new_base_shape)
+    return [tuple(int(el) for el in shape) for shape in shapes]

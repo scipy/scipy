@@ -2166,8 +2166,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logentropy_logexp(self, **params):
-        res = np.log(self._entropy_dispatch(**params)+0j)
-        return _log_real_standardize(res)
+        with np.errstate(invalid='ignore'):
+            # np.log warns with complex NaN argument
+            res = np.log(self._entropy_dispatch(**params)+0j)
+            return _log_real_standardize(res)
 
     def _logentropy_logexp_safe(self, **params):
         out = self._logentropy_logexp(**params)
@@ -2203,7 +2205,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _entropy_logexp(self, **params):
-        return np.real(np.exp(self._logentropy_dispatch(**params)))
+        with np.errstate(invalid='ignore'):
+            # np.exp(np.nan) raises on some platforms?
+            return np.real(np.exp(self._logentropy_dispatch(**params)))
 
     def _entropy_quadrature(self, **params):
         def integrand(x, **params):
@@ -2445,7 +2449,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         case_central = ~(case_left | case_right)
         log_mass = _logexpxmexpy(logcdf_y, logcdf_x)
         log_mass[case_right] = _logexpxmexpy(logccdf_x, logccdf_y)[case_right]
-        log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
+        with np.errstate(invalid='ignore'):
+            # np.logaddexp warns with NaN argument
+            log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
         return log_mass[()] if np.any(flip_sign) else log_mass.real[()]
@@ -2453,7 +2459,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
         expres = expres + 0j if np.any(x > y) else expres
-        return np.log(expres)
+        with np.errstate(divide='ignore'):
+            return np.log(expres)
 
     def _logcdf2_logexp_safe(self, x, y, **params):
         out = self._logcdf2_logexp(x, y, **params)
@@ -2568,7 +2575,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         cdf_max = np.maximum(cdf_x, cdf_y)
         ccdf_max = np.maximum(ccdf_x, ccdf_y)
-        spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
+        with np.errstate(invalid='ignore'):
+            spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
         mask = np.abs(tol * out) < spacing
 
         if np.any(mask):
@@ -2611,7 +2619,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = 1 - ccdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * out < np.spacing(ccdf)
+        with np.errstate(invalid='ignore'):
+            mask = tol * out < np.spacing(ccdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2749,7 +2758,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = 1 - cdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * out < np.spacing(cdf)
+        with np.errstate(invalid='ignore'):
+            mask = tol * out < np.spacing(cdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2811,7 +2821,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = self._icdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * x < np.spacing(1 - x)
+        with np.errstate(invalid='ignore'):
+            mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2869,7 +2880,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         out = self._iccdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol * x < np.spacing(1 - x)
+        with np.errstate(invalid='ignore'):
+            mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
