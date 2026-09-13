@@ -1022,10 +1022,29 @@ class poisson_gen(rv_discrete):
         return special.log_gammainc(k + 1, mu)
 
     def _ppf(self, q, mu):
-        vals = ceil(special.pdtrik(q, mu))
+        # First evaluate the Poisson quantile via Boost using the rounding up policy
+        # This policy is much faster than evaluation to machine precision but may be
+        # inaccurate in the tails
+        x_candidate = scu._poisson_ppf_stats(q, mu)
+        # The quantile can be off by a few integers in the extreme tails,
+        # so we search for the exact integer by repeatedly checking with pdtr.
+        # This is performed in both directions
+        q, mu, vals = np.broadcast_arrays(q, mu, x_candidate)
+        vals = vals.astype(np.float64, copy=True)
+
+        too_low = special.pdtr(vals, mu) < q
+        while np.any(too_low):
+            vals[too_low] += 1
+            too_low = special.pdtr(vals, mu) < q
+
         vals1 = np.maximum(vals - 1, 0)
-        temp = special.pdtr(vals1, mu)
-        return np.where(temp >= q, vals1, vals)
+        too_high = (vals > 0) & (special.pdtr(vals1, mu) >= q)
+        while np.any(too_high):
+            vals[too_high] -= 1
+            vals1 = np.maximum(vals - 1, 0)
+            too_high = (vals > 0) & (special.pdtr(vals1, mu) >= q)
+
+        return vals
 
     def _stats(self, mu):
         var = mu
