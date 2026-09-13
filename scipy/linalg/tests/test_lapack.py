@@ -4,7 +4,9 @@
 
 import gc
 from functools import reduce
+import importlib.util
 import sysconfig
+import weakref
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -30,6 +32,31 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+@pytest.mark.parametrize('module_name, routine', [
+    ('_fblas', 'daxpy'),
+    ('_fblas_64', 'daxpy'),
+    ('_flapack', 'dgesv'),
+    ('_flapack_64', 'dgesv'),
+])
+def test_wrapper_module_collected(module_name, routine):
+    spec = importlib.util.find_spec(f'scipy.linalg.{module_name}')
+    if spec is None:
+        pytest.skip(f'{module_name} not available')
+
+    def load_module():
+        # Load a fresh module without putting it in sys.modules. Only the
+        # module -> wrapper -> heap type -> module cycle should keep it alive.
+        fresh_spec = importlib.util.spec_from_file_location(module_name, spec.origin)
+        module = importlib.util.module_from_spec(fresh_spec)
+        fresh_spec.loader.exec_module(module)
+        return weakref.ref(module), weakref.ref(type(getattr(module, routine)))
+
+    module_ref, type_ref = load_module()
+    gc.collect()
+    assert module_ref() is None
+    assert type_ref() is None
 
 
 def test_wrapper_traverses_its_type():

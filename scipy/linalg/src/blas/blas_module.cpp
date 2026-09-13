@@ -190,10 +190,9 @@ add_wrapped_table(PyObject *module, PyTypeObject *tp, const PyMethodDef *defs) {
 
     for (const PyMethodDef *d = defs; d->ml_name != nullptr; d++) {
 
+        // PyObject_GC_New gives the instance an owned reference to its heap type.
         BlasFunc *f = PyObject_GC_New(BlasFunc, tp);
         if (f == nullptr) { return -1; }
-
-        Py_INCREF(tp);   // the reference the instance owns
 
         /* Every row is invoked through this one pointer type by `blasfunc_call`, which -- unlike
          * CPython's own dispatch -- never consults `ml_flags`.  So every entry in these tables
