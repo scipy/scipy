@@ -22,11 +22,6 @@ else
   endif
 endif
 
-if cc.get_id() == 'gcc' and cc.sizeof('void*') == 4
-  # Disable SIMD, segfaults on Linux i686, see scipy#25572
-  duccfft_args += ['-DDUCC0_NO_SIMD']
-endif
-
 py3.extension_module(
     'pyduccfft',
     'pyduccfft.cxx',
