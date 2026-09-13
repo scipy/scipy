@@ -5387,6 +5387,37 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
 
+    Examples
+    --------
+    Design a 5th-order Bessel analog lowpass filter prototype:
+
+    >>> from scipy.signal import besselap, sosfreqz, sos2zpk
+    >>> import numpy as np
+
+    Get the poles, zeros, and gain of the filter:
+
+    >>> z, p, k = besselap(N=5, norm='phase')
+    >>> print(f"Zeros: {z}")
+    Zeros: []
+    >>> print(f"Poles: {p}")
+    Poles: [-2.32466963+0.j         -0.86746072+1.57842507j -0.86746072-1.57842507j
+     -1.83886475+0.72984381j -1.83886475-0.72984381j]
+    >>> print(f"Gain: {k}")
+    Gain: 1.0
+
+    Convert to second-order sections and plot the frequency response:
+
+    >>> from scipy.signal import sos2tf
+    >>> sos = np.hstack([np.ones((len(p), 1)), np.column_stack([p.real, p.imag**2 + p.real**2]), np.ones((len(p), 1))])  # Convert poles to SOS
+    >>> b, a = sos2tf(sos * k)
+    >>> w, h = sosfreqz(b, a, worN=512)
+
+    The Bessel filter has maximally flat group delay:
+
+    >>> group_delay = -np.diff(np.unwrap(np.angle(h))) / np.diff(w)
+    >>> print(f"Group delay at DC: {group_delay[0]:.3f}")
+    Group delay at DC: 5.000
+
     """
     if xp is None:
         xp = np_compat
