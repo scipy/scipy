@@ -1349,6 +1349,13 @@ class TestInterp:
         b = make_interp_spline(x, y, k=k, bc_type='periodic')
         xp_assert_close(b(x), y, atol=1e-14)
 
+    @pytest.mark.parametrize('k', [0, 1, 2, 3, 4, 5])
+    def test_periodic_extrapolation(self, k, xp):
+        xx, yy = self._get_xy(xp)
+
+        b = make_interp_spline(xx, yy, k=k, bc_type='periodic')
+        assert b.extrapolate == 'periodic'
+
     def test_periodic_axis(self, xp):
         n = self.xx.shape[0]
         rng = np.random.RandomState(1234)
