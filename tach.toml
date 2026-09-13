@@ -157,7 +157,6 @@ depends_on = [
     "scipy.special",
     "scipy.stats.contingency",
     "scipy.stats.distributions",
-    "scipy.stats.mstats",
     "scipy.stats.qmc", "scipy._external",
 ]
 
@@ -171,7 +170,7 @@ depends_on = ["scipy.stats"]
 
 [[modules]]
 path = "scipy.stats.mstats"
-depends_on = ["scipy.stats"]
+depends_on = ["scipy._lib", "scipy.stats"]
 
 [[modules]]
 path = "scipy.stats.qmc"

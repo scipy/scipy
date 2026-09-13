@@ -186,6 +186,11 @@ warnings.filterwarnings(
     message=r'.*py:obj reference target not found: scipy.misc.*',
     category=Warning,
 )
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*`scipy.stats.mstats` is deprecated.*',
+    category=DeprecationWarning,
+)
 
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
@@ -307,6 +312,8 @@ autosummary_generate = True
 autosummary_filename_map = {
     "scipy.signal.czt": "czt-function",
     "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
+    "scipy.stats.logistic": "scipy.stats.logistic.lower",
+    "scipy.stats.uniform": "scipy.stats.uniform.lower",
 }
 
 

@@ -78,7 +78,6 @@ import textwrap
 
 special_ufuncs = [
     "_beta_pdf",
-    "_beta_ppf",
     "_binom_cdf",
     "_binom_isf",
     "_binom_pmf",
