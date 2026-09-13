@@ -100,12 +100,22 @@ static PyObject *lapackfunc_get_name(PyObject *self, void *Py_UNUSED(closure)) {
  *
  * @note Built lazily by build_doc() on first access and cached in `self->doc`. The store runs in
  *       a per-object critical section, so concurrent first accesses keep one build and drop the
- *       other. `doc` is set at most once and never cleared while `self` is live, so the cached
- *       fast path reads without locking.  Routines with no docstring registered return None.
+ *       other. The cached path takes the same lock, so a reader never sees the pointer without
+ *       the string it was built from; `__doc__` is cold enough that the lock costs nothing worth
+ *       reclaiming.  Routines with no docstring registered return None.
  */
 static PyObject *lapackfunc_get_doc(PyObject *self, void *Py_UNUSED(closure)) {
     LapackFunc *f = (LapackFunc *)self;
-    if (f->doc != nullptr) { return Py_NewRef(f->doc); }
+
+    PyObject *doc;
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_BEGIN_CRITICAL_SECTION(self);
+#endif
+    doc = Py_XNewRef(f->doc);
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_END_CRITICAL_SECTION();
+#endif
+    if (doc != nullptr) { return doc; }
 
     const char *name = PyUnicode_AsUTF8(f->name);
     if (name == nullptr) { return nullptr; }
@@ -123,11 +133,12 @@ static PyObject *lapackfunc_get_doc(PyObject *self, void *Py_UNUSED(closure)) {
         f->doc = built;
         built = nullptr;
     }
+    doc = Py_NewRef(f->doc);
 #if PY_VERSION_HEX >= 0x030d00f0
     Py_END_CRITICAL_SECTION();
 #endif
     if (built != nullptr) { Py_DECREF(built); }   // lost the race; keep the winner
-    return Py_NewRef(f->doc);
+    return doc;
 }
 
 
