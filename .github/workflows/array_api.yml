@@ -46,8 +46,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - tasks: [test-strict, test-torch, test-torch-float32, test-torch-meta, test-dask]
-            environments: [array-api-strict, torch-cpu, dask-cpu]
+          - tasks: [test-strict, test-torch, test-torch-float32, test-torch-meta, test-dask, test-mparray]
+            environments: [array-api-strict, torch-cpu, dask-cpu, mparray]
           - tasks: [test-jax]
             environments: [jax-cpu]
     steps:
