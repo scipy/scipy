@@ -1025,24 +1025,35 @@ class poisson_gen(rv_discrete):
         # First evaluate the Poisson quantile via Boost using the rounding up policy
         # This policy is much faster than evaluation to machine precision but may be
         # inaccurate in the tails
-        x_candidate = scu._poisson_ppf_stats(q, mu)
+        vals = scu._poisson_ppf_stats(q, mu)
         # The quantile can be off by a few integers in the extreme tails,
-        # so we search for the exact integer by repeatedly checking with pdtr.
-        # This is performed in both directions
-        q, mu, vals = np.broadcast_arrays(q, mu, x_candidate)
-        vals = vals.astype(np.float64, copy=True)
+        # so we search for the exact integer by repeatedly checking against pdtr.
+        # helper to support scalars as well as arrays
+        mu_arr, q_arr = np.asarray(mu), np.asarray(q)
 
+        def _at(arr, mask):
+            return arr if arr.ndim == 0 else arr[mask]
+
+        # case 1, initial guess is too low: we need to increment until
+        # pdtr(vals, mu) >= q
         too_low = special.pdtr(vals, mu) < q
         while np.any(too_low):
             vals[too_low] += 1
-            too_low = special.pdtr(vals, mu) < q
+            too_low[too_low] = (special.pdtr(vals[too_low], _at(mu_arr, too_low)) <
+                                _at(q_arr, too_low))
 
+        # case 2, initial guess is too high: we need to decrement until
+        # pdtr(vals-1, mu) < q
+        # make sure not to decrement below 0
         vals1 = np.maximum(vals - 1, 0)
         too_high = (vals > 0) & (special.pdtr(vals1, mu) >= q)
         while np.any(too_high):
             vals[too_high] -= 1
-            vals1 = np.maximum(vals - 1, 0)
-            too_high = (vals > 0) & (special.pdtr(vals1, mu) >= q)
+            vals1[too_high] = np.maximum(vals[too_high] - 1, 0)
+            too_high[too_high] = (vals[too_high] > 0) & (
+                special.pdtr(vals1[too_high], _at(mu_arr, too_high)) >=
+                _at(q_arr, too_high)
+            )
 
         return vals
 
