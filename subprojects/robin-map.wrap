@@ -1,0 +1,13 @@
+[wrap-file]
+directory = robin-map-1.4.0
+source_url = https://github.com/Tessil/robin-map/archive/refs/tags/v1.4.0.tar.gz
+source_filename = robin-map-1.4.0.tar.gz
+source_hash = 7930dbf9634acfc02686d87f615c0f4f33135948130b8922331c16d90a03250c
+patch_filename = robin-map_1.4.0-1_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/robin-map_1.4.0-1/get_patch
+patch_hash = feb14b6752b7d439fb2f3ee968e595a9a3de00ef8cb029488af2ceb4f504b95d
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/robin-map_1.4.0-1/robin-map-1.4.0.tar.gz
+wrapdb_version = 1.4.0-1
+
+[provide]
+robin-map = robin_map_dep
