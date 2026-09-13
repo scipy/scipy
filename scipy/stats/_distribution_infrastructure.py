@@ -5115,7 +5115,7 @@ def order_statistic(X, /, *, r, n):
 
 
 def _raise_if_not_continuous(f):
-    functools.wraps(f)
+    @functools.wraps(f)
     def wrapped(self, *args, **kwargs):
         if not self._continuous:
             raise NotImplementedError(f"`{f.__name__}` is implemented only for "

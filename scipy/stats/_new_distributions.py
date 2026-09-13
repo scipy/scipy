@@ -474,6 +474,10 @@ class Binomial(DiscreteDistribution):
     def __init__(self, *, n, p, **kwargs):
         super().__init__(n=n, p=p, **kwargs)
 
+    def _support(self, *, n, p, **kwargs):
+        a, b = super()._support(n=n, p=p, **kwargs)
+        return np.where(p == 1, b, a), np.where(p == 0, a, b)
+
     def _pmf_formula(self, x, *, n, p, **kwargs):
         return scu._binom_pmf(x, n, p)
 
