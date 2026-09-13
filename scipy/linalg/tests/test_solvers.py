@@ -134,6 +134,34 @@ class TestSolveLyapunov:
         assert res.shape == (0, 0)
         assert res.dtype == ref.dtype
 
+    @pytest.mark.parametrize("dtype_a",
+        [int, np.float32, np.float64, np.complex64, np.complex128]
+    )
+    @pytest.mark.parametrize("dtype_q",
+        [int, np.float32, np.float64, np.complex64, np.complex128]
+    )
+    @pytest.mark.parametrize("n", [0, 5])
+    @pytest.mark.parametrize("method", ["direct", "bilinear"])
+    def test_shape_dtyp_discrete(self, dtype_a, dtype_q, n, method):
+        rng = np.random.default_rng(seed=12345)
+        common_dtype = np.promote_types(dtype_a, dtype_q)
+        res_dtype = np.float64 if np.isdtype(common_dtype, "integral") else common_dtype
+        atol = 5e-6
+
+        a = rng.normal(size=(n, n))
+        q = rng.normal(size=(n, n))
+        if np.issubdtype(dtype_a, np.complexfloating):
+            a = a + 1j * rng.normal(size=(n, n))
+        if np.issubdtype(dtype_q, np.complexfloating):
+            q = q + 1j * rng.normal(size=(n, n))
+
+        a = a.astype(dtype_a)
+        q = q.astype(dtype_q)
+
+        x = solve_discrete_lyapunov(a, q, method=method)
+        assert_allclose(a @ x @ np.conj(a.T) - x + q, np.zeros((n, n)), atol=atol)
+        assert x.dtype == res_dtype
+
 
 class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')

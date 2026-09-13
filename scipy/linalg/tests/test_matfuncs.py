@@ -997,6 +997,29 @@ class TestExpmFrechet:
         assert_allclose(sps_expm, blockEnlarge_expm)
         assert_allclose(sps_frechet, blockEnlarge_frechet)
 
+    @pytest.mark.parametrize("dtype", [
+        int, np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [0, 5])
+    @pytest.mark.parametrize("method", ["SPS", "blockEnlarge"])
+    def test_shape_dtype(self, dtype, n, method):
+        rng = np.random.default_rng(seed=12345)
+
+        a = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = a.astype(dtype)
+        q = np.eye(n, dtype=dtype)
+
+        expm_a, expm_frechet_ae = expm_frechet(a, q, method=method)
+        res_dtype = np.float64 if dtype is int else dtype
+
+        assert expm_a.dtype == res_dtype
+        assert expm_a.shape == (n, n)
+        assert expm_frechet_ae.dtype == res_dtype
+        assert expm_frechet_ae.shape == (n, n)
+
+
 
 def _help_expm_cond_search(A, A_norm, X, X_norm, eps, p):
     p = np.reshape(p, A.shape)
@@ -1084,6 +1107,22 @@ class TestExpmConditionNumber:
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
+
+    @pytest.mark.parametrize("dtype", [
+        int, np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_shape_dtype(self, dtype, n):
+        rng = np.random.default_rng(seed=12345)
+
+        a = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = a.astype(dtype)
+
+        cond = expm_cond(a)
+        assert np.shape(cond) == ()
+        assert cond.dtype == np.float64 if dtype is int else np.finfo(dtype).dtype
 
 
 class TestKhatriRao:
