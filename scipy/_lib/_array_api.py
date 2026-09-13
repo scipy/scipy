@@ -829,9 +829,9 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         "backed by the backends indicated above; masked values will be treated as "
         "though they were not present." if capabilities.get("marray", False) else "")
 
-    mparray_note = (f"`{fun_name}` also accepts "
-        "`MPArrays <https://github.com/mdhaber/mparray>`__ "
-        "for arbitrary precision arithmetic. "
+    mparray_note = (f"In addition, `{fun_name}` accepts "
+        "`MPArrays <https://github.com/mdhaber/mparray>`__; "
+        "calculations will be performed with the precision set by ``mpmath.mp.dps``. "
         if capabilities.get("mparray", False) else "")
 
     # Note: deliberately not documenting array-api-strict
