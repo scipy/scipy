@@ -65,4 +65,14 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         'radius_final': float(final_tr_radius),
         'scale': bool(scale),
     }
-    return _cobyqa_minimize(fun, x0, args, bounds, constraints, callback, options)
+    res = _cobyqa_minimize(fun, x0, args, bounds, constraints, callback,
+                           options)
+
+    # COBYQA reports a callback-requested stop (``status == 3``) as a
+    # successful termination. For consistency with the other `minimize`
+    # methods, which treat the `callback` raising ``StopIteration`` as an
+    # unsuccessful termination, override `success` accordingly. See gh-23660.
+    if res.status == 3:
+        res.success = False
+
+    return res
