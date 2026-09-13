@@ -460,8 +460,8 @@ class Binomial(DiscreteDistribution):
         f(x) = {n \choose x} p^x (1 - p)^{n-x}
 
     """
-    _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
-    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(False, False))
+    _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(True, False))
+    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(True, True))
     _x_support = _IntegerInterval(endpoints=(0, 'n'), inclusive=(True, True))
 
     _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
@@ -473,6 +473,10 @@ class Binomial(DiscreteDistribution):
 
     def __init__(self, *, n, p, **kwargs):
         super().__init__(n=n, p=p, **kwargs)
+
+    def _support(self, *, n, p, **kwargs):
+        a, b = super()._support(n=n, p=p, **kwargs)
+        return np.where(p == 1, b, a), np.where(p == 0, a, b)
 
     def _pmf_formula(self, x, *, n, p, **kwargs):
         return scu._binom_pmf(x, n, p)
