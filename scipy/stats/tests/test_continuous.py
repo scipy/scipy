@@ -199,6 +199,21 @@ families = continuous_families + discrete_families
 
 
 class TestDistributions:
+    @pytest.mark.parametrize('mu, sigma, upper, logmass', [
+        (0., 1., 1e-20, -46.97064039308559),
+        (0., 1., np.nextafter(0., 1.), -745.3590104545859),
+        (-1e18, 1e8, 1., -5e19),
+    ])
+    def test_normal_narrow_interval(self, mu, sigma, upper, logmass):
+        # gh-26119: monotone-density integral bounds round to these log masses.
+        X = Normal(mu=mu, sigma=sigma)
+        # Mix failed subtraction with zero-width and ordinary intervals.
+        x = np.array([0., upper, 0., -np.inf])
+        y = np.array([upper, 0., 0., np.inf])
+        ref = np.array([logmass, logmass + np.pi*1j, -np.inf, 0.])
+        assert_allclose(X.logcdf(x, y), ref, rtol=2e-15)
+        assert_allclose(X.cdf(x, y), np.exp(ref).real, rtol=2e-14, atol=0)
+
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
