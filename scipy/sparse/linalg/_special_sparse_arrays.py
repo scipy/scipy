@@ -38,15 +38,13 @@ class LaplacianNd(LinearOperator):
     eigenvalues(m=None)
         Construct a 1D array of `m` largest (smallest in absolute value)
         eigenvalues of the Laplacian matrix in ascending order.
-    eigenvectors(m=None):
+    eigenvectors(m=None)
         Construct the array with columns made of `m` eigenvectors (``float``)
         of the ``Nd`` Laplacian corresponding to the `m` ordered eigenvalues.
 
-    .. versionadded:: 1.12.0
-
     Notes
     -----
-    Compared to the MATLAB/Octave implementation [1] of 1-, 2-, and 3-D
+    Compared to the MATLAB/Octave implementation [1]_ of 1-, 2-, and 3-D
     Laplacian, this code allows the arbitrary N-D case and the matrix-free
     callable option, but is currently limited to pure Dirichlet, Neumann or
     Periodic boundary conditions only.
@@ -57,7 +55,7 @@ class LaplacianNd(LinearOperator):
 
     All eigenvalues and eigenvectors of the discrete Laplacian operator for
     an ``N``-dimensional  regular grid of shape `grid_shape` with the grid
-    step size ``h=1`` are analytically known [2].
+    step size ``h=1`` are analytically known [2]_.
 
     References
     ----------
