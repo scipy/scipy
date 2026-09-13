@@ -6069,6 +6069,15 @@ class TestTTestCI:
 
 @make_xp_test_case(stats.ttest_ind)
 class TestTTestIndMore:
+    @pytest.mark.parametrize('scale', [2.**-300, 2.**300])
+    def test_gh26169(self, scale, xp):
+        a = xp.asarray([-1., 0., 1.], dtype=xp.float64) * scale
+        res = stats.ttest_ind(a, a + 2*scale, equal_var=False)
+        xp_assert_equal(res.df, xp.asarray(4., dtype=xp.float64))
+        xp_assert_close(res.statistic, xp.asarray(-np.sqrt(6), dtype=xp.float64))
+        xp_assert_close(res.pvalue,
+                        xp.asarray(1 - 1.2*np.sqrt(0.6), dtype=xp.float64))
+
     @make_xp_test_case(stats.ttest_ind_from_stats)
     def test_ttest_ind_with_uneq_var(self, xp):
         # check vs. R `t.test`, e.g.
@@ -7839,6 +7848,13 @@ class TestAlexanderGovern:
 
 @make_xp_test_case(stats.f_oneway)
 class TestFOneWay:
+
+    @pytest.mark.parametrize('scale', [2.**-511, 2.**500])
+    def test_gh26146(self, scale, xp):
+        a = xp.asarray([-1., 0., 1.], dtype=xp.float64) * scale
+        res = stats.f_oneway(a, a + 2*scale, a + 4*scale, equal_var=False)
+        xp_assert_close(res.statistic, xp.asarray(72/7, dtype=xp.float64))
+        xp_assert_close(res.pvalue, xp.asarray(49/1849, dtype=xp.float64))
 
     def test_trivial(self, xp):
         # A trivial test of stats.f_oneway, with F=0.
