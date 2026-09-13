@@ -8053,10 +8053,10 @@ class TestFOneWay:
             xp_assert_equal(result.pvalue, xp.asarray(xp.nan))
 
     @skip_xp_backends('dask.array', reason='lazy->reduced input validation')
-    @pytest.mark.parametrize('args', [(), ([1, 2, 3],)])
+    @pytest.mark.parametrize('args', [(), ([1, 2, 3],), ([[1, 2], [3, 4]],)])
     def test_too_few_inputs(self, args, xp):
         args = [xp.asarray(arg) for arg in args]
-        message = "At least two samples are required..."
+        message = "at least two inputs are required|At least two samples are required"
         with pytest.raises(TypeError, match=message):
             stats.f_oneway(*args)
 
@@ -8186,6 +8186,13 @@ class TestKruskal:
         message = r"Need at least two groups in stats.kruskal\(\)"
         with pytest.raises(ValueError, match=message):
             stats.kruskal()
+
+    @skip_xp_backends('dask.array', reason='lazy->reduced input validation')
+    @pytest.mark.parametrize('shape', [(3,), (3, 5)])
+    def test_one_sample(self, shape, xp):
+        message = r"Need at least two groups in stats.kruskal\(\)"
+        with pytest.raises(ValueError, match=message):
+            stats.kruskal(xp.ones(shape))
 
 
 @make_xp_test_case(stats.combine_pvalues)
