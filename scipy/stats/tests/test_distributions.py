@@ -3127,16 +3127,15 @@ class TestPoisson:
     @pytest.mark.parametrize("mu", [1e3, 1e6, 1e10])
     @pytest.mark.parametrize("distance", [1e-15, 1e-12, 1e-6])
     @pytest.mark.parametrize("tail", ["left", "right"])
-    def test_ppf_cdf_roundtrip_large_mu(self, mu, distance, tail):
+    def test_ppf_against_definition_large_mu(self, mu, distance, tail):
+        # test that the quantile returned by ppf corresponds to the lowest
+        # value k such that cdf(k-1) < p <= cdf(k)
         if tail == "left":
             p = distance
         else:
             p = 1 - distance
         k = stats.poisson.ppf(p, mu)
-        km1 = k - 1
-        cdf_k = stats.poisson.cdf(k, mu)
-        cdf_km1 = stats.poisson.cdf(km1, mu)
-        assert cdf_km1 < p <= cdf_k
+        assert stats.poisson.cdf(k - 1, mu) < p <= stats.poisson.cdf(k, mu)
 
 
 class TestKSTwo:
