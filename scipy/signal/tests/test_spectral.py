@@ -7,7 +7,9 @@ from numpy.testing import (assert_,
                            assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._array_api import make_xp_test_case, xp_assert_close, is_jax
+from scipy._lib._array_api import (
+    make_xp_test_case, xp_assert_close, xp_assert_equal, is_jax
+)
 import scipy._external.array_api_extra as xpx
 from scipy import signal
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
@@ -1507,18 +1509,6 @@ class TestSTFT:
         with chk_VE('window must have length of nperseg'):
             check_COLA(np.ones(20), 10, 0)
 
-        # Checks for check_NOLA():
-        with chk_VE('nperseg must be a positive integer'):
-            check_NOLA('hann', -10, 0)
-        with chk_VE('noverlap must be less than nperseg'):
-            check_NOLA('hann', 10, 20)
-        with chk_VE('window must be 1-D'):
-            check_NOLA(np.ones((2, 2)), 10, 0)
-        with chk_VE('window must have length of nperseg'):
-            check_NOLA(np.ones(20), 10, 0)
-        with chk_VE('noverlap must be a nonnegative integer'):
-            check_NOLA('hann', 64, -32)
-
         x = np.zeros(1024)
         z = stft(x)[2]
 
@@ -1570,6 +1560,21 @@ class TestSTFT:
         with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
             istft(z, scaling=scaling)
 
+    @make_xp_test_case(check_NOLA)
+    def test_check_NOLA_input_validation(self, xp):
+        with pytest.raises(ValueError, match='nperseg must be a positive integer'):
+            check_NOLA('hann', -10, 0)
+        with pytest.raises(ValueError, match='noverlap must be less than nperseg'):
+            check_NOLA('hann', 10, 20)
+        with pytest.raises(ValueError, match='window must be 1-D'):
+            check_NOLA(xp.ones((2, 2)), 10, 0)
+        with pytest.raises(ValueError, match='window must have length of nperseg'):
+            check_NOLA(xp.ones(20), 10, 0)
+        with pytest.raises(
+            ValueError, match='noverlap must be a nonnegative integer'
+        ):
+            check_NOLA('hann', 64, -32)
+
     def test_check_COLA(self):
         settings = [
                     ('boxcar', 10, 0),
@@ -1586,7 +1591,8 @@ class TestSTFT:
             msg = '{}, {}, {}'.format(*setting)
             assert_equal(True, check_COLA(*setting), err_msg=msg)
 
-    def test_check_NOLA(self):
+    @make_xp_test_case(check_NOLA)
+    def test_check_NOLA(self, xp):
         settings_pass = [
                     ('boxcar', 10, 0),
                     ('boxcar', 10, 9),
@@ -1605,17 +1611,24 @@ class TestSTFT:
                     ]
         for setting in settings_pass:
             msg = '{}, {}, {}'.format(*setting)
-            assert_equal(True, check_NOLA(*setting), err_msg=msg)
+            xp_assert_equal(True, check_NOLA(*setting), check_0d=False, err_msg=msg)
 
-        w_fail = np.ones(16)
-        w_fail[::2] = 0
+        w_fail = xp.ones(16, dtype=xp.float64)
+        w_fail = xpx.at(w_fail)[::2].set(0)
         settings_fail = [
-                    (w_fail, len(w_fail), len(w_fail) // 2),
+                    (w_fail, w_fail.shape[0], w_fail.shape[0] // 2),
                     ('hann', 64, 0),
         ]
         for setting in settings_fail:
             msg = '{}, {}, {}'.format(*setting)
-            assert_equal(False, check_NOLA(*setting), err_msg=msg)
+            xp_assert_equal(False, check_NOLA(*setting), check_0d=False, err_msg=msg)
+
+    @make_xp_test_case(check_NOLA)
+    @pytest.mark.parametrize('dtype', ['int32', 'float32', 'float64'])
+    def test_check_NOLA_dtypes(self, dtype, xp):
+        window = xp.ones(4, dtype=getattr(xp, dtype))
+        result = check_NOLA(window, 4, 2)
+        xp_assert_equal(result, xp.asarray(True, dtype=xp.bool), check_0d=False)
 
     def test_average_all_segments(self):
         rng = np.random.RandomState(1234)
