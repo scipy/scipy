@@ -121,7 +121,7 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
-const char *_bivariate_normal_sf_doc = R"(
+const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
