@@ -1268,8 +1268,24 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Maximum number of Arnoldi update iterations allowed
         Default: ``n*10``
     tol : float, optional
-        Relative accuracy for eigenvalues (stopping criterion)
+        Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
+
+        Note that `tol` bounds the relative residual norm of the returned
+        eigenpairs; it does not guarantee the completeness of the requested
+        spectrum or that all eigenvalues within a tight cluster are found.
+        When eigenvalues are tightly clustered with relative spacing comparable
+        to or smaller than `tol`, ARPACK may satisfy the convergence test
+        before all cluster members have emerged in the subspace, potentially
+        omitting a cluster member in favor of another eigenvalue. In such
+        cases, specifying a stricter tolerance (e.g., a smaller `tol` or
+        ``tol=0``), increasing `ncv`, or testing different starting vectors
+        `v0` is advised. Conversely, a looser (larger) `tol` may be used when
+        approximate eigenvalues suffice and iteration count must be minimized.
+        Explicitly checking the residual norms (e.g.,
+        ``np.linalg.norm(A @ v[:, i] - w[i] * v[:, i])``, or
+        ``np.linalg.norm(A @ v[:, i] - w[i] * (M @ v[:, i]))`` for generalized
+        problems) can verify the quality of the computed eigenpairs.
     return_eigenvectors : bool, optional
         Return eigenvectors (True) in addition to eigenvalues
     Minv : ndarray, sparse matrix or LinearOperator, optional
@@ -1543,9 +1559,25 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
-    tol : float
+    tol : float, optional
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
+
+        Note that `tol` bounds the relative residual norm of the returned
+        eigenpairs; it does not guarantee the completeness of the requested
+        spectrum or that all eigenvalues within a tight cluster are found.
+        When eigenvalues are tightly clustered with relative spacing comparable
+        to or smaller than `tol`, ARPACK may satisfy the convergence test
+        before all cluster members have emerged in the subspace, potentially
+        omitting a cluster member in favor of another eigenvalue. In such
+        cases, specifying a stricter tolerance (e.g., a smaller `tol` or
+        ``tol=0``), increasing `ncv`, or testing different starting vectors
+        `v0` is advised. Conversely, a looser (larger) `tol` may be used when
+        approximate eigenvalues suffice and iteration count must be minimized.
+        Explicitly checking the residual norms (e.g.,
+        ``np.linalg.norm(A @ v[:, i] - w[i] * v[:, i])``, or
+        ``np.linalg.norm(A @ v[:, i] - w[i] * (M @ v[:, i]))`` for generalized
+        problems) can verify the quality of the computed eigenpairs.
     return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues.
         This value determines the order in which eigenvalues are sorted.
