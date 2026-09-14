@@ -6320,8 +6320,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     except ValueError as e:
         raise ValueError("`popmean.shape[axis]` must equal 1.") from e
     d = mean - popmean
-    v = _var(a, axis=axis, ddof=1)
-    denom = xp.sqrt(v / n)
+    # Scale the centered values before squaring: the variance can underflow
+    # or overflow even when the standard error is representable (gh-26113).
+    a_zero_mean = _demean(a, xp.expand_dims(mean, axis=axis), axis, xp=xp)
+    scale = xp.max(xp.abs(a_zero_mean), axis=axis, keepdims=True)
+    scale = xp.where(scale == 0, 1, scale)
+    v = xp.mean((a_zero_mean / scale)**2, axis=axis)
+    denom = xp.squeeze(scale, axis=axis) * xp.sqrt(v / df)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = xp.divide(d, denom)
