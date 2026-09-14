@@ -78,6 +78,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
 solve-group = "default"
 
+[environments.jupyter]
+# tasks: jupyter
+features = ["run-deps", "test-deps", "ipython-dep", "jupyter"]
+solve-group = "default"
+
 [environments.bench]
 # tasks: bench
 features = ["run-deps", "bench-common", "bench", "default-platforms"]
@@ -464,6 +469,20 @@ cmd = "spin ipython --build-dir=build-cpu --no-build"
 depends-on = "build-cpu"
 env.SCIPY_ARRAY_API = "1"
 description = "Launch IPython (array-api-cpu env)"
+
+
+### Jupyter ###
+
+[feature.jupyter.dependencies]
+jupyterlab = "*"
+ipykernel = "*"
+
+[feature.jupyter.tasks.jupyter]
+cmd = "spin run --no-build jupyter lab"
+depends-on = "build"
+# Keep notebook kernels from importing the source tree ahead of the local build.
+env.PYTHONSAFEPATH = "1"
+description = "Launch JupyterLab with the local SciPy build"
 
 
 ### Benchmarking ###
