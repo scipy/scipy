@@ -1109,7 +1109,10 @@ def linregress(x, y=None):
 
     Perform the linear regression:
 
-    >>> res = stats.mstats.linregress(x, y)
+    >>> import warnings
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore", category=DeprecationWarning)
+    ...     res = stats.mstats.linregress(x, y)
 
     Coefficient of determination (R-squared):
 

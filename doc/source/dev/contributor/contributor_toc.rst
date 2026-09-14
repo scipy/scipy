@@ -13,7 +13,7 @@ fixing a bug and submitting a pull request (*note: this video is from 2018, so
 the build steps are different by now - the overall workflow is still the same
 though*).
 
-- :ref:`building-from-source` - how to set up a development environment,
+- :ref:`building-contributor` - how to set up a development environment,
   including installing compilers and SciPy dependencies, cloning the SciPy
   repository on GitHub and updating git submodules, and using the ``spin``
   interface for building and running tests.
@@ -92,22 +92,12 @@ Compiled code
 .. toctree::
     :hidden:
 
-    development_workflow
-    pep8
     ../gitwash/gitwash
     reviewing_prs
-    ../triage
-    adding_new
-    ../core-dev/index
     ../missing-bits
     NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
     writing_test_tips
-    devpy_test
     debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
-    rendering_documentation
     adding_notebooks
-    benchmarking
-    cython
     compiled_code
-    public_cython_api

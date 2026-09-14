@@ -57,7 +57,7 @@ with the Milestone for the release or the "backport-candidate" label.
 Creating the maintenance branch
 -------------------------------
 Before branching, ensure that the release notes are updated as far as possible.
-Include the output of ``tools/gh_lists.py`` and ``tools/authors.py`` in the
+Include the output of ``tools/release/gh_lists.py`` and ``tools/release/authors.py`` in the
 release notes.
 
 Maintenance branches are named ``maintenance/<major>.<minor>.x`` (e.g. 0.19.x).
@@ -161,17 +161,8 @@ If the wheel builds reveal issues that need to be fixed
 with backports on the maintenance branch, you may remove the local tags (for example
 ``git tag -d v1.2.0rc1``) and restart with tagging above on the new candidate commit.
 
-The ``cibuildwheel`` infrastructure runs the tests from the built wheels and if they pass,
-uploads the wheels to https://anaconda.org/multibuild-wheels-staging/scipy.
-
-From there you can download them for uploading to PyPI. This can be
-done in an automated fashion using ``tools/download-wheels.py``::
-
-  $ python tools/download-wheels.py 1.5.0rc1 -w REPO_ROOT/release/installers
-
-After this, we want to regenerate the README file, in order to have the MD5 and
-SHA256 checksums of the just downloaded wheels in it.  Run ``spin
-notes`` again.
+The release process is now automated in the ``scipy/scipy-release`` repository —
+pushing the tag will upload all wheels and the sdist directly to PyPI.
 
 
 Uploading release artifacts
@@ -242,7 +233,7 @@ For beta and rc versions, ask people to test (run the scipy tests
 and test against their own code) and report issues on Github or Discourse.
 
 After the final release is done, port relevant changes to release notes, build
-scripts, author name mapping in ``tools/authors.py`` and any other changes that
+scripts, author name mapping in ``tools/release/authors.py`` and any other changes that
 were only made on the maintenance branch to main.
 
 Enable interactive examples by editing the runtime configuration file,

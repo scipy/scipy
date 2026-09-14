@@ -1,6 +1,7 @@
 import functools
 from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API, xp_capabilities
+    xp_result_device, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API,
+    xp_capabilities,
 )
 
 import numpy as np
@@ -13,12 +14,12 @@ __all__ = _ndimage_api.__all__
 MODULE_NAME = 'ndimage'
 
 
-def _maybe_convert_arg(arg, xp):
+def _maybe_convert_arg(arg, xp, device=None):
     """Convert arrays/scalars hiding in the sequence `arg`."""
     if isinstance(arg, np.ndarray | np.generic):
-        return xp.asarray(arg)
+        return xp.asarray(arg, device=device)
     elif isinstance(arg, list | tuple):
-        return type(arg)(_maybe_convert_arg(x, xp) for x in arg)
+        return type(arg)(_maybe_convert_arg(x, xp, device) for x in arg)
     else:
         return arg
 
@@ -55,18 +56,21 @@ def delegate_xp(delegator, module_name):
             else:
                 # the original function (does all np.asarray internally)
                 # XXX: output arrays
+                # The NumPy round-trip must return results on the device of
+                # the input arrays, not on the backend's default device
+                device = xp_result_device(*args, *kwds.values())
                 result = func(*args, **kwds)
 
                 if isinstance(result, np.ndarray | np.generic):
                     # XXX: np.int32->np.array_0D
-                    return xp.asarray(result)
+                    return xp.asarray(result, device=device)
                 elif isinstance(result, int):
                     return result
                 elif isinstance(result, dict):
                     # value_indices:
                     # result is {np.int64(1): (array(0), array(1))} etc
                     return {
-                        k.item(): tuple(xp.asarray(vv) for vv in v)
+                        k.item(): tuple(xp.asarray(vv, device=device) for vv in v)
                         for k,v in result.items()
                     }
                 elif result is None:
@@ -74,7 +78,7 @@ def delegate_xp(delegator, module_name):
                     return result
                 else:
                     # lists/tuples
-                    return _maybe_convert_arg(result, xp)
+                    return _maybe_convert_arg(result, xp, device)
         return wrapper
     return inner
 
@@ -96,7 +100,8 @@ capabilities_dict = {
         cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "vectorized_filter": xp_capabilities(
-        cpu_only=True, allow_dask_compute=True, jax_jit=False
+        cpu_only=True, allow_dask_compute=True, jax_jit=False,
+        exceptions=["cupy"]
     ),
     "generate_binary_structure": xp_capabilities(out_of_scope=True),
     "map_coordinates": xp_capabilities(
@@ -113,6 +118,7 @@ for func_name in _ndimage_api.__all__:
 
     capabilities = capabilities_dict.get(func_name, default_capabilities)
 
+    # pyrefly:ignore[not-callable]
     f = capabilities(
         delegate_xp(delegator, MODULE_NAME)(bare_func)
         if SCIPY_ARRAY_API else bare_func

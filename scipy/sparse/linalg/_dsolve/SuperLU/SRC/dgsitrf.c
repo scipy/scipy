@@ -328,7 +328,7 @@ dgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int relaxed_supernodes = mark_relax(m, relax_end, relax_fsupc, xa_begin, xa_end,
 	         asub, marker_relax);
 #if ( PRNTlevel >= 1)
-    printf("%d relaxed supernodes.\n", i);
+    printf("%d relaxed supernodes.\n", relaxed_supernodes);
 #else
     (void)relaxed_supernodes; // to suppress unused variable warning
 #endif

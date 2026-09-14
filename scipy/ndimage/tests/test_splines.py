@@ -56,7 +56,7 @@ def make_spline_knot_matrix(xp, n, order, mode='mirror'):
     return xp.asarray(matrix / knot_values_sum)
 
 
-@make_xp_test_case(ndimage.spline_filter1d)
+@make_xp_test_case(ndimage.spline_filter1d)  # type:ignore[attr-defined]
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
 @pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
 def test_spline_filter_vs_matrix_solution(order, mode, xp):
@@ -71,7 +71,7 @@ def test_spline_filter_vs_matrix_solution(order, mode, xp):
     assert_almost_equal(eye, spline_filter_axis_1 @ matrix.T)
 
 
-@make_xp_test_case(ndimage.spline_filter1d)
+@make_xp_test_case(ndimage.spline_filter1d)  # type:ignore[attr-defined]
 @xfail_xp_backends("cupy", reason="CuPy spline_filter1d has the same aliasing bug")
 @pytest.mark.parametrize('order', [2, 3, 4, 5])
 @pytest.mark.parametrize('n', [2, 3, 4, 5])

@@ -15,7 +15,7 @@ def test_decimate():
 
     ones_i64 = np.ones(32, dtype=np.int64)
     assert decimate(ones_i64, 2).dtype == np.float64
-    
+
 
 def test_lfilter_zi():
     b_f32 = np.array([1, 2, 3], dtype=np.float32)
@@ -28,7 +28,7 @@ def test_lfiltic():
     b_f32 = np.array([1, 2, 3], dtype=np.float32)
     a_f32 = np.array([4, 5, 6], dtype=np.float32)
     x_f32 = np.ones(32, dtype=np.float32)
-    
+
     b_f64 = b_f32.astype(np.float64)
     a_f64 = a_f32.astype(np.float64)
     x_f64 = x_f32.astype(np.float64)

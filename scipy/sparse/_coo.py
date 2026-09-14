@@ -5,11 +5,11 @@ __docformat__ = "restructuredtext en"
 __all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
 
 import math
+import os
 from warnings import warn
 
 import numpy as np
 
-from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
@@ -27,12 +27,12 @@ import operator
 
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
-    _allow_nd = range(1, 65)
+    _allow_nd = tuple(range(1, 65))
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
         if not copy:
-            copy = copy_if_needed
+            copy = None
 
         if isinstance(arg1, tuple):
             if isshape(arg1, allow_nd=self._allow_nd):
@@ -244,14 +244,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
-    
+
     @property
     def mT(self):
         if (n := self.ndim) < 2:
             raise ValueError(f"Array must be at least 2-dimensional, but it is {n}-D")
         axes = None if n == 2 else tuple(range(n - 2)) + (-1, -2)
         return self.transpose(axes=axes)
-    
+
     mT.__doc__ = _spbase.mT.__doc__
 
     def resize(self, *shape) -> None:
@@ -329,7 +329,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         Parameters
         ----------
         copy : bool, optional
-            Unused.
+            Unused. A copy is always made in the 2D case. And CSC is 2D.
 
         Returns
         -------
@@ -356,6 +356,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
+            # _coo_to_compressed copy kwarg only for 1D. CSC cant be 1D. See gh-24676
             from ._csc import csc_array
             indptr, indices, data, shape = self._coo_to_compressed(csc_array._swap)
 
@@ -373,7 +374,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ----------
         copy : bool, optional
             With ``copy=False``, the data/indices may be shared between this
-            array/matrix and the resultant csr_array/matrix.
+            array/matrix and the resultant csr_array/matrix. But only for 1D.
+            For 2D, a copy will always be made.
 
         Returns
         -------
@@ -1541,8 +1543,8 @@ def _get_sparse_data_and_coords(x, new_shape, dtype):
     if len_diff > 0:
         # prepend ones to shape of x to match ndim
         x_shape = [1] * len_diff + list(x_shape)
-        coord_zeros = np.zeroslike(x_coords[0])
-        x_coords = tuple([coord_zeros] * len_diff + x_coords)
+        coord_zeros = np.zeros_like(x_coords[0])
+        x_coords = [coord_zeros] * len_diff + x_coords
     # taking away axes (squeezing) is not part of broadcasting, but long
     # spmatrix history of using 2d vectors in 1d space, so we manually
     # squeeze the front and back axes here to be compatible
@@ -1656,6 +1658,15 @@ def _ravel_coords(coords, shape, order='C'):
 def isspmatrix_coo(x):
     """Is `x` of coo_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -1669,13 +1680,24 @@ def isspmatrix_coo(x):
     Examples
     --------
     >>> from scipy.sparse import coo_array, coo_matrix, csr_matrix, isspmatrix_coo
-    >>> isspmatrix_coo(coo_matrix([[5]]))
+    >>> isspmatrix_coo(coo_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_coo(coo_array([[5]]))
+    >>> isspmatrix_coo(coo_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_coo(csr_matrix([[5]]))
+    >>> isspmatrix_coo(csr_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_coo` is being replaced by `self.format == "coo" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_coo function will be removed no earlier than v2.2.
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, coo_matrix)
 
 
@@ -1802,6 +1824,15 @@ class coo_matrix(spmatrix, _coo_base):
     A sparse matrix in COOrdinate format.
 
     Also known as the 'ijv' or 'triplet' format.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         coo_matrix(D)

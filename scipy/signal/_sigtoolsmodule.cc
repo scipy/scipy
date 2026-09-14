@@ -7,7 +7,6 @@ is granted under the SciPy License.
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include "numpy/ndarrayobject.h"
-#include "npy_2_compat.h"
 
 #include "_sigtools.hh"
 #include <stdlib.h>
@@ -472,7 +471,8 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                      double *response, double *weight, int type, int maxiter,
-                     int grid_density, int *niter_out) {
+                     int grid_density, int *niter_out, int *ngrid_out,
+                     int *nfcns_out) {
 
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
@@ -508,7 +508,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
      work  (dimsize+1)*6
 
   */
-  tempstor = (double *)malloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
+  tempstor = (double *)PyMem_RawMalloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
   if (tempstor == NULL) return -2;
 
   des = tempstor; grid = des + wrksize+1;
@@ -549,7 +549,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 	    wt[j] = wate(temp,fx,wtx,lband,jtype);
 	    if (++j > wrksize) {
                 /* too many points, or too dense grid */
-                free(tempstor);
+                PyMem_RawFree(tempstor);
                 return -1;
             }
 	    grid[j] = temp + delf;
@@ -567,6 +567,15 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     ngrid = j - 1;
     if (neg == nodd) {
 	if (grid[ngrid] > (0.5-delf)) --ngrid;
+    }
+
+    /* Need at least nfcns+1 grid points for the extremal frequencies;
+       a too-narrow band yields fewer and overruns the arrays (gh-24495). */
+    if (ngrid < nfcns + 1) {
+	*ngrid_out = ngrid;
+	*nfcns_out = nfcns;
+	PyMem_RawFree(tempstor);
+	return -3;
     }
 
     /*
@@ -608,7 +617,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 
     if (remez(&dev, des, grid, edge, wt, ngrid, numbands, iext, alpha, nfcns,
               maxiter, work, dimsize, niter_out) < 0) {
-        free(tempstor);
+        PyMem_RawFree(tempstor);
         return -1;
     }
 
@@ -656,7 +665,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     }
     if (neg == 1 && nodd == 1) h[nz] = 0.0;
 
-  free(tempstor);
+  PyMem_RawFree(tempstor);
   return 0;
 
 }
@@ -736,7 +745,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
         if (afill == NULL) goto fail;
     }
 
-    aout_dimens = (npy_intp *)malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    aout_dimens = (npy_intp *)PyMem_RawMalloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
     if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
@@ -787,7 +796,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
 
     switch (ret) {
     case 0:
-      free(aout_dimens);
+      PyMem_RawFree(aout_dimens);
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
@@ -812,7 +821,7 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
     }
 
 fail:
-    free(aout_dimens);
+    PyMem_RawFree(aout_dimens);
     Py_XDECREF(ain1);
     Py_XDECREF(ain2);
     Py_XDECREF(aout);
@@ -840,6 +849,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     double oldvalue, *dptr, fs = 1.0;
     char mystr[255];
     int niter = -1;
+    int ngrid = -1, nfcns = -1;
 
     if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight,
                           &type, &fs, &maxiter, &grid_density)) {
@@ -904,7 +914,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
                     (double *)PyArray_DATA(a_weight),
-                    type, maxiter, grid_density, &niter);
+                    type, maxiter, grid_density, &niter, &ngrid, &nfcns);
     if (err < 0) {
         if (err == -1) {
             snprintf(mystr, sizeof(mystr), "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
@@ -913,6 +923,15 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
         }
         else if (err == -2) {
             PyErr_NoMemory();
+            goto fail;
+        }
+        else if (err == -3) {
+            snprintf(mystr, sizeof(mystr),
+                "Band edges are too close together to build the dense "
+                "frequency grid: it has only %d point(s) but at least %d "
+                "(one per extremal frequency) are required. Widen the bands, "
+                "reduce numtaps, or increase grid_density.", ngrid, nfcns + 1);
+            PyErr_SetString(PyExc_ValueError, mystr);
             goto fail;
         }
     }

@@ -17,5 +17,5 @@ py3.install_sources(
   subdir: 'scipy/fft'
 )
 
-subdir('_pocketfft')
+subdir('_duccfft')
 subdir('tests')

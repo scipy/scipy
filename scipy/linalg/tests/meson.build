@@ -1,8 +1,10 @@
 python_sources = [
   '__init__.py',
+  'cython_abi_signatures.json',
   'test_basic.py',
   'test_batch.py',
   'test_blas.py',
+  'test_cython_abi.py',
   'test_cython_blas.py',
   'test_cython_lapack.py',
   'test_cythonized_array_utils.py',
@@ -23,7 +25,8 @@ python_sources = [
   'test_sketches.py',
   'test_solve_toeplitz.py',
   'test_solvers.py',
-  'test_special_matrices.py'
+  'test_special_matrices.py',
+  'test_deprecations.py',
 ]
 
 

@@ -107,9 +107,9 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     float   *Lval, *Uval;
-    int      fsupc, nrow, nsupr, nsupc, irow;
+    int      fsupc, irow, jcol;
+    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
     int_t    i, j, k, luptr, istart, iptr;
-    int      jcol, n, ldb, nrhs;
     float   *work, *rhs_work, *soln;
     flops_t  solve_ops;
     void sprint_soln(int n, int nrhs, const float *soln);

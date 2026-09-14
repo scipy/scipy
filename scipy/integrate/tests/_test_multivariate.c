@@ -97,34 +97,28 @@ fail:
 }
 
 
+static struct PyModuleDef_Slot _test_multivariate_slots[] = {
+    {Py_mod_exec, create_pointers},
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_test_multivariate",
-    NULL,
-    -1,
-    NULL, /* Empty methods section */
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_test_multivariate",
+    .m_size = 0,
+    .m_methods = NULL,
+    .m_slots = _test_multivariate_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__test_multivariate(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
-    if (m == NULL) {
-        return NULL;
-    }
-    if (create_pointers(m)) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return m;
+    return PyModuleDef_Init(&moduledef);
 }

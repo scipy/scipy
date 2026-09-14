@@ -192,7 +192,7 @@ class Weierstrass(Benchmark):
     .. math::
 
        f_{\text{Weierstrass}}(x) = \sum_{i=1}^{n} \left [
-                                   \sum_{k=0}^{kmax} a^k \cos 
+                                   \sum_{k=0}^{kmax} a^k \cos
                                    \left( 2 \pi b^k (x_i + 0.5) \right) - n
                                    \sum_{k=0}^{kmax} a^k \cos(\pi b^k) \right ]
 

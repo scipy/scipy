@@ -1,0 +1,1333 @@
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
+index 030ddc10e4..fcab94f197 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
+@@ -67,7 +67,7 @@ ccolumn_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int         incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     singlecomplex      alpha, beta;
+     
+     /* krep = representative of current k-th supernode
+@@ -80,8 +80,8 @@ ccolumn_bmod (
+      */
+     singlecomplex      ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          fsupc, nsupc, nsupr, segsze;
+-    int          nrow;	  /* No of rows in the matrix of matrix-vector */
++    slu_blasint  fsupc, nsupc, nsupr, segsze;
++    slu_blasint  nrow;	  /* No of rows in the matrix of matrix-vector */
+     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
+     int_t        lptr, kfnz, isub, irow, i;
+     int_t        no_zeros, new_next, ufirst, nextlu;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+index c8e40dda83..4d632a2b5b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+@@ -148,7 +148,7 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ #define ITMAX 5
+     
+     /* Table of constant values */
+-    int    ione = 1, nrow = A->nrow;
++    slu_blasint    ione = 1, nrow = A->nrow;
+     singlecomplex ndone = {-1., 0.};
+     singlecomplex done = {1., 0.};
+     
+@@ -402,7 +402,8 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ 	kase = 0;
+ 
+ 	do {
+-	    clacon2_(&nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
++	    int nrow_int = (int)nrow;
++	    clacon2_(&nrow_int, &work[A->nrow], work, &ferr[j], &kase, isave);
+ 	    if (kase == 0) break;
+ 
+ 	    if (kase == 1) {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
+index ba319acde4..afb3338c93 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
+@@ -108,9 +108,9 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     singlecomplex   *Lval, *Uval;
+-    int      fsupc, nrow, nsupr, nsupc, irow;
++    int      fsupc, irow, jcol;
++    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
+     int_t    i, j, k, luptr, istart, iptr;
+-    int      jcol, n, ldb, nrhs;
+     singlecomplex   *work, *rhs_work, *soln;
+     flops_t  solve_ops;
+     void cprint_soln(int n, int nrhs, const singlecomplex *soln);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
+index 0485fd1d47..125df1bac3 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
+@@ -90,7 +90,8 @@ int
+ clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int isave[3])
+ {
+     /* Table of constant values */
+-    int c__1 = 1;
++    slu_blasint c__1 = 1;
++    int c__1_int = 1;  /* for internal _slu functions that take int* */
+     singlecomplex      zero = {0.0, 0.0};
+     singlecomplex      one = {1.0, 0.0};
+ 
+@@ -106,7 +107,8 @@ clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int
+     extern float smach(char *);
+     extern int icmax1_slu(int *, singlecomplex *, int *);
+     extern double scsum1_slu(int *, singlecomplex *, int *);
+-    extern void ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
++    extern void ccopy_(slu_blasint *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
++    slu_blasint n_blas = *n;
+ 
+     safmin = smach("Safe minimum");
+     if ( *kase == 0 ) {
+@@ -136,7 +138,7 @@ clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int
+ 	/*        ... QUIT */
+ 	goto L150;
+     }
+-    *est = scsum1_slu(n, x, &c__1);
++    *est = scsum1_slu(n, x, &c__1_int);
+ 
+     for (i = 0; i < *n; ++i) {
+ 	d__1 = c_abs(&x[i]);
+@@ -155,7 +157,7 @@ clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int
+     /*     ................ ENTRY   (isave[0] == 2)   
+ 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+ L40:
+-    isave[1] = icmax1_slu(n, &x[0], &c__1);  /* j */
++    isave[1] = icmax1_slu(n, &x[0], &c__1_int);  /* j */
+     --isave[1];  /* --j; */
+     isave[2] = 2; /* iter = 2; */
+ 
+@@ -173,10 +175,10 @@ L70:
+ #ifdef _CRAY
+     CCOPY(n, x, &c__1, v, &c__1);
+ #else
+-    ccopy_(n, x, &c__1, v, &c__1);
++    ccopy_(&n_blas, x, &c__1, v, &c__1);
+ #endif
+     estold = *est;
+-    *est = scsum1_slu(n, v, &c__1);
++    *est = scsum1_slu(n, v, &c__1_int);
+ 
+ 
+ L90:
+@@ -201,7 +203,7 @@ L90:
+ 	   X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+ L110:
+     jlast = isave[1];  /* j; */
+-    isave[1] = icmax1_slu(n, &x[0], &c__1); /* j */
++    isave[1] = icmax1_slu(n, &x[0], &c__1_int); /* j */
+     isave[1] = isave[1] - 1;  /* --j; */
+     if (x[jlast].r != (d__1 = x[isave[1]].r, fabs(d__1)) && isave[2] < 5) {
+ 	isave[2] = isave[2] + 1;  /* ++iter; */
+@@ -223,12 +225,12 @@ L120:
+     /*     ................ ENTRY   (isave[0] = 5)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+ L140:
+-    temp = scsum1_slu(n, x, &c__1) / (float)(*n * 3) * 2.;
++    temp = scsum1_slu(n, x, &c__1_int) / (float)(*n * 3) * 2.;
+     if (temp > *est) {
+ #ifdef _CRAY
+ 	CCOPY(n, &x[0], &c__1, &v[0], &c__1);
+ #else
+-	ccopy_(n, &x[0], &c__1, &v[0], &c__1);
++	ccopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
+ #endif
+ 	*est = temp;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
+index 033756a52d..ffbeff18a5 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
+@@ -79,17 +79,18 @@ cpanel_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int          incx = 1, incy = 1;
++    slu_blasint  incx = 1, incy = 1;
+     singlecomplex       alpha, beta;
+ #endif
+ 
+     register int k, ksub;
+-    int          fsupc, nsupc, nsupr, nrow;
++    int          fsupc, nsupc;
++    slu_blasint  nsupr, nrow;
+     int          krep, krep_ind;
+     singlecomplex       ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          segsze;
+-    int          block_nrow;  /* no of rows in a block row */
++    slu_blasint  segsze;
++    slu_blasint  block_nrow;  /* no of rows in a block row */
+     int_t        lptr;	      /* Points to the row subscripts of a supernode */
+     int          kfnz, irow, no_zeros; 
+     register int isub, isub1, i;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
+index 1dffacaceb..bc9ca483bd 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
+@@ -54,12 +54,12 @@ csnode_bmod (
+ 	 ftcs2 = _cptofcd("N", strlen("N")),
+ 	 ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int            incx = 1, incy = 1;
++    slu_blasint    incx = 1, incy = 1;
+     singlecomplex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
+ #endif
+ 
+     singlecomplex   comp_zero = {0.0, 0.0};
+-    int     nsupc, nsupr, nrow;
++    slu_blasint nsupc, nsupr, nrow;
+     int_t   isub, irow;
+     int_t   ufirst, nextlu;
+     int_t   *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
+index be964fedac..2586ffb566 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
+@@ -94,12 +94,14 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     singlecomplex   *Lval, *Uval;
+-    int incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     singlecomplex temp;
+     singlecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+     singlecomplex comp_zero = {0.0, 0.0};
+-    int nrow, irow, jcol;
+-    int fsupc, nsupr, nsupc;
++    slu_blasint nrow;
++    int irow, jcol;
++    int fsupc;
++    slu_blasint nsupr, nsupc;
+     int_t luptr, istart, i, k, iptr;
+     singlecomplex *work;
+     flops_t solve_ops;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dcolumn_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dcolumn_bmod.c
+index 8bcf0e420c..4819fed5fa 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dcolumn_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dcolumn_bmod.c
+@@ -67,7 +67,7 @@ dcolumn_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int         incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     double      alpha, beta;
+     
+     /* krep = representative of current k-th supernode
+@@ -80,8 +80,8 @@ dcolumn_bmod (
+      */
+     double      ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          fsupc, nsupc, nsupr, segsze;
+-    int          nrow;	  /* No of rows in the matrix of matrix-vector */
++    slu_blasint  fsupc, nsupc, nsupr, segsze;
++    slu_blasint  nrow;	  /* No of rows in the matrix of matrix-vector */
+     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
+     int_t        lptr, kfnz, isub, irow, i;
+     int_t        no_zeros, new_next, ufirst, nextlu;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
+index 2bc537ccc7..f3d7dbbc9f 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
+@@ -148,7 +148,7 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ #define ITMAX 5
+     
+     /* Table of constant values */
+-    int    ione = 1, nrow = A->nrow;
++    slu_blasint    ione = 1, nrow = A->nrow;
+     double ndone = -1.;
+     double done = 1.;
+     
+@@ -405,7 +405,8 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ 	kase = 0;
+ 
+ 	do {
+-	    dlacon2_(&nrow, &work[A->nrow], work,
++	    int nrow_int = (int)nrow;
++	    dlacon2_(&nrow_int, &work[A->nrow], work,
+ 		    &iwork[A->nrow], &ferr[j], &kase, isave);
+ 	    if (kase == 0) break;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgstrs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgstrs.c
+index 6f550c8a8b..8a2082dda2 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgstrs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgstrs.c
+@@ -107,9 +107,9 @@ dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     double   *Lval, *Uval;
+-    int      fsupc, nrow, nsupr, nsupc, irow;
++    int      fsupc, irow, jcol;
++    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
+     int_t    i, j, k, luptr, istart, iptr;
+-    int      jcol, n, ldb, nrhs;
+     double   *work, *rhs_work, *soln;
+     flops_t  solve_ops;
+     void dprint_soln(int n, int nrhs, const double *soln);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dlacon2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dlacon2.c
+index 17ad950768..028662f0d6 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dlacon2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dlacon2.c
+@@ -89,7 +89,7 @@ int
+ dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int isave[3])
+ {
+     /* Table of constant values */
+-    int c__1 = 1;
++    slu_blasint c__1 = 1;
+     double      zero = 0.0;
+     double      one = 1.0;
+     
+@@ -103,14 +103,16 @@ dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int is
+     extern double SASUM(int *, double *, int *);
+     extern int SCOPY(int *, double *, int *, double *, int *);
+ #else
+-    extern int idamax_(int *, double *, int *);
+-    extern double dasum_(int *, double *, int *);
+-    extern void dcopy_(int *, double *, int *, double *, int *);
++    extern int idamax_(slu_blasint *, double *, slu_blasint *);
++    extern double dasum_(slu_blasint *, double *, slu_blasint *);
++    extern void dcopy_(slu_blasint *, double *, slu_blasint *, double *, slu_blasint *);
+ #endif
+ #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
+ #define i_dnnt(a) \
+ 	( a>=0 ? floor(a+.5) : -floor(.5-a) ) /* Round to nearest integer */
+ 
++    slu_blasint n_blas = *n;
++
+     if ( *kase == 0 ) {
+ 	for (i = 0; i < *n; ++i) {
+ 	    x[i] = 1. / (double) (*n);
+@@ -140,7 +142,7 @@ dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int is
+ #ifdef _CRAY
+     *est = SASUM(n, x, &c__1);
+ #else
+-    *est = dasum_(n, x, &c__1);
++    *est = dasum_(&n_blas, x, &c__1);
+ #endif
+ 
+     for (i = 0; i < *n; ++i) {
+@@ -157,7 +159,7 @@ L40:
+ #ifdef _CRAY
+     isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
+ #else
+-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
++    isave[1] = idamax_(&n_blas, &x[0], &c__1);  /* j */
+ #endif
+     --isave[1];  /* --j; */
+     isave[2] = 2; /* iter = 2; */
+@@ -176,13 +178,13 @@ L70:
+ #ifdef _CRAY
+     SCOPY(n, x, &c__1, v, &c__1);
+ #else
+-    dcopy_(n, x, &c__1, v, &c__1);
++    dcopy_(&n_blas, x, &c__1, v, &c__1);
+ #endif
+     estold = *est;
+ #ifdef _CRAY
+     *est = SASUM(n, v, &c__1);
+ #else
+-    *est = dasum_(n, v, &c__1);
++    *est = dasum_(&n_blas, v, &c__1);
+ #endif
+ 
+     for (i = 0; i < *n; ++i)
+@@ -211,7 +213,7 @@ L110:
+ #ifdef _CRAY
+     isave[1] = ISAMAX(n, &x[0], &c__1);/* j */
+ #else
+-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
++    isave[1] = idamax_(&n_blas, &x[0], &c__1);  /* j */
+ #endif
+     isave[1] = isave[1] - 1;  /* --j; */
+     if (x[jlast] != fabs(x[isave[1]]) && isave[2] < 5) {
+@@ -236,13 +238,13 @@ L140:
+ #ifdef _CRAY
+     temp = SASUM(n, x, &c__1) / (double)(*n * 3) * 2.;
+ #else
+-    temp = dasum_(n, x, &c__1) / (double)(*n * 3) * 2.;
++    temp = dasum_(&n_blas, x, &c__1) / (double)(*n * 3) * 2.;
+ #endif
+     if (temp > *est) {
+ #ifdef _CRAY
+ 	SCOPY(n, &x[0], &c__1, &v[0], &c__1);
+ #else
+-	dcopy_(n, &x[0], &c__1, &v[0], &c__1);
++	dcopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
+ #endif
+ 	*est = temp;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c
+index 38580d0903..210619c661 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dpanel_bmod.c
+@@ -79,17 +79,18 @@ dpanel_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int          incx = 1, incy = 1;
++    slu_blasint  incx = 1, incy = 1;
+     double       alpha, beta;
+ #endif
+ 
+     register int k, ksub;
+-    int          fsupc, nsupc, nsupr, nrow;
++    int          fsupc, nsupc;
++    slu_blasint  nsupr, nrow;
+     int          krep, krep_ind;
+     double       ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          segsze;
+-    int          block_nrow;  /* no of rows in a block row */
++    slu_blasint  segsze;
++    slu_blasint  block_nrow;  /* no of rows in a block row */
+     int_t        lptr;	      /* Points to the row subscripts of a supernode */
+     int          kfnz, irow, no_zeros; 
+     register int isub, isub1, i;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c
+index e3cff55aba..62bd196347 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsnode_bmod.c
+@@ -54,11 +54,11 @@ dsnode_bmod (
+ 	 ftcs2 = _cptofcd("N", strlen("N")),
+ 	 ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int            incx = 1, incy = 1;
++    slu_blasint    incx = 1, incy = 1;
+     double         alpha = -1.0, beta = 1.0;
+ #endif
+ 
+-    int     nsupc, nsupr, nrow;
++    slu_blasint nsupc, nsupr, nrow;
+     int_t   isub, irow;
+     int_t   ufirst, nextlu;
+     int_t   *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsp_blas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsp_blas2.c
+index d8135df597..6bd4abfee7 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsp_blas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dsp_blas2.c
+@@ -94,10 +94,12 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     double   *Lval, *Uval;
+-    int incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     double alpha = 1.0, beta = 1.0;
+-    int nrow, irow, jcol;
+-    int fsupc, nsupr, nsupc;
++    slu_blasint nrow;
++    int irow, jcol;
++    int fsupc;
++    slu_blasint nsupr, nsupc;
+     int_t luptr, istart, i, k, iptr;
+     double *work;
+     flops_t solve_ops;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+index 80f248a6e1..54780830f1 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern void ccopy_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
+ 
+ #if 0
+ static singlecomplex *A;  /* used in _compare_ only */
+@@ -72,11 +72,11 @@ ilu_ccopy_to_ucol(
+     singlecomplex    *ucol;
+     int_t     *usub, *xusub;
+     int_t     nzumax;
+-    int       m; /* number of entries in the nonzero U-segments */
++    slu_blasint m; /* number of entries in the nonzero U-segments */
+     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
+     register double tmp;
+     singlecomplex zero = {0.0, 0.0};
+-    int i_1 = 1;
++    slu_blasint i_1 = 1;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 125cac1eb3..823defad20 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -23,14 +23,14 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
+-extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
+-extern float scasum_(int *, singlecomplex *, int *);
+-extern float scnrm2_(int *, singlecomplex *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int icamax_(int *, singlecomplex [], int *);
++extern void cswap_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern void ccopy_(slu_blasint *, singlecomplex [], slu_blasint *, singlecomplex [], slu_blasint *);
++extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
++extern float scasum_(slu_blasint *, singlecomplex *, slu_blasint *);
++extern float scnrm2_(slu_blasint *, singlecomplex *, slu_blasint *);
++extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
++extern slu_blasint icamax_(slu_blasint *, singlecomplex [], slu_blasint *);
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
+@@ -74,7 +74,7 @@ int ilu_cdrop_row(
+     register int i, k, m1;
+     register int nzlc; /* number of nonzeros in column last+1 */
+     int_t xlusup_first, xlsub_first;
+-    int m, n; /* m x n is the size of the supernode */
++    slu_blasint m, n; /* m x n is the size of the supernode */
+     int r = 0; /* number of dropped rows */
+     register float *temp;
+     register singlecomplex *lusup = (singlecomplex *) Glu->lusup;
+@@ -87,8 +87,8 @@ int ilu_cdrop_row(
+     norm_t nrm = options->ILU_Norm;
+     singlecomplex one = {1.0, 0.0};
+     singlecomplex none = {-1.0, 0.0};
+-    int i_1 = 1;
+-    int inc_diag; /* inc_diag = m + 1 */
++    slu_blasint i_1 = 1;
++    slu_blasint inc_diag; /* inc_diag = m + 1 */
+     int nzp = 0;  /* number of zero pivots */
+     float alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
+ 
+@@ -194,7 +194,7 @@ int ilu_cdrop_row(
+ 	    }
+ 	    else /* by quick select */
+ 	    {
+-		int len = m1 - n + 1;
++		slu_blasint len = m1 - n + 1;
+ 		scopy_(&len, swork, &i_1, swork2, &i_1);
+ 		tol = sqselect(len, swork2, quota - n);
+ #if 0
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+index b1cf76b6f2..4ce0688d78 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void dcopy_(int *, double [], int *, double [], int *);
++extern void dcopy_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
+ 
+ #if 0
+ static double *A;  /* used in _compare_ only */
+@@ -72,11 +72,11 @@ ilu_dcopy_to_ucol(
+     double    *ucol;
+     int_t     *usub, *xusub;
+     int_t     nzumax;
+-    int       m; /* number of entries in the nonzero U-segments */
++    slu_blasint m; /* number of entries in the nonzero U-segments */
+     register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
+     register double tmp;
+     double zero = 0.0;
+-    int i_1 = 1;
++    slu_blasint i_1 = 1;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
+index 41e9db519f..6da784556e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
+@@ -23,13 +23,13 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_ddefs.h"
+ 
+-extern void dswap_(int *, double [], int *, double [], int *);
+-extern void daxpy_(int *, double *, double [], int *, double [], int *);
+-extern void dcopy_(int *, double [], int *, double [], int *);
+-extern double dasum_(int *, double *, int *);
+-extern double dnrm2_(int *, double *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int idamax_(int *, double [], int *);
++extern void dswap_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
++extern void daxpy_(slu_blasint *, double *, double [], slu_blasint *, double [], slu_blasint *);
++extern void dcopy_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
++extern double dasum_(slu_blasint *, double *, slu_blasint *);
++extern double dnrm2_(slu_blasint *, double *, slu_blasint *);
++extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
++extern slu_blasint idamax_(slu_blasint *, double [], slu_blasint *);
+ 
+ #if 0
+ static double *A;  /* used in _compare_ only */
+@@ -73,7 +73,7 @@ int ilu_ddrop_row(
+     register int i, k, m1;
+     register int nzlc; /* number of nonzeros in column last+1 */
+     int_t xlusup_first, xlsub_first;
+-    int m, n; /* m x n is the size of the supernode */
++    slu_blasint m, n; /* m x n is the size of the supernode */
+     int r = 0; /* number of dropped rows */
+     register double *temp;
+     register double *lusup = (double *) Glu->lusup;
+@@ -87,8 +87,8 @@ int ilu_ddrop_row(
+     double zero = 0.0;
+     double one = 1.0;
+     double none = -1.0;
+-    int i_1 = 1;
+-    int inc_diag; /* inc_diag = m + 1 */
++    slu_blasint i_1 = 1;
++    slu_blasint inc_diag; /* inc_diag = m + 1 */
+     int nzp = 0;  /* number of zero pivots */
+     double alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
+ 
+@@ -193,7 +193,7 @@ int ilu_ddrop_row(
+ 	    }
+ 	    else /* by quick select */
+ 	    {
+-		int len = m1 - n + 1;
++		slu_blasint len = m1 - n + 1;
+ 		dcopy_(&len, dwork, &i_1, dwork2, &i_1);
+ 		tol = dqselect(len, dwork2, quota - n);
+ #if 0
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+index 04a5984b41..fbae396c6e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
+@@ -72,11 +72,11 @@ ilu_scopy_to_ucol(
+     float    *ucol;
+     int_t     *usub, *xusub;
+     int_t     nzumax;
+-    int       m; /* number of entries in the nonzero U-segments */
++    slu_blasint m; /* number of entries in the nonzero U-segments */
+     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
+     register double tmp;
+     float zero = 0.0;
+-    int i_1 = 1;
++    slu_blasint i_1 = 1;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
+index 749cb00a4e..c67f38246b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
+@@ -23,13 +23,13 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_sdefs.h"
+ 
+-extern void sswap_(int *, float [], int *, float [], int *);
+-extern void saxpy_(int *, float *, float [], int *, float [], int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
+-extern float sasum_(int *, float *, int *);
+-extern float snrm2_(int *, float *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int isamax_(int *, float [], int *);
++extern void sswap_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
++extern void saxpy_(slu_blasint *, float *, float [], slu_blasint *, float [], slu_blasint *);
++extern void scopy_(slu_blasint *, float [], slu_blasint *, float [], slu_blasint *);
++extern float sasum_(slu_blasint *, float *, slu_blasint *);
++extern float snrm2_(slu_blasint *, float *, slu_blasint *);
++extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
++extern slu_blasint isamax_(slu_blasint *, float [], slu_blasint *);
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
+@@ -73,7 +73,7 @@ int ilu_sdrop_row(
+     register int i, k, m1;
+     register int nzlc; /* number of nonzeros in column last+1 */
+     int_t xlusup_first, xlsub_first;
+-    int m, n; /* m x n is the size of the supernode */
++    slu_blasint m, n; /* m x n is the size of the supernode */
+     int r = 0; /* number of dropped rows */
+     register float *temp;
+     register float *lusup = (float *) Glu->lusup;
+@@ -87,8 +87,8 @@ int ilu_sdrop_row(
+     float zero = 0.0;
+     float one = 1.0;
+     float none = -1.0;
+-    int i_1 = 1;
+-    int inc_diag; /* inc_diag = m + 1 */
++    slu_blasint i_1 = 1;
++    slu_blasint inc_diag; /* inc_diag = m + 1 */
+     int nzp = 0;  /* number of zero pivots */
+     float alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
+ 
+@@ -193,7 +193,7 @@ int ilu_sdrop_row(
+ 	    }
+ 	    else /* by quick select */
+ 	    {
+-		int len = m1 - n + 1;
++		slu_blasint len = m1 - n + 1;
+ 		scopy_(&len, swork, &i_1, swork2, &i_1);
+ 		tol = sqselect(len, swork2, quota - n);
+ #if 0
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+index 2c4f0c7438..26ff208f32 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
++extern void zcopy_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
+ 
+ #if 0
+ static doublecomplex *A;  /* used in _compare_ only */
+@@ -72,11 +72,11 @@ ilu_zcopy_to_ucol(
+     doublecomplex    *ucol;
+     int_t     *usub, *xusub;
+     int_t     nzumax;
+-    int       m; /* number of entries in the nonzero U-segments */
++    slu_blasint m; /* number of entries in the nonzero U-segments */
+     register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
+     register double tmp;
+     doublecomplex zero = {0.0, 0.0};
+-    int i_1 = 1;
++    slu_blasint i_1 = 1;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
+index cdf0825801..ed7176a1be 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
+@@ -23,14 +23,14 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_zdefs.h"
+ 
+-extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void dcopy_(int *, double [], int *, double [], int *);
+-extern double dzasum_(int *, doublecomplex *, int *);
+-extern double dznrm2_(int *, doublecomplex *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int izamax_(int *, doublecomplex [], int *);
++extern void zswap_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
++extern void zaxpy_(slu_blasint *, doublecomplex *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
++extern void zcopy_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
++extern void dcopy_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
++extern double dzasum_(slu_blasint *, doublecomplex *, slu_blasint *);
++extern double dznrm2_(slu_blasint *, doublecomplex *, slu_blasint *);
++extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
++extern slu_blasint izamax_(slu_blasint *, doublecomplex [], slu_blasint *);
+ 
+ #if 0
+ static double *A;  /* used in _compare_ only */
+@@ -74,7 +74,7 @@ int ilu_zdrop_row(
+     register int i, k, m1;
+     register int nzlc; /* number of nonzeros in column last+1 */
+     int_t xlusup_first, xlsub_first;
+-    int m, n; /* m x n is the size of the supernode */
++    slu_blasint m, n; /* m x n is the size of the supernode */
+     int r = 0; /* number of dropped rows */
+     register double *temp;
+     register doublecomplex *lusup = (doublecomplex *) Glu->lusup;
+@@ -87,8 +87,8 @@ int ilu_zdrop_row(
+     norm_t nrm = options->ILU_Norm;
+     doublecomplex one = {1.0, 0.0};
+     doublecomplex none = {-1.0, 0.0};
+-    int i_1 = 1;
+-    int inc_diag; /* inc_diag = m + 1 */
++    slu_blasint i_1 = 1;
++    slu_blasint inc_diag; /* inc_diag = m + 1 */
+     int nzp = 0;  /* number of zero pivots */
+     double alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
+ 
+@@ -194,7 +194,7 @@ int ilu_zdrop_row(
+ 	    }
+ 	    else /* by quick select */
+ 	    {
+-		int len = m1 - n + 1;
++		slu_blasint len = m1 - n + 1;
+ 		dcopy_(&len, dwork, &i_1, dwork2, &i_1);
+ 		tol = dqselect(len, dwork2, quota - n);
+ #if 0
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scolumn_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scolumn_bmod.c
+index 4381e10c89..ef3d067369 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scolumn_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scolumn_bmod.c
+@@ -67,7 +67,7 @@ scolumn_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int         incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     float      alpha, beta;
+     
+     /* krep = representative of current k-th supernode
+@@ -80,8 +80,8 @@ scolumn_bmod (
+      */
+     float      ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          fsupc, nsupc, nsupr, segsze;
+-    int          nrow;	  /* No of rows in the matrix of matrix-vector */
++    slu_blasint  fsupc, nsupc, nsupr, segsze;
++    slu_blasint  nrow;	  /* No of rows in the matrix of matrix-vector */
+     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
+     int_t        lptr, kfnz, isub, irow, i;
+     int_t        no_zeros, new_next, ufirst, nextlu;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
+index 12786be717..f06b44d300 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
+@@ -148,7 +148,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ #define ITMAX 5
+     
+     /* Table of constant values */
+-    int    ione = 1, nrow = A->nrow;
++    slu_blasint    ione = 1, nrow = A->nrow;
+     float ndone = -1.;
+     float done = 1.;
+     
+@@ -405,7 +405,8 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ 	kase = 0;
+ 
+ 	do {
+-	    slacon2_(&nrow, &work[A->nrow], work,
++	    int nrow_int = (int)nrow;
++	    slacon2_(&nrow_int, &work[A->nrow], work,
+ 		    &iwork[A->nrow], &ferr[j], &kase, isave);
+ 	    if (kase == 0) break;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgstrs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgstrs.c
+index 1ae3d5853f..ccf91997ff 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgstrs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgstrs.c
+@@ -107,9 +107,9 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     float   *Lval, *Uval;
+-    int      fsupc, nrow, nsupr, nsupc, irow;
++    int      fsupc, irow, jcol;
++    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
+     int_t    i, j, k, luptr, istart, iptr;
+-    int      jcol, n, ldb, nrhs;
+     float   *work, *rhs_work, *soln;
+     flops_t  solve_ops;
+     void sprint_soln(int n, int nrhs, const float *soln);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slacon2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slacon2.c
+index 2770f99e99..536b5520e8 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slacon2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slacon2.c
+@@ -89,7 +89,7 @@ int
+ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave[3])
+ {
+     /* Table of constant values */
+-    int c__1 = 1;
++    slu_blasint c__1 = 1;
+     float      zero = 0.0;
+     float      one = 1.0;
+     
+@@ -103,14 +103,16 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
+     extern float SASUM(int *, float *, int *);
+     extern int SCOPY(int *, float *, int *, float *, int *);
+ #else
+-    extern int isamax_(int *, float *, int *);
+-    extern float sasum_(int *, float *, int *);
+-    extern void scopy_(int *, float *, int *, float *, int *);
++    extern int isamax_(slu_blasint *, float *, slu_blasint *);
++    extern float sasum_(slu_blasint *, float *, slu_blasint *);
++    extern void scopy_(slu_blasint *, float *, slu_blasint *, float *, slu_blasint *);
+ #endif
+ #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
+ #define i_dnnt(a) \
+ 	( a>=0 ? floor(a+.5) : -floor(.5-a) ) /* Round to nearest integer */
+ 
++    slu_blasint n_blas = *n;
++
+     if ( *kase == 0 ) {
+ 	for (i = 0; i < *n; ++i) {
+ 	    x[i] = 1. / (float) (*n);
+@@ -140,7 +142,7 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
+ #ifdef _CRAY
+     *est = SASUM(n, x, &c__1);
+ #else
+-    *est = sasum_(n, x, &c__1);
++    *est = sasum_(&n_blas, x, &c__1);
+ #endif
+ 
+     for (i = 0; i < *n; ++i) {
+@@ -157,7 +159,7 @@ L40:
+ #ifdef _CRAY
+     isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
+ #else
+-    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
++    isave[1] = isamax_(&n_blas, &x[0], &c__1);  /* j */
+ #endif
+     --isave[1];  /* --j; */
+     isave[2] = 2; /* iter = 2; */
+@@ -176,13 +178,13 @@ L70:
+ #ifdef _CRAY
+     SCOPY(n, x, &c__1, v, &c__1);
+ #else
+-    scopy_(n, x, &c__1, v, &c__1);
++    scopy_(&n_blas, x, &c__1, v, &c__1);
+ #endif
+     estold = *est;
+ #ifdef _CRAY
+     *est = SASUM(n, v, &c__1);
+ #else
+-    *est = sasum_(n, v, &c__1);
++    *est = sasum_(&n_blas, v, &c__1);
+ #endif
+ 
+     for (i = 0; i < *n; ++i)
+@@ -211,7 +213,7 @@ L110:
+ #ifdef _CRAY
+     isave[1] = ISAMAX(n, &x[0], &c__1);/* j */
+ #else
+-    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
++    isave[1] = isamax_(&n_blas, &x[0], &c__1);  /* j */
+ #endif
+     isave[1] = isave[1] - 1;  /* --j; */
+     if (x[jlast] != fabs(x[isave[1]]) && isave[2] < 5) {
+@@ -236,13 +238,13 @@ L140:
+ #ifdef _CRAY
+     temp = SASUM(n, x, &c__1) / (float)(*n * 3) * 2.;
+ #else
+-    temp = sasum_(n, x, &c__1) / (float)(*n * 3) * 2.;
++    temp = sasum_(&n_blas, x, &c__1) / (float)(*n * 3) * 2.;
+ #endif
+     if (temp > *est) {
+ #ifdef _CRAY
+ 	SCOPY(n, &x[0], &c__1, &v[0], &c__1);
+ #else
+-	scopy_(n, &x[0], &c__1, &v[0], &c__1);
++	scopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
+ #endif
+ 	*est = temp;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
+index 97ba246ccd..dd5003e414 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_Cnames.h
+@@ -453,4 +453,8 @@ at the top-level directory.
+ #endif
+ 
+ 
++/* BLAS symbol renaming (SciPy-specific, kept outside vendored SRC/) */
++#include "scipy_slu_blas_config.h"
++
++
+ #endif /* __SUPERLU_CNAMES */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+index 9b0505d44d..2c25c81d89 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+@@ -264,17 +264,17 @@ extern void    ccheck_tempv(int, singlecomplex *);
+ 
+ /*! \brief BLAS */
+ 
+-extern void ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
+-extern void caxpy_(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
+-extern void cgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
+-		  const int*, const singlecomplex*, singlecomplex*, const int*);
+-extern void ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
+-                  singlecomplex*, int*);
+-extern void ctrsm_(char*, char*, char*, char*, int*, int*,
+-                  singlecomplex*, singlecomplex*, int*, singlecomplex*, int*);
+-extern void cgemv_(char *, int *, int *, singlecomplex *, singlecomplex *a, int *,
+-                  singlecomplex *, int *, singlecomplex *, singlecomplex *, int *);
++extern void ccopy_(slu_blasint *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
++extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
++extern void cgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
++                  const singlecomplex*, const singlecomplex*, const slu_blasint*, const singlecomplex*,
++		  const slu_blasint*, const singlecomplex*, singlecomplex*, const slu_blasint*);
++extern void ctrsv_(char*, char*, char*, slu_blasint*, singlecomplex*, slu_blasint*,
++                  singlecomplex*, slu_blasint*);
++extern void ctrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
++                  singlecomplex*, singlecomplex*, slu_blasint*, singlecomplex*, slu_blasint*);
++extern void cgemv_(char *, slu_blasint *, slu_blasint *, singlecomplex *, singlecomplex *a, slu_blasint *,
++                  singlecomplex *, slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *);
+ 
+ extern void cusolve(int, int, singlecomplex*, singlecomplex*);
+ extern void clsolve(int, int, singlecomplex*, singlecomplex*);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+index 9c18fb56ce..27762382c9 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
+@@ -261,17 +261,17 @@ extern void    dcheck_tempv(int, double *);
+ 
+ /*! \brief BLAS */
+ 
+-extern void dcopy_(int *, double *, int *, double *, int *);
+-extern void daxpy_(int *, double *, double *, int *, double *, int *);
+-extern void dgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const double*, const double*, const int*, const double*,
+-		  const int*, const double*, double*, const int*);
+-extern void dtrsv_(char*, char*, char*, int*, double*, int*,
+-                  double*, int*);
+-extern void dtrsm_(char*, char*, char*, char*, int*, int*,
+-                  double*, double*, int*, double*, int*);
+-extern void dgemv_(char *, int *, int *, double *, double *a, int *,
+-                  double *, int *, double *, double *, int *);
++extern void dcopy_(slu_blasint *, double *, slu_blasint *, double *, slu_blasint *);
++extern void daxpy_(slu_blasint *, double *, double *, slu_blasint *, double *, slu_blasint *);
++extern void dgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
++                  const double*, const double*, const slu_blasint*, const double*,
++		  const slu_blasint*, const double*, double*, const slu_blasint*);
++extern void dtrsv_(char*, char*, char*, slu_blasint*, double*, slu_blasint*,
++                  double*, slu_blasint*);
++extern void dtrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
++                  double*, double*, slu_blasint*, double*, slu_blasint*);
++extern void dgemv_(char *, slu_blasint *, slu_blasint *, double *, double *a, slu_blasint *,
++                  double *, slu_blasint *, double *, double *, slu_blasint *);
+ 
+ extern void dusolve(int, int, double*, double*);
+ extern void dlsolve(int, int, double*, double*);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+index 14af3fcf0c..e0d5c6c612 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
+@@ -261,17 +261,17 @@ extern void    scheck_tempv(int, float *);
+ 
+ /*! \brief BLAS */
+ 
+-extern void scopy_(int *, float *, int *, float *, int *);
+-extern void saxpy_(int *, float *, float *, int *, float *, int *);
+-extern void sgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const float*, const float*, const int*, const float*,
+-		  const int*, const float*, float*, const int*);
+-extern void strsv_(char*, char*, char*, int*, float*, int*,
+-                  float*, int*);
+-extern void strsm_(char*, char*, char*, char*, int*, int*,
+-                  float*, float*, int*, float*, int*);
+-extern void sgemv_(char *, int *, int *, float *, float *a, int *,
+-                  float *, int *, float *, float *, int *);
++extern void scopy_(slu_blasint *, float *, slu_blasint *, float *, slu_blasint *);
++extern void saxpy_(slu_blasint *, float *, float *, slu_blasint *, float *, slu_blasint *);
++extern void sgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
++                  const float*, const float*, const slu_blasint*, const float*,
++		  const slu_blasint*, const float*, float*, const slu_blasint*);
++extern void strsv_(char*, char*, char*, slu_blasint*, float*, slu_blasint*,
++                  float*, slu_blasint*);
++extern void strsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
++                  float*, float*, slu_blasint*, float*, slu_blasint*);
++extern void sgemv_(char *, slu_blasint *, slu_blasint *, float *, float *a, slu_blasint *,
++                  float *, slu_blasint *, float *, float *, slu_blasint *);
+ 
+ extern void susolve(int, int, float*, float*);
+ extern void slsolve(int, int, float*, float*);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+index b43e6a8ce7..cb65506594 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
+@@ -264,17 +264,17 @@ extern void    zcheck_tempv(int, doublecomplex *);
+ 
+ /*! \brief BLAS */
+ 
+-extern void zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+-extern void zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+-extern void zgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const doublecomplex*, const doublecomplex*, const int*, const doublecomplex*,
+-		  const int*, const doublecomplex*, doublecomplex*, const int*);
+-extern void ztrsv_(char*, char*, char*, int*, doublecomplex*, int*,
+-                  doublecomplex*, int*);
+-extern void ztrsm_(char*, char*, char*, char*, int*, int*,
+-                  doublecomplex*, doublecomplex*, int*, doublecomplex*, int*);
+-extern void zgemv_(char *, int *, int *, doublecomplex *, doublecomplex *a, int *,
+-                  doublecomplex *, int *, doublecomplex *, doublecomplex *, int *);
++extern void zcopy_(slu_blasint *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
++extern void zaxpy_(slu_blasint *, doublecomplex *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
++extern void zgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
++                  const doublecomplex*, const doublecomplex*, const slu_blasint*, const doublecomplex*,
++		  const slu_blasint*, const doublecomplex*, doublecomplex*, const slu_blasint*);
++extern void ztrsv_(char*, char*, char*, slu_blasint*, doublecomplex*, slu_blasint*,
++                  doublecomplex*, slu_blasint*);
++extern void ztrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
++                  doublecomplex*, doublecomplex*, slu_blasint*, doublecomplex*, slu_blasint*);
++extern void zgemv_(char *, slu_blasint *, slu_blasint *, doublecomplex *, doublecomplex *a, slu_blasint *,
++                  doublecomplex *, slu_blasint *, doublecomplex *, doublecomplex *, slu_blasint *);
+ 
+ extern void zusolve(int, int, doublecomplex*, doublecomplex*);
+ extern void zlsolve(int, int, doublecomplex*, doublecomplex*);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
+index ea9acb9592..0655609791 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/spanel_bmod.c
+@@ -79,17 +79,18 @@ spanel_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int          incx = 1, incy = 1;
++    slu_blasint  incx = 1, incy = 1;
+     float       alpha, beta;
+ #endif
+ 
+     register int k, ksub;
+-    int          fsupc, nsupc, nsupr, nrow;
++    int          fsupc, nsupc;
++    slu_blasint  nsupr, nrow;
+     int          krep, krep_ind;
+     float       ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          segsze;
+-    int          block_nrow;  /* no of rows in a block row */
++    slu_blasint  segsze;
++    slu_blasint  block_nrow;  /* no of rows in a block row */
+     int_t        lptr;	      /* Points to the row subscripts of a supernode */
+     int          kfnz, irow, no_zeros; 
+     register int isub, isub1, i;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c
+index da1ee1dca4..367b6bf7ea 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssnode_bmod.c
+@@ -54,11 +54,11 @@ ssnode_bmod (
+ 	 ftcs2 = _cptofcd("N", strlen("N")),
+ 	 ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int            incx = 1, incy = 1;
++    slu_blasint    incx = 1, incy = 1;
+     float         alpha = -1.0, beta = 1.0;
+ #endif
+ 
+-    int     nsupc, nsupr, nrow;
++    slu_blasint nsupc, nsupr, nrow;
+     int_t   isub, irow;
+     int_t   ufirst, nextlu;
+     int_t   *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssp_blas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssp_blas2.c
+index 6aa736945f..1654927e0d 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssp_blas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ssp_blas2.c
+@@ -94,10 +94,12 @@ sp_strsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     float   *Lval, *Uval;
+-    int incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     float alpha = 1.0, beta = 1.0;
+-    int nrow, irow, jcol;
+-    int fsupc, nsupr, nsupc;
++    slu_blasint nrow;
++    int irow, jcol;
++    int fsupc;
++    slu_blasint nsupr, nsupc;
+     int_t luptr, istart, i, k, iptr;
+     float *work;
+     flops_t solve_ops;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zcolumn_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zcolumn_bmod.c
+index d445dcc2d6..eec32462ec 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zcolumn_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zcolumn_bmod.c
+@@ -67,7 +67,7 @@ zcolumn_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int         incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     doublecomplex      alpha, beta;
+     
+     /* krep = representative of current k-th supernode
+@@ -80,8 +80,8 @@ zcolumn_bmod (
+      */
+     doublecomplex      ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          fsupc, nsupc, nsupr, segsze;
+-    int          nrow;	  /* No of rows in the matrix of matrix-vector */
++    slu_blasint  fsupc, nsupc, nsupr, segsze;
++    slu_blasint  nrow;	  /* No of rows in the matrix of matrix-vector */
+     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
+     int_t        lptr, kfnz, isub, irow, i;
+     int_t        no_zeros, new_next, ufirst, nextlu;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
+index d474e2a893..37479ef7a8 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
+@@ -148,7 +148,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ #define ITMAX 5
+     
+     /* Table of constant values */
+-    int    ione = 1, nrow = A->nrow;
++    slu_blasint    ione = 1, nrow = A->nrow;
+     doublecomplex ndone = {-1., 0.};
+     doublecomplex done = {1., 0.};
+     
+@@ -402,7 +402,8 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+ 	kase = 0;
+ 
+ 	do {
+-	    zlacon2_(&nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
++	    int nrow_int = (int)nrow;
++	    zlacon2_(&nrow_int, &work[A->nrow], work, &ferr[j], &kase, isave);
+ 	    if (kase == 0) break;
+ 
+ 	    if (kase == 1) {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgstrs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgstrs.c
+index c3339b2319..e708d619f5 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgstrs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgstrs.c
+@@ -108,9 +108,9 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     doublecomplex   *Lval, *Uval;
+-    int      fsupc, nrow, nsupr, nsupc, irow;
++    int      fsupc, irow, jcol;
++    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
+     int_t    i, j, k, luptr, istart, iptr;
+-    int      jcol, n, ldb, nrhs;
+     doublecomplex   *work, *rhs_work, *soln;
+     flops_t  solve_ops;
+     void zprint_soln(int n, int nrhs, const doublecomplex *soln);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zlacon2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zlacon2.c
+index 71dca48fec..da761c0e45 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zlacon2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zlacon2.c
+@@ -90,7 +90,8 @@ int
+ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int isave[3])
+ {
+     /* Table of constant values */
+-    int c__1 = 1;
++    slu_blasint c__1 = 1;
++    int c__1_int = 1;  /* for internal _slu functions that take int* */
+     doublecomplex      zero = {0.0, 0.0};
+     doublecomplex      one = {1.0, 0.0};
+ 
+@@ -106,7 +107,8 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
+     extern double dmach(char *);
+     extern int izmax1_slu(int *, doublecomplex *, int *);
+     extern double dzsum1_slu(int *, doublecomplex *, int *);
+-    extern void zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
++    extern void zcopy_(slu_blasint *, doublecomplex *, slu_blasint *, doublecomplex *, slu_blasint *);
++    slu_blasint n_blas = *n;
+ 
+     safmin = dmach("Safe minimum");
+     if ( *kase == 0 ) {
+@@ -136,7 +138,7 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
+ 	/*        ... QUIT */
+ 	goto L150;
+     }
+-    *est = dzsum1_slu(n, x, &c__1);
++    *est = dzsum1_slu(n, x, &c__1_int);
+ 
+     for (i = 0; i < *n; ++i) {
+ 	d__1 = z_abs(&x[i]);
+@@ -155,7 +157,7 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
+     /*     ................ ENTRY   (isave[0] == 2)   
+ 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+ L40:
+-    isave[1] = izmax1_slu(n, &x[0], &c__1);  /* j */
++    isave[1] = izmax1_slu(n, &x[0], &c__1_int);  /* j */
+     --isave[1];  /* --j; */
+     isave[2] = 2; /* iter = 2; */
+ 
+@@ -173,10 +175,10 @@ L70:
+ #ifdef _CRAY
+     CCOPY(n, x, &c__1, v, &c__1);
+ #else
+-    zcopy_(n, x, &c__1, v, &c__1);
++    zcopy_(&n_blas, x, &c__1, v, &c__1);
+ #endif
+     estold = *est;
+-    *est = dzsum1_slu(n, v, &c__1);
++    *est = dzsum1_slu(n, v, &c__1_int);
+ 
+ 
+ L90:
+@@ -201,7 +203,7 @@ L90:
+ 	   X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+ L110:
+     jlast = isave[1];  /* j; */
+-    isave[1] = izmax1_slu(n, &x[0], &c__1); /* j */
++    isave[1] = izmax1_slu(n, &x[0], &c__1_int); /* j */
+     isave[1] = isave[1] - 1;  /* --j; */
+     if (x[jlast].r != (d__1 = x[isave[1]].r, fabs(d__1)) && isave[2] < 5) {
+ 	isave[2] = isave[2] + 1;  /* ++iter; */
+@@ -223,12 +225,12 @@ L120:
+     /*     ................ ENTRY   (isave[0] = 5)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+ L140:
+-    temp = dzsum1_slu(n, x, &c__1) / (double)(*n * 3) * 2.;
++    temp = dzsum1_slu(n, x, &c__1_int) / (double)(*n * 3) * 2.;
+     if (temp > *est) {
+ #ifdef _CRAY
+ 	CCOPY(n, &x[0], &c__1, &v[0], &c__1);
+ #else
+-	zcopy_(n, &x[0], &c__1, &v[0], &c__1);
++	zcopy_(&n_blas, &x[0], &c__1, &v[0], &c__1);
+ #endif
+ 	*est = temp;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
+index 756b2a27c4..0395cde808 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zpanel_bmod.c
+@@ -79,17 +79,18 @@ zpanel_bmod (
+          ftcs2 = _cptofcd("N", strlen("N")),
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int          incx = 1, incy = 1;
++    slu_blasint  incx = 1, incy = 1;
+     doublecomplex       alpha, beta;
+ #endif
+ 
+     register int k, ksub;
+-    int          fsupc, nsupc, nsupr, nrow;
++    int          fsupc, nsupc;
++    slu_blasint  nsupr, nrow;
+     int          krep, krep_ind;
+     doublecomplex       ukj, ukj1, ukj2;
+     int_t        luptr, luptr1, luptr2;
+-    int          segsze;
+-    int          block_nrow;  /* no of rows in a block row */
++    slu_blasint  segsze;
++    slu_blasint  block_nrow;  /* no of rows in a block row */
+     int_t        lptr;	      /* Points to the row subscripts of a supernode */
+     int          kfnz, irow, no_zeros; 
+     register int isub, isub1, i;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c
+index 4015b23806..1a7b6f549f 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsnode_bmod.c
+@@ -54,12 +54,12 @@ zsnode_bmod (
+ 	 ftcs2 = _cptofcd("N", strlen("N")),
+ 	 ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+-    int            incx = 1, incy = 1;
++    slu_blasint    incx = 1, incy = 1;
+     doublecomplex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
+ #endif
+ 
+     doublecomplex   comp_zero = {0.0, 0.0};
+-    int     nsupc, nsupr, nrow;
++    slu_blasint nsupc, nsupr, nrow;
+     int_t   isub, irow;
+     int_t   ufirst, nextlu;
+     int_t   *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsp_blas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsp_blas2.c
+index 7bb7eb484a..bf81e315ec 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsp_blas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zsp_blas2.c
+@@ -94,12 +94,14 @@ sp_ztrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+     SCformat *Lstore;
+     NCformat *Ustore;
+     doublecomplex   *Lval, *Uval;
+-    int incx = 1, incy = 1;
++    slu_blasint incx = 1, incy = 1;
+     doublecomplex temp;
+     doublecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+     doublecomplex comp_zero = {0.0, 0.0};
+-    int nrow, irow, jcol;
+-    int fsupc, nsupr, nsupc;
++    slu_blasint nrow;
++    int irow, jcol;
++    int fsupc;
++    slu_blasint nsupr, nsupc;
+     int_t luptr, istart, i, k, iptr;
+     doublecomplex *work;
+     flops_t solve_ops;

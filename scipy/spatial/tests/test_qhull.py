@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
+from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
 import itertools
@@ -191,7 +191,8 @@ class TestUtilities:
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
             assert_equal(i, p[2], err_msg=f'{p!r}')
-            j = qhull.tsearch(tri, p[:2])
+            with pytest.warns(DeprecationWarning, match="`tsearch` is deprecated"):
+                j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
     def test_plane_distance(self):
@@ -609,6 +610,11 @@ class TestConvexHull:
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
+
+    @pytest.mark.parametrize("points", [np.ones((5,)), np.ones((5, 1, 3))])
+    def test_points_wrong_dim_fails(self, points):
+        with pytest.raises(ValueError, match="shape"):
+            qhull.ConvexHull(points)
 
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
@@ -1211,7 +1217,7 @@ class Test_HalfspaceIntersection:
                                            [-1., 1.],
                                            [-1., -1.]])
         actual_intersections = hs.intersections
-        # They may be in any order, so just check that under some permutation 
+        # They may be in any order, so just check that under some permutation
         # expected=actual.
 
         ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))

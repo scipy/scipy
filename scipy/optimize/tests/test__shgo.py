@@ -6,6 +6,8 @@ import time
 from multiprocessing import Pool
 from numpy.testing import assert_allclose
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
                             rosen_der, rosen_hess, NonlinearConstraint, OptimizeWarning)
@@ -836,6 +838,7 @@ class TestShgoArguments:
         np.testing.assert_allclose(res_new_bounds.x, res_old_bounds.x)
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_19_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 

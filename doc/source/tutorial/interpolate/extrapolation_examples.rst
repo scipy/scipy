@@ -33,6 +33,11 @@ are deliberately pared down to bare essentials needed to demonstrate the
 main ideas, in a hope that they serve as an inspiration for your
 handling of your particular problem.
 
+.. note::
+
+   The ``extrapolate`` argument is covered in detail in the 
+   :ref:`1-D interpolation tutorial <tutorial-interpolate_out_of_bounds>`.
+
 
 .. _tutorial-extrapolation-left-right:
 
@@ -442,7 +447,7 @@ whole dataset using NumPy broadcasting.
         -------
         func : callable
             A callable object which mirrors the CT behavior,
-            with an additional neareast-neighbor extrapolation
+            with an additional nearest-neighbor extrapolation
             outside of the data range.
         """
         x = xy[:, 0]

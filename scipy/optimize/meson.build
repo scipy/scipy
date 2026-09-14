@@ -21,6 +21,7 @@ py3.extension_module('_minpack',
   ],
   include_directories: 'src/',
   dependencies: [np_dep, ccallback_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -70,7 +71,7 @@ py3.extension_module('_lbfgsb',
     'src/lbfgsb.c',
   ],
   dependencies: [lapack_dep, np_dep],
-  include_directories: ['src/', '../_build_utils/src'],
+  include_directories: ['src/'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -92,6 +93,14 @@ py3.extension_module('_pava_pybind',
   ['_pava/pava_pybind.cpp'],
   include_directories: '_pava',
   dependencies: [np_dep, pybind11_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
+py3.extension_module('_biteopt',
+  ['_biteopt/_biteopt.cpp'],
+  dependencies: [np_dep, pybind11_dep, biteopt_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -145,7 +154,6 @@ py3.extension_module('_slsqplib',
     'src/nnls.c'
   ],
   dependencies: [lapack_dep, np_dep],
-  include_directories: ['../_build_utils/src'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -165,6 +173,7 @@ py3.install_sources([
   '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
+  '_biteopt_py.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
   '_cobyqa_py.py',
@@ -208,19 +217,8 @@ py3.install_sources([
   '_trustregion_ncg.py',
   '_tstutils.py',
   '_zeros_py.py',
-  'cobyla.py',
   'cython_optimize.pxd',
   'elementwise.py',
-  'lbfgsb.py',
-  'linesearch.py',
-  'minpack.py',
-  'minpack2.py',
-  'moduleTNC.py',
-  'nonlin.py',
-  'optimize.py',
-  'slsqp.py',
-  'tnc.py',
-  'zeros.py'
 ],
   subdir: 'scipy/optimize'
 )

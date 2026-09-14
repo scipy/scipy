@@ -12,6 +12,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+import warnings
 
 import numpy as np
 cimport numpy as np
@@ -28,6 +29,7 @@ from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
 from scipy.linalg.cython_lapack cimport blas_int, dgetrf, dgetrs, dgecon
+from scipy._lib._array_api import xp_capabilities
 
 np.import_array()
 
@@ -1679,6 +1681,8 @@ class _QhullUser:
         self._qhull.add_points(points, interior_point)
         self._update(self._qhull)
 
+
+@xp_capabilities(np_only=True)
 class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2201,12 +2205,17 @@ class Delaunay(_QhullUser):
         return z
 
 
+@xp_capabilities(out_of_scope=True)
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
 
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
+
+    .. deprecated:: 1.18.0
+        `tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be removed
+        in SciPy 2.2.0.
 
     Parameters
     ----------
@@ -2251,6 +2260,9 @@ def tsearch(tri, xi):
     >>> plt.show()
 
     """
+    msg = ("`tsearch` is deprecated in favor of `Delaunay.find_simplex` and will be "
+           "removed in SciPy 2.2.0.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return tri.find_simplex(xi)
 
 # Set docstring for foo to docstring of bar, working around change in Cython 0.28
@@ -2319,6 +2331,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 # Convex hulls
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class ConvexHull(_QhullUser):
     """
     ConvexHull(points, incremental=False, qhull_options=None)
@@ -2478,6 +2491,9 @@ class ConvexHull(_QhullUser):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
+        if points.ndim != 2:
+            raise ValueError("Input `points` array must be of shape (npoints, ndim).")
+
         if qhull_options is None:
             qhull_options = b""
             if points.shape[1] >= 5:
@@ -2542,6 +2558,7 @@ _copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 # Voronoi diagrams
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class Voronoi(_QhullUser):
     """
     Voronoi(points, furthest_site=False, incremental=False, qhull_options=None)
@@ -2710,6 +2727,7 @@ _copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 # Halfspace Intersection
 #------------------------------------------------------------------------------
 
+@xp_capabilities(np_only=True)
 class HalfspaceIntersection(_QhullUser):
     """
     HalfspaceIntersection(halfspaces, interior_point, incremental=False, qhull_options=None)

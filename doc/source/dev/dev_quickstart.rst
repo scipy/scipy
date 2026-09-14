@@ -17,7 +17,7 @@ steps to start contributing:
 
    SciPy uses compiled code for speed, which means you might need extra
    dependencies to complete this step depending on your system - see
-   :ref:`building-from-source`.
+   :ref:`building-contributor`.
 
 3. **Perform development tasks**
 
@@ -32,7 +32,7 @@ Basic workflow
     We **strongly** recommend using a user-activated environment setup, such as
     a conda or virtual environment.
 
-Since SciPy contains parts written in C, C++, and Fortran that need to be
+Since SciPy contains parts written in C and C++ that need to be
 compiled before use, make sure you have the necessary compilers and Python
 development headers installed. If you are using ``conda``, these will be
 installed automatically. If you are using ``pip``, check which
@@ -46,9 +46,8 @@ account and then create your local repository via::
     git submodule update --init
     git remote add upstream https://github.com/scipy/scipy.git
 
-Next, set up your development environment. **With**
-:ref:`system-level dependencies <system-level>` **installed**, execute the
-instructions in :ref:`building-from-source`.
+Next, set up your development environment,
+following :ref:`building-contributor`.
 
 For details on how to test your changes, see the more complete setup
 walkthrough in :ref:`development-workflow`.

@@ -1,0 +1,30 @@
+A small test package to demonstrate ILP64 support in downstream Cython packages.
+
+Currently, SciPy can be built with or without ILP64 support; in the former case 
+`cython_lapack` ABI can be built to be either LP64 or ILP64, see [1] for a discussion.
+
+Here we demonstrate two ways of adapting downstream for a Cython-using package,
+which relies on `cython_lapack`.
+
+A difficulty is that `cython_lapack` is using `blas_int` type for integer variables
+and arrays, which resolves to either a C `int` or `int64_t`.
+A downstream user package has two options:
+
+1. Use a cython wrapper to cast from `int` to `blas_int` type, so that other modules
+   can depend on this wrapper and hence don't need changing.
+   This way, the linear algebra is exposed as LP64 regardless of whether SciPy
+   is built to internally use LP64 or ILP64 variants.
+   See `tests/test_wrapper.py` for details.
+
+2. Directly use SciPy's `blas_int` type without an intermediate wrapper layer.
+   This way, the downstream functionality is not limited by `INT_MAX` for array sizes.
+   (see `tests/test_direct.py` for details).
+
+See the relevant SciPy CI workflow [2] for an example of building and testing
+this package.
+
+------------
+
+[1] https://scipy.github.io/devdocs/building/blas_lapack.html#bit-integer-ilp64-blas-lapack
+[2] https://github.com/scipy/scipy/blob/main/.github/workflows/linux_blas.yml
+

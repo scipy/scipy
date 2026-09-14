@@ -70,8 +70,8 @@ trlib_int_t trlib_leftmost_irreducible(
     trlib_flt_t dleftmost = 0.0;            // increment
     trlib_flt_t prlp = 0.0;                 // value of Parlett-Reid-Last-Pivot function
     trlib_flt_t obyprlp = 0.0;              // quotient used in Cholesky computation
-    trlib_flt_t dprlp = 0.0;                // derivative of Parlett-Reid-Last-Pivot function wrt to leftmost
-    trlib_flt_t ddprlp = 0.0;               // second derivative of Parlett-Reid-Last-Pivot function wrt to leftmost
+    trlib_flt_t dprlp = 0.0;                // derivative of Parlett-Reid-Last-Pivot function w.r.t. leftmost
+    trlib_flt_t ddprlp = 0.0;               // second derivative of Parlett-Reid-Last-Pivot function w.r.t. leftmost
     trlib_int_t n_neg_piv = 0;              // number of negative pivots in factorization
     trlib_flt_t quad_abs = 0.0;             // absolute  coefficient in quadratic model
     trlib_flt_t quad_lin = 0.0;             // linear    coefficient in quadratic model
@@ -110,7 +110,7 @@ trlib_int_t trlib_leftmost_irreducible(
           by eigenvalue interlacing theorem desired value <= provided leftmost
        on coldstart, start close lower bound as hopefully this is a good estimation */
     if ( warm ) {
-        // provided leftmost is an upper bound and a pole of Parlett-Reid Value, thus pertub a bit
+        // provided leftmost is an upper bound and a pole of Parlett-Reid Value, thus perturbs a bit
         up = fmin(up, leftmost_minor); *leftmost = leftmost_minor - .1*(up-low); //*leftmost = leftmost_minor - TRLIB_EPS_POW_4;
     }
     else { leftmost_minor = 0.0; *leftmost = low + .1*(up-low); }; // ensure sanity on leftmost_minor and start with lower bound

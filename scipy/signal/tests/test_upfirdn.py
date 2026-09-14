@@ -40,7 +40,7 @@ import pytest
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_assert_close, array_namespace, _xp_copy_to_numpy, is_cupy,
+    xp_assert_close, array_namespace, xp_copy_to_numpy, is_cupy,
     make_xp_test_case
 )
 from scipy._external.array_api_compat import numpy as np_compat
@@ -202,7 +202,7 @@ class TestUpfirdn:
 
         h = xp.asarray(firwin(31, 1. / down, window='hamming'))
         yl = xp.asarray(
-            upfirdn_naive(_xp_copy_to_numpy(x), _xp_copy_to_numpy(h), 1, down)
+            upfirdn_naive(xp_copy_to_numpy(x), xp_copy_to_numpy(h), 1, down)
         )
         y = upfirdn(h, x, up=1, down=down)
         assert y.shape == (want_len,)
@@ -273,7 +273,7 @@ class TestUpfirdn:
             concat = array_namespace(left).concat
             y_expected = concat((left, x, right))
         else:
-            y_expected = np.pad(_xp_copy_to_numpy(x), (npre, npost), mode=mode)
+            y_expected = np.pad(xp_copy_to_numpy(x), (npre, npost), mode=mode)
             y_expected = xp.asarray(y_expected)
 
         y_expected = xp.asarray(y_expected, dtype=xp.float64)
@@ -281,12 +281,12 @@ class TestUpfirdn:
 
     @pytest.mark.parametrize(
         'size, h_len, mode, dtype',
-        product(
+        list(product(
             [8],
             [4, 5, 26],  # include cases with h_len > 2*size
             _upfirdn_modes,
             ["float32", "float64", "complex64", "complex128"],
-        )
+        ))
     )
     def test_modes(self, size, h_len, mode, dtype, xp):
         if is_cupy(xp) and mode != "constant":
@@ -308,9 +308,9 @@ class TestUpfirdn:
         npad = h_len - 1
         if mode in ['antisymmetric', 'antireflect', 'smooth', 'line']:
             # use _pad_test test function for modes not supported by np.pad.
-            xpad = _pad_test(_xp_copy_to_numpy(x), npre=npad, npost=npad, mode=mode)
+            xpad = _pad_test(xp_copy_to_numpy(x), npre=npad, npost=npad, mode=mode)
         else:
-            xpad = np.pad(_xp_copy_to_numpy(x), npad, mode=mode)
+            xpad = np.pad(xp_copy_to_numpy(x), npad, mode=mode)
 
         xpad = xp.asarray(xpad)
         ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')

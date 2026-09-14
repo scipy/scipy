@@ -72,9 +72,6 @@ dist
 # The shelf plugin uses this dir
 ./.shelf
 MANIFEST
-# distutils configuration
-site.cfg
-setup.cfg
 # other temporary files
 .coverage
 .deps
@@ -111,10 +108,6 @@ doc/source/.jupyterlite.doit.db
 # GitHub cache #
 ################
 gh_cache.json
-
-# mypy cache #
-##############
-.mypy_cache/
 
 # linter #
 ##########
@@ -252,11 +245,10 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/_ckdtree.cxx
 scipy/spatial/ckdtree.h
-scipy/spatial/_hausdorff.c
+scipy/spatial/distance/_hausdorff.c
 scipy/spatial/_qhull.c
 scipy/spatial/_voronoi.c
 scipy/spatial/transform/_rotation.c
-scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c

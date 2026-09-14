@@ -27,7 +27,7 @@ This module contains low-level functions from the LAPACK library.
 .. warning::
 
    These functions do little to no error checking.
-   It is possible to cause crashes by mis-using them,
+   It is possible to cause crashes by misusing them,
    so prefer using the higher-level routines in `scipy.linalg`.
 
 .. note::
@@ -886,29 +886,32 @@ from .blas import (
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
 
-from re import compile as regex_compile
-try:
-    from scipy.linalg import _clapack
-except ImportError:
-    _clapack = None
-
 from scipy.__config__ import CONFIG
 
-# TODO: fold HAS_LP64 into __config__, allow for _flapack not being available
-from scipy.linalg import _flapack
-HAS_LP64 = True
-
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
 HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
 del CONFIG
-_flapack_64 = None
+
+if HAS_LP64:
+    from scipy.linalg import _flapack
+else:
+    _flapack = None
+
 if HAS_ILP64:
     from scipy.linalg import _flapack_64
+else:
+    _flapack_64 = None
 
+if not (HAS_LP64 or HAS_ILP64):
+    raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")
 
-# Expose all functions (only flapack --- clapack is an implementation detail)
-empty_module = None
-from scipy.linalg._flapack import *  # noqa: E402, F403
-del empty_module
+if HAS_LP64:
+    from scipy.linalg._flapack import *  # noqa: F403
+else:
+    from scipy.linalg._flapack_64 import *  # noqa: F403
+
 
 __all__ = ['get_lapack_funcs']
 
@@ -920,30 +923,6 @@ _lapack_alias = {
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
 }
-
-
-# Place guards against docstring rendering issues with special characters
-p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
-p2 = regex_compile(r'Default: (?P<d>.*?)\n')
-
-
-def backtickrepl(m):
-    if m.group('s'):
-        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
-    else:
-        return f"with bounds ``{m.group('b')}``\n"
-
-
-for routine in [ssyevr, dsyevr, cheevr, zheevr,
-                ssyevx, dsyevx, cheevx, zheevx,
-                ssygvd, dsygvd, chegvd, zhegvd]:
-    if routine.__doc__:
-        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
-        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
-    else:
-        continue
-
-del regex_compile, p1, p2, backtickrepl
 
 
 @_memoize_get_funcs
@@ -1015,7 +994,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     use the ``dtype=`` argument:
 
     >>> LA.get_lapack_funcs('lange', dtype=np.float32)
-    <fortran function slange>
+    <flapack function slange>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
@@ -1043,20 +1022,18 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
         if ilp64 == 'preferred':
             ilp64 = HAS_ILP64
         else:
-            raise ValueError("Invalid value for 'ilp64'")
+            raise ValueError(f"Invalid value for {ilp64 = }.")
 
     if not ilp64:
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack, _clapack,
-                          "flapack", "clapack", _lapack_alias,
+                          "LAPACK", _flapack, "flapack", _lapack_alias,
                           ilp64=False)
     else:
         if not HAS_ILP64:
             raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
                                "compiled only with 32-bit LAPACK")
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack_64, None,
-                          "flapack_64", None, _lapack_alias,
+                          "LAPACK", _flapack_64, "flapack_64", _lapack_alias,
                           ilp64=True)
 
 

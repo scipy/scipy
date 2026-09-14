@@ -5,13 +5,18 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   label_issue:
+    name: "Label Issue"
     # Permissions needed for labelling issues automatically
     # https://docs.github.com/en/actions/security-guides/automatic-token-authentication
     permissions:
       contents: read
-      issues: write
+      issues: write  # needed to apply label
     runs-on: ubuntu-latest
     steps:
     # label based on issue title

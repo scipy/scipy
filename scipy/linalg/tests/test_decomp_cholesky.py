@@ -148,7 +148,8 @@ class TestCholesky:
 
         c = cholesky(a, **overwrite_kw)
         overwrite_a = overwrite_kw.get("overwrite_a", False)
-        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+        a_inplace = (overwrite_a and (dtype is not int)
+                     and (a.flags["F_CONTIGUOUS"] or a.flags["C_CONTIGUOUS"]))
 
         assert np.shares_memory(a, c) == a_inplace
         assert np.all(a == a_ref) != a_inplace
@@ -172,6 +173,48 @@ class TestCholesky:
         else:
             assert_allclose(np.tril(a, k=-1), np.zeros_like(a), atol=1e-14)
             assert_allclose(c.T @ c, a_ref, atol=1e-14)
+
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("order", ['C', 'F', 'noncontig_C', 'noncontig_F'])
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_nan_in_unused_triangle(self, lower, order, overwrite_a, dtype):
+        # The unused triangle should never be read, so NaN there must not
+        # affect the result.
+        rng = np.random.default_rng(seed=12345)
+        n = 5
+        x = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            x = x + 1j * rng.normal(size=(n, n))
+        a = (x @ x.conj().T + n * np.eye(n)).astype(dtype)
+        c_ref = cholesky(a, lower=lower)
+
+        # Prepare the array in the desired layout
+        if order.startswith('noncontig'):
+            # Unequal strides to probe strided path thoroughly
+            big_order = 'F' if order.endswith('_F') else 'C'
+            a_big = np.zeros((2*n, 3*n), dtype=dtype, order=big_order)
+            a_big[::2, ::3] = a
+            a_nan = a_big[::2, ::3]  # non-contiguous view
+            assert not a_nan.flags['C_CONTIGUOUS']
+            assert not a_nan.flags['F_CONTIGUOUS']
+        else:
+            a_nan = np.array(a, order=order)
+
+        # Put NaN in the unused triangle
+        if lower:
+            a_nan[np.triu_indices(n, 1)] = np.nan
+        else:
+            a_nan[np.tril_indices(n, -1)] = np.nan
+
+        c = cholesky(a_nan, lower=lower, overwrite_a=overwrite_a,
+                     check_finite=False)
+        assert_allclose(c, c_ref, atol=1e-14)
+        # Verify reconstruction
+        if lower:
+            assert_allclose(c @ c.conj().T, a, atol=1e-13)
+        else:
+            assert_allclose(c.conj().T @ c, a, atol=1e-13)
 
 
 class TestCholeskyBanded:
@@ -402,7 +445,8 @@ class TestChoFactor:
 
         c, lower = cho_factor(a, **overwrite_kw, lower=lower)
         overwrite_a = overwrite_kw.get("overwrite_a", False)
-        a_inplace = overwrite_a and (dtype is not int) and a.flags["F_CONTIGUOUS"]
+        a_inplace = (overwrite_a and (dtype is not int)
+                     and (a.flags["F_CONTIGUOUS"] or a.flags["C_CONTIGUOUS"]))
 
         assert np.shares_memory(a, c) == a_inplace
         assert np.all(a == a_ref) != a_inplace

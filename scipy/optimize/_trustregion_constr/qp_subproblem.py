@@ -459,7 +459,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     -------
     x : array_like, shape (n,)
         Solution of the EQP problem.
-    info : Dict
+    info : dict
         Dictionary containing the following:
 
             - niter : Number of iterations.

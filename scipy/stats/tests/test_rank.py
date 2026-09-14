@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
@@ -5,11 +7,12 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import (xp_assert_equal, make_xp_test_case, xp_result_type,
-                                   xp_default_dtype)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_result_type
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+@pytest.mark.filterwarnings("ignore: `tiecorrect` is deprecated")
 class TestTieCorrect:
 
     def test_empty(self):
@@ -113,7 +116,7 @@ class TestRankData:
 
     def test_basic(self, xp):
         """Basic tests of stats.rankdata."""
-        desired_dtype = xp_default_dtype(xp)
+        desired_dtype = xpx.default_dtype(xp)
 
         data = [100, 10, 50]
         expected = xp.asarray([3.0, 1.0, 2.0], dtype=desired_dtype)
@@ -300,7 +303,7 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
-    _rankdata_cases = (
+    _rankdata_cases: Sequence[tuple[list[int], str, np.ndarray | list[float]]] = (
         # values, method, expected
         ([], 'average', []),
         ([], 'min', []),

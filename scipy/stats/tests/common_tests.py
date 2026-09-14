@@ -7,9 +7,7 @@ from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import (
-    getfullargspec_no_self as _getfullargspec, np_long
-)
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy import stats
 
@@ -211,11 +209,9 @@ def check_random_state_property(distfn, args):
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)
 
-    # check that np.random.Generator can be used (numpy >= 1.17)
-    if hasattr(np.random, 'default_rng'):
-        # obtain a np.random.Generator object
-        rng = np.random.default_rng(1234)
-        distfn.rvs(*args, size=1, random_state=rng)
+    # obtain a np.random.Generator object
+    rng = np.random.default_rng(1234)
+    distfn.rvs(*args, size=1, random_state=rng)
 
     # can override the instance-level random_state for an individual .rvs call
     distfn.random_state = 2
@@ -231,7 +227,7 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np.long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:
@@ -260,7 +256,7 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np.long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:

@@ -15,16 +15,16 @@ Transformed Density Rejection (TDR)
 
 
 TDR is an acceptance/rejection method that uses the concavity of a transformed
-density to construct hat function and squeezes automatically. Such PDFs are
+density to construct a hat function and squeezes automatically. Such PDFs are
 called T-concave. Currently the following transformations are implemented:
 
 .. math::
 
-    c = 0.: T(x) &= \log(x)\\
+    c = 0: T(x) &= \log(x)\\
     c = -0.5: T(x) &= \frac{1}{\sqrt{x}} \text{ (Default)}
 
 In addition to the PDF, it also requires the derivative of the PDF w.r.t ``x``
-(i.e. the variate). These functions must be present as methods of a python
+(i.e. the variate). These functions must be present as methods of a Python
 object which can then be passed to the generators to instantiate their object.
 The variant that is implemented uses squeezes proportional to hat function ([1]_).
 
@@ -193,7 +193,7 @@ the number of construction points to use.
     ...                                   construction_points=[-5, 0, 5])
 
 This method accepts many other set-up parameters. See the documentation for
-an exclusive list. More information of the parameters and the method can be
+an exhaustive list. More information on the parameters and the method can be
 found in `Section 5.3.16 of the UNU.RAN user manual
 <http://statmath.wu.ac.at/software/unuran/doc/unuran.html#TDR>`__.
 
@@ -210,4 +210,3 @@ References
 .. [2] Hörmann, Wolfgang. "A rejection technique for sampling from
        T-concave distributions." ACM Transactions on Mathematical
        Software (TOMS) 21.2 (1995): 182-193
-

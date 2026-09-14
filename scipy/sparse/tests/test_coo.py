@@ -251,7 +251,7 @@ def test_1d_resize(arg: int):
     assert_equal(res.toarray(), den)
 
 
-@pytest.mark.parametrize('arg', zip([1, 2, 3, 4], [1, 2, 3, 4]))
+@pytest.mark.parametrize('arg', list(zip([1, 2, 3, 4], [1, 2, 3, 4])))
 def test_1d_to_2d_resize(arg: tuple[int, int]):
     den = np.array([1, 0, 3])
     res = coo_array(den)
@@ -284,7 +284,7 @@ def test_sum_duplicates():
     # 4d case
     arr4d = coo_array(([2, 3, 7], ([1, 0, 1], [0, 2, 0], [1, 2, 1], [1, 0, 1])))
     assert arr4d.nnz == 3
-    expected = np.array(  # noqa: E501
+    expected = np.array(
         [[[[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [3, 0]]],
          [[[0, 0], [0, 9], [0, 0]], [[0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]]]]
     )
@@ -477,7 +477,7 @@ def test_nd_transpose(shape):
         trans_arr = arr.mT
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
-    
+
         trans_arr = matrix_transpose(arr)
         assert trans_arr.shape == exp_arr.shape
         assert_equal(trans_arr.toarray(), exp_arr)
@@ -1200,6 +1200,32 @@ def test_newaxis_set():
     assert_equal(A.toarray(), D)
     A[3:, None, 1] = D[3:, None, 1] = 3
     assert_equal(A.toarray(), D)
+
+
+def test_setitem_sparse_rhs_broadcast_prepend_dim():
+    # gh-25965: assigning a lower-dimensional *sparse* array into a
+    # higher-dimensional target must broadcast by prepending leading axes.
+    # This path previously raised AttributeError ('np.zeroslike' typo) and,
+    # once that was fixed, TypeError from item-assigning a tuple.
+    for target_shape, src in [
+        ((2, 3), [1, 0, 2]),      # (3,) -> (2, 3), prepend one axis
+        ((2, 2, 3), [5, 0, 7]),   # (3,) -> (2, 2, 3), prepend two axes
+        ((3, 4, 5), np.arange(5)),    # (5,) -> (3, 4, 5), prepend two axes
+    ]:
+        src = np.asarray(src, dtype=float)
+        A = coo_array(target_shape, dtype=float)
+        A[...] = coo_array(src)
+        assert_equal(A.toarray(), np.broadcast_to(src, target_shape))
+
+    # partial slice with a sparse RHS broadcast over a prepended axis
+    A = coo_array((3, 3), dtype=float)
+    D = np.zeros((3, 3))
+    A[1:3, :] = coo_array(np.array([9, 0, 8]))
+    D[1:3, :] = np.array([9, 0, 8])
+    # match numpy's broadcast result (moving target) ...
+    assert_equal(A.toarray(), D)
+    # ... and a ground-truth check with the expected values written out
+    assert_equal(A.toarray(), [[0, 0, 0], [9, 0, 8], [9, 0, 8]])
 
 
 def test_1d_coo_set():

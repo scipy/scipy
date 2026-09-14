@@ -22,12 +22,12 @@ See also `Meson's documentation on cross compilation
 <https://mesonbuild.com/Cross-compilation.html>`__ to learn what options you
 may need to pass to Meson to successfully cross compile.
 
-One common hiccup is that ``numpy`` and ``pythran`` require
-running Python code in order to obtain their include directories. This tends to
-not work well, either accidentally picking up the packages from the build
-(native) Python rather than the host (cross) Python or requiring ``crossenv``
-or QEMU to run the host Python. To avoid this problem, specify the paths to the
-relevant directories in your *cross file*:
+One common hiccup is that ``pythran`` requires running Python code in order to
+obtain its include directory. This tends to not work well, either accidentally
+picking up the packages from the build (native) Python rather than the host
+(cross) Python or requiring ``crossenv`` or QEMU to run the host Python. To
+avoid this problem, specify the path to the relevant directory in your
+*cross file*:
 
 .. code:: ini
 
@@ -35,8 +35,16 @@ relevant directories in your *cross file*:
     sitepkg = '/abspath/to/host-pythons/site-packages/'
 
     [properties]
-    numpy-include-dir = sitepkg + 'numpy/core/include'
     pythran-include-dir = sitepkg + 'pythran'
+
+``numpy`` used to require the same treatment, through a ``numpy-include-dir``
+property. That is no longer needed: since SciPy 2.0.0 (when ``f2py`` was
+removed) nothing needs a path to numpy's headers directly, so numpy is looked
+up with Meson's ``dependency('numpy')``. Meson resolves that through a
+``numpy.pc`` pkg-config file if it can find one, and otherwise by running the
+``numpy-config`` executable. For a cross build, provide a ``numpy.pc`` for the
+numpy you are targeting; it takes precedence over a ``numpy`` in the build
+environment.
 
 For more details and the current status around cross compilation, see:
 

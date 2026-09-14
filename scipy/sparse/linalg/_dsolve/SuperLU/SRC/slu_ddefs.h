@@ -261,17 +261,17 @@ extern void    dcheck_tempv(int, double *);
 
 /*! \brief BLAS */
 
-extern void dcopy_(int *, double *, int *, double *, int *);
-extern void daxpy_(int *, double *, double *, int *, double *, int *);
-extern void dgemm_(const char*, const char*, const int*, const int*, const int*,
-                  const double*, const double*, const int*, const double*,
-		  const int*, const double*, double*, const int*);
-extern void dtrsv_(char*, char*, char*, int*, double*, int*,
-                  double*, int*);
-extern void dtrsm_(char*, char*, char*, char*, int*, int*,
-                  double*, double*, int*, double*, int*);
-extern void dgemv_(char *, int *, int *, double *, double *a, int *,
-                  double *, int *, double *, double *, int *);
+extern void dcopy_(slu_blasint *, double *, slu_blasint *, double *, slu_blasint *);
+extern void daxpy_(slu_blasint *, double *, double *, slu_blasint *, double *, slu_blasint *);
+extern void dgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+                  const double*, const double*, const slu_blasint*, const double*,
+		  const slu_blasint*, const double*, double*, const slu_blasint*);
+extern void dtrsv_(char*, char*, char*, slu_blasint*, double*, slu_blasint*,
+                  double*, slu_blasint*);
+extern void dtrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+                  double*, double*, slu_blasint*, double*, slu_blasint*);
+extern void dgemv_(char *, slu_blasint *, slu_blasint *, double *, double *a, slu_blasint *,
+                  double *, slu_blasint *, double *, double *, slu_blasint *);
 
 extern void dusolve(int, int, double*, double*);
 extern void dlsolve(int, int, double*, double*);

@@ -18,5 +18,6 @@ ax = fig.add_subplot(111)
 ax.plot(x1, np.zeros(x1.shape), 'b+', ms=20)  # rug plot
 kde3 = stats.gaussian_kde(x1, bw_method=my_kde_bandwidth)
 ax.plot(x_eval, kde3(x_eval), 'g-', label="With smaller BW")
+ax.legend()
 
 plt.show()

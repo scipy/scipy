@@ -55,7 +55,8 @@ class TestOdeint:
 
 class TestODEClass:
 
-    ode_class = None   # Set in subclass.
+    # Set in subclass.
+    ode_class: type | None = None
 
     def _do_problem(self, problem, integrator, method='adams'):
 
@@ -90,7 +91,7 @@ class TestODEClass:
 
 class TestOde(TestODEClass):
 
-    ode_class = ode
+    ode_class: type[ode] = ode
 
     def test_vode(self):
         # Check the vode solver
@@ -116,7 +117,7 @@ class TestOde(TestODEClass):
             problem = problem_cls()
             if problem.cmplx:
                 continue
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -128,7 +129,7 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -140,7 +141,7 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
 
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
@@ -219,7 +220,7 @@ class TestComplexOde(TestODEClass):
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -229,7 +230,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -239,7 +240,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
 
 
 class TestSolout:
@@ -405,11 +406,11 @@ class ODE:
     """
     stiff = False
     cmplx = False
-    stop_t = 1
-    z0 = []
+    stop_t: float = 1
+    z0: np.ndarray | list = []
 
-    lband = None
-    uband = None
+    lband: int | None = None
+    uband: int | None = None
 
     atol = 1e-6
     rtol = 1e-5
@@ -842,3 +843,24 @@ def test_repeated_t_values():
     # t values are not monotonic.
     assert_raises(ValueError, odeint, func, [1.], [0, 1, 0.5, 0])
     assert_raises(ValueError, odeint, func, [1, 2, 3], [0, -1, -2, 3])
+
+
+def test_vode_jacobian_convention():
+    # Regression test for gh-24933: VODE Jacobian transposition bug.
+    def f(t, y):
+        return [-0.04*y[0] + 1e4*y[1]*y[2],
+                0.04*y[0] - 1e4*y[1]*y[2] - 3e7*y[1]**2,
+                3e7*y[1]**2]
+
+    def jac(t, y):
+        return np.array([[-0.04,              1e4*y[2],         1e4*y[1]],
+                         [0.04,  -1e4*y[2] - 6e7*y[1],        -1e4*y[1]],
+                         [0.0,               6e7*y[1],              0.0]])
+
+    y0 = [1.0, 0.0, 0.0]
+    # Correct Jac. needs ~124 steps; transposed (bug) needs ~2084. Cap at 150.
+    r = ode(f, jac).set_integrator('vode', method='bdf', rtol=1e-8,
+                                   atol=1e-10, nsteps=150)
+    r.set_initial_value(y0, 0.0)
+    r.integrate(1.0)
+    assert r.successful()

@@ -98,12 +98,17 @@ debug: CFLAGS += -g -DDEBUG -O0
 debug: CFLAGS := $(filter-out -O3,$(CFLAGS))
 debug: all
 
+# ILP64 build (64-bit BLAS/LAPACK integers)
+ilp64: CFLAGS += -DHAVE_BLAS_ILP64
+ilp64: all
+
 # Show help
 help:
 	@echo "Available targets:"
 	@echo "  all        - Build shared library (default)"
 	@echo "  shared     - Build shared library"
 	@echo "  debug      - Build with debug symbols and no optimization"
+	@echo "  ilp64      - Build with 64-bit BLAS/LAPACK integers"
 	@echo "  install    - Install library and headers to system directories"
 	@echo "  uninstall  - Remove installed files from system directories"
 	@echo "  clean      - Remove build artifacts"
@@ -178,7 +183,7 @@ compiler-info:
 	@echo "Compiler supports C standards and will use default or system-configured standard"
 
 # Phony targets
-.PHONY: all directories install uninstall clean distclean debug help shared check-deps check-blas compiler-info
+.PHONY: all directories install uninstall clean distclean debug ilp64 help shared check-deps check-blas compiler-info
 
 # Make variables visible
 .SUFFIXES:

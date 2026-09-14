@@ -107,9 +107,9 @@ dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     double   *Lval, *Uval;
-    int      fsupc, nrow, nsupr, nsupc, irow;
+    int      fsupc, irow, jcol;
+    slu_blasint nrow, nsupr, nsupc, n, ldb, nrhs;
     int_t    i, j, k, luptr, istart, iptr;
-    int      jcol, n, ldb, nrhs;
     double   *work, *rhs_work, *soln;
     flops_t  solve_ops;
     void dprint_soln(int n, int nrhs, const double *soln);

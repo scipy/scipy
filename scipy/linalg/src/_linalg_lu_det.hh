@@ -1,8 +1,10 @@
+/*
+ * Templated loops for `linalg.lu` and `linalg.det`
+ */
 #pragma once
-#include <cstring>
-#include <cstdint>
-#include <type_traits>
-#include "npy_cblas.h"
+
+namespace sp_linalg {
+
 
 constexpr int LU_MAX_NDIM = 64;
 
@@ -128,7 +130,7 @@ inline void ipiv_to_perm(CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_IN
 template<typename T>
 void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, CBLAS_INT m, CBLAS_INT ncols)
 {
-    std::memcpy(tmp, data, m * ncols * sizeof(T));
+    std::memcpy(tmp, data, (size_t)m * ncols * sizeof(T));
     for (CBLAS_INT i = 0; i < m; i++) {
         if (perm[i] != i) {
             std::memcpy(data + i * ncols, tmp + perm[i] * ncols, ncols * sizeof(T));
@@ -378,3 +380,6 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
 
     return 0;
 }
+
+
+} // namespace sp_linalg

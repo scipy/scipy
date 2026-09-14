@@ -111,7 +111,7 @@ def _check_sparse_inputs(options, meth, A_ub, A_eq):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
-    method : str, optional
+    meth : str, optional
         The algorithm used to solve the standard form problem.
 
     Returns

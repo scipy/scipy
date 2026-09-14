@@ -223,7 +223,7 @@ class TestMGCStat:
         res = stats.multiscale_graphcorr(distx, disty, compute_distance=None)
         assert_allclose(res.statistic, 0.0)
         assert_allclose(res.pvalue, 1.0)
-    
+
     @pytest.mark.xslow
     def test_alias(self):
         # generate x and y

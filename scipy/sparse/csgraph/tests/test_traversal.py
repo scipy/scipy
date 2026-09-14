@@ -46,6 +46,7 @@ def test_graph_depth_first():
         assert_array_almost_equal(csgraph_to_dense(dfirst_test), dfirst)
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_return_type():
     from .._laplacian import laplacian
     from .._min_spanning_tree import minimum_spanning_tree

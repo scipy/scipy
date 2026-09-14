@@ -424,6 +424,8 @@ Gamma and related functions
    gammaincinv  -- Inverse to `gammainc`.
    gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse to `gammaincc`.
+   log_gammainc -- Log of the regularized lower incomplete gamma function.
+   log_gammaincc -- Log of the regularized upper incomplete gamma function.
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
@@ -431,6 +433,7 @@ Gamma and related functions
    betaincinv   -- Inverse function to beta integral.
    betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
+   digammainv   -- Inverse of the digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
@@ -498,8 +501,8 @@ Ellipsoidal harmonics
 .. autosummary::
    :toctree: generated/
 
-   ellip_harm   -- Ellipsoidal harmonic functions E^p_n(l).
-   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n(l).
+   ellip_harm   -- Ellipsoidal harmonic functions E^p_n.
+   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n.
    ellip_normal -- Ellipsoidal harmonic normalization constants gamma^p_n.
 
 Orthogonal polynomials
@@ -813,8 +816,15 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+# These mathieu functions are generated dynamically and inserted into globals
+# through _support_alternative_backends. This confuses the type checker though
+# so import them when type checking. Importing them in the regular code path
+# breaks test_support_alternative_backends.py due to the vagaries of how
+# those tests are set up. TODO: Do the setup of delegation in scipy.special
+# in a more principled way.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ._mathieu import mathieu_cem, mathieu_sem
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
@@ -826,7 +836,7 @@ __all__ += [
     'logsumexp',
     'softmax',
     'log_softmax',
-    'multigammaln',
+    'multigammaln',  # pyrefly:ignore[bad-dunder-all]
     'ellip_harm',
     'ellip_harm_2',
     'ellip_normal',
@@ -835,8 +845,11 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_cem',
+    'mathieu_sem',
 ]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+del TYPE_CHECKING
