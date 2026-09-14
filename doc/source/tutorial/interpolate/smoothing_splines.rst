@@ -167,6 +167,7 @@ Here is a minimal example:
     ...     plt.plot(xnew, spl(xnew), label=f'$t_{i+1}$')
     >>> plt.plot(x, y, 'o', alpha=0.4)
     >>> plt.legend()
+    >>> plt.tight_layout()
     >>> plt.show()
 
 As seen in the plot above, the curves are pretty close to each other,
@@ -196,6 +197,7 @@ the knots at quantiles of ``x``:
     ...     plt.plot(xnew, spl(xnew), label=label)
     >>> plt.plot(x, y, 'o', alpha=0.4)
     >>> plt.legend()
+    >>> plt.tight_layout()
     >>> plt.show()
 
 Both knot vectors have the same size and differ only in placement. The
@@ -230,6 +232,7 @@ with 8 interior knots, uniform versus placed around the bump:
     ...     ax.plot(xnew, spl(xnew))
     ...     ax.plot(t[4:-4], np.full(len(t) - 8, 0.15), '|', markersize=10)
     ...     ax.set_title(title)
+    >>> plt.tight_layout()
     >>> plt.show()
 
 The uniform knots oversmooth the bump and wiggle in the quiet region. The
@@ -295,6 +298,7 @@ captures the feature, without spending extra knots everywhere else.
     >>> ax2.axvline(5, color='k', ls=':', lw=1)
     >>> ax2.set_title('second derivative')
     >>> ax1.legend()
+    >>> plt.tight_layout()
     >>> plt.show()
 
 Notice that the two fits look nearly the same, the real difference shows
@@ -365,6 +369,7 @@ generalized cross-validation (GCV) criterion:
     >>> plt.plot(xnew, spl(xnew), label='GCV-selected $\\lambda$')
     >>> plt.plot(x, y, 'o', alpha=0.4)
     >>> plt.legend()
+    >>> plt.tight_layout()
     >>> plt.show()
 
 The search is scale free. Internally the criterion is minimized over a
