@@ -64,7 +64,7 @@ features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs, refguide-check
+# tasks: docs, open-docs, refguide-check
 features = ["docs", "marray"]
 solve-group = "default"
 
@@ -446,6 +446,16 @@ make = "*"
 cmd = "spin docs --no-build"
 depends-on = "build"
 description = "Build the documentation"
+
+[feature.docs.tasks.open-docs]
+cmd = "open doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
+[feature.docs.target.win.tasks.open-docs]
+cmd = "cmd /c start doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
 
 [feature.docs.tasks.refguide-check]
 cmd = "spin refguide-check --no-build"
