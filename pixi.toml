@@ -448,7 +448,12 @@ depends-on = "build"
 description = "Build the documentation"
 
 [feature.docs.tasks.open-docs]
-cmd = "python -c \"from pathlib import Path; import webbrowser; webbrowser.open_new_tab(Path('doc/build/html/index.html').resolve().as_uri())\""
+cmd = "open doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
+[feature.docs.target.win.tasks.open-docs]
+cmd = "cmd /c start doc/build/html/index.html"
 depends-on = "docs"
 description = "Build and preview the documentation"
 
