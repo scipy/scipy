@@ -3072,7 +3072,7 @@ class TestDTypes:
     def test_det(self, tcode):
         a = self.get_arr2D(tcode)
 
-        is_arm = platform.machine().startswith('arm')
+        is_arm = platform.machine().startswith('arm')   # gh-24831
         is_windows = os.name == 'nt'
 
         failing_tcodes = 'SUVOmM'
