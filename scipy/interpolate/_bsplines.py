@@ -2075,7 +2075,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-        extrapolate = "periodic" if bc_type=="periodic" else True
+        extrapolate = "periodic" if bc_type == "periodic" else True
         return BSpline.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))

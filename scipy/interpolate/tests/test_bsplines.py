@@ -1355,6 +1355,7 @@ class TestInterp:
 
         b = make_interp_spline(xx, yy, k=k, bc_type='periodic')
         assert b.extrapolate == 'periodic'
+        xp_assert_close(b(xx[0] - 0.5), b(xx[-1] - 0.5), atol=1e-14)
 
     def test_periodic_axis(self, xp):
         n = self.xx.shape[0]
