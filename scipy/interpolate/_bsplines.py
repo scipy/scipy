@@ -1930,8 +1930,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
-        * ``"not-a-knot"`` (default): The first and second segments are the
-          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"not-a-knot"`` (default for ``k > 1``): The first and second segments
+          are the same polynomial. This is equivalent to having ``bc_type=None``
+          for ``k > 1``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent.
 
@@ -2036,6 +2037,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         # delegate to CuPy, *and* return a SciPy BSpline object
         import cupyx.scipy.interpolate as csi
         b = csi.make_interp_spline(x, y, k, t, bc_type, axis, check_finite)
+        # This is a workaround that should be cleaned up once cupy returns a spline
+        # with extrapolate="periodic". See the following cupy issue:
+        # https://github.com/cupy/cupy/issues/10304
+        b.extrapolate = "periodic" if bc_type == "periodic" else b.extrapolate
         return BSpline.construct_fast(b.t, b.c, b.k, b.extrapolate, b.axis)
 
     # convert string aliases for the boundary conditions
@@ -2070,7 +2075,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
             raise ValueError("Too much info for k=0: t and bc_type can only "
-                             "be None.")
+                             "be None or 'periodic'.")
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
@@ -2081,7 +2086,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
     if k == 1 and t is None:
         if not (deriv_l is None and deriv_r is None):
-            raise ValueError("Too much info for k=1: bc_type can only be None.")
+            raise ValueError("Too much info for k=1: bc_type can only be None "
+                             "or 'periodic'.")
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
