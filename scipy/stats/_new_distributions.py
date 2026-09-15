@@ -82,13 +82,16 @@ class Normal(ContinuousDistribution):
         return StandardNormal._ilogccdf_formula(self, x) * sigma + mu
 
     def _entropy_formula(self, *, mu, sigma, **kwargs):
-        return StandardNormal._entropy_formula(self) + np.log(abs(sigma))
+        with np.errstate(invalid='ignore'):
+            log_abs_sigma = np.log(abs(sigma))
+        return StandardNormal._entropy_formula(self) + log_abs_sigma
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         lH0 = StandardNormal._logentropy_formula(self)
-        with np.errstate(divide='ignore'):
-            # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf
-            # Silence the unnecessary runtime warning
+        with np.errstate(divide='ignore', invalid='ignore'):
+            # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf -> divide
+            # sigma = NaN -> invalid
+            # Silence the unnecessary runtime warnings
             lls = np.log(np.log(abs(sigma))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
