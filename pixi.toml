@@ -64,7 +64,7 @@ features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs, refguide-check
+# tasks: docs, open-docs, refguide-check
 features = ["docs", "marray"]
 solve-group = "default"
 
@@ -76,6 +76,11 @@ solve-group = "default"
 [environments.ipython]
 # tasks: ipython
 features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
+solve-group = "default"
+
+[environments.jupyter]
+# tasks: jupyter
+features = ["run-deps", "test-deps", "ipython-dep", "jupyter"]
 solve-group = "default"
 
 [environments.bench]
@@ -442,16 +447,27 @@ cmd = "spin docs --no-build"
 depends-on = "build"
 description = "Build the documentation"
 
+[feature.docs.tasks.open-docs]
+cmd = "open doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
+[feature.docs.target.win.tasks.open-docs]
+cmd = "cmd /c start doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
 [feature.docs.tasks.refguide-check]
 cmd = "spin refguide-check --no-build"
 depends-on = "build"
-description = "Build the documentation"
+description = "Check docs reference guide matches `__all__` attributes"
 
 
 ### IPython ###
 
 [feature.ipython-dep.dependencies]
 ipython = "*"
+matplotlib = "*"
 
 [feature.ipython-task.tasks.ipython]
 cmd = "spin ipython --no-build"
@@ -463,6 +479,20 @@ cmd = "spin ipython --build-dir=build-cpu --no-build"
 depends-on = "build-cpu"
 env.SCIPY_ARRAY_API = "1"
 description = "Launch IPython (array-api-cpu env)"
+
+
+### Jupyter ###
+
+[feature.jupyter.dependencies]
+jupyterlab = "*"
+ipykernel = "*"
+
+[feature.jupyter.tasks.jupyter]
+cmd = "spin run --no-build jupyter lab"
+depends-on = "build"
+# Keep notebook kernels from importing the source tree ahead of the local build.
+env.PYTHONSAFEPATH = "1"
+description = "Launch JupyterLab with the local SciPy build"
 
 
 ### Benchmarking ###

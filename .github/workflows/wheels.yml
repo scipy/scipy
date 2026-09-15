@@ -122,7 +122,7 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.buildplat[4] }}
         run: |
           if [[ "${BLAS_VARIANT}" == "accelerate" ]]; then
-            echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
+            echo "CIBW_CONFIG_SETTINGS=setup-args=-Dblas=accelerate setup-args=-Dconfig-output=portable" >> "$GITHUB_ENV"
 
             # Builds with Accelerate only target macOS>=14.0
             CIBW_ENV="CIBW_ENVIRONMENT_MACOS=MACOSX_DEPLOYMENT_TARGET=14.0 INSTALL_OPENBLAS=false"
