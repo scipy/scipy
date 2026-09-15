@@ -1390,7 +1390,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         raise ValueError(f'LAPACK driver "{driver}" is not found')
 
     if len(a.shape) < 2:
-        raise ValueError('Input array a should be at least 2D, got {a.shape = }')
+        raise ValueError(f'Input array a should be at least 2D, got {a.shape = }')
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
