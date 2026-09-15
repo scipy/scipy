@@ -5,15 +5,35 @@ orbs:
   # check content of the orb when updating the version
   pixi: prefix-dev/pixi@0.1.0
 
+# gen3 resource classes are only valid with the `current` tag, not a pinned
+# dated tag -- a pinned tag is rejected with "is not a valid resource class"
+_machine_image: &machine_image
+  image: ubuntu-2604:current
+
 # Aliases to reuse
 _defaults: &defaults
-  docker:
-    # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/developer/images/image/cimg/python
-    - image: cimg/python:3.13.10
+  machine:
+    <<: *machine_image
+  # large.gen3 is 4 vCPU / 16 GiB; drop the `.gen3` suffix if it is unavailable
+  resource_class: large.gen3
   working_directory: ~/repo
 
 commands:
+  apt-install:
+    description: Install apt packages that the machine image does not ship
+    parameters:
+      packages:
+        type: string
+    steps:
+      - run:
+          name: apt install << parameters.packages >>
+          command: |
+            # retries/timeouts: the machine image's regional mirror 503s at times
+            # and apt otherwise spins on it until the no-output timeout fires
+            APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+            timeout 600 sudo apt-get update $APT_OPTS
+            timeout 600 sudo apt-get install -y $APT_OPTS << parameters.packages >>
+
   check-skip:
     steps:
       - run:
@@ -84,7 +104,9 @@ jobs:
 
       - run:
           name: build SciPy
-          command: pixi run build
+          # -j 4 matches the vCPUs; spin's default counts *physical* cores, which
+          # a 4-vCPU VM may report as 2
+          command: pixi run build -j 4
 
       - run:
           name: ccache performance
@@ -119,9 +141,14 @@ jobs:
       - pixi/pixi_setup:
           env: "docs"
 
+      # zip is needed by the doc-dist Makefile target; the docs env has no zip
+      - apt-install:
+          packages: zip
+
       - run:
           name: build docs
           no_output_timeout: 25m
+          # `spin docs` sets SPHINXOPTS="-W -j auto"; on a VM `auto` is the 4 vCPUs
           # tee: the check below greps this file, and greps clean if it is absent
           command: pixi run --skip-deps docs doc-dist 2>&1 | tee sphinx_log.txt
 
@@ -144,9 +171,9 @@ jobs:
 
   run_benchmarks:
     <<: *defaults
-    # 8 GB rather than medium's 4 GB, so the memory-hungry sparse and stats
-    # benchmarks run instead of being skipped or OOM-killed
-    resource_class: large
+    # not just inherited: the sparse and stats benchmarks need the 16 GiB, so
+    # this job must not be shrunk along with the rest
+    resource_class: large.gen3
     steps:
       - attach_workspace:
           at: ~/
@@ -222,13 +249,13 @@ jobs:
           no_output_timeout: 35m
           command: pixi run --skip-deps smoke-docs
 
+      - apt-install:
+          packages: wamerican-small
+
       - run:
           name: smoke-tutorials
           no_output_timeout: 10m
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y wamerican-small
-            pixi run --skip-deps smoke-tutorials
+          command: pixi run --skip-deps smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
@@ -237,6 +264,8 @@ jobs:
 
   deploy:
     <<: *defaults
+    # a git clone and push; nothing here is CPU- or memory-bound
+    resource_class: medium.gen3
     steps:
       - attach_workspace:
           at: /tmp/build
