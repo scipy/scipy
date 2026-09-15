@@ -19,7 +19,8 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
 from scipy.linalg import (
-    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz
+    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz,
+    cholesky_banded,
 )
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
@@ -3576,6 +3577,34 @@ def test_lantr(norm, uplo, m, n, diag, dtype):
     ref = lange(norm, A)
 
     assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_pbcon(dtype, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is Hermitian positive definite of shape n x n, bandwidth kd
+    n, kd = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, kd + 1)] = 0
+    A[np.tril_indices(n, -kd - 1)] = 0
+    A = A + A.conj().T + 2 * n * np.eye(n, dtype=dtype)
+
+    # banded storage of the triangle pbcon will look at
+    ab = _to_banded(0, kd, A) if uplo == 'U' else _to_banded(kd, 0, A)
+
+    anorm = np.linalg.norm(A, 1)
+    c_band = cholesky_banded(ab, lower=(uplo == 'L'))
+    pbcon, = get_lapack_funcs(("pbcon",), (ab,))
+    res, info = pbcon(kd, c_band, anorm, uplo=uplo)
+
+    assert info == 0
+    ref = 1 / np.linalg.cond(A, 1)
+    assert_allclose(res, ref, rtol=1)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
