@@ -1022,10 +1022,37 @@ class poisson_gen(rv_discrete):
         return special.log_gammainc(k + 1, mu)
 
     def _ppf(self, q, mu):
-        vals = ceil(special.pdtrik(q, mu))
+        q_arr = np.asarray(q)
+        mu_arr = np.asarray(mu)
+        original_shape = np.broadcast_shapes(q_arr.shape, mu_arr.shape)
+        work_shape = original_shape or (1,)
+
+        # broadcast to a common (non-scalar) shape so boolean masks derived
+        # from `vals` can be used to index into `q_arr`/`mu_arr` directly
+        vals = np.broadcast_to(
+            scu._poisson_ppf_stats(q, mu), work_shape
+        ).astype(np.float64, copy=True)
+        q_arr = np.broadcast_to(q_arr, work_shape)
+        mu_arr = np.broadcast_to(mu_arr, work_shape)
+
+        # case 1, increment until pdtr(vals, mu) >= q
+        too_low = special.pdtr(vals, mu_arr) < q_arr
+        while np.any(too_low):
+            vals[too_low] += 1
+            too_low[too_low] = (special.pdtr(vals[too_low], mu_arr[too_low]) <
+                                q_arr[too_low])
+
+        # case 2, decrement until pdtr(vals-1, mu) < q
         vals1 = np.maximum(vals - 1, 0)
-        temp = special.pdtr(vals1, mu)
-        return np.where(temp >= q, vals1, vals)
+        too_high = (vals > 0) & (special.pdtr(vals1, mu_arr) >= q_arr)
+        while np.any(too_high):
+            vals[too_high] -= 1
+            vals1[too_high] = np.maximum(vals[too_high] - 1, 0)
+            too_high[too_high] = (vals[too_high] > 0) & (
+                special.pdtr(vals1[too_high], mu_arr[too_high]) >= q_arr[too_high]
+            )
+
+        return vals.reshape(original_shape)
 
     def _stats(self, mu):
         var = mu
