@@ -223,6 +223,11 @@ namespace lapack {
         void BLAS_FUNC(cgbtrs)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
         void BLAS_FUNC(zgbtrs)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, CBLAS_INT *);
 
+        void BLAS_FUNC(spbcon)(char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dpbcon)(char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cpbcon)(char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, c64 *, f32 *, CBLAS_INT *);
+        void BLAS_FUNC(zpbcon)(char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, c128 *, f64 *, CBLAS_INT *);
+
         /* The same real/complex split as `?gtcon`: IWORK for the real flavors, RWORK for the complex. */
         void BLAS_FUNC(sgbcon)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *);
         void BLAS_FUNC(dgbcon)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *);
@@ -1031,6 +1036,15 @@ namespace lapack {
         { BLAS_FUNC(cgbtrs)(&trans, &n, &kl, &ku, &nrhs, ab, &ldab, ipiv, b, &ldb, info); }
     inline void gbtrs(char trans, CBLAS_INT n, CBLAS_INT kl, CBLAS_INT ku, CBLAS_INT nrhs, c128 *ab, CBLAS_INT ldab, CBLAS_INT *ipiv, c128 *b, CBLAS_INT ldb, CBLAS_INT *info)
         { BLAS_FUNC(zgbtrs)(&trans, &n, &kl, &ku, &nrhs, ab, &ldab, ipiv, b, &ldb, info); }
+
+    inline void pbcon(char uplo, CBLAS_INT n, CBLAS_INT kd, f32 *ab, CBLAS_INT ldab, f32 anorm, f32 *rcond, f32 *work, CBLAS_INT *iwork, CBLAS_INT *info)
+    { BLAS_FUNC(spbcon)(&uplo, &n, &kd, ab, &ldab, &anorm, rcond, work, iwork, info); }
+    inline void pbcon(char uplo, CBLAS_INT n, CBLAS_INT kd, f64 *ab, CBLAS_INT ldab, f64 anorm, f64 *rcond, f64 *work, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(dpbcon)(&uplo, &n, &kd, ab, &ldab, &anorm, rcond, work, iwork, info); }
+    inline void pbcon(char uplo, CBLAS_INT n, CBLAS_INT kd, c64 *ab, CBLAS_INT ldab, f32 anorm, f32 *rcond, c64 *work, f32 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(cpbcon)(&uplo, &n, &kd, ab, &ldab, &anorm, rcond, work, rwork, info); }
+    inline void pbcon(char uplo, CBLAS_INT n, CBLAS_INT kd, c128 *ab, CBLAS_INT ldab, f64 anorm, f64 *rcond, c128 *work, f64 *rwork, CBLAS_INT *info)
+        { BLAS_FUNC(zpbcon)(&uplo, &n, &kd, ab, &ldab, &anorm, rcond, work, rwork, info); }
 
     inline void gbcon(char norm, CBLAS_INT n, CBLAS_INT kl, CBLAS_INT ku, f32 *ab, CBLAS_INT ldab, CBLAS_INT *ipiv, f32 anorm, f32 *rcond, f32 *work, CBLAS_INT *iwork, CBLAS_INT *info)
         { BLAS_FUNC(sgbcon)(&norm, &n, &kl, &ku, ab, &ldab, ipiv, &anorm, rcond, work, iwork, info); }
