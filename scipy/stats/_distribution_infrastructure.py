@@ -886,6 +886,7 @@ def _set_invalid_nan(f):
     clip_log = {'_logcdf1', '_logccdf1'}
     # relevant to discrete distributions only
     replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
+    cdflike = {'_cdf1', '_logcdf1', '_ccdf1', '_logccdf1'}
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -897,8 +898,7 @@ def _set_invalid_nan(f):
         dtype = self._dtype
         shape = self._shape
         discrete = isinstance(self, DiscreteDistribution)
-        keep_low_endpoint = discrete and method_name in {'_cdf1', '_logcdf1',
-                                                         '_ccdf1', '_logccdf1'}
+        discrete_cdflike = discrete and method_name in cdflike
 
         # Ensure that argument is at least as precise as distribution
         # parameters, which are already at least floats. This will avoid issues
@@ -927,7 +927,7 @@ def _set_invalid_nan(f):
         # and the result will be set to the appropriate value.
         left_inc, right_inc = self._variable.domain.inclusive
         mask_low = (x < low if (method_name in replace_strict and left_inc)
-                    or keep_low_endpoint else x <= low)
+                    or discrete_cdflike else x <= low)
         mask_high = (x > high if (method_name in replace_strict and right_inc)
                      else x >= high)
         mask_invalid = (mask_low | mask_high)
@@ -943,6 +943,10 @@ def _set_invalid_nan(f):
             mask_endpoint = (mask_low_endpoint | mask_high_endpoint)
             any_endpoint = (mask_endpoint if mask_endpoint.shape == ()
                             else np.any(mask_endpoint))
+
+        # Check for non-integral arguments to CDF-like method of discrete distribution
+        if discrete_cdflike:
+            x = np.floor(x)
 
         # Check for non-integral arguments to PMF method
         # or PDF of a discrete distribution.
@@ -1002,7 +1006,7 @@ def _set_invalid_nan(f):
                 a[mask_high_endpoint] if method_name.endswith('ccdf')
                 else b[mask_high_endpoint])
 
-            if not keep_low_endpoint:
+            if not discrete_cdflike:
                 res[mask_low_endpoint] = replace_low_endpoint
             res[mask_high_endpoint] = replace_high_endpoint
 
