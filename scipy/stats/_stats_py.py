@@ -3933,11 +3933,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
@@ -8686,11 +8687,13 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
+    # `xp_promote` returns a bare array for one argument, whose len is its rows.
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     lengths = [sample.shape[-1] for sample in samples]
     if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
