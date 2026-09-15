@@ -635,7 +635,7 @@ universal functions):
    :toctree: generated/
 
    mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 

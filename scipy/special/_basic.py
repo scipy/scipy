@@ -1814,7 +1814,7 @@ def mathieu_odd_coef(m, q):
     Parameters
     ----------
     m : int
-        Order of Mathieu functions.  Must be non-negative.
+        Order of Mathieu functions.  Must be positive.
     q : float (>=0)
         Parameter of Mathieu functions.  Must be non-negative.
 
@@ -1872,7 +1872,7 @@ def mathieu_odd_coef(m, q):
     ``mathieu_sem(m, q, x)``.
 
     >>> plt.plot(x, y, 'k--', label="Fourier sum")
-    >>> se, _sce = mathieu_sem(m, q, x)
+    >>> se, _dse = mathieu_sem(m, q, x)
     >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_sem")
     >>> plt.grid(True)
     >>> plt.title(f'Mathieu Function $\\rm{{se_{m}}}(x, {q})$')
