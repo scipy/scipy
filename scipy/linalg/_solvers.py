@@ -226,7 +226,7 @@ def _solve_discrete_lyapunov_direct(a, q):
     """
 
     lhs = np.kron(a, a.conj())
-    lhs = np.eye(lhs.shape[0]) - lhs
+    lhs = np.eye(lhs.shape[0], dtype=a.dtype) - lhs
     x = solve(lhs, q.flatten())
 
     return np.reshape(x, q.shape)
@@ -239,7 +239,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=bilinear`. It is not supposed to be called directly.
     """
-    eye = np.eye(a.shape[0])
+    eye = np.eye(a.shape[0], dtype=a.dtype)
     aH = a.conj().transpose()
     aHI_inv = inv(aH + eye)
     b = np.dot(aH - eye, aHI_inv)

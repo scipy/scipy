@@ -135,3 +135,41 @@ def test_empty(dt_c, dt_b):
     assert x1.shape == (0, 0)
     assert x1.dtype == x.dtype
 
+@pytest.mark.parametrize("dt_c", [int, float, np.float32, complex, np.complex64])
+@pytest.mark.parametrize("dt_r", [int, float, np.float32, complex, np.complex64])
+@pytest.mark.parametrize("dt_b", [int, float, np.float32, complex, np.complex64])
+@pytest.mark.parametrize("n", [0, 5])
+@pytest.mark.parametrize("nrhs", [0, 1, 2])
+def test_shape_dtype(dt_c, dt_r, dt_b, n, nrhs):
+    rng = np.random.default_rng(seed=12345)
+
+    ## Setup
+    c = rng.normal(size=(n,))
+    if np.issubdtype(dt_c, np.complexfloating):
+        c = c + 1j * rng.normal(size=(n,))
+    c = c.astype(dt_c)
+
+    r = rng.normal(size=(n,))
+    if np.issubdtype(dt_r, np.complexfloating):
+        r = r + 1j * rng.normal(size=(n,))
+    r = r.astype(dt_r)
+
+    shape_b = (n,) if nrhs == 0 else (n, nrhs)
+    b = rng.normal(size=shape_b)
+    if np.issubdtype(dt_b, np.complexfloating):
+        b = b + 1j * rng.normal(size=shape_b)
+    b = b.astype(dt_b)
+
+    ## Compute solutions
+    a = toeplitz(c, r)
+    ref = solve(a, b, assume_a="general")
+    res = solve_toeplitz((c, r), b)
+
+    ## Check solutions
+    res_dtype = np.promote_types(np.promote_types(dt_c, dt_r), dt_b)
+    res_dtype = np.float64 if np.isdtype(res_dtype, "integral") else res_dtype
+    atol = 1e-6 if res_dtype in [np.float32, np.complex64] else 1e-14
+
+    assert res.dtype == res_dtype
+    assert res.shape == shape_b
+    assert_allclose(res, ref, atol=atol)
