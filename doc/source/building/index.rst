@@ -18,6 +18,7 @@ Building from source
     :maxdepth: 1
 
     contributor
+    contributor-advanced
 
 Building SciPy from source requires setting up system-level dependencies
 (compilers, BLAS/LAPACK libraries, etc.) first, and then invoking a build. The
