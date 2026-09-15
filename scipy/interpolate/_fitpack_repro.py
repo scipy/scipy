@@ -97,6 +97,66 @@ def add_knot(x, t, k, residuals, periodic=False):
     return t_new
 
 
+def _interval_residuals(x, t, k, residuals, nrint):
+    """Sum the residuals over each knot interval, ``t(j+k) <= x(i) <= t(j+k+1)``.
+
+    A data point on an interval boundary contributes half of its residual to
+    either side.
+
+    This is
+    https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpcurf.f#L190-L215
+    """
+    n = t.shape[0]
+    fpint = np.zeros(nrint, dtype=float)
+    fpart, i, l, new = 0.0, 0, k + 1, False
+    for it in range(x.shape[0]):
+        if l < n - (k + 1) and x[it] >= t[l]:
+            new = True
+            l += 1
+        term = residuals[it]
+        fpart += term
+        if new:
+            store = term * 0.5
+            fpint[i] = fpart - store
+            i += 1
+            fpart = store
+            new = False
+    fpint[nrint - 1] = fpart
+    return fpint
+
+
+def _add_knot_split(x, t, k, fpint, nrdata):
+    """Add a knot to the interval with the largest residual sum.
+
+    The new knot is the middle data point of that interval. That interval's
+    residual sum is then split between the two halves in proportion to the
+    number of data points each receives, which is what lets FITPACK place
+    several knots from a single residual computation.
+
+    This is
+    https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
+    """
+    fpmax, number, maxpt, maxbeg, jbegin = 0.0, -1, 0, 0, 0
+    for j in range(nrdata.shape[0]):
+        if nrdata[j] != 0 and fpint[j] > fpmax:
+            fpmax, number, maxpt, maxbeg = fpint[j], j, int(nrdata[j]), jbegin
+        jbegin += int(nrdata[j]) + 1
+    if number < 0:
+        raise ValueError(_iermesg[1])
+
+    ihalf = maxpt // 2 + 1
+    nxt = number + 1
+    fpint = np.insert(fpint, nxt, 0.0)
+    nrdata = np.insert(nrdata, nxt, 0)
+    nrdata[number] = ihalf - 1
+    nrdata[nxt] = maxpt - ihalf
+    fpint[number] = fpmax * nrdata[number] / maxpt
+    fpint[nxt] = fpmax * nrdata[nxt] / maxpt
+
+    t = np.insert(t, number + 1 + k, x[maxbeg + ihalf])
+    return t, fpint, nrdata
+
+
 def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     """Common input validations for generate_knots and make_splrep.
     """
@@ -235,7 +295,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
     Also note that a step of the generator may add multiple knots:
 
     >>> [len(t) for t in knots]
-    [8, 9, 10, 12, 16, 24, 40, 48, 52, 54]
+    [8, 9, 10, 12, 16, 24, 39, 47, 51, 53, 54]
 
     Notes
     -----
@@ -349,6 +409,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
         t[k + 1] = x[(m + 1)//2 - 1]
         nplus = 1
     n = t.shape[0]
+    nrdata = np.array([m - 2], dtype=np.intp)
 
     # c  main loop for the different sets of knots. m is a safe upper bound
     # c  for the number of trials.
@@ -385,9 +446,19 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
             npl1 = int(nplus * fpms / delta) if delta > acc else nplus*2
             nplus = min(nplus*2, max(npl1, nplus//2, 1))
 
+        # c  compute the sum((w(i)*(y(i)-s(x(i))))**2) for each knot interval
+        # c  and store it in fpint(j). All nplus knots below come from this one
+        # c  computation: fpknot splits fpint of the interval it cuts, instead
+        # c  of the residuals being recomputed in between.
+        if not periodic:
+            fpint = _interval_residuals(x, t, k, residuals, n - nmin + 1)
+
         # actually add knots
         for j in range(nplus):
-            t = add_knot(x, t, k, residuals, periodic)
+            if periodic:
+                t = add_knot(x, t, k, residuals, periodic)
+            else:
+                t, fpint, nrdata = _add_knot_split(x, t, k, fpint, nrdata)
 
             # check if we have enough knots already
 
@@ -409,7 +480,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
                 return
 
             # recompute if needed
-            if j < nplus - 1:
+            if periodic and j < nplus - 1:
                 residuals, _ = _get_residuals(x, y, t, k, w=w, periodic=periodic)
 
     # this should never be reached
