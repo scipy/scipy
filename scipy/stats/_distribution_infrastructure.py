@@ -2166,7 +2166,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logentropy_logexp(self, **params):
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', divide='ignore'):
             # np.log warns with complex NaN argument
             res = np.log(self._entropy_dispatch(**params)+0j)
             return _log_real_standardize(res)
