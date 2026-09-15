@@ -2866,7 +2866,7 @@ class TestSmoothingSpline:
 
         x = np.linspace(0, 4, 25)
         y = np.sin(2 * x) + 0.25 * np.cos(11 * x)
-        t = np.r_[[0.0]*4, [0.8, 1.6, 2.4, 3.2], [4.0]*4]
+        t = _augknt(np.r_[0.0, 0.8, 1.6, 2.4, 3.2, 4.0], 3)
         lam = 2.5e-4 * 4.0**3                  # lambda_R * range^3
         spl = make_smoothing_spline(x, y, lam=lam, t=t)
         xp_assert_close(spl(x), ss_vals, atol=5e-4)
@@ -2967,7 +2967,7 @@ class TestSmoothingSpline:
         y = np.sin(2 * np.pi * 3 * x / scale) + 0.3 * rng.normal(size=50)
         tk = np.linspace(x[0], x[-1], 15)
         tk[0], tk[-1] = x[0], x[-1]
-        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        t = _augknt(tk, 3)
         f = make_smoothing_spline(x, y, t=t)
         assert np.all(np.isfinite(f(x)))
         # the fit should be reasonable.
@@ -2980,7 +2980,7 @@ class TestSmoothingSpline:
         y = np.sin(2 * x) + 0.3 * rng.normal(size=60)
         tk = np.linspace(x[0], x[-1], 15)
         tk[0], tk[-1] = x[0], x[-1]
-        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        t = _augknt(tk, 3)
         n = len(x)
         lams = np.logspace(-6, 3, 30)
         eye = np.eye(n)
@@ -2990,22 +2990,31 @@ class TestSmoothingSpline:
             trA = sum(make_smoothing_spline(x, eye[:, k], lam=lam, t=t)(x)[k]
                       for k in range(n))
             V[i] = np.mean((y - yhat)**2) / (1 - trA / n)**2
-        lam_star = lams[np.argmin(V)]
+        i_star = np.argmin(V)
+        lam_star = lams[i_star]
         f_auto = make_smoothing_spline(x, y, t=t)(x)
         f_star = make_smoothing_spline(x, y, lam=lam_star, t=t)(x)
-        # the continuous search converges within one grid step of the grid
-        # argmin; on the flat GCV valley the fits are close, not bit identical.
-        xp_assert_close(f_auto, f_star, atol=5e-2)
+        # The fits at the neighboring grid points bound how much the fit
+        # can move over one grid step. Use that bound as the tolerance, so
+        # the test checks "within one grid step" exactly.
+        f_lo = make_smoothing_spline(x, y, lam=lams[i_star - 1], t=t)(x)
+        f_hi = make_smoothing_spline(x, y, lam=lams[i_star + 1], t=t)(x)
+        atol = max(np.max(np.abs(f_star - f_lo)), np.max(np.abs(f_hi - f_star)))
+        xp_assert_close(f_auto, f_star, atol=atol)
 
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
         rng = np.random.default_rng(7)
         x = np.sort(rng.uniform(0, 4, 50))
         y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
-        t = np.r_[[x[0]]*3, x, [x[-1]]*3]
+        t = _augknt(x, 3)
         f_old = make_smoothing_spline(x, y)(x)          # existing GCV path
         f_new = make_smoothing_spline(x, y, t=t)(x)     # user-knots GCV path
-        xp_assert_close(f_new, f_old, atol=5e-2)
+        # The two searches find essentially the same lam. Across seeds the
+        # measured difference between the fits is 1e-7 to 3e-5, since the
+        # optimizers stop at slightly different points on the flat GCV
+        # valley. A tolerance of 1e-4 keeps a comfortable margin.
+        xp_assert_close(f_new, f_old, atol=1e-4)
 
     def test_gcv_user_knots_weights(self):
         """Unit weights reproduce the unweighted GCV fit; nonuniform weights run."""
@@ -3014,7 +3023,7 @@ class TestSmoothingSpline:
         y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
         tk = np.linspace(x[0], x[-1], 12)
         tk[0], tk[-1] = x[0], x[-1]
-        t = np.r_[[tk[0]]*3, tk, [tk[-1]]*3]
+        t = _augknt(tk, 3)
         f_now = make_smoothing_spline(x, y, w=np.ones_like(x), t=t)(x)
         f_no_w = make_smoothing_spline(x, y, t=t)(x)
         xp_assert_close(f_now, f_no_w, atol=1e-12)
@@ -3032,7 +3041,7 @@ class TestSmoothingSpline:
         #   predict(fit, x)$y    # fit$lambda = 2.463429220330e-04
         x = np.linspace(0, 4, 25)
         y = np.sin(2 * x) + 0.25 * np.cos(11 * x)
-        t = np.r_[[0.0]*4, [0.8, 1.6, 2.4, 3.2], [4.0]*4]
+        t = _augknt(np.r_[0.0, 0.8, 1.6, 2.4, 3.2, 4.0], 3)
         r_yhat = np.array([
             0.186393846962, 0.398457768892, 0.615308455998, 0.802461275320,
             0.925431593898, 0.949816825933, 0.858608383717, 0.673605986607,

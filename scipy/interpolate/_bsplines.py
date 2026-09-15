@@ -2988,6 +2988,9 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     r = xtwx_banded[3, :].sum() / omega[3, :].sum()
 
     def _gcv(lam):
+        # the system is rectangular so we can't apply the t=None path's
+        # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
+        # compute the residual directly
         # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
         # use it to estimate rcond of the banded system before solving
         c, tr = _solve_smoothing_spline_coefficients(
