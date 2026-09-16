@@ -226,6 +226,10 @@ jobs:
 # Reference guide checking
   refguide_check:
     <<: *defaults
+    environment:
+      # The VM image lets matplotlib's auto backend resolve to qtagg (pyqt comes
+      # with conda-forge's matplotlib); the doctest runner then fails restoring it
+      MPLBACKEND: Agg
     steps:
       - attach_workspace:
           at: ~/
