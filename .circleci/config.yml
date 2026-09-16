@@ -141,10 +141,6 @@ jobs:
       - pixi/pixi_setup:
           env: "docs"
 
-      # zip is needed by the doc-dist Makefile target; the docs env has no zip
-      - apt-install:
-          packages: zip
-
       - run:
           name: build docs
           no_output_timeout: 25m

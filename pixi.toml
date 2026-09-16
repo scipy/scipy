@@ -441,6 +441,9 @@ scipy-doctest = ">=2.2"
 linkify-it-py = "*"
 make = "*"
 
+[feature.docs.target.unix.dependencies]
+zip = "*"
+
 
 [feature.docs.tasks.docs]
 cmd = "spin docs --no-build"
