@@ -14,7 +14,6 @@
 
 # Build related files
 pyproject.toml  @rgommers
-requirements/  @rgommers @lucascolley
 environment.yml  @rgommers @lucascolley
 scipy/_build_utils/  @rgommers
 scipy/_external  @lucascolley
@@ -24,7 +23,7 @@ scipy/_external  @lucascolley
 
 # CI config
 .circleci/  @larsoner
-.github/workflows/  @larsoner @andyfaff
+.github/workflows/  @larsoner
 
 # Developer workspace
 *pixi*  @lucascolley
@@ -45,18 +44,14 @@ scipy/sparse/csgraph/
 scipy/sparse/linalg/  @lucascolley
 scipy/spatial/  @tylerjereddy @peterbell10
 scipy/special/  @steppi
-scipy/stats/_distn_infrastructure/  @andyfaff @ev-br
 scipy/stats/*distr*.py  @ev-br
-scipy/stats/_continuous_distns/  @andyfaff
 scipy/stats/_covariance.py  @mdhaber
-scipy/stats/_hypothesis.py  @tupui
 scipy/stats/*qmc.*  @tupui
 scipy/stats/_multicomp.py  @tupui @mdhaber
 scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
 scipy/stats/_sensitivity_analysis.py  @tupui
 scipy/stats/_survival.py  @tupui @mdhaber
-scipy/stats/.unuran/  @tirthasheshpatel
 
 # Testing infrastructure
 pytest.ini  @larsoner
@@ -70,7 +65,7 @@ tools/linting/  @lucascolley
 tools/refguide/  @ev-br
 tools/release/  @tylerjereddy
 tools/vendoring/  @lucascolley
-tools/wheels/  @andyfaff @rgommers
+tools/wheels/  @rgommers
 
 # Doc
 doc/source/conf.py  @tupui
