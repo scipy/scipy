@@ -2,8 +2,11 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import gc
 from functools import reduce
+import importlib.util
 import sysconfig
+import weakref
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -29,6 +32,62 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+@pytest.mark.parametrize('module_name, routine', [
+    ('_fblas', 'daxpy'),
+    ('_fblas_64', 'daxpy'),
+    ('_flapack', 'dgesv'),
+    ('_flapack_64', 'dgesv'),
+])
+def test_wrapper_module_collected(module_name, routine):
+    spec = importlib.util.find_spec(f'scipy.linalg.{module_name}')
+    if spec is None:
+        pytest.skip(f'{module_name} not available')
+
+    def load_module():
+        # Load a fresh module without putting it in sys.modules. Only the
+        # module -> wrapper -> heap type -> module cycle should keep it alive.
+        fresh_spec = importlib.util.spec_from_file_location(module_name, spec.origin)
+        module = importlib.util.module_from_spec(fresh_spec)
+        fresh_spec.loader.exec_module(module)
+        return weakref.ref(module), weakref.ref(type(getattr(module, routine)))
+
+    module_ref, type_ref = load_module()
+    gc.collect()
+    assert module_ref() is None
+    assert type_ref() is None
+
+
+def test_wrapper_traverses_its_type():
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    func = get_lapack_funcs('gesv', dtype=np.float64)
+    assert any(ref is func for ref in gc.get_referrers(type(func)))
+
+
+def test_ilaver():
+    # `ilaver` is the only routine taking no arguments at all.  The tables are
+    # dispatched through a single function-pointer type that never consults
+    # ml_flags, so its empty kwlist -- not METH_NOARGS -- is what rejects
+    # anything it is passed.
+    version = lapack.ilaver()
+    assert len(version) == 3
+    assert all(isinstance(v, int) for v in version)
+    assert version[0] >= 3, version
+
+    for args, kwargs in [((1,), {}), ((1, 2, 3), {}), ((), {'spam': 'eggs'})]:
+        with assert_raises(TypeError):
+            lapack.ilaver(*args, **kwargs)
+
+
+def test_wrapper_type_cannot_be_instantiated():
+    # The module builds every wrapper itself and fills in fields no constructor could
+    # supply, so `object.__new__` must not hand out a blank one; every method would
+    # dereference its null `meth` and `name`.
+    with assert_raises(TypeError):
+        type(get_lapack_funcs('gesv', dtype=np.float64))()
 
 
 def generate_random_dtype_array(shape, dtype, rng):
