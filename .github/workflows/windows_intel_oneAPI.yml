@@ -1,4 +1,4 @@
-name: Windows tests (MSVC + ifx + OpenBLAS)
+name: Windows tests (MSVC + icx + OpenBLAS)
 # TODO: replace OpenBLAS with MKL. This is harder to get to build, so we merged with OpenBLAS first.
 
 on:
@@ -20,12 +20,6 @@ on:
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
-
-# The environment variable WINDOWS_HPC_URL
-# store the URL for downloading Intel oneAPI.
-# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
-env:
-  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -55,6 +49,15 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e # v0.9.4
+        with:
+          pixi-version: v0.77.1
+          cache: false
+          environments: >-
+            build-intel
+            test-intel
+          activate-environment: build-intel
+
       - name: cache install
         id: cache-install
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -64,42 +67,9 @@ jobs:
               C:\Program Files (x86)\Intel\oneAPI\setvars.bat
               C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
           key: install-${{ env.WINDOWS_HPC_URL }}-compiler
-      - name: Install oneAPI HPC kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        shell: cmd /C call {0}  # need to use `cmd` for batch scripts
-        run: |
-          echo %WINDOWS_HPC_URL%
-          tools\intel_oneAPI\install_intel_oneAPI_windows.bat "%WINDOWS_HPC_URL%" "" "dfbf8487f6ee5b9c1bb2cad19f2ef8dd842529a533670ce21582d39c303bf979"  &REM 2025.0.1.48
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3.3.0
-        with:
-          python-version: 3.12
-          channels: conda-forge
-          channel-priority: strict
-          use-only-tar-bz2: false
-          miniforge-variant: Miniforge3
-          miniforge-version: latest
-          auto-activate-base: true
-          activate-environment: true
+      - name: Initialise Intel oneAPI and Build SciPy
+        run: pixi run build-intel
 
-      - run: conda --version
-      - run: which python
-
-      - name: Install packages from conda
-        shell: pwsh
-        run: conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
-
-      # MSVC is unable to compile Pythran code, therefore we need to use
-      # -C-Duse-pythran=false while building SciPy.
-      # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
-      - name: Initialise Intel oneAPI, MSVC and Build SciPy
-        shell: cmd /C call {0}  # need to use `cmd` for batch scripts
-        run: |
-          call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          spin build -S-Duse-pythran=false -S--vsenv
-
-      - name: Test scipy.datasets
-        shell: pwsh
-        run: spin test -s datasets
+      - name: Test scipy
+        run: pixi run --environment=test-intel --skip-deps test-intel -s datasets

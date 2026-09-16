@@ -978,34 +978,68 @@ description = "Build SciPy with clang-23 and -werror"
 ### Alternative compilers ###
 
 [feature.intel]
-platforms = ["linux-64"]
+platforms = ["linux-64", "win-64"]
 
-[feature.build-intel.activation.env]
-# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
-LINUX_CPPKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh"
-LINUX_HPCKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh"
-
-[feature.build-intel.tasks.install-oneapi-cppkit]
-cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL \"\" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b'"
-description = "Install Intel oneAPI CPP kit (2025.0.1.27)"
-
-[feature.build-intel.tasks.install-oneapi-hpckit]
-cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL \"\" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6'"
-description = "Install Intel oneAPI HPC kit (2025.0.1.47)"
-
-[feature.build-intel.tasks.build-intel]
-cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin build --build-dir=build-intel --setup-args=-Dblas=mkl-dynamic-lp64-iomp --setup-args=-Dlapack=mkl-dynamic-lp64-iomp'"
-depends-on = ["install-oneapi-cppkit", "install-oneapi-hpckit"]
-env = {
-  CC = "icx",
-  CXX = "icpx",
+[feature.build-intel.target.linux-64]
+activation.env = {
+  # Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+  LINUX_CPPKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh",
+  LINUX_HPCKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh",
 }
-description = "Build SciPy (Intel OneAPI compilers)"
+tasks = {
+  install-oneapi-cppkit = {
+    cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL \"\" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b'",
+    description = "Install Intel oneAPI CPP kit (2025.0.1.27)",
+  },
+  install-oneapi-hpckit = {
+    cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL \"\" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6'",
+    description = "Install Intel oneAPI HPC kit (2025.0.1.47)",
+  },
+  build-intel = {
+    cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin build --build-dir=build-intel --setup-args=-Dblas=mkl-dynamic-lp64-iomp --setup-args=-Dlapack=mkl-dynamic-lp64-iomp'",
+    depends-on = ["install-oneapi-cppkit", "install-oneapi-hpckit"],
+    env = {
+      CC = "icx",
+      CXX = "icpx",
+    },
+    description = "Build SciPy (Intel OneAPI compilers)",
+  },
+}
 
-[feature.test-intel.tasks.test-intel]
-cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin test --build-dir=build-intel --no-build'"
-depends-on = "build-intel"
-description = "Test SciPy (Intel OneAPI compilers)"
+[feature.test-intel.target.linux-64.tasks]
+test-intel = {
+  cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin test --build-dir=build-intel --no-build'",
+  depends-on = "build-intel",
+  description = "Test SciPy (Intel OneAPI compilers)",
+}
+
+[feature.build-intel.target.win-64]
+# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+activation.env.WINDOWS_HPC_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe"
+tasks = {
+  install-oneapi-hpckit = {
+    cmd = "tools\\intel_oneAPI\\ensure_oneapi_installed_windows.bat dfbf8487f6ee5b9c1bb2cad19f2ef8dd842529a533670ce21582d39c303bf979",
+    description = "Install Intel oneAPI HPC kit (2025.0.1.48)",
+  },
+  build-intel = {
+    # for icx we need to override c_std to c11
+    # MSVC is unable to compile Pythran code, https://github.com/serge-sans-paille/pythran/issues/2215
+    cmd = "tools\\intel_oneAPI\\build_with_oneapi_env_windows.bat spin build --build-dir=build-intel --setup-args=-Dc_std=c11 --setup-args=-Duse-pythran=false --setup-args=--vsenv",
+    depends-on = "install-oneapi-hpckit",
+    env = {
+      CC = "icx",
+      CXX = "icpx",
+    },
+    description = "Build SciPy (Intel OneAPI compilers)",
+  },
+}
+
+[feature.test-intel.target.win-64.tasks]
+test-intel = {
+  cmd = "spin test --build-dir=build-intel --no-build",
+  depends-on = "build-intel",
+  description = "Test SciPy (Intel OneAPI compilers)",
+}
 
 
 ### Maintenance tools ###
