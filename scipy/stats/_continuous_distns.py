@@ -11587,6 +11587,10 @@ class gennorm_gen(rv_continuous):
         # evaluating (.5 + c) first prevents numerical cancellation
         return (0.5 + c) - c * sc.gammaincc(1.0/beta, abs(x)**beta)
 
+    def _logcdf(self, x, beta):
+        val = sc.log_gammaincc(1.0/beta, abs(x)**beta) - np.log(2)
+        return xpx.apply_where(x > 0, val, scu._log1mexp, fill_value=val)
+
     def _ppf(self, x, beta):
         c = np.sign(x - 0.5)
         # evaluating (1. + c) first prevents numerical cancellation
@@ -11594,6 +11598,9 @@ class gennorm_gen(rv_continuous):
 
     def _sf(self, x, beta):
         return self._cdf(-x, beta)
+
+    def _logsf(self, x, beta):
+        return self._logcdf(-x, beta)
 
     def _isf(self, x, beta):
         return -self._ppf(x, beta)
