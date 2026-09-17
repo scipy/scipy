@@ -3604,7 +3604,7 @@ def test_pbcon(dtype, uplo):
 
     assert info == 0
     ref = 1 / np.linalg.cond(A, 1)
-    assert_allclose(res, ref, rtol=1e-2)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
