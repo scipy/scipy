@@ -9691,6 +9691,15 @@ def test_ncf_variance():
     assert_allclose(v, 42.75, rtol=1e-14)
 
 
+def test_ncf_sf_nc_zero():
+    # Regression test for gh-26188: ncf.sf returned -cdf instead of 1 - cdf
+    # when the non-centrality parameter is zero.
+    x = stats.f.ppf(0.95, 1, 7)
+    res = stats.ncf.sf(x, 1, 7, 0.0)
+    assert_allclose(res, 1 - stats.ncf.cdf(x, 1, 7, 0.0), rtol=1e-14)
+    assert_allclose(res, stats.f.sf(x, 1, 7), rtol=1e-14)
+
+
 def test_ncf_cdf_spotcheck():
     # Regression test for gh-15582 testing against values from R/MATLAB
     # Generate check_val from R or MATLAB as follows:

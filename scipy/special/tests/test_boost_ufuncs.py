@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
+from scipy import special as sc
 import scipy.special._ufuncs as scu
 from scipy.integrate import tanhsinh
 
@@ -61,6 +62,16 @@ def test_landau():
 
 def test_gh22956():
     _ = scu._ncx2_pdf(30, 1e307, 16)
+
+
+def test_ncf_sf_nc_zero():
+    # Regression test for gh-26188: _ncf_sf returned -cdf instead of
+    # 1 - cdf when the non-centrality parameter is zero.
+    x = np.linspace(0.5, 20.0, 50)
+    dfn, dfd, nc = 3.0, 7.0, 0.0
+    res = scu._ncf_sf(x, dfn, dfd, nc)
+    ref = 1.0 - sc.ncfdtr(dfn, dfd, nc, x)
+    assert_allclose(res, ref, rtol=1e-12, atol=1e-16)
 
 @pytest.mark.parametrize("func", [scu._binom_cdf, scu._binom_sf])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])

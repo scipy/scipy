@@ -1147,6 +1147,14 @@ template<typename Real>
 Real
 ncf_sf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 {
+    // Boost's complemented non-central F cdf is incorrect when the
+    // non-centrality parameter is 0 (it returns -cdf instead of 1 - cdf).
+    // When l == 0 the non-central F distribution is the Fisher F
+    // distribution, so route to that instead. See gh-26188.
+    if (l == 0) {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::fisher_f_distribution<Real, StatsPolicy>(v1, v2), x));
+    }
     return boost::math::cdf(boost::math::complement(
         boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x));
 }
