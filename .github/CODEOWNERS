@@ -23,7 +23,7 @@ scipy/_external  @lucascolley
 
 # CI config
 .circleci/  @larsoner
-.github/workflows/  @larsoner
+.github/workflows/  @larsoner @andyfaff
 
 # Developer workspace
 *pixi*  @lucascolley
@@ -65,7 +65,7 @@ tools/linting/  @lucascolley
 tools/refguide/  @ev-br
 tools/release/  @tylerjereddy
 tools/vendoring/  @lucascolley
-tools/wheels/  @rgommers
+tools/wheels/  @andyfaff @rgommers
 
 # Doc
 doc/source/conf.py  @tupui
