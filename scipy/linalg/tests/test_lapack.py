@@ -3611,9 +3611,7 @@ def test_gbcon(dtype, norm):
     gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
     lu = getrf(A)[0]
     ref = gecon(lu, anorm, norm=norm)[0]
-    # This is an estimate of reciprocal condition number; we just need order of
-    # magnitude.
-    assert_allclose(res, ref, rtol=1)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
 
 
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
