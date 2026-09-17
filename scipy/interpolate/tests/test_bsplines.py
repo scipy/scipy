@@ -2966,7 +2966,6 @@ class TestSmoothingSpline:
         x = np.sort(rng.uniform(0, scale, 50))
         y = np.sin(2 * np.pi * 3 * x / scale) + 0.3 * rng.normal(size=50)
         tk = np.linspace(x[0], x[-1], 15)
-        tk[0], tk[-1] = x[0], x[-1]
         t = _augknt(tk, 3)
         f = make_smoothing_spline(x, y, t=t)
         assert np.all(np.isfinite(f(x)))
@@ -2979,7 +2978,6 @@ class TestSmoothingSpline:
         x = np.sort(rng.uniform(0, 4, 60))
         y = np.sin(2 * x) + 0.3 * rng.normal(size=60)
         tk = np.linspace(x[0], x[-1], 15)
-        tk[0], tk[-1] = x[0], x[-1]
         t = _augknt(tk, 3)
         n = len(x)
         lams = np.logspace(-6, 3, 30)
@@ -3022,7 +3020,6 @@ class TestSmoothingSpline:
         x = np.sort(rng.uniform(0, 4, 50))
         y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
         tk = np.linspace(x[0], x[-1], 12)
-        tk[0], tk[-1] = x[0], x[-1]
         t = _augknt(tk, 3)
         f_now = make_smoothing_spline(x, y, w=np.ones_like(x), t=t)(x)
         f_no_w = make_smoothing_spline(x, y, t=t)(x)
