@@ -642,6 +642,15 @@ class DOP853(RungeKutta):
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
 
+    References
+    ----------
+    .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
+           Equations I: Nonstiff Problems", Sec. II.
+    .. [2] `Page with original Fortran code of DOP853
+            <http://www.unige.ch/~hairer/software.html>`_.
+    .. [3] "Cowell's method", Wikipedia
+            https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method
+
     Examples
     --------
     Compute one orbit of a satellite around Earth using `Cowell's
@@ -663,20 +672,20 @@ class DOP853(RungeKutta):
     >>> v_orbit = np.sqrt((G*mass_e)/(radius_e+alt_s))
 
     Cowell's equations for simulating two interacting bodies are a
-    system of second-order ODEs.
+    system of second-order ODEs
 
     .. math::
 
         \begin{align*}
-            \ddot{r_1} &=\frac{Gm_2(r_2-r_1)}{d^3}\\
-            \ddot{r_2} &= \frac{Gm_1(r_1-r_2)}{d^3}
+            \ddot{r}_1 &=\frac{Gm_2(r_2-r_1)}{d^3}\\
+            \ddot{r}_2 &= \frac{Gm_1(r_1-r_2)}{d^3}
         \end{align*}
 
-    Where :math:`r_1` and :math:`r_2` are the position vectors of the
+    where :math:`r_1` and :math:`r_2` are the position vectors of the
     centers of the two bodies, :math:`G` is the Newtonian constant of
     gravitation, and :math:`m_1` and :math:`m_2` are the masses of the
     two bodies. The distance between the centers of the two bodies is
-    :math:`d = ||r_1 - r_2||`.
+    :math:`d = \lVert r_1 - r_2 \rVert`.
 
     To convert Cowell's equations into a system of first-order ODEs,
     introduce variables :math:`k_1` and :math:`k_2` for the velocity of
@@ -685,10 +694,10 @@ class DOP853(RungeKutta):
     .. math::
 
         \begin{align*}
-            \dot{r_1} &= k_1\\
-            \dot{r_2} &= k_2\\
-            \dot{k_1} &=\frac{Gm_2(r_2-r_1)}{d^3}\\
-            \dot{k_2} &=\frac{Gm_1(r_1-r_2)}{d^3}
+            \dot{r}_1 &= k_1\\
+            \dot{r}_2 &= k_2\\
+            \dot{k}_1 &=\frac{Gm_2(r_2-r_1)}{d^3}\\
+            \dot{k}_2 &=\frac{Gm_1(r_1-r_2)}{d^3}
         \end{align*}
 
     Then, define a function that returns the right-hand side of the
@@ -745,8 +754,7 @@ class DOP853(RungeKutta):
     >>> plt.show()
 
     The figure shows that the Earth is approximately stationary and the
-    satellite orbits around it in an ellipse. The satellite orbit has a
-    gap.
+    satellite orbits around it. The satellite orbit has a gap.
 
     To calculate the rest of the orbit, run the solver for another
     ``40`` integration steps.
@@ -768,15 +776,6 @@ class DOP853(RungeKutta):
     >>> plt.show()
 
     The additional ``40`` integration steps close the gap in the orbit.
-
-    References
-    ----------
-    .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
-           Equations I: Nonstiff Problems", Sec. II.
-    .. [2] `Page with original Fortran code of DOP853
-            <http://www.unige.ch/~hairer/software.html>`_.
-    .. [3] "Cowell's method", Wikipedia
-            https://en.wikipedia.org/wiki/Orbit_modeling#Cowell's_method
     """
     n_stages = dop853_coefficients.N_STAGES
     order = 8
