@@ -265,10 +265,11 @@ struct mathieu_coeffs {
  * This caches the fourier coefficients so that they can be reused as x varies
  * while m and q stay fixed during the course of ufunc iteration. A ufunc using
  * this kernel should use scipy.special._ufunc_tools._with_cache_optimization.
- * Following SciPy's longstanding unorthodox behavior, the angle x is taken in
- * units of degrees.
+ * AngleUnits selects radians for the new API or degrees for the legacy API.
+ * In both cases, the returned derivative is with respect to radians.
  */
-template <xsf::mathieu::Parity FuncParity, typename T>
+template <xsf::mathieu::Parity FuncParity, typename T,
+          xsf::mathieu::AngleUnitPolicy AngleUnits = xsf::mathieu::AngleUnitPolicy::Degrees>
 struct mathieu_xem {
     double last_q = std::numeric_limits<double>::quiet_NaN();
     int last_m = -1;
@@ -283,7 +284,9 @@ struct mathieu_xem {
         double x_d = static_cast<double>(x);
         double out_d, out_diff_d;
 
-        constexpr const char *name = (FuncParity == Even) ? "mathieu_cem" : "mathieu_sem";
+        constexpr const char *name = AngleUnits == AngleUnitPolicy::Degrees
+                                         ? ((FuncParity == Even) ? "mathieu_cem" : "mathieu_sem")
+                                         : ((FuncParity == Even) ? "mathieu_ce" : "mathieu_se");
 
         if ((m < 0) || !std::isfinite(m) || m != std::floor(m) || !std::isfinite(q) || std::isnan(x)) {
             out = std::numeric_limits<T>::quiet_NaN();
@@ -340,11 +343,7 @@ struct mathieu_xem {
                 out = std::numeric_limits<T>::quiet_NaN();
                 out_diff = std::numeric_limits<T>::quiet_NaN();
                 last_m = -1; // invalidate cache upon error
-                if constexpr (FuncParity == Even) {
-                    xsf::set_error("mathieu_cem", status, NULL);
-                } else {
-                    xsf::set_error("mathieu_sem", status, NULL);
-                }
+                xsf::set_error(name, status, NULL);
                 return;
             }
             last_q = q_d;
@@ -354,9 +353,9 @@ struct mathieu_xem {
         /* Compute mathieu function and its derivative by summing the fourier
          * series. */
         if (int_m % 2) {
-            sum_fourier_series<FuncParity, Odd, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Odd, AngleUnits>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         } else {
-            sum_fourier_series<FuncParity, Even, AngleUnitPolicy::Degrees>(as_mdspan(coefs), x_d, out_d, out_diff_d);
+            sum_fourier_series<FuncParity, Even, AngleUnits>(as_mdspan(coefs), x_d, out_d, out_diff_d);
         }
         out = static_cast<T>(out_d);
         out_diff = static_cast<T>(out_diff_d);
@@ -374,6 +373,16 @@ inline void mathieu_cem(double m, double q, double x, double &out, double &out_d
 
 inline void mathieu_sem(double m, double q, double x, double &out, double &out_diff) {
     return mathieu_xem<xsf::mathieu::Parity::Odd, double>{}(m, q, x, out, out_diff);
+}
+
+inline void mathieu_ce(double m, double q, double x, double &out, double &out_diff) {
+    return mathieu_xem<xsf::mathieu::Parity::Even, double, xsf::mathieu::AngleUnitPolicy::Radians>{}(
+        m, q, x, out, out_diff);
+}
+
+inline void mathieu_se(double m, double q, double x, double &out, double &out_diff) {
+    return mathieu_xem<xsf::mathieu::Parity::Odd, double, xsf::mathieu::AngleUnitPolicy::Radians>{}(
+        m, q, x, out, out_diff);
 }
 
 } // namespace special
