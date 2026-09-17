@@ -358,7 +358,9 @@ for key in (
         'tsearch',
         'minkowski_distance_p',
         'minkowski_distance',
-        'distance_matrix'
+        'distance_matrix',
+        'mathieu_cem',
+        'mathieu_sem',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
