@@ -15,7 +15,7 @@ from scipy.special import (
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
-    mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
+    mathieu_a, mathieu_b, mathieu_ce, mathieu_se, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
     ellip_harm, ellip_harm_2, spherical_jn, spherical_yn, wright_bessel
 )
@@ -90,11 +90,11 @@ def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
 
 def mathieu_ce_rad(m, q, x):
-    return mathieu_cem(m, q, x*180/np.pi)[0]
+    return mathieu_ce(m, q, x)[0]
 
 
 def mathieu_se_rad(m, q, x):
-    return mathieu_sem(m, q, x*180/np.pi)[0]
+    return mathieu_se(m, q, x)[0]
 
 
 def mathieu_mc1_scaled(m, q, x):
