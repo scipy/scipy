@@ -44,14 +44,18 @@ scipy/sparse/csgraph/
 scipy/sparse/linalg/  @lucascolley
 scipy/spatial/  @tylerjereddy @peterbell10
 scipy/special/  @steppi
+scipy/stats/_distn_infrastructure.py  @andyfaff @ev-br
 scipy/stats/*distr*.py  @ev-br
+scipy/stats/_continuous_distns.py  @andyfaff
 scipy/stats/_covariance.py  @mdhaber
+scipy/stats/_hypotests.py  @tupui
 scipy/stats/*qmc.*  @tupui
 scipy/stats/_multicomp.py  @tupui @mdhaber
 scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
 scipy/stats/_sensitivity_analysis.py  @tupui
 scipy/stats/_survival.py  @tupui @mdhaber
+scipy/stats/_unuran/  @tirthasheshpatel
 
 # Testing infrastructure
 pytest.ini  @larsoner
