@@ -7,7 +7,20 @@ from scipy.stats._stats_py import _xp_mean, _xp_var
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-dtypes = ['float32', 'float64']
+
+@pytest.fixture(params=['float32', 'float64'])
+def dtype(request):
+    return request.param
+
+
+@pytest.fixture
+def dtype_devices(dtype, devices, xp):
+    dtype = getattr(xp, dtype)
+    devices = [
+        d for d in devices
+        if dtype in xp.__array_namespace_info__().dtypes(device=d)
+    ]
+    return dtype, devices
 
 
 def get_arrays(n_arrays, *, dtype=np.float64, xp=np, shape=(30,), device=None,
@@ -30,11 +43,12 @@ def get_arrays(n_arrays, *, dtype=np.float64, xp=np, shape=(30,), device=None,
                                          (stats.pmean, {'p': 2}),
                                          (_xp_mean, {}),
                                          ])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_xmean(fun, kwargs, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_xmean(fun, kwargs, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
+        if dtype != xp.__array_namespace_info__().dtypes(device=device):
+            pytest.skip(f"{dtype} unsupported for device {device}")
         x, weights = get_arrays(2, device=device, dtype=dtype, xp=xp)
         res = fun(x, weights=weights, **kwargs)
         assert xp_device(res) == xp_device(x)
@@ -44,10 +58,9 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
 @skip_xp_backends('array_api_strict',
                   reason="special functions don't work with 'device1'")
 @pytest.mark.parametrize('nargs', [1, 2])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_entropy(nargs, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_entropy(nargs, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         args = get_arrays(nargs, device=device, dtype=dtype, xp=xp)
         res = stats.entropy(*args)
@@ -55,10 +68,9 @@ def test_entropy(nargs, dtype, xp, devices):
         assert res.dtype == dtype
 
 
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_directional_stats(dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_directional_stats(dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         x = get_arrays(1, shape=(30, 3), device=device, dtype=dtype, xp=xp)[0]
         res = stats.directional_stats(x)
@@ -81,10 +93,9 @@ def test_directional_stats(dtype, xp, devices):
     "ebrahimi",
     "auto",
 ])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_differential_entropy(method, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_differential_entropy(method, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
         res = stats.differential_entropy(values, method=method)
@@ -97,13 +108,12 @@ def test_differential_entropy(method, dtype, xp, devices):
                                     'closest_observation', 'interpolated_inverted_cdf',
                                     'hazen', 'weibull', 'linear', 'median_unbiased',
                                     'normal_unbiased', 'harrell-davis'])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_quantile(method, dtype, xp, devices):
+def test_quantile(method, dtype_devices, xp):
     if (is_array_api_strict(xp) or is_torch(xp)) and method == 'harrell-davis':
         pytest.skip("'harrell-davis' not currently supported on GPU.")
 
-    dtype = getattr(xp, dtype)
+    dtype, devices = dtype_devices
     for device in devices:
         values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
         res = stats.quantile(values, 0.5, method=method)
@@ -111,10 +121,9 @@ def test_quantile(method, dtype, xp, devices):
         assert values.dtype == dtype
 
 
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_boxcox_llf(dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_boxcox_llf(dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         data = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
         res = stats.boxcox_llf(1, data)
@@ -148,10 +157,9 @@ def test_boxcox_llf(dtype, xp, devices):
      (stats.tstd, {'limits': (0.1, 0.9)}),
      (stats.tsem, {'limits': (0.1, 0.9)}),
      ])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_one_in_one_out(fun, kwargs, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_one_in_one_out(fun, kwargs, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         array = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
         res = fun(array, **kwargs)
@@ -159,10 +167,9 @@ def test_one_in_one_out(fun, kwargs, dtype, xp, devices):
         assert res.dtype == dtype
 
 
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_describe(dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_describe(dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         array = get_arrays(1, shape=10, dtype=dtype, device=device, xp=xp)[0]
         res = stats.describe(array, axis=-1)
@@ -182,10 +189,9 @@ def test_describe(dtype, xp, devices):
 
 
 @pytest.mark.parametrize('fun', [stats.zscore, stats.gzscore, stats.zmap])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_zscore(fun, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_zscore(fun, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         n = 2 if (fun == stats.zmap) else 1
         arrays = get_arrays(n, device=device, dtype=dtype, xp=xp)
@@ -200,10 +206,9 @@ def test_zscore(fun, dtype, xp, devices):
                                     'kurtosistest', 'normaltest', 'jarque_bera',
                                     'bartlett', 'pearsonr', 'chisquare',
                                     'power_divergence'])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_hypothesis_tests(f_name, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_hypothesis_tests(f_name, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         f = getattr(stats, f_name)
 
@@ -235,10 +240,9 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
 @skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'tippett', 'stouffer',
                                     'mudholkar_george'])
-@pytest.mark.parametrize('dtype', dtypes)
 @pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
-def test_combine_pvalues(method, dtype, xp, devices):
-    dtype = getattr(xp, dtype)
+def test_combine_pvalues(method, dtype_devices, xp):
+    dtype, devices = dtype_devices
     for device in devices:
         pvalues = get_arrays(1, xp=xp, dtype=dtype, device=device)[0] / 10
         res = stats.combine_pvalues(pvalues, method=method)

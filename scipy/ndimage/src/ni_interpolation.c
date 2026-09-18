@@ -201,7 +201,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
 
  exit:
     NPY_END_THREADS;
-    free(buffer);
+    PyMem_RawFree(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -294,13 +294,13 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     }
 
     /* offsets used at the borders: */
-    edge_offsets = malloc(irank * sizeof(npy_intp*));
+    edge_offsets = PyMem_RawMalloc(irank * sizeof(npy_intp*));
     if (NPY_UNLIKELY(!edge_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
-    data_offsets = malloc(irank * sizeof(npy_intp*));
+    data_offsets = PyMem_RawMalloc(irank * sizeof(npy_intp*));
     if (NPY_UNLIKELY(!data_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -312,7 +312,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     if (mode == NI_EXTEND_GRID_CONSTANT) {
         // boolean indicating if the current point in the filter footprint is
         // outside the bounds
-        edge_grid_const = malloc(irank * sizeof(char*));
+        edge_grid_const = PyMem_RawMalloc(irank * sizeof(char*));
         if (NPY_UNLIKELY(!edge_grid_const)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -321,7 +321,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         for(jj = 0; jj < irank; jj++)
             edge_grid_const[jj] = NULL;
         for(jj = 0; jj < irank; jj++) {
-            edge_grid_const[jj] = malloc((order + 1) * sizeof(char));
+            edge_grid_const[jj] = PyMem_RawMalloc((order + 1) * sizeof(char));
             if (NPY_UNLIKELY(!edge_grid_const[jj])) {
                 NPY_END_THREADS;
                 PyErr_NoMemory();
@@ -331,7 +331,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     }
 
     for(jj = 0; jj < irank; jj++) {
-        data_offsets[jj] = malloc((order + 1) * sizeof(npy_intp));
+        data_offsets[jj] = PyMem_RawMalloc((order + 1) * sizeof(npy_intp));
         if (NPY_UNLIKELY(!data_offsets[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -339,7 +339,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
     /* will hold the spline coefficients: */
-    splvals = malloc(irank * sizeof(double*));
+    splvals = PyMem_RawMalloc(irank * sizeof(double*));
     if (NPY_UNLIKELY(!splvals)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -348,7 +348,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     for(jj = 0; jj < irank; jj++)
         splvals[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
-        splvals[jj] = malloc((order + 1) * sizeof(double));
+        splvals[jj] = PyMem_RawMalloc((order + 1) * sizeof(double));
         if (NPY_UNLIKELY(!splvals[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -369,9 +369,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     po = (void *)PyArray_DATA(output);
 
     /* make a table of all possible coordinates within the spline filter: */
-    fcoordinates = malloc(irank * filter_size * sizeof(npy_intp));
+    fcoordinates = PyMem_RawMalloc(irank * filter_size * sizeof(npy_intp));
     /* make a table of all offsets within the spline filter: */
-    foffsets = malloc(filter_size * sizeof(npy_intp));
+    foffsets = PyMem_RawMalloc(filter_size * sizeof(npy_intp));
     if (NPY_UNLIKELY(!fcoordinates || !foffsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -636,24 +636,24 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
  exit:
     NPY_END_THREADS;
-    free(edge_offsets);
+    PyMem_RawFree(edge_offsets);
     if (edge_grid_const) {
         for(jj = 0; jj < irank; jj++)
-            free(edge_grid_const[jj]);
-        free(edge_grid_const);
+            PyMem_RawFree(edge_grid_const[jj]);
+        PyMem_RawFree(edge_grid_const);
     }
     if (data_offsets) {
         for(jj = 0; jj < irank; jj++)
-            free(data_offsets[jj]);
-        free(data_offsets);
+            PyMem_RawFree(data_offsets[jj]);
+        PyMem_RawFree(data_offsets);
     }
     if (splvals) {
         for(jj = 0; jj < irank; jj++)
-            free(splvals[jj]);
-        free(splvals);
+            PyMem_RawFree(splvals[jj]);
+        PyMem_RawFree(splvals);
     }
-    free(foffsets);
-    free(fcoordinates);
+    PyMem_RawFree(foffsets);
+    PyMem_RawFree(fcoordinates);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -686,7 +686,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
     /* if the mode is 'constant' we need some temps later: */
     if (mode == NI_EXTEND_CONSTANT) {
-        zeros = malloc(rank * sizeof(npy_intp*));
+        zeros = PyMem_RawMalloc(rank * sizeof(npy_intp*));
         if (NPY_UNLIKELY(!zeros)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -695,7 +695,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         for(jj = 0; jj < rank; jj++)
             zeros[jj] = NULL;
         for(jj = 0; jj < rank; jj++) {
-            zeros[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+            zeros[jj] = PyMem_RawMalloc(odimensions[jj] * sizeof(npy_intp));
             if (NPY_UNLIKELY(!zeros[jj])) {
                 NPY_END_THREADS;
                 PyErr_NoMemory();
@@ -705,7 +705,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     } else if (mode == NI_EXTEND_GRID_CONSTANT) {
         // boolean indicating if the current point in the filter footprint is
         // outside the bounds
-        edge_grid_const = malloc(rank * sizeof(char*));
+        edge_grid_const = PyMem_RawMalloc(rank * sizeof(char*));
         if (NPY_UNLIKELY(!edge_grid_const)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -714,7 +714,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         for(jj = 0; jj < rank; jj++)
             edge_grid_const[jj] = NULL;
         for(jj = 0; jj < rank; jj++) {
-            edge_grid_const[jj] = malloc(odimensions[jj] * sizeof(char*));
+            edge_grid_const[jj] = PyMem_RawMalloc(odimensions[jj] * sizeof(char*));
             if (NPY_UNLIKELY(!edge_grid_const[jj])) {
                 NPY_END_THREADS;
                 PyErr_NoMemory();
@@ -726,7 +726,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         }
     }
     /* store offsets, along each axis: */
-    offsets = malloc(rank * sizeof(npy_intp*));
+    offsets = PyMem_RawMalloc(rank * sizeof(npy_intp*));
     if (NPY_UNLIKELY(!offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -736,7 +736,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         offsets[jj] = NULL;
 
     /* store spline coefficients, along each axis: */
-    splvals = malloc(rank * sizeof(double**));
+    splvals = PyMem_RawMalloc(rank * sizeof(double**));
     if (NPY_UNLIKELY(!splvals)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -747,8 +747,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
     /* store offsets at all edges: */
     for(jj = 0; jj < rank; jj++) {
-        offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
-        splvals[jj] = malloc(odimensions[jj] * sizeof(double*));
+        offsets[jj] = PyMem_RawMalloc(odimensions[jj] * sizeof(npy_intp));
+        splvals[jj] = PyMem_RawMalloc(odimensions[jj] * sizeof(double*));
         if (NPY_UNLIKELY(!offsets[jj] || !splvals[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -760,7 +760,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     }
 
     if (mode != NI_EXTEND_GRID_CONSTANT){
-        edge_offsets = malloc(rank * sizeof(npy_intp**));
+        edge_offsets = PyMem_RawMalloc(rank * sizeof(npy_intp**));
         if (NPY_UNLIKELY(!edge_offsets)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -770,7 +770,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             edge_offsets[jj] = NULL;
         }
         for(jj = 0; jj < rank; jj++) {
-            edge_offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp*));
+            edge_offsets[jj] = PyMem_RawMalloc(odimensions[jj] * sizeof(npy_intp*));
             if (NPY_UNLIKELY(!edge_offsets[jj])) {
                 NPY_END_THREADS;
                 PyErr_NoMemory();
@@ -824,7 +824,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     npy_intp idx = 0;
 
                     if (mode == NI_EXTEND_GRID_CONSTANT) {
-                        edge_grid_const[jj][kk] = malloc((order + 1) * sizeof(char));
+                        edge_grid_const[jj][kk] = PyMem_RawMalloc((order + 1) * sizeof(char));
                         if (NPY_UNLIKELY(!edge_grid_const[jj][kk])) {
                             NPY_END_THREADS;
                             PyErr_NoMemory();
@@ -835,7 +835,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                             edge_grid_const[jj][kk][hh] = (idx < 0 || idx >= idimensions[jj]);
                         }
                     } else {
-                        edge_offsets[jj][kk] = malloc((order + 1) * sizeof(npy_intp));
+                        edge_offsets[jj][kk] = PyMem_RawMalloc((order + 1) * sizeof(npy_intp));
                         if (NPY_UNLIKELY(!edge_offsets[jj][kk])) {
                             NPY_END_THREADS;
                             PyErr_NoMemory();
@@ -850,7 +850,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
                 }
                 if (order > 0) {
-                    splvals[jj][kk] = malloc((order + 1) * sizeof(double));
+                    splvals[jj][kk] = PyMem_RawMalloc((order + 1) * sizeof(double));
                     if (NPY_UNLIKELY(!splvals[jj][kk])) {
                         NPY_END_THREADS;
                         PyErr_NoMemory();
@@ -875,8 +875,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     po = (void *)PyArray_DATA(output);
 
     /* store all coordinates and offsets with filter: */
-    fcoordinates = malloc(rank * filter_size * sizeof(npy_intp));
-    foffsets = malloc(filter_size * sizeof(npy_intp));
+    fcoordinates = PyMem_RawMalloc(rank * filter_size * sizeof(npy_intp));
+    foffsets = PyMem_RawMalloc(filter_size * sizeof(npy_intp));
     if (NPY_UNLIKELY(!fcoordinates || !foffsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -1023,45 +1023,45 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     NPY_END_THREADS;
     if (zeros) {
         for(jj = 0; jj < rank; jj++)
-            free(zeros[jj]);
-        free(zeros);
+            PyMem_RawFree(zeros[jj]);
+        PyMem_RawFree(zeros);
     }
     if (offsets) {
         for(jj = 0; jj < rank; jj++)
-            free(offsets[jj]);
-        free(offsets);
+            PyMem_RawFree(offsets[jj]);
+        PyMem_RawFree(offsets);
     }
     if (splvals) {
         for(jj = 0; jj < rank; jj++) {
             if (splvals[jj]) {
                 for(hh = 0; hh < odimensions[jj]; hh++)
-                    free(splvals[jj][hh]);
-                free(splvals[jj]);
+                    PyMem_RawFree(splvals[jj][hh]);
+                PyMem_RawFree(splvals[jj]);
             }
         }
-        free(splvals);
+        PyMem_RawFree(splvals);
     }
     if (edge_offsets) {
         for(jj = 0; jj < rank; jj++) {
             if (edge_offsets[jj]) {
                 for(hh = 0; hh < odimensions[jj]; hh++)
-                    free(edge_offsets[jj][hh]);
-                free(edge_offsets[jj]);
+                    PyMem_RawFree(edge_offsets[jj][hh]);
+                PyMem_RawFree(edge_offsets[jj]);
             }
         }
-        free(edge_offsets);
+        PyMem_RawFree(edge_offsets);
     }
     if (edge_grid_const) {
         for(jj = 0; jj < rank; jj++) {
             if (edge_grid_const[jj]) {
                 for(hh = 0; hh < odimensions[jj]; hh++)
-                    free(edge_grid_const[jj][hh]);
-                free(edge_grid_const[jj]);
+                    PyMem_RawFree(edge_grid_const[jj][hh]);
+                PyMem_RawFree(edge_grid_const[jj]);
             }
         }
-        free(edge_grid_const);
+        PyMem_RawFree(edge_grid_const);
     }
-    free(foffsets);
-    free(fcoordinates);
+    PyMem_RawFree(foffsets);
+    PyMem_RawFree(fcoordinates);
     return PyErr_Occurred() ? 0 : 1;
 }

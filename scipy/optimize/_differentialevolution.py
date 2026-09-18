@@ -995,7 +995,7 @@ class DifferentialEvolutionSolver:
             x0_scaled = self._unscale_parameters(np.asarray(x0))
             if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
                 raise ValueError(
-                    "Some entries in x0 lay outside the specified bounds"
+                    "Some entries in x0 lie outside the specified bounds"
                 )
             self.population[0] = x0_scaled
 

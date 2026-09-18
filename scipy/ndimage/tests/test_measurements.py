@@ -21,8 +21,8 @@ import scipy.ndimage as ndimage
 from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
-# mypy: disable-error-code=attr-defined
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 @pytest.mark.uses_xp_capabilities(False, reason="private")
@@ -355,6 +355,7 @@ def test_label13(xp):
 
 @skip_xp_backends(np_only=True, exceptions=["cupy"],
                   reason='output=dtype is numpy-specific')
+@xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10041")
 @make_xp_test_case(ndimage.label)
 def test_label_output_typed(xp):
     data = xp.ones([5])

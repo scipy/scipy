@@ -151,7 +151,7 @@ import numpy as np
 from scipy.interpolate._ndbspline import NdBSpline
 from scipy.interpolate._fitpack_repro import (
     root_rati, disc, add_knot, _not_a_knot)
-from . import _dierckx      # type: ignore[attr-defined]
+from . import _dierckx
 from scipy.sparse import csr_array
 from scipy._lib._util import _validate_int
 

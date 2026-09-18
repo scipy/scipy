@@ -8,7 +8,7 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
     CBLAS_INT i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     CBLAS_INT j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
     double tau = 0.0, unorm = 0.0, ztest, alpha, cc, ss, wmax, T, tmp_work;
-    double pivot = 1.0, pivot2 = 0.0, tmp = 0.0, spacing = 0.0;
+    double pivot = 1.0, tauvtb = 0.0, tmp = 0.0, spacing = 0.0;
     *info = 1;
     if (m <= 0 || n <= 0)
     {
@@ -51,49 +51,49 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
             iz = izmax;
             j = indices[iz];
 
-            // The sign of wmax is OK for j to be moved to set p. Begin the
-            // transformation and check new diagonal element to avoid near-linear
-            // dependence.
-            pivot = a[indz + j*m];
-            tmpint = m - indz;
-            BLAS_FUNC(dlarfgp)(&tmpint, &pivot, &a[indz + 1 + j*m], &one, &tau);
+            // The sign of wmax is OK for j to be moved to set p. Column j and b
+            // are not modified until j is accepted.
 
             // Compute the norm of a[0:indz, j] to check for linear dependence.
             unorm = (indz > 0 ? BLAS_FUNC(dnrm2)(&indz, &a[j*m], &one) : 0.0);
             // unorm is nonnegative
             spacing = (unorm > 0.0 ? nextafter(unorm, 2*unorm) - unorm : 0.0);
 
-            // Test for independence by checking the pivot for zero.
-            if (fabs(pivot) > 100.0*spacing)
+            // Test for independence by checking the new diagonal element for
+            // zero. Its magnitude is the norm of a[indz:m, j].
+            tmpint = m - indz;
+            if (BLAS_FUNC(dnrm2)(&tmpint, &a[indz + j*m], &one) > 100.0*spacing)
             {
-                // Column j is sufficiently independent. Copy b into zz and solve
-                // for ztest which is the new prospective value for x[j].
-                for (i = 0; i < m; i++) { zz[i] = b[i]; }
-                tmpint = m - indz;
-                pivot2 = a[indz + j*m];
-                a[indz + j*m] = 1.0;
-                BLAS_FUNC(dlarf)("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
-                // See if ztest is positive. This is from the original F77 code.
-                // Probably better to use a sign test instead of a division.
-                ztest = zz[indz] / pivot;
-                if (ztest > 0.0)
-                {
-                    break;
-                } else {
-                    a[indz + j*m] = pivot2;
-                }
+                // Column j is sufficiently independent. Form the transformation
+                // on a copy in zz[indz:m] and solve for ztest which is the new
+                // prospective value for x[j].
+                for (i = indz; i < m; i++) { zz[i] = a[i + j*m]; }
+                BLAS_FUNC(dlarfgp)(&tmpint, &zz[indz], &zz[indz + 1], &one, &tau);
+                pivot = zz[indz];
+                zz[indz] = 1.0;
+                // (H*b)[indz] = b[indz] - tau*v'b, with v = zz[indz:m].
+                tmpint = m - indz - 1;
+                tauvtb = tau*(b[indz] + BLAS_FUNC(ddot)(&tmpint, &zz[indz + 1], &one, &b[indz + 1], &one));
+                // See if ztest is positive. This is from the original F77 code and
+                // guards against round-off making the new x[j] nonpositive.
+                ztest = (b[indz] - tauvtb) / pivot;
+                if (ztest > 0.0) { break; }
             }
             // Reject j as a candidate to be moved from set z to set p.
-            // a(indz,j) is restored, set w(j)=0., and loop back to test dual
-            // coeffs again.
+            // Set w(j)=0., and loop back to test dual coeffs again.
             w[j] = 0.0;
         }
         // ====================================================================
 
         // the index j=indices[iz]  has been selected to be moved from set z to
-        // set p. Update b, update indices, apply householder transformations to
-        // cols in new set z,  zero subdiagonal elements in col j,  set w(j)=0.
-        for (i = 0; i < m; i++) { b[i] = zz[i]; }
+        // set p. Store the transformation in col j, apply it to b, update
+        // indices, apply householder transformations to cols in new set z,
+        // zero subdiagonal elements in col j,  set w(j)=0.
+        for (i = indz; i < m; i++) { a[i + j*m] = zz[i]; }
+        b[indz] -= tauvtb;
+        tmpint = m - indz - 1;
+        tmp = -tauvtb;
+        BLAS_FUNC(daxpy)(&tmpint, &tmp, &zz[indz + 1], &one, &b[indz + 1], &one);
         indices[iz] = indices[indz];
         indices[indz] = j;
         indz++;
@@ -114,6 +114,7 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
         w[j] = 0.0;
 
         // Solve the permuted triangular system, store in zz.
+        for (i = 0; i < indz; i++) { zz[i] = b[i]; }
         for (k = 0; k < indz; k++)
         {
             // ip traverses the indices of P set in reverse
@@ -162,7 +163,7 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
                 x[k] = x[k] + alpha*(zz[ip] - x[k]);
             }
 
-            // Modify a, b, and the indicies to move coefficient i from set p
+            // Modify a, b, and the indices to move coefficient i from set p
             // to set z. While loop simulates a goto in the original F77 code.
             i = indices[jj];
             while (1)

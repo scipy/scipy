@@ -1,21 +1,20 @@
+/*
+ * Templated loops for `linalg.svd`
+ */
 #pragma once
-#include "scipy_blas_defines.h"
-#include "_npymath.hh"
-#include "_common_array_utils.hh"
-
 
 namespace sp_linalg {
 
 /*
  * SVD size helper: if A.shape == (m, n),
  * U is either (m, m) or (m, k) and Vh is either (n, n) or (k, n)
- */ 
+ */
 int
 u_vh_shapes(npy_intp m, npy_intp n, char jobz,
             npy_intp *u_shape0, npy_intp *u_shape1,
             npy_intp *vh_shape0, npy_intp *vh_shape1
 ){
-    npy_intp k = m < n ? m : n; 
+    npy_intp k = m < n ? m : n;
 
     switch(jobz) {
         case('N') :
@@ -99,9 +98,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     /*
      * Allocate memory and chop the buffer into parts
      *
-     *    lwork     data_size         
+     *    lwork     data_size
      * |----------|-----------|----------|------|
-     * ^          ^           ^          ^      
+     * ^          ^           ^          ^
      * work       data        buf_U     buf_Vh
      *
      * Here
@@ -117,7 +116,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
@@ -139,9 +138,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     CBLAS_INT *iwork = NULL;
     real_type *rwork = NULL;
     // iwork
-    iwork = (CBLAS_INT *)malloc(8*min_mn*sizeof(CBLAS_INT));
+    iwork = (CBLAS_INT *)PyMem_RawMalloc(8*min_mn*sizeof(CBLAS_INT));
     if (iwork == NULL) {
-        free(buf);
+        PyMem_RawFree(buf);
         info = -102;
         return (int)info;
     }
@@ -153,10 +152,10 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             5*min_mn*min_mn + 5*min_mn,
             2*max_mn*min_mn + 2*min_mn*min_mn + min_mn
         );
-        rwork = (real_type *)malloc(lrwork * sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(lrwork * sizeof(real_type));
         if (rwork == NULL) {
-            free(buf);
-            free(iwork);
+            PyMem_RawFree(buf);
+            PyMem_RawFree(iwork);
             info = -103;
             return (int)info;
         }
@@ -185,7 +184,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
@@ -200,9 +199,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
  done:
-    free(buf);
-    free(iwork);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(iwork);
+    PyMem_RawFree(rwork);
     return 0;
 }
 
@@ -262,9 +261,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     /*
      * Allocate memory and chop the buffer into parts
      *
-     *    lwork     data_size         
+     *    lwork     data_size
      * |----------|-----------|----------|------|
-     * ^          ^           ^          ^      
+     * ^          ^           ^          ^
      * work       data        buf_U     buf_Vh
      *
      * Here
@@ -280,7 +279,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
     }
 
-    T *buf = (T *)malloc(bufsize*sizeof(T));
+    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
     if (buf == NULL) { info = -101; return (int)info; }
 
     // partition the workspace
@@ -301,9 +300,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     real_type *rwork = NULL;
     if constexpr (detail::type_traits<T>::is_complex) {
-        rwork = (real_type *)malloc(5*min_mn*sizeof(real_type));
+        rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
         if (rwork == NULL) {
-            free(buf);
+            PyMem_RawFree(buf);
             info = -103;
             return (int)info;
         }
@@ -332,7 +331,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             goto done;
         }
 
-        // copy-and-tranpose U and Vh slices from temp buffers to the output;
+        // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
         if (jobz != 'N') {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
@@ -347,8 +346,8 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     }
 
  done:
-    free(buf);
-    free(rwork);
+    PyMem_RawFree(buf);
+    PyMem_RawFree(rwork);
     return 0;
 }
 

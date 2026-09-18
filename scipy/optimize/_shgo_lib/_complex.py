@@ -1078,7 +1078,7 @@ class Complex:
         initial triangulation and sub-triangulation.
 
         If near is specified (for example; a star domain or collections of
-        cells known to contain v) then only those simplices containd in near
+        cells known to contain v) then only those simplices contained in near
         will be searched, this greatly speeds up the process.
 
         If near is not specified this method will search the entire simplicial

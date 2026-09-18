@@ -17,7 +17,7 @@ except ImportError:
 
 if __spec__.parent is None or __spec__.parent == '':
     # Running as python script, use absolute import
-    import _registry  # type: ignore
+    import _registry  # pyrefly: ignore[missing-import]
 else:
     # Running as python module, use relative import
     from . import _registry

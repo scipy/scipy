@@ -31,7 +31,6 @@ ndimage_to_numpy_mode = {
     'grid-constant': 'constant',
 }
 
-# mypy: disable-error-code=attr-defined
 
 class TestBoundaries:
 
@@ -1500,7 +1499,7 @@ class TestRotate:
     def test_rotate10(self, xp):
         data = xp.reshape(xp.arange(45, dtype=xp.float64), (3, 5, 3))
 
-	# The output of ndimage.rotate before refactoring
+        # The output of ndimage.rotate before refactoring
         expected = xp.asarray([[[0.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0],
                                 [6.54914793, 7.54914793, 8.54914793],

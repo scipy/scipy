@@ -222,16 +222,14 @@ spanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #else
-#if SCIPY_FIX
-		   if (nsupr < segsze) {
+		    if (nsupr < segsze) {
 			/* Fail early rather than passing in invalid parameters to TRSV. */
 			ABORT("failed to factorize matrix");
-		   }
-#endif
-		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+		    }
+		    strsv_( "L", "N", "U", &segsze, &lusup[luptr],
 			   &nsupr, TriTmp, &incx );
 #endif
-#else		
+#else
 		    slsolve ( nsupr, segsze, &lusup[luptr], TriTmp );
 #endif
 		    
@@ -407,13 +405,11 @@ spanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #else
-#if SCIPY_FIX
-		   if (nsupr < segsze) {
+		    if (nsupr < segsze) {
 			/* Fail early rather than passing in invalid parameters to TRSV. */
 			ABORT("failed to factorize matrix");
-		   }
-#endif
-		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+		    }
+		    strsv_( "L", "N", "U", &segsze, &lusup[luptr],
 			   &nsupr, tempv, &incx );
 #endif
 		    

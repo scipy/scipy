@@ -8,6 +8,7 @@ import threading
 from scipy._lib import _ccallback_c as _test_ccallback_cython
 from scipy._lib import _test_ccallback
 from scipy._lib._ccallback import LowLevelCallable
+from scipy._lib._testutils import IS_WASM
 
 
 ERROR_VALUE = 2.0
@@ -164,6 +165,7 @@ def test_signature_override():
     assert_equal(caller(llcallable, 3), 4)
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_threadsafety():
     def callback(a, caller):
         if a <= 0:

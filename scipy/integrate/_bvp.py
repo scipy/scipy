@@ -878,7 +878,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
            Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
            Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
-           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1, 
+           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1,
            Number 2, pp. 201-217, 2006.
     .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
            Boundary Value Problems for Ordinary Differential Equations",

@@ -5,6 +5,7 @@ python_sources = [
   'test__util.py',
   'test_bunch.py',
   'test_ccallback.py',
+  'test_check_nondefault_device.py',
   'test_config.py',
   'test_deprecation.py',
   'test_doccer.py',
@@ -13,7 +14,7 @@ python_sources = [
   'test_scipy_version.py',
   'test_warnings.py',
   'test_array_api.py',
-  'test_xp_capabilities.py'
+  'test_xp_capabilities.py',
 ]
 
 py3.install_sources(

@@ -452,7 +452,7 @@ public:
    double variance(void);                                  // approximate variance (poor approximation)
    int32_t mode(void);                                     // calculate mode
    double moments(double * mean, double * var);            // calculate exact mean and variance
-   int BernouilliH(int32_t x, double h, double rh, StochasticLib1 *sto); // used by rejection method
+   int BernoulliH(int32_t x, double h, double rh, StochasticLib1 *sto); // used by rejection method
 
    // implementations of different calculation methods
 protected:

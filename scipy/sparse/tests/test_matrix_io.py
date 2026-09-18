@@ -6,9 +6,11 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
-from scipy.sparse import (sparray, csr_array, coo_array, save_npz, load_npz,
+from scipy.sparse import (sparray, save_npz, load_npz,
                           csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix)
+                          coo_matrix, dok_matrix, lil_matrix,
+                          csc_array, csr_array, bsr_array, dia_array,
+                          coo_array, dok_array, lil_array)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -25,7 +27,11 @@ def _save_and_load(matrix):
     return loaded_matrix
 
 def _check_save_and_load(dense_matrix):
-    for matrix_class in [csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix]:
+    sparse_classes = [
+        csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix,
+        csc_array, csr_array, bsr_array, dia_array, coo_array,
+        ]
+    for matrix_class in sparse_classes:
         matrix = matrix_class(dense_matrix)
         loaded_matrix = _save_and_load(matrix)
         assert_(type(loaded_matrix) is matrix_class)
@@ -33,6 +39,7 @@ def _check_save_and_load(dense_matrix):
         assert_(loaded_matrix.dtype == dense_matrix.dtype)
         assert_equal(loaded_matrix.toarray(), dense_matrix)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_random():
     N = 10
     np.random.seed(0)
@@ -40,15 +47,18 @@ def test_save_and_load_random():
     dense_matrix[dense_matrix > 0.7] = 0
     _check_save_and_load(dense_matrix)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_empty():
     dense_matrix = np.zeros((4,6))
     _check_save_and_load(dense_matrix)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_save_and_load_one_entry():
     dense_matrix = np.zeros((4,6))
     dense_matrix[1,2] = 1
     _check_save_and_load(dense_matrix)
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 def test_sparray_vs_spmatrix():
     #save/load matrix
     fd, tmpfile = tempfile.mkstemp(suffix='.npz')
@@ -106,11 +116,16 @@ def test_malicious_load():
     finally:
         os.remove(tmpfile)
 
-def test_implemented_error():
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
+@pytest.mark.parametrize(
+    "container", [dok_matrix, dok_array, lil_matrix, lil_array]
+)
+def test_implemented_error(container):
     # Attempts to save an unsupported type and checks that an
     # NotImplementedError is raised.
 
-    x = dok_matrix((2,3))
+    x = container((2,3))
     x[0,1] = 1
 
-    assert_raises(NotImplementedError, save_npz, 'x.npz', x)
+    with pytest.raises(NotImplementedError, match="convert.*before saving"):
+        save_npz("x.npz", x)

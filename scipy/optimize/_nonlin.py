@@ -13,7 +13,7 @@ from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
-from scipy._lib._util import copy_if_needed, _dedent_for_py313
+from scipy._lib._util import _dedent_for_py313
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 from inspect import signature
@@ -210,7 +210,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Solver tolerance selection
     gamma = 0.9
     eta_max = 0.9999
-    eta_treshold = 0.1
+    eta_threshold = 0.1
     eta = 1e-3
 
     for n in range(maxiter):
@@ -244,7 +244,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Adjust forcing parameters for inexact methods
         eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        if gamma * eta**2 < eta_threshold:
             eta = min(eta_max, eta_A)
         else:
             eta = min(eta_max, max(eta_A, gamma*eta**2))
@@ -746,7 +746,7 @@ class LowRankMatrix:
 
     def collapse(self):
         """Collapse the low-rank matrix to a full-rank one."""
-        self.collapsed = np.array(self, copy=copy_if_needed)
+        self.collapsed = np.array(self, copy=None)
         self.cs = None
         self.ds = None
         self.alpha = None

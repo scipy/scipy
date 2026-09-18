@@ -1,3 +1,7 @@
+/*
+ * Templated loops for `linalg.cholesky`
+ */
+#pragma once
 
 namespace sp_linalg {
 

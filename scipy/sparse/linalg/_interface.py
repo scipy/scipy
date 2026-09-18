@@ -151,6 +151,7 @@ class LinearOperator:
     __call__
     __add__
     __truediv__
+    __pow__
     __rmul__
     __rmatmul__
 
@@ -169,11 +170,24 @@ class LinearOperator:
     It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
     the same dtype of the output given an ``int8`` input as `matvec`.
 
-    `LinearOperator` instances can also be multiplied, added with each
-    other, and raised to integral powers, all lazily: the result of these
-    operations
-    is always a new, composite `LinearOperator`, that defers linear
-    operations to the original operators and combines the results.
+    `LinearOperator` instances can also be multiplied and added with each
+    other. Square instances can be raised to non-negative integer powers with
+    ``A ** p``, representing ``p`` repeated applications of ``A`` (rather than
+    a matrix exponential). All of these operations are lazy: the result is a
+    new, composite `LinearOperator` that defers operations to the original
+    operators and combines the results.
+
+    .. versionchanged:: 1.18.0
+        It is assumed that subclasses of `LinearOperator`
+        call ``super().__init__`` in their ``__init__`` method, as this handles
+        setting of some private attributes correctly.
+        (For some discussion of this pattern, see
+        https://rhettinger.wordpress.com/2011/05/26/super-considered-super/.)
+
+        ``super().__init__`` should be provided with a ``shape`` argument,
+        a ``dtype`` argument (optionally ``None`` for automatic selection),
+        and, optionally, an ``xp`` argument for the array namespace
+        (defaults to ``numpy``).
 
     More details regarding how to subclass a `LinearOperator` and several
     examples of concrete `LinearOperator` instances can be found in the
@@ -193,6 +207,8 @@ class LinearOperator:
     array([ 2.,  3.])
     >>> A @ np.ones(2)
     array([ 2.,  3.])
+    >>> A**2 @ np.ones(2)
+    array([ 4.,  9.])
 
     """  # numpydoc ignore=PR01,PR02
 
@@ -232,7 +248,8 @@ class LinearOperator:
         """
         xp = np_compat if xp is None else xp
         if dtype is not None:
-            dtype = xp.empty(0, dtype=dtype).dtype
+            # throwaway 0-size array to canonicalize `dtype`; no array in scope
+            dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
         shape = tuple(shape)
         if len(shape) < 2:
@@ -267,7 +284,8 @@ class LinearOperator:
         """
         if self.dtype is None:
             xp = self._xp
-            v = xp.zeros(self.shape[-1], dtype=xp.int8)
+            # dtype probe; user callables define the operator, no device to match
+            v = xp.zeros(self.shape[-1], dtype=xp.int8)  # skip device check
             try:
                 matvec_v = xp.asarray(self.matvec(v))
             except (OverflowError, TypeError, RuntimeError):
@@ -332,7 +350,7 @@ class LinearOperator:
             msg = (
                 f"Calling {func_name} on 'column vectors' of shape "
                 f"`({inner_dim}, 1)` was deprecated in SciPy 1.18.0 and will no "
-                f"longer be possible in SciPy 1.20.0. "
+                f"longer be possible in SciPy 2.1.0. "
                 f"Please call {matmat_func_name} instead for identical behaviour."
             )
             warnings.warn(
@@ -352,7 +370,7 @@ class LinearOperator:
 
         y = self._rmatvec(x) if adjoint else self._matvec(x)
 
-        broadcasted_dims = xpx.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
         if row_vector:
             y = xp.reshape(y, (*broadcasted_dims, outer_dim))
         elif column_vector:
@@ -558,7 +576,9 @@ class LinearOperator:
     def _check_matching_namespace(self, x):
         xp_x = getattr(x, "_xp", None)
         if xp_x is None:
-            xp_x = array_namespace(x, self._xp.empty(0), sparse_ok=True)
+            # `empty(0)` is a throwaway used only to resolve the namespace
+            xp_x = array_namespace(x, self._xp.empty(0),  # skip device check
+                                   sparse_ok=True)
         if xp_x != self._xp:
             msg = (
                 f"Mismatched array namespaces."
@@ -676,7 +696,7 @@ class LinearOperator:
     def rdot(self, x):
         """Multi-purpose multiplication method from the right.
 
-        .. note ::
+        .. note::
 
             This method returns ``x A``.
             To perform adjoint multiplication instead, use one of
@@ -760,6 +780,11 @@ class LinearOperator:
                 return mT(self.T.matmat(mT(x)))
 
     def __pow__(self, p):
+        """Raise this linear operator to a non-negative integer power.
+
+        The operator must be square. The returned `LinearOperator` lazily
+        represents ``p`` repeated applications of this operator.
+        """
         self._check_matching_namespace(p)
         if xp_isscalar(p):
             return _PowerLinearOperator(self, p, xp=self._xp)
@@ -979,7 +1004,7 @@ class _SumLinearOperator(LinearOperator):
         *B_broadcast_dims, B_M, B_N = B.shape
         if (A_M, A_N) != (B_M, B_N):
             raise ValueError(f"cannot add {A} and {B}: shape mismatch")
-        broadcasted_dims = xpx.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
+        broadcasted_dims = xp.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
         self.args = (A, B)
         super().__init__(_get_dtype([A, B], xp=xp), (*broadcasted_dims, A_M, A_N), xp)
 

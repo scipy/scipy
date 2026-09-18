@@ -12,7 +12,7 @@ from libc.math cimport isnan, isinf, NAN
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
 
-cdef extern from "xsf_wrappers.h" nogil:
+cdef extern from "cython_special_wrappers.h" nogil:
     double cephes_bdtrc_wrap(double k, int n, double p)
     double cephes_bdtr_wrap(double k, int n, double p)
     double cephes_bdtri_wrap(double k, int n, double y)
@@ -27,9 +27,7 @@ cdef extern from "xsf_wrappers.h" nogil:
     double cephes_smirnovi_wrap(int n, double x)
     double cephes_smirnovci_wrap(int n, double x)
     double cephes_smirnovp_wrap(int n, double x)
-
-cdef extern from "xsf_wrappers.h":
-    double special_cyl_bessel_k_int(int n, double z) nogil
+    double special_cyl_bessel_k_int(int n, double z)
 
 cdef extern from "Python.h":
     # Purposefully ignore the raised PyError --- assume the ufunc will collect it

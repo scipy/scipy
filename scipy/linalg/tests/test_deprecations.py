@@ -159,7 +159,7 @@ def _patch_args(func_name, args):
         a = args[0]
         piv = np.arange(a.shape[0])
         args = ((a, piv), args[1])
-    elif func_name in ('eigh_tridiagonal', 'eigvalsh_tridiagonal'):       
+    elif func_name in ('eigh_tridiagonal', 'eigvalsh_tridiagonal'):
         d, e = args
         args = (d, e[:, :-1])
     elif func_name == 'cossin':

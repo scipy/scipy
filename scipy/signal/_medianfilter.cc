@@ -79,7 +79,7 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns, int* errnum)    \
     TYPE *myvals, *fptr1, *fptr2, *ptr1, *ptr2;                         \
                                                                         \
     totN = Nwin[0] * Nwin[1];                                           \
-    myvals = (TYPE *) malloc( totN * sizeof(TYPE));                     \
+    myvals = (TYPE *) PyMem_RawMalloc( totN * sizeof(TYPE));                     \
     if (myvals == NULL) {                                               \
 	*errnum = -1;                                                   \
 	return;                                                         \
@@ -120,7 +120,7 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns, int* errnum)    \
                                                                         \
     Py_END_ALLOW_THREADS                                                \
                                                                         \
-    free(myvals);                                                       \
+    PyMem_RawFree(myvals);                                                       \
     *errnum = 0;                                                        \
 }
 

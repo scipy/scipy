@@ -3,7 +3,6 @@ option('blas', type: 'string', value: 'openblas',
 option('lapack', type: 'string', value: 'openblas',
         description: 'option for LAPACK library switching')
 
-# NB ILP64 build is experimental.
 # See https://scipy.github.io/devdocs/building/blas_lapack.html for details
 option('use-ilp64', type: 'boolean', value: false,
        description: 'Use ILP64 (64-bit integer) BLAS and LAPACK interfaces')
@@ -25,10 +24,12 @@ option('use-pythran', type: 'boolean', value: true,
         description: 'If set to false, disables using Pythran (it falls back ' +
                      'to either pure Python code or Cython code, depending on ' +
                      'the implementation).')
+option('config-output', type: 'combo', choices: ['auto', 'full', 'portable'],
+       value: 'auto',
+       description: 'Detail level for the installed scipy.__config__; use ' +
+                    'portable for redistributable binary artifacts. ' +
+                    'auto selects portable when SOURCE_DATE_EPOCH is set')
 option('use-system-libraries', type: 'array',
         choices : ['none', 'all', 'auto', 'boost.math', 'qhull'], value : ['none'],
         description: 'Choose which system libraries for subprojects ' +
                      'if they are available.')
-option('_without-fortran', type: 'boolean', value: false,
-       description: 'If set to true, build without a Fortran compiler ' +
-                    '(the deprecated `scipy.odr` will be missing)')

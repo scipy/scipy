@@ -181,7 +181,7 @@ def compose_transforms(tf_matrix: Array, other_tf_matrix: Array) -> Array:
 
 def inv(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    r_inv = xp.matrix_transpose(matrix[..., :3, :3])
+    r_inv = matrix[..., :3, :3].mT
     # Matrix multiplication of r_inv and translation vector
     t_inv = -(r_inv @ matrix[..., :3, 3][..., None])[..., 0]
     matrix = xp.zeros(
@@ -312,7 +312,7 @@ def mean(
 
 def setitem(
     matrix: Array,
-    indexer: Array | int | tuple | slice | EllipsisType | None,
+    indexer: Array | int | tuple | slice | EllipsisType,
     value: Array,
 ) -> Array:
     xp = array_namespace(matrix)

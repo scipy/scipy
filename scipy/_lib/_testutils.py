@@ -5,6 +5,7 @@ Generic test utilities.
 
 import inspect
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -13,27 +14,38 @@ import sysconfig
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from importlib.util import module_from_spec, spec_from_file_location
+from typing import TYPE_CHECKING
 
 import numpy as np
 import scipy
 
-try:
-    # Need type: ignore[import-untyped] for mypy >= 1.6
-    import cython  # type: ignore[import-untyped]
-    from Cython.Compiler.Version import (  # type: ignore[import-untyped]
+if TYPE_CHECKING:
+    import cython
+    from Cython.Compiler.Version import (
         version as cython_version,
     )
-except ImportError:
-    cython = None
 else:
-    from scipy._external.packaging_version import version
-    required_version = '3.2.0'
-    if version.parse(cython_version) < version.Version(required_version):
-        # too old or wrong cython, skip Cython API tests
+    try:
+        import cython
+        from Cython.Compiler.Version import (
+            version as cython_version,
+        )
+    except ImportError:
         cython = None
+    else:
+        from scipy._external.packaging_version import version
+        required_version = '3.2.0'
+        if version.parse(cython_version) < version.Version(required_version):
+            # too old or wrong cython, skip Cython API tests
+            cython = None
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL',
+           'IS_WASM']
+
+
+IS_WASM = (sys.platform == "emscripten"
+           or platform.machine() in ("wasm32", "wasm64"))
 
 
 IS_MUSL = False

@@ -854,7 +854,7 @@ lsi(CBLAS_INT ma, CBLAS_INT mg, CBLAS_INT n, double* restrict a, double* restric
  * buffer is at least (m+2)*(n+1) + 2*m
  * indices is int(n)
  * x is (n)
- * xnorm is the norm of the solution if succeded
+ * xnorm is the norm of the solution if succeeded
  * mode is the return code integer
  *
  * Mode return values

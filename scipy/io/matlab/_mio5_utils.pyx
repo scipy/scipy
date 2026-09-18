@@ -16,6 +16,7 @@ from copy import copy as pycopy
 
 cimport cython
 
+from libc.stdint cimport SIZE_MAX
 from libc.stdlib cimport calloc, free
 from libc.string cimport strcmp
 
@@ -608,7 +609,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
+    cdef inline size_t size_from_header(self, VarHeader5 header) except *:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in
@@ -624,11 +625,24 @@ cdef class VarReader5:
         size : size_t
            size of array referenced by header (product of dims)
         '''
-        # calculate number of items in array from dims product
-        cdef size_t size = 1
-        cdef int i
+        # calculate number of items in array from dims product, with
+        # overflow / negative-dim guards against malformed input.
+        cdef:
+            size_t size = 1
+            size_t dim
+            cnp.int32_t d
+            int i
         for i in range(header.n_dims):
-            size *= header.dims_ptr[i]
+            d = header.dims_ptr[i]
+            if d < 0:
+                raise ValueError(
+                    'Negative dimension in array header '
+                    '(malformed input file?)')
+            dim = <size_t>d
+            if dim != 0 and size > SIZE_MAX // dim:
+                raise ValueError(
+                    'Array size overflow in header (malformed input file?)')
+            size *= dim
         return size
 
     cdef read_mi_matrix(self, int process=1):

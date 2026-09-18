@@ -4,6 +4,7 @@ from numpy.random import default_rng
 from numpy.testing import assert_allclose
 
 from scipy import linalg
+from scipy.__config__ import CONFIG
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.linalg import cossin, get_lapack_funcs
@@ -11,6 +12,17 @@ from scipy.linalg import cossin, get_lapack_funcs
 REAL_DTYPES = (np.float32, np.float64)
 COMPLEX_DTYPES = (np.complex64, np.complex128)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+def _is_atlas():
+    # ATLAS ships an old reference LAPACK. Detect it so we can skip tests that
+    # rely on LAPACK routines with known bugs in that version.
+    deps = CONFIG['Build Dependencies']
+    names = (deps['blas']['name'], deps['lapack']['name'])
+    return any('atlas' in (name or '').lower() for name in names)
+
+
+IS_ATLAS = _is_atlas()
 
 
 @pytest.mark.parametrize('dtype_', DTYPES)
@@ -28,6 +40,12 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
                              (100, 50, 50),
                          ])
 @pytest.mark.parametrize('swap_sign', [True, False])
+@pytest.mark.skipif(
+    IS_ATLAS,
+    reason="ATLAS ships old reference LAPACK; the complex CS decomposition "
+           "driver (?uncsd, via internal ?bbcsd) has a flaky sign-consistency "
+           "bug there. ATLAS is unmaintained, so this is skipped, not xfailed.",
+)
 def test_cossin(dtype_, m, p, q, swap_sign):
     rng = default_rng(1708093570726217)
     if dtype_ in COMPLEX_DTYPES:
@@ -117,13 +135,13 @@ def test_cossin_error_invalid_shape():
     p, q = 3, 4
     invalid_x12 = np.ones((p, q + 2))
     valid_ones = np.ones((p, q))
-    with pytest.raises(ValueError, 
+    with pytest.raises(ValueError,
             match=r"Invalid x12 dimensions: desired \(3, 4\), got \(3, 6\)"):
         cossin((valid_ones, invalid_x12, valid_ones, valid_ones))
 
     # Invalid x21 dimensions
     invalid_x21 = np.ones(p + 2)
-    with pytest.raises(ValueError, 
+    with pytest.raises(ValueError,
             match=r"Invalid x21 dimensions: desired \(3, 4\), got \(1, 5\)"):
         cossin((valid_ones, valid_ones, invalid_x21, valid_ones))
 

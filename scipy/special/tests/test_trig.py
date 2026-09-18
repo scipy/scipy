@@ -33,7 +33,7 @@ def test_half_integer_real_part():
 
 
 @pytest.mark.skip("Temporary skip while gh-19526 is being resolved")
-def test_intermediate_overlow():
+def test_intermediate_overflow():
     # Make sure we avoid overflow in situations where cosh/sinh would
     # overflow but the product with sin/cos would not
     sinpi_pts = [complex(1 + 1e-14, 227),

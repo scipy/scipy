@@ -4,7 +4,7 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import skip_xp_invalid_arg
 import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_jax, is_cupy,
+from scipy._lib._array_api import (make_xp_test_case, is_jax, is_cupy,
                                    eager_warns, xp_result_type, is_array_api_strict)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats
@@ -33,7 +33,7 @@ class TestChatterjeeXi:
         #       0.7620801065573549, 0.31410063302647495, 0.7935620302236199,
         #       0.5423085761365468)
         # xicor(x, y, ties=FALSE, pvalue=TRUE)
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(25982435982346983)
         x = rng.random(size=10)
         y = (rng.random(size=10) if case['y_cont']
@@ -115,7 +115,7 @@ class TestSpearmanRho:
         #       0.7620801065573549, 0.31410063302647495, 0.7935620302236199,
         #       0.5423085761365468)
         # cor.test(x, y, method='spearman', alternative='t', exact=FALSE)
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(25982435982346983)
         x = rng.random(size=10)
         y = rng.random(size=10)
@@ -159,7 +159,7 @@ class TestSpearmanRho:
         rng = np.random.default_rng(5982435982346983)
         x = rng.integers(n//2, size=n)
         y = rng.integers(n//2, size=n)
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
 
         ref = stats.spearmanr(x, y, alternative=alternative)
         ref_statistic = xp.asarray(ref.statistic, dtype=dtype)

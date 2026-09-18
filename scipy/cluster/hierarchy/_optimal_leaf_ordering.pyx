@@ -41,7 +41,7 @@ cdef inline void dual_swap(float* darr, int* iarr,
     """
     [Taken from Scikit-learn.]
 
-    swap the values at inex i1 and i2 of both darr and iarr"""
+    swap the values at index i1 and i2 of both darr and iarr"""
     cdef float dtmp = darr[i1]
     darr[i1] = darr[i2]
     darr[i2] = dtmp

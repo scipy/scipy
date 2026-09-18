@@ -265,7 +265,7 @@ def test_genlaguerre_nan(n, alpha, x):
     assert nan_laguerre == nan_arg
 
 
-@pytest.mark.parametrize('n', [0, 1, 2, 3.2])
+@pytest.mark.parametrize('n', [0, 1, 2, 3.2, np.nan])
 @pytest.mark.parametrize('alpha', [0.0, 1, np.nan])
 @pytest.mark.parametrize('x', [1e-6, 2, np.nan])
 def test_gegenbauer_nan(n, alpha, x):

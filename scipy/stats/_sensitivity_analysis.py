@@ -332,9 +332,7 @@ def sobol_indices(
 
         And method:
 
-        bootstrap(confidence_level: float, n_resamples: int)
-        -> BootstrapSobolResult
-
+        bootstrap(confidence_level: float, n_resamples: int) -> BootstrapSobolResult
             A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 
@@ -607,7 +605,7 @@ def sobol_indices(
             "saltelli_2010": saltelli_2010,
         }
         try:
-            method = method.lower()  # type: ignore[assignment]
+            method = method.lower()
             indices_method_ = indices_methods[method]
         except KeyError as exc:
             message = (

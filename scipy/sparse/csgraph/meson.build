@@ -39,7 +39,6 @@ foreach pyx_file: pyx_files_for_cpp
   py3.extension_module(pyx_file[0],
     cython_gen_csgraph_for_cpp.process(pyx_file[1]),
     cpp_args: cython_cpp_args,
-    include_directories: inc_np,
     dependencies: np_dep,
     link_args: version_link_args,
     install: true,

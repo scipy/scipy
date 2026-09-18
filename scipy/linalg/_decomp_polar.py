@@ -6,7 +6,12 @@ from scipy.linalg import svd
 __all__ = ['polar']
 
 
-@_apply_over_batch(('a', 2))
+def _polar_signature(a, side='right'):
+    return ("(i,j)->(i,j),(i,i)" if side == 'left'
+            else "(i,j)->(i,j),(j,j)")
+
+
+@_apply_over_batch(('a', 2), signature=_polar_signature)
 def polar(a, side="right"):
     """
     Compute the polar decomposition.

@@ -14,10 +14,6 @@ python_sources = [
   '_helper.py',
   '_pseudo_diffs.py',
   '_realtransforms.py',
-  'basic.py',
-  'helper.py',
-  'pseudo_diffs.py',
-  'realtransforms.py'
 ]
 
 

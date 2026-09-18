@@ -1,4 +1,4 @@
-__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
+__all__ = ['interp1d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 import functools
 import os
 from math import prod
@@ -9,11 +9,11 @@ import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
 
 import scipy.special as spec
-from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy
+    array_namespace, xp_capabilities, scipy_namespace_for, is_numpy,
+    xp_result_device
 )
 
 from . import _fitpack_py
@@ -35,7 +35,7 @@ def lagrange(x, w):
     be able to use more than about 20 points even if they are chosen optimally.
 
     .. deprecated:: 1.18.0
-        This function is deprecated and will be removed in SciPy 1.20.0. Use
+        This function is deprecated and will be removed in SciPy 2.1.0. Use
         `scipy.interpolate.BarycentricInterpolator` instead.
 
     Parameters
@@ -102,7 +102,7 @@ def lagrange(x, w):
 
     """
     _warn_skips = (os.path.dirname(__file__),)
-    msg = ("`lagrange` is deprecated and will be removed in SciPy 1.20.0. Use "
+    msg = ("`lagrange` is deprecated and will be removed in SciPy 2.1.0. Use "
            "`scipy.interpolate.BarycentricInterpolator` instead.")
     warnings.warn(msg, DeprecationWarning, skip_file_prefixes=_warn_skips)
     M = len(x)
@@ -120,47 +120,6 @@ def lagrange(x, w):
 
 # !! Need to find argument for keeping initialize. If it isn't
 # !! found, get rid of it!
-
-
-err_mesg = """\
-`interp2d` has been removed in SciPy 1.14.0.
-
-For legacy code, nearly bug-for-bug compatible replacements are
-`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-scattered 2D data.
-
-In new code, for regular grids use `RegularGridInterpolator` instead.
-For scattered data, prefer `LinearNDInterpolator` or
-`CloughTocher2DInterpolator`.
-
-For more details see
-https://scipy.github.io/devdocs/tutorial/interpolate/interp_transition_guide.html
-"""
-
-class interp2d:
-    """
-    interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
-             fill_value=None)
-
-    Class for 2D interpolation (deprecated and removed).
-
-    .. versionremoved:: 1.14.0
-
-        `interp2d` has been removed in SciPy 1.14.0.
-
-        For legacy code, nearly bug-for-bug compatible replacements are
-        `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-        scattered 2D data.
-
-        In new code, for regular grids use `RegularGridInterpolator` instead.
-        For scattered data, prefer `LinearNDInterpolator` or
-        `CloughTocher2DInterpolator`.
-
-        For more details see :ref:`interp-transition-guide`.
-    """
-    def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
-                 fill_value=None):
-        raise NotImplementedError(err_mesg)
 
 
 def _check_broadcast_up_to(arr_from, shape_to, name):
@@ -265,7 +224,6 @@ class interp1d(_Interpolator1D):
     splrep, splev
         Spline interpolation/smoothing based on FITPACK.
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
-    interp2d : 2-D interpolation
 
     Notes
     -----
@@ -303,11 +261,9 @@ class interp1d(_Interpolator1D):
 
         self.bounds_error = bounds_error  # used by fill_value setter
 
-        # `copy` keyword semantics changed in NumPy 2.0, once that is
-        # the minimum version this can use `copy=None`.
         self.copy = copy
         if not copy:
-            self.copy = copy_if_needed
+            self.copy = None
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,
@@ -495,7 +451,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x, x_new)
 
         # 3. Clip x_new_indices so that they are within the range of
-        #    self.x indices and at least 1. Removes mis-interpolation
+        #    self.x indices and at least 1. Removes misinterpolation
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
@@ -514,7 +470,7 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
-        
+
         return y_new
 
     def _call_nearest(self, x_new):
@@ -938,10 +894,7 @@ class _PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
-            # in NumPy 1.6.0
-            for ii, root in enumerate(r):
-                r2[ii] = root
+            r2[...] = r
 
             return r2.reshape(self.c.shape[2:])
 
@@ -1393,21 +1346,42 @@ class PPoly:
     larger than 20-30.
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = xp_result_device(c, x)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_ppoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_ppoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
+        self.__dict__.setdefault("_device", None)
 
     @classmethod
-    def _construct_from_xp(cls, xp_ppoly, *, xp_external):
+    def _construct_from_xp(cls, xp_ppoly, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_ppoly
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_ppoly.c)
+        self._device = device
         return self
 
     @classmethod
@@ -1422,17 +1396,19 @@ class PPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = xp_result_device(c, x)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
                 c, x, extrapolate=extrapolate, axis=axis
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -1442,7 +1418,7 @@ class PPoly:
 
     @property
     def x(self):
-        return self._xp.asarray(self._delegate_to.x)
+        return self._xp.asarray(self._delegate_to.x, device=self._device)
 
     @x.setter
     def x(self, x):
@@ -1520,10 +1496,14 @@ class PPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -1553,6 +1533,7 @@ class PPoly:
         return self._construct_from_xp(
             self._delegate_to.derivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def antiderivative(self, nu=1):
@@ -1588,6 +1569,7 @@ class PPoly:
         return self._construct_from_xp(
             self._delegate_to.antiderivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def integrate(self, a, b, extrapolate=None):
@@ -1612,7 +1594,8 @@ class PPoly:
             Definite integral of the piecewise polynomial over [a, b]
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     def solve(self, y=0, discontinuity=True, extrapolate=None):
@@ -1667,7 +1650,8 @@ class PPoly:
         return self._xp.asarray(
             self._delegate_to.solve(
                 y=y, discontinuity=discontinuity, extrapolate=extrapolate
-            )
+            ),
+            device=self._device,
         )
 
     def roots(self, discontinuity=True, extrapolate=None):
@@ -1775,9 +1759,10 @@ class PPoly:
             t, c, k = tck
             xp = array_namespace(t, c)
         xp_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = xp_result_device(t, c)
         t, c = xp_internal.asarray(t), xp_internal.asarray(c)
         pp = xp_cls.from_spline((t, c, k), extrapolate=extrapolate)
-        return cls._construct_from_xp(pp, xp_external=xp)
+        return cls._construct_from_xp(pp, xp_external=xp, device=device)
 
     @classmethod
     def from_bernstein_basis(cls, bp, extrapolate=None):
@@ -1800,7 +1785,7 @@ class PPoly:
         xp = bp._xp
         xp_cls, _ = _get_xp_ppoly_cls(xp)
         pp = xp_cls.from_bernstein_basis(bp._delegate_to, extrapolate=extrapolate)
-        return cls._construct_from_xp(pp, xp_external=xp)
+        return cls._construct_from_xp(pp, xp_external=xp, device=bp._device)
 
 
 _bpoly_extra_note = (
@@ -1910,23 +1895,44 @@ class BPoly:
                \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
-    """  # noqa: E501
+    """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         xp = array_namespace(c, x)
         xp_bpoly_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = xp_result_device(c, x)
         if not is_numpy(xp):
             c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         self._delegate_to = xp_bpoly_cls(c, x, extrapolate=extrapolate, axis=axis)
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_bpoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
+        self.__dict__.setdefault("_device", None)
 
     @classmethod
-    def _construct_from_xp(cls, xp_bpoly, *, xp_external):
+    def _construct_from_xp(cls, xp_bpoly, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_bpoly
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_bpoly.c)
+        self._device = device
         return self
 
     @classmethod
@@ -1941,17 +1947,19 @@ class BPoly:
         """
         xp = array_namespace(c, x)
         xp_ppoly_cls, xp_internal = _get_xp_ppoly_cls(xp)
+        device = xp_result_device(c, x)
         c, x = xp_internal.asarray(c), xp_internal.asarray(x)
         return cls._construct_from_xp(
             xp_ppoly_cls.construct_fast(
                 c, x, extrapolate=extrapolate, axis=axis
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -1961,7 +1969,7 @@ class BPoly:
 
     @property
     def x(self):
-        return self._xp.asarray(self._delegate_to.x)
+        return self._xp.asarray(self._delegate_to.x, device=self._device)
 
     @x.setter
     def x(self, x):
@@ -2039,10 +2047,14 @@ class BPoly:
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
         """
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -2065,6 +2077,7 @@ class BPoly:
         return self._construct_from_xp(
             self._delegate_to.derivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def antiderivative(self, nu=1):
@@ -2093,6 +2106,7 @@ class BPoly:
         return self._construct_from_xp(
             self._delegate_to.antiderivative(nu=nu),
             xp_external=self._xp,
+            device=self._device,
         )
 
     def integrate(self, a, b, extrapolate=None):
@@ -2117,7 +2131,8 @@ class BPoly:
 
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     @classmethod
@@ -2141,7 +2156,7 @@ class BPoly:
         xp = pp._xp
         xp_cls, _ = _get_xp_bpoly_cls(xp)
         bp = xp_cls.from_power_basis(pp._delegate_to, extrapolate=extrapolate)
-        return cls._construct_from_xp(bp, xp_external=xp)
+        return cls._construct_from_xp(bp, xp_external=xp, device=pp._device)
 
     @classmethod
     def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
@@ -2207,7 +2222,7 @@ class BPoly:
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # yi is documented as accepting arrays or lists of
             # arrays.  The following line with star unpacking will not
             # work for array ``yi`` for some backends because some are
@@ -2216,8 +2231,10 @@ class BPoly:
         else:
             xp = array_namespace(xi, yi)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        yi_seq = yi if isinstance(yi, (list, tuple)) else (yi,)
+        device = xp_result_device(xi, *yi_seq)
         xi = xp_internal.asarray(xi)
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # If yi is a ragged list or tuple of arrays, then need to apply
             # xp_internal.asarray separately over each element.
             yi = list(map(xp_internal.asarray, yi))
@@ -2227,7 +2244,7 @@ class BPoly:
         bp = xp_cls.from_derivatives(
             xi, yi, orders=orders, extrapolate=extrapolate
         )
-        return cls._construct_from_xp(bp, xp_external=xp)
+        return cls._construct_from_xp(bp, xp_external=xp, device=device)
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
@@ -2286,8 +2303,10 @@ class BPoly:
         """
         xp = array_namespace(ya, yb)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
+        device = xp_result_device(ya, yb)
         ya, yb = xp_internal.asarray(ya), xp_internal.asarray(yb)
-        return xp.asarray(xp_cls._construct_from_derivatives(xa, xb, ya, yb))
+        return xp.asarray(
+            xp_cls._construct_from_derivatives(xa, xb, ya, yb), device=device)
 
     @staticmethod
     def _raise_degree(c, d):
@@ -2319,7 +2338,9 @@ class BPoly:
         """
         xp = array_namespace(c)
         xp_cls, xp_internal = _get_xp_bpoly_cls(xp)
-        return xp.asarray(xp_cls._raise_degree(xp_internal.asarray(c), d))
+        device = xp_result_device(c)
+        return xp.asarray(
+            xp_cls._raise_degree(xp_internal.asarray(c), d), device=device)
 
 class NdPPoly:
     """
@@ -2383,6 +2404,9 @@ class NdPPoly:
     unstable.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None):
         self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)

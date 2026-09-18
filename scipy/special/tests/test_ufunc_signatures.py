@@ -110,7 +110,7 @@ def test_nep50(ufunc):
         result = ufunc(*args)
         result = [result] if len(output_types) == 1 else result
         result = np.asarray(result)
-        
+
         # Test that the output is an appropriately typed nan. This also implicitly
         # tests that ufuncs propagate nans correctly.
         assert_equal(

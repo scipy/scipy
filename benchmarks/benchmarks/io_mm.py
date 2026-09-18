@@ -119,7 +119,7 @@ class MemUsage(Benchmark):
         import numpy as np
         import scipy.sparse
         from {implementation} import mmwrite
-        
+
         def generate_coo(size):
             nnz = int(size / (4 + 4 + 8))
             rows = np.arange(nnz, dtype=np.int32)
@@ -135,7 +135,7 @@ class MemUsage(Benchmark):
             indices = np.arange(nnz, dtype=np.int32)
             data = np.random.default_rng().uniform(low=0, high=1.0, size=nnz)
             return scipy.sparse.csr_array((data, indices, indptr), shape=(nrows, nnz))
-        
+
         def generate_dense(size):
             nnz = size // 8
             return np.random.default_rng().uniform(low=0, high=1.0, size=(1, nnz))

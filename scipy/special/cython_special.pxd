@@ -3,11 +3,6 @@ ctypedef fused number_t:
     double complex
     double
 
-cpdef number_t spherical_jn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
-cpdef number_t spherical_yn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
-cpdef number_t spherical_in(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
-cpdef number_t spherical_kn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
-
 ctypedef fused Dd_number_t:
     double complex
     double
@@ -26,7 +21,6 @@ ctypedef fused dlp_number_t:
     long
     Py_ssize_t
 
-cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil
 cpdef double agm(double x0, double x1) noexcept nogil
 cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) noexcept nogil
 cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) noexcept nogil
@@ -43,8 +37,8 @@ cpdef double besselpoly(double x0, double x1, double x2) noexcept nogil
 cpdef double beta(double x0, double x1) noexcept nogil
 cpdef df_number_t betainc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
-cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double betaln(double x0, double x1) noexcept nogil
 cpdef double binom(double x0, double x1) noexcept nogil
 cpdef double boxcox(double x0, double x1) noexcept nogil
@@ -64,12 +58,13 @@ cpdef double cosdg(double x0) noexcept nogil
 cpdef double cosm1(double x0) noexcept nogil
 cpdef double cotdg(double x0) noexcept nogil
 cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil
 cpdef double ellipe(double x0) noexcept nogil
 cpdef double ellipeinc(double x0, double x1) noexcept nogil
 cdef void ellipj(double x0, double x1, double *y0, double *y1, double *y2, double *y3) noexcept nogil
+cpdef double ellipk(double x0) noexcept nogil
 cpdef double ellipkinc(double x0, double x1) noexcept nogil
 cpdef double ellipkm1(double x0) noexcept nogil
-cpdef double ellipk(double x0) noexcept nogil
 cpdef Dd_number_t elliprc(Dd_number_t x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t elliprd(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil
 cpdef Dd_number_t elliprf(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil
@@ -78,10 +73,10 @@ cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_num
 cpdef double entr(double x0) noexcept nogil
 cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil
 cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil
+cpdef double erfcinv(double x0) noexcept nogil
 cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil
 cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil
 cpdef df_number_t erfinv(df_number_t x0) noexcept nogil
-cpdef double erfcinv(double x0) noexcept nogil
 cpdef Dd_number_t eval_chebyc(dlp_number_t x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t eval_chebys(dlp_number_t x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t eval_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil
@@ -168,7 +163,10 @@ cpdef Dd_number_t kv(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t kve(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t log1p(Dd_number_t x0) noexcept nogil
 cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil
+cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil
+cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil
+cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil
 cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil
 cpdef double lpmv(double x0, double x1, double x2) noexcept nogil
@@ -199,6 +197,7 @@ cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil
 cpdef double ndtri(double x0) noexcept nogil
+cpdef double ndtri_exp(double x0) noexcept nogil
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil
 cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil
@@ -237,13 +236,19 @@ cpdef double sindg(double x0) noexcept nogil
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil
+cpdef number_t spherical_in(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_jn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_kn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_yn(Py_ssize_t n, number_t z, bint derivative=*) noexcept nogil
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double stdtridf(double x0, double x1) noexcept nogil
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double struve(double x0, double x1) noexcept nogil
 cpdef double tandg(double x0) noexcept nogil
 cpdef double tklmbda(double x0, double x1) noexcept nogil
+cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil
 cpdef double complex wofz(double complex x0) noexcept nogil
+cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) noexcept nogil
@@ -253,6 +258,3 @@ cpdef double yn(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t yv(double x0, Dd_number_t x1) noexcept nogil
 cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil
 cpdef double zetac(double x0) noexcept nogil
-cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil
-cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil
-cpdef double ndtri_exp(double x0) noexcept nogil

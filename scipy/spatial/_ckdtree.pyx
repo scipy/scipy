@@ -9,7 +9,6 @@
 
 import numpy as np
 import scipy.sparse
-from scipy._lib._util import copy_if_needed
 
 cimport numpy as np
 
@@ -573,7 +572,7 @@ cdef class cKDTree:
         self._python_tree = None
 
         if not copy_data:
-            copy_data = copy_if_needed
+            copy_data = None
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         # read-only view so ban people modifying tree.data after the tree is
@@ -1524,8 +1523,8 @@ cdef class cKDTree:
 
                All new code using scipy sparse should use sparse array
                types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
+               `output_type` will be deprecated at v2.0 and switch from
+               'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
                to work, but will go away eventually.
 

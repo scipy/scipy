@@ -7,16 +7,17 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded)
+                          solve, solve_banded, solveh_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, diags_array
 from scipy.special import poch
 from itertools import combinations
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy
+    array_namespace, concat_1d, xp_capabilities, scipy_namespace_for, is_numpy,
+    is_cupy, xp_device, xp_result_device
 )
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
@@ -69,6 +70,241 @@ def _diff_dual_poly(j, k, y, d, t):
         res += np.prod([(y - t[j + p]) for p in range(1, k + 1)
                         if (j + p) not in comb[i//d]])
     return res
+
+def _get_fitpack_packed_column(A_packed, offset, k, j, m):
+    """Extract conceptual dense column j from packed storage."""
+    p = j - offset
+    in_band = (p >= 0) & (p < k + 1)
+
+    col = np.zeros(m)
+    rows = np.where(in_band)[0]
+    col[rows] = A_packed[rows, p[rows]]
+    return col
+
+def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
+    """
+    Drop boundary rows and the first/last dense columns from a FITPACK
+    packed matrix, returning a smaller packed matrix ready for `qr_reduce`.
+
+    This is the preprocessing step for the clamped LSQ problem. After the
+    boundary coefficients are pinned (c[0] = ci, c[-1] = cf), the LSQ
+    system reduces to solving for the (nc - 2) free coefficients with the
+    first and last dense rows/columns removed.
+
+    The transformation in the packed format:
+
+    1. Boundary rows (row 0 and row m-1): contributed only to the pinned
+       coefficients, so we drop them outright.
+    2. Dense column 0: per the packing formula
+       `A_dense[i, j] = A_packed[i, j - offset[i]]`,
+       cell (i, 0) of the dense matrix sits at packed position 0 of any
+       row where `offset[i] == 0`. For those rows we shift the packed
+       entries left by one; the trailing slot becomes 0.
+    3. Dense column nc-1: similarly, cell (i, nc-1) sits at packed position
+       k of any row where `offset[i] + k == nc - 1`. For those rows we
+       copy only the first k packed entries; the trailing slot becomes 0.
+    4. Offsets: after dropping dense column 0, the column numbering shifts
+       left by one, so all offsets decrement by 1. The exception is rows
+       whose leftmost cell was the dropped one - their new leftmost cell
+       is at new column 0, so their offset stays 0.
+    """
+    # Drop boundary rows
+    if cf is None:
+        A_kept = A_packed[1:]
+        offset_kept = offset[1:]
+        y_w = y_w[1:]
+    elif ci is None:
+        A_kept = A_packed[:-1]
+        offset_kept = offset[:-1]
+        y_w = y_w[:-1]
+    else:
+        A_kept = A_packed[1: -1]
+        offset_kept = offset[1: -1]
+        y_w = y_w[1: -1]
+
+    # Identifying rows touching dropped columns
+    A_col0_mask = offset_kept == 0
+    A_col_last_mask = offset_kept + k == nc -1
+
+    A_reduced = np.zeros_like(A_kept) # (m - 2, k + 1) or (m - 1, k + 1)
+
+    # Copy-as is (full `k + 1` width)
+    if cf is None:
+        elements_undroped = ~A_col0_mask
+    elif ci is None:
+        elements_undroped = ~A_col_last_mask
+    else:
+        elements_undroped = ~A_col0_mask & ~A_col_last_mask
+
+    A_reduced[elements_undroped] = A_kept[elements_undroped]
+
+    elements_col0_only = A_col0_mask & ~A_col_last_mask
+    elements_last_only = ~A_col0_mask & A_col_last_mask
+
+    # Touching Col0: Shift elements by left and copy
+    if cf is None:
+        A_reduced[elements_col0_only, :k] = A_kept[elements_col0_only, 1: k + 1]
+
+    # Touching Col last: Copy directly
+    elif ci is None:
+        A_reduced[elements_last_only, :k] = A_kept[elements_last_only, :k]
+
+    else:
+        A_reduced[elements_col0_only, :k] = A_kept[elements_col0_only, 1: k + 1]
+        A_reduced[elements_last_only, :k] = A_kept[elements_last_only, :k]
+
+    if ci is not None:
+        offset_reduced = offset_kept - 1
+        offset_reduced[A_col0_mask] = 0
+    else:
+        offset_reduced = offset_kept.copy()
+
+    if cf is None or ci is None:
+        nc_free = nc - 1
+    else:
+        nc_free = nc - 2
+
+    return A_reduced, offset_reduced, nc_free, y_w
+
+def _validate_clamp_values(clamp_values, k, t, y, x, xp, check_finite=True):
+    """Checks if clamp_values has valid values or not."""
+
+    if not isinstance(clamp_values, list | tuple):
+        raise ValueError(
+            f"clamp_values should be a tuple or list, got type {type(clamp_values)}."
+        )
+    if len(clamp_values) != 2:
+        raise ValueError(
+            f"Expect clamp_values to be of length 2, got {len(clamp_values)}."
+        )
+
+    ci_raw, cf_raw = clamp_values
+
+    if ci_raw is None and cf_raw is None:
+        raise ValueError("At least one clamp value must not be None")
+
+    # array_namespace validates that clamp_values is compatible with xp's
+    # namespace. Plain Python scalars and None are accepted regardless of
+    # xp (per array_namespace's own handling), but non-scalar array-likes
+    # (e.g. nested tuples for multidim y) must match xp's namespace -- this
+    # follows the same "lists don't implicitly become xp-arrays" convention
+    # used elsewhere in scipy, rather than special-casing clamp_values.
+    # Raises TypeError on mismatch, consistent with array_namespace's
+    # behavior throughout the rest of the library.
+    # `empty(0)` is a throwaway used only to resolve the namespace
+    array_namespace(*clamp_values, xp.empty(0))  # skip device check
+
+    def _prepare(val, side):
+        try:
+            arr = _as_float_array(val, check_finite)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"clamp_values[{side}] should be a real, finite number, got {val!r}."
+            )
+
+        if np.iscomplexobj(arr):
+            raise ValueError(
+                f"clamp_values[{side}] should be a real number, "
+                f"got complex value {val!r}."
+            )
+
+        arr = np.atleast_1d(arr)
+        expected = y.shape[1:] if y.ndim > 1 else (1,)
+        if arr.shape != expected:
+            raise ValueError(
+            f"clamp_values[{side}] has wrong dimension: shape {arr.shape} !="
+            f" {expected}."
+            )
+        arr = arr.reshape(-1)
+        return arr
+
+    ci = _prepare(ci_raw, 0) if ci_raw is not None else None
+    cf = _prepare(cf_raw, 1) if cf_raw is not None else None
+
+    if ci is not None:
+        if np.any(t[:k+1] != t[0]):
+            raise ValueError(f"Left clamp requires t[:{k+1}] to all equal t[0]")
+        if t[0] != x[0]:
+            raise ValueError(
+                f"Left clamp requires t[0] == x[0], got t[0]={t[0]}, x[0]={x[0]}"
+            )
+
+    if cf is not None:
+        if np.any(t[-(k+1):] != t[-1]):
+            raise ValueError(f"Right clamp requires t[-{k+1}:] to all equal t[-1]")
+        if t[-1] != x[-1]:
+            raise ValueError(
+                f"Right clamp requires t[-1] == x[-1], got t[-1]={t[-1]}, x[-1]={x[-1]}"
+            )
+
+    return ci, cf
+
+def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
+    """
+    Apply the clamp preprocessing to the banded matrix and RHS for the
+    norm-eq path.
+
+    Clamped LSQ: pin spl(x[0]) = ci and spl(x[-1]) = cf.
+
+    For a clamped knot vector, only B[0] is nonzero at x[0] and only
+    B[nc-1] is nonzero at x[-1] (both with value 1). So spl(x[0]) = c[0]
+    and spl(x[-1]) = c[nc-1], clamping the endpoint values reduces to
+    pinning the first and last coefficients.
+
+    The reduced LSQ solves for the (nc-2) free coefficients:
+      minimize || (y - ci*A[:, 0] - cf*A[:, -1]) - A_reduced @ c_free ||^2
+    where A_reduced is A with the first and last columns dropped.
+
+    In the LAPACK lower-banded storage of A.T @ A, dropping the first
+    and last columns of the symmetric A.T @ A is equivalent to slicing
+    ab[:, 1:-1].
+
+    References:
+    - https://stackoverflow.com/questions/78482220
+    - https://pages.mtu.edu/%7Eshene/COURSES/cs3621/NOTES/INT-APP/CURVE-APP-global.html
+    """
+    if cf is None:
+        ab_reduced = ab[:, 1:]  # Drop first column
+        rhs = rhs[1:]           # Drop first row
+        ab_col0 = np.zeros((n - 1, extradim))
+        ab_col_last = np.zeros((n - 1, extradim))
+    elif ci is None:
+        ab_reduced = ab[:, :-1]  # Drop last column
+        rhs = rhs[:-1]           # Drop last row
+        ab_col0 = np.zeros((n - 1, extradim))
+        ab_col_last = np.zeros((n - 1, extradim))
+    else:
+        ab_reduced = ab[:, 1:-1]
+        rhs = rhs[1:-1]
+        ab_col0 = np.zeros((n - 2, extradim))
+        ab_col_last = np.zeros((n - 2, extradim))
+
+    # Subtract the contribution of clamped coefficients from the RHS:
+    # rhs_adjusted = A_reduced.T @ y - ci * A_reduced.T @ A[:, 0]
+    #                                 - cf * A_reduced.T @ A[:, -1]
+    # Column 0 of A.T @ A in banded storage: straight read down ab[:, 0]
+    # If one sided clamp only, that corresponding coefficient is zero
+    # hence, no contribution to rhs reduced.
+    if cf is None:
+        ab_col0[:k] = ab[1:k + 1, 0:1]
+        ab_col0 = ab_col0 * ci
+        rhs -= ab_col0
+    elif ci is None:
+        banded_idx_last_col = np.arange(1, k + 1)
+        ab_col_last[-k:] = ab[banded_idx_last_col,
+                              (n - 1) - banded_idx_last_col][::-1, None]
+        ab_col_last = ab_col_last * cf
+        rhs -= ab_col_last
+    else:
+        ab_col0[:k] = ab[1:k + 1, 0:1]
+        ab_col0 = ab_col0 * ci
+        banded_idx_last_col = np.arange(1, k + 1)
+        ab_col_last[-k:] = ab[banded_idx_last_col,
+                              (n - 1) - banded_idx_last_col][::-1, None]
+        ab_col_last = ab_col_last * cf
+        rhs = rhs - ab_col0 - ab_col_last
+
+    return ab_reduced, rhs
 
 
 class _BSpline:
@@ -614,6 +850,9 @@ class BSpline:
 
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = xp_result_device(t, c)
         if not is_numpy(xp):
             # only convert t and c to internal namespace if it is not NumPy
             # to preserve NumPy behavior with lists.
@@ -632,13 +871,15 @@ class BSpline:
         # keeping modules in attributes like this.
         self._xp = xp
         self._xp_internal = xp_internal
+        self._device = device
 
     @classmethod
-    def _construct_from_xp(cls, xp_bspline, *, xp_external):
+    def _construct_from_xp(cls, xp_bspline, *, xp_external, device=None):
         self = object.__new__(cls)
         self._delegate_to = xp_bspline
         self._xp = xp_external
         self._xp_internal = array_namespace(xp_bspline.t)
+        self._device = device
         return self
 
     @classmethod
@@ -650,6 +891,7 @@ class BSpline:
         """
         xp = array_namespace(t, c)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        device = xp_result_device(t, c)
         return cls._construct_from_xp(
             xp_bspline_cls.construct_fast(
                 xp_internal.asarray(t),
@@ -658,6 +900,7 @@ class BSpline:
                 extrapolate=extrapolate, axis=axis,
             ),
             xp_external=xp,
+            device=device,
         )
 
     @property
@@ -668,7 +911,7 @@ class BSpline:
 
     @property
     def t(self):
-        return self._xp.asarray(self._delegate_to.t)
+        return self._xp.asarray(self._delegate_to.t, device=self._device)
 
     @t.setter
     def t(self, t):
@@ -680,7 +923,7 @@ class BSpline:
 
     @property
     def c(self):
-        return self._xp.asarray(self._delegate_to.c)
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
 
     @c.setter
     def c(self, c):
@@ -772,11 +1015,13 @@ class BSpline:
         """
         xp = array_namespace(t)
         xp_bspline_cls, xp_internal = _get_xp_bspline_cls(xp)
+        device = xp_result_device(t)
         return cls._construct_from_xp(
             xp_bspline_cls.basis_element(
                 xp_internal.asarray(t), extrapolate=extrapolate,
             ),
             xp_external=xp,
+            device=device,
         )
 
     @classmethod
@@ -883,10 +1128,14 @@ class BSpline:
             in the coefficient array with the shape of `x`.
 
         """
+        device = xp_result_device(x)
+        if device is None:
+            device = self._device
         return self._xp.asarray(
             self._delegate_to(
                 self._xp_internal.asarray(x), nu=nu, extrapolate=extrapolate
-            )
+            ),
+            device=device,
         )
 
     def derivative(self, nu=1):
@@ -914,6 +1163,7 @@ class BSpline:
             return self._construct_from_xp(
                 self._delegate_to.derivative(nu=nu),
                 xp_external=self._xp,
+                device=self._device,
             )
 
         ## Array-agnostic codepath
@@ -924,7 +1174,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splder((t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate, axis=self.axis)
 
@@ -959,6 +1209,7 @@ class BSpline:
             return self._construct_from_xp(
                 self._delegate_to.antiderivative(nu=nu),
                 xp_external=self._xp,
+                device=self._device,
             )
 
         ## Array-agnostic codepath
@@ -969,7 +1220,7 @@ class BSpline:
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:], device=xp_device(c)))
         tck = _fitpack_impl.splantider((t, c, self.k), nu)
 
         if self.extrapolate == 'periodic':
@@ -1028,7 +1279,8 @@ class BSpline:
 
         """
         return self._xp.asarray(
-            self._delegate_to.integrate(a, b, extrapolate=extrapolate)
+            self._delegate_to.integrate(a, b, extrapolate=extrapolate),
+            device=self._device,
         )
 
     @classmethod
@@ -1110,10 +1362,11 @@ class BSpline:
         """
         xp = array_namespace(pp.x, pp.c)
         xp_bspline_cls, _ = _get_xp_bspline_cls(xp)
+        device = xp_result_device(pp.x, pp.c)
         # from_power_basis isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         spl = xp_bspline_cls.from_power_basis(pp, bc_type=bc_type)
-        return cls._construct_from_xp(spl, xp_external=xp)
+        return cls._construct_from_xp(spl, xp_external=xp, device=device)
 
     def insert_knot(self, x, m=1):
         """Insert a new knot at `x` of multiplicity `m`.
@@ -1187,16 +1440,22 @@ class BSpline:
         # insert_knot isn't available in CuPy as of version 14 causing this to
         # raise with an AttributeError when xp_internal is CuPy.
         return self._construct_from_xp(
-            self._delegate_to.insert_knot(x, m=m), xp_external=self._xp
+            self._delegate_to.insert_knot(x, m=m), xp_external=self._xp,
+            device=self._device,
         )
 
     def __getstate__(self):
         # need custom __getstate__ and __setstate__ methods to allow pickling
         # while holding onto namespaces.
-        return (self._delegate_to, self._xp.empty(0))
+        # `empty(0)` is a pickling sentinel, never combined with input data
+        return (
+            self._delegate_to,
+            self._xp.empty(0),  # skip device check
+            self._device,
+        )
 
     def __setstate__(self, state):
-        self._delegate_to, sentinel_array = state
+        self._delegate_to, sentinel_array, self._device = state
         self._xp_internal = array_namespace(self._delegate_to.t)
         self._xp = array_namespace(sentinel_array)
 
@@ -1538,7 +1797,7 @@ def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
             ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
 
 
-def _make_periodic_spline(x, y, t, k, axis, *, xp):
+def _make_periodic_spline(x, y, t, k, axis, *, xp, device=None):
     '''
     Compute the (coefficients of) interpolating B-spline with periodic
     boundary conditions.
@@ -1589,7 +1848,7 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
         for i in range(extradim):
             c[:, i] = _make_interp_per_full_matr(x, y_new[:, i], t, k)
         c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
-        t, c = xp.asarray(t), xp.asarray(c)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
     nt = len(t) - k - 1
@@ -1629,11 +1888,16 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
         cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
         c[:, i] = np.concatenate((cc[-kul:], cc, cc[:kul + k % 2]))
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(
+    cpu_only=True,
+    jax_jit=False,
+    allow_dask_compute=True,
+    exceptions=["cupy"]
+)
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Create an interpolating B-spline with specified degree and boundary conditions.
@@ -1666,8 +1930,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
-        * ``"not-a-knot"`` (default): The first and second segments are the
-          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"not-a-knot"`` (default for ``k > 1``): The first and second segments
+          are the same polynomial. This is equivalent to having ``bc_type=None``
+          for ``k > 1``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent.
 
@@ -1765,6 +2030,19 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> plt.show()
 
     """
+    xp = array_namespace(x, y, t)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, t)
+    if is_cupy(xp):
+        # delegate to CuPy, *and* return a SciPy BSpline object
+        import cupyx.scipy.interpolate as csi
+        b = csi.make_interp_spline(x, y, k, t, bc_type, axis, check_finite)
+        # This is a workaround that should be cleaned up once cupy returns a spline
+        # with extrapolate="periodic". See the following cupy issue:
+        # https://github.com/cupy/cupy/issues/10304
+        b.extrapolate = "periodic" if bc_type == "periodic" else b.extrapolate
+        return BSpline.construct_fast(b.t, b.c, b.k, b.extrapolate, b.axis)
+
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot' or bc_type == 'periodic':
         deriv_l, deriv_r = None, None
@@ -1776,7 +2054,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError as e:
             raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
-    xp = array_namespace(x, y, t)
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
 
@@ -1798,22 +2075,25 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
             raise ValueError("Too much info for k=0: t and bc_type can only "
-                             "be None.")
+                             "be None or 'periodic'.")
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
-        t, c = xp.asarray(t), xp.asarray(c)
-        return BSpline.construct_fast(t, c, k, axis=axis)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
+        extrapolate = "periodic" if bc_type == "periodic" else True
+        return BSpline.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
     if k == 1 and t is None:
         if not (deriv_l is None and deriv_r is None):
-            raise ValueError("Too much info for k=1: bc_type can only be None.")
+            raise ValueError("Too much info for k=1: bc_type can only be None "
+                             "or 'periodic'.")
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
-        t, c = xp.asarray(t), xp.asarray(c)
-        return BSpline.construct_fast(t, c, k, axis=axis)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
+        extrapolate = "periodic" if bc_type=="periodic" else True
+        return BSpline.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis)
 
     k = operator.index(k)
 
@@ -1844,7 +2124,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
-        return _make_periodic_spline(x, y, t, k, axis, xp=xp)
+        return _make_periodic_spline(x, y, t, k, axis, xp=xp, device=device)
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
@@ -1872,6 +2152,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # bail out if the `y` array is zero-sized
     if y.size == 0:
         c = np.zeros((nt,) + y.shape[1:], dtype=float)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     # set up the LHS: the colocation matrix + derivatives at boundaries
@@ -1907,12 +2188,13 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     elif info < 0:
         raise ValueError(f'illegal value in {-info}-th argument of internal gbsv')
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr",
+clamp_values=None):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
     The result is a linear combination
@@ -1954,6 +2236,15 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         (Explicitly construct and solve the normal system of equations), and
         "qr" (Use the QR factorization of the design matrix).
         Default is "qr".
+    clamp_values : tuple, optional
+        A 2-tuple ``(ci, cf)`` where each element is either a real number,
+        a numeric array or ``None``. Pins the spline's value at ``x[0]``
+        to ``ci`` and at ``x[-1]`` to ``cf``. ``None`` leaves that endpoint
+        unclamped. For example, ``(5, None)`` clamps ``x[0]`` to ``5`` and
+        leaves ``x[-1]`` free. Requires the knot vector to have multiplicity
+        ``k + 1`` located exactly at the clamped endpoint(s) and be equal to
+        ``x[0]`` and ``x[-1]``.
+        Default is None.
 
     Returns
     -------
@@ -1974,6 +2265,14 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     Knots ``t`` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
+    When ``clamp_values`` is supplied, the knot vector must additionally
+    have multiplicity ``k + 1`` at the endpoint(s) being clamped, i.e.
+    ``t[0] == t[1] == ... == t[k]`` for the left endpoint and/or
+    ``t[-1] == t[-2] == ... == t[-(k+1)]`` for the right endpoint. This
+    holds for the standard clamped knot vector construction as well as
+    other constructions with the same boundary multiplicity, such as
+    not-a-knot boundary conditions.
 
     Examples
     --------
@@ -2025,6 +2324,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
 
     """
     xp = array_namespace(x, y, t, w)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, t, w)
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
@@ -2060,19 +2361,15 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
+    if clamp_values is not None:
+        ci, cf = _validate_clamp_values(
+            clamp_values, k, t, y, x, xp, check_finite=check_finite,
+        )
+    else:
+        ci, cf = None, None
 
     # number of coefficients
     n = t.size - k - 1
-
-    # complex y: view as float, preserve the length
-    was_complex =  y.dtype.kind == 'c'
-    yy = y.view(float)
-    if was_complex and y.ndim == 1:
-        yy = yy.reshape(y.shape[0], 2)
-
-    # multiple r.h.s
-    extradim = prod(yy.shape[1:])
-    yy = yy.reshape(-1, extradim)
 
     # complex y: view as float, preserve the length
     was_complex =  y.dtype.kind == 'c'
@@ -2099,7 +2396,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         if was_complex:
             rhs = rhs.view(complex)
 
-        rhs = rhs.reshape((n,) + y.shape[1:])
+        if clamp_values is not None:
+            ab, rhs = _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf)
 
         # have observation matrix & rhs, can solve the LSQ problem
         cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
@@ -2107,8 +2405,15 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         m = rhs.shape[0]
         c = cho_solve_banded((cho_decomp, lower), rhs.reshape(m, -1), overwrite_b=True,
                              check_finite=check_finite).reshape(rhs.shape)
+
+        if clamp_values is not None:
+            nc_full = n   # full coefficient count
+            c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
+
     elif method == "qr":
-        _, _, c, _, _ = _lsq_solve_qr(x, yy, t, k, w)
+        _, _, c, _, _ = _lsq_solve_qr(
+            x, yy, t, k, w, ci=ci, cf=cf,
+        )
 
         if was_complex:
             c = c.view(complex)
@@ -2120,13 +2425,74 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
 ######################
 # LSQ spline helpers #
 ######################
+
+def _lsq_clamp_preprocess(A, offset, nc, k, y_w, ci, cf, x, y, w):
+    """
+    Apply the clamp preprocessing to packed matrix + RHS for the QR path.
+
+    Adjusts y_w for the pinned coefficients, reduces (A, offset, nc) by
+    dropping boundary rows and dense columns 0 and nc-1, and returns
+    everything ready to feed into qr_reduce + fpback.
+    """
+
+    y_w_new = y_w.copy()
+    if ci is not None:  # left is clamped, need ci contribution
+        A_col0 = _get_fitpack_packed_column(A, offset, k, 0, y_w.shape[0])
+        y_w_new = y_w_new - A_col0[:, None] * ci[None, :]
+    if cf is not None:  # right is clamped, need cf contribution
+        A_col_last = _get_fitpack_packed_column(A, offset, k, nc - 1, y_w.shape[0])
+        y_w_new = y_w_new - A_col_last[:, None] * cf[None, :]
+
+    y_w = y_w_new
+
+    A, offset, nc, y_w = _reduce_packed_for_clamp(
+        A, offset, nc, k, y_w, ci, cf
+    )
+
+    if cf is None:
+        x_reduced = x[1:]
+        y_reduced = y[1:]
+        w_reduced = w[1:]
+    elif ci is None:
+        x_reduced = x[:-1]
+        y_reduced = y[:-1]
+        w_reduced = w[:-1]
+    else:
+        x_reduced = x[1: -1]
+        y_reduced = y[1: -1]
+        w_reduced = w[1: -1]
+
+    return A, offset, nc, y_w, x_reduced, y_reduced, w_reduced
+
+
+def _lsq_clamp_postprocess(c_free, ci, cf, nc_full):
+    """Reassemble the full coefficient vector after solving the reduced system.
+    """
+    extradim = c_free.shape[1] if c_free.ndim > 1 else 1
+    c_full = np.zeros((nc_full, extradim))
+
+    if cf is None:
+        # Only ci pinned at position 0, free coefficients fill the rest
+        c_full[0, :] = ci
+        c_full[1:, :] = c_free.reshape(nc_full - 1, extradim)
+    elif ci is None:
+        # Only cf pinned at position -1, free coefficients fill the rest
+        c_full[-1, :] = cf
+        c_full[:-1, :] = c_free.reshape(nc_full - 1, extradim)
+    else:
+        # Both ends pinned
+        c_full[0, :] = ci
+        c_full[-1, :] = cf
+        c_full[1:-1, :] = c_free.reshape(nc_full - 2, extradim)
+
+    return c_full
 
 def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     """Solve for the LSQ spline coeffs given x, y and knots.
@@ -2148,7 +2514,7 @@ def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     return R, A1, A2, Z, y_w, c, p, residuals
 
 
-def _lsq_solve_qr(x, y, t, k, w, periodic=False):
+def _lsq_solve_qr(x, y, t, k, w, periodic=False, ci=None, cf=None):
     """Solve for the LSQ spline coeffs given x, y and knots.
 
     `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
@@ -2158,9 +2524,16 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
     y_w = y * w[:, None]
     if not periodic:
         A, offset, nc = _dierckx.data_matrix(x, t, k, w)
-        _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
-        c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)
-        return A, y_w, c, fp, residuals
+
+        if ci is not None or cf is not None:
+            return _lsq_solve_qr_clamp_values(
+                x, y, t, k, w, ci=ci, cf=cf,            )
+
+        else:
+            _dierckx.qr_reduce(A, offset, nc, y_w)
+            c, residuals, fp = _dierckx.fpback(A, nc, x, y, t, k, w, y_w)
+            return A, y_w, c, fp, residuals
+
     else:
         # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
         R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
@@ -2169,15 +2542,102 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
             R, H1, H2, offset, nc, y_w, k,
             len(t), False)         # modifies arguments in-place
         # Ref: https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpbacp.f
-        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
+        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x[:-1], y[:-1, :], t, w[:-1])
         return R, y_w, c, fp, residuals
 
+def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
+    """Solve for the LSQ spline coeffs given x, y, knots and clamp_values.
 
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+    `w` is always 1D: one weight value per `x` value.
+    `clamp_values` is always 2D: matches the shape of `y`.
+    """
+    y_w = y * w[:, None]
+    A, offset, nc = _dierckx.data_matrix(x, t, k, w)
+
+    A, offset, nc, y_w, x, y, w = _lsq_clamp_preprocess(
+        A, offset, nc, k, y_w, ci, cf, x, y, w
+    )
+
+    _dierckx.qr_reduce(A, offset, nc, y_w)
+    c, residuals, fp = _dierckx.fpback_clamped(
+        A, nc, x, y, t, k, w, y_w, False,
+        ci, cf
+    )
+    return A, y_w, c, fp, residuals
 
 
 #############################
 #  Smoothing spline helpers #
 #############################
+
+def _compute_b_inv(A):
+    """
+    Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
+    ``U`` is a unit upper triangular banded matrix using an algorithm
+    proposed in [1].
+
+    Parameters
+    ----------
+    A : array, shape (4, n)
+        Matrix to inverse, stored in LAPACK banded storage.
+
+    Returns
+    -------
+    B : array, shape (4, n)
+        3 unique bands of the symmetric matrix that is an inverse to ``A``.
+        The first row is filled with zeros.
+
+    Notes
+    -----
+    The algorithm is based on the cholesky decomposition and, therefore,
+    in case matrix ``A`` is close to not positive defined, the function
+    raises LinalgError.
+
+    Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
+
+    References
+    ----------
+    .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+        spline functions," Numerische Mathematik, vol. 47, no. 1,
+        pp. 99-106, 1985.
+        :doi:`10.1007/BF01389878`
+
+    """
+
+    def find_b_inv_elem(i, j, U, D, B):
+        rng = min(3, n - i - 1)
+        rng_sum = 0.
+        if j == 0:
+            # use 2-nd formula from [1]
+            for k in range(1, rng + 1):
+                rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
+            rng_sum += D[i]
+            B[-1, i] = rng_sum
+        else:
+            # use 1-st formula from [1]
+            for k in range(1, rng + 1):
+                diag = abs(k - j)
+                ind = i + min(k, j)
+                rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
+            B[-j - 1, i + j] = rng_sum
+
+    U = cholesky_banded(A)
+    for i in range(2, 5):
+        U[-i, i-1:] /= U[-1, :-i+1]
+    D = 1. / (U[-1])**2
+    U[-1] /= U[-1]
+
+    n = U.shape[1]
+
+    B = np.zeros(shape=(4, n))
+    for i in range(n - 1, -1, -1):
+        for j in range(min(3, n - i - 1), -1, -1):
+            find_b_inv_elem(i, j, U, D, B)
+    # the first row contains garbage and should be removed
+    B[0] = [0.] * n
+    return B
+
 
 def _compute_optimal_gcv_parameter(X, wE, y, w):
     """
@@ -2255,73 +2715,6 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
                 res[-j-1, i + j] = sum(X[j:, i] * W_Y[:5-j, i + j])
         return res
 
-    def compute_b_inv(A):
-        """
-        Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
-        ``U`` is a unit upper triangular banded matrix using an algorithm
-        proposed in [1].
-
-        Parameters
-        ----------
-        A : array, shape (4, n)
-            Matrix to inverse, stored in LAPACK banded storage.
-
-        Returns
-        -------
-        B : array, shape (4, n)
-            3 unique bands of the symmetric matrix that is an inverse to ``A``.
-            The first row is filled with zeros.
-
-        Notes
-        -----
-        The algorithm is based on the cholesky decomposition and, therefore,
-        in case matrix ``A`` is close to not positive defined, the function
-        raises LinalgError.
-
-        Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
-
-        References
-        ----------
-        .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
-            spline functions," Numerische Mathematik, vol. 47, no. 1,
-            pp. 99-106, 1985.
-            :doi:`10.1007/BF01389878`
-
-        """
-
-        def find_b_inv_elem(i, j, U, D, B):
-            rng = min(3, n - i - 1)
-            rng_sum = 0.
-            if j == 0:
-                # use 2-nd formula from [1]
-                for k in range(1, rng + 1):
-                    rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
-                rng_sum += D[i]
-                B[-1, i] = rng_sum
-            else:
-                # use 1-st formula from [1]
-                for k in range(1, rng + 1):
-                    diag = abs(k - j)
-                    ind = i + min(k, j)
-                    rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
-                B[-j - 1, i + j] = rng_sum
-
-        U = cholesky_banded(A)
-        for i in range(2, 5):
-            U[-i, i-1:] /= U[-1, :-i+1]
-        D = 1. / (U[-1])**2
-        U[-1] /= U[-1]
-
-        n = U.shape[1]
-
-        B = np.zeros(shape=(4, n))
-        for i in range(n - 1, -1, -1):
-            for j in range(min(3, n - i - 1), -1, -1):
-                find_b_inv_elem(i, j, U, D, B)
-        # the first row contains garbage and should be removed
-        B[0] = [0.] * n
-        return B
-
     def _gcv(lam, X, XtWX, wE, XtE, y):
         r"""
         Computes the generalized cross-validation criteria [1].
@@ -2389,7 +2782,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         # compute the denominator
         lhs = XtWX + lam * XtE
         try:
-            b_banded = compute_b_inv(lhs)
+            b_banded = _compute_b_inv(lhs)
             # compute the trace of the product b_banded @ XtX
             tr = b_banded * XtWX
             tr[:-1] *= 2
@@ -2466,8 +2859,236 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+def _deboor_derivative_matrix(t, order):
+    r"""
+    Build the matrix that differentiates a spline via de Boor's formula.
+
+    A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
+    :math:`\gamma` has a derivative which is a spline of order
+    :math:`m - 1` on the *same* knot vector :math:`\tau`:
+
+    .. math::
+
+        f'(u) = \sum_{j} (m - 1)\,
+                \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
+                B_{j,\,m-1}(u)
+
+    Differentiation is therefore a linear map on coefficients. This
+    function returns its matrix :math:`D`, so that the derivative has
+    coefficients :math:`D \gamma`.
+
+    This is the matrix form of the coefficient computation inside
+    `BSpline.derivative` (and FITPACK's ``splder``), with one
+    bookkeeping difference: those return the derivative on the trimmed
+    knot vector ``t[1:-1]``, dropping one boundary knot per end, while
+    here the full knot vector is kept, so the degenerate boundary
+    entries appear as explicit zero rows. Keeping ``t`` fixed is what
+    lets the two derivative matrices compose with each other and with
+    the hat-function mass matrix on the same knots in
+    `_penalty_matrix_banded`.
+
+    Notes
+    -----
+    Row :math:`j` holds :math:`+d_j` in column :math:`j` and
+    :math:`-d_j` in column :math:`j - 1`, where
+    :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
+    multiplying the coefficient difference in the formula above.
+
+    For a clamped knot vector the denominator vanishes at
+    :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
+    coincide. Those coefficients are set to zero, making the first and
+    last rows identically zero; this is why formulations assuming
+    clamped knots omit those terms from the sum entirely.
+
+    References
+    ----------
+    .. [1] C. de Boor, "B(asic)-Spline Basics", 1986, eq. (10.3)
+           (Algorithm 10); the Remark following it treats the
+           vanishing-denominator case at repeated knots.
+           https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
+    .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
+           for Computer Aided Design and Manufacturing", eq. (1.65).
+           :doi:`10.1007/978-3-642-04074-0`
+           https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
+
+    """
+    N = len(t) - order
+    d = np.zeros(N + 1)
+    j = np.arange(N + 1)
+    mask = np.where(t[j + order - 1] - t[j] > 0)
+    d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
+
+    # row j: +d_j at column j, -d_j at column j-1
+    return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
+
+
+def _penalty_matrix_banded(t):
+    r"""Penalty matrix of a cubic smoothing spline on the knot vector ``t``.
+
+    Computes the matrix form of the second-derivative penalty
+    :math:`\int (f''(u))^2 du`, i.e.
+    :math:`\Omega_{ij} = \int B_i''(u) B_j''(u) du` for the cubic
+    B-spline basis on ``t``, exactly and without numerical integration:
+
+    1. ``C = D2 @ D1`` expresses the second derivative of each cubic
+       B-spline in the basis of linear B-splines ("hat functions") on the
+       same knots; ``D1`` and ``D2`` apply de Boor's derivative formula
+       (stated and explained in the docstring of
+       `_deboor_derivative_matrix`) once each.
+    2. ``R`` is the mass (Gram) matrix of the hat functions,
+       ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
+       closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
+       ``(t[p+2] - t[p+1]) / 6`` off it. Here the hat function ``N_p``
+       is the degree-one B-spline built on the three knots
+       ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
+       ``t[p+2]``.
+    3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
+       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       accepted by ``scipy.linalg.solveh_banded``.
+
+    ``Omega`` depends on ``t`` only (no data enters), is symmetric
+    positive semi-definite, and its null space is the straight lines,
+    which have zero curvature. This null space is why the assembled
+    system ``X.T @ W @ X + lam * Omega`` grows ill-conditioned as
+    ``lam`` grows (condition number proportional to ``lam``): in two
+    directions of coefficient space only the data term contributes,
+    while all others scale with ``lam``.
+
+    The full derivation with worked examples, the validation against
+    ``fda::bsplinepen`` and other independent constructions, and a
+    conditioning analysis are in the companion report (steps 1-3 above
+    are its eqs. (4)-(5), (8)-(9) and (11) respectively):
+    https://github.com/aadya940/scipy-bspline-testing
+    """
+    order = 4 # assuming a cubic spline
+    m = len(t) - order # number of coefficients
+
+    D1 = _deboor_derivative_matrix(t, order)      # cubic to quadratic coeffs
+    D2 = _deboor_derivative_matrix(t, order - 1)  # quadratic to linear coeffs
+    C = D2 @ D1                                   # cubic to linear (f'') coeffs
+    R_size = len(t) - 2 # len(t) - order (because linear)
+
+    d0 = (t[2:] - t[:-2]) / 3.0
+    d1 = (t[2:-1] - t[1:-2]) / 6.0
+    R = diags_array([d1, d0, d1], offsets=[-1, 0, 1], shape=(R_size, R_size))
+
+    omega = C.T @ R @ C
+    omega_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        omega_banded[i, : m - i] = omega.diagonal(-i)
+
+    return omega_banded
+
+
+def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
+    """`make_smoothing_spline` path for a user-provided knot vector ``t``.
+
+    Solves the penalized least-squares problem in the cubic B-spline basis
+    on ``t`` via the normal equations,
+
+        (X^T W X + lam * Omega) c = X^T W y,
+
+    with ``Omega`` from `_penalty_matrix_banded`. Both matrices are 7-banded
+    symmetric, so the system is solved with a banded Cholesky factorization.
+    Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
+    """
+    if lam is None:
+        raise NotImplementedError(
+            "automatic GCV selection of `lam` is not supported with user knots, "
+            "pass `lam` explicitly")
+    if np.ndim(lam) != 0:
+        raise NotImplementedError(
+            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+            f"got an array of shape {np.shape(lam)}."
+        )
+    if lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+    if np.ndim(y) > 1:
+        raise NotImplementedError(
+            "batched `y` is not supported with user-provided knots yet; "
+            "`y` must be 1-D")
+    t = np.ascontiguousarray(t, dtype=float)
+    if not np.all(np.isfinite(t)):
+        raise ValueError("`t` must not contain infs or nans")
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("`t` must be a 1-D non-decreasing array")
+    if len(t) < 8:
+        raise ValueError(
+            "`t` must contain at least 8 knots (a cubic spline needs at "
+            f"least one base interval); got {len(t) = }")
+    if not (t[0] == t[3] and t[-4] == t[-1]):
+        raise ValueError(
+            "`t` must be clamped: the first 4 and last 4 knots must each "
+            "be equal (boundary knots repeated to multiplicity 4). "
+            "Without clamping, the penalty integrates over regions the "
+            "data cannot constrain and straight lines are penalized.")
+    # Each repeat of an interior knot removes one continuity requirement.
+    # A double knot lets f'' step at the knot: both one-sided values are
+    # finite and the penalty charges them through the neighboring
+    # intervals, so Omega stays exact. A triple knot lets f' have a
+    # corner, whose true penalty (integral of a delta squared) is
+    # infinite, yet Omega returns a finite value because the hat function
+    # at the triple knot has zero width and drops that contribution: the
+    # corner would come for free at every lam. Full derivation in the
+    # companion report, Sec. 15 FAQ 2 (link in make_smoothing_spline).
+    vals, counts = np.unique(t, return_counts=True)
+    if counts[0] != 4 or counts[-1] != 4:
+        raise ValueError(
+            "boundary knots in `t` must have multiplicity exactly 4")
+    if np.any(counts[1:-1] > 2):
+        raise ValueError(
+            "interior knots in `t` must not have multiplicity greater "
+            "than 2: the penalty, the integral of (f'')^2, is only defined "
+            "for functions with a continuous first derivative, which "
+            "requires interior multiplicity at most 2")
+    if x[0] < t[3] or x[-1] > t[-4]:
+        raise ValueError(
+            "all `x` values must lie within the base interval "
+            f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
+
+    m = len(t) - 4
+    if lam == 0 and m > len(x):
+        raise ValueError(
+            "with `lam=0` the fit is an unpenalized least-squares problem, "
+            "which needs at least as many data points as basis functions; "
+            f"got {len(x)} points and {m} = len(t) - 4 basis functions. "
+            "Use fewer knots, or pass `lam` > 0.")
+
+    X = BSpline.design_matrix(x, t, 3)
+
+    omega = _penalty_matrix_banded(t)
+    XtWX = X.T @ X.multiply(w[:, None])
+    XtWy = X.T @ (w * y)
+    XtWX_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+    try:
+        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    except LinAlgError as e:
+        # why only the two extremes of lam can fail: companion report,
+        # Sec. 15 FAQ 1 (link in make_smoothing_spline)
+        raise ValueError(
+            "the system `X^T W X + lam * Omega` is not positive definite, so "
+            "the coefficients are not uniquely determined. This happens only "
+            "at the two extremes of `lam`. At `lam` zero or near zero: the "
+            "support of some basis function contains no data, i.e. some "
+            "interval (t[j], t[j+4]) has no `x` in it (use fewer knots, or a "
+            "larger `lam`, which lets the penalty determine the coefficients "
+            "the data cannot see). At very large `lam`: the system is "
+            "numerically singular, since its condition number grows "
+            "proportionally to `lam` (use a smaller `lam`; the fit there is "
+            "already indistinguishable from its straight-line limit).") from e
+    c = np.ascontiguousarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
+    return BSpline.construct_fast(t, c, 3, axis=axis)
+
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
+def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2504,6 +3125,16 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
+    t : array_like, shape (nt,), optional
+        Knot vector. Must be non-decreasing, with all ``x`` values inside
+        the base interval ``[t[3], t[-4]]``; boundary knots must be
+        repeated 4 times (clamped), and interior knots may repeat only to
+        multiplicity 2 (higher multiplicity would allow kinks or jumps,
+        for which the penalty :math:`\int (f'')^2` is not defined).
+        ``t`` can only be passed when ``lam``
+        is given explicitly. Default is None, in which case a clamped knot
+        vector at the data sites is used,
+        ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
         The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
@@ -2533,7 +3164,22 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     In cases when the initial problem is ill-posed (for example, the product
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
-    defined matrix) a ValueError is raised.
+    defined matrix) a ValueError is raised. This also happens when ``lam``
+    is very large: the condition number of the linear system solved
+    internally grows proportionally to ``lam``, so the achievable
+    accuracy degrades as ``eps * cond`` until, eventually, the system
+    becomes numerically singular.
+
+    If ``t`` is not specified, the function returns a natural cubic
+    smoothing spline with knots at the data sites (zero second
+    derivative at the two boundary knots). If ``t`` is specified, the
+    function returns a cubic spline with these predefined knots
+    (sometimes referred to as an O'Sullivan penalized spline [5]_); no
+    boundary conditions are imposed. In particular, if the given ``t``
+    contains all the data sites, the natural boundary behavior is not
+    lost: the unconstrained minimizer satisfies the natural conditions
+    on its own, so the two paths return the same spline. The returned
+    `BSpline` has ``extrapolate=True``.
 
     References
     ----------
@@ -2553,6 +3199,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         BSc thesis, 2022.
         `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
+    .. [5] M. P. Wand and J. T. Ormerod, "On semiparametric regression
+        with O'Sullivan penalised splines", Australian & New Zealand
+        Journal of Statistics, vol. 50, no. 2, pp. 179-198, 2008.
+        :doi:`10.1111/j.1467-842X.2008.00507.x`
 
     Examples
     --------
@@ -2582,7 +3232,12 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
-    xp = array_namespace(x, y)
+    # include the optional arrays so that a namespace or device mismatch
+    # between any of the inputs raises consistently (both helpers
+    # ignore Nones)
+    xp = array_namespace(x, y, w, t)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, w, t)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -2600,7 +3255,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
@@ -2609,6 +3263,15 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     # Internals assume that the data axis is the zero-th axis
     axis = normalize_axis_index(axis, y.ndim)
     y = np.moveaxis(y, axis, 0)
+
+    if t is not None:
+        # user-provided knots: penalized least squares in the B-spline
+        # basis on ``t``. The construction is described in the companion
+        # report, https://github.com/aadya940/scipy-bspline-testing
+        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis,
+                                                 xp=xp, device=device)
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
 
     # flatten the trailing axes of y to simplify further manipulations
     y_shape1 = y.shape[1:]
@@ -2638,7 +3301,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     # last elements
     X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
     X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+                (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
     X[3, -2] = X_bspl[-1, -1]
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
@@ -2662,7 +3325,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     if np.ndim(lam) == 0:
         c = solve_banded((2, 2), X + lam * wE, y)
     elif np.ndim(lam) == 1:
-        # XXX: solve_banded does not suppport batched `ab` matrices; loop manually
+        # XXX: solve_banded does not support batched `ab` matrices; loop manually
         c = np.empty((n, lam.shape[0]))
         for i in range(lam.shape[0]):
             c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])
@@ -2682,7 +3345,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (t[-4] - t[-6]) + cm1,
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
-    t, c_ = xp.asarray(t), xp.asarray(c_)
+    t, c_ = xp.asarray(t, device=device), xp.asarray(c_, device=device)
     return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 

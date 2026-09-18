@@ -3,8 +3,8 @@
 	url = https://github.com/scipy/scipy-mathjax.git
 
 [submodule "subprojects/array_api_compat"]
-	path = subprojects/array_api_compat/array_api_compat
-	url = https://github.com/data-apis/array-api-compat.git
+	path = subprojects/array_api_compat
+	url = https://github.com/data-apis/array-api-compat
 
 [submodule "subprojects/array_api_extra"]
 	path = subprojects/array_api_extra

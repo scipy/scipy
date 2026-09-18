@@ -2,8 +2,11 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import gc
 from functools import reduce
+import importlib.util
 import sysconfig
+import weakref
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -16,7 +19,8 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
 from scipy.linalg import (
-    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz
+    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz,
+    cholesky_banded,
 )
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
@@ -26,14 +30,65 @@ from scipy.sparse import diags_array
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
-from scipy.__config__ import CONFIG
-blas_provider = blas_version = None
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
-
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+@pytest.mark.parametrize('module_name, routine', [
+    ('_fblas', 'daxpy'),
+    ('_fblas_64', 'daxpy'),
+    ('_flapack', 'dgesv'),
+    ('_flapack_64', 'dgesv'),
+])
+def test_wrapper_module_collected(module_name, routine):
+    spec = importlib.util.find_spec(f'scipy.linalg.{module_name}')
+    if spec is None:
+        pytest.skip(f'{module_name} not available')
+
+    def load_module():
+        # Load a fresh module without putting it in sys.modules. Only the
+        # module -> wrapper -> heap type -> module cycle should keep it alive.
+        fresh_spec = importlib.util.spec_from_file_location(module_name, spec.origin)
+        module = importlib.util.module_from_spec(fresh_spec)
+        fresh_spec.loader.exec_module(module)
+        return weakref.ref(module), weakref.ref(type(getattr(module, routine)))
+
+    module_ref, type_ref = load_module()
+    gc.collect()
+    assert module_ref() is None
+    assert type_ref() is None
+
+
+def test_wrapper_traverses_its_type():
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    func = get_lapack_funcs('gesv', dtype=np.float64)
+    assert any(ref is func for ref in gc.get_referrers(type(func)))
+
+
+def test_ilaver():
+    # `ilaver` is the only routine taking no arguments at all.  The tables are
+    # dispatched through a single function-pointer type that never consults
+    # ml_flags, so its empty kwlist -- not METH_NOARGS -- is what rejects
+    # anything it is passed.
+    version = lapack.ilaver()
+    assert len(version) == 3
+    assert all(isinstance(v, int) for v in version)
+    assert version[0] >= 3, version
+
+    for args, kwargs in [((1,), {}), ((1, 2, 3), {}), ((), {'spam': 'eggs'})]:
+        with assert_raises(TypeError):
+            lapack.ilaver(*args, **kwargs)
+
+
+def test_wrapper_type_cannot_be_instantiated():
+    # The module builds every wrapper itself and fills in fields no constructor could
+    # supply, so `object.__new__` must not hand out a blank one; every method would
+    # dereference its null `meth` and `name`.
+    with assert_raises(TypeError):
+        type(get_lapack_funcs('gesv', dtype=np.float64))()
 
 
 def generate_random_dtype_array(shape, dtype, rng):
@@ -895,7 +950,7 @@ class TestHetrd:
         assert_raises(ValueError, hetrd, A)
 
     @pytest.mark.parametrize('real_dtype,complex_dtype',
-                             zip(REAL_DTYPES, COMPLEX_DTYPES))
+                             list(zip(REAL_DTYPES, COMPLEX_DTYPES)))
     @pytest.mark.parametrize('n', (1, 3))
     def test_hetrd(self, n, real_dtype, complex_dtype):
         A = np.zeros((n, n), dtype=complex_dtype)
@@ -1785,12 +1840,12 @@ def test_syequb():
 
 
 @pytest.mark.skipif(True,
-                    reason="Failing on some OpenBLAS version, see gh-12276")
+                    reason="Failing on Intel MKL, see gh-12276")
 def test_heequb():
-    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # zheequb had a bug for versions between 3.7.x and 3.9.x
     # See Reference-LAPACK gh-61 and gh-408
-    # Hence the zheequb test is customized accordingly to avoid
-    # work scaling.
+    # However it seems like MKL did not pick up the fix and
+    # carried the bug to newer versions.
     A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
     s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
@@ -1837,9 +1892,9 @@ def test_getc2_gesc2():
 
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
-@pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
-@pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
-@pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
+@pytest.mark.parametrize('joba', list(range(6)))  # 'C', 'E', 'F', 'G', 'A', 'R'
+@pytest.mark.parametrize('jobu', list(range(4)))  # 'U', 'F', 'W', 'N'
+@pytest.mark.parametrize('jobv', list(range(4)))  # 'V', 'J', 'W', 'N'
 @pytest.mark.parametrize('jobr', [0, 1])
 @pytest.mark.parametrize('jobp', [0, 1])
 def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
@@ -2221,7 +2276,7 @@ def test_geqrfp_lwork(dtype, shape):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                         list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs(ddtype, dtype):
     rng = np.random.RandomState(42)
     # set test tolerance appropriate for dtype
@@ -2270,7 +2325,7 @@ def test_pttrf_pttrs(ddtype, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                         list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
     n = 10
     rng = np.random.RandomState(1234)
@@ -2283,7 +2338,7 @@ def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+                        list(zip(REAL_DTYPES + REAL_DTYPES, DTYPES)))
 def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     n = 10
     rng = np.random.RandomState(42)
@@ -2378,8 +2433,8 @@ def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr(dtype, realtype, compute_z):
     '''
     Tests the ?pteqr lapack routine for all dtypes and compute_z parameters.
@@ -2410,8 +2465,8 @@ def test_pteqr(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_error_non_spd(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
@@ -2424,8 +2479,8 @@ def test_pteqr_error_non_spd(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
@@ -2438,8 +2493,8 @@ def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", range(3))
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+@pytest.mark.parametrize("compute_z", list(range(3)))
 def test_pteqr_error_singular(dtype, realtype, compute_z):
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
@@ -2833,8 +2888,8 @@ def test_gtsvx_NAG(du, d, dl, b, x):
     assert_array_almost_equal(x, x_soln)
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',
@@ -2892,8 +2947,8 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
                                  "({x_soln.shape[1]},)"))
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',
@@ -2919,8 +2974,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     assert_raises(Exception, ptsvx, d, e, b[:-1], fact=fact, df=df, ef=ef)
 
 
-@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
-                                               + REAL_DTYPES))
+@pytest.mark.parametrize("dtype,realtype", list(zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES)))
 @pytest.mark.parametrize("fact,df_de_lambda",
                          [("F",
                            lambda d, e: get_lapack_funcs('pttrf',
@@ -3525,6 +3580,34 @@ def test_lantr(norm, uplo, m, n, diag, dtype):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_pbcon(dtype, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is Hermitian positive definite of shape n x n, bandwidth kd
+    n, kd = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, kd + 1)] = 0
+    A[np.tril_indices(n, -kd - 1)] = 0
+    A = A + A.conj().T + 2 * n * np.eye(n, dtype=dtype)
+
+    # banded storage of the triangle pbcon will look at
+    ab = _to_banded(0, kd, A) if uplo == 'U' else _to_banded(kd, 0, A)
+
+    anorm = np.linalg.norm(A, 1)
+    c_band = cholesky_banded(ab, lower=(uplo == 'L'))
+    pbcon, = get_lapack_funcs(("pbcon",), (ab,))
+    res, info = pbcon(kd, c_band, anorm, uplo=uplo)
+
+    assert info == 0
+    ref = 1 / np.linalg.cond(A, 1)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('norm', ['1', 'I', 'O'])
 def test_gbcon(dtype, norm):
     rng = np.random.default_rng(17273783424)
@@ -3557,9 +3640,7 @@ def test_gbcon(dtype, norm):
     gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
     lu = getrf(A)[0]
     ref = gecon(lu, anorm, norm=norm)[0]
-    # This is an estimate of reciprocal condition number; we just need order of
-    # magnitude.
-    assert_allclose(res, ref, rtol=1)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
 
 
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))

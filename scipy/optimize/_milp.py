@@ -4,7 +4,7 @@ import numpy as np
 from numpy.exceptions import VisibleDeprecationWarning
 
 from scipy.sparse import csc_array, vstack, issparse
-from ._highspy._highs_wrapper import _highs_wrapper  # type: ignore[import-not-found,import-untyped]
+from ._highspy._highs_wrapper import _highs_wrapper
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 from ._linprog_highs import _highs_to_scipy_status_message
@@ -136,7 +136,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     indptr, indices, data = A.indptr, A.indices, A.data.astype(np.float64)
 
     # options IV
-    options = options or {}
+    options = dict(options) if options else {}
     supported_options = {'disp', 'presolve', 'time_limit', 'node_limit',
                          'mip_rel_gap'}
     unsupported_options = set(options).difference(supported_options)

@@ -18,20 +18,13 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy._lib._util import AxisError
+from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
 
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
-
-
-def _using_accelerate():
-    config = np.show_config('dicts')
-    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
-
-
-RTOL = 1e-6 if _using_accelerate() else 1e-15
+RTOL = 1e-6 if USING_ACCELERATE else 1e-15
 
 
 tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
@@ -216,6 +209,11 @@ axis_nan_policy_cases = [
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='bisecting'),
+     1, 1, False, lambda x: (x,)),
+    (stats.circmedian, tuple(), dict(convention='geometric'),
+     1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
@@ -233,7 +231,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "Not enough other observations",
                       "Not enough observations.",
                       "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
+                      "zero-size array to reduction operation",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty",
@@ -372,6 +370,9 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
 # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
 @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                            'RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
@@ -409,11 +410,14 @@ if SCIPY_XSLOW:
     @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
     # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                                'RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
     @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-    @pytest.mark.parametrize(("axis"), range(-3, 3))
+    @pytest.mark.parametrize(("axis"), list(range(-3, 3)))
     @pytest.mark.parametrize(("data_generator"),
                              ("all_nans", "all_finite", "mixed"))
     def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
@@ -626,6 +630,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # - Any results returned by the three versions should be the same.
     with warnings.catch_warnings():  # treat warnings as errors
         warnings.simplefilter("error")
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         ea_str, eb_str, ec_str = None, None, None
         try:
@@ -703,6 +708,8 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
     small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
                            stats.differential_entropy, stats.epps_singleton_2samp,
                            stats.shapiro}
+    if hypotest == stats.circmedian:
+        sample_shape = (2, 3, 4, 3)  # slow convergence along axis of size 4!
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
     if hypotest in {weightedtau_weighted}:
@@ -1001,7 +1008,7 @@ def paired_non_broadcastable_cases():
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"),
-                         paired_non_broadcastable_cases())
+                         list(paired_non_broadcastable_cases()))
 def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
                            unpacker, axis):
     # test for correct error message when shapes are not broadcastable
@@ -1140,7 +1147,9 @@ def test_masked_stat_1d():
     females3 = [20, 11, 17, 1000, 12]
     mask3 = [False, False, False, True, False]
     females3 = np.ma.masked_array(females3, mask=mask3)
-    res3 = stats.mannwhitneyu(males, females3)
+    message = "Support for NumPy masked arrays is deprecated..."
+    with pytest.warns(DeprecationWarning, match=message):
+        res3 = stats.mannwhitneyu(males, females3)
     np.testing.assert_array_equal(res3, res)
 
     # same result when extra nan is omitted and additional element is masked
@@ -1163,7 +1172,7 @@ def test_masked_stat_1d():
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
-@pytest.mark.parametrize(("axis"), range(-3, 3))
+@pytest.mark.parametrize(("axis"), list(range(-3, 3)))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
     rng = np.random.default_rng(3679428403)

@@ -1,5 +1,7 @@
 import pytest
 import numpy as np
+
+from scipy._lib._testutils import IS_WASM
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
@@ -135,7 +137,7 @@ class TestScalarFunction(TestCase):
         x0 = np.array([2.0, 0.3])
         ex = ExScalarFunction()
         ex2 = ExScalarFunction()
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = ScalarFunction(ex.fun, x0, (), '2-point',
                                     ex.hess, None, (-np.inf, np.inf),
                                     workers=mapper)
@@ -601,7 +603,7 @@ class TestVectorialFunction(TestCase):
         ex2 = ExVectorialFunction()
         v = np.array([1.0, 2.0])
 
-        with MapWrapper(2) as mapper:
+        with MapWrapper(1 if IS_WASM else 2) as mapper:
             approx = VectorFunction(ex.fun, x0, '2-point',
                                     ex.hess, None, None, (-np.inf, np.inf),
                                     False, workers=mapper)

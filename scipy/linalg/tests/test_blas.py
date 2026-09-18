@@ -2,6 +2,7 @@
 # Created by: Pearu Peterson, April 2002
 #
 
+import gc
 import math
 import pytest
 import numpy as np
@@ -16,9 +17,10 @@ import scipy
 from scipy.linalg import get_blas_funcs, toeplitz, solve
 from scipy.linalg.blas import HAS_ILP64
 
+FBLAS_ERROR: type[Exception] = ValueError
+
 try:
     from scipy.linalg import _fblas as fblas
-    FBLAS_ERROR = fblas.__fblas_error
     HAS_LP64_FBLAS = True
 except ImportError:
     fblas = None
@@ -26,7 +28,6 @@ except ImportError:
 
 try:
     from scipy.linalg import _fblas_64 as fblas_64
-    FBLAS_ERROR = fblas_64.__fblas_64_error
 except ImportError:
     fblas_64 = None
 
@@ -115,6 +116,38 @@ def test_get_blas_funcs_alias():
     f, g, h = get_blas_funcs(('dot', 'dotc', 'dotu'), dtype=np.float64)
     assert f is g
     assert f is h
+
+
+@pytest.mark.parametrize('module', [
+    pytest.param(fblas, id='fblas',
+                 marks=pytest.mark.skipif(not HAS_LP64_FBLAS,
+                                          reason='LP64 fblas not available')),
+    pytest.param(fblas_64, id='fblas_64',
+                 marks=pytest.mark.skipif(not HAS_ILP64,
+                                          reason='ILP64 fblas not available')),
+])
+def test_wrapper_traverses_its_type(module):
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    func = module.daxpy
+    assert any(ref is func for ref in gc.get_referrers(type(func)))
+
+
+@pytest.mark.parametrize('module', [
+    pytest.param(fblas, id='fblas',
+                 marks=pytest.mark.skipif(not HAS_LP64_FBLAS,
+                                          reason='LP64 fblas not available')),
+    pytest.param(fblas_64, id='fblas_64',
+                 marks=pytest.mark.skipif(not HAS_ILP64,
+                                          reason='ILP64 fblas not available')),
+])
+def test_wrapper_type_cannot_be_instantiated(module):
+    # The module builds every wrapper itself and fills in fields no constructor could
+    # supply, so `object.__new__` must not hand out a blank one; every method would
+    # dereference its null `meth` and `name`.
+    with assert_raises(TypeError):
+        type(module.daxpy)()
 
 
 def _dt_from_prefix(prefix):
@@ -865,10 +898,9 @@ class TestBLAS3Symm:
     @parametrize_blas("symm", "sdcz")
     def test_symm_wrong_side(self, f, dtype):
         """`side=1` means C <- B*A, hence shapes of A and B are to be
-        compatible. Otherwise, f2py exception is raised.
+        compatible. Otherwise, ValueError is raised.
         """
-        # FIXME narrow down to _fblas.error
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             f(a=self.a, b=self.b, alpha=1, side=1)
 
     @parametrize_blas("symm", "sdcz")
@@ -909,12 +941,9 @@ class TestBLAS3Syrk:
         c = f(a=self.a, alpha=1., trans=1)
         assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
-    # prints '0-th dimension must be fixed to 3 but got 5',
-    # FIXME: suppress?
     @parametrize_blas("syrk", "sdcz")
     def test_syrk_wrong_c(self, f, dtype):
-        # FIXME narrow down to _fblas.error
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             f(a=self.a, alpha=1., c=np.ones((5, 8)))
         # if C is supplied, it must have compatible dimensions
 

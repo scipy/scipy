@@ -4,7 +4,7 @@ import warnings
 import os
 
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from ._ckdtree import cKDTree, cKDTreeNode
 from .distance import minkowski
 from scipy._lib._array_api import xp_capabilities
 
@@ -26,7 +26,7 @@ def minkowski_distance_p(x, y, p=2.0):
 
     .. deprecated:: 1.18.0
         This function is deprecated in favor of `scipy.spatial.distance.minkowski`
-        and will be removed in SciPy 1.20.0.
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def minkowski_distance_p(x, y, p=2.0):
     """
     msg = ("`minkowski_distance_p` is deprecated in favor of "
            "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
-           "in SciPy 1.20.0.")
+           "in SciPy 2.1.0.")
     warnings.warn(msg, DeprecationWarning,
                   skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
@@ -84,7 +84,7 @@ def minkowski_distance(x, y, p=2.0):
 
     .. deprecated:: 1.18.0
         This function is deprecated in favor of `scipy.spatial.distance.minkowski`
-        and will be removed in SciPy 1.20.0.
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -109,7 +109,7 @@ def minkowski_distance(x, y, p=2.0):
     """
     msg = ("`minkowski_distance` is deprecated in favor of "
            "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
-           "in SciPy 1.20.0.")
+           "in SciPy 2.1.0.")
     warnings.warn(msg, DeprecationWarning,
                   skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
@@ -120,6 +120,7 @@ def minkowski_distance(x, y, p=2.0):
         return minkowski_distance_p(x, y, p)**(1./p)
 
 
+@xp_capabilities(np_only=True)
 class Rectangle:
     """Hyperrectangle class.
 
@@ -273,6 +274,7 @@ class Rectangle:
         return minkowski(np.zeros_like(delta), delta, p)
 
 
+@xp_capabilities(np_only=True)
 class KDTree(cKDTree):
     """
     kd-tree for quick nearest-neighbor lookup.
@@ -910,8 +912,8 @@ class KDTree(cKDTree):
 
                All new code using scipy sparse should use sparse array
                types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
+               `output_type` will be deprecated at v2.0 and switch from
+               'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
                to work, but will go away eventually.
 
@@ -966,7 +968,7 @@ def distance_matrix(x, y, p=2.0, threshold=1000000):
 
     .. deprecated:: 1.18.0
         This function is deprecated in favor of `scipy.spatial.distance.cdist`
-        and will be removed in SciPy 1.20.0.
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -996,7 +998,7 @@ def distance_matrix(x, y, p=2.0, threshold=1000000):
     """
     msg = ("`distance_matrix` is deprecated in favor of "
            "`scipy.spatial.distance.cdist` as of SciPy 1.18.0 and will be removed "
-           "in SciPy 1.20.0.")
+           "in SciPy 2.1.0.")
     warnings.warn(msg, DeprecationWarning,
                   skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)

@@ -455,7 +455,7 @@ Another problem is that MLE is inherently poorly behaved for some distributions.
 stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
 ```
 
-Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is a fixed parameter.
+Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifying that the location is a fixed parameter.
 
 ```{code-cell} ipython3
 # c_, loc_, scale_ = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
