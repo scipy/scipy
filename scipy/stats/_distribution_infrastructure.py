@@ -2084,7 +2084,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # bracket; it may terminate with `fl < fm < fr` (and, e.g. `xl < xm < xr` but
         # all very close to `a`. In this case, we assume the function is unimodal, and
         # the optimum is at the endpoint.
-        x_at_boundary = res_b.status == -1
+        # TODO: see https://github.com/scipy/scipy/pull/25210#discussion_r3295327858
+        x_at_boundary = res.status == -1
         fl, fm, fr = res_b.f_bracket
         x_at_left = x_at_boundary & (fl <= fm)
         x_at_right = x_at_boundary & (fr < fm)
@@ -3832,6 +3833,9 @@ class CircularDistribution(UnivariateDistribution):
     def _ccdf2(self, x, y, *, method, **kwargs):
         raise NotImplementedError("Circular distributions do not "
                                   "support two-argument `ccdf`.")
+
+    def _lmoment_dispatch(self, order, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `lmoment`.")
 
     def _logcdf1(self, x, *, method, **kwargs):
         raise NotImplementedError("Circular distributions do not support `logcdf`.")

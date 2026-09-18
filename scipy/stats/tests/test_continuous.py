@@ -222,7 +222,8 @@ class TestDistributions:
         with np.errstate(invalid='ignore', divide='ignore'):
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
-            check_lmoment_funcs(dist, result_shape)
+            if family not in circular_families:
+                check_lmoment_funcs(dist, result_shape)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
             qrng = qmc.Halton(d=1, seed=rng)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)

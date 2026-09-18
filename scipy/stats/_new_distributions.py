@@ -9,7 +9,6 @@ from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, DiscreteDistribution, CircularDistribution,
     _RealInterval, _IntegerInterval, _RealParameter, _Parameterization, _combine_docs)
-from scipy.stats._stats import von_mises_cdf
 
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
@@ -590,7 +589,8 @@ class VonMises(ContinuousDistribution, CircularDistribution):
         # x0 = x.copy()
         # x = (x + np.pi) % (2*np.pi) - np.pi
         x = np.where(x < 0, x + 2*np.pi, x)
-        res = np.asarray(von_mises_cdf(kappa, x - mu) - von_mises_cdf(kappa, -mu))
+        res = np.asarray(scu._von_mises_cdf(kappa, x - mu)
+                         - scu._von_mises_cdf(kappa, -mu))
         # return res % 1  # doesn't work because 1 % 1 = 0
         res[res < 0] += 1
         return res
