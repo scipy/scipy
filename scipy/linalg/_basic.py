@@ -1925,16 +1925,14 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
         raise ValueError('Incompatible dimensions.')
 
-    dtype = np.promote_types(np.promote_types(r.dtype, c.dtype), b.dtype)
-    dtype = np.float64 if np.isdtype(dtype, "integral") else dtype
-    r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
+    c, r, b = _ensure_dtype_cdsz(c, r, b)
 
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
         b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
-    return r, c, b, dtype, b_shape
+    return r, c, b, b.dtype, b_shape
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
