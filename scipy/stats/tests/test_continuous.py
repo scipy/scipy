@@ -2517,6 +2517,8 @@ class TestCircular:
         X = stats.VonMises(mu=0, kappa=1)
 
         message = "Circular distributions do not support "
+        with pytest.raises(NotImplementedError, match=message + '`lmoment`.'):
+            X.lmoment()
         with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
             X.logcdf(1)
         with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
