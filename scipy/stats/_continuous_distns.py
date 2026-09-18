@@ -781,7 +781,7 @@ class beta_gen(rv_continuous):
         return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        return scu._beta_ppf(q, a, b)
+        return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
         a_plus_b = a + b
@@ -11366,31 +11366,7 @@ class vonmises_gen(rv_continuous):
                 # some large kappa such that r[0](kappa) = 1.0 numerically.
                 return 1e16
             elif r > 0:
-                def solve_for_kappa(kappa):
-                    return sc.i1e(kappa)/sc.i0e(kappa) - r
-
-                # The bounds of the root of r[0](kappa) = r are derived from
-                # selected bounds of r[0](x) given in [1, Eq. 11 & 16].  See
-                # gh-20102 for details.
-                #
-                # [1] Amos, D. E. (1973).  Computation of Modified Bessel
-                #     Functions and Their Ratios.  Mathematics of Computation,
-                #     28(125): 239-251.
-                lower_bound = r/(1-r)/(1+r)
-                upper_bound = 2*lower_bound
-
-                # The bounds are violated numerically for certain values of r,
-                # where solve_for_kappa evaluated at the bounds have the same
-                # sign.  This indicates numerical imprecision of i1e()/i0e().
-                # Return the violated bound in this case as it's more accurate.
-                if solve_for_kappa(lower_bound) >= 0:
-                    return lower_bound
-                elif solve_for_kappa(upper_bound) <= 0:
-                    return upper_bound
-                else:
-                    root_res = root_scalar(solve_for_kappa, method="brentq",
-                                           bracket=(lower_bound, upper_bound))
-                    return root_res.root
+                return scu._iv_ratioinv(1, r)
             else:
                 # if the provided floc is very far from the circular mean,
                 # the mean resultant length r can become negative.
@@ -11611,6 +11587,10 @@ class gennorm_gen(rv_continuous):
         # evaluating (.5 + c) first prevents numerical cancellation
         return (0.5 + c) - c * sc.gammaincc(1.0/beta, abs(x)**beta)
 
+    def _logcdf(self, x, beta):
+        val = sc.log_gammaincc(1.0/beta, abs(x)**beta) - np.log(2)
+        return xpx.apply_where(x > 0, val, scu._log1mexp, fill_value=val)
+
     def _ppf(self, x, beta):
         c = np.sign(x - 0.5)
         # evaluating (1. + c) first prevents numerical cancellation
@@ -11618,6 +11598,9 @@ class gennorm_gen(rv_continuous):
 
     def _sf(self, x, beta):
         return self._cdf(-x, beta)
+
+    def _logsf(self, x, beta):
+        return self._logcdf(-x, beta)
 
     def _isf(self, x, beta):
         return -self._ppf(x, beta)

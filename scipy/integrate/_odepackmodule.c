@@ -374,7 +374,7 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     if ((current_odepack_callback->jac_type == 1) && !current_odepack_callback->jac_transpose) {
         // Full Jacobian (jt=1 user supplied), no transpose needed, use memcpy
         double *src_data = (double*)PyArray_DATA(result_array);
-        memcpy(pd, src_data, (*n) * (*nrowpd) * sizeof(double));
+        memcpy(pd, src_data, (size_t)(*n) * (*nrowpd) * sizeof(double));
     } else {
         // Need to copy with proper Fortran layout
         npy_intp m;
@@ -709,7 +709,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    if ((wa = (double *)calloc(lrw*sizeof(double) + liw*sizeof(CBLAS_INT), 1))==NULL) {
+    if ((wa = (double *)PyMem_RawCalloc(lrw*sizeof(double) + liw*sizeof(CBLAS_INT), 1))==NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -823,7 +823,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     Py_XDECREF(ap_tcrit);
     Py_DECREF(ap_y);
     Py_DECREF(ap_tout);
-    free(wa);
+    PyMem_RawFree(wa);
 
     // Full output
     if (full_output)
@@ -859,7 +859,7 @@ fail:
     Py_XDECREF(ap_tcrit);
     Py_XDECREF(ap_tout);
     Py_XDECREF(ap_yout);
-    if (allocated) { free(wa); }
+    if (allocated) { PyMem_RawFree(wa); }
 
     if (full_output)
     {

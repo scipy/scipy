@@ -40,6 +40,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/mathieu_legacy.h>
+#include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
@@ -54,6 +55,8 @@
 #include <xsf/wright_bessel.h>
 #include <xsf/wright.h>
 #include <xsf/zeta.h>
+#include "mathieu.h"
+
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -64,14 +67,13 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 extern const char *_beta_pdf_doc;
-extern const char *_beta_ppf_doc;
 extern const char *_binom_cdf_doc;
 extern const char *_binom_isf_doc;
 extern const char *_binom_pmf_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_binom_sf_doc;
+extern const char *_bivariate_normal_cdf_doc;
 extern const char *_cospi_doc;
-extern const char *_bivariate_normal_sf_doc;
 extern const char *_cauchy_isf_doc;
 extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
@@ -81,6 +83,12 @@ extern const char *_skewnorm_cdf_doc;
 extern const char *_skewnorm_isf_doc;
 extern const char *_skewnorm_ppf_doc;
 extern const char *_gen_harmonic_doc;
+extern const char *_hypergeom_cdf_doc;
+extern const char *_hypergeom_mean_doc;
+extern const char *_hypergeom_pmf_doc;
+extern const char *_hypergeom_sf_doc;
+extern const char *_hypergeom_skewness_doc;
+extern const char *_hypergeom_variance_doc;
 extern const char *_igam_fac_doc;
 extern const char *_invgauss_isf_doc;
 extern const char *_invgauss_ppf_doc;
@@ -95,6 +103,17 @@ extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_mathieu_cem_doc;
+extern const char *_mathieu_sem_doc;
+extern const char *_nbinom_cdf_doc;
+extern const char *_nbinom_isf_doc;
+extern const char *_nbinom_kurtosis_excess_doc;
+extern const char *_nbinom_mean_doc;
+extern const char *_nbinom_pmf_doc;
+extern const char *_nbinom_ppf_doc;
+extern const char *_nbinom_sf_doc;
+extern const char *_nbinom_skewness_doc;
+extern const char *_nbinom_variance_doc;
 extern const char *_ncf_isf_doc;
 extern const char *_ncf_kurtosis_excess_doc;
 extern const char *_ncf_mean_doc;
@@ -203,6 +222,7 @@ extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp0f1_doc;
+extern const char *hyp1f1_doc;
 extern const char *hyp2f1_doc;
 extern const char *hyperu_doc;
 extern const char *i0_doc;
@@ -214,6 +234,7 @@ extern const char *inv_boxcox1p_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
+extern const char *iv_ratioinv_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
@@ -244,12 +265,10 @@ extern const char *log_wright_bessel_doc;
 extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
-extern const char *mathieu_cem_doc;
 extern const char *mathieu_modcem1_doc;
 extern const char *mathieu_modcem2_doc;
 extern const char *mathieu_modsem1_doc;
 extern const char *mathieu_modsem2_doc;
-extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
 extern const char *nbdtrik_doc;
@@ -307,6 +326,7 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *stdtr_doc;
+extern const char *stdtridf_doc;
 extern const char *stdtrit_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
@@ -338,10 +358,7 @@ static PyObject* _set_action(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-static PyMethodDef _methods[] = {
-    {"_set_action", _set_action, METH_VARARGS, NULL},
-    {NULL, NULL, 0, NULL}
-};
+static PyMethodDef _methods[] = {{"_set_action", _set_action, METH_VARARGS, NULL}, {NULL, NULL, 0, NULL}};
 
 static int
 _special_ufuncs_module_exec(PyObject *module)
@@ -354,12 +371,6 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(beta_pdf_double)},
                           "_beta_pdf", _beta_pdf_doc);
     PyModule_AddObjectRef(module, "_beta_pdf", _beta_pdf);
-
-    PyObject *_beta_ppf =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_ppf_float),
-                           static_cast<xsf::numpy::ddd_d>(beta_ppf_double)},
-                          "_beta_ppf", _beta_ppf_doc);
-    PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
 
     PyObject *_binom_cdf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_cdf_float),
@@ -391,11 +402,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_binom_sf", _binom_sf_doc);
     PyModule_AddObjectRef(module, "_binom_sf", _binom_sf);
 
-    PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
-         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
-        "_bivariate_normal_sf", _bivariate_normal_sf_doc);
-    PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_cdf),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
+        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
 
     PyObject *_cauchy_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_isf_float),
@@ -431,6 +442,42 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_hypergeom_pmf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_pmf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_pmf_double)},
+                          "_hypergeom_pmf", _hypergeom_pmf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_pmf", _hypergeom_pmf);
+
+    PyObject *_hypergeom_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_cdf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_cdf_double)},
+                          "_hypergeom_cdf", _hypergeom_cdf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_cdf", _hypergeom_cdf);
+
+    PyObject *_hypergeom_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_sf_float),
+                           static_cast<xsf::numpy::dddd_d>(hypergeom_sf_double)},
+                          "_hypergeom_sf", _hypergeom_sf_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_sf", _hypergeom_sf);
+
+    PyObject *_hypergeom_mean =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_mean_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_mean_double)},
+                          "_hypergeom_mean", _hypergeom_mean_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_mean", _hypergeom_mean);
+
+    PyObject *_hypergeom_variance =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_variance_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_variance_double)},
+                          "_hypergeom_variance", _hypergeom_variance_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_variance", _hypergeom_variance);
+
+    PyObject *_hypergeom_skewness =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(hypergeom_skewness_float),
+                           static_cast<xsf::numpy::ddd_d>(hypergeom_skewness_double)},
+                          "_hypergeom_skewness", _hypergeom_skewness_doc);
+    PyModule_AddObjectRef(module, "_hypergeom_skewness", _hypergeom_skewness);
 
     PyObject *_invgauss_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(invgauss_isf_float),
@@ -488,6 +535,60 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::ddd_d>(landau_sf_double)},
                           "_landau_sf", _landau_sf_doc);
     PyModule_AddObjectRef(module, "_landau_sf", _landau_sf);
+
+    PyObject *_nbinom_cdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_cdf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_cdf_double)},
+                          "_nbinom_cdf", _nbinom_cdf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_cdf", _nbinom_cdf);
+
+    PyObject *_nbinom_isf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_isf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_isf_double)},
+                          "_nbinom_isf", _nbinom_isf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_isf", _nbinom_isf);
+
+    PyObject *_nbinom_kurtosis_excess =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_kurtosis_excess_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_kurtosis_excess_double)},
+                          "_nbinom_kurtosis_excess", _nbinom_kurtosis_excess_doc);
+    PyModule_AddObjectRef(module, "_nbinom_kurtosis_excess", _nbinom_kurtosis_excess);
+
+    PyObject *_nbinom_mean =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_mean_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_mean_double)},
+                          "_nbinom_mean", _nbinom_mean_doc);
+    PyModule_AddObjectRef(module, "_nbinom_mean", _nbinom_mean);
+
+    PyObject *_nbinom_pmf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_pmf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_pmf_double)},
+                          "_nbinom_pmf", _nbinom_pmf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_pmf", _nbinom_pmf);
+
+    PyObject *_nbinom_ppf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_ppf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_ppf_double)},
+                          "_nbinom_ppf", _nbinom_ppf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_ppf", _nbinom_ppf);
+
+    PyObject *_nbinom_sf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nbinom_sf_float),
+                           static_cast<xsf::numpy::ddd_d>(nbinom_sf_double)},
+                          "_nbinom_sf", _nbinom_sf_doc);
+    PyModule_AddObjectRef(module, "_nbinom_sf", _nbinom_sf);
+
+    PyObject *_nbinom_skewness =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_skewness_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_skewness_double)},
+                          "_nbinom_skewness", _nbinom_skewness_doc);
+    PyModule_AddObjectRef(module, "_nbinom_skewness", _nbinom_skewness);
+
+    PyObject *_nbinom_variance =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(nbinom_variance_float),
+                           static_cast<xsf::numpy::dd_d>(nbinom_variance_double)},
+                          "_nbinom_variance", _nbinom_variance_doc);
+    PyModule_AddObjectRef(module, "_nbinom_variance", _nbinom_variance);
 
     PyObject *_ncf_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_isf_float),
@@ -1192,6 +1293,12 @@ _special_ufuncs_module_exec(PyObject *module)
                           "hyp0f1", hyp0f1_doc);
     PyModule_AddObjectRef(module, "hyp0f1", hyp0f1);
 
+    PyObject *hyp1f1 = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(hyp1f1_float), static_cast<xsf::numpy::ddd_d>(hyp1f1_double),
+         static_cast<xsf::numpy::ffF_F>(xsf::hyp1f1), static_cast<xsf::numpy::ddD_D>(xsf::hyp1f1)},
+        "hyp1f1", hyp1f1_doc);
+    PyModule_AddObjectRef(module, "hyp1f1", hyp1f1);
+
     PyObject *hyp2f1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::hyp2f1), static_cast<xsf::numpy::dddd_d>(xsf::hyp2f1),
                            static_cast<xsf::numpy::fffF_F>(xsf::hyp2f1), static_cast<xsf::numpy::dddD_D>(xsf::hyp2f1)},
@@ -1308,6 +1415,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c)}, "_iv_ratio_c",
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
+
+    PyObject *iv_ratioinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratioinv), static_cast<xsf::numpy::dd_d>(xsf::iv_ratioinv)},
+        "_iv_ratioinv", iv_ratioinv_doc);
+    PyModule_AddObjectRef(module, "_iv_ratioinv", iv_ratioinv);
 
     PyObject *ive = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_ie),
@@ -1573,19 +1685,23 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *mathieu_a =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::cem_cva), static_cast<xsf::numpy::dd_d>(xsf::cem_cva)},
+        xsf::numpy::ufunc({special::mathieu_cv<xsf::mathieu::Parity::Even, float>{},
+                           special::mathieu_cv<xsf::mathieu::Parity::Even, double>{}},
                           "mathieu_a", mathieu_a_doc);
     PyModule_AddObjectRef(module, "mathieu_a", mathieu_a);
 
     PyObject *mathieu_b =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::sem_cva), static_cast<xsf::numpy::dd_d>(xsf::sem_cva)},
+        xsf::numpy::ufunc({special::mathieu_cv<xsf::mathieu::Parity::Odd, float>{},
+                           special::mathieu_cv<xsf::mathieu::Parity::Odd, double>{}},
                           "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(module, "mathieu_b", mathieu_b);
 
-    PyObject *mathieu_cem =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::cem), static_cast<xsf::numpy::ddd_dd>(xsf::cem)}, 2,
-                          "mathieu_cem", mathieu_cem_doc);
-    PyModule_AddObjectRef(module, "mathieu_cem", mathieu_cem);
+    PyObject *_mathieu_cem =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Even, float>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Even, double>{}},
+                          2, "_mathieu_cem", _mathieu_cem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_cem", _mathieu_cem);
+
 
     PyObject *mathieu_modcem1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::mcm1), static_cast<xsf::numpy::ddd_dd>(xsf::mcm1)}, 2,
@@ -1607,10 +1723,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "mathieu_modsem2", mathieu_modsem2_doc);
     PyModule_AddObjectRef(module, "mathieu_modsem2", mathieu_modsem2);
 
-    PyObject *mathieu_sem =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::sem), static_cast<xsf::numpy::ddd_dd>(xsf::sem)}, 2,
-                          "mathieu_sem", mathieu_sem_doc);
-    PyModule_AddObjectRef(module, "mathieu_sem", mathieu_sem);
+    PyObject *_mathieu_sem =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Odd, float>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Odd, double>{}},
+                          2, "_mathieu_sem", _mathieu_sem_doc);
+    PyModule_AddObjectRef(module, "_mathieu_sem", _mathieu_sem);
 
     PyObject *modfresnelm = xsf::numpy::ufunc({static_cast<xsf::numpy::f_FF>(xsf::modified_fresnel_minus),
                                                static_cast<xsf::numpy::d_DD>(xsf::modified_fresnel_minus)},
@@ -1836,6 +1953,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(t_cdf_double)},
                           "stdtr", stdtr_doc);
     PyModule_AddObjectRef(module, "stdtr", stdtr);
+
+    PyObject *stdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(stdtridf_float),
+                           static_cast<xsf::numpy::dd_d>(stdtridf_double)},
+                          "stdtridf", stdtridf_doc);
+    PyModule_AddObjectRef(module, "stdtridf", stdtridf);
 
     PyObject *stdtrit =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_ppf_float),

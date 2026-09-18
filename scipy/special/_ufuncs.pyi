@@ -158,12 +158,10 @@ __all__ = [
     'lpmv',
     'mathieu_a',
     'mathieu_b',
-    'mathieu_cem',
     'mathieu_modcem1',
     'mathieu_modcem2',
     'mathieu_modsem1',
     'mathieu_modsem2',
-    'mathieu_sem',
     'modfresnelm',
     'modfresnelp',
     'modstruve',
@@ -257,11 +255,12 @@ class errstate:
 
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
-_bivariate_normal_sf: np.ufunc
+_bivariate_normal_cdf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
 _gen_harmonic: np.ufunc
 _igam_fac: np.ufunc
+_iv_ratioinv: np.ufunc
 _kolmogc: np.ufunc
 _kolmogci: np.ufunc
 _kolmogp: np.ufunc
@@ -269,6 +268,8 @@ _lambertw: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_mathieu_cem: np.ufunc
+_mathieu_sem: np.ufunc
 _normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
@@ -440,12 +441,10 @@ logit: np.ufunc
 lpmv: np.ufunc
 mathieu_a: np.ufunc
 mathieu_b: np.ufunc
-mathieu_cem: np.ufunc
 mathieu_modcem1: np.ufunc
 mathieu_modcem2: np.ufunc
 mathieu_modsem1: np.ufunc
 mathieu_modsem2: np.ufunc
-mathieu_sem: np.ufunc
 modfresnelm: np.ufunc
 modfresnelp: np.ufunc
 modstruve: np.ufunc

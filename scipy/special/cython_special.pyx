@@ -28,10 +28,6 @@ cannot emit warnings like their counterparts in ``scipy.special``.
 Available functions
 -------------------
 
-- :py:func:`~scipy.special.voigt_profile`::
-
-        double voigt_profile(double, double, double)
-
 - :py:func:`~scipy.special.agm`::
 
         double agm(double, double)
@@ -103,15 +99,15 @@ Available functions
         float betaincc(float, float, float)
         double betaincc(double, double, double)
 
-- :py:func:`~scipy.special.betaincinv`::
-
-        float betaincinv(float, float, float)
-        double betaincinv(double, double, double)
-
 - :py:func:`~scipy.special.betainccinv`::
 
         float betainccinv(float, float, float)
         double betainccinv(double, double, double)
+
+- :py:func:`~scipy.special.betaincinv`::
+
+        float betaincinv(float, float, float)
+        double betaincinv(double, double, double)
 
 - :py:func:`~scipy.special.betaln`::
 
@@ -194,6 +190,11 @@ Available functions
         double dawsn(double)
         double complex dawsn(double complex)
 
+- :py:func:`~scipy.special.digammainv`::
+
+        float digammainv(float)
+        double digammainv(double)
+
 - :py:func:`~scipy.special.ellipe`::
 
         double ellipe(double)
@@ -206,6 +207,10 @@ Available functions
 
         void ellipj(double, double, double *, double *, double *, double *)
 
+- :py:func:`~scipy.special.ellipk`::
+
+        double ellipk(double)
+
 - :py:func:`~scipy.special.ellipkinc`::
 
         double ellipkinc(double, double)
@@ -213,10 +218,6 @@ Available functions
 - :py:func:`~scipy.special.ellipkm1`::
 
         double ellipkm1(double)
-
-- :py:func:`~scipy.special.ellipk`::
-
-        double ellipk(double)
 
 - :py:func:`~scipy.special.elliprc`::
 
@@ -257,6 +258,10 @@ Available functions
         double complex erfc(double complex)
         double erfc(double)
 
+- :py:func:`~scipy.special.erfcinv`::
+
+        double erfcinv(double)
+
 - :py:func:`~scipy.special.erfcx`::
 
         double erfcx(double)
@@ -271,10 +276,6 @@ Available functions
 
         float erfinv(float)
         double erfinv(double)
-
-- :py:func:`~scipy.special.erfcinv`::
-
-        double erfcinv(double)
 
 - :py:func:`~scipy.special.eval_chebyc`::
 
@@ -667,11 +668,6 @@ Available functions
         float log_expit(float)
         long double log_expit(long double)
 
-- :py:func:`~scipy.special.log_ndtr`::
-
-        double log_ndtr(double)
-        double complex log_ndtr(double complex)
-
 - :py:func:`~scipy.special.log_gammainc`::
 
         float log_gammainc(float, float)
@@ -681,6 +677,15 @@ Available functions
 
         float log_gammaincc(float, float)
         double log_gammaincc(double, double)
+
+- :py:func:`~scipy.special.log_ndtr`::
+
+        double log_ndtr(double)
+        double complex log_ndtr(double complex)
+
+- :py:func:`~scipy.special.log_wright_bessel`::
+
+        double log_wright_bessel(double, double, double)
 
 - :py:func:`~scipy.special.loggamma`::
 
@@ -809,6 +814,10 @@ Available functions
 
         double ndtri(double)
 
+- :py:func:`~scipy.special.ndtri_exp`::
+
+        double ndtri_exp(double)
+
 - :py:func:`~scipy.special.nrdtrimn`::
 
         double nrdtrimn(double, double, double)
@@ -925,11 +934,6 @@ Available functions
         double complex psi(double complex)
         double psi(double)
 
-- :py:func:`~scipy.special.digammainv`::
-
-        float digammainv(float)
-        double digammainv(double)
-
 - :py:func:`~scipy.special.radian`::
 
         double radian(double, double, double)
@@ -1000,9 +1004,17 @@ Available functions
 
         double tklmbda(double, double)
 
+- :py:func:`~scipy.special.voigt_profile`::
+
+        double voigt_profile(double, double, double)
+
 - :py:func:`~scipy.special.wofz`::
 
         double complex wofz(double complex)
+
+- :py:func:`~scipy.special.wright_bessel`::
+
+        double wright_bessel(double, double, double)
 
 - :py:func:`~scipy.special.wrightomega`::
 
@@ -1046,18 +1058,6 @@ Available functions
 
         double zetac(double)
 
-- :py:func:`~scipy.special.wright_bessel`::
-
-        double wright_bessel(double, double, double)
-
-- :py:func:`~scipy.special.log_wright_bessel`::
-
-        double log_wright_bessel(double, double, double)
-
-- :py:func:`~scipy.special.ndtri_exp`::
-
-        double ndtri_exp(double)
-
 
 Custom functions
 ----------------
@@ -1071,20 +1071,6 @@ Spherical Bessel functions
 The optional ``derivative`` boolean argument is replaced with an
 optional Cython ``bint``, leading to the following signatures.
 
-- :py:func:`~scipy.special.spherical_jn`::
-
-        double complex spherical_jn(Py_ssize_t, double complex)
-        double complex spherical_jn(Py_ssize_t, double complex, bint)
-        double spherical_jn(Py_ssize_t, double)
-        double spherical_jn(Py_ssize_t, double, bint)
-
-- :py:func:`~scipy.special.spherical_yn`::
-
-        double complex spherical_yn(Py_ssize_t, double complex)
-        double complex spherical_yn(Py_ssize_t, double complex, bint)
-        double spherical_yn(Py_ssize_t, double)
-        double spherical_yn(Py_ssize_t, double, bint)
-
 - :py:func:`~scipy.special.spherical_in`::
 
         double complex spherical_in(Py_ssize_t, double complex)
@@ -1092,12 +1078,26 @@ optional Cython ``bint``, leading to the following signatures.
         double spherical_in(Py_ssize_t, double)
         double spherical_in(Py_ssize_t, double, bint)
 
+- :py:func:`~scipy.special.spherical_jn`::
+
+        double complex spherical_jn(Py_ssize_t, double complex)
+        double complex spherical_jn(Py_ssize_t, double complex, bint)
+        double spherical_jn(Py_ssize_t, double)
+        double spherical_jn(Py_ssize_t, double, bint)
+
 - :py:func:`~scipy.special.spherical_kn`::
 
         double complex spherical_kn(Py_ssize_t, double complex)
         double complex spherical_kn(Py_ssize_t, double complex, bint)
         double spherical_kn(Py_ssize_t, double)
         double spherical_kn(Py_ssize_t, double, bint)
+
+- :py:func:`~scipy.special.spherical_yn`::
+
+        double complex spherical_yn(Py_ssize_t, double complex)
+        double complex spherical_yn(Py_ssize_t, double complex, bint)
+        double spherical_yn(Py_ssize_t, double)
+        double spherical_yn(Py_ssize_t, double, bint)
 
 """
 from numpy cimport (npy_float, npy_double, npy_longdouble, npy_cdouble,
@@ -1132,14 +1132,14 @@ cdef extern from r"cython_special_wrappers.h":
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     npy_double special_ker(npy_double) nogil
     double special_kerp(double) nogil
-    npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
-    npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double) nogil
-    void _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_special_mathieu_a "special_mathieu_a"(npy_double, npy_double) nogil
+    npy_double _func_special_mathieu_b "special_mathieu_b"(npy_double, npy_double) nogil
+    void _func_special_mathieu_cem "special_mathieu_cem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
-    void _func_sem_wrap "sem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    void _func_special_mathieu_sem "special_mathieu_sem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     void _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     npy_double _func_oblate_aswfa_nocv_wrap "oblate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
@@ -1390,6 +1390,7 @@ cdef extern from r"cython_special_wrappers.h":
 
     double special_boxcox(double x, double lmbda) nogil
     double special_boxcox1p(double x, double lmbda) nogil
+    npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) nogil
     npy_cdouble special_chyp0f1(double v, npy_cdouble z) nogil
     double special_hyp0f1(double v, double z) nogil
     double special_hyperu(double a, double b, double x) nogil
@@ -1429,6 +1430,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_fdtrc_double(double dfn, double dfd, double x) nogil
     float boost_fdtri_float(float dfn, float dfd, float p) nogil
     double boost_fdtri_double(double dfn, double dfd, double p) nogil
+    double boost_hyp1f1_double(double a, double b, double x) nogil
     float boost_log_gammainc_float(float a, float x) nogil
     double boost_log_gammainc_double(double a, double x) nogil
     float boost_log_gammaincc_float(float a, float x) nogil
@@ -1452,6 +1454,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_powm1_double(double x, double y) nogil
     float boost_stdtr_float(float df, float t) nogil
     double boost_stdtr_double(double df, double t) nogil
+    double boost_stdtridf_double(double df, double t) nogil
     float boost_stdtrit_float(float df, float p) nogil
     double boost_stdtrit_double(double df, double p) nogil
 
@@ -1466,41 +1469,6 @@ cdef _proto_bdtrc_unsafe_t *_proto_bdtrc_unsafe_t_var = &_func_bdtrc_unsafe
 from ._legacy cimport bdtri_unsafe as _func_bdtri_unsafe
 ctypedef double _proto_bdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtri_unsafe_t *_proto_bdtri_unsafe_t_var = &_func_bdtri_unsafe
-
-cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
-    """See the documentation for scipy.special.chdtriv"""
-    if df_number_t is float:
-        return boost_chdtriv_float(x0, x1)
-    elif df_number_t is double:
-        return boost_chdtriv_double(x0, x1)
-
-cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtr"""
-    if df_number_t is float:
-        return boost_chndtr_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_chndtr_double(x0, x1, x2)
-
-cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtrix"""
-    if df_number_t is float:
-        return boost_chndtrix_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_chndtrix_double(x0, x1, x2)
-
-cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtrinc"""
-    if df_number_t is float:
-        return boost_chndtrinc_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_chndtrinc_double(x0, x1, x2)
-
-cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtridf"""
-    if df_number_t is float:
-        return boost_chndtridf_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_chndtridf_double(x0, x1, x2)
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -1687,9 +1655,6 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
-
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j1 "j1"(npy_double)nogil
@@ -1742,17 +1707,9 @@ from ._legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) noexcept nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
 
-from ._cdflib_wrappers cimport stdtridf as _func_stdtridf
-ctypedef double _proto_stdtridf_t(double, double) noexcept nogil
-cdef _proto_stdtridf_t *_proto_stdtridf_t_var = &_func_stdtridf
-
 from ._legacy cimport yn_unsafe as _func_yn_unsafe
 ctypedef double _proto_yn_unsafe_t(double, double) noexcept nogil
 cdef _proto_yn_unsafe_t *_proto_yn_unsafe_t_var = &_func_yn_unsafe
-
-cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.voigt_profile"""
-    return xsf_voigt_profile(x0, x1, x2)
 
 cpdef double agm(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.agm"""
@@ -1835,6 +1792,10 @@ cpdef double bdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.bdtrik"""
     return boost_bdtrik(x0, x1, x2)
 
+cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.bdtrin"""
+    return boost_bdtrin(x0, x1, x2)
+
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
     return special_bei(x0)
@@ -1872,33 +1833,19 @@ cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexc
     elif df_number_t is double:
         return boost_betaincc_double(x0, x1, x2)
 
-cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.betaincinv"""
-    if df_number_t is float:
-        return boost_betaincinv_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_betaincinv_double(x0, x1, x2)
-
-cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtrib"""
-    if df_number_t is float:
-        return boost_btdtrib_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_btdtrib_double(x0, x1, x2)
-
-cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtria"""
-    if df_number_t is float:
-        return boost_btdtria_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_btdtria_double(x0, x1, x2)
-
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainccinv"""
     if df_number_t is float:
         return boost_betainccinv_float(x0, x1, x2)
     elif df_number_t is double:
         return boost_betainccinv_double(x0, x1, x2)
+
+cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.betaincinv"""
+    if df_number_t is float:
+        return boost_betaincinv_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_betaincinv_double(x0, x1, x2)
 
 cpdef double betaln(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.betaln"""
@@ -1916,6 +1863,20 @@ cpdef double boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox1p"""
     return special_boxcox1p(x0, x1)
 
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.btdtria"""
+    if df_number_t is float:
+        return boost_btdtria_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_btdtria_double(x0, x1, x2)
+
+cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.btdtrib"""
+    if df_number_t is float:
+        return boost_btdtrib_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_btdtrib_double(x0, x1, x2)
+
 cpdef double cbrt(double x0) noexcept nogil:
     """See the documentation for scipy.special.cbrt"""
     return xsf_cbrt(x0)
@@ -1931,6 +1892,41 @@ cpdef double chdtrc(double x0, double x1) noexcept nogil:
 cpdef double chdtri(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtri"""
     return xsf_chdtri(x0, x1)
+
+cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.chdtriv"""
+    if df_number_t is float:
+        return boost_chdtriv_float(x0, x1)
+    elif df_number_t is double:
+        return boost_chdtriv_double(x0, x1)
+
+cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtr"""
+    if df_number_t is float:
+        return boost_chndtr_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_chndtr_double(x0, x1, x2)
+
+cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtridf"""
+    if df_number_t is float:
+        return boost_chndtridf_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_chndtridf_double(x0, x1, x2)
+
+cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtrinc"""
+    if df_number_t is float:
+        return boost_chndtrinc_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_chndtrinc_double(x0, x1, x2)
+
+cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtrix"""
+    if df_number_t is float:
+        return boost_chndtrix_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_chndtrix_double(x0, x1, x2)
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""
@@ -1950,6 +1946,13 @@ cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil:
         return xsf_dawsn(x0)
     elif Dd_number_t is double_complex:
         return _complexstuff.double_complex_from_npy_cdouble(xsf_cdawsn(_complexstuff.npy_cdouble_from_double_complex(x0)))
+
+cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
+    """See the documentation for scipy.special.digammainv"""
+    if df_number_t is float:
+        return special_digammainvf(x0)
+    elif df_number_t is double:
+        return special_digammainv(x0)
 
 cpdef double ellipe(double x0) noexcept nogil:
     """See the documentation for scipy.special.ellipe"""
@@ -1971,6 +1974,10 @@ def _ellipj_pywrap(double x0, double x1):
     ellipj(x0, x1, &y0, &y1, &y2, &y3)
     return y0, y1, y2, y3
 
+cpdef double ellipk(double x0) noexcept nogil:
+    """See the documentation for scipy.special.ellipk"""
+    return special_ellipk(x0)
+
 cpdef double ellipkinc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.ellipkinc"""
     return xsf_ellipkinc(x0, x1)
@@ -1978,10 +1985,6 @@ cpdef double ellipkinc(double x0, double x1) noexcept nogil:
 cpdef double ellipkm1(double x0) noexcept nogil:
     """See the documentation for scipy.special.ellipkm1"""
     return cephes_ellpk(x0)
-
-cpdef double ellipk(double x0) noexcept nogil:
-    """See the documentation for scipy.special.ellipk"""
-    return special_ellipk(x0)
 
 cpdef Dd_number_t elliprc(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.elliprc"""
@@ -2036,6 +2039,10 @@ cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil:
     elif Dd_number_t is double:
         return xsf_erfc(x0)
 
+cpdef double erfcinv(double x0) noexcept nogil:
+    """See the documentation for scipy.special.erfcinv"""
+    return cephes_erfcinv(x0)
+
 cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfcx"""
     if Dd_number_t is double:
@@ -2056,10 +2063,6 @@ cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
         return boost_erfinv_float(x0)
     elif df_number_t is double:
         return boost_erfinv_double(x0)
-
-cpdef double erfcinv(double x0) noexcept nogil:
-    """See the documentation for scipy.special.erfcinv"""
-    return cephes_erfcinv(x0)
 
 cpdef Dd_number_t eval_chebyc(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyc"""
@@ -2263,6 +2266,27 @@ cpdef double exprel(double x0) noexcept nogil:
     """See the documentation for scipy.special.exprel"""
     return special_exprel(x0)
 
+cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtr"""
+    if df_number_t is float:
+        return boost_fdtr_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_fdtr_double(x0, x1, x2)
+
+cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtrc"""
+    if df_number_t is float:
+        return boost_fdtrc_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_fdtrc_double(x0, x1, x2)
+
+cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtri"""
+    if df_number_t is float:
+        return boost_fdtri_float(x0, x1, x2)
+    elif df_number_t is double:
+        return boost_fdtri_double(x0, x1, x2)
+
 cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtridfd"""
     return _func_fdtridfd(x0, x1, x2)
@@ -2323,13 +2347,13 @@ cpdef double gdtrc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrc"""
     return xsf_gdtrc(x0, x1, x2)
 
-cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.gdtrib"""
-    return xsf_gdtrib(x0, x1, x2)
-
 cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtria"""
     return xsf_gdtria(x0, x1, x2)
+
+cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.gdtrib"""
+    return xsf_gdtrib(x0, x1, x2)
 
 cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrix"""
@@ -2365,9 +2389,9 @@ cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.hyp1f1"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp1f1_double)(x0, x1, x2)
+        return boost_hyp1f1_double(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
+        return _complexstuff.double_complex_from_npy_cdouble(chyp1f1_wrap(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
@@ -2607,13 +2631,6 @@ cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil:
     elif dfg_number_t is long_double:
         return special_log_expitl(x0)
 
-cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
-    """See the documentation for scipy.special.log_ndtr"""
-    if Dd_number_t is double:
-        return xsf_log_ndtr(x0)
-    elif Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(xsf_clog_ndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
-
 cpdef df_number_t log_gammainc(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.log_gammainc"""
     if df_number_t is float:
@@ -2627,6 +2644,17 @@ cpdef df_number_t log_gammaincc(df_number_t x0, df_number_t x1) noexcept nogil:
         return boost_log_gammaincc_float(x0, x1)
     elif df_number_t is double:
         return boost_log_gammaincc_double(x0, x1)
+
+cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
+    """See the documentation for scipy.special.log_ndtr"""
+    if Dd_number_t is double:
+        return xsf_log_ndtr(x0)
+    elif Dd_number_t is double_complex:
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_clog_ndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
+
+cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.log_wright_bessel"""
+    return special_log_wright_bessel(x0, x1, x2)
 
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.loggamma"""
@@ -2650,15 +2678,15 @@ cpdef double lpmv(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double mathieu_a(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_a"""
-    return _func_cem_cva_wrap(x0, x1)
+    return _func_special_mathieu_a(x0, x1)
 
 cpdef double mathieu_b(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_b"""
-    return _func_sem_cva_wrap(x0, x1)
+    return _func_special_mathieu_b(x0, x1)
 
 cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_cem"""
-    _func_cem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_cem(x0, x1, x2, y0, y1)
 
 def _mathieu_cem_pywrap(double x0, double x1, double x2):
     cdef double y0
@@ -2708,7 +2736,7 @@ def _mathieu_modsem2_pywrap(double x0, double x1, double x2):
 
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_sem"""
-    _func_sem_wrap(x0, x1, x2, y0, y1)
+    _func_special_mathieu_sem(x0, x1, x2, y0, y1)
 
 def _mathieu_sem_pywrap(double x0, double x1, double x2):
     cdef double y0
@@ -2775,13 +2803,13 @@ cpdef double nbdtri(dlp_number_t x0, dlp_number_t x1, double x2) noexcept nogil:
     elif dlp_number_t is Py_ssize_t:
         return xsf_nbdtri(x0, x1, x2)
 
-cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.nbdtrin"""
-    return boost_nbdtrin(x0, x1, x2)
-
 cpdef double nbdtrik(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nbdtrik"""
     return boost_nbdtrik(x0, x1, x2)
+
+cpdef double nbdtrin(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.nbdtrin"""
+    return boost_nbdtrin(x0, x1, x2)
 
 cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtr"""
@@ -2789,31 +2817,6 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
         return boost_ncfdtr_float(x0, x1, x2, x3)
     elif df_number_t is double:
         return boost_ncfdtr_double(x0, x1, x2, x3)
-
-cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtr"""
-    if df_number_t is float:
-        return boost_fdtr_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_fdtr_double(x0, x1, x2)
-
-cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtrc"""
-    if df_number_t is float:
-        return boost_fdtrc_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_fdtrc_double(x0, x1, x2)
-
-cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtri"""
-    if df_number_t is float:
-        return boost_fdtri_float(x0, x1, x2)
-    elif df_number_t is double:
-        return boost_fdtri_double(x0, x1, x2)
-
-cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.bdtrin"""
-    return boost_bdtrin(x0, x1, x2)
 
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
@@ -2866,6 +2869,10 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
 cpdef double ndtri(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri"""
     return xsf_ndtri(x0)
+
+cpdef double ndtri_exp(double x0) noexcept nogil:
+    """See the documentation for scipy.special.ndtri_exp"""
+    return special_ndtri_exp(x0)
 
 cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrimn"""
@@ -3083,13 +3090,6 @@ cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
     elif Dd_number_t is double:
         return special_digamma(x0)
 
-cpdef df_number_t digammainv(df_number_t x0) noexcept nogil:
-    """See the documentation for scipy.special.digammainv"""
-    if df_number_t is float:
-        return special_digammainvf(x0)
-    elif df_number_t is double:
-        return special_digammainv(x0)
-
 cpdef double radian(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.radian"""
     return xsf_radian(x0, x1, x2)
@@ -3174,6 +3174,58 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
     elif Dd_number_t is double:
         return xsf_spence(x0)
 
+cpdef number_t spherical_in(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_in"""
+    if derivative:
+        if number_t is double:
+            return special_sph_bessel_i_jac(n, z)
+        else:
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+    if number_t is double:
+        return special_sph_bessel_i(n, z)
+    else:
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+cpdef number_t spherical_jn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_jn"""
+    if derivative:
+        if number_t is double:
+            return special_sph_bessel_j_jac(n, z)
+        else:
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+    if number_t is double:
+        return special_sph_bessel_j(n, z)
+    else:
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+cpdef number_t spherical_kn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_kn"""
+    if derivative:
+        if number_t is double:
+            return special_sph_bessel_k_jac(n, z)
+        else:
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+    if number_t is double:
+        return special_sph_bessel_k(n, z)
+    else:
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+cpdef number_t spherical_yn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_yn"""
+    if derivative:
+        if number_t is double:
+            return special_sph_bessel_y_jac(n, z)
+        else:
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
+    if number_t is double:
+        return special_sph_bessel_y(n, z)
+    else:
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y(n, _complexstuff.npy_cdouble_from_double_complex(z)))
+
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
     if df_number_t is float:
@@ -3181,16 +3233,16 @@ cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     elif df_number_t is double:
         return boost_stdtr_double(x0, x1)
 
+cpdef double stdtridf(double p, double t) noexcept nogil:
+    """See the documentation for scipy.special.stdtridf"""
+    return boost_stdtridf_double(p, t)
+
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtrit"""
     if df_number_t is float:
         return boost_stdtrit_float(x0, x1)
     elif df_number_t is double:
         return boost_stdtrit_double(x0, x1)
-
-cpdef double stdtridf(double x0, double x1) noexcept nogil:
-    """See the documentation for scipy.special.stdtridf"""
-    return _func_stdtridf(x0, x1)
 
 cpdef double struve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.struve"""
@@ -3204,9 +3256,17 @@ cpdef double tklmbda(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.tklmbda"""
     return xsf_tukeylambdacdf(x0, x1)
 
+cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.voigt_profile"""
+    return xsf_voigt_profile(x0, x1, x2)
+
 cpdef double complex wofz(double complex x0) noexcept nogil:
     """See the documentation for scipy.special.wofz"""
     return _complexstuff.double_complex_from_npy_cdouble(xsf_cwofz(_complexstuff.npy_cdouble_from_double_complex(x0)))
+
+cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.wright_bessel"""
+    return special_wright_bessel(x0, x1, x2)
 
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.wrightomega"""
@@ -3265,67 +3325,3 @@ cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
 cpdef double zetac(double x0) noexcept nogil:
     """See the documentation for scipy.special.zetac"""
     return xsf_zetac(x0)
-
-cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.wright_bessel"""
-    return special_wright_bessel(x0, x1, x2)
-
-cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.log_wright_bessel"""
-    return special_log_wright_bessel(x0, x1, x2)
-
-cpdef double ndtri_exp(double x0) noexcept nogil:
-    """See the documentation for scipy.special.ndtri_exp"""
-    return special_ndtri_exp(x0)
-
-cpdef number_t spherical_jn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
-    """See the documentation for scipy.special.spherical_jn"""
-    if derivative:
-        if number_t is double:
-            return special_sph_bessel_j_jac(n, z)
-        else:
-            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-    if number_t is double:
-        return special_sph_bessel_j(n, z)
-    else:
-        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-cpdef number_t spherical_yn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
-    """See the documentation for scipy.special.spherical_yn"""
-    if derivative:
-        if number_t is double:
-            return special_sph_bessel_y_jac(n, z)
-        else:
-            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-    if number_t is double:
-        return special_sph_bessel_y(n, z)
-    else:
-        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-cpdef number_t spherical_in(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
-    """See the documentation for scipy.special.spherical_in"""
-    if derivative:
-        if number_t is double:
-            return special_sph_bessel_i_jac(n, z)
-        else:
-            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-    if number_t is double:
-        return special_sph_bessel_i(n, z)
-    else:
-        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-cpdef number_t spherical_kn(Py_ssize_t n, number_t z, bint derivative=0) noexcept nogil:
-    """See the documentation for scipy.special.spherical_kn"""
-    if derivative:
-        if number_t is double:
-            return special_sph_bessel_k_jac(n, z)
-        else:
-            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
-
-    if number_t is double:
-        return special_sph_bessel_k(n, z)
-    else:
-        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k(n, _complexstuff.npy_cdouble_from_double_complex(z)))

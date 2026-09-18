@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import copy
 from warnings import warn
 
 import numpy as np
@@ -1110,6 +1111,7 @@ def _validate_bounds(bounds, x0, meth):
         raise ValueError(msg)
 
     msg = "The number of bounds is not compatible with the length of `x0`."
+    bounds = copy.copy(bounds)  # don't broadcast onto the caller's object
     try:
         bounds.lb = np.broadcast_to(bounds.lb, x0.shape)
         bounds.ub = np.broadcast_to(bounds.ub, x0.shape)

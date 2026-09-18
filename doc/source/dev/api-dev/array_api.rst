@@ -1181,7 +1181,7 @@ support for each function, it's usually vital to have tests which isolate use
 of the alternative backend only to the function being tested.
 
 To help facilitate such backend isolation, there is a function
-``_xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
+``xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
 ``xp`` array to a NumPy array, bypassing any device transfer guards, while
 preserving dtypes. It is essential that this function is only used in
 tests. Attempts to copy a device array to NumPy outside of tests should fail,
@@ -1189,7 +1189,7 @@ because otherwise it is opaque as to whether a function is working on GPU or
 not. Creation of input arrays and reference output arrays, and computations that
 verify that the output of the function being tested satisfies an invariant (such
 as round trip tests that a function composed with its inverse gives the identity
-function), should all be done with NumPy (using the ``_xp_copy_to_numpy``
+function), should all be done with NumPy (using the ``xp_copy_to_numpy``
 function if necessary).
 
 Such backend isolation should not be applied blindly. Consider for example a
@@ -1285,6 +1285,60 @@ as it does to tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
+Testing device propagation with a torch meta default device
+````````````````````````````````````````````````````````````
+
+Under the array API standard, arrays created without an explicit ``device``
+land on the backend's *default* device. If SciPy code creates an array
+internally without propagating the input's device (``device=xp_device(x)``),
+the result only breaks when the input lives on a *non-default* device - a
+situation regular CPU test runs never exercise as there is only one CPU device.
+
+Using the PyTorch ``'meta'`` device (through ``SCIPY_DEVICE=meta``) closes that
+gap without needing extra hardware. E.g., running::
+
+  pixi run test-torch-meta
+
+makes torch's data-free ``meta`` device the default while the ``xp`` fixture
+hands tests a wrapper namespace that creates input arrays on CPU.
+SciPy-internal code resolves the real namespace from its input arrays, so any
+internal creation that omits ``device=`` lands on ``meta`` and fails with an
+exception (``Expected all tensors to be on the same device``) at the first
+combination with input data.
+
+In other words: testing with the PyTorch meta device provides a
+device-propagation leak detector. It simulates running the test suite on a
+machine whose default device is a GPU while all test arrays are created in CPU
+memory - a situation in which a missing ``device=`` actually breaks - without
+needing a GPU.
+This includes ``cpu_only`` functions: their NumPy round-trip must
+return results on the *input's* device (not the default device), so they run
+and are value-checked in this mode.
+
+When triaging a failure in this mode:
+
+* An ``Expected all tensors to be on the same device`` error (``meta`` and
+  ``cpu``) inside SciPy code is a real leak; fix it by propagating the input
+  device at the creation site.
+* ``Tensor.item() cannot be called on meta tensors`` / ``Cannot copy out of
+  meta tensor``: check where the offending tensor was created. Most often it
+  is also a real leak, one step removed: an internal conversion omitted
+  ``device=`` (e.g. a host parameter - one that lives in CPU memory - converted
+  with a bare ``xp.asarray(p)`` and then validated with ``xp.any(p <= 0)``),
+  and the fix is again to pin the creation site. Only when the device-to-host transfer
+  is inherent to the implementation - a computed value genuinely needed on the
+  host, which is a legal synchronization on real devices but impossible on the
+  data-free ``meta`` device - mark the test with
+  ``@pytest.mark.skip_xp_backends(skip_meta=True, reason=...)``.
+* A value assertion comparing a ``meta`` result against a ``cpu`` reference
+  means the function constructs its output on the default device because it
+  takes no array input (e.g. the window functions). If the function has a
+  ``device`` keyword, do not skip: pass the device of test-created arrays
+  explicitly (see the ``device`` fixture in ``test_windows.py``), which both
+  fixes the test and actively verifies the keyword is threaded through every
+  internal creation. Only functions without a ``device`` keyword need the
+  ``skip_meta=True`` mark.
+
 Adding tests for class methods
 ``````````````````````````````
 
@@ -1365,7 +1419,6 @@ considered out-of-scope.
    array_api_modules_tables/fft
    array_api_modules_tables/integrate
    array_api_modules_tables/interpolate
-   array_api_modules_tables/io
    array_api_modules_tables/linalg
    array_api_modules_tables/linalg_interpolative
    array_api_modules_tables/ndimage
@@ -1396,7 +1449,6 @@ Support on CPU
    :fft: array_api_support_fft_cpu
    :integrate: array_api_support_integrate_cpu
    :interpolate: array_api_support_interpolate_cpu
-   :io: array_api_support_io_cpu
    :linalg: array_api_support_linalg_cpu
    :linalg.interpolative: array_api_support_linalg_interpolative_cpu
    :ndimage: array_api_support_ndimage_cpu
@@ -1427,7 +1479,6 @@ Support on GPU
    :fft: array_api_support_fft_gpu
    :integrate: array_api_support_integrate_gpu
    :interpolate: array_api_support_interpolate_gpu
-   :io: array_api_support_io_gpu
    :linalg: array_api_support_linalg_gpu
    :linalg.interpolative: array_api_support_linalg_interpolative_gpu
    :ndimage: array_api_support_ndimage_gpu
@@ -1458,7 +1509,6 @@ Support with JIT
    :fft: array_api_support_fft_jit
    :integrate: array_api_support_integrate_jit
    :interpolate: array_api_support_interpolate_jit
-   :io: array_api_support_io_jit
    :linalg: array_api_support_linalg_jit
    :linalg.interpolative: array_api_support_linalg_interpolative_jit
    :ndimage: array_api_support_ndimage_jit

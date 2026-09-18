@@ -816,6 +816,16 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
+# These mathieu functions are generated dynamically and inserted into globals
+# through _support_alternative_backends. This confuses the type checker though
+# so import them when type checking. Importing them in the regular code path
+# breaks test_support_alternative_backends.py due to the vagaries of how
+# those tests are set up. TODO: Do the setup of delegation in scipy.special
+# in a more principled way.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ._mathieu import mathieu_cem, mathieu_sem
+
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.
@@ -835,8 +845,11 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_cem',
+    'mathieu_sem',
 ]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+del TYPE_CHECKING

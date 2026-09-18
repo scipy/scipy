@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from hypothesis import strategies as st
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
@@ -3320,8 +3320,11 @@ class TestVectorizedFilter:
         xp_assert_close(res, ref)
 
 
+# cost is Hypothesis engine overhead per example, not `median_filter`; lengths past ~50
+# can't reach the `lim = (size - 1) // 2` boundary fuzzed here, so they only add cost
+@settings(max_examples=50)
 @given(x=npst.arrays(dtype=np.float64,
-                     shape=st.integers(min_value=1, max_value=1000)),
+                     shape=st.integers(min_value=1, max_value=200)),
        size=st.integers(min_value=1, max_value=50),
        mode=st.sampled_from(["constant", "mirror", "wrap", "reflect",
                              "nearest"]),

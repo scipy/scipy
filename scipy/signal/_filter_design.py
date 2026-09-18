@@ -50,10 +50,6 @@ def _is_int_type(x):
     Check if input is of a scalar integer type (so ``5`` and ``array(5)`` will
     pass, while ``5.0`` and ``array([5])`` will fail.
     """
-    if np.ndim(x) != 0:
-        # Older versions of NumPy did not raise for np.array([1]).__index__()
-        # This is safe to remove when support for those versions is dropped
-        return False
     try:
         operator.index(x)
     except TypeError:
@@ -5871,15 +5867,15 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=No
     # b - cz^-N or b + cz^-N
     b = xp.zeros(N + 1, device=device)
     sgn = -1. if negative_coef else 1
-    xpx.at(b, 0).set(bx)
-    xpx.at(b, -1).set(sgn * cx)
+    b = xpx.at(b, 0).set(bx)
+    b = xpx.at(b, -1).set(sgn * cx)
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
     a = xp.zeros(N + 1, device=device)
-    xpx.at(a, 0).set(1.)
-    xpx.at(a, -1).set(sgn * ax)
+    a = xpx.at(a, 0).set(1.)
+    a = xpx.at(a, -1).set(sgn * ax)
 
     return b, a
 

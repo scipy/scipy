@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import rng_integers
 from scipy._lib._array_api import (is_numpy, make_xp_test_case,
-                                   xp_size, array_namespace, _xp_copy_to_numpy,
+                                   xp_size, array_namespace, xp_copy_to_numpy,
                                    is_lazy_array, eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
@@ -1552,7 +1552,7 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ks_2samp` supports more backends
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1581,7 +1581,7 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ansari` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ansari(x, y, axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1686,14 +1686,14 @@ class TestPermutationTest:
         def statistic_1samp_1d(z, axis):
             # todo: use `xp` as backend when `wilcoxon` is translated to array API
             # 'less' ensures we get the same of two statistics every time
-            z = _xp_copy_to_numpy(z)
+            z = xp_copy_to_numpy(z)
             res = stats.wilcoxon(z, alternative='less', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
 
         def statistic_2samp_1d(x, y, axis):
             # todo: use `xp` as backend when `wilcoxon` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.wilcoxon(x, y, alternative='less', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1746,7 +1746,7 @@ class TestPermutationTest:
 
         def statistic(x, axis):
             # todo: use `xp` as backend when `kendalltau` is translated to array API
-            x = _xp_copy_to_numpy(x)
+            x = xp_copy_to_numpy(x)
             res = stats.kendalltau(x, y, method='asymptotic', axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1880,7 +1880,7 @@ class TestPermutationTest:
 
         def statistic(x, y, axis):
             # todo: use `xp` as backend when `ansari` is translated to array API
-            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            x, y = xp_copy_to_numpy(x), xp_copy_to_numpy(y)
             res = stats.ansari(x, y, axis=axis)
             res = xp.asarray(res.statistic)
             return res[()] if res.ndim == 0 else res
@@ -1938,12 +1938,12 @@ class TestPermutationTest:
                         2.6514917, 2.01160156, 0.47699563])
         expected_statistic = 0.7714285714285715
 
-        y = xp.asarray(stats.rankdata(_xp_copy_to_numpy(y)))
+        y = xp.asarray(stats.rankdata(xp_copy_to_numpy(y)))
         def statistic(x, axis):
             # `spearmanr` is not array api compatible, but `pearsonr` is. So for now
-            # use _xp_copy_to_numpy just for ranking so we can run this test w/ CuPy.
+            # use xp_copy_to_numpy just for ranking so we can run this test w/ CuPy.
             # TODO: use `xp` as backend when cupy works with `rankdata`
-            x = xp.asarray(stats.rankdata(_xp_copy_to_numpy(x), axis=axis))
+            x = xp.asarray(stats.rankdata(xp_copy_to_numpy(x), axis=axis))
             return stats.pearsonr(x, y, axis=axis).statistic
 
         res = permutation_test((x,), statistic, permutation_type='pairings',

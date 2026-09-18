@@ -834,8 +834,8 @@ class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
-            - ``axis1 == axis3`` (symmetric sequence)
+        - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+        - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
         the consecutive orthogonal axes requirement is maintained.
@@ -1265,9 +1265,8 @@ class Rotation:
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to:
 
-                - [-90, 90] degrees if all axes are different (like xyz)
-                - [0, 180] degrees if first and third axes are the same
-                  (like zxz)
+              - [-90, 90] degrees if all axes are different (like xyz)
+              - [0, 180] degrees if first and third axes are the same (like zxz)
 
         References
         ----------
@@ -1328,18 +1327,18 @@ class Rotation:
         *,
         suppress_warnings: bool = False,
     ) -> Array:
-        """Represent as Davenport angles.
+        r"""Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
         rotations.
 
         For both Euler angles and Davenport angles, consecutive axes must
-        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
-        ``axis3``). For Euler angles, there is an additional relationship
-        between ``axis1`` or ``axis3``, with two possibilities:
+        be orthogonal (``axis2`` is orthogonal to both ``axis1`` and ``axis3``).
+        For Euler angles, there is an additional relationship between ``axis1``
+        or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
-            - ``axis1 == axis3`` (symmetric sequence)
+        - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+        - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
         the consecutive orthogonal axes requirement is maintained.
@@ -1379,11 +1378,17 @@ class Rotation:
             Shape depends on shape of inputs used to initialize object.
             The returned angles are in the range:
 
-            - First angle belongs to [-180, 180] degrees (both inclusive)
-            - Third angle belongs to [-180, 180] degrees (both inclusive)
-            - Second angle belongs to a set of size 180 degrees,
-              given by: ``[-abs(lambda), 180 - abs(lambda)]``, where ``lambda``
-              is the angle between the first and third axes.
+            - First angle belongs to :math:`[-180°,\ 180°]` (both inclusive)
+            - Third angle belongs to :math:`[-180°,\ 180°]` (both inclusive)
+            - Second angle belongs to a set of size 180°,
+              given by:
+
+                - :math:`[-\lambda,\ 180° {-\lambda}]`, if :math:`\lambda ≥ 0`
+                - :math:`[-180° - \lambda,\ {-\lambda}]`, if :math:`\lambda < 0`
+
+              Here :math:`\lambda` is the angle in :math:`[-180°,\ 180°]` that rotates
+              axis 3 onto axis 1 using axis 2 as the rotation vector
+              (all intervals inclusive on both sides).
 
         References
         ----------
@@ -1577,11 +1582,11 @@ class Rotation:
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
 
-            - As a projection of vector components expressed in the final frame
-              to the original frame.
-            - As the physical rotation of a vector being glued to the original
-              frame as it rotates. In this case the vector components are
-              expressed in the original frame before and after the rotation.
+        - As a projection of vector components expressed in the final frame
+          to the original frame.
+        - As the physical rotation of a vector being glued to the original
+          frame as it rotates. In this case the vector components are
+          expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
         ``(self.as_matrix() @ vectors[..., np.newaxis])[..., 0]``.
@@ -1776,6 +1781,7 @@ class Rotation:
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         Broadcasting rules apply:
+
         >>> p = R.from_quat(np.tile(np.array([0, 0, 1, 1]), (5, 1, 1)))
         >>> q = R.from_quat(np.tile(np.array([1, 0, 0, 1]), (1, 6, 1)))
         >>> p.shape, q.shape
@@ -2116,11 +2122,11 @@ class Rotation:
             The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
             where `n` is a positive integer. The groups are:
 
-                * I: Icosahedral group
-                * O: Octahedral group
-                * T: Tetrahedral group
-                * D: Dicyclic group
-                * C: Cyclic group
+            * I: Icosahedral group
+            * O: Octahedral group
+            * T: Tetrahedral group
+            * D: Dicyclic group
+            * C: Cyclic group
 
         axis : int
             The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or

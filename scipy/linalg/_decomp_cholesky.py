@@ -297,7 +297,7 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
     return x
 
 
-@_apply_over_batch(("ab", 2))
+@_apply_over_batch(("ab", 2), signature="(i,j)->(i,j)")
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
     Cholesky decompose a banded Hermitian positive-definite matrix.

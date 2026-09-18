@@ -1722,9 +1722,13 @@ class TestOptimizeSimple(CheckOptimize):
             # call to the callback
             assert res.fun == ref.fun
             assert_equal(res.x, ref.x)
-        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
-        if method != 'cobyqa':
-            assert not res.success
+        if method == 'trust-constr':
+            assert res.status == 3
+        elif method == 'cobyqa':
+            assert res.status == 4
+        else:
+            assert res.status == 99
+        assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -2573,6 +2577,13 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    def test_repr_with_empty_dict_value(self):
+        # gh-25893
+        res = optimize.OptimizeResult(x=1, options={})
+        assert 'options' in repr(res)
+        res = optimize.OptimizeResult(options={}, info={'a': 1})
+        assert 'a: 1' in repr(res)
+
     @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
@@ -3190,6 +3201,27 @@ def test_bounds_with_list():
     optimize.minimize(
         optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
     )
+
+
+@pytest.mark.parametrize('method', ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc',
+                                    'slsqp', 'cobyla', 'cobyqa', 'trust-constr'))
+def test_minimize_does_not_mutate_bounds(method):
+    # `minimize` broadcast lb/ub onto the caller's `Bounds`; cf. gh-8419
+    bounds = optimize.Bounds(0., np.inf)
+    lb, ub, keep_feasible = bounds.lb, bounds.ub, bounds.keep_feasible
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method=method, bounds=bounds)
+    assert bounds.lb is lb
+    assert bounds.ub is ub
+    assert bounds.keep_feasible is keep_feasible
+
+
+def test_minimize_bounds_reusable_across_sizes():
+    # consequence of the above: a dimension-agnostic `Bounds` was only usable once
+    bounds = optimize.Bounds(0., np.inf)
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
+    optimize.minimize(optimize.rosen, [0.5, 0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
 
 
 @pytest.mark.parametrize('method', (

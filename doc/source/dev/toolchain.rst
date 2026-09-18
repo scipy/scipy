@@ -26,7 +26,7 @@ section for an example.)
 
 - First and foremost, SciPy is a Python project, hence it requires a Python environment.
 - BLAS and LAPACK numerical libraries need to be installed.
-- Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
+- Compilers for C and C++ code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
 - The Python environment needs the ``numpy`` package to be installed.
 - Testing requires the ``pytest`` and ``hypothesis`` Python packages.
 - Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
@@ -115,9 +115,12 @@ could vary. Please check the `release notes`_ and the meta-package
 Compilers
 ^^^^^^^^^
 
-Building SciPy requires compilers for C, C++, Fortran, as well as the
+Building SciPy requires compilers for C and C++, as well as the
 python transpilers Cython and Pythran (the latter is an opt-out dependency
-starting from version 1.7.0).
+starting from version 1.7.0). A Fortran compiler is no longer needed: in SciPy
+2.0.0, the last Fortran code was removed. Note that BLAS and LAPACK are still
+Fortran libraries, so their Fortran ABI (see :ref:`building-blas-and-lapack`)
+and runtime library still matter.
 
 To maintain compatibility with a large number of platforms & setups, especially
 where using the official wheels (or other distribution channels like Anaconda
@@ -130,7 +133,7 @@ As explained in more detail below, the current minimal compiler versions are:
  Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
 ==========  ===========================  ===============================  ============================
  GCC         Linux                        AIX, Alpine Linux, OSX           GCC 10.3
- LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 12.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 15.0
  MSVC        Windows                      -                                Visual Studio 2019 (vc142)
 ==========  ===========================  ===============================  ============================
 
@@ -412,7 +415,7 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
  Library           Minimum version
 =============== =====================================================
-LAPACK           3.7.1
+LAPACK           3.9.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
                  The Accelerate BLAS library is no longer supported.
 =============== =====================================================

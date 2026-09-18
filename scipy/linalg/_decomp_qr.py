@@ -198,7 +198,17 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
             R = np.empty_like(a1, shape=batch_shape + (K, N))
 
         if pivoting:
-            Rj = R, np.arange(N, dtype=np.int64 if HAS_ILP64 else np.int32)
+            if np.any(batch_shape == 0):
+                jpvt = np.empty(
+                    batch_shape + (N,), dtype=np.int64 if HAS_ILP64 else np.int32
+                )
+            else:
+                jpvt = np.tile(
+                    np.arange(N, dtype=np.int64 if HAS_ILP64 else np.int32),
+                    batch_shape + (1,),
+                )
+            Rj = R, jpvt
+
         else:
             Rj = R,
 
@@ -396,7 +406,19 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     return (cQ,) + raw[1:]
 
 
-@_apply_over_batch(('a', 2))
+def _rq_signature(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
+                  check_finite=True):
+    m, n = a.shape[-2:]
+    k = min(m, n)
+    if mode == "full":
+        return "(i,j)->(i,j),(j,j)"
+    elif mode == "economic":
+        return f"(i,j)->(i,{k}),({k},j)"
+    else:
+        return "(i,j)->(i,j)"
+
+
+@_apply_over_batch(('a', 2), signature=_rq_signature)
 def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.

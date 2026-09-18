@@ -107,7 +107,7 @@ void *superlu_python_module_malloc(size_t size)
     if (g == NULL) {
         return NULL;
     }
-    mem_ptr = malloc(size);
+    mem_ptr = PyMem_RawMalloc(size);
     if (mem_ptr == NULL) {
         NPY_DISABLE_C_API;
         return NULL;
@@ -125,7 +125,7 @@ void *superlu_python_module_malloc(size_t size)
   fail:
     Py_XDECREF(key);
     NPY_DISABLE_C_API;
-    free(mem_ptr);
+    PyMem_RawFree(mem_ptr);
     superlu_python_module_abort
         ("superlu_malloc: Cannot set dictionary key value in malloc.");
     return NULL;
@@ -157,7 +157,7 @@ void superlu_python_module_free(void *ptr)
      */
     if (key != NULL) {
         if (!PyDict_DelItem(g->memory_dict, key)) {
-            free(ptr);
+            PyMem_RawFree(ptr);
         }
         Py_DECREF(key);
     }
@@ -175,7 +175,7 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
         while (PyDict_Next(self->memory_dict, &pos, &key, &value)) {
             void *ptr;
             ptr = PyLong_AsVoidPtr(key);
-            free(ptr);
+            PyMem_RawFree(ptr);
         }
     }
 

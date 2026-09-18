@@ -2,16 +2,16 @@ import pickle
 
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
-    make_xp_test_case, is_cupy, _xp_copy_to_numpy
+    make_xp_test_case, is_cupy, xp_copy_to_numpy
 )
 from scipy._external import array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 
-from numpy import mgrid, pi, sin, poly1d
+from numpy import poly1d
 import numpy as np
 
-from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
+from scipy.interpolate import (interp1d, lagrange, PPoly, BPoly,
         splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
         NdPPoly, BSpline, PchipInterpolator, make_interp_spline, CubicSpline,
         FloaterHormannInterpolator, BarycentricInterpolator, KroghInterpolator,
@@ -31,14 +31,6 @@ from scipy.special import binom
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-
-
-class TestInterp2D:
-    def test_interp2d(self):
-        y, x = mgrid[0:2:20j, 0:pi:21j]
-        z = sin(x+0.5*y)
-        with assert_raises(NotImplementedError):
-            interp2d(x, y, z)
 
 
 class TestInterp1D:
@@ -1695,7 +1687,7 @@ class TestPPoly:
         )
         # ditto for p.solve(const) with sections identically equal const
         const = 2.
-        c1 = _xp_copy_to_numpy(c)
+        c1 = xp_copy_to_numpy(c)
         c1[1, :] += const
         c1 = xp.asarray(c1)
         pp1 = PPoly(c1, x)

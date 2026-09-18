@@ -37,7 +37,9 @@ SEMILAPACK_URL="https://github.com/ilayn/semicolon-lapack/archive/refs/tags/v${S
 # To be consumed via PKG_CONFIG_PATH
 BLAS_PREFIX="${PROJECT_DIR}/.blis"
 
-BUILD_ROOT="$(mktemp -d)"
+BUILD_ROOT="${TMPDIR:-/tmp}/scipy-wasm-blas"
+rm -rf "${BUILD_ROOT}"
+mkdir -p "${BUILD_ROOT}"
 trap 'rm -rf "${BUILD_ROOT}"' EXIT
 
 rm -rf "${BLAS_PREFIX}"

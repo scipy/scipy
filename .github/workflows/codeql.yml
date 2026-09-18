@@ -84,12 +84,20 @@ jobs:
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
     - if: matrix.build-mode == 'manual'
-      name: Install dependencies and build SciPy
+      name: Checkout submodules
+      shell: bash
+      run: git submodule update --init
+
+    - if: matrix.build-mode == 'manual'
+      name: Install Ubuntu dependencies
+      uses: ./.github/apt-get
+      with:
+        packages: gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
+
+    - if: matrix.build-mode == 'manual'
+      name: Build SciPy
       shell: bash
       run: |
-        git submodule update --init
-        sudo apt update
-        sudo apt install -y gcc g++ libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
         python -m pip install --upgrade pip
         python -m pip install --group build --group dev-cli
         spin build

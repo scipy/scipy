@@ -16,17 +16,17 @@ from typing import Literal
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
                                    is_marray, xp_size, xp_result_device, xp_result_type,
-                                   xp_capabilities, xp_isscalar)
+                                   xp_capabilities, xp_isscalar, xp_device)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
+_config = np.show_config('dicts')
+USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
-
-copy_if_needed: bool | None = None
 
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
@@ -416,7 +416,7 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-def _validate_int(k, name, minimum=None):
+def _validate_int(k, name, minimum=None, maximum=None):
     """
     Validate a scalar integer.
 
@@ -433,6 +433,8 @@ def _validate_int(k, name, minimum=None):
         The name of the parameter.
     minimum : int, optional
         An optional lower bound.
+    maximum : int, optional
+        An optional upper bound.
     """
     try:
         k = operator.index(k)
@@ -441,6 +443,9 @@ def _validate_int(k, name, minimum=None):
     if minimum is not None and k < minimum:
         raise ValueError(f'{name} must be an integer not less '
                          f'than {minimum}') from None
+    if maximum is not None and k > maximum:
+        raise ValueError(f'{name} must be an integer not greater '
+                         f'than {maximum}') from None
     return k
 
 
@@ -1063,7 +1068,8 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     `mplus` is additional left padding applied to keys
     """
     if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        # `default=0` guards against an empty dict,
+        m = max(map(len, list(d.keys())), default=0) + mplus
         s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
                        _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
                        for k, v in sorter(d)])  # +2 for ': '
@@ -1109,11 +1115,60 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
-def _apply_over_batch(*argdefs):
+def output_from_signature(arrays, batch_shape, core_shapes, signature):
+    xp = array_namespace(*arrays)
+    dtype = xp.result_type(*arrays)
+    device = xp_device(arrays[0]) if len(arrays) else None
+
+    # ENH: parse more efficiently with regex.
+    # Preserve functions (e.g. max, min) and `eval` below.
+    inputs, outputs = signature.split("->")
+    inputs = inputs.lstrip("(").rstrip(")").split("),(")
+    input_dim_to_letter = {}
+    for i, input in enumerate(inputs):
+        for j, l in enumerate(input.split(",")):
+            input_dim_to_letter[(i, j)] = l
+
+    letter_to_length = {'': ()}
+    for i, core_shape in enumerate(core_shapes):
+        for j, length in enumerate(core_shape):
+            l = input_dim_to_letter[(i, j)]
+            if hasattr(letter_to_length, l):
+                assert letter_to_length[l] == length
+            else:
+                letter_to_length[l] = length
+
+    results = []
+    # This is a hack to avoid having to rethink the parsing strategy, e.g.
+    # (i, i)->(i, i),bool(i) becomes (i, i)->(i, i),(booli).
+    # But then we can still separate the two outputs by splitting at ),(.
+    # TODO: use regular expression for more efficient, elegant parsing.
+    signature_dtypes = ['bool', 'int', 'float', 'complex']
+    for signature_dtype in signature_dtypes:
+        outputs = outputs.replace(f"{signature_dtype}(", f"({signature_dtype}")
+    outputs = outputs.lstrip("(").rstrip(")").split("),(")
+    for output in outputs:
+        output_dtype = dtype
+        for signature_dtype in signature_dtypes:
+            if signature_dtype in output:
+                output_dtypes = {'bool': xp.bool,
+                                 'int': xp.result_type(1),
+                                 'float': xp.real(xp.asarray(1, dtype=dtype,
+                                                  device=device)).dtype,
+                                 'complex': xp.result_type(complex(1), dtype)}
+                output_dtype = output_dtypes[signature_dtype]
+                output = output.replace(signature_dtype, "")
+        out_core_shape = tuple([eval(l, letter_to_length)
+                                for l in output.split(',') if l])
+        results.append(xp.empty(batch_shape + out_core_shape,
+                                dtype=output_dtype, device=device))
+    return results[0] if len(results) == 1 else tuple(results)
+
+
+def _apply_over_batch(*argdefs, signature=None):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1185,11 +1240,13 @@ def _apply_over_batch(*argdefs):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # We can't support zero-size batches right now because without data with
-            # which to call the function, the decorator doesn't even know the *number*
-            # of outputs, let alone their core shapes or dtypes.
+            # Handle zero-size batches
             if math.prod(batch_shape) == 0:
-                message = f'`{f.__name__}` does not support zero-size batches.'
+                sig = signature(*args, **kwargs) if callable(signature) else signature
+                if signature is not None:
+                    return output_from_signature(arrays, batch_shape, core_shapes, sig)
+                f_name = f.__name__.lstrip('_')
+                message = f'`{f_name}` does not support zero-size batches.'
                 raise ValueError(message)
 
             # Broadcast arrays to appropriate shape
@@ -1219,10 +1276,16 @@ def _apply_over_batch(*argdefs):
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
-            return results[0] if len(results) == 1 else results
+            return results[0] if len(results) == 1 else tuple(results)
 
         doc = FunctionDoc(wrapper)
-        doc['Extended Summary'].append(_batch_note.rstrip())
+        batch_note = _batch_note.rstrip()
+        if signature is None:
+            batch_note += ("\nNote that calls with zero-size batches are unsupported "
+                           "and will raise a ``ValueError``.")
+        elif isinstance(signature, str):
+            batch_note += f"\nThe NEP 5 signature of this function is {signature}."
+        doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper

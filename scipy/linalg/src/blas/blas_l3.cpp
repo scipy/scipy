@@ -32,8 +32,8 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
-            ARRAY_IN(b, 2);
+            ARRAY_IN(T, a, 2);
+            ARRAY_IN(T, b, 2);
 
             CBLAS_INT m = trans_a ? shape(a, 1) : shape(a, 0);
             CBLAS_INT k = trans_a ? shape(a, 0) : shape(a, 1);
@@ -41,7 +41,7 @@ namespace blas{
             CHECKARRAY(trans_b ? shape(b, 1) == k : shape(b, 0) == k, b);
             CBLAS_INT n = trans_b ? shape(b, 0) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::gemm(trans_a ? (trans_a == 2 ? 'C' : 'T') : 'N', trans_b ? (trans_b == 2 ? 'C' : 'T') : 'N',
@@ -69,14 +69,14 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
-            ARRAY_IN(b, 2);
+            ARRAY_IN(T, a, 2);
+            ARRAY_IN(T, b, 2);
 
             CBLAS_INT m = side ? shape(b, 0) : shape(a, 0);
             CHECKARRAY(side ? shape(b, 1) == shape(a, 0) : shape(a, 1) == shape(b, 0), b);
             CBLAS_INT n = side ? shape(a, 1) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::symm(side ? 'R' : 'L', lower ? 'L' : 'U', m, n, alpha,
@@ -99,14 +99,14 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
-            ARRAY_IN(b, 2);
+            ARRAY_IN(T, a, 2);
+            ARRAY_IN(T, b, 2);
 
             CBLAS_INT m = side ? shape(b, 0) : shape(a, 0);
             CHECKARRAY(side ? shape(b, 1) == shape(a, 0) : shape(a, 1) == shape(b, 0), b);
             CBLAS_INT n = side ? shape(a, 1) : shape(b, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(m, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(m, n));
             CHECKARRAY(shape(c, 0) == m && shape(c, 1) == n, c);
 
             blas::hemm(side ? 'R' : 'L', lower ? 'L' : 'U', m, n, alpha,
@@ -129,11 +129,11 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
+            ARRAY_IN(T, a, 2);
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::syrk(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -160,11 +160,11 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
+            ARRAY_IN(T, a, 2);
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::herk(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -187,15 +187,15 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
-            ARRAY_IN(b, 2);
+            ARRAY_IN(T, a, 2);
+            ARRAY_IN(T, b, 2);
 
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             /* f2py phrased the a/b conformance as a check on "hidden k" */
             CHECKARRAY(trans ? shape(a, 0) == shape(b, 0) : shape(a, 1) == shape(b, 1), b);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::syr2k(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -223,14 +223,14 @@ namespace blas{
             SCALAR_REQ(T, alpha);
             SCALAR_OPT(T, beta, T(0));
 
-            ARRAY_IN(a, 2);
-            ARRAY_IN(b, 2);
+            ARRAY_IN(T, a, 2);
+            ARRAY_IN(T, b, 2);
 
             CBLAS_INT n = trans ? shape(a, 1) : shape(a, 0);
             CHECKARRAY(trans ? shape(a, 0) == shape(b, 0) : shape(a, 1) == shape(b, 1), b);
             CBLAS_INT k = trans ? shape(a, 0) : shape(a, 1);
 
-            ARRAY_OUT(c, 2, overwrite_c != 0, ctx.zeros(n, n));
+            ARRAY_OUT(T, c, 2, overwrite_c != 0, ctx.zeros(n, n));
             CHECKARRAY(shape(c, 0) == n && shape(c, 1) == n, c);
 
             blas::her2k(lower ? 'L' : 'U', trans ? (trans == 2 ? 'C' : 'T') : 'N',
@@ -255,8 +255,8 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, diag, 0);     CHECK(diag == 0 || diag == 1, diag);
             SCALAR_REQ(T, alpha);
 
-            ARRAY_IN(a, 2);
-            ARRAY_INOUT(b, 2, overwrite_b != 0);
+            ARRAY_IN(T, a, 2);
+            ARRAY_INOUT(T, b, 2, overwrite_b != 0);
             CBLAS_INT m = shape(b, 0), n = shape(b, 1);
             /* f2py's "hidden k" check: a must span the multiplied dimension */
             CHECKARRAY(shape(a, 1) >= (side ? n : m) && shape(a, 1) <= shape(a, 0), a);
@@ -284,10 +284,10 @@ namespace blas{
             SCALAR_OPT(CBLAS_INT, diag, 0);     CHECK(diag == 0 || diag == 1, diag);
             SCALAR_REQ(T, alpha);
 
-            ARRAY_INOUT(b, 2, overwrite_b != 0);
+            ARRAY_INOUT(T, b, 2, overwrite_b != 0);
             CBLAS_INT m = shape(b, 0), n = shape(b, 1);
 
-            ARRAY_IN(a, 2);
+            ARRAY_IN(T, a, 2);
             CHECKARRAY(shape(a, 0) == (side ? n : m), a);
             CHECKARRAY(shape(a, 0) == shape(a, 1), a);
 
@@ -300,19 +300,19 @@ namespace blas{
 
 
         PyMethodDef l3_methods[] = {
-            BLAS_FAMILY(gemm),
-            BLAS_FAMILY(symm),
-            BLAS_FAMILY(syr2k),
-            BLAS_FAMILY(syrk),
-            BLAS_FAMILY(trmm),
-            BLAS_FAMILY(trsm),
+            FAMILY(gemm),
+            FAMILY(symm),
+            FAMILY(syr2k),
+            FAMILY(syrk),
+            FAMILY(trmm),
+            FAMILY(trsm),
             /* Irregular function families are added individually */
-            BLAS_ROW(chemm,  hemm,  c64),
-            BLAS_ROW(zhemm,  hemm,  c128),
-            BLAS_ROW(cherk,  herk,  c64),
-            BLAS_ROW(zherk,  herk,  c128),
-            BLAS_ROW(cher2k, her2k, c64),
-            BLAS_ROW(zher2k, her2k, c128),
+            ROW(chemm,  hemm,  c64),
+            ROW(zhemm,  hemm,  c128),
+            ROW(cherk,  herk,  c64),
+            ROW(zherk,  herk,  c128),
+            ROW(cher2k, her2k, c64),
+            ROW(zher2k, her2k, c128),
             /* Sentinel */
             {nullptr, nullptr, 0, nullptr},
         };

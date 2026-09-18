@@ -20,4 +20,6 @@ def _max_len_seq_inner(taps, state, nbits, length, seq):
         state[idx] = feedback
         idx = (idx + 1) % nbits
     # state must be rolled s.t. next run, when idx==0, it's in the right place
-    return np.roll(state, -idx, axis=0)
+    # Avoid np.roll, pythran's generated code triggers a spurious warning:
+    # https://github.com/serge-sans-paille/pythran/issues/2472
+    return np.concatenate((state[idx:], state[:idx]))

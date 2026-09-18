@@ -53,6 +53,13 @@ def delegate_xp(delegator, module_name):
                     # CuPy < 14 exposes this under the old SciPy name.
                     cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
+                # cupyx functions have no `device` kwarg (cupy#9848); they create on the
+                # current cuda device, so honor a device request via the
+                # cupy.cuda.Device context manager
+                device = kwds.pop('device', None)
+                if device is not None:
+                    with device:
+                        return cupyx_func(*args, **kwds)
                 return cupyx_func(*args, **kwds)
             elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
                 spx = scipy_namespace_for(xp)
@@ -258,7 +265,6 @@ capabilities_overrides = {
                                    jax_jit=False, allow_dask_compute=True),
     "invres": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "invresz": xp_capabilities(np_only=True, exceptions=["cupy"]),
-    "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
     "iirfilter": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "kaiser_atten": xp_capabilities(
