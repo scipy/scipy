@@ -529,14 +529,14 @@ eigenvalues can then be found.
     >>> print(l1, l2)   # eigenvalues
     (-0.3722813232690143+0j) (5.372281323269014+0j)
     >>> print(v[:, 0])   # first eigenvector
-    [-0.82456484  0.56576746]
+    [-0.82456484+0.j  0.56576746+0.j]
     >>> print(v[:, 1])   # second eigenvector
-    [-0.41597356 -0.90937671]
+    [-0.41597356+0.j -0.90937671+0.j]
     >>> print(np.sum(abs(v**2), axis=0))  # eigenvectors are unitary
     [1. 1.]
     >>> v1 = np.array(v[:, 0]).T
     >>> print(linalg.norm(A.dot(v1) - l1*v1))  # check the computation
-    3.23682852457e-16
+    5.551115123125783e-17
 
 
 Singular value decomposition
@@ -985,11 +985,11 @@ Many linear algebra functions have ``overwrite_*`` arguments to signal that an o
 is allowed to work in-place and overwrite the input array (the naming convention is
 that an array argument ``a`` has a matching ``overwrite_a``; a ``b`` argument has a
 matching ``overwrite_b`` and so on).
- 
+
 By default, ``scipy.linalg`` functions preserve their inputs and make copies internally.
 In some cases, working in-place may improve performance or avoid running out of memory---
 it is however advisable to measure and make sure you actually see improvements
-for your specific workloads. 
+for your specific workloads.
 
 Note however that setting ``overwrite_a=True`` only indicates that it *may* work in-place;
 whether it actually *does* depends on whether additional requirements are met.
@@ -1001,7 +1001,7 @@ are true:
 - the array is Fortran-ordered;
 - currently only two-dimensional arrays, ``ndim == 2``, are compatible; batched arrays
   use an internal buffer of the size of the core shaped array. This however may change
-  in a future SciPy version. 
+  in a future SciPy version.
 
 If any of these conditions are violated, a copy is made under the hood, regardless of
 whether `overwrite_a` is ``True`` or ``False``.
