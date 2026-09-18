@@ -3834,7 +3834,7 @@ class CircularDistribution(UnivariateDistribution):
         raise NotImplementedError("Circular distributions do not "
                                   "support two-argument `ccdf`.")
 
-    def _lmoment_dispatch(self, order, *, method, **kwargs):
+    def _lmoment(self, order, *, method, **kwargs):
         raise NotImplementedError("Circular distributions do not support `lmoment`.")
 
     def _logcdf1(self, x, *, method, **kwargs):

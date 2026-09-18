@@ -558,6 +558,14 @@ class VonMises(ContinuousDistribution, CircularDistribution):
 
          f(x; \mu, \kappa) = \frac{\exp( \kappa \cos(x - \mu))}
                                   {2\pi I_0(\kappa)           }
+
+    This is a circular distribution. Although the interface is the same as distributions
+    defined on the real line, functions of distributions defined on a unit circle often
+    follow different conventions (e.g., the mean, variance, and more general moments are
+    defined in terms of trigonometric moments), and some methods are not yet implemented
+    (e.g., ``lmoment``, ``log(c)cdf``, and ``ilog(c)cdf``).
+
+    See method docstrings for details.
     """
 
     _mu_domain = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))

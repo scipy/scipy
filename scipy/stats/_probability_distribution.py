@@ -434,6 +434,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        Currently, `lmoment` is implemented only for continuous, real-line distributions;
+        for discrete and circular distributions, it raises a ``NotImplementedError``.
+
         L-moments are only defined for distributions with finite mean. If a formula for
         the L-moment is not specifically implemented for the chosen distribution, SciPy
         will attempt to compute the moment via a generic method, which may yield a
@@ -1329,6 +1332,9 @@ class _ProbabilityDistribution(ABC):
 
             F(x, y) = \int_x^y f(u) du = F(y) - F(x)
 
+        Currently, the two argument version is implemented only for continuous
+        distributions; for circular distributions, it raises a ``NotImplementedError``.
+
         For real line distributions,
         the CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
@@ -1547,6 +1553,9 @@ class _ProbabilityDistribution(ABC):
         .. math::
 
             G(x, y) = \int_l^x f(u) du + \int_y^r f(u) du
+
+        Currently, the two argument version is implemented only for continuous
+        distributions; for circular distributions, it raises a ``NotImplementedError``.
 
         For continuous, real-line distributions,
         the CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
