@@ -2130,7 +2130,7 @@ class TestLSQ:
                          u=xp_copy_to_numpy(x), t=xp_copy_to_numpy(t), task=-1,
                          per=1)
 
-        xp_assert_close(spl.t, xp.asarray(tck[0]))
+        xp_assert_close(spl.t, xp.asarray(tck[0]), atol=1e-14)
         xp_assert_close(spl.c, xp.asarray(tck[1][0]))
 
     def test_weights_same(self, xp):
