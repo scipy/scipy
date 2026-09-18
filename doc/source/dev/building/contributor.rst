@@ -6,7 +6,10 @@ Building SciPy for Contributors
 Using Pixi
 ==========
 
-Development of SciPy is made easy with `Pixi <https://pixi.prefix.dev>`__.
+Development of SciPy is made easy with `Pixi <https://pixi.prefix.dev>`__,
+which removes the need for developers to keep track of development environments
+and installed dependencies.
+
 First, `clone the SciPy repository <https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository>`__::
 
       git clone https://github.com/scipy/scipy.git
@@ -19,7 +22,8 @@ SciPy can then be built with the single command::
 
     pixi run build
 
-All other common development tasks are also available via ``pixi run``:
+All other common development tasks are also available via ``pixi run``.
+Running a task automatically installs and uses a suitable environment:
 
 .. code-block:: console
 
