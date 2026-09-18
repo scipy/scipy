@@ -4031,6 +4031,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
+        # Center the means to avoid cancellation with a large common offset.
+        y_t = y_t - y_t[0]
         axis_zero = -w_t.ndim
         y_hat = xp.vecdot(w_t, y_t, axis=axis_zero)
 
