@@ -102,7 +102,7 @@ class TestBatch:
     def test_expm_cond(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = rng.random((5, 3, 4, 4)).astype(dtype)
-        self.batch_test(linalg.expm_cond, A, test_zero_size_dtype=False)
+        self.batch_test(linalg.expm_cond, A, test_zero_size_dtype=True)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
@@ -414,7 +414,7 @@ class TestBatch:
         n_out = 2 if compute_expm else 1
         self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
                         kwargs=dict(compute_expm=compute_expm),
-                        test_zero_size_dtype=False)
+                        test_zero_size_dtype=True)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_subspace_angles(self, dtype):
@@ -447,9 +447,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        test_zero_size_dtype = fun != linalg.solve_discrete_lyapunov
-        self.batch_test(fun, (A, B), n_out=n_out,
-                        test_zero_size_dtype=test_zero_size_dtype)
+        self.batch_test(fun, (A, B), n_out=n_out, test_zero_size_dtype=True)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cossin(self, dtype):
@@ -709,7 +707,7 @@ class TestBatch:
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
                         kwargs=dict(sketch_size=3, rng=311224),
-                        test_zero_size_dtype=False)
+                        test_zero_size_dtype=True)
 
     def test_clarkson_woodruff_transform_sparse(self):
         rng = np.random.default_rng(8342310302941288912051)

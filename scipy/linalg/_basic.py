@@ -749,12 +749,12 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
 @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
 def _solve_toeplitz(c, r, b, check_finite):
-    r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
+    r, c, b, _, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
 
-    # accommodate empty arrays
+    # accommodate empty arrays, it is sufficient to check the size of `b`
     if b.size == 0:
-        return np.empty_like(b)
+        return np.empty(b_shape, dtype=b.dtype)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
@@ -1831,7 +1831,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
                          'LAPACK documentation for the xGEBAL error codes.')
 
     # Separate the permutations from the scalings and then convert to int
-    scaling = np.ones_like(ps, dtype=float)
+    scaling = np.ones_like(ps, dtype=B.dtype)
     scaling[lo:hi+1] = ps[lo:hi+1]
 
     # gebal uses 1-indexing
@@ -1923,16 +1923,14 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
         raise ValueError('Incompatible dimensions.')
 
-    is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.float64
-    r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
+    c, r, b = _ensure_dtype_cdsz(c, r, b)
 
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
         b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
-    return r, c, b, dtype, b_shape
+    return r, c, b, b.dtype, b_shape
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
