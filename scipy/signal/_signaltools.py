@@ -1791,6 +1791,12 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     Convolve `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
 
+    Notes
+    -----
+    The second input array is flipped in both dimensions before being convolved
+    with the first input array. To apply a kernel without flipping it, use
+    :func:`correlate2d` instead.
+
     Parameters
     ----------
     in1 : array_like
