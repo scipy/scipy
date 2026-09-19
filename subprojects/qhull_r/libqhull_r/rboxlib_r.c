@@ -372,7 +372,7 @@ void qh_rboxpoints2(qhT *qh, char* rbox_command, double **simplex) {
     }
   }else if (israndom) {
     seed= (int)time(&timedata);
-    sprintf(seedbuf, " t%d", seed);  /* appends an extra t, not worth removing */
+    snprintf(seedbuf, sizeof(seedbuf) / sizeof(seedbuf[0]), " t%d", seed);  /* appends an extra t, not worth removing */
     strncat(command, seedbuf, sizeof(command) - strlen(command) - 1);
     t= strstr(command, " t ");
     if (t)
