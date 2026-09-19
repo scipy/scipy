@@ -3384,3 +3384,91 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+# The rank filter tests below are NumPy only: contiguity, alignment, byte order
+# and NPY_ARRAY_WRITEBACKIFCOPY have no equivalent in the array API standard.
+def _noncontiguous_output(size, dtype):
+    """Output array that is not C contiguous, so NumPy has to copy it."""
+    out = np.zeros(2 * size, dtype=dtype)[::2]
+    assert not out.flags.c_contiguous
+    return out
+
+
+def _misaligned_output(size, dtype):
+    """Output array that is not aligned, so NumPy has to copy it."""
+    dtype = np.dtype(dtype)
+    buf = np.zeros(size * dtype.itemsize + 1, dtype=np.uint8)
+    out = np.ndarray(size, dtype=dtype, buffer=buf.data, offset=1)
+    assert not out.flags.aligned
+    return out
+
+
+@pytest.mark.parametrize('make_output',
+                         [_noncontiguous_output, _misaligned_output],
+                         ids=['noncontiguous', 'misaligned'])
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.int64])
+def test_rank_filter_1d_output_writeback(make_output, dtype):
+    # output= is converted with NPY_ARRAY_INOUT_ARRAY2, so a non-contiguous or
+    # misaligned output array is substituted by a temporary that has to be
+    # written back explicitly. Same class of bug as gh-25641.
+    data = np.asarray([3, 1, 4, 1, 5, 9, 2, 6, 5, 3], dtype=dtype)
+    reference = ndimage.median_filter(data, size=3)
+
+    out = make_output(data.size, dtype)
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        ndimage.median_filter(data, size=3, output=out)
+    unresolved = [str(w.message) for w in rec
+                  if issubclass(w.category, RuntimeWarning)
+                  and 'WRITEBACKIFCOPY' in str(w.message)]
+    assert unresolved == []
+
+    xp_assert_equal(np.ascontiguousarray(out), reference)
+
+
+@pytest.mark.parametrize('in_dtype, out_dtype', [
+    (np.float64, np.float32),   # output itemsize smaller than the input's
+    (np.float32, np.float64),   # output itemsize larger than the input's
+    (np.float64, np.int64),     # same itemsize, different kind
+    (np.int64, np.float64),
+])
+def test_rank_filter_1d_output_dtype(in_dtype, out_dtype):
+    # The 1-D fast path reinterprets the output buffer using the input's dtype,
+    # so a differing output dtype must be converted rather than reinterpreted.
+    # Results must match the n-dimensional code path.
+    data = np.asarray([3, 1, 4, 1, 5, 9, 2, 6, 5, 3], dtype=in_dtype)
+
+    # reference: the same filter forced through the n-dimensional code path
+    expected = np.zeros((1, data.size), dtype=out_dtype)
+    ndimage.median_filter(data[np.newaxis, :], size=(1, 3), output=expected)
+    expected = expected[0]
+
+    out = np.zeros(data.size, dtype=out_dtype)
+    result = ndimage.median_filter(data, size=3, output=out)
+
+    assert result is out
+    xp_assert_equal(out, expected)
+
+
+@pytest.mark.parametrize('dtype', [np.float64, np.float32, np.int64,
+                                   np.int32, np.uint16])
+@pytest.mark.parametrize('swap_input, swap_output',
+                         [(True, False), (False, True), (True, True)],
+                         ids=['input', 'output', 'both'])
+def test_rank_filter_1d_byte_order(dtype, swap_input, swap_output):
+    # The 1-D fast path dereferences the buffers directly, so non-native byte
+    # order has to be converted rather than reinterpreted.
+    native = np.dtype(dtype)
+    swapped = native.newbyteorder()
+
+    values = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]
+    data = np.asarray(values, dtype=swapped if swap_input else native)
+    expected = ndimage.median_filter(np.asarray(values, dtype=native), size=3)
+
+    out = np.zeros(len(values), dtype=swapped if swap_output else native)
+    ndimage.median_filter(data, size=3, output=out)
+    xp_assert_equal(out.astype(native), expected)
+
+    # ... and the same without an explicit output array
+    xp_assert_equal(ndimage.median_filter(data, size=3).astype(native), expected)
