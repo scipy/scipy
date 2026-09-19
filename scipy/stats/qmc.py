@@ -43,18 +43,18 @@ Introduction to Quasi-Monte Carlo
 
 Quasi-Monte Carlo (QMC) methods [1]_, [2]_, [3]_ provide an
 :math:`n \times d` array of numbers in :math:`[0,1]`. They can be used in
-place of :math:`n` points from the :math:`U[0,1]^{d}` distribution. Compared to
+place of :math:`n` points from the :math:`U([0,1]^d)` distribution. Compared to
 random points, QMC points are designed to have fewer gaps and clumps. This is
 quantified by discrepancy measures [4]_. From the Koksma-Hlawka
-inequality [5]_ we know that low discrepancy reduces a bound on
+inequality [5]_, we know that low discrepancy reduces a bound on
 integration error. Averaging a function :math:`f` over :math:`n` QMC points
-can achieve an integration error close to :math:`O(n^{-1})` for well
-behaved functions [2]_.
+can achieve an integration error close to :math:`O(n^{-1})` for
+well-behaved functions [2]_.
 
 Most QMC constructions are designed for special values of :math:`n`
-such as powers of 2 or large primes. Changing the sample
+such as powers of :math:`2` or large primes. Changing the sample
 size by even one can degrade their performance, even their
-rate of convergence [6]_. For instance :math:`n=100` points may give less
+rate of convergence [6]_. For instance, :math:`n=100` points may give less
 accuracy than :math:`n=64` if the method was designed for :math:`n=2^m`.
 
 Some QMC constructions are extensible in :math:`n`: we can find
@@ -67,7 +67,7 @@ both :math:`n` and :math:`d`.
 
 QMC points are deterministic. That makes it hard to estimate the accuracy of
 integrals estimated by averages over QMC points. Randomized QMC (RQMC) [7]_
-points are constructed so that each point is individually :math:`U[0,1]^{d}`
+points are constructed so that each point is individually :math:`U([0,1]^d)`
 while collectively the :math:`n` points retain their low discrepancy.
 One can make :math:`R` independent replications of RQMC points to
 see how stable a computation is. From :math:`R` independent values,
@@ -80,24 +80,24 @@ cancel in a way that deterministic ones do not. RQMC also
 has advantages on integrands that are singular or, for other
 reasons, fail to be Riemann integrable.
 
-(R)QMC cannot beat Bahkvalov's curse of dimension (see [9]_). For
-any random or deterministic method, there are worst case functions
-that will give it poor performance in high dimensions. A worst
-case function for QMC might be 0 at all n points but very
-large elsewhere. Worst case analyses get very pessimistic
+(R)QMC cannot beat Bakhvalov's curse of dimension (see [9]_). For
+any random or deterministic method, there are worst-case functions
+that will give it poor performance in high dimensions. A worst-case
+function for QMC might be 0 at all n points but very
+large elsewhere. Worst-case analyses get very pessimistic
 in high dimensions. (R)QMC can bring a great improvement over
 MC when the functions on which it is used are not worst case.
-For instance (R)QMC can be especially effective on integrands
+For instance, (R)QMC can be especially effective on integrands
 that are well approximated by sums of functions of
 some small number of their input variables at a time [10]_, [11]_.
 That property is often a surprising finding about those functions.
 
 Also, to see an improvement over IID MC, (R)QMC requires a bit of smoothness of
-the integrand, roughly the mixed first order derivative in each direction,
-:math:`\partial^d f/\partial x_1 \cdots \partial x_d`, must be integral.
+the integrand, roughly the mixed first-order derivative in each direction,
+:math:`\partial^d f/\partial x_1 \cdots \partial x_d`, must be integrable.
 For instance, a function that is 1 inside the hypersphere and 0 outside of it
 has infinite variation in the sense of Hardy and Krause for any dimension
-:math:`d = 2`.
+:math:`d \ge 2`.
 
 Scrambled nets are a kind of RQMC that have some valuable robustness
 properties [12]_. If the integrand is square integrable, they give variance
@@ -106,7 +106,7 @@ properties [12]_. If the integrand is square integrable, they give variance
 integrable integrand. Scrambled nets satisfy a strong law of large numbers
 for :math:`f` in :math:`L^p` when :math:`p>1`. In some
 special cases there is a central limit theorem [13]_. For smooth enough
-integrands they can achieve RMSE nearly :math:`O(n^{-3})`. See [12]_
+integrands they can achieve variance nearly :math:`O(n^{-3})`. See [12]_
 for references about these properties.
 
 The main kinds of QMC methods are lattice rules [14]_ and digital
@@ -118,7 +118,7 @@ nets there are widely used default constructions.
 The most widely used QMC methods are Sobol' sequences [17]_.
 These are digital nets. They are extensible in both :math:`n` and :math:`d`.
 They can be scrambled. The special sample sizes are powers
-of 2. Another popular method are Halton sequences [18]_.
+of 2. Another popular method uses Halton sequences [18]_.
 The constructions resemble those of digital nets. The earlier
 dimensions have much better equidistribution properties than
 later ones. There are essentially no special sample sizes.
@@ -137,7 +137,7 @@ showing the improved rate to be attained.
 
 Using QMC is like using the entire period of a small random
 number generator. The constructions are similar and so
-therefore are the computational costs [23]_.
+are the computational costs [23]_.
 
 (R)QMC is sometimes improved by passing the points through
 a baker's transformation (tent function) prior to using them.
@@ -147,7 +147,7 @@ useful to produce a periodic function for lattice rules [14]_,
 and sometimes it improves the convergence rate [24]_.
 
 It is not straightforward to apply QMC methods to Markov
-chain Monte Carlo (MCMC).  We can think of MCMC as using
+chain Monte Carlo (MCMC). We can think of MCMC as using
 :math:`n=1` point in :math:`[0,1]^{d}` for very large :math:`d`, with
 ergodic results corresponding to :math:`d \to \infty`. One proposal is
 in [25]_ and under strong conditions an improved rate of convergence
@@ -156,7 +156,7 @@ has been shown [26]_.
 Returning to Sobol' points: there are many versions depending
 on what are called direction numbers. Those are the result of
 searches and are tabulated. A very widely used set of direction
-numbers come from [27]_. It is extensible in dimension up to
+numbers comes from [27]_. It is extensible in dimension up to
 :math:`d=21201`.
 
 References
@@ -165,11 +165,10 @@ References
 .. [2] Niederreiter, Harald. "Random number generation and quasi-Monte Carlo
    methods." Society for Industrial and Applied Mathematics, 1992.
 .. [3] Dick, Josef, Frances Y. Kuo, and Ian H. Sloan. "High-dimensional
-   integration: the quasi-Monte Carlo way." Acta Numerica no. 22: 133, 2013.
-.. [4] Aho, A. V., C. Aistleitner, T. Anderson, K. Appel, V. Arnol'd, N.
-   Aronszajn, D. Asotsky et al. "W. Chen et al.(eds.), "A Panorama of
-   Discrepancy Theory", Sringer International Publishing,
-   Switzerland: 679, 2014.
+   integration: the quasi-Monte Carlo way." Acta Numerica 22: 133-288, 2013.
+.. [4] Chen, William, Anand Srivastav, and Giancarlo Travaglini, eds.
+   "A Panorama of Discrepancy Theory." Springer International Publishing,
+   Switzerland, 2014.
 .. [5] Hickernell, Fred J. "Koksma-Hlawka Inequality." Wiley StatsRef:
    Statistics Reference Online, 2014.
 .. [6] Owen, Art B. "On dropping the first Sobol' point." :arxiv:`2008.08051`,
@@ -178,17 +177,17 @@ References
    quasi-Monte Carlo methods." In Modeling uncertainty, pp. 419-474. Springer,
    New York, NY, 2002.
 .. [8] DiCiccio, Thomas J., and Bradley Efron. "Bootstrap confidence
-   intervals." Statistical science: 189-212, 1996.
+   intervals." Statistical Science 11, no. 3: 189-212, 1996.
 .. [9] Dimov, Ivan T. "Monte Carlo methods for applied scientists." World
    Scientific, 2008.
 .. [10] Caflisch, Russel E., William J. Morokoff, and Art B. Owen. "Valuation
    of mortgage backed securities using Brownian bridges to reduce effective
-   dimension." Journal of Computational Finance: no. 1 27-46, 1997.
+   dimension." Journal of Computational Finance 1, no. 1: 27-46, 1997.
 .. [11] Sloan, Ian H., and Henryk Wozniakowski. "When are quasi-Monte Carlo
-   algorithms efficient for high dimensional integrals?." Journal of Complexity
+   algorithms efficient for high dimensional integrals?" Journal of Complexity
    14, no. 1 (1998): 1-33.
-.. [12] Owen, Art B., and Daniel Rudolf, "A strong law of large numbers for
-   scrambled net integration." SIAM Review, to appear.
+.. [12] Owen, Art B., and Daniel Rudolf. "A Strong Law of Large Numbers for
+   Scrambled Net Integration." SIAM Review 63, no. 2: 360-372, 2021.
 .. [13] Loh, Wei-Liem. "On the asymptotic distribution of scrambled net
    quadrature." The Annals of Statistics 31, no. 4: 1282-1324, 2003.
 .. [14] Sloan, Ian H. and S. Joe. "Lattice methods for multiple integration."
@@ -219,8 +218,8 @@ References
 .. [23] Niederreiter, Harald. "Multidimensional numerical integration using
    pseudorandom numbers." In Stochastic Programming 84 Part I, pp. 17-38.
    Springer, Berlin, Heidelberg, 1986.
-.. [24] Hickernell, Fred J. "Obtaining O (N-2+e) Convergence for Lattice
-   Quadrature Rules." In Monte Carlo and Quasi-Monte Carlo Methods 2000,
+.. [24] Hickernell, Fred J. "Obtaining :math:`O(N^{-2+\varepsilon})` Convergence
+   for Lattice Quadrature Rules." In Monte Carlo and Quasi-Monte Carlo Methods 2000,
    pp. 274-289. Springer, Berlin, Heidelberg, 2002.
 .. [25] Owen, Art B., and Seth D. Tribble. "A quasi-Monte Carlo Metropolis
    algorithm." Proceedings of the National Academy of Sciences 102,
