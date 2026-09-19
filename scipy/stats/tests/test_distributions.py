@@ -3137,6 +3137,29 @@ class TestPoisson:
         assert_allclose(stats.poisson.logsf(k, mu), logsf_reference,
                         rtol=1e-15, atol=1e-300)
 
+    @pytest.mark.parametrize("k", [0, 1, 5, 10, 17])
+    @pytest.mark.parametrize("mu", [1, 2.8, 5, 10.0, 50.5, 100])
+    def test_ppf_cdf_roundtrip(self, k, mu):
+        # parametetrization was chosen to represent diverse inputs while
+        # staying below a probability of 1
+        poisson_dist = stats.poisson(mu)
+        cdf = poisson_dist.cdf(k)
+        quantile = poisson_dist.ppf(cdf)
+        assert quantile == k
+
+    @pytest.mark.parametrize("mu", [1e3, 1e6, 1e10])
+    @pytest.mark.parametrize("distance", [1e-15, 1e-12, 1e-6])
+    @pytest.mark.parametrize("tail", ["left", "right"])
+    def test_ppf_against_definition_large_mu(self, mu, distance, tail):
+        # test that the quantile returned by ppf corresponds to the lowest
+        # value k such that cdf(k-1) < p <= cdf(k)
+        if tail == "left":
+            p = distance
+        else:
+            p = 1 - distance
+        k = stats.poisson.ppf(p, mu)
+        assert stats.poisson.cdf(k - 1, mu) < p <= stats.poisson.cdf(k, mu)
+
 
 class TestKSTwo:
 
