@@ -77,6 +77,7 @@ py3.install_sources([
     '_polyutils.py',
     '_savitzky_golay.py',
     '_short_time_fft.py',
+    '_state_space.py',
     '_signaltools.py',
     '_spectral_py.py',
     '_spline.pyi',
