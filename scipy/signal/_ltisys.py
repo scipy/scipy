@@ -855,12 +855,18 @@ class TransferFunction(LinearTimeInvariant):
     def num(self, num):
         self._num = atleast_1d(num)
 
-        # Update dimensions
-        if len(self.num.shape) > 1:
-            self.outputs, self.inputs = self.num.shape
+        # ``TransferFunction`` only models SISO and SIMO systems: ``num`` is
+        # either a 1-D array (SISO numerator polynomial) or a 2-D array whose
+        # rows are the numerator polynomial of each output (SIMO).  The
+        # number of inputs is therefore always one; the number of outputs is
+        # the number of rows of a 2-D ``num`` (or 1 in the SISO case).
+        # See gh-16161 for context on why ``self.num.shape`` cannot be
+        # unpacked as ``(outputs, inputs)``.
+        if self.num.ndim > 1:
+            self.outputs = self.num.shape[0]
         else:
             self.outputs = 1
-            self.inputs = 1
+        self.inputs = 1
 
     @property
     def den(self):
@@ -1255,12 +1261,16 @@ class ZerosPolesGain(LinearTimeInvariant):
     def zeros(self, zeros):
         self._zeros = atleast_1d(zeros)
 
-        # Update dimensions
-        if len(self.zeros.shape) > 1:
-            self.outputs, self.inputs = self.zeros.shape
+        # ``ZerosPolesGain`` only models SISO and SIMO systems: ``zeros`` is
+        # either a 1-D array (SISO) or a 2-D array whose rows hold the zeros
+        # of each output (SIMO).  The number of inputs is therefore always
+        # one; the number of outputs is the number of rows of a 2-D
+        # ``zeros`` (or 1 in the SISO case).  See gh-16161.
+        if self.zeros.ndim > 1:
+            self.outputs = self.zeros.shape[0]
         else:
             self.outputs = 1
-            self.inputs = 1
+        self.inputs = 1
 
     @property
     def poles(self):
