@@ -1656,7 +1656,10 @@ class chi2_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Chi-squared distribution", Wikipedia,
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 18, p. 416.
+    .. [2] "Chi-squared distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Chi-squared_distribution
 
     %(example)s
@@ -2093,6 +2096,14 @@ class expon_gen(rv_continuous):
 
     The exponential distribution is a special case of the gamma
     distributions, with gamma shape parameter ``a = 1``.
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 19, p. 494.
+    .. [2] "Exponential distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Exponential_distribution
 
     %(example)s
 
@@ -6106,6 +6117,14 @@ class laplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 2*. 2nd ed., John Wiley &
+           Sons, 1995, Chapter 24, p. 164.
+    .. [2] "Laplace distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Laplace_distribution
+
     %(example)s
 
     """
@@ -6540,6 +6559,14 @@ class logistic_gen(rv_continuous):
     Fermi-Dirac distribution describing fermionic statistics.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 2*. 2nd ed., John Wiley &
+           Sons, 1995, Chapter 23, p. 116.
+    .. [2] "Logistic distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Logistic_distribution
 
     %(example)s
 
@@ -9151,6 +9178,14 @@ class rayleigh_gen(rv_continuous):
     `rayleigh` is a special case of `chi` with ``df=2``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous
+           Univariate Distributions, Volume 1*. 2nd ed., John Wiley &
+           Sons, 1994, Chapter 18, Section 10, p. 456.
+    .. [2] "Rayleigh distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Rayleigh_distribution
 
     %(example)s
 
