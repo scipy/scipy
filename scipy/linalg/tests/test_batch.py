@@ -388,8 +388,7 @@ class TestBatch:
         args = (A, B) if include_B else (A,)
         kwargs = dict(left=left, right=right, homogeneous_eigvals=homogeneous_eigvals)
         n_out = 1 + left + right
-        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs,
-                        test_zero_size_dtype=False)
+        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs)
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
