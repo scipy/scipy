@@ -420,3 +420,16 @@ class TestDualAnnealing:
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
         assert_allclose(res3.fun, res2.fun, rtol=1e-6)
         assert_allclose(res4.fun, res2.fun, rtol=1e-6)
+
+    @pytest.mark.parametrize("visit", [1.1, 1.2, 1.3, 1.4, 1.5, 1.7, 2., 2.62, 2.9])
+    def test_visit(self, visit):
+        # gh-12384 reported that dual_annealing did not work for visit < 1.4
+        # cases 1.2, 1.3, 1.4 raised errors
+        # below 1.1 we still fail but that is expected as the probability
+        # exceeds the limit of double precision floating point numbers.
+        def eggholder(x):
+            return (-(x[1] + 47) * np.sin(np.sqrt(np.abs(x[0]/2 + (x[1] + 47)))) -
+                     x[0] * np.sin(np.sqrt(np.abs(x[0] - (x[1] + 47)))))
+
+        bounds = [(-512, 512), (-512, 512)]
+        dual_annealing(eggholder, bounds=bounds, visit=visit, rng=1234)
