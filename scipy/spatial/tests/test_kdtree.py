@@ -689,6 +689,18 @@ class sparse_distance_matrix_consistency:
         d = tree.sparse_distance_matrix(tree, 3, output_type='dok_array').toarray()
         assert_array_almost_equal(d, d.T, decimal=14)
 
+    def test_ckdtree_warnings(self):
+        tree = self.kdtree_type(np.array([[0.0, 0.0], [1.0, 1.0]]))
+        tree.sparse_distance_matrix(tree, 3, output_type="coo_array")
+        tree.sparse_distance_matrix(tree, 3, output_type="dok_array")
+        with pytest.deprecated_call(match='The keyword output_type="dok'):
+            tree.sparse_distance_matrix(tree, 3, output_type="dok_matrix")
+        with pytest.deprecated_call(match='The keyword output_type="coo'):
+            tree.sparse_distance_matrix(tree, 3, output_type="coo_matrix")
+        with pytest.deprecated_call(match='The keyword output_type="dok'):
+            with pytest.deprecated_call(match="The default value for `out"):
+                tree.sparse_distance_matrix(tree, 3)
+
     @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_ckdtree_return_types(self):
         # brute-force reference
@@ -721,23 +733,27 @@ class sparse_distance_matrix_consistency:
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
         assert isinstance(r, dok_array)
         # test return type 'dok_matrix'
-        r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='dok_matrix')
-        assert_array_almost_equal(ref, r.toarray(), decimal=14)
-        assert isinstance(r, dok_matrix)
+        with pytest.deprecated_call(match='The keyword output_type="dok'):
+            r = self.T1.sparse_distance_matrix(self.T2, self.r,
+                output_type='dok_matrix')
+            assert_array_almost_equal(ref, r.toarray(), decimal=14)
+            assert isinstance(r, dok_matrix)
         # test return type 'coo_array'
         r = self.T1.sparse_distance_matrix(self.T2, self.r,
             output_type='coo_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
         assert isinstance(r, coo_array)
         # test return type 'coo_matrix'
-        r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='coo_matrix')
-        assert_array_almost_equal(ref, r.toarray(), decimal=14)
-        assert isinstance(r, coo_matrix)
+        with pytest.deprecated_call(match='The keyword output_type="coo'):
+            r = self.T1.sparse_distance_matrix(self.T2, self.r,
+                output_type='coo_matrix')
+            assert_array_almost_equal(ref, r.toarray(), decimal=14)
+            assert isinstance(r, coo_matrix)
         # test default return type 'dok_matrix'
-        r = self.T1.sparse_distance_matrix(self.T2, self.r)
-        assert isinstance(r, dok_matrix)
+        with pytest.deprecated_call(match="The default value for `out"):
+            with pytest.deprecated_call(match='The keyword output_type="dok'):
+                r = self.T1.sparse_distance_matrix(self.T2, self.r)
+                assert isinstance(r, dok_matrix)
 
 
 @KDTreeTest
