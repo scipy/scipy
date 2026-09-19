@@ -192,7 +192,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         ``(A'A)^{-1}`` (if ``damp == 0``) or more generally ``(A'A +
         damp^2*I)^{-1}``.  This is well defined if A has full column
         rank or ``damp > 0``.  (Not sure what var means if ``rank(A)
-        < n`` and ``damp = 0.``)  The estimate is a rough one; see Notes.
+        < n`` and ``damp = 0.``)  This is a rough estimate only; see Notes.
 
     Notes
     -----
