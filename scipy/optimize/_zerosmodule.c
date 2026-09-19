@@ -173,6 +173,41 @@ _bisect(PyObject *self, PyObject *args)
         return call_solver(bisect,self,args);
 }
 
+static char doc_bisect_exact[] = (
+    "_bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)\n\n"
+    "Find a root of f in [a, b] using bisection.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "f : callable\n"
+    "    Python function returning a float.\n"
+    "a : float\n"
+    "    Left bracket endpoint.\n"
+    "b : float\n"
+    "    Right bracket endpoint.\n"
+    "xtol : float\n"
+    "    Absolute tolerance. Must be >= 0.\n"
+    "rtol : float\n"
+    "    Relative tolerance.\n"
+    "maxiter : int\n"
+    "    Maximum number of iterations. Must be >= 0.\n"
+    "args : tuple\n"
+    "    Extra arguments passed to f.\n"
+    "full_output : int\n"
+    "    Non-zero to return detailed results.\n"
+    "disp : int, optional\n"
+    "    Non-zero to raise RuntimeError on convergence failure.\n\n"
+    "Returns\n"
+    "-------\n"
+    "If full_output is 0: root (float)\n"
+    "If full_output != 0: (root, funcalls, iterations, flag)\n"
+);
+
+static PyObject *
+_bisect_exact(PyObject *self, PyObject *args)
+{
+        return call_solver(bisect_exact,self,args);
+}
+
 static char doc_ridder[] = (
     "_ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)\n\n"
     "Find a root of f in [a, b] using Ridder's method.\n\n"
@@ -287,6 +322,7 @@ _brentq(PyObject *self, PyObject *args)
 static PyMethodDef
 Zerosmethods[] = {
 	{"_bisect", _bisect, METH_VARARGS, doc_bisect},
+    {"_bisect_exact", _bisect_exact, METH_VARARGS, doc_bisect_exact},
 	{"_ridder", _ridder, METH_VARARGS, doc_ridder},
 	{"_brenth", _brenth, METH_VARARGS, doc_brenth},
 	{"_brentq", _brentq, METH_VARARGS, doc_brentq},

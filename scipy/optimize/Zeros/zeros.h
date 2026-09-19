@@ -27,6 +27,9 @@ typedef double (*solver_type)(callback_type, double, double, double, double,
 extern double bisect(callback_type f, double xa, double xb, double xtol,
                      double rtol, int iter, void *func_data_param,
                      scipy_zeros_info *solver_stats);
+extern double bisect_exact(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data_param,
+                     scipy_zeros_info *solver_stats);
 extern double ridder(callback_type f, double xa, double xb, double xtol,
                      double rtol, int iter, void *func_data_param,
                      scipy_zeros_info *solver_stats);
