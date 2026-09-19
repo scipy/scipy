@@ -9,6 +9,9 @@ set URL=%~1
 set COMPONENTS=%~2
 set EXPECTED_SHA256=%~3
 
+:: "-" is used as a sentinel for "no components"
+if "%COMPONENTS%"=="-" set COMPONENTS=
+
 :: download installer from intel
 curl.exe --output %TEMP%\webimage.exe --url %URL% --retry 5 --retry-delay 5
 
