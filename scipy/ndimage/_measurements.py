@@ -986,7 +986,12 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     if find_median:
         order = np.lexsort((input.ravel(), labels.ravel()))
     else:
-        order = input.ravel().argsort()
+        # A stable sort keeps equal values in their original (flat-index)
+        # order. This makes the reported extremum position for a label depend
+        # only on that label's own pixels: with an unstable sort the tie-break
+        # among equal extrema could be reordered by values belonging to other
+        # labels, so the result changed when unrelated pixels changed (gh-25279).
+        order = input.ravel().argsort(kind='stable')
     input = input.ravel()[order]
     labels = labels.ravel()[order]
     if find_positions:
@@ -1006,8 +1011,14 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         maxs[labels] = input
         result += [maxs[idxs]]
     if find_max_positions:
+        # Among tied maxima, report the lexicographically-first position
+        # (smallest flat index), matching the scalar/no-index single_group
+        # path and the minimum-position branch above (gh-25279). The forward
+        # assignment keeps the last write per label, so order the equal maxima
+        # by descending flat index (via -positions) to leave the smallest one.
         maxpos = np.zeros(labels.max() + 2, int)
-        maxpos[labels] = positions
+        max_order = np.lexsort((-positions, input))
+        maxpos[labels[max_order]] = positions[max_order]
         result += [maxpos[idxs]]
     if find_median:
         locs = np.arange(len(labels))
@@ -1277,6 +1288,12 @@ def minimum_position(input, labels=None, index=None):
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
 
+    Notes
+    -----
+    When several positions within a region share the minimum value, the
+    lexicographically-first position (the smallest index in C order) is
+    returned.
+
     Examples
     --------
     >>> import numpy as np
@@ -1360,6 +1377,12 @@ def maximum_position(input, labels=None, index=None):
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
 
+    Notes
+    -----
+    When several positions within a region share the maximum value, the
+    lexicographically-first position (the smallest index in C order) is
+    returned.
+
     Examples
     --------
     >>> from scipy import ndimage
@@ -1430,6 +1453,13 @@ def extrema(input, labels=None, index=None):
     See Also
     --------
     maximum, minimum, maximum_position, minimum_position, center_of_mass
+
+    Notes
+    -----
+    When several positions within a region share an extreme value, the
+    ``min_positions`` and ``max_positions`` returned are the
+    lexicographically-first (smallest index in C order) positions, consistent
+    with `minimum_position` and `maximum_position`.
 
     Examples
     --------
