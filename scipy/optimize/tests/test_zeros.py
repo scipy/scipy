@@ -228,6 +228,24 @@ class TestBracketMethods(TestScalarRootFinders):
         with pytest.raises(ValueError, match="maxiter must be >= 0"):
             zeros.brentq(lambda x: x**2 - 1, -2, 0, maxiter=-1)
 
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('endpoint', [0, 1])
+    def test_gh_25955_iterations_when_endpoint_is_root(self, method, endpoint):
+        # gh-25955: the C solvers set `iterations` only after the checks for an
+        # endpoint being a root, so those exits reported whatever the field
+        # happened to hold. Run a bracket that needs iterations first, so a
+        # stale count is there to be read.
+        def f(x):
+            return x**3 - 1
+
+        method(f, 0.5, 10.0, full_output=True)
+
+        bracket = (1.0, 10.0) if endpoint == 0 else (0.1, 1.0)
+        root, r = method(f, *bracket, full_output=True)
+        assert r.converged
+        assert_allclose(root, 1.0)
+        assert r.iterations == 0
+
 
 class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):
