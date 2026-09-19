@@ -38,7 +38,7 @@ inline void agm_update(T& x, T& y)
 }
 
 template<typename T>
-static ExitStatus
+ExitStatus
 rf0(const T& x, const T& y, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;

@@ -40,6 +40,7 @@
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/mathieu_legacy.h>
+#include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
@@ -66,14 +67,13 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 extern const char *_beta_pdf_doc;
-extern const char *_beta_ppf_doc;
 extern const char *_binom_cdf_doc;
 extern const char *_binom_isf_doc;
 extern const char *_binom_pmf_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_binom_sf_doc;
+extern const char *_bivariate_normal_cdf_doc;
 extern const char *_cospi_doc;
-extern const char *_bivariate_normal_sf_doc;
 extern const char *_cauchy_isf_doc;
 extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
@@ -234,6 +234,7 @@ extern const char *inv_boxcox1p_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
+extern const char *iv_ratioinv_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
@@ -325,6 +326,7 @@ extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
 extern const char *stdtr_doc;
+extern const char *stdtridf_doc;
 extern const char *stdtrit_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
@@ -370,12 +372,6 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_beta_pdf", _beta_pdf_doc);
     PyModule_AddObjectRef(module, "_beta_pdf", _beta_pdf);
 
-    PyObject *_beta_ppf =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_ppf_float),
-                           static_cast<xsf::numpy::ddd_d>(beta_ppf_double)},
-                          "_beta_ppf", _beta_ppf_doc);
-    PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
-
     PyObject *_binom_cdf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_cdf_float),
                            static_cast<xsf::numpy::ddd_d>(binom_cdf_double)},
@@ -406,11 +402,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_binom_sf", _binom_sf_doc);
     PyModule_AddObjectRef(module, "_binom_sf", _binom_sf);
 
-    PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
-         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
-        "_bivariate_normal_sf", _bivariate_normal_sf_doc);
-    PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_cdf),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
+        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
 
     PyObject *_cauchy_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_isf_float),
@@ -1420,6 +1416,11 @@ _special_ufuncs_module_exec(PyObject *module)
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
 
+    PyObject *iv_ratioinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratioinv), static_cast<xsf::numpy::dd_d>(xsf::iv_ratioinv)},
+        "_iv_ratioinv", iv_ratioinv_doc);
+    PyModule_AddObjectRef(module, "_iv_ratioinv", iv_ratioinv);
+
     PyObject *ive = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_ie),
          static_cast<xsf::numpy::fF_F>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dD_D>(xsf::cyl_bessel_ie)},
@@ -1952,6 +1953,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(t_cdf_double)},
                           "stdtr", stdtr_doc);
     PyModule_AddObjectRef(module, "stdtr", stdtr);
+
+    PyObject *stdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(stdtridf_float),
+                           static_cast<xsf::numpy::dd_d>(stdtridf_double)},
+                          "stdtridf", stdtridf_doc);
+    PyModule_AddObjectRef(module, "stdtridf", stdtridf);
 
     PyObject *stdtrit =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_ppf_float),

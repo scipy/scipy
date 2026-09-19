@@ -9,7 +9,8 @@ import os
 from warnings import warn
 
 from ._coo import coo_array, coo_matrix
-from ._base import sparray, spmatrix
+from ._base import sparray
+from ._matrix import spmatrix
 
 
 def find(A):

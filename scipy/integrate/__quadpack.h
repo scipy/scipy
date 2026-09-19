@@ -96,16 +96,16 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
 
     callback->info_p = NULL;
 
-    p = (double *)malloc(sizeof(double) * ndim);
+    p = (double *)PyMem_RawMalloc(sizeof(double) * ndim);
     if (p == NULL) {
-        free(p);
+        PyMem_RawFree(p);
         PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
         return -1;
     }
 
     size = PyTuple_Size(extra_arguments);
     if (size != ndim - 1) {
-        free(p);
+        PyMem_RawFree(p);
         PyErr_SetString(PyExc_ValueError, "extra arguments don't match ndim");
         return -1;
     }
@@ -117,7 +117,7 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
         item = PyTuple_GET_ITEM(extra_arguments, i);
         p[i+1] = PyFloat_AsDouble(item);
         if (PyErr_Occurred()) {
-            free(p);
+            PyMem_RawFree(p);
             return -1;
         }
     }
@@ -195,7 +195,7 @@ free_callback(ccallback_t *callback)
 {
     if (callback->signature && (callback->signature->value == CB_ND ||
                                 callback->signature->value == CB_ND_USER)) {
-        free(callback->info_p);
+        PyMem_RawFree(callback->info_p);
         callback->info_p = NULL;
     }
 

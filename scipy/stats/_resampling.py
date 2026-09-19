@@ -16,6 +16,7 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_size,
     xp_device,
+    xp_result_device,
     xp_swapaxes,
     is_lazy_array,
 )
@@ -1072,7 +1073,8 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
 
     xp = array_namespace(*n_observations, significance, *vals)
 
-    significance = xp.asarray(significance)
+    device = xp_result_device(significance, *n_observations, *vals)
+    significance = xp.asarray(significance, device=device)
     if not xp.isdtype(significance.dtype, "real floating"):
         raise ValueError("`significance` must be of floating point dtype.")
 

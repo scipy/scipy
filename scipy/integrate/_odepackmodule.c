@@ -709,7 +709,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    if ((wa = (double *)calloc(lrw*sizeof(double) + liw*sizeof(CBLAS_INT), 1))==NULL) {
+    if ((wa = (double *)PyMem_RawCalloc(lrw*sizeof(double) + liw*sizeof(CBLAS_INT), 1))==NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -823,7 +823,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     Py_XDECREF(ap_tcrit);
     Py_DECREF(ap_y);
     Py_DECREF(ap_tout);
-    free(wa);
+    PyMem_RawFree(wa);
 
     // Full output
     if (full_output)
@@ -859,7 +859,7 @@ fail:
     Py_XDECREF(ap_tcrit);
     Py_XDECREF(ap_tout);
     Py_XDECREF(ap_yout);
-    if (allocated) { free(wa); }
+    if (allocated) { PyMem_RawFree(wa); }
 
     if (full_output)
     {

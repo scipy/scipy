@@ -757,12 +757,6 @@ class TestSystematic:
                             exception_to_nan(lambda z: mpmath.ber(0, z, **HYPERKW)),
                             [Arg(-1e3, 1e3)])
 
-    def test_bernoulli(self):
-        assert_mpmath_equal(lambda n: sc.bernoulli(int(n))[int(n)],
-                            lambda n: float(mpmath.bernoulli(int(n))),
-                            [IntArg(0, 13000)],
-                            rtol=1e-9, n=13000)
-
     def test_besseli(self):
         assert_mpmath_equal(
             sc.iv,

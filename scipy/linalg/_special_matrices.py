@@ -347,7 +347,7 @@ def leslie(f, s):
     return a
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities(allow_dask_compute=2)
 def block_diag(*arrs):
     """
     Create a block diagonal array from provided arrays.
@@ -428,8 +428,7 @@ def block_diag(*arrs):
     arrs = [xp.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
     out_dtype = xp.result_type(*arrs)
     block_shapes = [a.shape[-2:] for a in arrs]
-    out = xp.zeros(batch_shape +
-                   tuple(map(int, xp.sum(xp.asarray(block_shapes), axis=0))),
+    out = xp.zeros(batch_shape + tuple(sum(s) for s in zip(*block_shapes)),
                    dtype=out_dtype, device=xp_device(arrs[0]))
 
     r, c = 0, 0

@@ -181,7 +181,6 @@ Additional tools
    pchip_interpolate
    Rbf
    interp1d
-   interp2d
 
 .. seealso::
 
