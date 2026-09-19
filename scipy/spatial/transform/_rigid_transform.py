@@ -13,8 +13,7 @@ from scipy._lib._array_api import (
     Array,
     xp_capabilities,
 )
-from scipy.spatial.transform import Rotation
-from scipy.spatial.transform._rotation import _promote
+from scipy.spatial.transform._rotation import Rotation, _promote
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as xp_backend
 import scipy._external.array_api_extra as xpx
