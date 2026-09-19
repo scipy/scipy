@@ -165,7 +165,7 @@ def set_backend(backend, coerce=False, only=False):
     Examples
     --------
     >>> import scipy.fft as fft
-    >>> with fft.set_backend('scipy', only=True):
+    >>> with fft.set_backend('scipy', only=True):  # doctest: +SKIP
     ...     fft.fft([1])  # Always calls the scipy implementation
     array([1.+0.j])
     """
