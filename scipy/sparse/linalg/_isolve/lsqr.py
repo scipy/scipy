@@ -192,7 +192,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         ``(A'A)^{-1}`` (if ``damp == 0``) or more generally ``(A'A +
         damp^2*I)^{-1}``.  This is well defined if A has full column
         rank or ``damp > 0``.  (Not sure what var means if ``rank(A)
-        < n`` and ``damp = 0.``)
+        < n`` and ``damp = 0.``)  This is a rough estimate only; see Notes.
 
     Notes
     -----
@@ -245,6 +245,14 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     A has low rank or its elements are small relative to those of A),
     LSQR may converge more rapidly on the system ``A@M(inverse)@z =
     b``, after which x can be recovered by solving M@x = z.
+
+    The ``var`` estimate accumulates over the iterations actually taken and
+    only approaches the requested diagonals as the bidiagonalization nears
+    ``n`` steps.  Since `lsqr` stops as soon as ``x`` meets the tolerances,
+    which is usually much earlier, ``var`` is normally an underestimate.
+    Accuracy degrades further on larger problems, where the
+    bidiagonalization vectors lose orthogonality in floating point, so
+    ``var`` should be treated as a rough indication only.
 
     If A is symmetric, LSQR should not be used!
 
