@@ -962,6 +962,52 @@ class TestCurveFit:
         )
         assert np.all(pcov1 == pcov2)
 
+    def test_curvefit_two_points_matrix_covariance(self):
+        def fit_f(x, par, off):
+            return par*x**2 + off
+
+        ys = np.array([144.0, 300.0])
+        ys_cov = np.array([[4.0, 1.0], [1.0, 10.0]])
+        xs = np.array([3.0, 6.0])
+        p0 = (3.0, 0.0)
+
+        popt, pcov = curve_fit(fit_f, xs, ys, p0=p0, sigma=ys_cov,
+                               absolute_sigma=True)
+
+        assert_(popt.shape == (2,))
+        assert_(pcov.shape == (2, 2))
+
+    def test_curvefit_single_point_matrix_covariance(self):
+        def fit_f(x, par):
+            return par*x**2
+
+        ys = np.array([144.0])
+        ys_cov = np.array([[4.0]])
+        xs = np.array([3.0])
+        p0 = (3.0,)
+
+        popt, pcov = curve_fit(fit_f, xs, ys, p0=p0, sigma=ys_cov,
+                               absolute_sigma=True)
+
+        assert_allclose(popt, [16.0])
+        assert_allclose(pcov[0, 0], 0.04938272)
+
+    def test_curvefit_single_point_vector_covariance(self):
+        def fit_f(x, par):
+            return par*x**2
+
+        ys = np.array([144.0])
+        ys_cov = np.array([[4.0]])
+        xs = np.array([3.0])
+        p0 = (3.0,)
+
+        popt, pcov = curve_fit(fit_f, xs, ys, p0=p0,
+                               sigma=np.sqrt(ys_cov[0]),
+                               absolute_sigma=True)
+
+        assert_allclose(popt, [16.0])
+        assert_allclose(pcov[0, 0], 0.04938272)
+
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
         x = np.arange(-3, 5)
