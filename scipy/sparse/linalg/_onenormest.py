@@ -3,7 +3,7 @@
 
 import numpy as np
 from scipy.sparse import issparse
-from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.sparse._sputils import is_pydata_spmatrix
 
 

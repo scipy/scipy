@@ -3,7 +3,7 @@ __all__ = ['_svdp']
 import numpy as np
 from scipy.linalg.lapack import HAS_ILP64
 
-from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.linalg import LinAlgError
 
 from . import _propack

@@ -21,7 +21,7 @@ from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-import scipy.stats as stats
+from scipy.stats._continuous_distns import norm
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
@@ -2460,7 +2460,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
+            return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
