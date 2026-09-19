@@ -186,6 +186,7 @@ Multivariate distributions
    special_ortho_group    -- SO(N) group
    ortho_group            -- O(N) group
    unitary_group          -- U(N) group
+   symplectic_group       -- USp(2N) group
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
