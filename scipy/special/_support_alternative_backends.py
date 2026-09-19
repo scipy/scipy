@@ -170,6 +170,9 @@ class _FuncInfo:
                 func.__qualname__ = self.name
         else:
             func = self.func
+        if self.name in {"mathieu_cem", "mathieu_sem"}:
+            # Warn outside backend dispatch and register the public wrapper.
+            func = _mathieu._deprecated_mathieu(func, self.name[:-1])
         capabilities = self.xp_capabilities or xp_capabilities()
         # In order to retain a naked ufunc when SCIPY_ARRAY_API is
         # disabled, xp_capabilities must apply its changes in place.
@@ -925,11 +928,35 @@ _special_funcs = (
         test_large_ints=False,
     ),
     _FuncInfo(
+        _mathieu.mathieu_ce, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_ce", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        test_large_ints=False,
+        positive_only=(True, False, False),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _mathieu.mathieu_cem, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
             skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("mathieu_cem", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        test_large_ints=False,
+        positive_only=(True, False, False),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_se, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_se", ["torch"]),
         ),
         int_only=(True, False, False),
         test_large_ints=False,
