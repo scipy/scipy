@@ -367,6 +367,10 @@ coordinates of multivariate observations.
    page_trend_test
    multiscale_graphcorr
    spearmanr
+   distance_covariance
+   distance_correlation
+   distance_covariance_test
+   energy_distance_nd
 
 These association tests and are to work with samples in the form of contingency
 tables. Supporting functions are available in `scipy.stats.contingency`.
@@ -635,6 +639,9 @@ from ._distribution_infrastructure import (
 from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
+from ._distance_correlation import (distance_covariance, distance_correlation,
+                                    distance_covariance_test, energy_distance_nd,
+                                    DistanceCovarianceResult)
 from ._quantile import quantile, estimated_cdf
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
