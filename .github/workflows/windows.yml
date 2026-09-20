@@ -121,6 +121,9 @@ jobs:
           python-version: "3.12"
           architecture: "arm64"
 
+      - name: Set up Flang for ARM64
+        uses: ./.github/windows_arm64_steps
+
       - name: pip-packages
         run: |
           # `numpy<2.4.3` pin is due to np.linalg.solve crash, see gh-24774
