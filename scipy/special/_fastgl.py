@@ -4,6 +4,7 @@ Python/NumPy port of ``fastgl.cpp`` (Ignace Bogaert, 2014):
 
     I. Bogaert, "Iteration-Free Computation of Gauss-Legendre Quadrature Nodes
     and Weights", SIAM J. Sci. Comput. 36(3), A1008-A1026 (2014).
+    https://doi.org/10.1137/140954969
 
 Usage::
 

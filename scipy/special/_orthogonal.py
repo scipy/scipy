@@ -3372,6 +3372,7 @@ def roots_legendre(n, mu=False):
         https://en.wikipedia.org/wiki/Gauss%E2%80%93Legendre_quadrature
     .. [IB] I. Bogaert, "Iteration-Free Computation of Gauss-Legendre Quadrature Nodes
         and Weights", SIAM J. Sci. Comput. 36(3), A1008-A1026 (2014).
+        https://doi.org/10.1137/140954969
 
     Examples
     --------

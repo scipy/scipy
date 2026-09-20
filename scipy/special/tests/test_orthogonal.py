@@ -738,7 +738,7 @@ def test_roots_legendre():
     assert_raises(ValueError, sc.roots_legendre, 0)
     assert_raises(ValueError, sc.roots_legendre, 3.3)
 
-@pytest.mark.parametrize("n", [10, 100, 101, 150, 500, 1000])
+@pytest.mark.parametrize("n", [5, 10, 50, 100, 101, 150, 500, 1000])
 def test_roots_legendre_with_mpmath(n):
     # compare a sample of nodes and weights (both ends, middle, and in between)
     # against high precision values. n=100/101 straddle the switch from the
