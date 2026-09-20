@@ -54,8 +54,11 @@ and the second term penalizes large values of the second derivative---which is
 taken as the criterion for the smoothness of a curve.
 
 There is a classic theorem (see, for example, Chapter 2 of [GS]_) which says
-that the minimizer of this objective over all possible smooth curves is a
-natural cubic spline *with knots at the data points*, :math:`x_j`. The target function, :math:`g(x)`, is therefore
+that the minimizer of this objective over all curves with a square-integrable
+second derivative is a natural cubic spline *with knots at the data points*,
+:math:`x_j`. The minimization space is not restricted to splines. It includes
+exponentials and any other curve the objective is defined for, and the
+minimizer still turns out to be a spline. The target function, :math:`g(x)`, is therefore
 taken to be exactly that, and the minimization is carried over the spline
 coefficients at a given value of :math:`\lambda`. (It is also possible to
 choose the knots differently, see
@@ -145,8 +148,8 @@ the boundary knots to a vector of interior knots:
     >>> from scipy.interpolate import make_smoothing_spline
     >>> import matplotlib.pyplot as plt
     >>>
-    >>> def clamped_knots(interior, xmin, xmax):
-    ...     return np.concatenate([[xmin] * 4, interior, [xmax] * 4])
+    >>> def clamped_knots(interior):
+    ...     return np.concatenate([[x[0]] * 4, interior, [x[-1]] * 4])
 
 Here is a minimal example:
 
@@ -157,9 +160,9 @@ Here is a minimal example:
     >>> x = np.linspace(0, 10, 50)
     >>> y = np.sin(x) + 0.4 * rng.normal(size=len(x))
     >>> # every other, third and fourth interior data site as knots
-    >>> t1 = clamped_knots(x[1:-1:2], x[0], x[-1])
-    >>> t2 = clamped_knots(x[1:-1:3], x[0], x[-1])
-    >>> t3 = clamped_knots(x[1:-1:4], x[0], x[-1])
+    >>> t1 = clamped_knots(x[1:-1:2])
+    >>> t2 = clamped_knots(x[1:-1:3])
+    >>> t3 = clamped_knots(x[1:-1:4])
     >>>
     >>> xnew = np.linspace(x[0], x[-1], 400)
     >>> for i, t in enumerate([t1, t2, t3]):
@@ -188,8 +191,8 @@ the knots at quantiles of ``x``:
     >>>
     >>> # 8 interior knots, placed two ways
     >>> qs = np.linspace(0, 1, 10)[1:-1]
-    >>> t_eq = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1], x[0], x[-1])
-    >>> t_qt = clamped_knots(np.quantile(x, qs, method='nearest'), x[0], x[-1])
+    >>> t_eq = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1])
+    >>> t_qt = clamped_knots(np.quantile(x, qs, method='nearest'))
     >>>
     >>> xnew = np.linspace(x[0], x[-1], 400)
     >>> for t, label in [(t_eq, 'equispaced knots'), (t_qt, 'knots at quantiles')]:
@@ -204,7 +207,9 @@ Both knot vectors have the same size and differ only in placement. The
 quantile based knots follow the density of the data, which is why that
 curve traces the local structure on the dense left side better. Note the
 ``method='nearest'`` argument, with it, `numpy.quantile` returns actual
-elements of ``x``, so the knots are members of the data sites.
+elements of ``x``, so the knots are members of the data sites. Having knots
+at data sites is a convenience, not a requirement, the knots may be placed
+away from the data sites just as well.
 
 Quantiles follow the density of the data. Another option is to follow the
 signal itself, more knots where the signal has features, fewer where it is
@@ -219,9 +224,8 @@ with 8 interior knots, uniform versus placed around the bump:
     >>> y = (0.3 + 0.25 * x + 0.45 * np.exp(-((x - 0.7) / 0.045)**2)
     ...      + rng.normal(0, 0.05, x.size))
     >>>
-    >>> t_uniform = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1], x[0], x[-1])
-    >>> t_placed = clamped_knots([0.25, 0.5, 0.62, 0.66, 0.70, 0.74, 0.78, 0.9],
-    ...                          x[0], x[-1])
+    >>> t_uniform = clamped_knots(np.linspace(x[0], x[-1], 10)[1:-1])
+    >>> t_placed = clamped_knots([0.25, 0.5, 0.62, 0.66, 0.70, 0.74, 0.78, 0.9])
     >>>
     >>> xnew = np.linspace(x[0], x[-1], 400)
     >>> fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
@@ -241,18 +245,19 @@ the rest stays calm.
 
 The knots do not need to be a subset of the data sites, or coincide with
 them at all. Any non-decreasing knot vector works, as long as the boundary
-knots have multiplicity four and all data sites lie within the base
+knots have multiplicity four (four because the splines here are cubic, in
+general it is ``k + 1``) and all data sites lie within the base
 interval, ``t[3] <= x <= t[-4]``. For instance, we can place the interior
 knots on a uniform grid that shares no points with ``x``:
 
-    >>> t = clamped_knots(np.linspace(x[0], x[-1], 12)[1:-1], x[0], x[-1])
+    >>> t = clamped_knots(np.linspace(x[0], x[-1], 12)[1:-1])
     >>> spl = make_smoothing_spline(x, y, lam=1e-3, t=t)
 
 Finally, the default ``t=None`` corresponds to a specific choice of the knot
 vector, knots at all data sites, with the boundary ones repeated four times.
 Passing that vector explicitly reproduces the default result:
 
-    >>> t = clamped_knots(x[1:-1], x[0], x[-1])
+    >>> t = clamped_knots(x[1:-1])
     >>> spl_default = make_smoothing_spline(x, y, lam=1e-3)
     >>> spl_user = make_smoothing_spline(x, y, lam=1e-3, t=t)
     >>> xnew = np.linspace(x[0], x[-1], 400)
@@ -282,7 +287,7 @@ captures the feature, without spending extra knots everywhere else.
     >>> signal = np.where(x < 5, 0.0, (x - 5)**2 / 5)
     >>> y = signal + 0.15 * rng.normal(size=len(x))
     >>>
-    >>> t_single = clamped_knots(np.linspace(1, 9, 5), x[0], x[-1])
+    >>> t_single = clamped_knots(np.linspace(1, 9, 5))
     >>> # same knots, plus a second knot at the breakpoint x = 5
     >>> t_double = np.sort(np.concatenate([t_single, [5.0]]))
     >>>
@@ -344,9 +349,10 @@ two distinct ``x`` values.
 
 At the other extreme, a very large ``lam`` makes the linear system
 numerically singular, the data term is massively dominated out by the penalty, 
-whose matrix is itself singular (a straight line has zero penalty). In practice
-the useful range of ``lam`` is bounded by machine precision on both ends,
-and values far outside it fail with a linear algebra error.
+whose matrix is itself singular (a straight line has zero penalty). Useful
+values of ``lam`` sit far away from both extremes. The failures only start
+once one term of the linear system falls below the roundoff of the other,
+and then the solve fails with a linear algebra error.
 
 Automatic selection of ``lam``
 ``````````````````````````````
@@ -362,7 +368,7 @@ generalized cross-validation (GCV) criterion:
     >>> rng = np.random.default_rng(12345)
     >>> x = np.linspace(0, 10, 100)
     >>> y = np.sin(x) + 0.4 * rng.normal(size=len(x))
-    >>> t = clamped_knots(x[1:-1:4], x[0], x[-1])
+    >>> t = clamped_knots(x[1:-1:4])
     >>>
     >>> spl = make_smoothing_spline(x, y, t=t)   # lam=None is the default
     >>> xnew = np.linspace(x[0], x[-1], 400)
