@@ -3936,11 +3936,12 @@ def make_distribution(dist):
     another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass if the input defines a
-    ``pdf`` method or a `DiscreteDistribution` subclass if the input defines a ``pmf``
-    method. Like any subclass of `UnivariateDistribution`, it must be instantiated (i.e.
-    by passing all shape parameters as keyword arguments) before use. Once instantiated,
-    the resulting object will have the same interface as any other instance of
-    `UnivariateDistribution`; e.g., `scipy.stats.Normal`, `scipy.stats.Binomial`.
+    ``pdf``, ``icdf``, or ``iccdf`` method; it is a `DiscreteDistribution` subclass if
+    the input defines a ``pmf`` method. Like any subclass of `UnivariateDistribution`,
+    it must be instantiated (i.e. by passing all shape parameters as keyword arguments)
+    before use. Once instantiated, the resulting object will have the same interface as
+    any other instance of `UnivariateDistribution`; e.g., `scipy.stats.Normal`,
+    `scipy.stats.Binomial`.
 
     .. note::
 
@@ -4006,8 +4007,12 @@ def make_distribution(dist):
             the values of the parameters dict described above. (``domain_type`` is
             inferred from whether ``pdf`` or ``pmf`` is defined.)
 
-        The class **must** also define a ``pdf`` OR ``pmf`` method - not both - and
-        this determines whether the support of the distribution is continuous or
+        The class **must** also define either:
+
+        - a ``pdf``, ``icdf``, or ``iccdf`` method; OR
+        - a ``pmf`` method.
+
+        This determines whether the support of the distribution is continuous or
         discrete (i.e. accepts only integral values). It **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``,
         ``logpdf``, ``logpmf``,
@@ -4192,6 +4197,32 @@ def make_distribution(dist):
     >>> Y = MyBinomial(n=10, p=0.4)
     >>> np.isclose(Y.cdf(8.), X.cdf(8.))
     np.True_
+
+    Create a quantile-defined distribution; i.e., one defined by the inverse-CDF rather
+    then PDF or PMF.
+
+    >>> class MyTukeyLambda:
+    ...     __make_distribution_version__ = "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'lam': {'endpoints': (-np.inf, np.inf),
+    ...                        'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': (lambda *, lam: np.where(lam > 0, -1/lam, -np.inf),
+    ...                               lambda *, lam: np.where(lam > 0, 1/lam, np.inf)),
+    ...                'inclusive': (True, True)}
+    ...
+    ...     def icdf(self, p, lam):
+    ...         return 1/lam * (p**lam - (1 - p)**lam)
+    >>>
+    >>> MyTukeyLambda = stats.make_distribution(MyTukeyLambda())
+    >>> X = stats.tukeylambda(lam=0.14)
+    >>> Y = MyTukeyLambda(lam=0.14)
+    >>> np.isclose(Y.pdf(-0.314), X.pdf(-0.314))
+    True
 
     """
     if dist in {stats.levy_stable, stats.vonmises, stats.hypergeom,
@@ -4383,12 +4414,12 @@ def _make_distribution_custom(dist):
     elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
         pxf = 'PMF'
         distribution_subclass = DiscreteDistribution
-    elif hasattr(dist, 'icdf') or hasattr(dist, 'iccdf'):
+    elif hasattr(dist, 'icdf') or hasattr(dist, 'iccdf') and not hasattr(dist, 'pmf'):
         pxf = 'PDF'
         distribution_subclass = ContinuousDistribution
     else:
         message = ("The argument of `make_distribution` must implement "
-                   "either `pdf` OR `pmf` (not both).")
+                   "either `pdf`/`icdf`/`iccdf` OR `pmf` (not both).")
         raise ValueError(message)
 
     _x_param = _RealParameter('x', domain=_x_support, typical=typical)
