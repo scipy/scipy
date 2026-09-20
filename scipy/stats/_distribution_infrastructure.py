@@ -2003,12 +2003,15 @@ class UnivariateDistribution(_ProbabilityDistribution):
     ## Algorithms
 
     def _differentiation(self, f, x, args=None, params=None):
+        a, b = self._support(**params)
+        step = np.minimum(0.5, (b - a)/2)
+        direction = -(np.sign(x - a - step) + np.sign(x - b + step))
         args = [] if args is None else args
         params = {} if params is None else params
         args = np.broadcast_arrays(*args)
         rtol = None if _isnull(self.tol) else self.tol
-        # todo: do one-sided differentiation at support endpoint
-        res = derivative(f, x, args=args, kwargs=params, tolerances={'rtol': rtol})
+        res = derivative(f, x, initial_step=step, step_direction=np.sign(direction),
+                         args=args, kwargs=params, tolerances={'rtol': rtol})
         return res.df
 
     def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
