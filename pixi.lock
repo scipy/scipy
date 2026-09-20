@@ -1,36 +1,8 @@
 version: 7
 platforms:
 - name: linux-64
-  virtual-packages:
-  - __unix=0=0
-  - __linux=4.18
-  - __glibc=2.28
-  - __archspec=0=x86_64
-- name: linux-64-cuda-12
-  subdir: linux-64
-  virtual-packages:
-  - __cuda=12
-  - __unix=0=0
-  - __linux=4.18
-  - __glibc=2.28
-  - __archspec=0=x86_64
-- name: linux-64-cuda-13
-  subdir: linux-64
-  virtual-packages:
-  - __cuda=13
-  - __unix=0=0
-  - __linux=4.18
-  - __glibc=2.28
-  - __archspec=0=x86_64
 - name: osx-arm64
-  virtual-packages:
-  - __unix=0=0
-  - __osx=13.0
-  - __archspec=0=m1
 - name: win-64
-  virtual-packages:
-  - __win=10.0
-  - __archspec=0=x86_64
 environments:
   accelerate-ilp64:
     channels:
@@ -2432,7 +2404,7 @@ environments:
     channels:
     - url: https://prefix.dev/conda-forge/
     packages:
-      linux-64-cuda-13:
+      linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-2_gnu.tar.bz2
       - conda: https://prefix.dev/conda-forge/linux-64/asv-0.6.4-py313h7033f15_2.conda
@@ -4271,7 +4243,7 @@ environments:
     channels:
     - url: https://prefix.dev/conda-forge/
     packages:
-      linux-64-cuda-12:
+      linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
       - conda: https://prefix.dev/conda-forge/linux-64/asv-0.6.4-py313h7033f15_2.conda
       - conda: https://prefix.dev/conda-forge/linux-64/backports.zstd-1.2.0-py313h18e8e13_0.conda
@@ -7705,7 +7677,7 @@ environments:
     channels:
     - url: https://prefix.dev/conda-forge/
     packages:
-      linux-64-cuda-12:
+      linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
       - conda: https://prefix.dev/conda-forge/linux-64/asv-0.6.4-py313h7033f15_2.conda
       - conda: https://prefix.dev/conda-forge/linux-64/attr-2.5.2-h39aace5_0.conda
@@ -13491,7 +13463,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/attrs?source=hash-mapping
+  - pkg:pypi/attrs?source=compressed-mapping
   size: 64927
   timestamp: 1773935801332
 - conda: https://prefix.dev/conda-forge/noarch/babel-2.17.0-pyhd8ed1ab_0.conda
@@ -13671,7 +13643,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/charset-normalizer?source=hash-mapping
+  - pkg:pypi/charset-normalizer?source=compressed-mapping
   size: 58872
   timestamp: 1775127203018
 - conda: https://prefix.dev/conda-forge/noarch/click-8.2.1-pyh707e725_0.conda
@@ -13733,7 +13705,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/click?source=hash-mapping
+  - pkg:pypi/click?source=compressed-mapping
   size: 97070
   timestamp: 1775578280458
 - conda: https://prefix.dev/conda-forge/noarch/click-8.3.2-pyhc90fa1f_0.conda
@@ -13746,7 +13718,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/click?source=hash-mapping
+  - pkg:pypi/click?source=compressed-mapping
   size: 98253
   timestamp: 1775578217828
 - conda: https://prefix.dev/conda-forge/noarch/cloudpickle-3.1.2-pyhcf101f3_1.conda
@@ -14433,7 +14405,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/importlib-metadata?source=hash-mapping
+  - pkg:pypi/importlib-metadata?source=compressed-mapping
   size: 34387
   timestamp: 1773931568510
 - conda: https://prefix.dev/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
@@ -15236,7 +15208,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/mpmath?source=hash-mapping
+  - pkg:pypi/mpmath?source=compressed-mapping
   size: 464918
   timestamp: 1773662068273
 - conda: https://prefix.dev/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
@@ -15554,7 +15526,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/platformdirs?source=hash-mapping
+  - pkg:pypi/platformdirs?source=compressed-mapping
   size: 25862
   timestamp: 1775741140609
 - conda: https://prefix.dev/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
@@ -15686,7 +15658,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/pybind11?source=hash-mapping
+  - pkg:pypi/pybind11?source=compressed-mapping
   size: 247963
   timestamp: 1775004608640
 - conda: https://prefix.dev/conda-forge/noarch/pybind11-abi-11-hc364b38_1.conda
@@ -15751,7 +15723,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/pybind11-global?source=hash-mapping
+  - pkg:pypi/pybind11-global?source=compressed-mapping
   size: 243898
   timestamp: 1775004520432
 - conda: https://prefix.dev/conda-forge/noarch/pybind11-global-3.0.3-pyhc8003f9_0.conda
@@ -15766,7 +15738,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/pybind11-global?source=hash-mapping
+  - pkg:pypi/pybind11-global?source=compressed-mapping
   size: 242657
   timestamp: 1775004608640
 - conda: https://prefix.dev/conda-forge/noarch/pycodestyle-2.14.0-pyhd8ed1ab_0.conda
@@ -15823,7 +15795,7 @@ packages:
   license: BSD-2-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/pygments?source=hash-mapping
+  - pkg:pypi/pygments?source=compressed-mapping
   size: 893031
   timestamp: 1774796815820
 - conda: https://prefix.dev/conda-forge/noarch/pympler-1.1-pyhd8ed1ab_1.conda
@@ -15933,7 +15905,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pytest?source=hash-mapping
+  - pkg:pypi/pytest?source=compressed-mapping
   size: 299984
   timestamp: 1775644472530
 - conda: https://prefix.dev/conda-forge/noarch/pytest-cov-7.0.0-pyhcf101f3_1.conda
@@ -16222,7 +16194,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/requests?source=hash-mapping
+  - pkg:pypi/requests?source=compressed-mapping
   size: 63712
   timestamp: 1774894783063
 - conda: https://prefix.dev/conda-forge/noarch/rfc3339-validator-0.1.4-pyhd8ed1ab_1.conda
@@ -19872,7 +19844,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/numpy?source=hash-mapping
+  - pkg:pypi/numpy?source=compressed-mapping
   size: 6993182
   timestamp: 1773839150339
 - conda: https://prefix.dev/conda-forge/osx-arm64/openblas-0.3.30-openmp_hea878ba_3.conda
@@ -24814,33 +24786,33 @@ packages:
   purls: []
   size: 388453
   timestamp: 1764777142545
-- pypi: https://files.pythonhosted.org/packages/20/a4/219cbe6b4810ab5679e111d0802444681b44a8a96cc68a2057b38e6187e0/scipy_openblas64-0.3.34.237.0-py3-none-macosx_11_0_arm64.whl
-  name: scipy-openblas64
-  version: 0.3.34.237.0
-  sha256: 15b0809f07f98f5ca362cd6cb2d9418136c9e5affe83bf4a0c1ff8a309cba23d
-  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/23/f5/5fa81b7505d876d6f18c0247e61d147e1e6e758a9a848a8764c27c1569d5/scipy_openblas32-0.3.34.237.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: scipy-openblas32
   version: 0.3.34.237.0
   sha256: 8dadebbd02c19f0851c8ec7a20effadf5c270ffeab17f962f1e3414e9aa37541
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/52/6f/eb14bcc4a2002998e1864314f21cf3b03b6f6933fe996c0c6b55d4e73260/scipy_openblas64-0.3.34.237.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+- pypi: https://files.pythonhosted.org/packages/e6/87/0143f35acb6593bb3ec0b38569c570575727553002f2952cd3fd5c94b430/scipy_openblas64-0.3.34.237.0-py3-none-win_amd64.whl
   name: scipy-openblas64
   version: 0.3.34.237.0
-  sha256: 23db4aef3a1f93866a9a9f5e465920ec133822808f3cc96cc63a041d40a809e7
+  sha256: 611facde3847f5d0e5f8526e566fdb6f7f045ccd8c7bfc1dd743dee806d9fb60
   requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/90/11/3494878b9bbfb0047572b29343a494d5217a83095dd8840f9e5137da4eb2/scipy_openblas32-0.3.34.237.0-py3-none-win_amd64.whl
   name: scipy-openblas32
   version: 0.3.34.237.0
   sha256: eb810185ce637f0d98c43822ef627a7e4bacdd6daffa997536178c66d8ecc174
   requires_python: '>=3.7'
+- pypi: https://files.pythonhosted.org/packages/20/a4/219cbe6b4810ab5679e111d0802444681b44a8a96cc68a2057b38e6187e0/scipy_openblas64-0.3.34.237.0-py3-none-macosx_11_0_arm64.whl
+  name: scipy-openblas64
+  version: 0.3.34.237.0
+  sha256: 15b0809f07f98f5ca362cd6cb2d9418136c9e5affe83bf4a0c1ff8a309cba23d
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/95/da/40730271b080135c7002dd690d7a34a24aa390b7c79eda760486b7ca2f0c/scipy_openblas32-0.3.34.237.0-py3-none-macosx_11_0_arm64.whl
   name: scipy-openblas32
   version: 0.3.34.237.0
   sha256: 8ce2d5b16c11d7bca8512b92c6ba9c53515aab43d848b54a5845593804d912e2
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/e6/87/0143f35acb6593bb3ec0b38569c570575727553002f2952cd3fd5c94b430/scipy_openblas64-0.3.34.237.0-py3-none-win_amd64.whl
+- pypi: https://files.pythonhosted.org/packages/52/6f/eb14bcc4a2002998e1864314f21cf3b03b6f6933fe996c0c6b55d4e73260/scipy_openblas64-0.3.34.237.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: scipy-openblas64
   version: 0.3.34.237.0
-  sha256: 611facde3847f5d0e5f8526e566fdb6f7f045ccd8c7bfc1dd743dee806d9fb60
+  sha256: 23db4aef3a1f93866a9a9f5e465920ec133822808f3cc96cc63a041d40a809e7
   requires_python: '>=3.7'
