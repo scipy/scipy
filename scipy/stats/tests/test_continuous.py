@@ -2109,6 +2109,64 @@ class TestOrderStatistic:
         np.testing.assert_allclose(Z1.cdf(x), Z2.cdf(x))
 
 
+class TestQuantileDefinedDistribution:
+    @pytest.mark.slow
+    def test_tukey_lambda(self):
+        class MyTukeyLambda:
+            __make_distribution_version__ = "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'lam': {'endpoints': (-np.inf, np.inf),
+                                'inclusive': (False, False)}}
+
+            @property
+            def support(self):
+                return {'endpoints': (lambda *, lam: np.where(lam > 0, -1/lam, -np.inf),
+                                      lambda *, lam: np.where(lam > 0, 1/lam, np.inf)),
+                        'inclusive': (False, False)}
+
+            def icdf(self, x, lam):
+                with np.errstate(divide='ignore'):
+                    return 1/lam * (x**lam - (1 - x)**lam)
+
+        TukeyLambda1 = stats.make_distribution(MyTukeyLambda())
+        TukeyLambda2 = stats.make_distribution(stats.tukeylambda)
+
+        lam = 5  # test `_derivative`` `initial_step` logic
+        X = TukeyLambda1(lam=lam)
+        Y = TukeyLambda2(lam=lam)
+
+        x = np.linspace(-1/lam, 1/lam, 10)
+        p = Y.cdf(x)
+
+        with np.errstate(divide='ignore'):  # stats.tukeylambda is noisy
+            assert_allclose(X.logentropy(), Y.logentropy())
+            assert_allclose(X.entropy(), Y.entropy())
+            assert_allclose(X.mode(), Y.mode(), atol=1e-7)
+            assert_allclose(X.median(), Y.median(), atol=1e-10)
+            assert_allclose(X.mean(), Y.mean(), atol=1e-10)
+            assert_allclose(X.variance(), Y.variance())
+            assert_allclose(X.standard_deviation(), Y.standard_deviation())
+            assert_allclose(X.skewness(), Y.skewness(), atol=1e-10)
+            assert_allclose(X.kurtosis(), Y.kurtosis())
+            assert_allclose(X.logpdf(x), Y.logpdf(x))
+            assert_allclose(X.pdf(x), Y.pdf(x))
+            assert_allclose(X.logcdf(x), Y.logcdf(x))
+            assert_allclose(X.cdf(x), Y.cdf(x))
+            assert_allclose(X.logccdf(x), Y.logccdf(x))
+            assert_allclose(X.ccdf(x), Y.ccdf(x))
+            assert_allclose(X.ilogcdf(p), Y.ilogcdf(p))
+            assert_allclose(X.icdf(p), Y.icdf(p))
+            assert_allclose(X.ilogccdf(p), Y.ilogccdf(p))
+            assert_allclose(X.iccdf(p), Y.iccdf(p))
+            for kind in ['raw', 'central', 'standardized']:
+                for order in range(5):
+                    assert_allclose(X.moment(order, kind=kind),
+                                    Y.moment(order, kind=kind),
+                                    atol=1e-8)
+
+
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious
     # if new lines are untested.

@@ -2004,6 +2004,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _differentiation(self, f, x, args=None, params=None):
         a, b = self._support(**params)
+        x = x.real  # logentropy makes dtype complex
         step = np.minimum(0.5, (b - a)/2)
         direction = -(np.sign(x - a - step) + np.sign(x - b + step))
         args = [] if args is None else args
