@@ -72,8 +72,8 @@ extern const char *_binom_isf_doc;
 extern const char *_binom_pmf_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_binom_sf_doc;
+extern const char *_bivariate_normal_cdf_doc;
 extern const char *_cospi_doc;
-extern const char *_bivariate_normal_sf_doc;
 extern const char *_cauchy_isf_doc;
 extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
@@ -402,11 +402,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_binom_sf", _binom_sf_doc);
     PyModule_AddObjectRef(module, "_binom_sf", _binom_sf);
 
-    PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
-         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
-        "_bivariate_normal_sf", _bivariate_normal_sf_doc);
-    PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_cdf),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
+        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
 
     PyObject *_cauchy_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_isf_float),

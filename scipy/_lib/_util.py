@@ -22,11 +22,11 @@ from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
+_config = np.show_config('dicts')
+USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
-
-copy_if_needed: bool | None = None
 
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+

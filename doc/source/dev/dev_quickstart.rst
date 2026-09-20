@@ -17,7 +17,7 @@ steps to start contributing:
 
    SciPy uses compiled code for speed, which means you might need extra
    dependencies to complete this step depending on your system - see
-   :ref:`building-from-source`.
+   :ref:`building-contributor`.
 
 3. **Perform development tasks**
 
@@ -46,9 +46,8 @@ account and then create your local repository via::
     git submodule update --init
     git remote add upstream https://github.com/scipy/scipy.git
 
-Next, set up your development environment. **With**
-:ref:`system-level dependencies <system-level>` **installed**, execute the
-instructions in :ref:`building-from-source`.
+Next, set up your development environment,
+following :ref:`building-contributor`.
 
 For details on how to test your changes, see the more complete setup
 walkthrough in :ref:`development-workflow`.

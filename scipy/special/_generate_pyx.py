@@ -83,7 +83,7 @@ special_ufuncs = [
     "_binom_pmf",
     "_binom_ppf",
     "_binom_sf",
-    "_bivariate_normal_sf",
+    "_bivariate_normal_cdf",
     "_cauchy_isf",
     "_cauchy_ppf",
     "_cosine_cdf",

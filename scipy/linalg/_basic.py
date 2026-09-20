@@ -1412,7 +1412,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         raise ValueError(f'LAPACK driver "{driver}" is not found')
 
     if len(a.shape) < 2:
-        raise ValueError('Input array a should be at least 2D, got {a.shape = }')
+        raise ValueError(f'Input array a should be at least 2D, got {a.shape = }')
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
@@ -1490,11 +1490,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
-def _pinv_signature(*args, **kwargs):
-    return "(i,j)->(j,i),int()" if kwargs.get('return_rank') else "(i,j)->(j, i)"
-
-
-@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.

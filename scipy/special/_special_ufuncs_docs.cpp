@@ -121,7 +121,7 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
-const char *_bivariate_normal_sf_doc = R"(
+const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
@@ -3933,7 +3933,7 @@ const char *chndtrix_doc = R"(
     See Also
     --------
     chndtr : Noncentral chi-squared distribution CDF
-    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtridf : inverse of `chndtr` with respect to `df`
     chndtrinc : inverse of `chndtr` with respect to `nc`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
@@ -5108,7 +5108,7 @@ const char *ellipeinc_doc = R"(
     -----
     Wrapper for the Cephes [1]_ routine `ellie`.
 
-    Computation uses arithmetic-geometric means algorithm.
+    Computation uses arithmetic-geometric mean algorithm.
 
     The parameterization in terms of :math:`m` follows that of section
     17.2 in [2]_. Other parameterizations in terms of the
@@ -6289,16 +6289,18 @@ const char *dawsn_doc = R"(
 
     Dawson's integral.
 
-    Computes::
+    Computes
 
-        exp(-x**2) * integral(exp(t**2), t=0..x).
+    .. math::
+
+        F(x) = e^{-x^2} \int_0^x e^{t^2} \, dt.
 
     Parameters
     ----------
     x : array_like
-        Function parameter.
+        Real or complex-valued argument.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
@@ -6309,20 +6311,59 @@ const char *dawsn_doc = R"(
     --------
     wofz, erf, erfc, erfcx, erfi
 
+    Notes
+    -----
+    Dawson's integral is related to the imaginary error function by
+
+    .. math::
+
+        F(x) = \frac{\sqrt{\pi}}{2} e^{-x^2} \operatorname{erfi}(x).
+
+    It satisfies the ordinary differential equation
+
+    .. math::
+
+        F'(x) + 2xF(x) = 1, \qquad F(0) = 0.
+
+    For more details, see [1]_ and [2]_.
+
     References
     ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
+    .. [1] NIST Digital Library of Mathematical Functions, "Dawson's
+           Integral". https://dlmf.nist.gov/7.2
+    .. [2] Wikipedia, "Dawson function".
+           https://en.wikipedia.org/wiki/Dawson_function
+    .. [3] Steven G. Johnson, Faddeeva W function implementation.
+           http://ab-initio.mit.edu/Faddeeva
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy import special
+    >>> from scipy.special import dawsn, erfi
+
+    Verify the relation between Dawson's integral and `erfi`:
+
+    >>> x = np.linspace(-1, 1, 21)
+    >>> y = dawsn(x)
+    >>> y_erfi = np.sqrt(np.pi) * np.exp(-x**2) * erfi(x) / 2
+    >>> np.allclose(y, y_erfi)
+    True
+
+    The differential equation can also be checked numerically using a centered
+    finite difference:
+
+    >>> eps = 1e-8
+    >>> dy = (dawsn(x + eps) - dawsn(x - eps)) / (2*eps)
+    >>> np.allclose(dy + 2*x*y, 1, rtol=0, atol=2e-8)
+    True
+
+    Plot the function over a wider interval:
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
-    >>> plt.plot(x, special.dawsn(x))
+    >>> plt.plot(x, dawsn(x))
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$dawsn(x)$')
+    >>> plt.ylabel('$F(x)$')
     >>> plt.show()
     )";
 
@@ -7402,7 +7443,7 @@ const char *hankel2e_doc = R"(
     computation using the relation,
 
     .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi}
-              \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
+              \exp(\frac{\imath \pi v}{2}) K_v(z \exp(\frac{\imath\pi}{2}))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -8424,10 +8465,10 @@ const char *iv_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
-    (valid when the real part of `z` is positive).  For negative `v`, the
-    formula
+    (valid when the real part of `z` is positive; see [3]_).  For negative
+    `v`, the formula
 
     .. math:: I_{-v}(z) = I_v(z) + \frac{2}{\pi} \sin(\pi v) K_v(z)
 
@@ -8440,6 +8481,8 @@ const char *iv_doc = R"(
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+    .. [3] NIST Digital Library of Mathematical Functions,
+           Eq. 10.34.1. https://dlmf.nist.gov/10.34.E1
 
     Examples
     --------
@@ -8659,7 +8702,7 @@ const char *ive_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
     (valid when the real part of `z` is positive).  For negative `v`, the
     formula
@@ -12716,7 +12759,7 @@ const char *struve_l_doc = R"(
     v : array_like
         Order of the modified Struve function (float).
     x : array_like
-        Argument of the Struve function (float; must be positive unless `v` is
+        Argument of the modified Struve function (float; must be positive unless `v` is
         an integer).
     out : ndarray, optional
         Optional output array for the function results
@@ -12832,7 +12875,7 @@ const char *voigt_profile_doc = R"(
     -----
     It can be expressed in terms of Faddeeva function
 
-    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: V(x; \sigma, \gamma) = \frac{\Re[w(z)]}{\sigma\sqrt{2\pi}},
     .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
 
     where :math:`w(z)` is the Faddeeva function.
@@ -13106,7 +13149,7 @@ const char *y0_doc = R"(
     See Also
     --------
     j0: Bessel function of the first kind of order 0
-    yv: Bessel function of the first kind
+    yv: Bessel function of the second kind
 
     Notes
     -----

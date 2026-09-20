@@ -66,7 +66,7 @@ pull request (e.g. ``10286`` for `PR #10286`_). This immediately checks out
 the pull request into a branch with a name matching the one the PR author used.
 
 Assuming you set up your development environment according to
-:ref:`building-from-source`, you can now activate your development environment::
+:ref:`building-contributor`, you can now activate your development environment::
 
    conda activate scipy-dev
 
