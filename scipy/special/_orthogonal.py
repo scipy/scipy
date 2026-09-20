@@ -84,6 +84,7 @@ from scipy.special import airy
 # There is no .pyi file for _specfun
 from . import _specfun
 from . import _ufuncs
+from . import _fastgl
 
 
 __all__ = [
@@ -3338,7 +3339,8 @@ def roots_legendre(n, mu=False):
     Legendre polynomial :math:`P_n(x)`. These sample points and
     weights correctly integrate polynomials of degree :math:`2n - 1`
     or less over the interval :math:`[-1, 1]` with weight function
-    :math:`w(x) = 1`. See 2.2.10 in [AS]_ for more details.
+    :math:`w(x) = 1`. See 2.2.10 in [AS]_ for more details. The calculation
+    uses Bogaert's iteration-free method [IB]_.
 
     Parameters
     ----------
@@ -3368,6 +3370,8 @@ def roots_legendre(n, mu=False):
         Graphs, and Mathematical Tables. New York: Dover, 1972.
     .. [GL] Gauss-Legendre quadrature, Wikipedia,
         https://en.wikipedia.org/wiki/Gauss%E2%80%93Legendre_quadrature
+    .. [IB] I. Bogaert, "Iteration-Free Computation of Gauss-Legendre Quadrature Nodes
+        and Weights", SIAM J. Sci. Comput. 36(3), A1008-A1026 (2014).
 
     Examples
     --------
@@ -3438,20 +3442,7 @@ def roots_legendre(n, mu=False):
     2.1931471805599454
 
     """
-    m = int(n)
-    if n < 1 or n != m:
-        raise ValueError("n must be a positive integer.")
-
-    mu0 = 2.0
-    def an_func(k):
-        return 0.0 * k
-    def bn_func(k):
-        return k * np.sqrt(1.0 / (4 * k * k - 1))
-    f = _ufuncs.eval_legendre
-    def df(n, x):
-        return (-n * x * _ufuncs.eval_legendre(n, x)
-                + n * _ufuncs.eval_legendre(n - 1, x)) / (1 - x ** 2)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    return _fastgl.gauss_legendre(n, mu)
 
 
 def legendre(n, monic=False):

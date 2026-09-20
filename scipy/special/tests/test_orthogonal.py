@@ -738,6 +738,32 @@ def test_roots_legendre():
     assert_raises(ValueError, sc.roots_legendre, 0)
     assert_raises(ValueError, sc.roots_legendre, 3.3)
 
+@pytest.mark.parametrize("n", [10, 100, 101, 150, 500, 1000])
+def test_roots_legendre_with_mpmath(n):
+    # compare a sample of nodes and weights (both ends, middle, and in between)
+    # against high precision values. n=100/101 straddle the switch from the
+    # tabulated values to the asymptotic expansion.
+    mpmath = pytest.importorskip("mpmath")
+    x, w, mu = sc.roots_legendre(n, True)
+    assert mu == 2.0
+    assert_allclose(w.sum(), 2.0, rtol=1e-15)
+
+    with mpmath.workdps(30):
+        idx = sorted({0, 1, n // 4, n // 2 - 1, n // 2, n - 2, n - 1} & set(range(n)))
+        for i in idx:
+            # polish the float node with Newton's method at high precision
+            xr = mpmath.mpf(float(x[i]))
+            for _ in range(5):
+                p = mpmath.legendre(n, xr)
+                dp = n * (mpmath.legendre(n - 1, xr) - xr * p) / (1 - xr**2)
+                xr -= p / dp
+            # w_i = 2 / ((1 - x_i**2) * P_n'(x_i)**2)
+            dp = n * (mpmath.legendre(n - 1, xr) - xr * mpmath.legendre(n, xr))
+            dp /= 1 - xr**2
+            wr = 2 / ((1 - xr**2) * dp**2)
+            assert_allclose(x[i], float(xr), rtol=1e-14, atol=1e-15)
+            assert_allclose(w[i], float(wr), rtol=1e-14)
+
 def test_roots_sh_legendre():
     weightf = orth.sh_legendre(5).weight_func
     verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1., 5)
