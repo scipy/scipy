@@ -647,15 +647,19 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         super().__init__(**kwargs)
 
     def _logpdf_formula(self, x, **kwargs):
+        assert not np.any(np.abs(x) > 1)
         return np.log(0.75) + np.log(1 - x**2)
 
     def _pdf_formula(self, x, **kwargs):
+        assert not np.any(np.abs(x) > 1)
         return 0.75 * (1 - x**2)
 
     def _cdf_formula(self, x, **kwargs):
+        assert not np.any(np.abs(x) > 1)
         return 0.5 + 0.75*x - 0.25*x**3
 
     def _ccdf_formula(self, x, **kwargs):
+        assert not np.any(np.abs(x) > 1)
         return 0.5 - 0.75*x + 0.25*x**3
 
     def _icdf_formula(self, p, **kwargs):
