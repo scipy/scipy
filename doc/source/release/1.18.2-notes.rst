@@ -5,19 +5,39 @@ SciPy 1.18.2 Release Notes
 .. contents::
 
 SciPy 1.18.2 is a bug-fix release with no new features
-compared to 1.18.1.
+compared to 1.18.1. The version of OpenBLAS that ships
+with PyPI binaries has been increased.
 
 
 
 Authors
 =======
 * Name (commits)
+* Wasim Akram (1)
+* Evgeni Burovski (1)
+* Tekin Ertekin (1)
+* Ralf Gommers (2)
+* Tyler Reddy (11)
+* Warren Weckesser (2)
+
+    A total of 6 people contributed to this release.
+    People with a "+" by their names contributed a patch for the first time.
+    This list of names is automatically generated, and may not be fully complete.
 
 
 Issues closed for 1.18.2
 ------------------------
 
+* `#24681 <https://github.com/scipy/scipy/issues/24681>`__: BUG: signal._spline.sepfir2d: heap-buffer-overflow
+* `#26045 <https://github.com/scipy/scipy/issues/26045>`__: BUG: passing ndarray with dtype==int64 and order=='F' to linalg.inv...
 
 
 Pull requests for 1.18.2
 ------------------------
+
+* `#25238 <https://github.com/scipy/scipy/pull/25238>`__: CI: Increase the test timeout for an interpolate test in a Windows...
+* `#25282 <https://github.com/scipy/scipy/pull/25282>`__: TST: interpolate: Fix the timeout override of a test.
+* `#25571 <https://github.com/scipy/scipy/pull/25571>`__: TST: loosen signal test tolerances for FMA-contraction builds
+* `#25988 <https://github.com/scipy/scipy/pull/25988>`__: REL, MAINT: prepare for SciPy 1.18.2
+* `#26001 <https://github.com/scipy/scipy/pull/26001>`__: BUG: signal.sepfir2d: reject filters too long for the input axis
+* `#26050 <https://github.com/scipy/scipy/pull/26050>`__: BUG: linalg: prevent a segfault in ``inv(f_order_sym_matrix,``...
