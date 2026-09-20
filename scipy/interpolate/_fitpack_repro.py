@@ -100,6 +100,9 @@ def add_knot(x, t, k, residuals, periodic=False):
 def _interval_residuals(x, t, k, residuals, nrint):
     """Sum the residuals over each knot interval, ``t(j+k) <= x(i) <= t(j+k+1)``.
 
+    This is the "deviation between the spline and the data" the knot placement
+    goes by, measured once per iteration and then handed to _add_knot_split.
+
     A data point on an interval boundary contributes half of its residual to
     either side.
 
@@ -128,10 +131,22 @@ def _interval_residuals(x, t, k, residuals, nrint):
 def _add_knot_split(x, t, k, fpint, nrdata):
     """Add a knot to the interval with the largest residual sum.
 
-    The new knot is the middle data point of that interval. That interval's
-    residual sum is then split between the two halves in proportion to the
-    number of data points each receives, which is what lets FITPACK place
-    several knots from a single residual computation.
+    The tutorial describes an iteration as "add new knots by splitting the
+    interval with the maximum deviation between the spline and the data". Adding
+    one knot that way is straightforward; adding several in the same iteration is
+    not, because after the first one the intervals are no longer the intervals the
+    deviations were measured over.
+
+    FITPACK does not re-measure. It assumes the deviation of an interval is spread
+    evenly over the data points inside it, so when an interval is cut in two, each
+    half inherits the share of ``fpint`` that matches how many data points it got.
+    The estimate is crude, and it only has to order the intervals for the rest of
+    this batch: the next iteration solves the least squares problem again and
+    recomputes every ``fpint`` from scratch.
+
+    ``fpint[j]`` is the deviation attributed to knot interval j and ``nrdata[j]``
+    the number of data points strictly inside it. An interval with no interior
+    point cannot be cut, which is why ``nrdata`` is consulted before ``fpint``.
 
     This is
     https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
@@ -409,6 +424,11 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
         t[k + 1] = x[(m + 1)//2 - 1]
         nplus = 1
     n = t.shape[0]
+    # Number of data points strictly inside each knot interval. A knot is itself a
+    # data point and counts for neither side, so this starts as every point but the
+    # two ends. Only _add_knot_split changes it afterwards, as fpknot.f does; the
+    # per-interval deviations in fpint are recomputed every iteration, nrdata is
+    # carried across them.
     nrdata = np.array([m - 2], dtype=np.intp)
 
     # c  main loop for the different sets of knots. m is a safe upper bound
