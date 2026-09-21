@@ -171,6 +171,10 @@ class TestBSplines:
                                xp.asarray([], dtype=xp.float64))
         xp_assert_equal(r, xp.asarray([], dtype=xp.float64))
 
+        r = signal.cspline1d_eval(xp.asarray([1.], dtype=xp.float64),
+                                  xp.asarray([-1., 0., 1.], dtype=xp.float64))
+        xp_assert_equal(r, xp.asarray([1., 1., 1.], dtype=xp.float64))
+
         # Test case for newx that gets filtered down to empty
         r = signal.cspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64),
                                   xp.asarray([-1.0], dtype=xp.float64))
@@ -210,6 +214,10 @@ class TestBSplines:
         xp_assert_equal(signal.qspline1d_eval(xp.asarray([1., 0, 1]), xp.asarray([])),
                         xp.asarray([])
         )
+
+        r = signal.qspline1d_eval(xp.asarray([1.], dtype=xp.float64),
+                                  xp.asarray([-1., 0., 1.], dtype=xp.float64))
+        xp_assert_equal(r, xp.asarray([1., 1., 1.], dtype=xp.float64))
 
         # Test case for newx that gets filtered down to empty
         r = signal.qspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64),
