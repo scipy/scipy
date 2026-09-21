@@ -82,16 +82,16 @@ def solve_sylvester(a, b, q):
     True
 
     """
+    dtype = np.common_type(a, b, q)
+    a = a.astype(dtype)
+    b = b.astype(dtype)
+    q = q.astype(dtype)
     # Accommodate empty a
     if a.size == 0 or b.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
         func, = get_lapack_funcs(('trsyl',), arrays=(a, b, q))
         return np.empty(q.shape, dtype=tdict[func.typecode])
-    dtype = np.common_type(a, b, q)
-    a = a.astype(dtype)
-    b = b.astype(dtype)
-    q = q.astype(dtype)
 
     # Compute the Schur decomposition form of a
     r, u = schur(a)
