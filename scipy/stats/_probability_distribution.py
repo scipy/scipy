@@ -225,9 +225,12 @@ class _ProbabilityDistribution(ABC):
 
             \int_{\chi} \exp(in(x - c)) f(x) dx
 
-        where :math:`c = 0` for the "raw" moment and :math:`c = \mu`, the circular
-        mean, for the "central" moment ([2]_ 28). Standardized moments are not defined
-        for circular distributions.
+        where :math:`c` at the origin for the "raw" moment and :math:`c = \mu`, the
+        circular mean, for the "central" moment ([2]_ 28). Note that for circular
+        distributions, the origin is always left endpoint of the support, which may
+        not coincide with coordinate ``0.0`` due to differing parameterizations of
+        the unit circle. Standardized moments are not defined for circular
+        distributions.
 
         Parameters
         ----------

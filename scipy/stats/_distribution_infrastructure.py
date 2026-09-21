@@ -3102,7 +3102,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if moment is None and 'formula' in methods:
             moment = self._moment_raw_formula(order, **params)
 
-        if moment is None and 'transform' in methods and order > 1:
+        if moment is None and 'transform' in methods:
             moment = self._moment_raw_transform(order, **params)
 
         if moment is None and 'general' in methods:
@@ -3890,13 +3890,27 @@ class CircularDistribution(UnivariateDistribution):
 
     def _moment_from_pxf(self, order, center, **params):
         def integrand(x, order, center, **params):
-            pdf = self._pdf_dispatch(x, **params)
+            a, b = self._support(**params)
+            period = b - a
+            scale = 2*np.pi / period
+            # All internal moment calculations are in radians with the origin at the
+            # left endpoint of the support, so we are integrating over [0, 2*pi].
+            # Therefore, x needs to be scaled and shifted to the support of the
+            # distribution. But the returned PDF values need to be scaled back
+            # because we are integrating over [0, 2*pi], not the support. This is the
+            # same as evaluation of a PDF under generic shift/scale of a distribution;
+            # It just looks slightly different.
+            pdf = self._pdf_dispatch(x/scale + a, **params) / scale
             return np.exp(1j * order * (x - center)) * pdf
-        return self._quadrature(integrand, args=(order, center), params=params)
+        return self._quadrature(integrand, limits=(0, 2*np.pi),
+                                args=(order, center), params=params)
 
     def mean(self, *, method=None):
+        a, b = self.support()
+        period = b - a
+        scale = 2*np.pi / period
         phi = self.moment(1, kind='raw', method=method)
-        return np.angle(phi) % (2 * np.pi)
+        return np.angle(phi) / scale + a
 
     def variance(self, *, method=None):
         rho = self.moment(1, kind='central', method=method).real

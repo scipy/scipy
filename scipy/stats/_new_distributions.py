@@ -669,12 +669,15 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return 2*np.cos(1/3 * np.arccos(2*p - 1) + 4*np.pi/3)
 
     def _moment_raw_formula(self, order, **kwargs):
-        if order == 0:
-            return 1.0 + 0.0j
-        return 3/order**3 * (np.sin(order) - order*np.cos(order)) + 0j
+        res = self._moment_central_formula(order, **kwargs)
+        # infrastructure considers the origin to be the left endpoint
+        # of the support.
+        return res * np.exp(1j*order*np.pi)
 
     def _moment_central_formula(self, order, **kwargs):
-        return self._moment_raw_formula(order, **kwargs)
+        if order == 0:
+            return 1.0 + 0.0j
+        return 3*(-1)**(order + 1) / (np.pi * order)**2 + 0j
 
     def _entropy_formula(self):
         return 5/3 - np.log(3)
