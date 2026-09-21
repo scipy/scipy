@@ -109,6 +109,33 @@ class TestSolveLyapunov:
         x = solve_discrete_lyapunov(a, q, method=method)
         assert_array_almost_equal(
                       np.dot(np.dot(a, x), a.conj().transpose()) - x, -1.0*q)
+    
+    @pytest.mark.parametrize("dtype_a", [int, float, np.float32])
+    @pytest.mark.parametrize("dtype_q", [complex, np.complex64])
+    @pytest.mark.parametrize("method", ["direct", "bilinear"])
+    def test_discrete_mixed_dtypes(self, dtype_a, dtype_q, method):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        x = solve_discrete_lyapunov(a, q, method=method)
+        norm_ratio = np.linalg.norm(a @ x @ a.conj().T - x + q) / np.linalg.norm(q)
+        assert norm_ratio < 1e-8, f"a dtype: {dtype_a}, q dtype: {dtype_q}, method: {method}, norm_ratio: {norm_ratio:.1E}"
+
+    @pytest.mark.parametrize("dtype_a", [int, float, np.float32])
+    @pytest.mark.parametrize("dtype_q", [complex, np.complex64])
+    def test_continuous_mixed_dtypes(self, dtype_a, dtype_q):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        x = solve_continuous_lyapunov(a, q)
+        norm_ratio = np.linalg.norm(a @ x  + x @ a.conj().T - q) / np.linalg.norm(q)
+        assert norm_ratio < 1e-8, f"a dtype: {dtype_a}, q dtype: {dtype_q}, norm_ratio: {norm_ratio:.1E}"
 
     @skip_xp_invalid_arg
     def test_cases(self):
@@ -860,3 +887,18 @@ class TestSolveSylvester:
 
         assert res.shape == (m, n)
         assert res.dtype == ref.dtype
+
+    @pytest.mark.parametrize("dtype_a", [int, float, np.float32])
+    @pytest.mark.parametrize("dtype_b", [int, float, np.float32])
+    @pytest.mark.parametrize("dtype_q", [complex, np.complex64])
+    def test_discrete_mixed_dtypes(self, dtype_a, dtype_b, dtype_q):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        b = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_b)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        x = solve_sylvester(a, b, q)
+        norm_ratio = np.linalg.norm(a @ x + x @ b - q) / np.linalg.norm(q)
+        assert norm_ratio < 1e-8, f"a dtype: {dtype_a}, b dtype: {dtype_b}, q dtype: {dtype_q}, norm_ratio: {norm_ratio:.1E}"
