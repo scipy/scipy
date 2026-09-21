@@ -95,7 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
-@_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')
+@_apply_over_batch(('A', 2), signature='(i,i)->complex(i,i)')
 def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.

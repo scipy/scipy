@@ -332,9 +332,7 @@ def sobol_indices(
 
         And method:
 
-        bootstrap(confidence_level: float, n_resamples: int)
-        -> BootstrapSobolResult
-
+        bootstrap(confidence_level: float, n_resamples: int) -> BootstrapSobolResult
             A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 

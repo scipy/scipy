@@ -24,7 +24,6 @@ cdef extern from "xsf/specfun/specfun.h" namespace "xsf::specfun":
         Other
 
 cdef extern from "xsf/specfun/specfun.h" nogil:
-    void specfun_bernob 'xsf::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
     void specfun_cpbdn 'xsf::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
     void specfun_cyzo 'xsf::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
@@ -72,20 +71,6 @@ def airyzo(int nt, int kf):
     specfun_airyzo(nt, kf, xxa, xxb, xxc, xxd)
 
     return xa, xb, xc, xd
-
-
-def bernob(int n):
-    """
-    Compute Bernoulli number Bn for n >= 2. This is a wrapper for the
-    function 'specfun_bernob'.
-    """
-    cdef double *bbn
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-    bn = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    bbn = <cnp.float64_t *>cnp.PyArray_DATA(bn)
-    specfun_bernob(n, bbn)
-    return bn
 
 
 def cerzo(int nt):

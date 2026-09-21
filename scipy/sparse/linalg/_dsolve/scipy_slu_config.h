@@ -14,8 +14,6 @@ void superlu_python_module_free(void *ptr);
 #define USER_MALLOC superlu_python_module_malloc
 #define USER_FREE   superlu_python_module_free
 
-#define SCIPY_FIX 1
-
 /*
  * BLAS integer type: matches the BLAS library's integer ABI.
  * When HAVE_BLAS_ILP64 is defined (ILP64 build), this is int64_t;

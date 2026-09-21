@@ -864,6 +864,8 @@ float boost_stdtr_float(float df, float t) { return t_cdf_float(df, t); }
 
 double boost_stdtr_double(double df, double t) { return t_cdf_double(df, t); }
 
+double boost_stdtridf_double(double p, double t) { return stdtridf_double(p, t); }
+
 float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }

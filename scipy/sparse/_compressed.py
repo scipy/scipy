@@ -5,7 +5,7 @@ from warnings import warn
 import itertools
 
 import numpy as np
-from scipy._lib._util import _prune_array, copy_if_needed
+from scipy._lib._util import _prune_array
 
 from ._base import _spbase, issparse, sparray, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
@@ -72,7 +72,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                 check_contents=True)
 
                     if not copy:
-                        copy = copy_if_needed
+                        copy = None
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
