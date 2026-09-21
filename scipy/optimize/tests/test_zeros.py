@@ -886,6 +886,16 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
+@pytest.mark.parametrize('solver_name', ['brentq', 'brenth', 'bisect', 'ridder'])
+@pytest.mark.parametrize('endpoint', [0, 1])
+def test_gh25955_endpoint_root_iterations(solver_name, endpoint):
+    solver = getattr(zeros, solver_name)
+    root, result = solver(lambda x: x - endpoint, 0, 1, full_output=True)
+
+    assert root == endpoint
+    assert result.iterations == 0
+
+
 def test_gh_14486_converged_false():
     """Test that zero slope with secant method results in a converged=False"""
     def lhs(x):
