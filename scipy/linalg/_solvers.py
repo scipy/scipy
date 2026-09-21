@@ -88,12 +88,16 @@ def solve_sylvester(a, b, q):
                  'c': np.complex64, 'z': np.complex128}
         func, = get_lapack_funcs(('trsyl',), arrays=(a, b, q))
         return np.empty(q.shape, dtype=tdict[func.typecode])
+    dtype = np.common_type(a, b, q)
+    a = a.astype(dtype)
+    b = b.astype(dtype)
+    q = q.astype(dtype)
 
     # Compute the Schur decomposition form of a
-    r, u = schur(a, output='real')
+    r, u = schur(a)
 
     # Compute the Schur decomposition of b
-    s, v = schur(b.conj().transpose(), output='real')
+    s, v = schur(b.conj().transpose())
 
     # Construct f = u'*q*v
     f = np.dot(np.dot(u.conj().transpose(), q), v)
@@ -166,6 +170,9 @@ def solve_continuous_lyapunov(a, q):
 
     a = np.atleast_2d(_asarray_validated(a, check_finite=True))
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+    dtype = np.common_type(a, q)
+    a = a.astype(dtype)
+    q = q.astype(dtype)
 
     r_or_c = float
 
@@ -188,7 +195,7 @@ def solve_continuous_lyapunov(a, q):
         return np.empty(a.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
-    r, u = schur(a, output='real')
+    r, u = schur(a)
 
     # Construct f = u'*q*u
     f = u.conj().T.dot(q.dot(u))
@@ -224,6 +231,9 @@ def _solve_discrete_lyapunov_direct(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=direct`. It is not supposed to be called directly.
     """
+    dtype = np.common_type(a, q)
+    a = a.astype(dtype)
+    q = q.astype(dtype)
 
     lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0]) - lhs
@@ -239,7 +249,11 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=bilinear`. It is not supposed to be called directly.
     """
-    eye = np.eye(a.shape[0])
+    dtype = np.common_type(a, q)
+    a = a.astype(dtype)
+    q = q.astype(dtype)
+
+    eye = np.eye(a.shape[0], dtype=dtype)
     aH = a.conj().transpose()
     aHI_inv = inv(aH + eye)
     b = np.dot(aH - eye, aHI_inv)
