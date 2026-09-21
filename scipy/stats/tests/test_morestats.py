@@ -273,6 +273,33 @@ class TestAnderson:
         #   3.208057
         assert_allclose(A, 3.208057)
 
+    def test_gauss(self):
+        # dist='gauss' holds the mean at 0 and the standard deviation at 1, so
+        # standardising a sample by its own mean and standard deviation must
+        # reproduce the statistic dist='norm' computes by fitting them.
+        rs = RandomState(1234567890)
+        for scale, loc in [(1.0, 0.0), (2.5, -1.0), (0.4, 3.0)]:
+            x = scale * rs.standard_normal(size=200) + loc
+            z = (x - x.mean()) / x.std(ddof=1)
+            assert_allclose(stats.anderson(z, 'gauss').statistic,
+                            stats.anderson(x, 'norm').statistic)
+
+        # Fixing the scale makes the test sensitive to it, unlike 'norm'.
+        y = 1.5 * rs.standard_normal(size=1000)
+        assert stats.anderson(y, 'gauss').statistic > 10
+        assert stats.anderson(y, 'norm').statistic < 1
+
+        # No parameters are estimated, so the critical values do not depend on
+        # the sample size and the fitted parameters are exactly (0, 1).
+        res_small = stats.anderson(rs.standard_normal(size=20), 'gauss')
+        res_large = stats.anderson(rs.standard_normal(size=2000), 'gauss')
+        assert_allclose(res_small.critical_values, res_large.critical_values)
+        assert_allclose(res_small.critical_values,
+                        [1.62123854, 1.93295783, 2.49236716,
+                         3.07746418, 3.87812502])
+        assert_array_equal(res_small.significance_level, [15, 10, 5, 2.5, 1])
+        assert_allclose(res_small.fit_result.params, (0, 1))
+
     def test_expon(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
