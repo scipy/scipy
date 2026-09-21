@@ -886,11 +886,10 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
-@pytest.mark.parametrize('solver_name', bracket_methods)
+@pytest.mark.parametrize('method', bracket_methods)
 @pytest.mark.parametrize('endpoint', [0, 1])
-def test_gh25955_endpoint_root_iterations(solver_name, endpoint):
-    solver = getattr(zeros, solver_name)
-    root, result = solver(lambda x: x - endpoint, 0, 1, full_output=True)
+def test_gh25955_endpoint_root_iterations(method, endpoint):
+    root, result = method(lambda x: x - endpoint, 0, 1, full_output=True)
 
     assert root == endpoint
     assert result.iterations == 0
