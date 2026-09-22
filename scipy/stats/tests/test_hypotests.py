@@ -733,6 +733,16 @@ class TestMannWhitneyU:
         stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
         assert shape == _mwu_state.s.configurations.shape
 
+    def test_gh24777(self, xp):
+        # In low precision, the statistic lost accuracy because the rank sum was
+        # accumulated at a much larger magnitude than U before the constant was
+        # subtracted.
+        rng = np.random.RandomState(0)
+        x = xp.asarray(rng.poisson(1, size=6000), dtype=xp.float32)
+        y = xp.asarray(rng.poisson(1, size=2000), dtype=xp.float32)
+        res = mannwhitneyu(x, y, method='asymptotic')
+        xp_assert_equal(res.statistic, xp.asarray(6091893.5, dtype=xp.float32))
+
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative, xp):
         rng = np.random.default_rng(7600451795963068007)
