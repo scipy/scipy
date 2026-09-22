@@ -14,7 +14,7 @@ import numpy as np
 import scipy
 from scipy.sparse.linalg import minres
 
-from .test_minpack import pressure_network
+from .test_minpack import pressure_network, pressure_network_jacobian
 
 SOLVERS = {'anderson': nonlin.anderson,
            'diagbroyden': nonlin.diagbroyden,
@@ -38,16 +38,25 @@ def F(x):
     f = -d @ x - c * float(x.T @ x) * x
     return f
 
+def F_GRAD0(x, v):
+    x = np.asarray(x).T
+    dx = np.asarray(v).T
+    d = np.diag([3, 2, 1.5, 1, 0.5])
+    c = 0.01
+
+    df = -d @ dx - c * (2*float(x.T @ dx) * x + float(x.T @ x) * dx)
+    return df  
 
 F.xin = [1, 1, 1, 1, 1]
 F.KNOWN_BAD = {}
 F.JAC_KSP_BAD = {}
 F.ROOT_JAC_KSP_BAD = {}
 
-
 def F2(x):
     return x
 
+def F_GRAD2(x, v):
+    return np.array(v)
 
 F2.xin = [1, 2, 3, 4, 5, 6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
@@ -55,22 +64,22 @@ F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
 F2.JAC_KSP_BAD = {}
 F2.ROOT_JAC_KSP_BAD = {}
 
-
 def F2_lucky(x):
     return x
-
 
 F2_lucky.xin = [0, 0, 0, 0, 0, 0]
 F2_lucky.KNOWN_BAD = {}
 F2_lucky.JAC_KSP_BAD = {}
 F2_lucky.ROOT_JAC_KSP_BAD = {}
 
-
 def F3(x):
     A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
     b = np.array([1, 2, 3.])
     return A @ x - b
 
+def F_GRAD3(x, v):
+    A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
+    return A @ v
 
 F3.xin = [1, 2, 3]
 F3.KNOWN_BAD = {}
@@ -81,6 +90,11 @@ F3.ROOT_JAC_KSP_BAD = {}
 def F4_powell(x):
     A = 1e4
     return [A*x[0]*x[1] - 1, np.exp(-x[0]) + np.exp(-x[1]) - (1 + 1/A)]
+
+
+def F_GRAD4(x, v):
+    A = 1e4
+    return np.array([A*(x[0]*v[1] +v[0]*x[1]), -np.exp(-x[0])*v[0] - np.exp(-x[1])*v[1]])
 
 
 F4_powell.xin = [-1, -2]
@@ -97,6 +111,8 @@ F4_powell.ROOT_JAC_KSP_BAD = {'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'}
 def F5(x):
     return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
 
+def F_GRAD5(x, v):
+    return pressure_network_jacobian(x, 4, np.array([.5, .5, .5, .5])) @ v
 
 F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
@@ -117,6 +133,16 @@ def F6(x):
                   np.sin(x2 * np.exp(x1) - 1)])
     return -np.linalg.solve(J0, v)
 
+def F_GRAD6(x, w):
+    x1, x2 = x
+    y1, y2 = w
+    J0 = np.array([[-4.256, 14.7],
+                   [0.8394989, 0.59964207]])
+    dv = np.array([
+        y1 * (x2**5 - 7) + (x1 + 3) * 5 * x2**4 * y2,
+        np.cos(x2 * np.exp(x1) - 1) * (y2 * np.exp(x1) + x2 * np.exp(x1) * y1)
+    ])
+    return -np.linalg.solve(J0, dv)
 
 F6.xin = [-0.5, 1.4]
 F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
@@ -124,6 +150,17 @@ F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'diagbroyden': nonlin.diagbroyden}
 F6.JAC_KSP_BAD = {}
 F6.ROOT_JAC_KSP_BAD = {}
+
+F_GRAD = {F: F_GRAD0,
+          F2: None,
+        #   F2: F_GRAD2,
+          F2_lucky: None,
+        #   F2_lucky: F_GRAD2,
+          F3: F_GRAD3,
+          F4_powell: F_GRAD4,
+          F5: None,
+        #   F5: F_GRAD5,
+          F6: F_GRAD6}
 
 
 # ----------------------------------------------------------------------------
@@ -147,9 +184,10 @@ class TestNonlin:
                 if method in f.JAC_KSP_BAD:
                     continue
 
-                x = func(f, f.xin, method=method, line_search=None,
-                         f_tol=f_tol, maxiter=200, verbose=0)
-                assert_(np.absolute(f(x)).max() < f_tol)
+                for f_grad in [None, F_GRAD[f]]:
+                    x = func(f, f.xin, method=method, line_search=None,
+                             f_tol=f_tol, maxiter=200, Fgradp=f_grad, verbose=0)
+                    assert_(np.absolute(f(x)).max() < f_tol)
 
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
         assert_(np.absolute(f(x)).max() < f_tol)
