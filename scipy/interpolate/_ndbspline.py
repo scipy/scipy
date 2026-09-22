@@ -699,8 +699,9 @@ def make_lsq_ndbspline(
     -----
     .. versionadded:: 2.0.0
 
-    Let ``A[i, j]`` be tensor-product basis function ``j`` evaluated at data
-    point ``x[i]`` and let ``W = diag(w)``. This function solves
+    Let ``A[i, j]`` be the value of the ``j``-th tensor-product basis
+    function evaluated at the ``i``-th data point ``x[i]``, and let
+    ``W = diag(w)``. This function solves
 
     .. math::
 
@@ -712,7 +713,10 @@ def make_lsq_ndbspline(
 
     Every tensor-product basis function must be supported by at least one
     data point with positive weight, and there must be at least as many data
-    points as spline coefficients. Otherwise, a `ValueError` is raised.
+    points as spline coefficients. Violating either condition makes the
+    design matrix rank-deficient, so the coefficients cannot be determined
+    uniquely and a `ValueError` is raised. These conditions are necessary,
+    but do not by themselves guarantee that the design matrix has full rank.
     Coordinates in dimension ``d`` must lie in the base interval
     ``t[d][k[d]] <= x[:, d] <= t[d][-k[d] - 1]``.
 
