@@ -8688,7 +8688,6 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     """
     xp = array_namespace(*samples)
 
-    # `xp_promote` returns a bare array for one argument, whose len is its rows.
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
