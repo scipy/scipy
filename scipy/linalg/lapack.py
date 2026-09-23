@@ -386,6 +386,11 @@ All functions
    clange
    zlange
 
+   slansb
+   dlansb
+   clansb
+   zlansb
+
    slantr
    dlantr
    clantr
