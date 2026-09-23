@@ -437,6 +437,55 @@ def _rayleigh_ritz(blockVectorX, blockVectorAX, blockVectorBX,
     return _lambda, eigBlockVector, restart
 
 
+def _postprocess(A, B, blockVectorX, sizeX, largest, verbosityLevel):
+    """Final "exact" Rayleigh-Ritz on X to make the eigenvectors
+    "exactly" orthonormalized.
+
+    Returns the eigenvalues, the eigenvectors and their residual norms.
+    """
+    blockVectorAX = _apply_checked(A, blockVectorX,
+                                   "postprocessing iterate", "primary")
+    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+
+    blockVectorBX = blockVectorX
+    if B is not None:
+        blockVectorBX = _apply_checked(B, blockVectorX,
+                                       "postprocessing iterate", "secondary")
+
+    gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
+    _handle_gramA_gramB_verbosity(gramXAX, gramXBX, verbosityLevel)
+    gramXAX = (gramXAX + gramXAX.T.conj()) / 2
+    gramXBX = (gramXBX + gramXBX.T.conj()) / 2
+    try:
+        _lambda, eigBlockVector = eigh(gramXAX,
+                                       gramXBX,
+                                       check_finite=False)
+    except LinAlgError as e:
+        raise ValueError("eigh has failed in lobpcg postprocessing") from e
+
+    ii = _get_indx(_lambda, sizeX, largest)
+    _lambda = _lambda[ii]
+    eigBlockVector = np.asarray(eigBlockVector[:, ii])
+
+    blockVectorX = np.dot(blockVectorX, eigBlockVector)
+    blockVectorAX = np.dot(blockVectorAX, eigBlockVector)
+
+    if B is not None:
+        blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
+
+    _, residualNorms = _residuals(
+        B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
+    return _lambda, blockVectorX, residualNorms
+
+
+def _finalize_history(history, bestIterationNumber, values):
+    """Record the final `values`, truncate and split the history into a list."""
+    history[bestIterationNumber + 1, :] = values
+    history = history[: bestIterationNumber + 2, :]
+    history = np.vsplit(history, np.shape(history)[0])
+    return [np.squeeze(i) for i in history]
+
+
 def lobpcg(
     A,
     X,
@@ -733,12 +782,10 @@ def lobpcg(
     n, sizeX = blockVectorX.shape
     sizeY = 0 if blockVectorY is None else blockVectorY.shape[1]
 
-    if retLambdaHistory:
-        lambdaHistory = np.zeros((maxiter + 3, sizeX),
-                                 dtype=blockVectorX.dtype)
-    if retResidualNormsHistory:
-        residualNormsHistory = np.zeros((maxiter + 3, sizeX),
-                                        dtype=blockVectorX.dtype)
+    # The histories are always recorded, but only returned if requested.
+    lambdaHistory = np.zeros((max(maxiter, 0) + 3, sizeX),
+                             dtype=blockVectorX.dtype)
+    residualNormsHistory = np.zeros_like(lambdaHistory)
 
     if verbosityLevel:
         _print_problem_info(B, M, blockVectorY, n, sizeX, sizeY)
@@ -802,8 +849,7 @@ def lobpcg(
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
-    if retLambdaHistory:
-        lambdaHistory[0, :] = _lambda
+    lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
     blockVectorX = _matmul_inplace(
@@ -845,8 +891,7 @@ def lobpcg(
 
         blockVectorR, residualNorms = _residuals(
             B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
-        if retResidualNormsHistory:
-            residualNormsHistory[iterationNumber, :] = residualNorms
+        residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.sum(np.abs(residualNorms)) / sizeX
 
         if residualNorm < smallestResidualNorm:
@@ -964,8 +1009,7 @@ def lobpcg(
         ii = _get_indx(_lambda, sizeX, largest)
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
-        if retLambdaHistory:
-            lambdaHistory[iterationNumber + 1, :] = _lambda
+        lambdaHistory[iterationNumber + 1, :] = _lambda
 
         # Compute Ritz vectors.
         eigBlockVectorX, eigBlockVectorR, eigBlockVectorP = _split_eig_block(
@@ -989,10 +1033,8 @@ def lobpcg(
     _, residualNorms = _residuals(
         B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
     # Use old lambda in case of early loop exit.
-    if retLambdaHistory:
-        lambdaHistory[iterationNumber + 1, :] = _lambda
-    if retResidualNormsHistory:
-        residualNormsHistory[iterationNumber + 1, :] = residualNorms
+    lambdaHistory[iterationNumber + 1, :] = _lambda
+    residualNormsHistory[iterationNumber + 1, :] = residualNorms
     residualNorm = np.sum(np.abs(residualNorms)) / sizeX
     if residualNorm < smallestResidualNorm:
         smallestResidualNorm = residualNorm
@@ -1021,51 +1063,16 @@ def lobpcg(
                           blockVectorBY,
                           blockVectorY)
 
-    # Making eigenvectors "exactly" othonormalized by final "exact" RR
-    blockVectorAX = _apply_checked(A, blockVectorX,
-                                   "postprocessing iterate", "primary")
-    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+    _lambda, blockVectorX, residualNorms = _postprocess(
+        A, B, blockVectorX, sizeX, largest, verbosityLevel)
 
-    blockVectorBX = blockVectorX
-    if B is not None:
-        blockVectorBX = _apply_checked(B, blockVectorX,
-                                       "postprocessing iterate", "secondary")
-
-    gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
-    _handle_gramA_gramB_verbosity(gramXAX, gramXBX, verbosityLevel)
-    gramXAX = (gramXAX + gramXAX.T.conj()) / 2
-    gramXBX = (gramXBX + gramXBX.T.conj()) / 2
-    try:
-        _lambda, eigBlockVector = eigh(gramXAX,
-                                       gramXBX,
-                                       check_finite=False)
-    except LinAlgError as e:
-        raise ValueError("eigh has failed in lobpcg postprocessing") from e
-
-    ii = _get_indx(_lambda, sizeX, largest)
-    _lambda = _lambda[ii]
-    eigBlockVector = np.asarray(eigBlockVector[:, ii])
-
-    blockVectorX = np.dot(blockVectorX, eigBlockVector)
-    blockVectorAX = np.dot(blockVectorAX, eigBlockVector)
-
-    if B is not None:
-        blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
-
-    _, residualNorms = _residuals(
-        B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
-
+    result = (_lambda, blockVectorX)
     if retLambdaHistory:
-        lambdaHistory[bestIterationNumber + 1, :] = _lambda
+        result += (_finalize_history(lambdaHistory, bestIterationNumber,
+                                     _lambda),)
     if retResidualNormsHistory:
-        residualNormsHistory[bestIterationNumber + 1, :] = residualNorms
-
-    if retLambdaHistory:
-        lambdaHistory = lambdaHistory[
-            : bestIterationNumber + 2, :]
-    if retResidualNormsHistory:
-        residualNormsHistory = residualNormsHistory[
-            : bestIterationNumber + 2, :]
+        result += (_finalize_history(residualNormsHistory,
+                                     bestIterationNumber, residualNorms),)
 
     if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
@@ -1079,21 +1086,4 @@ def lobpcg(
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
 
-    if retLambdaHistory:
-        lambdaHistory = np.vsplit(lambdaHistory, np.shape(lambdaHistory)[0])
-        lambdaHistory = [np.squeeze(i) for i in lambdaHistory]
-    if retResidualNormsHistory:
-        residualNormsHistory = np.vsplit(residualNormsHistory,
-                                         np.shape(residualNormsHistory)[0])
-        residualNormsHistory = [np.squeeze(i) for i in residualNormsHistory]
-
-    if retLambdaHistory:
-        if retResidualNormsHistory:
-            return _lambda, blockVectorX, lambdaHistory, residualNormsHistory
-        else:
-            return _lambda, blockVectorX, lambdaHistory
-    else:
-        if retResidualNormsHistory:
-            return _lambda, blockVectorX, residualNormsHistory
-        else:
-            return _lambda, blockVectorX
+    return result
