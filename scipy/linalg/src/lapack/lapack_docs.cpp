@@ -1457,6 +1457,33 @@ namespace lapack {
         }
 
         static std::string
+        doc_pbcon(const char *name, const Dtype &)
+        {
+            std::string s;
+            s += std::string(name) + "(kd, ab, anorm, ldab=kd+1, uplo='U')\n\n";
+            s += "Estimate the reciprocal condition number of a positive definite band matrix\n"
+                 "from its Cholesky factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "kd : int\n    Number of super- or subdiagonals of the matrix.\n";
+            s += "ab : ndarray\n"
+                 "    Banded Cholesky factor of shape ``(kd + 1, n)``, as returned by ``pbtrf``;\n"
+                 "    the order `n` is read off `ab` itself.\n";
+            s += "anorm : float\n    1-norm of the original matrix, which equals its infinity norm here.\n";
+            s += "ldab : int, optional\n"
+                 "    Leading dimension of `ab`. It must equal ``ab.shape[0]`` and be at least\n"
+                 "    ``kd + 1``, which is also the default.\n";
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `ab` holds the upper triangular factor, ``'L'`` if lower.\n"
+                 "    Default is ``'U'``.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
         doc_gbcon(const char *name, const Dtype &)
         {
             std::string s;
@@ -4531,6 +4558,7 @@ namespace lapack {
             DOC_FAMILY(gbsv),
             DOC_FAMILY(gbtrf),
             DOC_FAMILY(gbtrs),
+            DOC_FAMILY(pbcon),
             DOC_FAMILY(gbcon),
             DOC_FAMILY(langb),
             DOC_FAMILY(pstrf),
