@@ -241,7 +241,7 @@ with warnings.catch_warnings():
     _array_api_backends = pytest.mark.array_api_backends
     _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
-                     'dask.array'}
+                     'dask.array', 'mparray'}
 xp_available_backends = [
     pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
@@ -263,6 +263,14 @@ if SCIPY_ARRAY_API:
         array_api_strict.set_array_api_strict_flags(
             api_version='2025.12'
         )
+    except ImportError:
+        pass
+
+    try:
+        import mparray  # pyrefly: ignore[missing-import]
+        xp_available_backends.append(
+            pytest.param(mparray, id='mparray',
+                         marks=_array_api_backends))
     except ImportError:
         pass
 
@@ -531,7 +539,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions",
+            "mparray"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 
