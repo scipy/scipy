@@ -3278,6 +3278,19 @@ class TestYeojohnsonNormmax(NormmaxTest):
         lmbda = stats.yeojohnson_normmax(x)
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
+    @pytest.mark.parametrize('c', [-3.0, 0.001, 1.0, 4.0, 1000.0])
+    def test_constant_input(self, c):
+        # Constant data carry no information about lmbda; like all-zero data,
+        # they should give 1 rather than an arbitrary value from the optimizer.
+        x = np.full(10, c)
+        assert stats.yeojohnson_normmax(x) == 1
+        xt, lmbda = stats.yeojohnson(x)
+        assert lmbda == 1
+        assert_allclose(xt, x)
+
+        x_nan = np.append(x, np.nan)
+        assert stats.yeojohnson_normmax(x_nan, nan_policy='omit') == 1
+
 
 @make_xp_test_case(stats.median_test)
 class TestMedianTest:

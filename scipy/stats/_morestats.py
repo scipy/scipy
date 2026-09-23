@@ -1990,7 +1990,10 @@ def yeojohnson_normmax(x, brack=None, *, nan_policy='propagate'):
 
         if not np.all(np.isfinite(x)):
             raise ValueError('Yeo-Johnson input must be finite.')
-        if np.all(x == 0):
+        # Constant data carry no information about `lmbda`, and the optimizer
+        # would return an arbitrary value. Return 1, for which the
+        # transformation is the identity.
+        if x.size == 0 or np.all(x == x.flat[0]):
             return 1.0
         if brack is not None:
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
