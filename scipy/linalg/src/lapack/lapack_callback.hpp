@@ -372,6 +372,34 @@ namespace lapack {
     auto name = lapack::routine##_select_traits<T>::fn
 
 /**
+ * @brief Windows only: make `longjmp` the plain jump it already is everywhere else.
+ *
+ * A failing callback jumps from inside a LAPACK routine back to the `setjmp` in the wrapper (see
+ * CALLABLE_CALL below).  On Linux and macOS that jump restores the registers `setjmp` saved and
+ * carries on from there, and nothing else happens.
+ *
+ * Windows does more: its `longjmp` first walks every stack frame between the jump and the
+ * `setjmp`, running whatever cleanup each frame registered, the way throwing a C++ exception
+ * would.  The frames in between belong to LAPACK, the walk through them fails, and the process
+ * dies with STATUS_BAD_STACK (0xc0000028) instead of the callback's exception reaching Python.
+ * A `sort` callback that raises is enough to reproduce it.
+ *
+ * Whether it walks is decided by one field, `Frame`, that `setjmp` stores in the jump buffer:
+ * zero means "do not walk".  Clearing it right after `setjmp` therefore gives the same plain jump
+ * the other platforms make.  Skipping the cleanup is safe here precisely because there is none to
+ * run: no frame this jump abandons may hold anything with a destructor, as `invoke_or_abort`
+ * warns above.
+ *
+ * `Frame` is the first field of the jump buffer for mingw and MSVC alike, on x86-64 and on ARM64.
+ * The 32-bit x86 buffer has no such field, hence `_WIN64` rather than `_WIN32`.
+ */
+#if defined(_WIN64)
+#  define DISABLE_JMP_UNWIND(buf) (reinterpret_cast<_JUMP_BUFFER *>(buf)->Frame = 0)
+#else
+#  define DISABLE_JMP_UNWIND(buf) ((void)0)
+#endif
+
+/**
  * @brief Run one Fortran call with the callback declared by CALLABLE_SELECT installed.
  *
  * Place it where the call belongs, after all setup: a callback failure returns nullptr with its
@@ -383,6 +411,9 @@ namespace lapack {
 #define CALLABLE_CALL(name, call) \
     do { \
         lapack::ScopedFrame name##_scope(&name##_frame); \
-        if (setjmp(name##_frame.jmpbuf) == 0) { call; } \
+        if (setjmp(name##_frame.jmpbuf) == 0) { \
+            DISABLE_JMP_UNWIND(name##_frame.jmpbuf); \
+            call; \
+        } \
         else { return nullptr; } \
     } while (0)
