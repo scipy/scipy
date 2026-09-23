@@ -6,7 +6,7 @@
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 	"features": {},
 
-	"onCreateCommand": ".devcontainer/setup.sh",
+	"onCreateCommand": "bash .devcontainer/setup.sh",
 	"postCreateCommand": "",
 
 	"customizations": {
