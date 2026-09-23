@@ -30,10 +30,12 @@ jobs:
     name: pyrefly (py3.12) & dev deps (py3.15), fast, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
+    # the usual skipping should not be enforced. Forks can opt in to this job
+    # by setting the repository variable SCIPY_FORK_CI to 'true'.
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == ''
+          || vars.SCIPY_FORK_CI == 'true')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
