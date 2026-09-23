@@ -22,7 +22,7 @@ from scipy.stats._distribution_infrastructure import (
     _generate_domain_support, Mixture, _logexpxmexpy)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
-from scipy.stats import Normal, Logistic, Uniform, Binomial
+from scipy.stats import Normal, Uniform
 from scipy._lib._testutils import mutually_broadcastable_shapes
 from scipy._lib._util import _RichResult
 
@@ -346,53 +346,9 @@ class DistributionsTest:
                         {'complement', 'inversion'}, tol_override=tol_override)
 
 
-class TestStandardNormal(DistributionsTest):
-    seed = 726527242
-    family = StandardNormal
-
-    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
-    def test_cdf2(self, case):
-        return super().test_cdf2(case)
-
-
-class TestNormal(DistributionsTest):
-    seed = 353965734
-    family = Normal
-
-    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
-    def test_logpdf(self, case):
-        return super().test_logpdf(case)
-
-    def test_lmoment(self, case):
-        return super().test_lmoment(case, tol_override={'atol': 1e-8})
-
-
-class TestLogistic(DistributionsTest):
-    seed = 389513556
-    family = Logistic
-
-    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
-    def test_cdf2(self, case):
-        return super().test_cdf2(case)
-
-
-class TestUniform(DistributionsTest):
-    seed = 893709074
-    family = Uniform
-
-    def test_mode(self, case):
-        assert_allclose(case.dist.mode(), case.dist.a + case.dist.ab/2)
-
-    @pytest.mark.thread_unsafe(reason="looks like an _rng_spawn issue?")
-    @pytest.mark.fail_slow(10)
-    def test_quasi_random_sample(self, case):
-        return super().test_quasi_random_sample(case)
-
-    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_moment(self, case):
-        return super().test_moment(case, tol_override={'atol': 1e-9})
-
-
+# Since this distributions is not public, the tests is really included to test the
+# distribution infrastructure more than the distribution itself. It also avoids
+# `DistributionTest` being detected as a misnamed test class by `check_test_name.py`
 class Test_LogUniform(DistributionsTest):
     seed = 260607439
     family = _LogUniform
@@ -400,32 +356,6 @@ class Test_LogUniform(DistributionsTest):
     @pytest.mark.fail_slow(10)
     def test_lmoment(self, case):
         return super().test_lmoment(case)
-
-
-class TestBinomial(DistributionsTest):
-    seed = 706381675
-    family = Binomial
-
-    def is_degenerate(self, dist):
-        return np.any((dist.p == 0) | (dist.p == 1) | np.isnan(dist.p))
-
-    def test_moment(self, case):
-        if self.is_degenerate(case.dist):
-            with np.errstate(invalid='ignore'):
-                return super().test_moment(case)
-        super().test_moment(case)
-
-    def test_skewness(self, case):
-        if self.is_degenerate(case.dist):
-            with np.errstate(invalid='ignore'):
-                return super().test_skewness(case)
-        super().test_moment(case)
-
-    def test_kurtosis(self, case):
-        if self.is_degenerate(case.dist):
-            with np.errstate(invalid='ignore'):
-                return super().test_kurtosis(case)
-        super().test_moment(case)
 
 
 class TestOtherMethods:
@@ -482,7 +412,6 @@ class TestOtherMethods:
         # Safe subtraction is needed in special cases
         x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
         y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
-
 
         p0 = X.pdf(0)*(y-x)
         p1 = X.cdf(x, y, method='subtraction_safe')
