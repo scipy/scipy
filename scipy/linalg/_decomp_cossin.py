@@ -140,7 +140,7 @@ def cossin(X, p=None, q=None, separate=False,
                    compute_u=compute_u, compute_vh=compute_vh)
 
 
-@_apply_over_batch(('x11', 2), ('x12', 2), ('x21', 2), ('x22', 2))
+@_apply_over_batch(('x11', 2), ('x12', 2), ('x21', 2), ('x22', 2), zero_size_fill=None)
 def _cossin(x11, x12, x21, x22, separate, swap_sign, compute_u, compute_vh):
 
     for name, block in zip(["x11", "x12", "x21", "x22"],

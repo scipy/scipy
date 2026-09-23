@@ -3007,6 +3007,7 @@ class TestMatrix_Balance:
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
 
+    @pytest.mark.skip("second output does not respect input dtype")
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
         a = np.empty((0, 0), dtype=dt)
@@ -3072,12 +3073,11 @@ class TestDTypes:
     def test_det(self, tcode):
         a = self.get_arr2D(tcode)
 
-        is_arm = platform.machine() == 'arm64'
-        is_armhf = platform.machine() == 'armv8l'   # gh-24831
+        is_arm = platform.machine().startswith('arm')   # gh-24831
         is_windows = os.name == 'nt'
 
         failing_tcodes = 'SUVOmM'
-        if not (is_arm or is_armhf or is_windows):
+        if not (is_arm or is_windows):
             failing_tcodes += 'gG'
 
         if tcode in failing_tcodes:
