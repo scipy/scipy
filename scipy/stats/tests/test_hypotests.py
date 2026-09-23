@@ -742,7 +742,7 @@ class TestMannWhitneyU:
         y = rng.poisson(1, size=2000)
         res = mannwhitneyu(xp.asarray(x, dtype=xp.float32),
                            xp.asarray(y, dtype=xp.float32), method='asymptotic')
-        ref = mannwhitneyu(x.astype(np.float64), y.astype(np.float64),
+        ref = mannwhitneyu(xp.astype(x, xp.float64), xp.astype(y, xp.float64),
                            method='asymptotic')
         xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=xp.float32))
 
