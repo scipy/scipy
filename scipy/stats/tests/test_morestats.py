@@ -9,7 +9,7 @@ from functools import partial
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
-                           assert_array_almost_equal,
+                           assert_array_almost_equal, assert_array_less,
                            assert_, assert_allclose, assert_equal)
 import pytest
 from pytest import raises as assert_raises
@@ -249,6 +249,31 @@ class TestShapiro:
 
 
 class TestAnderson:
+    def test_normal(self):
+        v = np.ones(10)
+        v[0] = 0
+        A, _ = stats.anderson(v)
+        # The expected statistic 3.208057 was computed independently of scipy.
+        # For example, in R:
+        #   > library(nortest)
+        #   > v <- rep(1, 10)
+        #   > v[1] <- 0
+        #   > result <- ad.test(v)
+        #   > result$statistic
+        #          A
+        #   3.208057
+        assert_allclose(A, 3.208057)
+
+    def test_expon(self):
+        rs = RandomState(1234567890)
+        x1 = rs.standard_exponential(size=50)
+        x2 = rs.standard_normal(size=50)
+        A, _ = stats.anderson(x1, 'expon')
+        assert_array_less(A, [1.572, 1.936])  # values from SciPy 1.18
+        with np.errstate(all='ignore'):
+            A, _ = stats.anderson(x2, 'expon')
+        assert A > 1.936  # values from SciPy 1.18
+
     def test_gumbel(self):
         # Regression test for gh-6306.  Before that issue was fixed,
         # this case would return a2=inf.
@@ -285,6 +310,28 @@ class TestAnderson:
 
         assert_allclose(A2, A1)
 
+    def test_gumbel_r(self):
+        # gh-2592, gh-6337
+        # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
+        rs = RandomState(1234567890)
+        x1 = rs.gumbel(size=100)
+        x2 = np.ones(100)
+        # A constant array is a degenerate case and breaks gumbel_r.fit, so
+        # change one value in x2.
+        x2[0] = 0.996
+        A1, _ = stats.anderson(x1, 'gumbel_r')
+        A2, _ = stats.anderson(x2, 'gumbel_r')
+
+        assert_array_less(A1, [0.86 , 1.018])  # values from SciPy 1.18
+        assert_(A2 > 1.018)  # values from SciPy 1.18
+
+    def test_weibull_min_case_A(self):
+        # data and reference values from `anderson` reference [7]
+        x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
+        res = stats.anderson(x, 'weibull_min')
+        assert_allclose(res.statistic, 0.260, rtol=1e-3)
+        assert res.statistic < 0.33  # values from SciPy 1.18
+
     def test_weibull_min_case_B(self):
         # From `anderson` reference [7]
         x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
@@ -316,6 +363,41 @@ class TestAndersonMethod:
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
             stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
+
+    @pytest.mark.parametrize('dist_name,significance_level,critical_values',
+        # values from SciPy 1.18
+        [('norm', [15, 10, 5, 2.5, 1], [0.552, 0.621, 0.74, 0.859, 1.019]),
+         ('expon', [15, 10, 5, 2.5, 1], [0.905, 1.049, 1.305, 1.572, 1.936]),
+         ('logistic', [25, 10, 5, 2.5, 1, 0.5],
+          [0.424, 0.56 , 0.657, 0.765, 0.901, 1.005]),
+         ('gumbel_l', [25, 10, 5, 2.5, 1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('gumbel_r', [25, 10, 5, 2.5,  1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('weibull_min', [0.5 , 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995],
+          [0.314, 0.428, 0.507, 0.569, 0.675, 0.78 , 0.921, 1.027])])
+    def test_interpolate_saturation(self, dist_name, significance_level,
+                                    critical_values):
+        dist = getattr(stats, dist_name)
+        rng = np.random.default_rng(4202165767276)
+        args = (3.5,) if dist_name == 'weibull_min' else tuple()
+        x = dist.rvs(*args, size=50, random_state=rng)
+
+        res = stats.anderson(x, dist_name)
+        pvalues = (1 - np.asarray(significance_level) if dist_name == 'weibull_min'
+                   else np.asarray(significance_level) / 100)
+        pvalue_min = np.min(pvalues)
+        pvalue_max = np.max(pvalues)
+        statistic_min = np.min(critical_values)
+        statistic_max = np.max(critical_values)
+
+        # data drawn from distribution -> low statistic / high p-value
+        res = stats.anderson(x, dist_name, method='interpolate')
+        assert res.statistic < statistic_min
+        assert res.pvalue == pvalue_max
+
+        # data not from distribution -> high statistic / low p-value
+        res = stats.anderson(rng.random(size=50), dist_name, method='interpolate')
+        assert res.statistic > statistic_max
+        assert res.pvalue == pvalue_min
 
     def test_monte_carlo_method(self):
         rng = np.random.default_rng(94982389149239)

@@ -2390,23 +2390,6 @@ def anderson(x, dist='norm', *, method="interpolate"):
 
     Notes
     -----
-    Critical values provided when `method` is unspecified are for the following
-    significance levels:
-
-    normal/exponential
-        15%, 10%, 5%, 2.5%, 1%
-    logistic
-        25%, 10%, 5%, 2.5%, 1%, 0.5%
-    gumbel_l / gumbel_r
-        25%, 10%, 5%, 2.5%, 1%
-    weibull_min
-        50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
-
-    If the returned statistic is larger than these critical values then
-    for the corresponding significance level, the null hypothesis that
-    the data come from the chosen distribution can be rejected.
-    The returned statistic is referred to as 'A2' in the references.
-
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
     conditions for a maximum likelihood estimate have been verified and
