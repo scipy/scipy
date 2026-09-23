@@ -207,6 +207,20 @@ def _apply_checked(op, blockVector, name, which):
     return result
 
 
+def _residuals(B, blockVectorX, blockVectorAX, blockVectorBX, _lambda):
+    """Return the block of residuals and their column norms."""
+    if B is not None:
+        aux = blockVectorBX * _lambda[np.newaxis, :]
+    else:
+        aux = blockVectorX * _lambda[np.newaxis, :]
+
+    blockVectorR = blockVectorAX - aux
+
+    aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
+    residualNorms = np.sqrt(np.abs(aux))
+    return blockVectorR, residualNorms
+
+
 def _print_problem_info(B, M, Y, n, sizeX, sizeY):
     aux = "Solving "
     if B is None:
@@ -280,6 +294,147 @@ def _dense_eigh(A, B, n, sizeX, largest):
             f"Dense eigensolver failed with error\n"
             f"{e}\n"
         )
+
+
+def _split_eig_block(eigBlockVector, sizeX, currentBlockSize, restart):
+    """Split Ritz coefficients into the parts acting on X, R and P."""
+    eigBlockVectorX = eigBlockVector[:sizeX]
+    if restart:
+        return eigBlockVectorX, eigBlockVector[sizeX:], None
+    eigBlockVectorR = eigBlockVector[sizeX:sizeX + currentBlockSize]
+    eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize:]
+    return eigBlockVectorX, eigBlockVectorR, eigBlockVectorP
+
+
+def _new_direction(blockVectorR, blockVectorP,
+                   eigBlockVectorR, eigBlockVectorP, restart):
+    """Combine the R (and, unless restarting, P) blocks into new directions."""
+    pp = np.dot(blockVectorR, eigBlockVectorR)
+    if not restart:
+        pp += np.dot(blockVectorP, eigBlockVectorP)
+    return pp
+
+
+def _b_orthogonalize_to_X(B, blockVectorX, blockVectorBX, blockVectorR):
+    """B-orthogonalize the block vector R to the B-orthonormal X."""
+    if B is not None:
+        return blockVectorR - (
+            blockVectorX @
+            (blockVectorBX.T.conj() @ blockVectorR)
+        )
+    return blockVectorR - (
+        blockVectorX @
+        (blockVectorX.T.conj() @ blockVectorR)
+    )
+
+
+def _explicit_gram_flag(explicitGramFlag, residualNorms,
+                        blockVectorR, blockVectorAR):
+    """Decide whether the Gram matrices must be computed explicitly."""
+    if blockVectorAR.dtype == "float32":
+        myeps = 1
+    else:
+        myeps = np.sqrt(np.finfo(blockVectorR.dtype).eps)
+
+    if residualNorms.max() > myeps and not explicitGramFlag:
+        return False
+    # Once explicitGramFlag, forever explicitGramFlag.
+    return True
+
+
+def _rayleigh_ritz(blockVectorX, blockVectorAX, blockVectorBX,
+                   blockVectorR, blockVectorAR, blockVectorBR,
+                   blockVectorP, blockVectorAP, blockVectorBP,
+                   _lambda, sizeX, currentBlockSize, explicitGramFlag,
+                   restart, iterationNumber, verbosityLevel):
+    """Rayleigh-Ritz procedure on the trial subspace spanned by X, R and P.
+
+    The directions P are dropped when restarting, or when the eigensolver
+    fails on the full trial subspace. Returns ``(_lambda, eigBlockVector,
+    restart)``, or None if the eigensolver fails on the reduced subspace.
+    """
+    # Compute symmetric Gram matrices:
+    # Common submatrices:
+    gramXAR = np.dot(blockVectorX.T.conj(), blockVectorAR)
+    gramRAR = np.dot(blockVectorR.T.conj(), blockVectorAR)
+
+    gramDtype = blockVectorAR.dtype
+    if explicitGramFlag:
+        gramRAR = (gramRAR + gramRAR.T.conj()) / 2
+        gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+        gramXAX = (gramXAX + gramXAX.T.conj()) / 2
+        gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
+        gramRBR = np.dot(blockVectorR.T.conj(), blockVectorBR)
+        gramXBR = np.dot(blockVectorX.T.conj(), blockVectorBR)
+    else:
+        gramXAX = np.diag(_lambda).astype(gramDtype)
+        gramXBX = np.eye(sizeX, dtype=gramDtype)
+        gramRBR = np.eye(currentBlockSize, dtype=gramDtype)
+        gramXBR = np.zeros((sizeX, currentBlockSize), dtype=gramDtype)
+
+    if not restart:
+        gramXAP = np.dot(blockVectorX.T.conj(), blockVectorAP)
+        gramRAP = np.dot(blockVectorR.T.conj(), blockVectorAP)
+        gramPAP = np.dot(blockVectorP.T.conj(), blockVectorAP)
+        gramXBP = np.dot(blockVectorX.T.conj(), blockVectorBP)
+        gramRBP = np.dot(blockVectorR.T.conj(), blockVectorBP)
+        if explicitGramFlag:
+            gramPAP = (gramPAP + gramPAP.T.conj()) / 2
+            gramPBP = np.dot(blockVectorP.T.conj(), blockVectorBP)
+        else:
+            gramPBP = np.eye(currentBlockSize, dtype=gramDtype)
+
+        gramA = np.block(
+            [
+                [gramXAX, gramXAR, gramXAP],
+                [gramXAR.T.conj(), gramRAR, gramRAP],
+                [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP],
+            ]
+        )
+        gramB = np.block(
+            [
+                [gramXBX, gramXBR, gramXBP],
+                [gramXBR.T.conj(), gramRBR, gramRBP],
+                [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP],
+            ]
+        )
+
+        _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
+
+        try:
+            _lambda, eigBlockVector = eigh(gramA,
+                                           gramB,
+                                           check_finite=False)
+            return _lambda, eigBlockVector, restart
+        except LinAlgError as e:
+            # raise ValueError("eigh failed in lobpcg iterations") from e
+            if verbosityLevel:
+                warnings.warn(
+                    f"eigh failed at iteration {iterationNumber} \n"
+                    f"with error {e} causing a restart.\n",
+                    UserWarning, stacklevel=3
+                )
+            # try again after dropping the direction vectors P from RR
+            restart = True
+
+    gramA = np.block([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
+    gramB = np.block([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
+
+    _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
+
+    try:
+        _lambda, eigBlockVector = eigh(gramA,
+                                       gramB,
+                                       check_finite=False)
+    except LinAlgError as e:
+        # raise ValueError("eigh failed in lobpcg iterations") from e
+        warnings.warn(
+            f"eigh failed at iteration {iterationNumber} with error\n"
+            f"{e}\n",
+            UserWarning, stacklevel=3
+        )
+        return None
+    return _lambda, eigBlockVector, restart
 
 
 def lobpcg(
@@ -675,6 +830,9 @@ def lobpcg(
     blockVectorP = None  # set during iteration
     blockVectorAP = None
     blockVectorBP = None
+    activeBlockVectorP = None
+    activeBlockVectorAP = None
+    activeBlockVectorBP = None
 
     smallestResidualNorm = np.abs(np.finfo(blockVectorX.dtype).max)
 
@@ -685,15 +843,8 @@ def lobpcg(
     while iterationNumber < maxiter:
         iterationNumber += 1
 
-        if B is not None:
-            aux = blockVectorBX * _lambda[np.newaxis, :]
-        else:
-            aux = blockVectorX * _lambda[np.newaxis, :]
-
-        blockVectorR = blockVectorAX - aux
-
-        aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-        residualNorms = np.sqrt(np.abs(aux))
+        blockVectorR, residualNorms = _residuals(
+            B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
         if retResidualNormsHistory:
             residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.sum(np.abs(residualNorms)) / sizeX
@@ -746,16 +897,8 @@ def lobpcg(
 
         ##
         # B-orthogonalize the preconditioned residuals to X.
-        if B is not None:
-            activeBlockVectorR = activeBlockVectorR - (
-                blockVectorX @
-                (blockVectorBX.T.conj() @ activeBlockVectorR)
-            )
-        else:
-            activeBlockVectorR = activeBlockVectorR - (
-                blockVectorX @
-                (blockVectorX.T.conj() @ activeBlockVectorR)
-            )
+        activeBlockVectorR = _b_orthogonalize_to_X(
+            B, blockVectorX, blockVectorBX, activeBlockVectorR)
 
         ##
         # B-orthonormalize the preconditioned residuals.
@@ -795,19 +938,10 @@ def lobpcg(
                 restart = True
 
         ##
-        # Perform the Rayleigh Ritz Procedure:
-        # Compute symmetric Gram matrices:
-
-        if activeBlockVectorAR.dtype == "float32":
-            myeps = 1
-        else:
-            myeps = np.sqrt(np.finfo(activeBlockVectorR.dtype).eps)
-
-        if residualNorms.max() > myeps and not explicitGramFlag:
-            explicitGramFlag = False
-        else:
-            # Once explicitGramFlag, forever explicitGramFlag.
-            explicitGramFlag = True
+        # Perform the Rayleigh Ritz Procedure.
+        explicitGramFlag = _explicit_gram_flag(
+            explicitGramFlag, residualNorms,
+            activeBlockVectorR, activeBlockVectorAR)
 
         # Shared memory assignments to simplify the code
         if B is None:
@@ -816,87 +950,16 @@ def lobpcg(
             if not restart:
                 activeBlockVectorBP = activeBlockVectorP
 
-        # Common submatrices:
-        gramXAR = np.dot(blockVectorX.T.conj(), activeBlockVectorAR)
-        gramRAR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAR)
-
-        gramDtype = activeBlockVectorAR.dtype
-        if explicitGramFlag:
-            gramRAR = (gramRAR + gramRAR.T.conj()) / 2
-            gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
-            gramXAX = (gramXAX + gramXAX.T.conj()) / 2
-            gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
-            gramRBR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBR)
-            gramXBR = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
-        else:
-            gramXAX = np.diag(_lambda).astype(gramDtype)
-            gramXBX = np.eye(sizeX, dtype=gramDtype)
-            gramRBR = np.eye(currentBlockSize, dtype=gramDtype)
-            gramXBR = np.zeros((sizeX, currentBlockSize), dtype=gramDtype)
-
-        if not restart:
-            gramXAP = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
-            gramRAP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAP)
-            gramPAP = np.dot(activeBlockVectorP.T.conj(), activeBlockVectorAP)
-            gramXBP = np.dot(blockVectorX.T.conj(), activeBlockVectorBP)
-            gramRBP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBP)
-            if explicitGramFlag:
-                gramPAP = (gramPAP + gramPAP.T.conj()) / 2
-                gramPBP = np.dot(activeBlockVectorP.T.conj(),
-                                 activeBlockVectorBP)
-            else:
-                gramPBP = np.eye(currentBlockSize, dtype=gramDtype)
-
-            gramA = np.block(
-                [
-                    [gramXAX, gramXAR, gramXAP],
-                    [gramXAR.T.conj(), gramRAR, gramRAP],
-                    [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP],
-                ]
-            )
-            gramB = np.block(
-                [
-                    [gramXBX, gramXBR, gramXBP],
-                    [gramXBR.T.conj(), gramRBR, gramRBP],
-                    [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP],
-                ]
-            )
-
-            _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
-
-            try:
-                _lambda, eigBlockVector = eigh(gramA,
-                                               gramB,
-                                               check_finite=False)
-            except LinAlgError as e:
-                # raise ValueError("eigh failed in lobpcg iterations") from e
-                if verbosityLevel:
-                    warnings.warn(
-                        f"eigh failed at iteration {iterationNumber} \n"
-                        f"with error {e} causing a restart.\n",
-                        UserWarning, stacklevel=2
-                    )
-                # try again after dropping the direction vectors P from RR
-                restart = True
-
-        if restart:
-            gramA = np.block([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
-            gramB = np.block([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
-
-            _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
-
-            try:
-                _lambda, eigBlockVector = eigh(gramA,
-                                               gramB,
-                                               check_finite=False)
-            except LinAlgError as e:
-                # raise ValueError("eigh failed in lobpcg iterations") from e
-                warnings.warn(
-                    f"eigh failed at iteration {iterationNumber} with error\n"
-                    f"{e}\n",
-                    UserWarning, stacklevel=2
-                )
-                break
+        aux = _rayleigh_ritz(
+            blockVectorX, blockVectorAX, blockVectorBX,
+            activeBlockVectorR, activeBlockVectorAR, activeBlockVectorBR,
+            activeBlockVectorP, activeBlockVectorAP, activeBlockVectorBP,
+            _lambda, sizeX, currentBlockSize, explicitGramFlag, restart,
+            iterationNumber, verbosityLevel)
+        if aux is None:
+            # Keep the previous _lambda for the postprocessing below.
+            break
+        _lambda, eigBlockVector, restart = aux
 
         ii = _get_indx(_lambda, sizeX, largest)
         _lambda = _lambda[ii]
@@ -905,68 +968,26 @@ def lobpcg(
             lambdaHistory[iterationNumber + 1, :] = _lambda
 
         # Compute Ritz vectors.
+        eigBlockVectorX, eigBlockVectorR, eigBlockVectorP = _split_eig_block(
+            eigBlockVector, sizeX, currentBlockSize, restart)
+
+        pp = _new_direction(activeBlockVectorR, activeBlockVectorP,
+                            eigBlockVectorR, eigBlockVectorP, restart)
+        app = _new_direction(activeBlockVectorAR, activeBlockVectorAP,
+                             eigBlockVectorR, eigBlockVectorP, restart)
+
+        blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
+        blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
+        blockVectorP, blockVectorAP = pp, app
+
         if B is not None:
-            if not restart:
-                eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:
-                                                 sizeX + currentBlockSize]
-                eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize:]
-
-                pp = np.dot(activeBlockVectorR, eigBlockVectorR)
-                pp += np.dot(activeBlockVectorP, eigBlockVectorP)
-
-                app = np.dot(activeBlockVectorAR, eigBlockVectorR)
-                app += np.dot(activeBlockVectorAP, eigBlockVectorP)
-
-                bpp = np.dot(activeBlockVectorBR, eigBlockVectorR)
-                bpp += np.dot(activeBlockVectorBP, eigBlockVectorP)
-            else:
-                eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:]
-
-                pp = np.dot(activeBlockVectorR, eigBlockVectorR)
-                app = np.dot(activeBlockVectorAR, eigBlockVectorR)
-                bpp = np.dot(activeBlockVectorBR, eigBlockVectorR)
-
-            blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
-            blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
+            bpp = _new_direction(activeBlockVectorBR, activeBlockVectorBP,
+                                 eigBlockVectorR, eigBlockVectorP, restart)
             blockVectorBX = np.dot(blockVectorBX, eigBlockVectorX) + bpp
+            blockVectorBP = bpp
 
-            blockVectorP, blockVectorAP, blockVectorBP = pp, app, bpp
-
-        else:
-            if not restart:
-                eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:
-                                                 sizeX + currentBlockSize]
-                eigBlockVectorP = eigBlockVector[sizeX + currentBlockSize:]
-
-                pp = np.dot(activeBlockVectorR, eigBlockVectorR)
-                pp += np.dot(activeBlockVectorP, eigBlockVectorP)
-
-                app = np.dot(activeBlockVectorAR, eigBlockVectorR)
-                app += np.dot(activeBlockVectorAP, eigBlockVectorP)
-            else:
-                eigBlockVectorX = eigBlockVector[:sizeX]
-                eigBlockVectorR = eigBlockVector[sizeX:]
-
-                pp = np.dot(activeBlockVectorR, eigBlockVectorR)
-                app = np.dot(activeBlockVectorAR, eigBlockVectorR)
-
-            blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
-            blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
-
-            blockVectorP, blockVectorAP = pp, app
-
-    if B is not None:
-        aux = blockVectorBX * _lambda[np.newaxis, :]
-    else:
-        aux = blockVectorX * _lambda[np.newaxis, :]
-
-    blockVectorR = blockVectorAX - aux
-
-    aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-    residualNorms = np.sqrt(np.abs(aux))
+    _, residualNorms = _residuals(
+        B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
     # Use old lambda in case of early loop exit.
     if retLambdaHistory:
         lambdaHistory[iterationNumber + 1, :] = _lambda
@@ -1030,14 +1051,9 @@ def lobpcg(
 
     if B is not None:
         blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
-        aux = blockVectorBX * _lambda[np.newaxis, :]
-    else:
-        aux = blockVectorX * _lambda[np.newaxis, :]
 
-    blockVectorR = blockVectorAX - aux
-
-    aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-    residualNorms = np.sqrt(np.abs(aux))
+    _, residualNorms = _residuals(
+        B, blockVectorX, blockVectorAX, blockVectorBX, _lambda)
 
     if retLambdaHistory:
         lambdaHistory[bestIterationNumber + 1, :] = _lambda
