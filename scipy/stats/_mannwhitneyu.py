@@ -2,6 +2,7 @@ import threading
 import numpy as np
 
 from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
+                                   xp_device,
                                    xp_promote, is_lazy_array, is_jax, is_marray,
                                    _count_nonmasked)
 from scipy._lib._bunch import _make_tuple_bunch
@@ -496,7 +497,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     # result. See gh-24777.
     # `n1` is a Python int here, or an MArray of `x.dtype` when masked; asarray
     # with an explicit dtype covers both without promoting `ranks`.
-    offset = xp.asarray((n1 + 1) / 2, dtype=ranks.dtype)
+    offset = xp.asarray((n1 + 1) / 2, dtype=ranks.dtype, device=xp_device(ranks))
     U1 = xp.sum(ranks[..., :x.shape[-1]] - offset[..., xp.newaxis], axis=-1)
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
     if is_marray(xp):  # should _count_nonmasked mask count=0?
