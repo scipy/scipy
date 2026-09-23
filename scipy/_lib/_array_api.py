@@ -839,7 +839,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     {textwrap.indent(marray_note or "", ' '*4)}
     {textwrap.indent(extra_note or "",  ' '*4)}
 
-        See :ref:`dev-arrayapi` for more information.
+        See :ref:`array-api-coverage` for more information.
 
     """
 
