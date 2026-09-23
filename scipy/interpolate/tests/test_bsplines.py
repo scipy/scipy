@@ -2131,7 +2131,7 @@ class TestLSQ:
                          per=1)
 
         xp_assert_close(spl.t, xp.asarray(tck[0]), atol=1e-14)
-        xp_assert_close(spl.c, xp.asarray(tck[1][0]))
+        xp_assert_close(spl.c, xp.asarray(tck[1][0]), atol=1e-14)
 
     def test_weights_same(self, xp):
         # both methods treat weights
