@@ -141,6 +141,14 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     if graph.format not in ("csr", "csc", "coo"):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
     graph = graph.tocsr()
+    if not graph.has_canonical_format:
+        # A CSR representation may store the same entry more than once. If it
+        # does, each duplicate would push the same row onto the fixed-size DFS
+        # stack in _hopcroft_karp below, overflowing the stack and corrupting
+        # memory (gh-26160). Merge duplicates (scipy's standard semantics)
+        # before running the search.
+        graph = graph.copy()
+        graph.sum_duplicates()
     i, j = graph.shape
     indices, indptr = safely_cast_index_arrays(graph, ITYPE, msg="csgraph")
     x, y = _hopcroft_karp(indices, indptr, i, j)
@@ -466,6 +474,15 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
                          "got %s" % (biadjacency.dtype,))
 
     biadjacency = biadjacency.astype(np.double)
+
+    if not biadjacency.has_canonical_format:
+        # A sparse representation may store the same entry more than once. If
+        # it does, each duplicate would push the same row onto fixed-size
+        # stacks in _hopcroft_karp and _lapjvsp below, overflowing them and
+        # corrupting memory (gh-26160). Merge duplicates, summing their
+        # weights per scipy's standard semantics, before the search.
+        biadjacency = biadjacency.copy()
+        biadjacency.sum_duplicates()
 
     if maximize:
         biadjacency = -biadjacency

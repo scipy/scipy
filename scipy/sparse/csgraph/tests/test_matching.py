@@ -6,7 +6,8 @@ import pytest
 
 from scipy.sparse import csr_array, coo_array, diags_array
 from scipy.sparse.csgraph import (
-    maximum_bipartite_matching, min_weight_full_bipartite_matching
+    maximum_bipartite_matching, min_weight_full_bipartite_matching,
+    structural_rank
 )
 
 
@@ -108,6 +109,54 @@ def test_maximum_bipartite_matching_feasibility_of_result():
     for u, v in zip(x, range(graph.shape[1])):
         if u != -1:
             assert graph[u, v]
+
+
+def test_maximum_bipartite_matching_duplicate_entries_in_csr_input():
+    # Regression test for GitHub issue #26160: a CSR input that stores the
+    # same entry more than once (so has_canonical_format is False) used to
+    # push the same row onto the fixed-size DFS stack repeatedly, overflowing
+    # it and corrupting memory. Rows are {0, 1} and {0}, with column 0 stored
+    # K extra times in row 1.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    assert not graph.has_canonical_format
+    x = maximum_bipartite_matching(graph, perm_type='row')
+    y = maximum_bipartite_matching(graph, perm_type='column')
+    expected_matching = np.array([1, 0])
+    assert_array_equal(expected_matching, x)
+    assert_array_equal(expected_matching, y)
+
+
+def test_structural_rank_duplicate_entries_in_csr_input():
+    # Structural rank delegates to maximum_bipartite_matching, so it must be
+    # guarded against duplicate CSR entries the same way (gh-26160).
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    assert_equal(structural_rank(graph), 2)
+
+
+def test_min_weight_full_bipartite_matching_duplicate_entries_in_csr_input():
+    # Regression test for GitHub issue #26160: min_weight_full_bipartite_matching
+    # used to overflow fixed-size stacks in _hopcroft_karp and _lapjvsp when the
+    # (weighted) input stored the same entry more than once.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    src, dst = min_weight_full_bipartite_matching(graph)
+    # The graph is 2 x 2 with an edge from each row, so a full matching must
+    # exist and cover both rows and both columns.
+    assert_array_equal(np.sort(src), np.arange(2))
+    assert_array_equal(np.sort(dst), np.arange(2))
+    for u, v in zip(src, dst):
+        assert graph[u, v] != 0
 
 
 def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
