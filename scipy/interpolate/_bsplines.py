@@ -2364,18 +2364,10 @@ clamp_values=None, bc_type=None):
         # C routines in _dierckx currently require C contiguity
         y = y.copy(order='C')
 
-    if x.ndim != 1:
-        raise ValueError("Expect x to be a 1-D sequence.")
-    if x.shape[0] < k+1:
-        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
-    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
-    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
     if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
@@ -2383,6 +2375,7 @@ clamp_values=None, bc_type=None):
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
     bc_type = _validate_bc_type(bc_type)
+    fpcheck(x, t, k, periodic=(bc_type == "periodic"))
     if clamp_values is not None:
         if bc_type == "periodic":
             raise ValueError("Periodic splines cannot have clamp values.")
