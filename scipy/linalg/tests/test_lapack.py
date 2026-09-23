@@ -3664,6 +3664,30 @@ def test_langb(dtype, norm):
     assert_allclose(res, ref, rtol=2e-6)
 
 
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['M', '1', 'I', 'F'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_lansb(dtype, norm, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is a symmetric band matrix of shape n x n with k super/sub-diagonals
+    n, k = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, k + 1)] = 0
+    A[np.tril_indices(n, -k - 1)] = 0
+    A = np.triu(A) + np.triu(A, 1).T   # symmetric, not conjugated
+
+    ab = _to_banded(0, k, A) if uplo == 'U' else _to_banded(k, 0, A)
+
+    lansb, lange = get_lapack_funcs(('lansb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = lansb(k, ab, norm=norm, uplo=uplo)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
+
+
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
 @pytest.mark.parametrize('compute_v', (0, 1))
 def test_stevd(dtype, compute_v):
