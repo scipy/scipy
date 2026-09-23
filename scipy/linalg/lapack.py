@@ -444,6 +444,11 @@ All functions
    sormrz_lwork
    dormrz_lwork
 
+   spbcon
+   dpbcon
+   cpbcon
+   zpbcon
+
    spbsv
    dpbsv
    cpbsv
