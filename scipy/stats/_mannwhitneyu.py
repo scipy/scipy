@@ -497,7 +497,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     # `n1` is a Python int here, or an MArray of `x.dtype` when masked; asarray
     # with an explicit dtype covers both without promoting `ranks`.
     offset = xp.asarray((n1 + 1) / 2, dtype=ranks.dtype)
-    U1 = xp.sum(ranks[..., :x.shape[-1]] - offset[..., None], axis=-1)
+    U1 = xp.sum(ranks[..., :x.shape[-1]] - offset[..., xp.newaxis], axis=-1)
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
     if is_marray(xp):  # should _count_nonmasked mask count=0?
         mask = U1.mask | (n1.data == 0) | (n2.data == 0)
