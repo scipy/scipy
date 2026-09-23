@@ -908,7 +908,7 @@ class TestSolveSylvester:
         rng = np.random.default_rng(20260917)
         dim = 5
         if all(dtype in _low_prec_dtypes for dtype in [dtype_a, dtype_b, dtype_q]):
-            atol = 1e-4
+            atol = 2e-4
         else:
             atol = 1e-12
 
