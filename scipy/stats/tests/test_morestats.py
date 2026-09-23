@@ -364,6 +364,34 @@ class TestAndersonMethod:
         with pytest.raises(ValueError, match=message):
             stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
 
+    def test_monte_carlo_method(self):
+        rng = np.random.default_rng(94982389149239)
+
+        message = "The `rvs` attribute..."
+        with pytest.warns(UserWarning, match=message):
+            method = stats.MonteCarloMethod(rvs=rng.random)
+            stats.anderson([1, 2, 3], 'norm', method=method)
+
+        message = "The `batch` attribute..."
+        with pytest.warns(UserWarning, match=message):
+            method = stats.MonteCarloMethod(batch=10)
+            stats.anderson([1, 2, 3], 'norm', method=method)
+
+        method = stats.MonteCarloMethod(n_resamples=9, rng=rng)
+        res = stats.anderson([1, 2, 3], 'norm', method=method)
+        ten_p = res.pvalue * 10
+        # p-value will always be divisible by n_resamples + 1
+        assert np.round(ten_p) == ten_p
+
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
+        ref = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
+        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        assert res.pvalue == ref.pvalue  # same random state -> same p-value
+        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984828))
+        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
+        assert res.pvalue != ref.pvalue  # different random state -> different p-value
+
     @pytest.mark.parametrize('dist_name,significance_level,critical_values',
         # values from SciPy 1.18
         [('norm', [15, 10, 5, 2.5, 1], [0.552, 0.621, 0.74, 0.859, 1.019]),
@@ -398,34 +426,6 @@ class TestAndersonMethod:
         res = stats.anderson(rng.random(size=50), dist_name, method='interpolate')
         assert res.statistic > statistic_max
         assert res.pvalue == pvalue_min
-
-    def test_monte_carlo_method(self):
-        rng = np.random.default_rng(94982389149239)
-
-        message = "The `rvs` attribute..."
-        with pytest.warns(UserWarning, match=message):
-            method = stats.MonteCarloMethod(rvs=rng.random)
-            stats.anderson([1, 2, 3], 'norm', method=method)
-
-        message = "The `batch` attribute..."
-        with pytest.warns(UserWarning, match=message):
-            method = stats.MonteCarloMethod(batch=10)
-            stats.anderson([1, 2, 3], 'norm', method=method)
-
-        method = stats.MonteCarloMethod(n_resamples=9, rng=rng)
-        res = stats.anderson([1, 2, 3], 'norm', method=method)
-        ten_p = res.pvalue * 10
-        # p-value will always be divisible by n_resamples + 1
-        assert np.round(ten_p) == ten_p
-
-        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
-        ref = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
-        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984827))
-        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
-        assert res.pvalue == ref.pvalue  # same random state -> same p-value
-        method = stats.MonteCarloMethod(rng=np.random.default_rng(23495984828))
-        res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
-        assert res.pvalue != ref.pvalue  # different random state -> different p-value
 
     @pytest.mark.parametrize('dist_name, seed',
         [('norm', 4202165767275),
