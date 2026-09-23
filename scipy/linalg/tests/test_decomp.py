@@ -3829,7 +3829,7 @@ def test_subspace_angles():
     assert_allclose(subspace_angles(a, b), np.empty((0,)))
     a = np.empty((0, 2))
     b = np.empty((0, 3))
-    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    assert_equal(subspace_angles(a, b), np.asarray([np.nan, np.nan]))
 
 
 class TestCDF2RDF:
