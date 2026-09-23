@@ -213,6 +213,20 @@ class DistributionsTest:
                                             shape_options, proportions)
         return _RichResult(family=self.family, rng=rng, **tmp)
 
+    @pytest.fixture
+    def valid_dist_x(self):
+        shape_options = dict(min_dims=1, max_dims=1, min_side=20, max_side=21)
+        proportions = (1, 0, 0, 0)  # all valid
+        rng = np.random.default_rng(self.seed)
+        tmp = draw_distribution_from_family(self.family, rng,
+                                            shape_options, proportions)
+        return tmp.dist, tmp.x
+
+    def test_purported_distribution(self, valid_dist_x):
+        message = ("This method must be overridden to demonstrate that the "
+                   "distribution is the purported one.")
+        raise NotImplementedError(message)
+
     def test_support(self, case):
         check_support(case.dist)
 
@@ -352,6 +366,10 @@ class DistributionsTest:
 class Test_LogUniform(DistributionsTest):
     seed = 260607439
     family = _LogUniform
+
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x), stats.loguniform(dist.a, dist.b).pdf(x))
 
     @pytest.mark.fail_slow(10)
     def test_lmoment(self, case):

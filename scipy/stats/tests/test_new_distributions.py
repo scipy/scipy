@@ -14,6 +14,10 @@ class TestBinomial(DistributionsTest):
     def is_degenerate(self, dist):
         return np.any((dist.p == 0) | (dist.p == 1) | np.isnan(dist.p))
 
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pmf(x), stats.binom(p=dist.p, n=dist.n).pmf(x))
+
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case):
         if self.is_degenerate(case.dist):
@@ -68,6 +72,10 @@ class TestLogistic(DistributionsTest):
     seed = 389513556
     family = stats.Logistic
 
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x), stats.logistic.pdf(x))
+
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_cdf2(self, case):
         return super().test_cdf2(case)
@@ -76,6 +84,11 @@ class TestLogistic(DistributionsTest):
 class TestNormal(DistributionsTest):
     seed = 353965734
     family = stats.Normal
+
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x),
+                                   stats.norm(loc=dist.mu, scale=dist.sigma).pdf(x))
 
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case):
@@ -89,6 +102,10 @@ class TestStandardNormal(DistributionsTest):
     seed = 726527242
     family = StandardNormal
 
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x), stats.norm.pdf(x))
+
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_cdf2(self, case):
         return super().test_cdf2(case)
@@ -97,6 +114,11 @@ class TestStandardNormal(DistributionsTest):
 class TestUniform(DistributionsTest):
     seed = 893709074
     family = stats.Uniform
+
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x),
+                                   stats.uniform(dist.a, dist.b - dist.a).pdf(x))
 
     def test_mode(self, case):
         assert_allclose(case.dist.mode(), case.dist.a + case.dist.ab/2)
