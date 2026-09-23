@@ -166,6 +166,122 @@ def _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel):
         _report_nonhermitian(gramB, "gramB")
 
 
+def _check_X_Y(blockVectorX, blockVectorY):
+    """Validate the initial approximations X and the constraints Y."""
+    if blockVectorY is not None and len(blockVectorY.shape) != 2:
+        warnings.warn(
+            f"Expected rank-2 array for argument Y, instead got "
+            f"{len(blockVectorY.shape)}, "
+            f"so ignore it and use no constraints.",
+            UserWarning, stacklevel=3
+        )
+        blockVectorY = None
+
+    # Block size.
+    if blockVectorX is None:
+        raise ValueError("The mandatory initial matrix X cannot be None")
+    if len(blockVectorX.shape) != 2:
+        raise ValueError("expected rank-2 array for argument X")
+
+    # Data type of iterates, determined by X, must be inexact
+    if not np.issubdtype(blockVectorX.dtype, np.inexact):
+        warnings.warn(
+            f"Data type for argument X is {blockVectorX.dtype}, "
+            f"which is not inexact, so casted to np.float32.",
+            UserWarning, stacklevel=3
+        )
+        blockVectorX = np.asarray(blockVectorX, dtype=np.float32)
+    return blockVectorX, blockVectorY
+
+
+def _apply_checked(op, blockVector, name, which):
+    """Apply `op` to `blockVector` and check that its shape is preserved."""
+    result = op(blockVector)
+    if result.shape != blockVector.shape:
+        raise ValueError(
+            f"The shape {blockVector.shape} "
+            f"of the {name} not preserved\n"
+            f"and changed to {result.shape} "
+            f"after multiplying by the {which} matrix.\n"
+        )
+    return result
+
+
+def _print_problem_info(B, M, Y, n, sizeX, sizeY):
+    aux = "Solving "
+    if B is None:
+        aux += "standard"
+    else:
+        aux += "generalized"
+    aux += " eigenvalue problem with"
+    if M is None:
+        aux += "out"
+    aux += " preconditioning\n\n"
+    aux += f"matrix size {n}\n"
+    aux += f"block size {sizeX}\n\n"
+    if Y is None:
+        aux += "No constraints\n\n"
+    elif sizeY > 1:
+        aux += f"{sizeY} constraints\n\n"
+    else:
+        aux += f"{sizeY} constraint\n\n"
+    print(aux)
+
+
+def _as_dense(A, n, which):
+    """Convert the matrix `A` of any supported type to a dense array."""
+    try:
+        if isinstance(A, LinearOperator):
+            A = A(np.eye(n, dtype=int))
+        elif callable(A):
+            A = A(np.eye(n, dtype=int))
+            if A.shape != (n, n):
+                raise ValueError(
+                    f"The shape {A.shape} of the {which} matrix\n"
+                    f"defined by a callable object is wrong.\n"
+                    f"Expected {(n, n)}."
+                )
+        elif issparse(A):
+            A = A.toarray()
+        else:
+            A = np.asarray(A)
+    except Exception as e:
+        raise Exception(
+            f"{which.capitalize()} MatMul call failed with error\n"
+            f"{e}\n")
+    return A
+
+
+def _dense_eigh(A, B, n, sizeX, largest):
+    """Solve the eigenproblem with a dense eigensolver instead of LOBPCG."""
+    # Define the closed range of indices of eigenvalues to return.
+    if largest:
+        eigvals = (n - sizeX, n - 1)
+    else:
+        eigvals = (0, sizeX - 1)
+
+    A = _as_dense(A, n, "primary")
+    if B is not None:
+        B = _as_dense(B, n, "secondary")
+
+    try:
+        vals, vecs = eigh(A,
+                          B,
+                          subset_by_index=eigvals,
+                          check_finite=False)
+        if largest:
+            # Reverse order to be compatible with eigs() in 'LM' mode.
+            vals = vals[::-1]
+            vecs = vecs[:, ::-1]
+
+        return vals, vecs
+    except Exception as e:
+        raise Exception(
+            f"Dense eigensolver failed with error\n"
+            f"{e}\n"
+        )
+
+
 def lobpcg(
     A,
     X,
@@ -458,35 +574,9 @@ def lobpcg(
 
     bestIterationNumber = maxiter
 
-    sizeY = 0
-    if blockVectorY is not None:
-        if len(blockVectorY.shape) != 2:
-            warnings.warn(
-                f"Expected rank-2 array for argument Y, instead got "
-                f"{len(blockVectorY.shape)}, "
-                f"so ignore it and use no constraints.",
-                UserWarning, stacklevel=2
-            )
-            blockVectorY = None
-        else:
-            sizeY = blockVectorY.shape[1]
-
-    # Block size.
-    if blockVectorX is None:
-        raise ValueError("The mandatory initial matrix X cannot be None")
-    if len(blockVectorX.shape) != 2:
-        raise ValueError("expected rank-2 array for argument X")
-
+    blockVectorX, blockVectorY = _check_X_Y(blockVectorX, blockVectorY)
     n, sizeX = blockVectorX.shape
-
-    # Data type of iterates, determined by X, must be inexact
-    if not np.issubdtype(blockVectorX.dtype, np.inexact):
-        warnings.warn(
-            f"Data type for argument X is {blockVectorX.dtype}, "
-            f"which is not inexact, so casted to np.float32.",
-            UserWarning, stacklevel=2
-        )
-        blockVectorX = np.asarray(blockVectorX, dtype=np.float32)
+    sizeY = 0 if blockVectorY is None else blockVectorY.shape[1]
 
     if retLambdaHistory:
         lambdaHistory = np.zeros((maxiter + 3, sizeX),
@@ -496,25 +586,7 @@ def lobpcg(
                                         dtype=blockVectorX.dtype)
 
     if verbosityLevel:
-        aux = "Solving "
-        if B is None:
-            aux += "standard"
-        else:
-            aux += "generalized"
-        aux += " eigenvalue problem with"
-        if M is None:
-            aux += "out"
-        aux += " preconditioning\n\n"
-        aux += f"matrix size {n}\n"
-        aux += f"block size {sizeX}\n\n"
-        if blockVectorY is None:
-            aux += "No constraints\n\n"
-        else:
-            if sizeY > 1:
-                aux += f"{sizeY} constraints\n\n"
-            else:
-                aux += f"{sizeY} constraint\n\n"
-        print(aux)
+        _print_problem_info(B, M, blockVectorY, n, sizeX, sizeY)
 
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
@@ -525,75 +597,12 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
-        sizeX = min(sizeX, n)
-
         if blockVectorY is not None:
             raise NotImplementedError(
                 "The dense eigensolver does not support constraints."
             )
 
-        # Define the closed range of indices of eigenvalues to return.
-        if largest:
-            eigvals = (n - sizeX, n - 1)
-        else:
-            eigvals = (0, sizeX - 1)
-
-        try:
-            if isinstance(A, LinearOperator):
-                A = A(np.eye(n, dtype=int))
-            elif callable(A):
-                A = A(np.eye(n, dtype=int))
-                if A.shape != (n, n):
-                    raise ValueError(
-                        f"The shape {A.shape} of the primary matrix\n"
-                        f"defined by a callable object is wrong.\n"
-                        f"Expected {(n, n)}."
-                    )
-            elif issparse(A):
-                A = A.toarray()
-            else:
-                A = np.asarray(A)
-        except Exception as e:
-            raise Exception(
-                f"Primary MatMul call failed with error\n"
-                f"{e}\n")
-
-        if B is not None:
-            try:
-                if isinstance(B, LinearOperator):
-                    B = B(np.eye(n, dtype=int))
-                elif callable(B):
-                    B = B(np.eye(n, dtype=int))
-                    if B.shape != (n, n):
-                        raise ValueError(
-                            f"The shape {B.shape} of the secondary matrix\n"
-                            f"defined by a callable object is wrong.\n"
-                        )
-                elif issparse(B):
-                    B = B.toarray()
-                else:
-                    B = np.asarray(B)
-            except Exception as e:
-                raise Exception(
-                    f"Secondary MatMul call failed with error\n"
-                    f"{e}\n")
-
-        try:
-            vals, vecs = eigh(A,
-                              B,
-                              subset_by_index=eigvals,
-                              check_finite=False)
-            if largest:
-                # Reverse order to be compatible with eigs() in 'LM' mode.
-                vals = vals[::-1]
-                vecs = vecs[:, ::-1]
-
-            return vals, vecs
-        except Exception as e:
-            raise Exception(
-                f"Dense eigensolver failed with error\n"
-                f"{e}\n"
-            )
+        return _dense_eigh(A, B, n, min(sizeX, n), largest)
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
         residualTolerance = np.sqrt(np.finfo(blockVectorX.dtype).eps) * n
@@ -606,14 +615,8 @@ def lobpcg(
     if blockVectorY is not None:
 
         if B is not None:
-            blockVectorBY = B(blockVectorY)
-            if blockVectorBY.shape != blockVectorY.shape:
-                raise ValueError(
-                    f"The shape {blockVectorY.shape} "
-                    f"of the constraint not preserved\n"
-                    f"and changed to {blockVectorBY.shape} "
-                    f"after multiplying by the secondary matrix.\n"
-                )
+            blockVectorBY = _apply_checked(B, blockVectorY,
+                                           "constraint", "secondary")
         else:
             blockVectorBY = blockVectorY
 
@@ -636,14 +639,8 @@ def lobpcg(
 
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
-    blockVectorAX = A(blockVectorX)
-    if blockVectorAX.shape != blockVectorX.shape:
-        raise ValueError(
-            f"The shape {blockVectorX.shape} "
-            f"of the initial approximations not preserved\n"
-            f"and changed to {blockVectorAX.shape} "
-            f"after multiplying by the primary matrix.\n"
-        )
+    blockVectorAX = _apply_checked(A, blockVectorX,
+                                   "initial approximations", "primary")
 
     gramXAX = blockVectorX.T.conj() @ blockVectorAX
 
@@ -707,23 +704,12 @@ def lobpcg(
             bestblockVectorX = blockVectorX
         elif residualNorm > 2**restartControl * smallestResidualNorm:
             forcedRestart = True
-            blockVectorAX = A(blockVectorX)
-            if blockVectorAX.shape != blockVectorX.shape:
-                raise ValueError(
-                    f"The shape {blockVectorX.shape} "
-                    f"of the restarted iterate not preserved\n"
-                    f"and changed to {blockVectorAX.shape} "
-                    f"after multiplying by the primary matrix.\n"
-                )
+            blockVectorAX = _apply_checked(A, blockVectorX,
+                                           "restarted iterate", "primary")
             if B is not None:
-                blockVectorBX = B(blockVectorX)
-                if blockVectorBX.shape != blockVectorX.shape:
-                    raise ValueError(
-                        f"The shape {blockVectorX.shape} "
-                        f"of the restarted iterate not preserved\n"
-                        f"and changed to {blockVectorBX.shape} "
-                        f"after multiplying by the secondary matrix.\n"
-                    )
+                blockVectorBX = _apply_checked(B, blockVectorX,
+                                               "restarted iterate",
+                                               "secondary")
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
@@ -1015,26 +1001,14 @@ def lobpcg(
                           blockVectorY)
 
     # Making eigenvectors "exactly" othonormalized by final "exact" RR
-    blockVectorAX = A(blockVectorX)
-    if blockVectorAX.shape != blockVectorX.shape:
-        raise ValueError(
-            f"The shape {blockVectorX.shape} "
-            f"of the postprocessing iterate not preserved\n"
-            f"and changed to {blockVectorAX.shape} "
-            f"after multiplying by the primary matrix.\n"
-        )
+    blockVectorAX = _apply_checked(A, blockVectorX,
+                                   "postprocessing iterate", "primary")
     gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     blockVectorBX = blockVectorX
     if B is not None:
-        blockVectorBX = B(blockVectorX)
-        if blockVectorBX.shape != blockVectorX.shape:
-            raise ValueError(
-                f"The shape {blockVectorX.shape} "
-                f"of the postprocessing iterate not preserved\n"
-                f"and changed to {blockVectorBX.shape} "
-                f"after multiplying by the secondary matrix.\n"
-            )
+        blockVectorBX = _apply_checked(B, blockVectorX,
+                                       "postprocessing iterate", "secondary")
 
     gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
     _handle_gramA_gramB_verbosity(gramXAX, gramXBX, verbosityLevel)
