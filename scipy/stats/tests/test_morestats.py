@@ -392,6 +392,21 @@ class TestAndersonMethod:
         res = stats.anderson([1, 2, 3, 4, 5], 'norm', method=method)
         assert res.pvalue != ref.pvalue  # different random state -> different p-value
 
+    @pytest.mark.parametrize('dist_name, seed',
+        [('norm', 4202165767275),
+         ('expon', 9094400417269),
+         pytest.param('logistic', 3776634590070, marks=pytest.mark.xslow),
+         pytest.param('gumbel_l', 7966588969335, marks=pytest.mark.xslow),
+         pytest.param('gumbel_r', 1886450383828, marks=pytest.mark.xslow)])
+    def test_method_consistency(self, dist_name, seed):
+        dist = getattr(stats, dist_name)
+        rng = np.random.default_rng(seed)
+        x = dist.rvs(size=50, random_state=rng)
+        ref = stats.anderson(x, dist_name, method='interpolate')
+        res = stats.anderson(x, dist_name, method=stats.MonteCarloMethod(rng=rng))
+        np.testing.assert_allclose(res.statistic, ref.statistic)
+        np.testing.assert_allclose(res.pvalue, ref.pvalue, atol=0.005)
+
     @pytest.mark.parametrize('dist_name,significance_level,critical_values',
         # values from SciPy 1.18
         [('norm', [15, 10, 5, 2.5, 1], [0.552, 0.621, 0.74, 0.859, 1.019]),
@@ -426,21 +441,6 @@ class TestAndersonMethod:
         res = stats.anderson(rng.random(size=50), dist_name, method='interpolate')
         assert res.statistic > statistic_max
         assert res.pvalue == pvalue_min
-
-    @pytest.mark.parametrize('dist_name, seed',
-        [('norm', 4202165767275),
-         ('expon', 9094400417269),
-         pytest.param('logistic', 3776634590070, marks=pytest.mark.xslow),
-         pytest.param('gumbel_l', 7966588969335, marks=pytest.mark.xslow),
-         pytest.param('gumbel_r', 1886450383828, marks=pytest.mark.xslow)])
-    def test_method_consistency(self, dist_name, seed):
-        dist = getattr(stats, dist_name)
-        rng = np.random.default_rng(seed)
-        x = dist.rvs(size=50, random_state=rng)
-        ref = stats.anderson(x, dist_name, method='interpolate')
-        res = stats.anderson(x, dist_name, method=stats.MonteCarloMethod(rng=rng))
-        np.testing.assert_allclose(res.statistic, ref.statistic)
-        np.testing.assert_allclose(res.pvalue, ref.pvalue, atol=0.005)
 
 
 @pytest.mark.filterwarnings("ignore:Parameter `variant`...:UserWarning")
