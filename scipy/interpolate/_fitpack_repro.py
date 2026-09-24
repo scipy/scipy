@@ -97,7 +97,7 @@ def add_knot(x, t, k, residuals, periodic=False):
     return t_new
 
 
-def _interval_residuals(x, t, k, residuals, nrint):
+def _interval_residuals(x, t, k, residuals, nrint, periodic=False):
     """Sum the residuals over each knot interval, ``t(j+k) <= x(i) <= t(j+k+1)``.
 
     This is the "deviation between the spline and the data" the knot placement
@@ -106,25 +106,38 @@ def _interval_residuals(x, t, k, residuals, nrint):
     A data point on an interval boundary contributes half of its residual to
     either side.
 
+    On a closed curve the stretch before the first interior knot and the stretch
+    after the last one are one and the same interval, so the first crossing and
+    the leftover at the end both land in the last entry.
+
     This is
     https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpcurf.f#L190-L215
+    and, for the periodic case,
+    https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpperi.f#L343-L371
     """
     n = t.shape[0]
     fpint = np.zeros(nrint, dtype=float)
-    fpart, i, l, new = 0.0, 0, k + 1, False
-    for it in range(x.shape[0]):
+    stop = x.shape[0] - 1 if periodic else x.shape[0]
+    fpart, i, l, new = 0.0, 0, k if periodic else k + 1, False
+    for it in range(stop):
         if l < n - (k + 1) and x[it] >= t[l]:
             new = True
             l += 1
         term = residuals[it]
         fpart += term
         if new:
-            store = term * 0.5
-            fpint[i] = fpart - store
-            i += 1
-            fpart = store
+            if periodic and l <= k + 1:
+                fpint[nrint - 1] = term
+            else:
+                store = term * 0.5
+                fpint[i] = fpart - store
+                i += 1
+                fpart = store
             new = False
-    fpint[nrint - 1] = fpart
+    if periodic:
+        fpint[nrint - 1] += fpart
+    else:
+        fpint[nrint - 1] = fpart
     return fpint
 
 
@@ -425,11 +438,16 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
         nplus = 1
     n = t.shape[0]
     # Number of data points strictly inside each knot interval. A knot is itself a
-    # data point and counts for neither side, so this starts as every point but the
-    # two ends. Only _add_knot_split changes it afterwards, as fpknot.f does; the
-    # per-interval deviations in fpint are recomputed every iteration, nrdata is
-    # carried across them.
-    nrdata = np.array([m - 2], dtype=np.intp)
+    # data point and counts for neither side, so on an open curve this starts as
+    # every point but the two ends. A closed curve starts with the one interior
+    # knot placed above, hence two intervals. Only _add_knot_split changes nrdata
+    # afterwards, as fpknot.f does; the per-interval deviations in fpint are
+    # recomputed every iteration, nrdata is carried across them.
+    if periodic:
+        mm = (m + 1) // 2
+        nrdata = np.array([mm - 2, m - 1 - mm], dtype=np.intp)
+    else:
+        nrdata = np.array([m - 2], dtype=np.intp)
 
     # c  main loop for the different sets of knots. m is a safe upper bound
     # c  for the number of trials.
@@ -470,15 +488,11 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
         # c  and store it in fpint(j). All nplus knots below come from this one
         # c  computation: fpknot splits fpint of the interval it cuts, instead
         # c  of the residuals being recomputed in between.
-        if not periodic:
-            fpint = _interval_residuals(x, t, k, residuals, n - nmin + 1)
+        fpint = _interval_residuals(x, t, k, residuals, n - nmin + 1, periodic)
 
         # actually add knots
         for j in range(nplus):
-            if periodic:
-                t = add_knot(x, t, k, residuals, periodic)
-            else:
-                t, fpint, nrdata = _add_knot_split(x, t, k, fpint, nrdata)
+            t, fpint, nrdata = _add_knot_split(x, t, k, fpint, nrdata)
 
             # check if we have enough knots already
 
@@ -498,10 +512,6 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
             if n >= nest:
                 yield xp.asarray(t, device=device)
                 return
-
-            # recompute if needed
-            if periodic and j < nplus - 1:
-                residuals, _ = _get_residuals(x, y, t, k, w=w, periodic=periodic)
 
     # this should never be reached
     return
