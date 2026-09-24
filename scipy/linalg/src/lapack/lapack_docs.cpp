@@ -1506,6 +1506,38 @@ namespace lapack {
             return s;
         }
 
+        static std::string
+        doc_lansb(const char *name, const Dtype &t) noexcept
+        {
+            std::string s;
+            s += std::string(name) + "(k, ab, norm='1', uplo='U', ldab=k+1)\n\n";
+            s += "Compute a norm of a symmetric band matrix (LAPACK ``" + std::string(name) + "``).\n\n";
+            s += "For the complex flavors the matrix is complex symmetric, not Hermitian.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "k : int\n"
+                 "    Number of super-diagonals (``uplo='U'``) or sub-diagonals (``uplo='L'``).\n";
+            s += "ab : ndarray, shape (ldab, n)\n"
+                 "    The upper or lower triangle of the matrix in symmetric banded storage,\n"
+                 "    ``k + 1`` rows.\n";
+            s += "norm : str, optional\n"
+                 "    ``'M'`` for the largest absolute value, ``'1'`` or ``'O'`` for the 1-norm,\n"
+                 "    ``'I'`` for the infinity norm, ``'F'`` or ``'E'`` for the Frobenius norm.\n"
+                 "    Lower case is accepted. Note that ``'M'`` is not a consistent matrix norm.\n"
+                 "    Default is ``'1'``.\n";
+            s += "uplo : str, optional\n"
+                 "    Whether `ab` stores the upper (``'U'``, default) or lower (``'L'``)\n"
+                 "    triangle.\n";
+            s += "ldab : int, optional\n"
+                 "    Leading dimension of `ab`, at least ``k + 1``, which is also the\n"
+                 "    default.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "n2 : " + std::string(t.is_complex ? "float" : t.scalar)
+               + "\n    The requested norm, always real.\n";
+            return s;
+        }
+
         /* ============================= flapack_pos_def.pyf.src ===================== */
 
         /** @brief `pstrf` and `pstf2` are the blocked and unblocked pivoted Cholesky; one
@@ -4532,6 +4564,7 @@ namespace lapack {
             DOC_FAMILY(gbtrs),
             DOC_FAMILY(gbcon),
             DOC_FAMILY(langb),
+            DOC_FAMILY(lansb),
             DOC_FAMILY(pstrf),
             DOC_FAMILY(pstf2),
             DOC_FAMILY(posv),
