@@ -313,6 +313,44 @@ class _lil_base(_spbase, IndexMixin):
             self._set_arrayXarray(row[rhs_row, rhs_col], col[rhs_row, rhs_col],
                                   rhs_data)
 
+    def _clear_sparsity_slice(self, row_idxs, col_start, col_stop, col_stride):
+        # Clear the sparsity pattern row by row, for the given column slice.
+        if col_stride > 0:
+            col_lo, col_hi = col_start, col_stop
+        else:
+            col_lo, col_hi = col_stop + 1, col_start + 1
+        unit_stride = col_stride in (1, -1)
+        # row_idxs is an arbitrary iterable, so avoid materializing nonempty_rows.
+        for r in row_idxs:
+            if (curr_row := self.rows[r]):
+                lo = bisect_left(curr_row, col_lo)
+                hi = bisect_left(curr_row, col_hi, lo)
+                if lo == hi:
+                    continue
+                curr_data = self.data[r]
+                if unit_stride:
+                    del curr_row[lo:hi]
+                    del curr_data[lo:hi]
+                else:
+                    for k in reversed(range(lo, hi)):
+                        if (curr_row[k] - col_start) % col_stride == 0:
+                            del curr_row[k]
+                            del curr_data[k]
+
+    def _clear_sparsity_outer(self, row_idxs, col_idxs):
+        # Clear the sparsity pattern row by row, for all columns.
+        nonempty_row_idxs = [r for r in row_idxs if self.rows[r]]
+        if not nonempty_row_idxs:
+          return
+        uniq_cols = set(col_idxs.tolist())
+        for r in nonempty_row_idxs:
+            curr_row = self.rows[r]
+            curr_data = self.data[r]
+            for k in reversed(range(len(curr_row))):
+                if curr_row[k] in uniq_cols:
+                    del curr_row[k]
+                    del curr_data[k]
+
     def _set_columnXarray_sparse(self, row, col, x):
         # outer indexing
         if 0 in row.shape or 0 in col.shape:
@@ -320,15 +358,7 @@ class _lil_base(_spbase, IndexMixin):
         rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
             x, row.shape[0], col.shape[0], self.dtype
         )
-        # Clear the sparsity pattern row by row.
-        uniq_cols = set(col.tolist())
-        for r in row:
-            if (curr_row := self.rows[r]):
-                curr_data = self.data[r]
-                for k in reversed(range(len(curr_row))):
-                    if curr_row[k] in uniq_cols:
-                        del curr_row[k]
-                        del curr_data[k]
+        self._clear_sparsity_outer(row, col)
         if rhs_data.size > 0:
             self._set_arrayXarray(row[rhs_row], col[rhs_col], rhs_data)
 
@@ -341,28 +371,7 @@ class _lil_base(_spbase, IndexMixin):
         rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
             x, nrows, ncols, self.dtype
         )
-
-        if j_stride > 0:
-            col_lo, col_hi = j_start, j_stop
-        else:
-            col_lo, col_hi = j_stop + 1, j_start + 1
-        unit_stride = j_stride in (1, -1)
-        # Clear the sparsity pattern.
-        for r in rows:
-            if (curr_row := self.rows[r]):
-                lo = bisect_left(curr_row, col_lo)
-                hi = bisect_left(curr_row, col_hi, lo)
-                if lo == hi:
-                    continue
-                curr_data = self.data[r]
-                if unit_stride:
-                    del curr_row[lo:hi]
-                    del curr_data[lo:hi]
-                else:
-                    for k in reversed(range(lo, hi)):
-                        if (curr_row[k] - j_start) % j_stride == 0:
-                            del curr_row[k]
-                            del curr_data[k]
+        self._clear_sparsity_slice(rows, j_start, j_stop, j_stride)
         if rhs_data.size > 0:
             if isinstance(rows, range):
                 target_rows = rows.start + rows.step * rhs_row
