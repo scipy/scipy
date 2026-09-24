@@ -110,6 +110,10 @@ class TestStandardNormal(DistributionsTest):
     def test_cdf2(self, case):
         return super().test_cdf2(case)
 
+    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
+    def test_logpdf(self, case):
+        return super().test_logpdf(case)
+
 
 class TestUniform(DistributionsTest):
     seed = 893709074

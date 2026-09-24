@@ -33,6 +33,11 @@ class TestMyNormal(DistributionsTest):
     family = stats.make_distribution(MyNormal())
     seed =7694871135
 
+    def test_purported_distribution(self, valid_dist_x):
+        message = "This method must be overridden..."
+        with pytest.raises(NotImplementedError, match=message):
+            return super().test_purported_distribution(valid_dist_x)
+
     @pytest.mark.xslow
     def test_lmoment(self, case):
         return super().test_lmoment()
