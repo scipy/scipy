@@ -112,6 +112,44 @@ namespace lapack {
             return make_result(b, static_cast<long long>(info));
         }
 
+        template <class T>
+        static PyObject *pbcon(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {"kd", "ab", "anorm", "ldab", "uplo",
+                                            nullptr};
+            static constexpr Ctx<T> ctx("pbcon", "OOO|OO", kwlist);
+            PARSE_ARGS();
+
+            using R = real_of_t<T>;
+            R rcond = 0.0;
+            CBLAS_INT info = 0;
+
+            SCALAR_OPT(char, uplo, 'U'); CHECK(uplo == 'U' || uplo == 'L', uplo);
+            SCALAR_REQ(CBLAS_INT, kd); CHECK(kd >= 0, kd);
+            
+            ARRAY_IN(T, ab, 2);
+            SCALAR_REQ(R, anorm);
+
+            CBLAS_INT n = shape(ab, 1);
+            CBLAS_INT band_rows;
+            if (!work_size(kd + 1, &band_rows)) { return nullptr; }
+            SCALAR_OPT(CBLAS_INT, ldab, band_rows); CHECK(ldab >= band_rows, ldab);
+            CHECKARRAY(shape(ab, 0) == ldab, ab);
+
+            if constexpr (is_complex_v<T>){
+                ARRAY_HIDDEN(T, work, 2*n);
+                ARRAY_HIDDEN(R, rwork, n);
+                lapack::pbcon(uplo, n, kd, ab.data<T>(), ldab, anorm, &rcond,
+                    work.data<T>(), rwork.data<R>(), &info);
+            } else {
+                ARRAY_HIDDEN(R, work, 3*n);
+                ARRAY_HIDDEN(CBLAS_INT, iwork, n);
+                lapack::pbcon(uplo, n, kd, ab.data<T>(), ldab, anorm, &rcond,
+                    work.data<T>(), iwork.data<CBLAS_INT>(), &info);
+            }
+
+            return make_result(rcond, static_cast<long long>(info));
+        }
 
         template <class T>
         static PyObject *gbcon(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
@@ -205,6 +243,7 @@ namespace lapack {
             FAMILY(gbsv),
             FAMILY(gbtrf),
             FAMILY(gbtrs),
+            FAMILY(pbcon),
             FAMILY(gbcon),
             FAMILY(langb),
             {nullptr, nullptr, 0, nullptr},
