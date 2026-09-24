@@ -1511,8 +1511,10 @@ def block_diag(mats, format=None, dtype=None):
     col = []
     data = []
     idx_arrays = []  # track idx_dtype of incoming sparse arrays
-    r_idx = 0
-    c_idx = 0
+
+    converted = []
+    total_rows = 0
+    total_cols = 0
     for a in mats:
         if isinstance(a, (list | numbers.Number)):
             a = coo_array(np.atleast_2d(a))
@@ -1521,18 +1523,27 @@ def block_diag(mats, format=None, dtype=None):
             if not idx_arrays and a.coords[0].dtype == np.int64:
                 idx_arrays.append(a.coords[0])
             nrows, ncols = a._shape_as_2d
-            row.append(a.row + r_idx)
-            col.append(a.col + c_idx)
-            data.append(a.data)
         else:
             nrows, ncols = a.shape
+        total_rows += nrows
+        total_cols += ncols
+        converted.append((a, nrows, ncols))
+    idx_dtype = get_index_dtype(idx_arrays, maxval=max(total_rows, total_cols))
+
+    r_idx = 0
+    c_idx = 0
+    for a, nrows, ncols in converted:
+        if issparse(a):
+            row.append(np.add(a.row, r_idx, dtype=idx_dtype))
+            col.append(np.add(a.col, c_idx, dtype=idx_dtype))
+            data.append(a.data)
+        else:
             a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
-            row.append(a_row + r_idx)
-            col.append(a_col + c_idx)
+            row.append(np.add(a_row, r_idx, dtype=idx_dtype))
+            col.append(np.add(a_col, c_idx, dtype=idx_dtype))
             data.append(a.ravel())
         r_idx += nrows
         c_idx += ncols
-    idx_dtype = get_index_dtype(idx_arrays, maxval=max(r_idx, c_idx))
     row = np.concatenate(row, dtype=idx_dtype)
     col = np.concatenate(col, dtype=idx_dtype)
     data = np.concatenate(data)
