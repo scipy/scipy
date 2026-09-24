@@ -425,8 +425,8 @@ class TestSortCallbacks:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_exception_in_callback_propagates(self, dtype):
-        # The trampoline longjmps out of the Fortran call; the original exception must
-        # reach the caller rather than being swallowed into a "do not select".
+        # The original exception must reach the caller rather than being swallowed into a
+        # "do not select" result.
         gees = get_lapack_funcs('gees', dtype=dtype)
         a = self._matrix(dtype)
 
