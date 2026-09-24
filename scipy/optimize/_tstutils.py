@@ -137,6 +137,15 @@ def f6(x):
         _f6_cache[x] = v
     return v
 
+def f7(x):
+    sum=0
+    for i in range(100):
+        sum+=pow(x,i)
+    return sum-2.71*2.71
+
+_f8_table = np.random.randint(100, size=1000)
+def f8(x):
+    return np.sum(np.floor(_f8_table/x))-200
 
 # Each Original test case has
 # - a function and its two derivatives,
@@ -850,10 +859,10 @@ def get_tests(collection='original', smoothness=None):
 
 
 # Backwards compatibility
-methods = [cc.bisect, cc.ridder, cc.brenth, cc.brentq]
-mstrings = ['cc.bisect', 'cc.ridder', 'cc.brenth', 'cc.brentq']
-functions = [f2, f3, f4, f5, f6]
-fstrings = ['f2', 'f3', 'f4', 'f5', 'f6']
+methods = [cc.bisect, cc.ridder, cc.brenth, cc.brentq, cc.bisect_exact]
+mstrings = ['cc.bisect', 'cc.ridder', 'cc.brenth', 'cc.brentq', 'cc.bisect_exact']
+functions = [f2, f3, f4, f5, f6, f7, f8]
+fstrings = ['f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8']
 
 #   ##################
 #   "Chandrupatla" test cases

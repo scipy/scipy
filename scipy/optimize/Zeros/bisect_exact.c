@@ -16,8 +16,8 @@ bisect_exact(callback_type f, double xa, double xb, double xtol, double rtol,
 
     fa = (*f)(xa, func_data_param);
     fb = (*f)(xb, func_data_param);
-    fz = (*f)(0, func_data_param);
-    solver_stats->funcalls = 3;
+    
+    solver_stats->funcalls = 2;
     if (fa == 0) {
         solver_stats->error_num = CONVERGED;
         return xa;
@@ -26,19 +26,24 @@ bisect_exact(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = CONVERGED;
         return xb;
     }
-    if (fz == 0) {
-        solver_stats->error_num = CONVERGED;
-        return 0.;
-    }
     if (signbit(fa)==signbit(fb)) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
-    if(signbit(fz)==signbit(fb)){
-        xb = copysign(0.0, xa);
-    }else{
-        xa = copysign(0.0, xb);
+    if(signbit(xa)!=signbit(xb)){
+        fz = (*f)(0, func_data_param);
+        solver_stats->funcalls++;
+        if (fz == 0) {
+            solver_stats->error_num = CONVERGED;
+            return 0.;
+        }
+        if(signbit(fz)==signbit(fb)){
+            xb = copysign(0.0, xa);
+        }else{
+            xa = copysign(0.0, xb);
+        }
     }
+    
     memcpy(&xa_int,&xa,sizeof xa_int);
     memcpy(&xb_int,&xb,sizeof xb_int);
     solver_stats->iterations = 0;

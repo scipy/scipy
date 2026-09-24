@@ -26,6 +26,24 @@ class Zeros(Benchmark):
     def time_zeros(self, func, meth):
         self.meth(self.func, self.a, self.b)
 
+class ZerosExtreme(Benchmark):
+    params = [
+        ['f7','f8'],
+        mstrings
+    ]
+    param_names = ['test function', 'solver']
+
+    def setup(self,func,meth):
+        self.a = 0.1
+        self.b = 100
+        self.xtol = 5e-324
+        self.maxiter=10000
+        
+        self.func = functions[fstrings.index(func)]
+        self.meth = methods[mstrings.index(meth)]
+
+    def time_zeros_extreme(self, func, meth):
+            self.meth(self.func, self.a, self.b,maxiter=self.maxiter,xtol=self.xtol)
 
 class Newton(Benchmark):
     params = [
