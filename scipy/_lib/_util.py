@@ -1251,6 +1251,11 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
                 if ndim == "1|2":  # special case for `solve`, etc.
                     ndim = 2 if array.ndim >= 2 else 1
 
+                if array is not None and array.ndim < ndim:
+                    message = (f"Argument `{names[i]}` has {array.ndim} dimensions, "
+                               f"but at least {ndim} dimension(s) is/are required.")
+                    raise ValueError(message)
+
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
                 core_shapes.append(shape[-ndim:] if ndim > 0 else ())
