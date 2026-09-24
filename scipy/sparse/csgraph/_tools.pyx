@@ -8,7 +8,7 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_array, csr_matrix, spmatrix, issparse
+from scipy.sparse import csr_array, issparse
 from scipy.sparse._sputils import is_pydata_spmatrix
 
 np.import_array()
@@ -218,8 +218,6 @@ def csgraph_from_dense(graph,
     """
     res = csgraph_masked_from_dense(graph, null_value, nan_null, infinity_null)
     res = csgraph_from_masked(res)
-    if isinstance(graph, np.matrix):
-        return csr_matrix(res, copy=False)
     return res
 
 
@@ -512,8 +510,6 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         data2[data2 == 0] = np.inf
         data = np.minimum(data, data2)
 
-    if isinstance(csgraph_orig, spmatrix):
-        return csr_matrix((data, indices, indptr), shape=(N, N))
     sctree = csr_array((data, indices, indptr), shape=(N, N))
     if is_pydata_spmatrix(csgraph_orig):
         pydata_sparse_cls = csgraph_orig.__class__

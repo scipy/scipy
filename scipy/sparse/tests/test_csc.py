@@ -3,50 +3,30 @@ import sys
 import platform
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_
-from scipy.sparse import csr_matrix, csc_matrix, lil_array, csr_array, csc_array
+from scipy.sparse import csr_array, csc_array, lil_array
 
 import pytest
 
 LINUX_INTEL = (sys.platform == 'linux') and (platform.machine() == 'x86_64')
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
-def test_csc_getrow():
-    N = 10
-    np.random.seed(0)
-    X = np.random.random((N, N))
-    X[X > 0.7] = 0
-    Xcsc = csc_matrix(X)
-
-    for i in range(N):
-        arr_row = X[i:i + 1, :]
-        csc_row = Xcsc.getrow(i)
-
-        assert_array_almost_equal(arr_row, csc_row.toarray())
-        assert_(type(csc_row) is csr_matrix)
-
-@pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
-def test_csc_getcol():
-    N = 10
-    np.random.seed(0)
-    X = np.random.random((N, N))
-    X[X > 0.7] = 0
-    Xcsc = csc_matrix(X)
-
-    for i in range(N):
-        arr_col = X[:, i:i + 1]
-        csc_col = Xcsc.getcol(i)
-
-        assert_array_almost_equal(arr_col, csc_col.toarray())
-        assert_(type(csc_col) is csc_matrix)
-
 @pytest.mark.parametrize("matrix_input, axis, expected_shape",
-        [(csc_array([[1, 0], [0, 0], [0, 2]]), 0, (0, 2)),
-         (csc_array([[1, 0], [0, 0], [0, 2]]), 1, (3, 0)),
-         (csc_array([[1, 0], [0, 0], [0, 2]]), 'both', (0, 0)),
-         (csc_array([[0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 2, 3, 0, 1]]),
-          0, (0, 6))])
+    [(csc_array([[1, 0],
+                [0, 0],
+                [0, 2]]),
+      0, (0, 2)),
+     (csc_array([[1, 0],
+                [0, 0],
+                [0, 2]]),
+      1, (3, 0)),
+     (csc_array([[1, 0],
+                [0, 0],
+                [0, 2]]),
+      'both', (0, 0)),
+     (csc_array([[0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 2, 3, 0, 1]]),
+      0, (0, 6))])
 def test_csc_empty_slices(matrix_input, axis, expected_shape):
     # see gh-11127 for related discussion
     slice_1 = matrix_input.toarray().shape[0] - 1

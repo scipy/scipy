@@ -15,7 +15,7 @@ from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial._ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance, minkowski_distance_p
 from scipy.spatial.distance import cdist, minkowski
-from scipy.sparse import dok_array, coo_array, dok_matrix, coo_matrix
+from scipy.sparse import dok_array, coo_array
 
 
 @pytest.fixture(params=[KDTree, cKDTree])
@@ -693,15 +693,12 @@ class sparse_distance_matrix_consistency:
         tree = self.kdtree_type(np.array([[0.0, 0.0], [1.0, 1.0]]))
         tree.sparse_distance_matrix(tree, 3, output_type="coo_array")
         tree.sparse_distance_matrix(tree, 3, output_type="dok_array")
-        with pytest.deprecated_call(match='The keyword output_type="dok'):
+        with pytest.raises(ValueError, match='Invalid output type; Use'):
             tree.sparse_distance_matrix(tree, 3, output_type="dok_matrix")
-        with pytest.deprecated_call(match='The keyword output_type="coo'):
+        with pytest.raises(ValueError, match='Invalid output type; Use'):
             tree.sparse_distance_matrix(tree, 3, output_type="coo_matrix")
-        with pytest.deprecated_call(match='The keyword output_type="dok'):
-            with pytest.deprecated_call(match="The default value for `out"):
-                tree.sparse_distance_matrix(tree, 3)
+        tree.sparse_distance_matrix(tree, 3)
 
-    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
     def test_ckdtree_return_types(self):
         # brute-force reference
         ref = np.zeros((self.n, self.n))
@@ -728,32 +725,16 @@ class sparse_distance_matrix_consistency:
             dist[i, j] = v
         assert_array_almost_equal(ref, dist, decimal=14)
         # test return type 'dok_array'
-        r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='dok_array')
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dok_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
         assert isinstance(r, dok_array)
-        # test return type 'dok_matrix'
-        with pytest.deprecated_call(match='The keyword output_type="dok'):
-            r = self.T1.sparse_distance_matrix(self.T2, self.r,
-                output_type='dok_matrix')
-            assert_array_almost_equal(ref, r.toarray(), decimal=14)
-            assert isinstance(r, dok_matrix)
         # test return type 'coo_array'
-        r = self.T1.sparse_distance_matrix(self.T2, self.r,
-            output_type='coo_array')
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='coo_array')
         assert_array_almost_equal(ref, r.toarray(), decimal=14)
         assert isinstance(r, coo_array)
-        # test return type 'coo_matrix'
-        with pytest.deprecated_call(match='The keyword output_type="coo'):
-            r = self.T1.sparse_distance_matrix(self.T2, self.r,
-                output_type='coo_matrix')
-            assert_array_almost_equal(ref, r.toarray(), decimal=14)
-            assert isinstance(r, coo_matrix)
-        # test default return type 'dok_matrix'
-        with pytest.deprecated_call(match="The default value for `out"):
-            with pytest.deprecated_call(match='The keyword output_type="dok'):
-                r = self.T1.sparse_distance_matrix(self.T2, self.r)
-                assert isinstance(r, dok_matrix)
+        # test default return type: 'dok_array'
+        r = self.T1.sparse_distance_matrix(self.T2, self.r)
+        assert isinstance(r, dok_array)
 
 
 @KDTreeTest
