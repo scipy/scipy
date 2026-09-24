@@ -453,7 +453,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     >>> a = np.array([[4, 3], [-4.5, -3.5]])
     >>> b = np.array([[1], [-1]])
     >>> q = np.array([[9, 6], [6, 4.]])
-    >>> r = 1
+    >>> r = np.array([[1]])
     >>> x = linalg.solve_continuous_are(a, b, q, r)
     >>> x
     array([[ 21.72792206,  14.48528137],
