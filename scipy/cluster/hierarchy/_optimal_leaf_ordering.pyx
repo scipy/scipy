@@ -407,8 +407,8 @@ def optimal_leaf_ordering(Z, D):
     sorted_leaves = leaves_list(Z)
 
     # Create map from original order to sorted order.
-    original_order_to_sorted_order = dict((orig_i, sorted_i) for sorted_i,orig_i
-                                          in enumerate(sorted_leaves))
+    original_order_to_sorted_order = {orig_i: sorted_i for sorted_i, orig_i
+                                      in enumerate(sorted_leaves)}
 
 
     # Re-write linkage map so it refers to sorted positions, rather than input

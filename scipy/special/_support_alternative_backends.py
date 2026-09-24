@@ -996,7 +996,8 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _ufuncs.ndtr, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+        _ufuncs.ndtr, ["x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note(), mparray=True)
     ),
     _FuncInfo(
         _ufuncs.ndtri, ["p"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())

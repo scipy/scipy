@@ -67,12 +67,9 @@ class eager:
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
-# check if it's available
+# check if it's available. Do not select a backend here: plotting tests request
+# the `mpl_agg` fixture instead (gh-3588).
 try:
-    import matplotlib
-    # and set the backend to be Agg (no gui)
-    matplotlib.use('Agg')
-    # before importing pyplot
     import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
@@ -954,6 +951,7 @@ class TestDendrogram:
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_valid_label_size(self, xp):
         link = xp.asarray([
             [0, 1, 1.0, 4],
@@ -981,6 +979,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     @pytest.mark.parametrize("orientation", ['top', 'bottom', 'left', 'right'])
     def test_dendrogram_plot(self, orientation, xp):
         # Tests dendrogram plotting.
@@ -1052,6 +1051,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_dendrogram_truncate_mode(self, xp):
         Z = xp.asarray(linkage(hierarchy_test_data.ytdist, 'single'))
 

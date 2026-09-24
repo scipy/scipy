@@ -1594,7 +1594,7 @@ cdef class cKDTree:
              To silence this message, set `output_type="dok_array"`.
              """
             warnings.warn(msg, DeprecationWarning, stacklevel=1)
-            msg = f"""The keyword output_type="dok_matrix" will not be supported in v2.2
+            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
              The intended replacement is output_type="dok_array".
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -1622,7 +1622,7 @@ cdef class cKDTree:
         elif output_type == 'coo_array':
             return res.coo_array(self.n, other.n)
         elif output_type == 'dok_matrix':
-            msg = f"""The keyword output_type="dok_matrix" will not be supported in v2.2
+            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
              The intended replacement is output_type="dok_array".
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -1635,7 +1635,7 @@ cdef class cKDTree:
             warnings.filterwarnings("ignore", "dok_matrix is being repl")
             return res.dok_matrix(self.n, other.n)
         elif output_type == 'coo_matrix':
-            msg = f"""The keyword output_type="coo_matrix" will not be supported in v2.2
+            msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
              The intended replacement is output_type="coo_array".
              Unless you use * instead of @, ** for matrix power, or you depend
              on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
