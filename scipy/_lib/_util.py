@@ -1133,7 +1133,7 @@ def validate_from_signature(names, core_shapes, signature):
     for i, core_shape in enumerate(core_shapes):
         for j, length in enumerate(core_shape):
             l = input_dim_to_letter[(i, j)]
-            if letter_to_length.get(l, None):
+            if l in letter_to_length:
                 if letter_to_length[l] != length:
                     shapes = ", ".join([f"{names[k]}: {core_shapes[k]}"
                                         for k in range(len(names))])

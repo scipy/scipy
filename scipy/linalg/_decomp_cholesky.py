@@ -269,7 +269,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
 
 
 def _cho_solve_signature(c, b, lower, overwrite_b, check_finite):
-    return ("(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i,j)->(i,j)")
+    return ("(i,i),(i)->(i)" if np.ndim(b) <= 1 else "(i,i),(i,j)->(i,j)")
 
 
 @_apply_over_batch(('c', 2), ('b', '1|2'), signature=_cho_solve_signature)
@@ -442,7 +442,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
 
 def _cho_solve_banded_signature(c, b, lower, overwrite_b, check_finite):
-    return ("(i, j),(j)->(j)" if np.ndim(b) <= 1 else "(i, j),(j,k)->(j,k)")
+    return ("(i,j),(j)->(j)" if np.ndim(b) <= 1 else "(i,j),(j,k)->(j,k)")
 
 
 @_apply_over_batch(('cb', 2), ('b', '1|2'), signature=_cho_solve_banded_signature)
