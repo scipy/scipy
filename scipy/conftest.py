@@ -235,7 +235,9 @@ def mpl_agg():
 
     Notes: the backend that was *resolved* before the test is what gets
     restored (matplotlib offers no public way to return to the unresolved
-    "auto" state), and all open figures are closed on teardown.
+    "auto" state), and all open figures are closed on teardown. Tests that
+    use this fixture should also be marked ``thread_unsafe``: pyplot's global
+    state is not thread-safe.
     """
     try:
         import matplotlib

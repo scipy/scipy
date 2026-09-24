@@ -951,6 +951,7 @@ class TestDendrogram:
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_valid_label_size(self, xp):
         link = xp.asarray([
@@ -979,6 +980,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     @pytest.mark.parametrize("orientation", ['top', 'bottom', 'left', 'right'])
     def test_dendrogram_plot(self, orientation, xp):
@@ -1051,6 +1053,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_dendrogram_truncate_mode(self, xp):
         Z = xp.asarray(linkage(hierarchy_test_data.ytdist, 'single'))
