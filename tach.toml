@@ -219,6 +219,7 @@ exclude = [
     "intersphinx_registry",
     "jax",
     "matplotlib",
+    "mparray",
     "mpmath",
     "ndonnx",
     "numpydoc",

@@ -140,6 +140,7 @@ def _process_capabilities_table_entry(
     # This logic should be decoupled from this function due to exceptions; e.g. marray.
     sphinx_capabilities = _make_sphinx_capabilities(**entry)
     sphinx_capabilities.pop("marray")
+    sphinx_capabilities.pop("mparray")
     for backend, capabilities in sphinx_capabilities.items():
         if backend in {"array_api_strict", "numpy"}:
             continue
