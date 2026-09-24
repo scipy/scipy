@@ -1334,7 +1334,7 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
             batch_note += ("\nNote that calls with zero-size batches are unsupported "
                            "and will raise a ``ValueError``.")
         elif isinstance(signature, str):
-            batch_note += f"\nThe NEP 5 signature of this function is {signature}."
+            batch_note += f"\nThe NEP 5 signature of this function is ``{signature}``."
         doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
