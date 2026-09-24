@@ -278,8 +278,8 @@ def _to_banded(n_below, n_above, a):
     return ab
 
 
-def _solve_triangular_signature(ab, b, overwrite_ab=False, overwrite_b=False,
-                                lower=False, check_finite=True):
+def _solve_triangular_signature(a, b, trans=0, lower=False, unit_diagonal=False,
+                                overwrite_b=False, check_finite=True):
     return ("(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i,j)->(i,j)")
 
 
