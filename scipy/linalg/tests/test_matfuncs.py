@@ -1090,15 +1090,16 @@ class TestExpmConditionNumber:
 
 @make_xp_test_case(khatri_rao)
 class TestKhatriRao:
-
-    def test_basic(self, xp):
-        a = khatri_rao(xp.asarray([[1, 2], [3, 4]]),
-                       xp.asarray([[5, 6], [7, 8]]))
+    @pytest.mark.parametrize('dtype', ["float32", "float64", "complex64", "complex128"])
+    def test_basic(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        a = khatri_rao(xp.asarray([[1, 2], [3, 4]], dtype=dtype),
+                       xp.asarray([[5, 6], [7, 8]], dtype=dtype))
 
         xp_assert_equal(a, xp.asarray([[5, 12],
                                       [7, 16],
                                       [15, 24],
-                                      [21, 32]]))
+                                      [21, 32]], dtype=dtype))
 
         b = khatri_rao(xp.empty([2, 2]), xp.empty([2, 2]))
         assert b.shape == (4, 2)
@@ -1144,7 +1145,7 @@ class TestKhatriRao:
         res2 = xp.stack([xpx.kron(a[:, k], b[:, k])
                           for k in range(b.shape[1])]).T
 
-        assert_array_equal(res1, res2)
+        xp_assert_equal(res1, res2)
 
     def test_empty(self, xp):
         a = xp.empty((0, 2))
