@@ -88,7 +88,7 @@ output
 output.shape
 ```
 
-Not all linear algebra functions map matrices to scalars. The map between core shapes of inputs and outputs is typically documented in the Notes section using a compact notation known as the "NEP 5 signature" of the function.
+Not all linear algebra functions map matrices to scalars. The map between core shapes of inputs and outputs is typically documented in the function's extended summary using a compact notation known as the "[NEP 5](https://numpy.org/neps/nep-0005-generalized-ufuncs.html#nep-5-generalized-universal-functions) signature" of the function.
 
 For instance, the signature of `det` is `(i,i)->()`. This indicates that the function accepts a single, square matrix with shape `(i,i)`, where `i` is the side length, and returns a single output with shape `()`. As another example, the {func}`scipy.linalg.expm` function maps from a matrix to a matrix with the same shape, so its signature is `(i,i)->(i,i)`.
 
