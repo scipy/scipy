@@ -445,10 +445,6 @@ def _asindices(idx, length, format):
     if format != "coo" and ix.ndim not in (1, 2) or format == "coo" and ix.ndim == 0:
         raise IndexError(f'Index dimension must be 1 or 2. Got {ix.ndim}')
 
-    # LIL routines handle bounds-checking for us, so don't do it here.
-    if format == "lil":
-        return ix
-
     if ix.size == 0:
         return ix
 

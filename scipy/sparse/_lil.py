@@ -13,7 +13,7 @@ from warnings import warn
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
-from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
+from ._index import IndexMixin, INT_TYPES, _broadcast_arrays, _validate_indices
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape)
 from . import _csparsetools
@@ -264,6 +264,37 @@ class _lil_base(_spbase, IndexMixin):
         _csparsetools.lil_insert(self.shape[0], self.shape[1], self.rows,
                                  self.data, row, col, x)
 
+    def _set_intXslice_sparse(self, row, col, x):
+        self._set_row_ranges_sparse(range(row, row + 1), col, x)
+
+    def _set_sliceXint_sparse(self, row, col, x):
+        row = range(*row.indices(self.shape[0]))
+        self._set_row_ranges_sparse(row, slice(col, col + 1), x)
+
+    def _set_sliceXslice_sparse(self, row, col, x):
+        # Fast path for full-matrix sparse assignment.
+        if row == slice(None) and col == slice(None) and x.shape == self.shape:
+            x = self._lil_container(x, dtype=self.dtype)
+            self.rows = x.rows
+            self.data = x.data
+            return
+        row = range(*row.indices(self.shape[0]))
+        self._set_row_ranges_sparse(row, col, x)
+
+    def _set_arrayXint_sparse(self, row, col, x):
+        self._set_row_ranges_sparse(row.ravel(), slice(col, col + 1), x)
+
+    def _set_intXarray_sparse(self, row, col, x):
+        row = np.array(row, dtype=col.dtype, ndmin=1)
+        self._set_columnXarray_sparse(row, col.ravel(), x)
+
+    def _set_arrayXslice_sparse(self, row, col, x):
+        self._set_row_ranges_sparse(row.ravel(), col, x)
+
+    def _set_sliceXarray_sparse(self, row, col, x):
+        row = np.arange(*row.indices(self.shape[0]), dtype=np.intp)
+        self._set_columnXarray_sparse(row, col.ravel(), x)
+
     def _set_arrayXarray(self, row, col, x):
         i, j, x = map(np.atleast_2d, _prepare_index_for_memoryview(row, col, x))
         _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
@@ -271,15 +302,79 @@ class _lil_base(_spbase, IndexMixin):
                                     i, j, x)
 
     def _set_arrayXarray_sparse(self, row, col, x):
-        # Fall back to densifying x
-        x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = _broadcast_arrays(x, row)
-        self._set_arrayXarray(row, col, x)
+        # inner indexing
+        rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
+            x, row.shape[0], row.shape[1], self.dtype
+        )
+        zero = np.broadcast_to(np.zeros((1,1), dtype=self.dtype), row.shape)
+        zero.flags.writeable = True  # Make compatible with Cython memoryview.
+        self._set_arrayXarray(row, col, zero)
+        if rhs_data.size > 0:
+            self._set_arrayXarray(row[rhs_row, rhs_col], col[rhs_row, rhs_col],
+                                  rhs_data)
+
+    def _set_columnXarray_sparse(self, row, col, x):
+        # outer indexing
+        if 0 in row.shape or 0 in col.shape:
+            return
+        rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
+            x, row.shape[0], col.shape[0], self.dtype
+        )
+        # Clear the sparsity pattern row by row.
+        uniq_cols = set(col.tolist())
+        for r in row:
+            if (curr_row := self.rows[r]):
+                curr_data = self.data[r]
+                for k in reversed(range(len(curr_row))):
+                    if curr_row[k] in uniq_cols:
+                        del curr_row[k]
+                        del curr_data[k]
+        if rhs_data.size > 0:
+            self._set_arrayXarray(row[rhs_row], col[rhs_col], rhs_data)
+
+    def _set_row_ranges_sparse(self, rows, col_slice, x):
+        j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
+        ncols = len(range(j_start, j_stop, j_stride))
+        nrows = len(rows)
+        if nrows == 0 or ncols == 0:
+            return
+        rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
+            x, nrows, ncols, self.dtype
+        )
+
+        if j_stride > 0:
+            col_lo, col_hi = j_start, j_stop
+        else:
+            col_lo, col_hi = j_stop + 1, j_start + 1
+        unit_stride = j_stride in (1, -1)
+        # Clear the sparsity pattern.
+        for r in rows:
+            if (curr_row := self.rows[r]):
+                lo = bisect_left(curr_row, col_lo)
+                hi = bisect_left(curr_row, col_hi, lo)
+                if lo == hi:
+                    continue
+                curr_data = self.data[r]
+                if unit_stride:
+                    del curr_row[lo:hi]
+                    del curr_data[lo:hi]
+                else:
+                    for k in reversed(range(lo, hi)):
+                        if (curr_row[k] - j_start) % j_stride == 0:
+                            del curr_row[k]
+                            del curr_data[k]
+        if rhs_data.size > 0:
+            if isinstance(rows, range):
+                target_rows = rows.start + rows.step * rhs_row
+            else:
+                target_rows = rows[rhs_row]
+            target_cols = j_start + j_stride * rhs_col
+            self._set_arrayXarray(target_rows, target_cols, rhs_data)
 
     def __setitem__(self, key, x):
+        # Fast path for simple (int, int) indexing.
         if isinstance(key, tuple) and len(key) == 2:
             row, col = key
-            # Fast path for simple (int, int) indexing.
             if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
                 if issparse(x):
                     x = x.toarray()
@@ -289,16 +384,52 @@ class _lil_base(_spbase, IndexMixin):
                 if x.size > 1:
                     raise ValueError("Trying to assign a sequence to an item")
                 return self._set_intXint(row, col, x)
-            # Fast path for full-matrix sparse assignment.
-            if (isinstance(row, slice) and isinstance(col, slice) and
-                    row == slice(None) and col == slice(None) and
-                    issparse(x) and x.shape == self.shape):
-                x = self._lil_container(x, dtype=self.dtype)
-                self.rows = x.rows
-                self.data = x.data
+        # Sparse assignment handled separately.
+        if issparse(x):
+            index, _, _, _ = _validate_indices(key, self.shape, self.format)
+            if 0 in x.shape:
                 return
+            row, col = index
+            return self._set_sparse(row, col, x)
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
+
+    def _set_sparse(self, row, col, x):
+        """Dispatch to one of the _set_<type>X<type>_sparse methods."""
+        if isinstance(row, INT_TYPES):
+            if isinstance(col, INT_TYPES):
+                if x.shape[0] * x.shape[1] != 1:
+                    raise ValueError("Trying to assign a sequence to an item")
+                val = self.dtype.type(x.toarray().item())
+                return self._set_intXint(row, col, val)
+            elif isinstance(col, slice):
+                return self._set_intXslice_sparse(row, col, x)
+            else:
+                return self._set_intXarray_sparse(row, col, x)
+        elif isinstance(row, slice):
+            if isinstance(col, INT_TYPES):
+                return self._set_sliceXint_sparse(row, col, x)
+            elif isinstance(col, slice):
+                return self._set_sliceXslice_sparse(row, col, x)
+            else:
+                return self._set_sliceXarray_sparse(row, col, x)
+        # row must be an array.
+        if isinstance(col, INT_TYPES):
+            return self._set_arrayXint_sparse(row, col, x)
+        elif isinstance(col, slice):
+            return self._set_arrayXslice_sparse(row, col, x)
+        # col must be an array.
+        is_outer = (row.ndim == 2 and row.shape[1] == 1 and
+                    (col.ndim == 1 or col.shape[0] == 1))
+        if is_outer:
+            return self._set_columnXarray_sparse(row[:, 0], col.reshape(-1), x)
+        row, col = _broadcast_arrays(row, col)
+        if row.shape != col.shape:
+            raise IndexError("row and column index arrays mismatch")
+        if row.ndim == 1:
+            row = row[None]
+            col = col[None]
+        return self._set_arrayXarray_sparse(row, col, x)
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -487,6 +618,38 @@ def _prepare_index_for_memoryview(i, j, x=None):
         return i, j, x
     else:
         return i, j
+
+
+def _prepare_sparse_rhs(x, nrows, ncols, dtype):
+    """Convert sparse `x` into broadcasted (i, j, data) for assignment."""
+    x = x.tocoo(copy=False)
+    if x.ndim == 1:
+        shape_2d = (x.shape[0], 1) if ncols == 1 else (1, x.shape[0])
+        x = x.reshape(shape_2d, copy=False)
+    broadcast_row = x.shape[0] == 1 and nrows != 1
+    broadcast_col = x.shape[1] == 1 and ncols != 1
+    if not ((broadcast_row or x.shape[0] == nrows) and
+            (broadcast_col or x.shape[1] == ncols)):
+        raise ValueError(f"shape mismatch in assignment: {x.shape} vs {(nrows,ncols)}")
+    if not x.has_canonical_format:
+        x = x.copy()
+        x.sum_duplicates()
+    if x.data.size == 0 or nrows == 0 or ncols == 0:
+        idx = np.empty(0, dtype=np.intp)
+        data = np.empty(0, dtype=dtype)
+        return idx, idx, data
+    row = x.row
+    col = x.col
+    data = x.data.astype(dtype, copy=False)
+    if broadcast_row:
+        row = np.repeat(np.arange(nrows, dtype=np.intp), len(row))
+        col = np.tile(col, nrows)
+        data = np.tile(data, nrows)
+    if broadcast_col:
+        row = np.repeat(row, ncols)
+        col = np.tile(np.arange(ncols, dtype=np.intp), len(col))
+        data = np.repeat(data, ncols)
+    return row, col, data
 
 
 def isspmatrix_lil(x):
