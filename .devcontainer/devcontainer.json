@@ -4,7 +4,11 @@
 		"memory": "8gb" // Added this because compilation fails on scipy.sparse if we have less than 8gb of RAM
 	},
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-	"features": {},
+	"features": {
+		"ghcr.io/devcontainers/features/sshd:1": {
+          "version": "latest"
+        }
+	},
 
 	"onCreateCommand": "bash .devcontainer/setup.sh",
 	"postCreateCommand": "",
