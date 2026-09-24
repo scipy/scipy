@@ -2367,7 +2367,7 @@ def anderson(x, dist='norm', *, method="interpolate"):
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
         If `method` is ``"interpolated"``, the p-value is interpolated from
-        pre-calculated tables.
+        pre-calculated tables (without extrapolating).
         If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
@@ -2701,7 +2701,7 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
         instance of `PermutationMethod`, the p-value is computed using
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
-        from tabulated values.
+        from tabulated values (without extrapolating).
 
     Returns
     -------

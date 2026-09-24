@@ -250,6 +250,16 @@ class TestShapiro:
 
 class TestAnderson:
     def test_normal(self):
+        rs = RandomState(1234567890)
+
+        x1 = rs.standard_exponential(size=50)
+        res = stats.anderson(x1)
+        assert res.pvalue <= 0.01
+
+        x2 = rs.standard_normal(size=50)
+        res = stats.anderson(x2)
+        res.pvalue > 0.05
+
         v = np.ones(10)
         v[0] = 0
         A, _ = stats.anderson(v)
