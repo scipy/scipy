@@ -4,7 +4,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.4
+    jupytext_version: 1.19.5
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -88,7 +88,9 @@ output
 output.shape
 ```
 
-Not all linear algebra functions map to scalars. For instance, the {func}`scipy.linalg.expm` function maps from a matrix to a matrix with the same shape.
+Not all linear algebra functions map matrices to scalars. The map between core shapes of inputs and outputs is typically documented in the Notes section using a compact notation known as the "NEP 5 signature" of the function.
+
+For instance, the signature of `det` is `(i,i)->()`. This indicates that the function accepts a single, square matrix with shape `(i,i)`, where `i` is the side length, and returns a single output with shape `()`. As another example, the {func}`scipy.linalg.expm` function maps from a matrix to a matrix with the same shape, so its signature is `(i,i)->(i,i)`.
 
 ```{code-cell} ipython3
 A = np.eye(3)
@@ -102,7 +104,7 @@ output = linalg.expm(input)
 output.shape
 ```
 
-Generalization of these rules to functions with multiple inputs and outputs is straightforward. For instance, the {func}`scipy.linalg.eig` function produces two outputs by default, a vector and a matrix.
+Generalization of these rules to functions with multiple inputs and outputs is straightforward. For instance, the {func}`scipy.linalg.eig` function produces two outputs by default, a vector and a matrix. Its signature is `(i,i)->(i),(i,i)`.
 
 ```{code-cell} ipython3
 evals, evecs = linalg.eig(A)
@@ -157,7 +159,7 @@ evals, evecs = linalg.eig(input_a, b=input_b)
 evals.shape, evecs.shape
 ```
 
-There are a few functions for which the core dimensionality (i.e., the length of the core shape) of an argument or output can be either 1 or 2. In these cases, the core dimensionality is taken to be 1 if the array has only one dimension and 2 if the array has two or more dimensions. For instance, consider the following calls to {func}`scipy.linalg.solve`. The simplest case is a single square matrix `A` and a single vector `b`:
+There are a few functions for which the core dimensionality (i.e., the length of the core shape) of an argument or output can be either 1 or 2. In these cases, the core dimensionality is taken to be 1 if the array has only one dimension and 2 if the array has two or more dimensions. For instance, consider the following calls to {func}`scipy.linalg.solve`, which has two possible signatures `(i,i),(i)->(i)` or `(i,i),(i,j)->(i,j)`. The simplest case is the first: a single square matrix `A` and a single vector `b`:
 
 ```{code-cell} ipython3
 A = np.eye(5)
@@ -167,7 +169,7 @@ linalg.solve(A, b)
 
 In this case, the core dimensionality of `A` is 2 (shape `(5, 5)`), the core dimensionality of `b` is 1  (shape `(5,)`), and the core dimensionality of the output is 1  (shape `(5,)`).
 
-However, `b` can also be a two-dimensional array in which the *columns* are taken to be one-dimensional vectors.
+However, the second signature indicates that `b` can also be a two-dimensional array in which the *columns* are taken to be one-dimensional vectors.
 
 ```{code-cell} ipython3
 b = np.empty((5, 2))
