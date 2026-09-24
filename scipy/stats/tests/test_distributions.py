@@ -9691,6 +9691,29 @@ def test_ncf_variance():
     assert_allclose(v, 42.75, rtol=1e-14)
 
 
+def test_ncf_sf_nc0_matches_f():
+    # gh-26188: ncf.sf(nc=0) returned -cdf instead of the Fisher survival.
+    dfn, dfd = 1, 7
+    x = stats.f.ppf(0.95, dfn, dfd)
+    assert_allclose(stats.ncf.sf(x, dfn, dfd, 0.0), stats.f.sf(x, dfn, dfd))
+    assert_allclose(
+        stats.ncf.sf(x, dfn, dfd, 0.0),
+        1 - stats.ncf.cdf(x, dfn, dfd, 0.0),
+        rtol=1e-12,
+    )
+    xs = np.array([0.5, x, 10.0])
+    ncs = np.array([0.0, 1.5, 0.0])
+    got = stats.ncf.sf(xs, dfn, dfd, ncs)
+    expected = np.array([
+        stats.f.sf(xs[0], dfn, dfd),
+        1 - stats.ncf.cdf(xs[1], dfn, dfd, 1.5),
+        stats.f.sf(xs[2], dfn, dfd),
+    ])
+    assert_allclose(got, expected)
+    grid = stats.ncf.sf(np.linspace(0.1, 20, 50), 2, 10, 0)
+    assert np.all((grid >= -1e-12) & (grid <= 1 + 1e-12))
+
+
 def test_ncf_cdf_spotcheck():
     # Regression test for gh-15582 testing against values from R/MATLAB
     # Generate check_val from R or MATLAB as follows:

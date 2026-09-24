@@ -8027,7 +8027,13 @@ class ncf_gen(rv_continuous):
             return sc.ncfdtri(dfn, dfd, nc, q)
 
     def _sf(self, x, dfn, dfd, nc):
-        return scu._ncf_sf(x, dfn, dfd, nc)
+        # Boost's complement cdf of the noncentral F returns -cdf when nc == 0
+        # (gh-26188). The central survival function is fdtrc.
+        result = scu._ncf_sf(x, dfn, dfd, nc)
+        central = np.asarray(nc) == 0
+        if np.any(central):
+            result = np.where(central, sc.fdtrc(dfn, dfd, x), result)
+        return result
 
     def _isf(self, x, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
