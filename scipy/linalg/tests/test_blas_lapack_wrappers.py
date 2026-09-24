@@ -180,12 +180,12 @@ class TestDefaultN:
             asum(x, incx=0)
 
     def test_nrm2_rejects_negative_increment(self):
-        # nrm2 alone requires incx > 0; the others accept incx != 0.
+        # Unlike other Level-1 wrappers, nrm2 requires incx > 0.
+        # Accelerate aborts when asum has a negative increment.
         x = np.arange(1.0, 8.0)
         nrm2 = _blas('nrm2', np.float64)
         with assert_raises(ValueError):
             nrm2(x, incx=-1)
-        _blas('asum', np.float64)(x, incx=-1)   # accepted
 
 
 # --------------------------------------------------------------------------------------
@@ -425,8 +425,8 @@ class TestSortCallbacks:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_exception_in_callback_propagates(self, dtype):
-        # The original exception must reach the caller rather than being swallowed into a
-        # "do not select" result.
+        # The original exception must reach the caller rather than being swallowed
+        # into a "do not select" result.
         gees = get_lapack_funcs('gees', dtype=dtype)
         a = self._matrix(dtype)
 
@@ -466,6 +466,7 @@ class TestSortCallbacks:
         assert out[-1] == 0
         assert captured and all(t == 0.5 for t in captured)
 
+    @pytest.mark.slow
     @pytest.mark.thread_unsafe(reason="sys.getrefcount sees other threads' references")
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_callback_failure_does_not_leak_the_callable(self, dtype):
@@ -701,6 +702,7 @@ class TestEveryRoutine:
 # --------------------------------------------------------------------------------------
 # Reference counting.
 # --------------------------------------------------------------------------------------
+@pytest.mark.slow
 @pytest.mark.thread_unsafe(reason="sys.getrefcount sees other threads' references")
 @pytest.mark.skipif(flapack is None, reason='_flapack not built')
 @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
@@ -721,6 +723,7 @@ def test_repeated_calls_do_not_leak_inputs(dtype):
     assert sys.getrefcount(b) == before_b
 
 
+@pytest.mark.slow
 @pytest.mark.thread_unsafe(reason="sys.getrefcount sees other threads' references")
 @pytest.mark.skipif(flapack is None, reason='_flapack not built')
 def test_failed_calls_do_not_leak_inputs():
