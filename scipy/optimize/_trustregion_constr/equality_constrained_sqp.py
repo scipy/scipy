@@ -80,7 +80,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     try:
         Z, LS, Y = projections(A, factorization_method)
     except ValueError as e:
-        if str(e) == "expected square matrix":
+        if str(e).startswith("The core shape(s) of the array argument(s)"):
             # can be the case if there are more equality
             # constraints than independent variables
             raise ValueError(
