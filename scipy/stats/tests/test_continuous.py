@@ -243,6 +243,7 @@ class DistributionsTest:
         check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
                                 case.result_shape, case.rng)
 
+    @pytest.mark.thread_unsafe(reason="looks like an _rng_spawn issue?")
     def test_quasi_random_sample(self, case):
         sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
         qrng = qmc.Halton(d=1, seed=case.rng)
