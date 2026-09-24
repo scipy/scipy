@@ -38,6 +38,8 @@ cython = "*"
 pythran = "*"
 pybind11 = "*"
 numpy = "*"
+# currently, we use openblas uniformly, matching our wheels,
+# which differs from conda-forge's default of mkl on windows.
 blas-devel = { version = "*", build = "*_openblas" }
 
 
