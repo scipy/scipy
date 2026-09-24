@@ -15,7 +15,7 @@ from scipy.linalg.lapack import _ensure_dtype_cdsz
 
 
 # dtypes for testing size-0 case following precedent set in gh-20295
-dtypes = [np.int32, np.int64, np.float32, np.float64, np.complex64, np.complex128]
+dtypes = [int, np.float32, np.float64, np.complex64, np.complex128]
 _low_prec_dtypes = [np.float32, np.complex64]
 
 

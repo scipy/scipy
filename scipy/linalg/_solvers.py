@@ -226,8 +226,6 @@ def _solve_discrete_lyapunov_direct(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=direct`. It is not supposed to be called directly.
     """
-    a, q = _ensure_dtype_cdsz(a, q)
-
     lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0], dtype=a.dtype) - lhs
     x = solve(lhs, q.flatten())
@@ -242,8 +240,6 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=bilinear`. It is not supposed to be called directly.
     """
-    a, q = _ensure_dtype_cdsz(a, q)
-
     eye = np.eye(a.shape[0], dtype=a.dtype)
     aH = a.conj().transpose()
     aHI_inv = inv(aH + eye)
@@ -325,6 +321,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     """
     a = np.asarray(a)
     q = np.asarray(q)
+    a, q = _ensure_dtype_cdsz(a, q)
     if method is None:
         # Select automatically based on size of matrices
         if a.shape[0] >= 10:
