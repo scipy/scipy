@@ -41,9 +41,9 @@ distcont = dict(distcont)
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
+# Do not select a backend here: plotting tests request the `mpl_agg` fixture
+# instead (gh-3588).
 try:
-    import matplotlib
-    matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
@@ -1824,6 +1824,7 @@ class TestProbplot:
         assert_allclose(osr1, osr2)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         fig = plt.figure()
         fig.add_subplot(111)
@@ -2404,6 +2405,7 @@ class TestPpccPlot:
         assert_allclose(ppcc1, ppcc3, rtol=1e-20)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
@@ -2978,6 +2980,7 @@ class TestBoxcoxNormplot:
         assert_allclose(ppcc, ppcc_expected)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
