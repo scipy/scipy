@@ -2219,6 +2219,17 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.grid(True)
     >>> plt.show()
 
+    FIR filter example (see also `firwin`, `firwin2`):
+
+    >>> b_fir = signal.firwin(29, 0.05)  # 29-tap lowpass FIR
+    >>> y_fir = signal.lfilter(b_fir, 1.0, xn)
+    >>> plt.figure
+    >>> plt.plot(t, xn, 'b', alpha=0.3, label='noisy')
+    >>> plt.plot(t, y_fir, 'g', label='FIR lfilter')
+    >>> plt.legend(loc='best')
+    >>> plt.grid(True)
+    >>> plt.show()
+
     """
     xp = array_namespace(b, a, x, zi)
     device = xp_result_device(b, a, x, zi)
