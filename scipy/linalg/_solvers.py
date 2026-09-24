@@ -467,7 +467,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 @_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
-                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
+                   signature="(i,i),(i,j),(i,i),(j,j),(i,i),(i,j)->(i,i)")
 def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
@@ -685,7 +685,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 @_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
-                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
+                   signature="(i,i),(i,j),(i,i),(j,j),(i,i),(i,j)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(

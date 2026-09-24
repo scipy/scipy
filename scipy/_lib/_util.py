@@ -1118,7 +1118,7 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 """
 
 
-def validate_from_signature(core_shapes, signature):
+def validate_from_signature(names, core_shapes, signature):
     # ENH: parse more efficiently with regex.
     # Preserve functions (e.g. max, min) and `eval` below.
     inputs, _ = signature.split("->")
@@ -1127,6 +1127,7 @@ def validate_from_signature(core_shapes, signature):
     for i, input in enumerate(inputs):
         for j, l in enumerate(input.split(",")):
             input_dim_to_letter[(i, j)] = l
+        inputs[i] = ", ".join(input.split(","))
 
     letter_to_length = {'': ()}
     for i, core_shape in enumerate(core_shapes):
@@ -1134,9 +1135,15 @@ def validate_from_signature(core_shapes, signature):
             l = input_dim_to_letter[(i, j)]
             if letter_to_length.get(l, None):
                 if letter_to_length[l] != length:
+                    shapes = ", ".join([f"{names[k]}: {core_shapes[k]}"
+                                        for k in range(len(names))])
+                    signatures = ", ".join([f"{names[k]}: ({inputs[k]})"
+                                            for k in range(len(names))])
                     message = (
-                        f"The core shape(s) of the array argument(s), {core_shapes}, "
-                        f"is/are incompatible with the function signature, {signature}."
+                        "The core shape(s) of the array argument(s): \n"
+                        f"{shapes}\n"
+                        "is/are incompatible with the shapes in the signature: \n"
+                        f"{signatures}"
                     )
                     raise ValueError(message)
             else:
@@ -1266,8 +1273,9 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
 
             # Raise if core shapes are incompatible
             if signature is not None:
-                sig = signature(*arrays, *other_args, **kwargs) if callable(signature) else signature
-                letter_to_length = validate_from_signature(core_shapes, sig)
+                sig = (signature(*arrays, *other_args, **kwargs)
+                       if callable(signature) else signature)
+                letter_to_length = validate_from_signature(names, core_shapes, sig)
 
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
