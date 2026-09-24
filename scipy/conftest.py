@@ -223,6 +223,38 @@ def check_fpu_mode(request):
                       category=FPUModeChangeWarning, stacklevel=0)
 
 
+@pytest.fixture
+def mpl_agg():
+    """Run a plotting test on matplotlib's non-interactive Agg backend and
+    switch back to the previously active backend afterwards.
+
+    The plotting tests used to select Agg at import time, which leaked into
+    the calling process: after ``scipy.test()`` a user's plots silently
+    stopped appearing (gh-3588). Function-scoped so each plotting test is
+    self-contained regardless of ordering or an aborted run.
+
+    Notes: the backend that was *resolved* before the test is what gets
+    restored (matplotlib offers no public way to return to the unresolved
+    "auto" state), and all open figures are closed on teardown.
+    """
+    try:
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except Exception as e:  # ImportError, or ValueError from a bad rc setting
+        pytest.skip(f"matplotlib not usable: {e!r}")
+    prev = matplotlib.get_backend()
+    plt.switch_backend("Agg")
+    yield
+    plt.close("all")
+    try:
+        plt.switch_backend(prev)
+    except Exception:
+        # The previous backend cannot be re-activated (e.g. a GUI backend on a
+        # headless machine); it was unusable before the test as well, so stay
+        # on Agg rather than fail the test run.
+        pass
+
+
 if not PARALLEL_RUN_AVAILABLE:
     @pytest.fixture
     def num_parallel_threads():
@@ -241,7 +273,7 @@ with warnings.catch_warnings():
     _array_api_backends = pytest.mark.array_api_backends
     _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
-                     'dask.array'}
+                     'dask.array', 'mparray'}
 xp_available_backends = [
     pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
@@ -263,6 +295,14 @@ if SCIPY_ARRAY_API:
         array_api_strict.set_array_api_strict_flags(
             api_version='2025.12'
         )
+    except ImportError:
+        pass
+
+    try:
+        import mparray  # pyrefly: ignore[missing-import]
+        xp_available_backends.append(
+            pytest.param(mparray, id='mparray',
+                         marks=_array_api_backends))
     except ImportError:
         pass
 
@@ -531,7 +571,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions",
+            "mparray"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 
