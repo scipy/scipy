@@ -7,9 +7,10 @@
 	"features": {
 		"ghcr.io/devcontainers/features/sshd:1": {
           "version": "latest"
-        }
+        },
+		"ghcr.io/devcontainers/features/conda:1": {}
 	},
-
+    
 	"onCreateCommand": "bash .devcontainer/setup.sh",
 	"postCreateCommand": "",
 
