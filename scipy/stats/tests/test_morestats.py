@@ -1824,6 +1824,7 @@ class TestProbplot:
         assert_allclose(osr1, osr2)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         fig = plt.figure()
@@ -2405,6 +2406,7 @@ class TestPpccPlot:
         assert_allclose(ppcc1, ppcc3, rtol=1e-20)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
@@ -2980,6 +2982,7 @@ class TestBoxcoxNormplot:
         assert_allclose(ppcc, ppcc_expected)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
