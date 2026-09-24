@@ -419,10 +419,10 @@ class _lil_base(_spbase, IndexMixin):
         elif isinstance(col, slice):
             return self._set_arrayXslice_sparse(row, col, x)
         # col must be an array.
-        is_outer = (row.ndim == 2 and row.shape[1] == 1 and
-                    (col.ndim == 1 or col.shape[0] == 1))
-        if is_outer:
+        if row.ndim == 2 and row.shape[1] == 1 and (col.ndim == 1 or col.shape[0] == 1):
             return self._set_columnXarray_sparse(row[:, 0], col.reshape(-1), x)
+        if col.ndim == 2 and col.shape[1] == 1 and (row.ndim == 1 or row.shape[0] == 1):
+            return self._set_columnXarray_sparse(row.reshape(-1), col[:, 0], x.T)
         row, col = _broadcast_arrays(row, col)
         if row.shape != col.shape:
             raise IndexError("row and column index arrays mismatch")
@@ -622,10 +622,9 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 def _prepare_sparse_rhs(x, nrows, ncols, dtype):
     """Convert sparse `x` into broadcasted (i, j, data) for assignment."""
-    x = x.tocoo(copy=False)
-    if x.ndim == 1:
-        shape_2d = (x.shape[0], 1) if ncols == 1 else (1, x.shape[0])
-        x = x.reshape(shape_2d, copy=False)
+    x = x.tocoo(copy=False).reshape(x._shape_as_2d, copy=False)
+    if ncols == 1 and x.shape == (1, nrows):
+        x = x.T
     broadcast_row = x.shape[0] == 1 and nrows != 1
     broadcast_col = x.shape[1] == 1 and ncols != 1
     if not ((broadcast_row or x.shape[0] == nrows) and
