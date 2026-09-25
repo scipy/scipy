@@ -4005,6 +4005,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
         dfn, dfd = dfbn, dfwn
 
     else:
+        # A large common offset can degrade both the means and variances in
+        # low precision. Center before computing either statistic, using the
+        # same offset for every group to retain the differences between means.
+        # A masked reference would mask otherwise valid observations.
+        if not is_marray(xp):
+            offset = samples[0][..., :1]
+            samples = [sample - offset for sample in samples]
+
         # calculate basic statistics for each sample
         # Beginning of second paragraph [4] page 1:
         # "As a particular case $y_t$ may be the means ... of samples
