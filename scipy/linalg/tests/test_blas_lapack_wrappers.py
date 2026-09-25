@@ -27,6 +27,7 @@ from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
 from scipy.linalg import get_lapack_funcs
+from scipy._lib._testutils import IS_WASM
 
 try:
     from scipy.linalg import _fblas as fblas
@@ -556,6 +557,8 @@ class TestScalarCoercion:
         # PyNumber_Long accepts it, and so did f2py.
         assert_allclose(self.asum(self.x, n='3'), self.asum(self.x, n=3))
 
+    @pytest.mark.skipif(IS_WASM, reason="overflows the smaller WASM stack before "
+                                         "the recursion limit is reached")
     def test_self_referential_sequence_raises_recursion_error(self):
         # Pure-C descent into element 0 would otherwise overflow the C stack; the
         # converters opt into the interpreter's depth accounting instead.
