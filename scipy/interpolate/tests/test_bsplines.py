@@ -22,6 +22,7 @@ from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
         CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
+        make_lsq_ndbspline, make_lsq_ndbspline_from_grid,
 )
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
@@ -4005,6 +4006,37 @@ class TestMakeLSQNdBSplineFromGrid:
 
         with assert_raises(ValueError, match="`w` must have shape"):
             _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w[:-1])
+
+
+class TestMakeLSQNdBSplinePublicAPI:
+    def test_scattered_data(self):
+        x = np.array(
+            [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [0.5, 0.5]]
+        )
+        y = x[:, 0] + 2.0 * x[:, 1]
+        t = (
+            np.array([0.0, 0.0, 1.0, 1.0]),
+            np.array([0.0, 0.0, 1.0, 1.0]),
+        )
+
+        spl = make_lsq_ndbspline(x, y, t, k=1)
+
+        assert isinstance(spl, NdBSpline)
+        xp_assert_close(spl([[0.25, 0.75]]), np.array([1.75]), atol=1e-13)
+
+    def test_gridded_data(self):
+        points = (np.linspace(0.0, 1.0, 4), np.linspace(-1.0, 1.0, 5))
+        x0, x1 = np.meshgrid(*points, indexing="ij")
+        values = x0 + 2.0 * x1
+        t = (
+            np.array([0.0, 0.0, 1.0, 1.0]),
+            np.array([-1.0, -1.0, 1.0, 1.0]),
+        )
+
+        spl = make_lsq_ndbspline_from_grid(points, values, t, k=1)
+
+        assert isinstance(spl, NdBSpline)
+        xp_assert_close(spl([[0.25, 0.5]]), np.array([1.25]), atol=1e-13)
 
 
 class TestMakeND:
