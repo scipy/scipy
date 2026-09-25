@@ -16,6 +16,7 @@
  */
 #include <Python.h>
 #include <cstring>
+#include <new>       /* bad_alloc: build_doc is noexcept and catches it */
 #include <string>
 
 namespace blas {
@@ -66,7 +67,7 @@ namespace blas {
         static constexpr const char *P_OVERWRITE_B  = "overwrite_b : int, optional\n    If nonzero, `b` may be overwritten in place. Default is 0.\n";
 
         static std::string
-        doc_axpy(const char *name, const Dtype &t) noexcept
+        doc_axpy(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, a=1.0, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -88,7 +89,7 @@ namespace blas {
         }
 
         static std::string
-        doc_nrm2(const char *name, const Dtype &) noexcept
+        doc_nrm2(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, n=None, offx=0, incx=1)\n\n";
@@ -106,7 +107,7 @@ namespace blas {
         }
 
         static std::string
-        doc_asum(const char *name, const Dtype &t) noexcept
+        doc_asum(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x, n=None, offx=0, incx=1)\n\n";
@@ -128,7 +129,7 @@ namespace blas {
         }
 
         static std::string
-        doc_iamax(const char *name, const Dtype &t) noexcept
+        doc_iamax(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x, n=None, offx=0, incx=1)\n\n";
@@ -154,7 +155,7 @@ namespace blas {
         }
 
         static std::string
-        doc_copy(const char *name, const Dtype &) noexcept
+        doc_copy(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -175,7 +176,7 @@ namespace blas {
         }
 
         static std::string
-        doc_swap(const char *name, const Dtype &) noexcept
+        doc_swap(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -197,7 +198,7 @@ namespace blas {
         }
 
         static std::string
-        doc_scal(const char *name, const Dtype &t) noexcept
+        doc_scal(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, x, n=None, offx=0, incx=1)\n\n";
@@ -218,7 +219,7 @@ namespace blas {
         /* csscal/zdscal: the scale factor is real even though `x` is complex, and the input is
          * copied unless overwrite_x is set (unlike the regular scal, which always works in place). */
         static std::string
-        doc_scal_real(const char *name, const Dtype &) noexcept
+        doc_scal_real(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, x, n=None, offx=0, incx=1, overwrite_x=0)\n\n";
@@ -238,7 +239,7 @@ namespace blas {
         }
 
         static std::string
-        doc_dot(const char *name, const Dtype &) noexcept
+        doc_dot(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -259,7 +260,7 @@ namespace blas {
         }
 
         static std::string
-        doc_dotu(const char *name, const Dtype &) noexcept
+        doc_dotu(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -280,7 +281,7 @@ namespace blas {
         }
 
         static std::string
-        doc_dotc(const char *name, const Dtype &) noexcept
+        doc_dotc(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, n=None, offx=0, incx=1, offy=0, incy=1)\n\n";
@@ -302,7 +303,7 @@ namespace blas {
         }
 
         static std::string
-        doc_rotg(const char *name, const Dtype &t) noexcept
+        doc_rotg(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b)\n\n";
@@ -322,7 +323,7 @@ namespace blas {
         }
 
         static std::string
-        doc_rotmg(const char *name, const Dtype &) noexcept
+        doc_rotmg(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d1, d2, x1, y1)\n\n";
@@ -341,7 +342,7 @@ namespace blas {
         }
 
         static std::string
-        doc_rot(const char *name, const Dtype &t) noexcept
+        doc_rot(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x, y, c, s, n=None, offx=0, incx=1, offy=0, incy=1, "
@@ -374,7 +375,7 @@ namespace blas {
         }
 
         static std::string
-        doc_rotm(const char *name, const Dtype &) noexcept
+        doc_rotm(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(x, y, param, n=None, offx=0, incx=1, offy=0, incy=1, "
@@ -402,7 +403,7 @@ namespace blas {
         /* ---- Level 2 ---------------------------------------------------------------------- */
 
         static std::string
-        doc_gemv(const char *name, const Dtype &t) noexcept
+        doc_gemv(const char *name, const Dtype &t)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -429,7 +430,7 @@ namespace blas {
         }
 
         static std::string
-        doc_gbmv(const char *name, const Dtype &t) noexcept
+        doc_gbmv(const char *name, const Dtype &t)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -460,7 +461,7 @@ namespace blas {
 
         /* sbmv (symmetric) / hbmv (Hermitian) banded matrix-vector product. */
         static std::string
-        doc_sbmv_hbmv(const char *name, const Dtype &t, const char *kind) noexcept
+        doc_sbmv_hbmv(const char *name, const Dtype &t, const char *kind)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -490,7 +491,7 @@ namespace blas {
 
         /* symv (symmetric) / hemv (Hermitian) matrix-vector product. */
         static std::string
-        doc_symv_hemv(const char *name, const Dtype &t, const char *kind) noexcept
+        doc_symv_hemv(const char *name, const Dtype &t, const char *kind)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -519,7 +520,7 @@ namespace blas {
 
         /* spmv (symmetric) / hpmv (Hermitian) packed matrix-vector product. */
         static std::string
-        doc_spmv_hpmv(const char *name, const Dtype &t, const char *kind) noexcept
+        doc_spmv_hpmv(const char *name, const Dtype &t, const char *kind)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -549,7 +550,7 @@ namespace blas {
 
         /* spr / hpr: packed rank-1 update.  spr's alpha has the matrix type; hpr's alpha is real. */
         static std::string
-        doc_spr(const char *name, const Dtype &t) noexcept
+        doc_spr(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, alpha, x, ap, incx=1, offx=0, lower=0, overwrite_ap=0)\n\n";
@@ -571,7 +572,7 @@ namespace blas {
         }
 
         static std::string
-        doc_hpr(const char *name, const Dtype &) noexcept
+        doc_hpr(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(n, alpha, x, ap, incx=1, offx=0, lower=0, overwrite_ap=0)\n\n";
@@ -594,7 +595,7 @@ namespace blas {
 
         /* spr2 / hpr2: packed rank-2 update. */
         static std::string
-        doc_spr2_hpr2(const char *name, const Dtype &t, const char *kind, const char *formula) noexcept
+        doc_spr2_hpr2(const char *name, const Dtype &t, const char *kind, const char *formula)
         {
             std::string s;
             s += std::string(name) + "(n, alpha, x, y, ap, incx=1, offx=0, incy=1, offy=0, lower=0, overwrite_ap=0)\n\n";
@@ -622,7 +623,7 @@ namespace blas {
 
         /* syr: symmetric rank-1 update, returning the full matrix `a`. */
         static std::string
-        doc_syr(const char *name, const Dtype &t) noexcept
+        doc_syr(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(alpha, x, lower=0, incx=1, offx=0, n=None, a=None, overwrite_a=0)\n\n";
@@ -645,7 +646,7 @@ namespace blas {
 
         /* her: Hermitian rank-1 update.  alpha is accepted as complex but only its real part is used. */
         static std::string
-        doc_her(const char *name, const Dtype &) noexcept
+        doc_her(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(alpha, x, lower=0, incx=1, offx=0, n=None, a=None, overwrite_a=0)\n\n";
@@ -668,7 +669,7 @@ namespace blas {
 
         /* syr2 / her2: rank-2 update returning the full matrix `a`. */
         static std::string
-        doc_syr2_her2(const char *name, const Dtype &t, const char *kind, const char *formula) noexcept
+        doc_syr2_her2(const char *name, const Dtype &t, const char *kind, const char *formula)
         {
             std::string s;
             s += std::string(name) + "(alpha, x, y, lower=0, incx=1, offx=0, incy=1, offy=0, n=None, a=None, overwrite_a=0)\n\n";
@@ -696,7 +697,7 @@ namespace blas {
 
         /* ger / geru / gerc: general rank-1 update ``a = alpha*outer(x, op(y)) + a``. */
         static std::string
-        doc_ger_family(const char *name, const Dtype &t, const char *outer) noexcept
+        doc_ger_family(const char *name, const Dtype &t, const char *outer)
         {
             std::string s;
             s += std::string(name) + "(alpha, x, y, incx=1, incy=1, a=None, overwrite_x=0, overwrite_y=0, overwrite_a=0)\n\n";
@@ -729,7 +730,7 @@ namespace blas {
          * part of the public signature, so `offx_first` selects it rather than hiding it. */
         static std::string
         doc_trmv_trsv(const char *name, const char *action, const char *result,
-                      bool offx_first) noexcept
+                      bool offx_first)
         {
             std::string s;
             s += std::string(name) + "(a, x, "
@@ -756,7 +757,7 @@ namespace blas {
 
         /* Banded triangular matrix-vector product (tbmv) or solve (tbsv). */
         static std::string
-        doc_tbmv_tbsv(const char *name, const char *action, const char *result) noexcept
+        doc_tbmv_tbsv(const char *name, const char *action, const char *result)
         {
             std::string s;
             s += std::string(name) + "(k, a, x, incx=1, offx=0, lower=0, trans=0, diag=0, overwrite_x=0)\n\n";
@@ -782,7 +783,7 @@ namespace blas {
 
         /* Packed triangular matrix-vector product (tpmv) or solve (tpsv). */
         static std::string
-        doc_tpmv_tpsv(const char *name, const char *action, const char *result) noexcept
+        doc_tpmv_tpsv(const char *name, const char *action, const char *result)
         {
             std::string s;
             s += std::string(name) + "(n, ap, x, incx=1, offx=0, lower=0, trans=0, diag=0, overwrite_x=0)\n\n";
@@ -809,7 +810,7 @@ namespace blas {
         /* ---- Level 3 ---------------------------------------------------------------------- */
 
         static std::string
-        doc_gemm(const char *name, const Dtype &t) noexcept
+        doc_gemm(const char *name, const Dtype &t)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -834,7 +835,7 @@ namespace blas {
 
         /* symm (symmetric) / hemm (Hermitian) matrix-matrix product. */
         static std::string
-        doc_symm_hemm(const char *name, const Dtype &t, const char *kind) noexcept
+        doc_symm_hemm(const char *name, const Dtype &t, const char *kind)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -859,7 +860,7 @@ namespace blas {
         static std::string doc_hemm(const char *name, const Dtype &t) { return doc_symm_hemm(name, t, "Hermitian"); }
 
         static std::string
-        doc_syrk(const char *name, const Dtype &t) noexcept
+        doc_syrk(const char *name, const Dtype &t)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -883,7 +884,7 @@ namespace blas {
         /* herk: Hermitian rank-k.  alpha and beta are accepted as complex but only their real
          * parts are used (the result is Hermitian). */
         static std::string
-        doc_herk(const char *name, const Dtype &) noexcept
+        doc_herk(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(alpha, a, beta=0.0, c=None, trans=0, lower=0, overwrite_c=0)\n\n";
@@ -904,7 +905,7 @@ namespace blas {
         }
 
         static std::string
-        doc_syr2k(const char *name, const Dtype &t) noexcept
+        doc_syr2k(const char *name, const Dtype &t)
         {
             const std::string sc = t.scalar;
             std::string s;
@@ -929,7 +930,7 @@ namespace blas {
         /* her2k: Hermitian rank-2k.  alpha is used in full; beta is accepted as complex but only
          * its real part is used. */
         static std::string
-        doc_her2k(const char *name, const Dtype &) noexcept
+        doc_her2k(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(alpha, a, b, beta=0.0, c=None, trans=0, lower=0, overwrite_c=0)\n\n";
@@ -954,7 +955,7 @@ namespace blas {
 
         /* trmm (product) / trsm (solve): triangular matrix-matrix operations. */
         static std::string
-        doc_trmm_trsm(const char *name, const Dtype &t, const char *action, const char *result) noexcept
+        doc_trmm_trsm(const char *name, const Dtype &t, const char *action, const char *result)
         {
             std::string s;
             s += std::string(name) + "(alpha, a, b, side=0, lower=0, trans_a=0, diag=0, overwrite_b=0)\n\n";
@@ -1074,8 +1075,19 @@ namespace blas {
         {
             for (const DocEntry &e : doc_table) {
                 if (std::strcmp(e.name, name) == 0) {
-                    const std::string d = e.fn(e.name, e.t);
-                    return PyUnicode_FromStringAndSize(d.data(), static_cast<Py_ssize_t>(d.size()));
+                    /* The templates build their result in a `std::string`, so they can throw.
+                     * This is `noexcept` because it is called straight from a getset slot, so
+                     * the throw has to become a Python exception here, not a terminate():
+                     * MemoryError for `std::bad_alloc`, SystemError for anything else. */
+                    try {
+                        const std::string d = e.fn(e.name, e.t);
+                        return PyUnicode_FromStringAndSize(d.data(), static_cast<Py_ssize_t>(d.size()));
+                    }
+                    catch (const std::bad_alloc &) { return PyErr_NoMemory(); }
+                    catch (...) {
+                        PyErr_Format(PyExc_SystemError, "failed to build the docstring of %s", name);
+                        return nullptr;
+                    }
                 }
             }
             return nullptr;
