@@ -358,8 +358,6 @@ double xsf_ndtri(double x);
 double xsf_nrdtrimn(double p, double std, double x);
 double xsf_nrdtrisd(double mean, double p, double x);
 double xsf_owens_t(double h, double a);
-double xsf_pdtr(double k, double m);
-double xsf_pdtrc(double k, double m);
 double xsf_pdtri(int k, double y);
 double xsf_smirnov(int n, double x);
 double xsf_smirnovc(int n, double x);
@@ -458,6 +456,8 @@ double boost_stdtr_double(double df, double t);
 double boost_stdtridf_double(double p, double t);
 float boost_stdtrit_float(float df, float p);
 double boost_stdtrit_double(double df, double p);
+double boost_pdtr_double(double m, double k);
+double boost_pdtrc_double(double m, double k);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -652,10 +652,6 @@ double xsf_nrdtrisd(double mean, double p, double x) { return xsf::nrdtrisd(mean
 
 double xsf_owens_t(double h, double a) { return xsf::owens_t(h, a); }
 
-double xsf_pdtr(double k, double m) { return xsf::pdtr(k, m); }
-
-double xsf_pdtrc(double k, double m) { return xsf::pdtrc(k, m); }
-
 double xsf_pdtri(int k, double y) { return xsf::pdtri(k, y); }
 
 double xsf_smirnov(int n, double x) { return xsf::cpu::smirnov(n, x); }
@@ -870,3 +866,6 @@ float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
 
+double boost_pdtr_double(double m, double k) { return _poisson_cdf_stats_double(m, k); }
+
+double boost_pdtrc_double(double m, double k) { return _poisson_sf_stats_double(m, k); }

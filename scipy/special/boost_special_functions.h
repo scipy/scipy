@@ -2665,6 +2665,134 @@ pdtrik_double(double p, double x)
 }
 
 template<typename Real>
+Real
+poisson_cdf_wrap(const Real x, const Real n)
+{
+    if (std::isnan(x) || std::isnan(n)) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if ((x < Real(0)) || (n < Real(0))) {
+        sf_error("pdtr", SF_ERROR_DOMAIN, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if (n == Real(0)) {
+        return Real(1);
+    }
+    if (std::isinf(x)) {
+        return Real(1);
+    }
+    Real x_rounded_down = std::floor(x);
+    Real y;
+    try {
+        y = boost::math::cdf(boost::math::poisson_distribution<Real, SpecialPolicy>(n), x_rounded_down);
+    } catch (...) {
+        sf_error("pdtr", SF_ERROR_NO_RESULT, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if ((y < Real(0)) || (y > Real(1))) {
+        sf_error("pdtr", SF_ERROR_NO_RESULT, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    return y;
+}
+
+double _poisson_cdf_stats_double(double x, double n)
+{
+    return poisson_cdf_wrap(x, n);
+}
+
+float _poisson_cdf_stats_float(float x, float n)
+{
+    return poisson_cdf_wrap(x, n);
+}
+
+template<typename Real>
+Real
+poisson_sf_wrap(const Real x, const Real n)
+{
+    if (std::isnan(x) || std::isnan(n)) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if ((x < Real(0)) || (n < Real(0))) {
+        sf_error("pdtrc", SF_ERROR_DOMAIN, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if (n == Real(0)) {
+        return Real(0);
+    }
+    if (std::isinf(x)) {
+        return Real(0);
+    }
+    Real x_rounded_down = std::floor(x);
+    Real y;
+    try {
+        y = boost::math::cdf(
+            boost::math::complement(boost::math::poisson_distribution<Real, SpecialPolicy>(n), x_rounded_down));
+    } catch (...) {
+        sf_error("pdtrc", SF_ERROR_NO_RESULT, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    if ((y < Real(0)) || (y > Real(1))) {
+        sf_error("pdtrc", SF_ERROR_NO_RESULT, NULL);
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    return y;
+}
+
+double _poisson_sf_stats_double(double x, double n)
+{
+    return poisson_sf_wrap(x, n);
+}
+
+float _poisson_sf_stats_float(float x, float n)
+{
+    return poisson_sf_wrap(x, n);
+}
+
+template<typename Real>
+Real
+poisson_ppf_stats_wrap(const Real p, const Real n)
+{
+    if (std::isnan(p) || std::isnan(n)) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    // cdflib returns nan for p == 1, so we do the same
+    // for backwards compatibility
+    if (p == 1) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    // keep backwards compatible with cdflib which returns 0
+    // for p==0 or n==0
+    if ((p == 0) || (n == 0)) {
+        return Real(0);
+    }
+    boost::math::poisson_distribution<Real, StatsPolicy> dist(n);
+    Real y;
+    try {
+        y = boost::math::quantile(dist, p);
+    }
+    catch (...) {
+        y = std::numeric_limits<Real>::quiet_NaN();
+    }
+    // Guard against negative values, as the Poisson distribution's support starts at 0.
+    if (y < 0) {
+        return Real(0);
+    }
+    return y;
+}
+
+
+double _poisson_ppf_stats_double(double p, double n)
+{
+    return poisson_ppf_stats_wrap(p, n);
+}
+
+float _poisson_ppf_stats_float(float p, float n)
+{
+    return poisson_ppf_stats_wrap(p, n);
+}
+
+template<typename Real>
 static inline
 Real lgamma_p_wrap(Real a, Real z)
 {

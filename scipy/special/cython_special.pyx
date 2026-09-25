@@ -1378,8 +1378,6 @@ cdef extern from r"cython_special_wrappers.h":
     double xsf_nrdtrimn(double p, double std, double x) nogil
     double xsf_nrdtrisd(double mean, double p, double x) nogil
     double xsf_owens_t(double h, double a) nogil
-    double xsf_pdtr(double k, double m) nogil
-    double xsf_pdtrc(double k, double m) nogil
     double xsf_pdtri(int k, double y) nogil
     double xsf_smirnov(int n, double x) nogil
     double xsf_smirnovc(int n, double x) nogil
@@ -1457,6 +1455,8 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_stdtridf_double(double df, double t) nogil
     float boost_stdtrit_float(float df, float p) nogil
     double boost_stdtrit_double(double df, double p) nogil
+    double boost_pdtr_double(double m, double k) nogil
+    double boost_pdtrc_double(double m, double k) nogil
 
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
@@ -2982,11 +2982,11 @@ def _pbwa_pywrap(double x0, double x1):
 
 cpdef double pdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtr"""
-    return xsf_pdtr(x0, x1)
+    return boost_pdtr_double(x0, x1)
 
 cpdef double pdtrc(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtrc"""
-    return xsf_pdtrc(x0, x1)
+    return boost_pdtrc_double(x0, x1)
 
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtri"""
