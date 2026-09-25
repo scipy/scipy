@@ -796,6 +796,21 @@ class TestShgoArguments:
         options = {'local_iter': 4}
         run_test(test5_1, n=60, options=options)
 
+    def test_14_1_sort_min_pool_x_min(self):
+        """Test that `sort_min_pool` reorders `X_min` consistently with
+        `minimizer_pool` and `minimizer_pool_F`"""
+        shc = SHGO(lambda x: x[0], [(0, 1)])
+        # unsorted, parallel arrays as populated by `SHGO.minimizers`
+        shc.X_min = np.array([[3.], [1.], [2.]])
+        shc.minimizer_pool = np.array(['c', 'a', 'b'])
+        shc.minimizer_pool_F = np.array([3., 1., 2.])
+
+        shc.sort_min_pool()
+
+        assert_allclose(shc.X_min, [[1.], [2.], [3.]])
+        assert_allclose(shc.minimizer_pool_F, [1., 2., 3.])
+        assert (shc.minimizer_pool == ['a', 'b', 'c']).all()
+
     def test_15_min_every_iter(self):
         """Test minimize every iter options and cover function cache"""
         options = {'minimize_every_iter': True}
