@@ -1,5 +1,3 @@
-/* Written by Charles Harris charles.harris@sdl.usu.edu */
-
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
