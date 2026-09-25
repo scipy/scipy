@@ -10,6 +10,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
                           hessenberg, rq, eig_banded, eigvals_banded, eigh,
@@ -1806,11 +1807,14 @@ class TestSVDVals:
         svdvals(a)
 
 
+@make_xp_test_case(diagsvd)
 class TestDiagSVD:
-
-    def test_simple(self):
-        assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
-                                  [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+    @pytest.mark.parametrize('dtype', ["float32", "float64", "complex64", "complex128"])
+    def test_simple(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        res = diagsvd(xp.asarray([1, 0, 0], dtype=dtype), 3, 3)
+        ref = xp.asarray([[1, 0, 0], [0, 0, 0], [0, 0, 0]], dtype=dtype)
+        xp_assert_close(res, ref)
 
 
 class TestQR:
