@@ -1507,9 +1507,6 @@ def block_diag(mats, format=None, dtype=None):
     else:
         container = coo_matrix
 
-    row = []
-    col = []
-    data = []
     idx_arrays = []  # track idx_dtype of incoming sparse arrays
 
     converted = []
@@ -1530,6 +1527,9 @@ def block_diag(mats, format=None, dtype=None):
         converted.append((a, nrows, ncols))
     idx_dtype = get_index_dtype(idx_arrays, maxval=max(total_rows, total_cols))
 
+    row = []
+    col = []
+    data = []
     r_idx = 0
     c_idx = 0
     for a, nrows, ncols in converted:
