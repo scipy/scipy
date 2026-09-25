@@ -264,9 +264,7 @@ class SphericalVoronoi:
 
     def _calculate_areas_3d(self):
         self.sort_vertices_of_regions()
-        sizes = np.diff(self._intervals)
-        csizes = np.cumsum(sizes)
-        num_regions = csizes[-1]
+        starts, ends = self._intervals[:-1], self._intervals[1:]
 
         # We create a set of triangles consisting of one point and two Voronoi
         # vertices. The vertices of each triangle are adjacent in the sorted
@@ -278,24 +276,21 @@ class SphericalVoronoi:
         # The calculation of nbrs2 is a vectorized version of:
         # np.array([r for region in self.regions for r in np.roll(region, 1)])
         nbrs2 = np.roll(nbrs1, 1)
-        indices = np.roll(csizes, 1)
-        indices[0] = 0
-        nbrs2[indices] = nbrs1[csizes - 1]
+        nbrs2[starts] = nbrs1[ends - 1]
 
         # Normalize points and vertices.
         pnormalized = (self.points - self.center) / self.radius
         vnormalized = (self.vertices - self.center) / self.radius
 
         # Create the complete set of triangles and calculate their solid angles
-        triangles = np.hstack([pnormalized[point_indices],
-                               vnormalized[nbrs1],
-                               vnormalized[nbrs2]
-                               ]).reshape((num_regions, 3, 3))
+        triangles = np.stack([pnormalized[point_indices],
+                              vnormalized[nbrs1],
+                              vnormalized[nbrs2]
+                              ], axis=1)
         triangle_solid_angles = calculate_solid_angles(triangles)
 
         # Sum the solid angles of the triangles in each region
-        solid_angles = np.cumsum(triangle_solid_angles)[csizes - 1]
-        solid_angles[1:] -= solid_angles[:-1]
+        solid_angles = np.add.reduceat(triangle_solid_angles, starts)
 
         # Get polygon areas using A = omega * r**2
         return solid_angles * self.radius**2
