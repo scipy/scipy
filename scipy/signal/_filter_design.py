@@ -4726,6 +4726,35 @@ def buttap(N, *, xp=None, device=None):
     --------
     butter : Filter design function using this prototype
 
+    Examples
+    --------
+    Design a fourth order analog Butterworth lowpass prototype:
+
+    >>> from scipy import signal
+    >>> import numpy as np
+    >>> z, p, k = signal.buttap(4)
+    >>> z
+    array([], dtype=float64)
+    >>> p  # doctest: +NORMALIZE_WHITESPACE
+    array([-0.38268343+0.92387953j, -0.92387953+0.38268343j,
+           -0.92387953-0.38268343j, -0.38268343-0.92387953j])
+    >>> k
+    1.0
+
+    The poles lie on the unit circle in the left half of the complex plane,
+    and the prototype has no finite zeros:
+
+    >>> np.allclose(np.abs(p), 1.0)
+    True
+
+    The prototype cutoff frequency is 1 rad/s.  To obtain an analog
+    lowpass filter with a different cutoff frequency, transform it with
+    `lp2lp_zpk`:
+
+    >>> z2, p2, k2 = signal.lp2lp_zpk(z, p, k, wo=100)
+    >>> np.allclose(np.abs(p2), 100.0)
+    True
+
     """
     if xp is None:
         xp = np_compat
