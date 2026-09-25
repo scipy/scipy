@@ -10,6 +10,7 @@
  */
 #include <Python.h>
 #include <cstring>
+#include <new>       /* bad_alloc: build_doc is noexcept and catches it */
 #include <string>
 
 namespace lapack {
@@ -212,7 +213,7 @@ namespace lapack {
 
         /** @brief The `lwork` entry, naming the companion that computes the optimal value. */
         static std::string
-        p_lwork(const char *deflt, const char *query) noexcept
+        p_lwork(const char *deflt, const char *query)
         {
             return "lwork : int, optional\n    Size of the workspace. Default is " + std::string(deflt)
                  + ".\n    Use ``" + std::string(query) + "`` for the optimal value.\n";
@@ -222,7 +223,7 @@ namespace lapack {
          *         `sselect`, `dselect`, `cselect`, `zselect` -- so the signature is built from
          *         the wrapper's own first letter rather than a fixed name. */
         static std::string
-        doc_gees(const char *name, const Dtype &t) noexcept
+        doc_gees(const char *name, const Dtype &t)
         {
             const std::string sel = std::string(1, name[0]) + "select";
             std::string s;
@@ -269,7 +270,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gges(const char *name, const Dtype &t) noexcept
+        doc_gges(const char *name, const Dtype &t)
         {
             const std::string sel = std::string(1, name[0]) + "select";
             std::string s;
@@ -325,7 +326,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gebal(const char *name, const Dtype &) noexcept
+        doc_gebal(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, scale=0, permute=0, overwrite_a=0)\n\n";
@@ -349,7 +350,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gehrd(const char *name, const Dtype &) noexcept
+        doc_gehrd(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, lo=0, hi=n-1, lwork=max(n,1), overwrite_a=0)\n\n";
@@ -376,7 +377,7 @@ namespace lapack {
          * `_lwork` query immediately after the routine it queries. */
 
         static std::string
-        doc_gehrd_lwork(const char *name, const Dtype &t) noexcept
+        doc_gehrd_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, lo=0, hi=n-1)\n\n";
@@ -394,7 +395,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gesv(const char *name, const Dtype &) noexcept
+        doc_gesv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, overwrite_a=0, overwrite_b=0)\n\n";
@@ -415,7 +416,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gecon(const char *name, const Dtype &) noexcept
+        doc_gecon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, anorm, norm='1')\n\n";
@@ -433,7 +434,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_getrf(const char *name, const Dtype &) noexcept
+        doc_getrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, overwrite_a=0)\n\n";
@@ -451,7 +452,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_getrs(const char *name, const Dtype &) noexcept
+        doc_getrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(lu, piv, b, trans=0, overwrite_b=0)\n\n";
@@ -471,7 +472,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_getc2(const char *name, const Dtype &) noexcept
+        doc_getc2(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, overwrite_a=0)\n\n";
@@ -492,7 +493,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gesc2(const char *name, const Dtype &) noexcept
+        doc_gesc2(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(lu, rhs, ipiv, jpiv, overwrite_rhs=0)\n\n";
@@ -512,7 +513,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_getri(const char *name, const Dtype &) noexcept
+        doc_getri(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(lu, piv, lwork=3*n, overwrite_lu=0)\n\n";
@@ -535,7 +536,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_getri_lwork(const char *name, const Dtype &t) noexcept
+        doc_getri_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n)\n\n";
@@ -553,7 +554,7 @@ namespace lapack {
         /** @brief `gesdd` and `gesvd` present the same interface; they differ in algorithm --
          *         divide-and-conquer versus the QR iteration. */
         static std::string
-        doc_gesxd_family(const char *name, const char *how, const char *query) noexcept
+        doc_gesxd_family(const char *name, const char *how, const char *query)
         {
             std::string s;
             s += std::string(name) + "(a, compute_uv=1, full_matrices=1, lwork=..., overwrite_a=0)\n\n";
@@ -576,13 +577,13 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_gesdd(const char *name, const Dtype &) noexcept
+        static std::string doc_gesdd(const char *name, const Dtype &)
             { return doc_gesxd_family(name, "by divide-and-conquer", "gesdd_lwork"); }
-        static std::string doc_gesvd(const char *name, const Dtype &) noexcept { return doc_gesxd_family(name, "by QR iteration", "gesvd_lwork"); }
+        static std::string doc_gesvd(const char *name, const Dtype &)  { return doc_gesxd_family(name, "by QR iteration", "gesvd_lwork"); }
 
         /** @brief `gesdd_lwork` and `gesvd_lwork` take the same arguments. */
         static std::string
-        doc_gesdd_family_lwork(const char *name, const Dtype &t, const char *base) noexcept
+        doc_gesdd_family_lwork(const char *name, const Dtype &t, const char *base)
         {
             std::string s;
             s += std::string(name) + "(m, n, compute_uv=1, full_matrices=1)\n\n";
@@ -600,11 +601,11 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_gesdd_lwork(const char *name, const Dtype &t) noexcept { return doc_gesdd_family_lwork(name, t, "gesdd"); }
-        static std::string doc_gesvd_lwork(const char *name, const Dtype &t) noexcept { return doc_gesdd_family_lwork(name, t, "gesvd"); }
+        static std::string doc_gesdd_lwork(const char *name, const Dtype &t)  { return doc_gesdd_family_lwork(name, t, "gesdd"); }
+        static std::string doc_gesvd_lwork(const char *name, const Dtype &t)  { return doc_gesdd_family_lwork(name, t, "gesvd"); }
 
         static std::string
-        doc_gels(const char *name, const Dtype &t) noexcept
+        doc_gels(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, trans='N', lwork=..., overwrite_a=0, overwrite_b=0)\n\n";
@@ -635,7 +636,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gels_lwork(const char *name, const Dtype &t) noexcept
+        doc_gels_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(m, n, nrhs, trans='N')\n\n";
@@ -660,7 +661,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gelss(const char *name, const Dtype &) noexcept
+        doc_gelss(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, cond=-1.0, lwork=..., overwrite_a=0, overwrite_b=0)\n\n";
@@ -685,7 +686,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gelsy(const char *name, const Dtype &) noexcept
+        doc_gelsy(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, jptv, cond, lwork, overwrite_a=0, overwrite_b=0)\n\n";
@@ -712,7 +713,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gelsd(const char *name, const Dtype &t) noexcept
+        doc_gelsd(const char *name, const Dtype &t)
         {
             std::string s;
             if (t.is_complex) {
@@ -750,7 +751,7 @@ namespace lapack {
          *         alongside `work`. */
         static std::string
         doc_gelsx_lwork(const char *name, const Dtype &t, const char *base, const char *args,
-                        bool sizes_workspaces = false) noexcept
+                        bool sizes_workspaces = false)
         {
             std::string s;
             s += std::string(name) + args + "\n\n";
@@ -778,15 +779,15 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_gelss_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_gelss_lwork(const char *name, const Dtype &t)
             { return doc_gelsx_lwork(name, t, "gelss", "(m, n, nrhs, cond=-1.0, lwork=-1)"); }
-        static std::string doc_gelsy_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_gelsy_lwork(const char *name, const Dtype &t)
             { return doc_gelsx_lwork(name, t, "gelsy", "(m, n, nrhs, cond, lwork=-1)"); }
-        static std::string doc_gelsd_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_gelsd_lwork(const char *name, const Dtype &t)
             { return doc_gelsx_lwork(name, t, "gelsd", "(m, n, nrhs, cond=-1.0, lwork=-1)", true); }
 
         static std::string
-        doc_geqp3(const char *name, const Dtype &) noexcept
+        doc_geqp3(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, lwork=3*(n+1), overwrite_a=0)\n\n";
@@ -812,7 +813,7 @@ namespace lapack {
          *         the sign convention on ``R`` and in which side ``Q`` acts from. */
         static std::string
         doc_geqrf_family(const char *name, const char *summary, const char *out, const char *deflt,
-                         const char *query, bool returns_work) noexcept
+                         const char *query, bool returns_work)
         {
             std::string s;
             s += std::string(name) + "(a, lwork=" + std::string(deflt) + ", overwrite_a=0)\n\n";
@@ -831,21 +832,21 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_geqrf(const char *name, const Dtype &) noexcept
+        static std::string doc_geqrf(const char *name, const Dtype &)
         {
             return doc_geqrf_family(name, "Compute a QR factorization",
                 "qr : ndarray\n    ``R`` in the upper triangle; below it, the reflectors that define ``Q``.\n",
                 "``3 * n``", "geqrf_lwork", true);
         }
 
-        static std::string doc_geqrfp(const char *name, const Dtype &) noexcept
+        static std::string doc_geqrfp(const char *name, const Dtype &)
         {
             return doc_geqrf_family(name, "Compute a QR factorization whose ``R`` has a nonnegative diagonal",
                 "qr : ndarray\n    ``R`` in the upper triangle, with ``diag(R) >= 0``; below it, the reflectors\n    that define ``Q``.\n",
                 "``max(1, n)``", "geqrfp_lwork", false);
         }
 
-        static std::string doc_gerqf(const char *name, const Dtype &) noexcept
+        static std::string doc_gerqf(const char *name, const Dtype &)
         {
             return doc_geqrf_family(name, "Compute an RQ factorization ``a = r @ q``",
                 "qr : ndarray\n    ``R`` on and above the ``(m - n)``-th subdiagonal; elsewhere, the reflectors\n    that define ``Q``.\n",
@@ -854,7 +855,7 @@ namespace lapack {
 
         /** @brief `geqrf_lwork` and `geqrfp_lwork` differ only in which routine they query. */
         static std::string
-        doc_geqrf_family_lwork(const char *name, const Dtype &t, const char *base) noexcept
+        doc_geqrf_family_lwork(const char *name, const Dtype &t, const char *base)
         {
             std::string s;
             s += std::string(name) + "(m, n)\n\n";
@@ -870,12 +871,12 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_geqrf_lwork(const char *name, const Dtype &t) noexcept  { return doc_geqrf_family_lwork(name, t, "geqrf"); }
-        static std::string doc_geqrfp_lwork(const char *name, const Dtype &t) noexcept { return doc_geqrf_family_lwork(name, t, "geqrfp"); }
+        static std::string doc_geqrf_lwork(const char *name, const Dtype &t)   { return doc_geqrf_family_lwork(name, t, "geqrf"); }
+        static std::string doc_geqrfp_lwork(const char *name, const Dtype &t)  { return doc_geqrf_family_lwork(name, t, "geqrfp"); }
 
         /** @brief `geequ` and `geequb` differ only in that `geequb` rounds its factors. */
         static std::string
-        doc_geequ_family(const char *name, const Dtype &, const char *what) noexcept
+        doc_geequ_family(const char *name, const Dtype &, const char *what)
         {
             std::string s;
             s += std::string(name) + "(a)\n\n";
@@ -897,13 +898,13 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_geequ(const char *name, const Dtype &t) noexcept
+        static std::string doc_geequ(const char *name, const Dtype &t)
             { return doc_geequ_family(name, t, "Compute row and column scale factors that equilibrate a matrix"); }
-        static std::string doc_geequb(const char *name, const Dtype &t) noexcept
+        static std::string doc_geequb(const char *name, const Dtype &t)
             { return doc_geequ_family(name, t, "Compute equilibration factors restricted to powers of the radix"); }
 
         static std::string
-        doc_geev(const char *name, const Dtype &t) noexcept
+        doc_geev(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, compute_vl=1, compute_vr=1, lwork=..., overwrite_a=0)\n\n";
@@ -933,7 +934,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_geev_lwork(const char *name, const Dtype &t) noexcept
+        doc_geev_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, compute_vl=1, compute_vr=1)\n\n";
@@ -951,7 +952,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ggev(const char *name, const Dtype &t) noexcept
+        doc_ggev(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, compute_vl=1, compute_vr=1, lwork=..., overwrite_a=0,\n";
@@ -984,7 +985,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gesvx(const char *name, const Dtype &) noexcept
+        doc_gesvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, fact='E', trans='N', af=None, ipiv=None, equed='B', r=None, c=None,\n";
@@ -1032,7 +1033,7 @@ namespace lapack {
         /* ============================ flapack_gen_tri.pyf.src ====================== */
 
         static std::string
-        doc_gtsv(const char *name, const Dtype &) noexcept
+        doc_gtsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(dl, d, du, b, overwrite_dl=0, overwrite_d=0, overwrite_du=0,\n";
@@ -1062,7 +1063,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gttrf(const char *name, const Dtype &) noexcept
+        doc_gttrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(dl, d, du, overwrite_dl=0, overwrite_d=0, overwrite_du=0)\n\n";
@@ -1090,7 +1091,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gttrs(const char *name, const Dtype &) noexcept
+        doc_gttrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(dl, d, du, du2, ipiv, b, trans='N', overwrite_b=0)\n\n";
@@ -1110,7 +1111,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gtcon(const char *name, const Dtype &) noexcept
+        doc_gtcon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(dl, d, du, du2, ipiv, anorm, norm='1')\n\n";
@@ -1129,7 +1130,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gtsvx(const char *name, const Dtype &) noexcept
+        doc_gtsvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(dl, d, du, b, fact='N', trans='N', dlf=None, df=None, duf=None,\n";
@@ -1172,7 +1173,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stev(const char *name, const Dtype &) noexcept
+        doc_stev(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, compute_v=1, overwrite_d=0, overwrite_e=0)\n\n";
@@ -1196,7 +1197,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stevd(const char *name, const Dtype &) noexcept
+        doc_stevd(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, compute_v=1, lwork=1+4*n+n*n, liwork=3+5*n, overwrite_d=0,\n";
@@ -1227,7 +1228,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_sterf(const char *name, const Dtype &) noexcept
+        doc_sterf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, overwrite_d=0, overwrite_e=0)\n\n";
@@ -1247,7 +1248,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stebz(const char *name, const Dtype &) noexcept
+        doc_stebz(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, range, vl, vu, il, iu, tol, order)\n\n";
@@ -1282,7 +1283,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stein(const char *name, const Dtype &) noexcept
+        doc_stein(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, w, iblock, isplit)\n\n";
@@ -1305,7 +1306,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stemr(const char *name, const Dtype &) noexcept
+        doc_stemr(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, range, vl, vu, il, iu, compute_v=1, lwork=18*n,\n";
@@ -1342,7 +1343,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_stemr_lwork(const char *name, const Dtype &t) noexcept
+        doc_stemr_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(d, e, range, vl, vu, il, iu, compute_v=1, overwrite_d=0,\n";
@@ -1370,14 +1371,14 @@ namespace lapack {
         static constexpr const char *P_KU = "ku : int\n    Number of superdiagonals.\n";
 
         static std::string
-        p_ab(const char *rows) noexcept
+        p_ab(const char *rows)
         {
             return "ab : ndarray\n    Band storage of shape ``(" + std::string(rows) + ", n)``:"
                    " ``a[i, j]`` is held at\n    ``ab[ku + i - j, j]``.\n";
         }
 
         static std::string
-        doc_gbsv(const char *name, const Dtype &) noexcept
+        doc_gbsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(kl, ku, ab, b, overwrite_ab=0, overwrite_b=0)\n\n";
@@ -1401,7 +1402,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gbtrf(const char *name, const Dtype &) noexcept
+        doc_gbtrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, kl, ku, m=shape(ab, 1), n=shape(ab, 1),\n";
@@ -1428,7 +1429,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gbtrs(const char *name, const Dtype &) noexcept
+        doc_gbtrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, kl, ku, b, ipiv, trans=0, n=shape(ab, 1),\n";
@@ -1456,7 +1457,34 @@ namespace lapack {
         }
 
         static std::string
-        doc_gbcon(const char *name, const Dtype &) noexcept
+        doc_pbcon(const char *name, const Dtype &)
+        {
+            std::string s;
+            s += std::string(name) + "(kd, ab, anorm, ldab=kd+1, uplo='U')\n\n";
+            s += "Estimate the reciprocal condition number of a positive definite band matrix\n"
+                 "from its Cholesky factorization (LAPACK ``" + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += "kd : int\n    Number of super- or subdiagonals of the matrix.\n";
+            s += "ab : ndarray\n"
+                 "    Banded Cholesky factor of shape ``(kd + 1, n)``, as returned by ``pbtrf``;\n"
+                 "    the order `n` is read off `ab` itself.\n";
+            s += "anorm : float\n    1-norm of the original matrix, which equals its infinity norm here.\n";
+            s += "ldab : int, optional\n"
+                 "    Leading dimension of `ab`. It must equal ``ab.shape[0]`` and be at least\n"
+                 "    ``kd + 1``, which is also the default.\n";
+            s += "uplo : str, optional\n"
+                 "    ``'U'`` if `ab` holds the upper triangular factor, ``'L'`` if lower.\n"
+                 "    Default is ``'U'``.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "rcond : float\n    Estimate of the reciprocal condition number.\n";
+            s += R_INFO;
+            return s;
+        }
+
+        static std::string
+        doc_gbcon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(kl, ku, ab, ipiv, anorm, norm='1', ldab=2*kl+ku+1)\n\n";
@@ -1481,7 +1509,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_langb(const char *name, const Dtype &t) noexcept
+        doc_langb(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(norm, kl, ku, ab, ldab=kl+ku+1)\n\n";
@@ -1511,7 +1539,7 @@ namespace lapack {
         /** @brief `pstrf` and `pstf2` are the blocked and unblocked pivoted Cholesky; one
          *         interface, one docstring, differing only in how they are described. */
         static std::string
-        doc_pstrf_family(const char *name, const char *how) noexcept
+        doc_pstrf_family(const char *name, const char *how)
         {
             std::string s;
             s += std::string(name) + "(a, tol=-1.0, lower=0, overwrite_a=0)\n\n";
@@ -1541,13 +1569,13 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_pstrf(const char *name, const Dtype &) noexcept
+        static std::string doc_pstrf(const char *name, const Dtype &)
             { return doc_pstrf_family(name, "blocked"); }
-        static std::string doc_pstf2(const char *name, const Dtype &) noexcept
+        static std::string doc_pstf2(const char *name, const Dtype &)
             { return doc_pstrf_family(name, "unblocked"); }
 
         static std::string
-        doc_posv(const char *name, const Dtype &) noexcept
+        doc_posv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, lower=0, overwrite_a=0, overwrite_b=0)\n\n";
@@ -1571,7 +1599,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_posvx(const char *name, const Dtype &) noexcept
+        doc_posvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, fact='E', af=None, equed='Y', s=None, lower=0,\n";
@@ -1613,7 +1641,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pocon(const char *name, const Dtype &) noexcept
+        doc_pocon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, anorm, uplo='U')\n\n";
@@ -1635,7 +1663,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_potrf(const char *name, const Dtype &) noexcept
+        doc_potrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, lower=0, clean=1, overwrite_a=0)\n\n";
@@ -1662,7 +1690,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_potrs(const char *name, const Dtype &) noexcept
+        doc_potrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(c, b, lower=0, overwrite_b=0)\n\n";
@@ -1684,7 +1712,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_potri(const char *name, const Dtype &) noexcept
+        doc_potri(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(c, lower=0, overwrite_c=0)\n\n";
@@ -1711,7 +1739,7 @@ namespace lapack {
         /* =========================== flapack_pos_def_tri.pyf.src =================== */
 
         static std::string
-        doc_ptsv(const char *name, const Dtype &) noexcept
+        doc_ptsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, b, overwrite_d=0, overwrite_e=0, overwrite_b=0)\n\n";
@@ -1737,7 +1765,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pttrf(const char *name, const Dtype &) noexcept
+        doc_pttrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, overwrite_d=0, overwrite_e=0)\n\n";
@@ -1762,7 +1790,7 @@ namespace lapack {
         /** @brief The complex flavors take a `lower` the real ones do not have, so the
          *         signature and one parameter entry differ between them. */
         static std::string
-        doc_pttrs(const char *name, const Dtype &t) noexcept
+        doc_pttrs(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + (t.is_complex ? "(d, e, b, lower=0, overwrite_b=0)\n\n"
@@ -1791,7 +1819,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pteqr(const char *name, const Dtype &t) noexcept
+        doc_pteqr(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(d, e, z, compute_z=0, overwrite_d=0, overwrite_e=0,\n";
@@ -1830,7 +1858,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ptsvx(const char *name, const Dtype &) noexcept
+        doc_ptsvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(d, e, b, fact='N', df=None, ef=None)\n\n";
@@ -1869,7 +1897,7 @@ namespace lapack {
         /** @brief `sytrf`/`hetrf` and `sytf2` -- blocked and unblocked Bunch-Kaufman. @p what
          *         names the symmetry, @p lwork_line is empty for the unblocked `sytf2`. */
         static std::string
-        doc_trf_family(const char *name, const char *what, bool blocked) noexcept
+        doc_trf_family(const char *name, const char *what, bool blocked)
         {
             std::string s;
             s += std::string(name) + (blocked ? "(a, lower=0, lwork=max(n, 1), overwrite_a=0)\n\n"
@@ -1899,16 +1927,16 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sytrf(const char *name, const Dtype &) noexcept
+        static std::string doc_sytrf(const char *name, const Dtype &)
             { return doc_trf_family(name, "symmetric", true); }
-        static std::string doc_hetrf(const char *name, const Dtype &) noexcept
+        static std::string doc_hetrf(const char *name, const Dtype &)
             { return doc_trf_family(name, "Hermitian", true); }
-        static std::string doc_sytf2(const char *name, const Dtype &) noexcept
+        static std::string doc_sytf2(const char *name, const Dtype &)
             { return doc_trf_family(name, "symmetric", false); }
 
         /** @brief The `(n, lower)` workspace queries; @p parent is the routine queried. */
         static std::string
-        doc_sh_lwork(const char *name, const Dtype &t, const char *parent) noexcept
+        doc_sh_lwork(const char *name, const Dtype &t, const char *parent)
         {
             std::string s;
             s += std::string(name) + "(n, lower=0)\n\n";
@@ -1925,22 +1953,22 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sytrf_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_sytrf_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "sytrf"); }
-        static std::string doc_hetrf_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_hetrf_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "hetrf"); }
-        static std::string doc_sysv_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_sysv_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "sysv"); }
-        static std::string doc_hesv_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_hesv_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "hesv"); }
-        static std::string doc_sysvx_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_sysvx_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "sysvx"); }
-        static std::string doc_hesvx_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_hesvx_lwork(const char *name, const Dtype &t)
             { return doc_sh_lwork(name, t, "hesvx"); }
 
         /** @brief `sytrs`/`hetrs` -- solve using the factorization. */
         static std::string
-        doc_trs_family(const char *name, const char *what) noexcept
+        doc_trs_family(const char *name, const char *what)
         {
             std::string s;
             s += std::string(name) + "(a, ipiv, b, lower=0, overwrite_b=0)\n\n";
@@ -1963,14 +1991,14 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sytrs(const char *name, const Dtype &) noexcept
+        static std::string doc_sytrs(const char *name, const Dtype &)
             { return doc_trs_family(name, "symmetric"); }
-        static std::string doc_hetrs(const char *name, const Dtype &) noexcept
+        static std::string doc_hetrs(const char *name, const Dtype &)
             { return doc_trs_family(name, "Hermitian"); }
 
         /** @brief `sytri`/`hetri` -- invert from the factorization. */
         static std::string
-        doc_tri_family(const char *name, const char *what) noexcept
+        doc_tri_family(const char *name, const char *what)
         {
             std::string s;
             s += std::string(name) + "(a, ipiv, lower=0, overwrite_a=0)\n\n";
@@ -1994,13 +2022,13 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sytri(const char *name, const Dtype &) noexcept
+        static std::string doc_sytri(const char *name, const Dtype &)
             { return doc_tri_family(name, "symmetric"); }
-        static std::string doc_hetri(const char *name, const Dtype &) noexcept
+        static std::string doc_hetri(const char *name, const Dtype &)
             { return doc_tri_family(name, "Hermitian"); }
 
         static std::string
-        doc_syconv(const char *name, const Dtype &) noexcept
+        doc_syconv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, ipiv, lower=0, way=0, overwrite_a=0)\n\n";
@@ -2025,7 +2053,7 @@ namespace lapack {
 
         /** @brief `syequb`/`heequb` -- scale factors that equilibrate the matrix. */
         static std::string
-        doc_equb_family(const char *name, const char *what) noexcept
+        doc_equb_family(const char *name, const char *what)
         {
             std::string s;
             s += std::string(name) + "(a, lower=0)\n\n";
@@ -2046,14 +2074,14 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_syequb(const char *name, const Dtype &) noexcept
+        static std::string doc_syequb(const char *name, const Dtype &)
             { return doc_equb_family(name, "symmetric"); }
-        static std::string doc_heequb(const char *name, const Dtype &) noexcept
+        static std::string doc_heequb(const char *name, const Dtype &)
             { return doc_equb_family(name, "Hermitian"); }
 
         /** @brief `sycon`/`hecon` -- condition estimate from the factorization. */
         static std::string
-        doc_con_family(const char *name, const char *what) noexcept
+        doc_con_family(const char *name, const char *what)
         {
             std::string s;
             s += std::string(name) + "(a, ipiv, anorm, lower=0)\n\n";
@@ -2073,14 +2101,14 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sycon(const char *name, const Dtype &) noexcept
+        static std::string doc_sycon(const char *name, const Dtype &)
             { return doc_con_family(name, "symmetric"); }
-        static std::string doc_hecon(const char *name, const Dtype &) noexcept
+        static std::string doc_hecon(const char *name, const Dtype &)
             { return doc_con_family(name, "Hermitian"); }
 
         /** @brief `sysv`/`hesv` -- the simple indefinite driver. */
         static std::string
-        doc_sv_family(const char *name, const char *what, const char *out) noexcept
+        doc_sv_family(const char *name, const char *what, const char *out)
         {
             std::string s;
             s += std::string(name) + "(a, b, lwork=max(n, 1), lower=0, overwrite_a=0, overwrite_b=0)\n\n";
@@ -2107,13 +2135,13 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_sysv(const char *name, const Dtype &) noexcept
+        static std::string doc_sysv(const char *name, const Dtype &)
             { return doc_sv_family(name, "symmetric", "udut"); }
-        static std::string doc_hesv(const char *name, const Dtype &) noexcept
+        static std::string doc_hesv(const char *name, const Dtype &)
             { return doc_sv_family(name, "Hermitian", "uduh"); }
 
         static std::string
-        doc_sysvx(const char *name, const Dtype &) noexcept
+        doc_sysvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, af=None, ipiv=None, lwork=max(3*n, 1), factored=0,\n";
@@ -2155,7 +2183,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_hesvx(const char *name, const Dtype &) noexcept
+        doc_hesvx(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, af=None, ipiv=None, lwork=max(2*n, 1), factored=0,\n";
@@ -2196,14 +2224,14 @@ namespace lapack {
 
         /** @brief The `sy`/`he` name of a merged pair, from the wrapper's own first letter. */
         static std::string
-        sh_name(const char *name, const char *stem) noexcept
+        sh_name(const char *name, const char *stem)
         {
             return std::string(1, name[0]) + (name[1] == 'h' ? "he" : "sy") + std::string(stem);
         }
 
         /** @brief `syev`/`heev` -- the simple QR-iteration driver. */
         static std::string
-        doc_ev(const char *name, const Dtype &t) noexcept
+        doc_ev(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, compute_v=1, lower=0, lwork=..., overwrite_a=0)\n\n";
@@ -2231,7 +2259,7 @@ namespace lapack {
 
         /** @brief The `(n, lower)` eigen workspace queries. */
         static std::string
-        doc_sh_ev_lwork(const char *name, const Dtype &t, const char *stem) noexcept
+        doc_sh_ev_lwork(const char *name, const Dtype &t, const char *stem)
         {
             std::string s;
             s += std::string(name) + "(n, lower=0)\n\n";
@@ -2245,15 +2273,15 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_ev_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_ev_lwork(const char *name, const Dtype &t)
             { return doc_sh_ev_lwork(name, t, "ev"); }
-        static std::string doc_evx_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_evx_lwork(const char *name, const Dtype &t)
             { return doc_sh_ev_lwork(name, t, "evx"); }
 
         /** @brief `syevd`/`heevd` -- divide-and-conquer.  Split because the complex half takes
          *         an extra `lrwork`; @p extra adds its entry. */
         static std::string
-        doc_evd_family(const char *name, const char *what, bool complex_side) noexcept
+        doc_evd_family(const char *name, const char *what, bool complex_side)
         {
             std::string s;
             s += std::string(name) + (complex_side
@@ -2290,11 +2318,11 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_evd(const char *name, const Dtype &t) noexcept
+        static std::string doc_evd(const char *name, const Dtype &t)
             { return doc_evd_family(name, t.is_complex ? "Hermitian" : "real symmetric", t.is_complex); }
 
         static std::string
-        doc_evd_lwork_family(const char *name, const Dtype &t, bool complex_side) noexcept
+        doc_evd_lwork_family(const char *name, const Dtype &t, bool complex_side)
         {
             std::string s;
             s += std::string(name) + "(n, compute_v=1, lower=0)\n\n";
@@ -2315,12 +2343,12 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_evd_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_evd_lwork(const char *name, const Dtype &t)
             { return doc_evd_lwork_family(name, t, t.is_complex); }
 
         /** @brief `syevr`/`heevr` -- the MRRR driver. */
         static std::string
-        doc_evr_family(const char *name, const char *what, bool complex_side) noexcept
+        doc_evr_family(const char *name, const char *what, bool complex_side)
         {
             std::string s;
             s += std::string(name) + "(a, compute_v=1, range='A', lower=0, vl=0.0, vu=1.0, il=1,\n";
@@ -2361,11 +2389,11 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_evr(const char *name, const Dtype &t) noexcept
+        static std::string doc_evr(const char *name, const Dtype &t)
             { return doc_evr_family(name, t.is_complex ? "Hermitian" : "real symmetric", t.is_complex); }
 
         static std::string
-        doc_evr_lwork_family(const char *name, const Dtype &t, bool complex_side) noexcept
+        doc_evr_lwork_family(const char *name, const Dtype &t, bool complex_side)
         {
             std::string s;
             s += std::string(name) + "(n, lower=0)\n\n";
@@ -2384,12 +2412,12 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_evr_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_evr_lwork(const char *name, const Dtype &t)
             { return doc_evr_lwork_family(name, t, t.is_complex); }
 
         /** @brief `syevx`/`heevx` -- bisection plus inverse iteration. */
         static std::string
-        doc_evx(const char *name, const Dtype &t) noexcept
+        doc_evx(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, compute_v=1, range='A', lower=0, vl=0.0, vu=1.0, il=1,\n";
@@ -2420,7 +2448,7 @@ namespace lapack {
 
         /** @brief `sygv`/`hegv` -- the generalized definite problem. */
         static std::string
-        doc_gv(const char *name, const Dtype &t) noexcept
+        doc_gv(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, itype=1, jobz='V', uplo='L', lwork=...,\n";
@@ -2450,7 +2478,7 @@ namespace lapack {
 
         /** @brief The `(n, uplo)` generalized workspace queries -- `uplo`, not `lower`. */
         static std::string
-        doc_sh_gv_lwork(const char *name, const Dtype &t, const char *stem) noexcept
+        doc_sh_gv_lwork(const char *name, const Dtype &t, const char *stem)
         {
             std::string s;
             s += std::string(name) + "(n, uplo='L')\n\n";
@@ -2464,14 +2492,14 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_gv_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_gv_lwork(const char *name, const Dtype &t)
             { return doc_sh_gv_lwork(name, t, "gv"); }
-        static std::string doc_gvx_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_gvx_lwork(const char *name, const Dtype &t)
             { return doc_sh_gv_lwork(name, t, "gvx"); }
 
         /** @brief `sygvd`/`hegvd` -- generalized divide-and-conquer, split for `lrwork`. */
         static std::string
-        doc_gvd_family(const char *name, const char *what, bool complex_side) noexcept
+        doc_gvd_family(const char *name, const char *what, bool complex_side)
         {
             std::string s;
             s += std::string(name) + (complex_side
@@ -2510,12 +2538,12 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_gvd(const char *name, const Dtype &t) noexcept
+        static std::string doc_gvd(const char *name, const Dtype &t)
             { return doc_gvd_family(name, t.is_complex ? "Hermitian" : "symmetric", t.is_complex); }
 
         /** @brief `sygvx`/`hegvx` -- selected generalized eigenvalues. */
         static std::string
-        doc_gvx(const char *name, const Dtype &t) noexcept
+        doc_gvx(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, itype=1, jobz='V', range='A', uplo='L', vl=0.0,\n";
@@ -2550,7 +2578,7 @@ namespace lapack {
 
         /** @brief `sytrd`/`hetrd` -- reduction to tridiagonal form. */
         static std::string
-        doc_trd(const char *name, const Dtype &t) noexcept
+        doc_trd(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, lower=0, lwork=max(n, 1), overwrite_a=0)\n\n";
@@ -2577,12 +2605,12 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_trd_lwork(const char *name, const Dtype &t) noexcept
+        static std::string doc_trd_lwork(const char *name, const Dtype &t)
             { return doc_sh_ev_lwork(name, t, "trd"); }
 
         /** @brief `sygst`/`hegst` -- reduce the generalized problem to standard form. */
         static std::string
-        doc_gst(const char *name, const Dtype &t) noexcept
+        doc_gst(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, itype=1, lower=0, overwrite_a=0)\n\n";
@@ -2628,7 +2656,7 @@ namespace lapack {
 
         /** @brief `transr` selects the RFP layout, and the transposed one is spelled with the
          *         flavor's own transpose letter -- ``'T'`` for real, ``'C'`` for complex. */
-        static std::string p_transr(const Dtype &t) noexcept
+        static std::string p_transr(const Dtype &t)
         {
             return std::string("transr : str, optional\n"
                    "    ``'N'`` for the normal RFP layout, ``'") + (t.is_complex ? "C" : "T") +
@@ -2640,7 +2668,7 @@ namespace lapack {
         static std::string
         doc_convert_from_packed(const char *name, const Dtype &t, const char *summary,
                                 const char *operand, const char *in, const char *out,
-                                bool has_transr) noexcept
+                                bool has_transr)
         {
             std::string s;
             s += std::string(name) + "(n, " + std::string(operand) + ", "
@@ -2661,28 +2689,28 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_tpttf(const char *name, const Dtype &t) noexcept
+        static std::string doc_tpttf(const char *name, const Dtype &t)
         {
             return doc_convert_from_packed(name, t,
                 "Convert a triangle from packed (TP) to rectangular full packed (RFP) storage",
                 "ap", P_AP_IN, R_ARF_OUT, true);
         }
 
-        static std::string doc_tpttr(const char *name, const Dtype &t) noexcept
+        static std::string doc_tpttr(const char *name, const Dtype &t)
         {
             return doc_convert_from_packed(name, t,
                 "Convert a triangle from packed (TP) to full (TR) storage",
                 "ap", P_AP_IN, R_A_TRI_OUT, false);
         }
 
-        static std::string doc_tfttp(const char *name, const Dtype &t) noexcept
+        static std::string doc_tfttp(const char *name, const Dtype &t)
         {
             return doc_convert_from_packed(name, t,
                 "Convert a triangle from rectangular full packed (RFP) to packed (TP) storage",
                 "arf", P_ARF_IN, R_AP_OUT, true);
         }
 
-        static std::string doc_tfttr(const char *name, const Dtype &t) noexcept
+        static std::string doc_tfttr(const char *name, const Dtype &t)
         {
             return doc_convert_from_packed(name, t,
                 "Convert a triangle from rectangular full packed (RFP) to full (TR) storage",
@@ -2693,7 +2721,7 @@ namespace lapack {
          *         so they share no signature line with the packed-input four. */
         static std::string
         doc_convert_from_full(const char *name, const Dtype &t, const char *summary,
-                              const char *out, bool has_transr) noexcept
+                              const char *out, bool has_transr)
         {
             std::string s;
             s += std::string(name) + "(a, " + (has_transr ? "transr='N', " : "") + "uplo='U')\n\n";
@@ -2710,21 +2738,21 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_trttf(const char *name, const Dtype &t) noexcept
+        static std::string doc_trttf(const char *name, const Dtype &t)
         {
             return doc_convert_from_full(name, t,
                 "Convert a triangle from full (TR) to rectangular full packed (RFP) storage",
                 R_ARF_OUT, true);
         }
 
-        static std::string doc_trttp(const char *name, const Dtype &t) noexcept
+        static std::string doc_trttp(const char *name, const Dtype &t)
         {
             return doc_convert_from_full(name, t,
                 "Convert a triangle from full (TR) to packed (TP) storage",
                 R_AP_OUT, false);
         }
 
-        static std::string doc_tfsm(const char *name, const Dtype &t) noexcept
+        static std::string doc_tfsm(const char *name, const Dtype &t)
         {
             const char *letter = t.is_complex ? "C" : "T";
             std::string s;
@@ -2772,7 +2800,7 @@ namespace lapack {
             "    Cholesky factorization in packed storage, as returned by ``pptrf``.\n";
 
         static std::string
-        doc_ppcon(const char *name, const Dtype &) noexcept
+        doc_ppcon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(n, ap, anorm, lower=0)\n\n";
@@ -2792,7 +2820,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ppsv(const char *name, const Dtype &) noexcept
+        doc_ppsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(n, ap, b, lower=0, overwrite_b=0)\n\n";
@@ -2816,7 +2844,7 @@ namespace lapack {
 
         /** @brief `pptrf` and `pptri` share a signature; only the summary and the result differ. */
         static std::string
-        doc_pp_in_place(const char *name, const char *summary, const char *in, const char *out) noexcept
+        doc_pp_in_place(const char *name, const char *summary, const char *in, const char *out)
         {
             std::string s;
             s += std::string(name) + "(n, ap, lower=0, overwrite_ap=0)\n\n";
@@ -2835,7 +2863,7 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_pptrf(const char *name, const Dtype &) noexcept
+        static std::string doc_pptrf(const char *name, const Dtype &)
         {
             return doc_pp_in_place(name,
                 "Compute the Cholesky factorization of a positive definite matrix in packed\nstorage",
@@ -2843,7 +2871,7 @@ namespace lapack {
                 "ul : ndarray\n    The Cholesky factor in packed storage, overwriting `ap`.\n");
         }
 
-        static std::string doc_pptri(const char *name, const Dtype &) noexcept
+        static std::string doc_pptri(const char *name, const Dtype &)
         {
             return doc_pp_in_place(name,
                 "Invert a positive definite matrix in packed storage from its Cholesky\nfactorization",
@@ -2852,7 +2880,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pptrs(const char *name, const Dtype &) noexcept
+        doc_pptrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(n, ap, b, lower=0, overwrite_b=0)\n\n";
@@ -2873,7 +2901,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_sfrk(const char *name, const Dtype &t) noexcept
+        doc_sfrk(const char *name, const Dtype &t)
         {
             const char *letter = t.is_complex ? "C" : "T";
             const char *adj = t.is_complex ? "conjugate transpose" : "transpose";
@@ -2931,7 +2959,7 @@ namespace lapack {
         /** @brief `pftrf` and `pftri` share a signature; only the summary and the result differ. */
         static std::string
         doc_pf_in_place(const char *name, const Dtype &t, const char *summary,
-                        const char *in, const char *out) noexcept
+                        const char *in, const char *out)
         {
             std::string s;
             s += std::string(name) + "(n, a, transr='N', uplo='U', overwrite_a=0)\n\n";
@@ -2951,7 +2979,7 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_pftrf(const char *name, const Dtype &t) noexcept
+        static std::string doc_pftrf(const char *name, const Dtype &t)
         {
             return doc_pf_in_place(name, t,
                 "Compute the Cholesky factorization of a positive definite matrix in\n"
@@ -2961,7 +2989,7 @@ namespace lapack {
                 "achol : ndarray\n    The Cholesky factor in RFP storage, overwriting `a`.\n");
         }
 
-        static std::string doc_pftri(const char *name, const Dtype &t) noexcept
+        static std::string doc_pftri(const char *name, const Dtype &t)
         {
             return doc_pf_in_place(name, t,
                 "Invert a positive definite matrix in rectangular full packed (RFP) storage\n"
@@ -2971,7 +2999,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pftrs(const char *name, const Dtype &t) noexcept
+        doc_pftrs(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, a, b, transr='N', uplo='U', overwrite_b=0)\n\n";
@@ -2997,7 +3025,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pbtrf(const char *name, const Dtype &) noexcept
+        doc_pbtrf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, lower=0, ldab=ab.shape[0], overwrite_ab=0)\n\n";
@@ -3018,7 +3046,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pbtrs(const char *name, const Dtype &) noexcept
+        doc_pbtrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, b, lower=0, ldab=ab.shape[0], overwrite_b=0)\n\n";
@@ -3039,7 +3067,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_pbsv(const char *name, const Dtype &) noexcept
+        doc_pbsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, b, lower=0, ldab=ab.shape[0], overwrite_ab=0,\n"
@@ -3075,7 +3103,7 @@ namespace lapack {
             "    ``'N'``.\n";
 
         static std::string
-        doc_trtrs(const char *name, const Dtype &) noexcept
+        doc_trtrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, lower=0, trans=0, unitdiag=0, lda=a.shape[0],\n"
@@ -3101,7 +3129,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_trcon(const char *name, const Dtype &) noexcept
+        doc_trcon(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, norm='1', uplo='U', diag='N')\n\n";
@@ -3125,7 +3153,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tbtrs(const char *name, const Dtype &) noexcept
+        doc_tbtrs(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, b, uplo='U', trans='N', diag='N', overwrite_b=0)\n\n";
@@ -3150,7 +3178,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_trtri(const char *name, const Dtype &) noexcept
+        doc_trtri(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(c, lower=0, unitdiag=0, overwrite_c=0)\n\n";
@@ -3172,7 +3200,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_lauum(const char *name, const Dtype &t) noexcept
+        doc_lauum(const char *name, const Dtype &t)
         {
             const char *adjoint = t.is_complex ? "conj().T" : "T";
             std::string s;
@@ -3205,7 +3233,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_laswp(const char *name, const Dtype &) noexcept
+        doc_laswp(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, piv, k1=0, k2=len(piv)-1, off=0, inc=1,\n"
@@ -3246,7 +3274,7 @@ namespace lapack {
             "    be 2x2; the adjusted values are not returned.\n";
 
         static std::string
-        doc_trexc(const char *name, const Dtype &) noexcept
+        doc_trexc(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, q, ifst, ilst, wantq=1, overwrite_a=0, overwrite_q=0)\n\n";
@@ -3271,7 +3299,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tgexc(const char *name, const Dtype &t) noexcept
+        doc_tgexc(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, b, q, z, ifst, ilst, wantq=1, wantz=1, ";
@@ -3320,7 +3348,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_trsyl(const char *name, const Dtype &) noexcept
+        doc_trsyl(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, c, trana='N', tranb='N', isgn=1, overwrite_c=0)\n\n";
@@ -3379,7 +3407,7 @@ namespace lapack {
             "    needed depends on the cluster size, so query the matching ``_lwork`` routine.\n";
 
         static std::string
-        doc_trsen(const char *name, const Dtype &t) noexcept
+        doc_trsen(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(select, t, q, job='B', wantq=1, lwork=max(1,n), ";
@@ -3426,7 +3454,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_trsen_lwork(const char *name, const Dtype &t) noexcept
+        doc_trsen_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(select, t, job='B')\n\n";
@@ -3453,7 +3481,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tgsen(const char *name, const Dtype &t) noexcept
+        doc_tgsen(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(select, a, b, q, z, ijob=4, wantq=1, wantz=1,\n"
@@ -3509,7 +3537,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tgsen_lwork(const char *name, const Dtype &t) noexcept
+        doc_tgsen_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + (t.is_complex ? "(select, a, b, ijob=4)\n\n"
@@ -3542,7 +3570,7 @@ namespace lapack {
 
         /** @brief The transpose letter these routines take: real flavors ``'T'``, complex
          *         ``'C'``, and no flavor takes the other's. */
-        static std::string p_trans_qr(const Dtype &t, bool optional) noexcept
+        static std::string p_trans_qr(const Dtype &t, bool optional)
         {
             std::string s = "trans : str";
             s += optional ? ", optional\n" : "\n";
@@ -3553,7 +3581,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_orghr(const char *name, const Dtype &) noexcept
+        doc_orghr(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, tau, lo=0, hi=n-1, lwork=max(hi-lo,1), overwrite_a=0)\n\n";
@@ -3578,7 +3606,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_orghr_lwork(const char *name, const Dtype &t) noexcept
+        doc_orghr_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, lo=0, hi=n-1)\n\n";
@@ -3600,7 +3628,7 @@ namespace lapack {
          *         shows up as the dimension that floors `lwork`. */
         static std::string
         doc_org_factor(const char *name, const char *which, const char *producer,
-                       const char *bound) noexcept
+                       const char *bound)
         {
             std::string s;
             s += std::string(name) + "(a, tau, lwork=3*" + std::string(bound) + ", overwrite_a=0)\n\n";
@@ -3622,14 +3650,14 @@ namespace lapack {
             return s;
         }
 
-        static std::string doc_orgqr(const char *name, const Dtype &) noexcept
+        static std::string doc_orgqr(const char *name, const Dtype &)
         { return doc_org_factor(name, "QR", "geqrf", "n"); }
 
-        static std::string doc_orgrq(const char *name, const Dtype &) noexcept
+        static std::string doc_orgrq(const char *name, const Dtype &)
         { return doc_org_factor(name, "RQ", "gerqf", "m"); }
 
         static std::string
-        doc_ormqr(const char *name, const Dtype &t) noexcept
+        doc_ormqr(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(side, trans, a, tau, c, lwork, overwrite_c=0)\n\n";
@@ -3658,7 +3686,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ormrz(const char *name, const Dtype &t) noexcept
+        doc_ormrz(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(a, tau, c, side='L', trans='N', lwork=..., overwrite_c=0)\n\n";
@@ -3689,7 +3717,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ormrz_lwork(const char *name, const Dtype &t) noexcept
+        doc_ormrz_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(m, n, side='L', trans='N')\n\n";
@@ -3722,7 +3750,7 @@ namespace lapack {
             "t : ndarray\n    The upper triangular block reflectors.\n";
 
         static std::string
-        doc_geqrt(const char *name, const Dtype &) noexcept
+        doc_geqrt(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(nb, a, overwrite_a=0)\n\n";
@@ -3744,7 +3772,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gemqrt(const char *name, const Dtype &t) noexcept
+        doc_gemqrt(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(v, t, c, side='L', trans='N', overwrite_c=0)\n\n";
@@ -3768,7 +3796,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tpqrt(const char *name, const Dtype &) noexcept
+        doc_tpqrt(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(l, nb, a, b, overwrite_a=0, overwrite_b=0)\n\n";
@@ -3794,7 +3822,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tpmqrt(const char *name, const Dtype &t) noexcept
+        doc_tpmqrt(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(l, v, t, a, b, side='L', trans='N', overwrite_a=0,\n"
@@ -3825,7 +3853,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tzrzf(const char *name, const Dtype &) noexcept
+        doc_tzrzf(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, lwork=max(m,1), overwrite_a=0)\n\n";
@@ -3849,7 +3877,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tzrzf_lwork(const char *name, const Dtype &t) noexcept
+        doc_tzrzf_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(m, n)\n\n";
@@ -3869,7 +3897,7 @@ namespace lapack {
         /* -------------------- CS decomposition and the one-off solvers --------------------- */
 
         static std::string
-        doc_orcsd(const char *name, const Dtype &t) noexcept
+        doc_orcsd(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x11, x12, x21, x22, compute_u1=1, compute_u2=1,\n"
@@ -3918,7 +3946,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_orcsd_lwork(const char *name, const Dtype &t) noexcept
+        doc_orcsd_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(m, p, q)\n\n";
@@ -3944,7 +3972,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gejsv(const char *name, const Dtype &) noexcept
+        doc_gejsv(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, joba=4, jobu=0, jobv=0, jobr=1, jobt=0, jobp=1,\n"
@@ -3987,7 +4015,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gglse(const char *name, const Dtype &) noexcept
+        doc_gglse(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, c, d, lwork=m+n+p, overwrite_a=0, overwrite_b=0,\n"
@@ -4022,7 +4050,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_gglse_lwork(const char *name, const Dtype &t) noexcept
+        doc_gglse_lwork(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(m, n, p)\n\n";
@@ -4041,7 +4069,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_lasd4(const char *name, const Dtype &t) noexcept
+        doc_lasd4(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(i, d, z, rho=1.0)\n\n";
@@ -4082,7 +4110,7 @@ namespace lapack {
             "w : ndarray\n    Eigenvalues in ascending order, length ``n``. Real for every flavor.\n";
 
         static std::string
-        doc_sbev(const char *name, const Dtype &) noexcept
+        doc_sbev(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(ab, compute_v=1, lower=0, ldab=ab.shape[0],\n"
@@ -4113,7 +4141,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_sbevd(const char *name, const Dtype &t) noexcept
+        doc_sbevd(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(ab, compute_v=1, lower=0, ldab=ab.shape[0], ";
@@ -4156,7 +4184,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_sbevx(const char *name, const Dtype &t) noexcept
+        doc_sbevx(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(ab, vl, vu, il, iu, ldab=ab.shape[0], compute_v=1,\n"
@@ -4215,7 +4243,7 @@ namespace lapack {
             "    norm. Lowercase is accepted.\n";
 
         static std::string
-        doc_lamch(const char *name, const Dtype &t) noexcept
+        doc_lamch(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(cmach)\n\n";
@@ -4235,7 +4263,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_lange(const char *name, const Dtype &) noexcept
+        doc_lange(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(norm, a)\n\n";
@@ -4251,7 +4279,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_lantr(const char *name, const Dtype &) noexcept
+        doc_lantr(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(norm, a, uplo='U', diag='N')\n\n";
@@ -4272,7 +4300,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_larfg(const char *name, const Dtype &t) noexcept
+        doc_larfg(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(n, alpha, x, incx=1, overwrite_x=0)\n\n";
@@ -4297,7 +4325,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_larf(const char *name, const Dtype &t) noexcept
+        doc_larf(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(v, tau, c, work, side='L', incv=1, overwrite_c=0)\n\n";
@@ -4330,7 +4358,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_lartg(const char *name, const Dtype &t) noexcept
+        doc_lartg(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(f, g)\n\n";
@@ -4350,7 +4378,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_rot(const char *name, const Dtype &t) noexcept
+        doc_rot(const char *name, const Dtype &t)
         {
             std::string s;
             s += std::string(name) + "(x, y, c, s, n=..., offx=0, incx=1, offy=0, incy=1,\n"
@@ -4383,7 +4411,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_ilaver(const char *name, const Dtype &) noexcept
+        doc_ilaver(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "()\n\n";
@@ -4403,7 +4431,7 @@ namespace lapack {
         }
 
         static std::string
-        doc_tgsyl(const char *name, const Dtype &) noexcept
+        doc_tgsyl(const char *name, const Dtype &)
         {
             std::string s;
             s += std::string(name) + "(a, b, c, d, e, f, trans='N', ijob=0, lwork=2*m*n,\n"
@@ -4530,6 +4558,7 @@ namespace lapack {
             DOC_FAMILY(gbsv),
             DOC_FAMILY(gbtrf),
             DOC_FAMILY(gbtrs),
+            DOC_FAMILY(pbcon),
             DOC_FAMILY(gbcon),
             DOC_FAMILY(langb),
             DOC_FAMILY(pstrf),
@@ -4701,13 +4730,28 @@ namespace lapack {
             {"ilaver", doc_ilaver, D},
         };
 
-        /** @brief The docstring for @p name, or nullptr when none is registered. */
+        /**
+         * @brief The docstring for @p name, or nullptr when none is registered.
+         *
+         * The templates assemble their result in a `std::string`, so they can throw.
+         * This is declared `noexcept` because it is called straight from a getset slot; the
+         * `catch` turns a `std::bad_alloc` into a `MemoryError`, and anything else (e.g.
+         * `std::length_error`) into a `SystemError`, rather than `std::terminate`.
+         * A nullptr return with no exception set means "no docstring for this routine".
+         */
         PyObject *build_doc(const char *name) noexcept
         {
             for (const DocEntry &e : doc_table) {
                 if (std::strcmp(e.name, name) == 0) {
-                    const std::string d = e.fn(e.name, e.t);
-                    return PyUnicode_FromStringAndSize(d.data(), static_cast<Py_ssize_t>(d.size()));
+                    try {
+                        const std::string d = e.fn(e.name, e.t);
+                        return PyUnicode_FromStringAndSize(d.data(), static_cast<Py_ssize_t>(d.size()));
+                    }
+                    catch (const std::bad_alloc &) { return PyErr_NoMemory(); }
+                    catch (...) {
+                        PyErr_Format(PyExc_SystemError, "failed to build the docstring of %s", name);
+                        return nullptr;
+                    }
                 }
             }
             return nullptr;

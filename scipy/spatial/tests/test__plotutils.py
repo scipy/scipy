@@ -2,9 +2,9 @@ import pytest
 import numpy as np
 from numpy.testing import assert_, assert_array_equal, assert_allclose
 
+# Do not select a backend here: plotting tests request the `mpl_agg` fixture
+# instead (gh-3588).
 try:
-    import matplotlib
-    matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
     has_matplotlib = True
 except Exception:
@@ -16,6 +16,7 @@ from scipy.spatial import \
 
 
 @pytest.mark.skipif(not has_matplotlib, reason="Matplotlib not available")
+@pytest.mark.usefixtures("mpl_agg")
 class TestPlotting:
     points = [(0,0), (0,1), (1,0), (1,1)]
 

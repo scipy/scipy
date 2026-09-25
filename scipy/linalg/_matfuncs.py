@@ -8,6 +8,7 @@ from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 
 # Local imports
 from scipy.linalg import LinAlgError, LinAlgWarning
@@ -846,6 +847,7 @@ def signm(A):
     return S0
 
 
+@xp_capabilities()
 @_apply_over_batch(('a', 2), ('b', 2), signature="(i,k),(j,k)->(i*j,k)")
 def khatri_rao(a, b):
     r"""
@@ -892,8 +894,9 @@ def khatri_rao(a, b):
            [ 8, 15, 54]])
 
     """
-    a = np.asarray(a)
-    b = np.asarray(b)
+    xp = array_namespace(a, b)
+    a = xp.asarray(a)
+    b = xp.asarray(b)
 
     if not (a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
@@ -903,11 +906,11 @@ def khatri_rao(a, b):
                          "should be equal.")
 
     # accommodate empty arrays
-    if a.size == 0 or b.size == 0:
+    if xp_size(a) == 0 or xp_size(b) == 0:
         m = a.shape[0] * b.shape[0]
         n = a.shape[1]
-        return np.empty_like(a, shape=(m, n))
+        return xp.empty_like(a, shape=(m, n))
 
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
-    c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
-    return c.reshape((-1,) + c.shape[2:])
+    c = a[..., :, xp.newaxis, :] * b[..., xp.newaxis, :, :]
+    return xp.reshape(c, (-1,) + c.shape[2:])
