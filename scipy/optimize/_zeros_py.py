@@ -611,6 +611,8 @@ def bisect_exact(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=64,
            full_output=False, disp=True):
     """
+    The following is copied from bisect(). Change before merging
+
     Find root of a function within an interval using bisection.
 
     Basic bisection routine to find a root of the function `f` between the

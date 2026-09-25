@@ -545,9 +545,9 @@ def _root_scalar_bisect_exact_doc():
         An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
-        Tolerance (absolute) for termination.
+        Ignored for now. Tolerance (absolute) for termination.
     rtol : float, optional
-        Tolerance (relative) for termination.
+        Ignored for now. Tolerance (relative) for termination.
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional

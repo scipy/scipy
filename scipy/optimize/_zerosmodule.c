@@ -174,8 +174,8 @@ _bisect(PyObject *self, PyObject *args)
 }
 
 static char doc_bisect_exact[] = (
-    "_bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)\n\n"
-    "Find a root of f in [a, b] using bisection.\n\n"
+    "_bisect_exact(f, a, b, xtol, rtol, maxiter, args, full_output, disp)\n\n"
+    "Find a root of f in [a, b] using modified bisection.\n\n"
     "Parameters\n"
     "----------\n"
     "f : callable\n"
