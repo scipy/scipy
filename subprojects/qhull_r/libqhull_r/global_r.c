@@ -12,8 +12,8 @@
    see qhull_ra.h for internal functions
 
    Copyright (c) 1993-2020 The Geometry Center.
-   $Id: //main/2019/qhull/src/libqhull_r/global_r.c#19 $$Change: 3037 $
-   $DateTime: 2020/09/03 17:28:32 $$Author: bbarber $
+   $Id: //main/2019/qhull/src/libqhull_r/global_r.c#22 $$Change: 3978 $
+   $DateTime: 2025/08/24 21:38:45 $$Author: bbarber $
  */
 
 #include "qhull_ra.h"
@@ -39,8 +39,8 @@
     recompile user_eg_r.c, rbox_r.c, libqhull_r.c, qconvex_r.c, qdelaun_r.c qvoronoi_r.c, qhalf_r.c, testqset_r.c
 */
 
-const char qh_version[]= "2020.2.r 2020/08/31";
-const char qh_version2[]= "qhull_r 8.0.2 (2020.2.r 2020/08/31)";
+const char qh_version[]= "2020.2.r 2023/01/02";
+const char qh_version2[]= "qhull_r 8.1-alpha3 (2020.2.r 2023/01/02)";
 
 /*-<a                             href="qh-globa_r.htm#TOC"
   >-------------------------------</a><a name="appendprint">-</a>
@@ -1197,7 +1197,7 @@ void qh_initflags(qhT *qh, char *command) {
 #endif
             break;
           case '7':
-            qh_option(qh, "Q15-check-duplicates", NULL, NULL);
+            qh_option(qh, "Q17-check-duplicates", NULL, NULL);
             qh->CHECKduplicates= True;
             break;
           default:
@@ -2201,7 +2201,7 @@ void qh_lib_check(int qhullLibraryType, int qhTsize, int vertexTsize, int ridgeT
       last_errcode= 6253;
     }
     if (qhmemTsize && qhmemTsize != sizeof(qhmemT)) {
-      qh_fprintf_stderr(6254, "qh_lib_check: Incorrect qhull library called.  Size of qhmemT for caller is %d, but for qhull library is %d.\n", qhmemTsize, sizeof(qhmemT));
+      qh_fprintf_stderr(6254, "qh_lib_check: Incorrect qhull library called.  Size of qhmemT for caller is %d, but for qhull library is %d.\n", qhmemTsize, (int)sizeof(qhmemT));
       last_errcode= 6254;
     }
     if (last_errcode) {
@@ -2231,12 +2231,12 @@ void qh_option(qhT *qh, const char *option, int *i, realT *r) {
         (int)strlen(option), (int)sizeof(buf)-30-30, option);
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }
-  sprintf(buf, "  %s", option);
+  buflen = 0;
+  buflen += snprintf(buf, sizeof(buf) / sizeof(buf[0]), "  %s", option);
   if (i)
-    sprintf(buf+strlen(buf), " %d", *i);
+    buflen += snprintf(buf+buflen, sizeof(buf) / sizeof(buf[0]) - buflen, " %d", *i);
   if (r)
-    sprintf(buf+strlen(buf), " %2.2g", *r);
-  buflen= (int)strlen(buf);   /* WARN64 */
+    buflen += snprintf(buf+buflen, sizeof(buf) / sizeof(buf[0]) - buflen, " %2.2g", *r);
   qh->qhull_optionlen += buflen;
   remainder= (int)(sizeof(qh->qhull_options) - strlen(qh->qhull_options)) - 1;    /* WARN64 */
   maximize_(remainder, 0);
