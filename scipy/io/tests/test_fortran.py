@@ -3,6 +3,7 @@
 import tempfile
 import shutil
 import os
+import struct
 from os import path
 from glob import iglob
 import threading
@@ -342,3 +343,21 @@ def test_fortran_eof_multidimensional(tmpdir):
         assert len(f.read_record(dtype=dt)) == q
         with pytest.raises(FortranFormattingError):
             f.read_record(dtype=dt)
+
+
+def test_fortranfiles_read_split_subrecords(tmpdir):
+    """Read a record split into multiple gfortran-style subrecords."""
+    filename = path.join(str(tmpdir), str(threading.get_native_id()),
+                         "split-record")
+    os.makedirs(path.dirname(filename), exist_ok=True)
+    data = np.arange(6, dtype='<i4').tobytes()
+    chunks = (data[:8], data[8:])
+    with open(filename, 'wb') as f:
+        for index, chunk in enumerate(chunks):
+            marker = -len(chunk) if index == 0 else len(chunk)
+            f.write(struct.pack('<i', marker))
+            f.write(chunk)
+            f.write(struct.pack('<i', marker))
+
+    with FortranFile(filename, 'r', '<u4') as f:
+        assert_equal(f.read_ints('<i4'), np.arange(6, dtype='<i4'))
