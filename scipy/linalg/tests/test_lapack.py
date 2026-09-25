@@ -26,6 +26,7 @@ from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.sparse import diags_array
+from scipy._lib._testutils import IS_WASM
 
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
@@ -35,6 +36,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+@pytest.mark.skipif(IS_WASM, reason="re-loading extension modules hangs in WASM")
 @pytest.mark.parametrize('module_name, routine', [
     ('_fblas', 'daxpy'),
     ('_fblas_64', 'daxpy'),
