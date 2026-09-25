@@ -9,7 +9,7 @@ from functools import partial
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
-                           assert_array_less, assert_array_almost_equal,
+                           assert_array_almost_equal, assert_array_less,
                            assert_, assert_allclose, assert_equal)
 import pytest
 from pytest import raises as assert_raises
@@ -248,20 +248,21 @@ class TestShapiro:
         xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
 
-@pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
 class TestAnderson:
     def test_normal(self):
         rs = RandomState(1234567890)
+
         x1 = rs.standard_exponential(size=50)
+        res = stats.anderson(x1)
+        assert res.pvalue <= 0.01
+
         x2 = rs.standard_normal(size=50)
-        A, crit, sig = stats.anderson(x1)
-        assert_array_less(crit[:-1], A)
-        A, crit, sig = stats.anderson(x2)
-        assert_array_less(A, crit[-2:])
+        res = stats.anderson(x2)
+        res.pvalue > 0.05
 
         v = np.ones(10)
         v[0] = 0
-        A, crit, sig = stats.anderson(v)
+        A, _ = stats.anderson(v)
         # The expected statistic 3.208057 was computed independently of scipy.
         # For example, in R:
         #   > library(nortest)
@@ -277,18 +278,18 @@ class TestAnderson:
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
         x2 = rs.standard_normal(size=50)
-        A, crit, sig = stats.anderson(x1, 'expon')
-        assert_array_less(A, crit[-2:])
+        A, _ = stats.anderson(x1, 'expon')
+        assert_array_less(A, [1.572, 1.936])  # values from SciPy 1.18
         with np.errstate(all='ignore'):
-            A, crit, sig = stats.anderson(x2, 'expon')
-        assert_(A > crit[-1])
+            A, _ = stats.anderson(x2, 'expon')
+        assert A > 1.936  # values from SciPy 1.18
 
     def test_gumbel(self):
         # Regression test for gh-6306.  Before that issue was fixed,
         # this case would return a2=inf.
         v = np.ones(100)
         v[0] = 0.0
-        a2, crit, sig = stats.anderson(v, 'gumbel')
+        a2, _ = stats.anderson(v, 'gumbel')
         # A brief reimplementation of the calculation of the statistic.
         n = len(v)
         xbar, s = stats.gumbel_l.fit(v)
@@ -306,7 +307,7 @@ class TestAnderson:
         rs = RandomState(1234567890)
         x = rs.standard_exponential(size=50)
         res = stats.anderson(x)
-        attributes = ('statistic', 'critical_values', 'significance_level')
+        attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
     def test_gumbel_l(self):
@@ -314,8 +315,8 @@ class TestAnderson:
         # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
         rs = RandomState(1234567890)
         x = rs.gumbel(size=100)
-        A1, crit1, sig1 = stats.anderson(x, 'gumbel')
-        A2, crit2, sig2 = stats.anderson(x, 'gumbel_l')
+        A1, _ = stats.anderson(x, 'gumbel')
+        A2, _ = stats.anderson(x, 'gumbel_l')
 
         assert_allclose(A2, A1)
 
@@ -328,30 +329,18 @@ class TestAnderson:
         # A constant array is a degenerate case and breaks gumbel_r.fit, so
         # change one value in x2.
         x2[0] = 0.996
-        A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
-        A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
+        A1, _ = stats.anderson(x1, 'gumbel_r')
+        A2, _ = stats.anderson(x2, 'gumbel_r')
 
-        assert_array_less(A1, crit1[-2:])
-        assert_(A2 > crit2[-1])
+        assert_array_less(A1, [0.86 , 1.018])  # values from SciPy 1.18
+        assert_(A2 > 1.018)  # values from SciPy 1.18
 
     def test_weibull_min_case_A(self):
         # data and reference values from `anderson` reference [7]
         x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
         res = stats.anderson(x, 'weibull_min')
-        m, loc, scale = res.fit_result.params
-        assert_allclose((m, loc, scale), (2.38, 99.02, 78.23), rtol=2e-3)
         assert_allclose(res.statistic, 0.260, rtol=1e-3)
-        assert res.statistic < res.critical_values[0]
-
-        c = 1 / m  # ~0.42
-        assert_allclose(c, 1/2.38, rtol=2e-3)
-        # interpolate between rows for c=0.4 and c=0.45, indices -3 and -2
-        As40 = _Avals_weibull[-3]
-        As45 = _Avals_weibull[-2]
-        As_ref = As40 + (c - 0.4)/(0.45 - 0.4) * (As45 - As40)
-        # atol=1e-3 because results are rounded up to the next third decimal
-        assert np.all(res.critical_values > As_ref)
-        assert_allclose(res.critical_values, As_ref, atol=1e-3)
+        assert res.statistic < 0.33  # values from SciPy 1.18
 
     def test_weibull_min_case_B(self):
         # From `anderson` reference [7]
@@ -372,20 +361,6 @@ class TestAnderson:
         with wcontext, econtext:
             stats.anderson(x, 'weibull_min')
 
-    @pytest.mark.parametrize('distname',
-                             ['norm', 'expon', 'gumbel_l', 'extreme1',
-                              'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
-    def test_anderson_fit_params(self, distname):
-        # check that anderson now returns a FitResult
-        rng = np.random.default_rng(330691555377792039)
-        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
-                         else distname)
-        dist = getattr(stats, real_distname)
-        params = distcont[real_distname]
-        x = dist.rvs(*params, size=1000, random_state=rng)
-        res = stats.anderson(x, distname)
-        assert res.fit_result.success
-
     def test_anderson_weibull_As(self):
         m = 1  # "when mi < 2, so that c > 0.5, the last line...should be used"
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[-1])
@@ -394,11 +369,6 @@ class TestAnderson:
 
 
 class TestAndersonMethod:
-    def test_warning(self):
-        message = "As of SciPy 1.17, users..."
-        with pytest.warns(FutureWarning, match=message):
-            stats.anderson([1, 2, 3], 'norm')
-
     def test_method_input_validation(self):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
@@ -447,22 +417,30 @@ class TestAndersonMethod:
         np.testing.assert_allclose(res.statistic, ref.statistic)
         np.testing.assert_allclose(res.pvalue, ref.pvalue, atol=0.005)
 
-    @pytest.mark.parametrize('dist_name',
-        ['norm', 'expon', 'logistic', 'gumbel_l', 'gumbel_r', 'weibull_min'])
-    def test_interpolate_saturation(self, dist_name):
+    @pytest.mark.parametrize('dist_name,significance_level,critical_values',
+        # values from SciPy 1.18
+        [('norm', [15, 10, 5, 2.5, 1], [0.552, 0.621, 0.74, 0.859, 1.019]),
+         ('expon', [15, 10, 5, 2.5, 1], [0.905, 1.049, 1.305, 1.572, 1.936]),
+         ('logistic', [25, 10, 5, 2.5, 1, 0.5],
+          [0.424, 0.56 , 0.657, 0.765, 0.901, 1.005]),
+         ('gumbel_l', [25, 10, 5, 2.5, 1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('gumbel_r', [25, 10, 5, 2.5,  1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('weibull_min', [0.5 , 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995],
+          [0.314, 0.428, 0.507, 0.569, 0.675, 0.78 , 0.921, 1.027])])
+    def test_interpolate_saturation(self, dist_name, significance_level,
+                                    critical_values):
         dist = getattr(stats, dist_name)
         rng = np.random.default_rng(4202165767276)
         args = (3.5,) if dist_name == 'weibull_min' else tuple()
         x = dist.rvs(*args, size=50, random_state=rng)
 
-        with pytest.warns(FutureWarning):
-            res = stats.anderson(x, dist_name)
-        pvalues = (1 - np.asarray(res.significance_level) if dist_name == 'weibull_min'
-                   else np.asarray(res.significance_level) / 100)
+        res = stats.anderson(x, dist_name)
+        pvalues = (1 - np.asarray(significance_level) if dist_name == 'weibull_min'
+                   else np.asarray(significance_level) / 100)
         pvalue_min = np.min(pvalues)
         pvalue_max = np.max(pvalues)
-        statistic_min = np.min(res.critical_values)
-        statistic_max = np.max(res.critical_values)
+        statistic_min = np.min(critical_values)
+        statistic_max = np.max(critical_values)
 
         # data drawn from distribution -> low statistic / high p-value
         res = stats.anderson(x, dist_name, method='interpolate')
