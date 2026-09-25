@@ -726,3 +726,47 @@ jobs:
       - name: Test SciPy
         run: |
           pixi run test-fail-slow
+
+  test_ppc64le:
+    name: ppc64le, fast, py3.12, spin
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-ppc64le
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          persist-credentials: false
+      
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+      
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --group build --group dev-cli --group test-core --group test-mp --extra-index-url https://wheels.developerfirst.ibm.com/ppc64le/linux --prefer-binary
+      
+      - name: Set up ccache
+        uses: ./.github/ccache
+        with:
+          workflow_name: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+      
+      - name: Setup build and install scipy
+        run: |
+          spin build --release
+      
+      - name: Ccache performance
+        shell: bash -l {0}
+        run: |
+          ccache --evict-older-than 1d
+          ccache -s
+      
+      - name: Test SciPy
+        run: |
+          export OMP_NUM_THREADS=2
+          spin test -j3 -- --durations 10 --timeout=60
