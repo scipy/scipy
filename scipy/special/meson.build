@@ -213,6 +213,7 @@ python_sources = [
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
+  '_fastgl.py',
   '_input_validation.py',
   '_lambertw.py',
   '_logsumexp.py',
