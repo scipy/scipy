@@ -981,7 +981,8 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         idxs = np.asanyarray(index, np.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
-    idxs[~ found] = labels.max() + 1
+    lmax = np.intp(labels.max())
+    idxs[~ found] = lmax + 1
 
     if find_median:
         order = np.lexsort((input.ravel(), labels.ravel()))
@@ -994,26 +995,26 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
 
     result = []
     if find_min:
-        mins = np.zeros(labels.max() + 2, input.dtype)
+        mins = np.zeros(lmax + 2, input.dtype)
         mins[labels[::-1]] = input[::-1]
         result += [mins[idxs]]
     if find_min_positions:
-        minpos = np.zeros(labels.max() + 2, int)
+        minpos = np.zeros(lmax + 2, int)
         minpos[labels[::-1]] = positions[::-1]
         result += [minpos[idxs]]
     if find_max:
-        maxs = np.zeros(labels.max() + 2, input.dtype)
+        maxs = np.zeros(lmax + 2, input.dtype)
         maxs[labels] = input
         result += [maxs[idxs]]
     if find_max_positions:
-        maxpos = np.zeros(labels.max() + 2, int)
+        maxpos = np.zeros(lmax + 2, int)
         maxpos[labels] = positions
         result += [maxpos[idxs]]
     if find_median:
         locs = np.arange(len(labels))
-        lo = np.zeros(labels.max() + 2, np.int_)
+        lo = np.zeros(lmax + 2, np.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = np.zeros(labels.max() + 2, np.int_)
+        hi = np.zeros(lmax + 2, np.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]
