@@ -12,6 +12,8 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_less)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize._linprog_util import _check_result
+import scipy.optimize._linprog_highs as _linprog_highs
 from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
@@ -2549,6 +2551,243 @@ class TestLinprogHiGHSMIP:
         res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
+
+
+@pytest.mark.parametrize('method', ['highs', 'highs-ds'])
+@pytest.mark.parametrize('violation', [2e-4, 5e-4, 9e-4])
+def test_highs_primal_feasibility_tolerance_postcheck(method, violation):
+    res = linprog([1.], A_ub=[[-1.]], b_ub=[-violation],
+                  method=method, options={'presolve': False,
+                                          'primal_feasibility_tolerance': 1e-3})
+    assert res.success
+    assert_allclose(res.x, [0])
+    assert_allclose(res.slack, [-violation])
+    assert -res.slack[0] <= 1e-3
+
+
+def test_highs_ipm_primal_feasibility_tolerance_postcheck():
+    res = linprog([1.], A_ub=[[-1.]], b_ub=[-5e-4], method='highs-ipm',
+                  options={'primal_feasibility_tolerance': 1e-3})
+    assert res.success
+    assert_allclose(res.x, [0])
+    assert_allclose(res.slack, [-5e-4])
+    assert -res.slack[0] <= 1e-3
+
+
+@pytest.mark.parametrize('problem, field', [
+    ({'c': [1.], 'A_eq': [[1.]], 'b_eq': [5e-4], 'bounds': [(0, None)]},
+     'con'),
+    ({'c': [-1.], 'A_ub': [[1.]], 'b_ub': [0.], 'bounds': [(5e-4, None)]},
+     'lower'),
+    ({'c': [1.], 'A_ub': [[-1.]], 'b_ub': [0.], 'bounds': [(None, -5e-4)]},
+     'upper'),
+], ids=['equality', 'lower-bound', 'upper-bound'])
+def test_highs_primal_feasibility_tolerance_constraint_kinds(problem, field):
+    res = linprog(method='highs-ds', options={
+        'presolve': False, 'primal_feasibility_tolerance': 1e-3}, **problem)
+    assert res.success
+    assert_allclose(res.x, [0])
+    residual = res.con if field == 'con' else getattr(res, field).residual
+    assert_allclose(residual, [5e-4] if field == 'con' else [-5e-4])
+    assert abs(residual[0]) <= 1e-3
+
+
+@pytest.fixture
+def highs_capture(monkeypatch):
+    wrapper = _linprog_highs._highs_wrapper
+    captured = []
+
+    def capture(*args, **kwargs):
+        result = wrapper(*args, **kwargs)
+        captured.append(result)
+        return result
+
+    monkeypatch.setattr(_linprog_highs, '_highs_wrapper', capture)
+    return captured
+
+
+@pytest.mark.parametrize('options, expected, warn', [
+    ({}, 1e-7, False),
+    ({'primal_feasibility_tolerance': None}, 1e-7, False),
+    ({'primal_feasibility_tolerance': -1}, 1e-7, True),
+    ({'primal_feasibility_tolerance': 1e-12}, 1e-7, True),
+    ({'primal_feasibility_tolerance': 1e-10}, 1e-10, False),
+], ids=['default', 'none', 'negative-fallback', 'below-min-fallback', 'valid'])
+def test_highs_constraint_tolerance_uses_native_options(highs_capture, options,
+                                                         expected, warn):
+    if warn:
+        with pytest.warns(OptimizeWarning):
+            res = linprog([1.], options=options)
+    else:
+        res = linprog([1.], options=options)
+    assert res.success
+    assert highs_capture[-1]['_constraint_tolerance'] == expected
+    assert '_constraint_tolerance' not in res
+
+
+def test_highs_constraint_tolerance_invalid_option(highs_capture):
+    with pytest.raises(TypeError):
+        linprog([1.], options={'primal_feasibility_tolerance': 'bad'})
+
+
+@pytest.mark.parametrize(
+    'integrality, bounds, options, expected, x, node_count', [
+        (None, [(0, None)], {'primal_feasibility_tolerance': 1e-7,
+                              'mip_feasibility_tolerance': 1e-3},
+         1e-7, 5e-4, None),
+        ([1], [(0, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-3,
+                           'mip_feasibility_tolerance': 1e-7},
+         1e-7, 1., 'mip'),
+        ([1], [(0, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-3},
+         1e-6, 1., 'mip'),
+        ([1], [(0, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-7,
+                           'mip_feasibility_tolerance': 1e-3},
+         1e-3, 0., 'mip'),
+        ([1], [(0, 10)], {'presolve': False, 'solve_relaxation': True,
+                           'primal_feasibility_tolerance': 1e-3,
+                           'mip_feasibility_tolerance': 1e-7},
+         1e-3, 0., 'lp'),
+        ([2], [(0, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-3,
+                           'mip_feasibility_tolerance': 1e-7},
+         1e-3, 0., 'lp'),
+        ([2], [(1, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-7,
+                           'mip_feasibility_tolerance': 1e-3},
+         1e-3, 0., 'mip'),
+        ([3], [(1, 10)], {'presolve': False,
+                           'primal_feasibility_tolerance': 1e-7,
+                           'mip_feasibility_tolerance': 1e-3},
+         1e-3, 0., 'mip'),
+    ], ids=['lp-inactive-mip', 'mip-inactive-primal', 'mip-default',
+            'mip-configured', 'relaxation', 'semi-continuous-normalized',
+            'semi-continuous', 'semi-integer'])
+def test_highs_constraint_tolerance_uses_native_mode(
+        highs_capture, integrality, bounds, options, expected, x, node_count):
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', OptimizeWarning)
+        res = linprog([1.], A_ub=[[-1.]], b_ub=[-5e-4], method='highs',
+                      integrality=integrality, bounds=bounds, options=options)
+    assert res.success
+    assert_allclose(res.x, [x])
+    assert highs_capture[-1]['_constraint_tolerance'] == expected
+    if node_count == 'lp':
+        assert highs_capture[-1]['mip_node_count'] < 0
+    elif node_count == 'mip':
+        assert highs_capture[-1]['mip_node_count'] >= 0
+
+
+def test_highs_constraint_tolerance_zero_node_mip(highs_capture):
+    with pytest.warns(OptimizeWarning):
+        res = linprog([1.], integrality=[1], bounds=[(0, 1)], method='highs',
+                      options={'primal_feasibility_tolerance': 1e-7,
+                               'mip_feasibility_tolerance': 1e-3})
+    assert res.success
+    assert highs_capture[-1]['mip_node_count'] == 0
+    assert highs_capture[-1]['_constraint_tolerance'] == 1e-3
+
+
+@pytest.mark.parametrize('kind', ['slack', 'con', 'lower', 'upper'])
+def test_check_result_constraint_tolerance(kind):
+    x = np.array([0.])
+    slack, con = np.array([]), np.array([])
+    bounds = np.array([[-np.inf, np.inf]])
+    if kind == 'slack':
+        slack = np.array([-5e-4])
+    elif kind == 'con':
+        con = np.array([5e-4])
+    elif kind == 'lower':
+        bounds[0, 0] = 5e-4
+    else:
+        bounds[0, 1] = -5e-4
+
+    status, _ = _check_result(x, 0., 0, slack, con, bounds, 1e-9, '', None,
+                              constraint_tolerance=1e-3)
+    assert status == 0
+    status, _ = _check_result(x, 0., 0, slack * 200, con * 200,
+                              bounds * 200, 1e-9, '', None,
+                              constraint_tolerance=1e-3)
+    assert status == 4
+    status, _ = _check_result(x, 0., 0, slack * 2.2, con * 2.2,
+                              bounds * 2.2, 1e-9, '', None,
+                              constraint_tolerance=1e-3)
+    assert status == 4
+
+
+def test_check_result_constraint_tolerance_guards():
+    args = (np.array([0.]), 0., 0, np.array([-5e-4]), np.array([]),
+            np.array([[-np.inf, np.inf]]), 1e-9, '', None)
+    assert _check_result(*args)[0] == 4
+    assert _check_result(*args, constraint_tolerance=np.inf)[0] == 4
+    assert _check_result(*args, constraint_tolerance=np.nan)[0] == 4
+    for index in [0, 1, 3, 4]:
+        nan_args = list(args)
+        nan_args[index] = np.array([np.nan]) if index != 1 else np.nan
+        assert _check_result(*nan_args, constraint_tolerance=1e-3)[0] == 4
+    assert _check_result(None, *args[1:], constraint_tolerance=1e-3)[0] == 4
+    assert _check_result(np.array([0.]), 0., 0, np.array([]), np.array([]),
+                         np.array([[1., np.inf]]), 1e-9, '', np.array([2]),
+                         constraint_tolerance=1e-3)[0] == 0
+
+
+@pytest.mark.parametrize('integrality', [2, 3], ids=['semi-continuous',
+                                                       'semi-integer'])
+def test_check_result_semi_variable_constraint_tolerance(integrality):
+    def check(x, constraint_tolerance=None):
+        return _check_result(np.array([x]), 0., 0, np.array([]), np.array([]),
+                             np.array([[1., np.inf]]), 1e-9, '',
+                             np.array([integrality]),
+                             constraint_tolerance=constraint_tolerance)[0]
+
+    assert check(0.) == 0
+    assert check(5e-4, constraint_tolerance=1e-3) == 0
+    assert check(5e-4) == 4
+    assert check(1.1e-3, constraint_tolerance=1e-3) == 4
+
+
+@pytest.mark.parametrize(
+    'integrality, options, expected_tolerance, expected_status', [
+        (None, {'primal_feasibility_tolerance': 1e-7,
+                'mip_feasibility_tolerance': 1e-3}, 1e-7, 4),
+        (None, {'primal_feasibility_tolerance': 1e-3,
+                'mip_feasibility_tolerance': 1e-7}, 1e-3, 0),
+        ([1], {'primal_feasibility_tolerance': 1e-3,
+               'mip_feasibility_tolerance': 1e-7}, 1e-7, 4),
+        ([1], {'primal_feasibility_tolerance': 1e-7,
+               'mip_feasibility_tolerance': 1e-3}, 1e-3, 0),
+    ], ids=['lp-tight-primal', 'lp-loose-primal', 'mip-tight-mip',
+            'mip-loose-mip'])
+def test_highs_constraint_tolerance_fault_injection(
+        monkeypatch, integrality, options, expected_tolerance, expected_status):
+    wrapper = _linprog_highs._highs_wrapper
+
+    def inject_claimed_solution(*args, **kwargs):
+        # Preserve native metadata and replace only the claimed primal result.
+        result = wrapper(*args, **kwargs)
+        assert result['_constraint_tolerance'] == expected_tolerance
+        result.update({'x': np.array([0.]), 'fun': 0.,
+                       'slack': np.array([-5e-4])})
+        return result
+
+    monkeypatch.setattr(_linprog_highs, '_highs_wrapper', inject_claimed_solution)
+    with pytest.warns(OptimizeWarning):
+        res = linprog([1.], A_ub=[[-1.]], b_ub=[-5e-4], bounds=[(0, 10)],
+                      integrality=integrality, method='highs', options=options)
+    assert res.status == expected_status
+    assert '_constraint_tolerance' not in res
+
+
+def test_highs_tighter_kkt_failure_is_preserved():
+    with pytest.warns(OptimizeWarning):
+        res = linprog([1.], A_ub=[[-1.]], b_ub=[-5e-4], method='highs',
+                      options={'presolve': False,
+                               'primal_feasibility_tolerance': 1e-3,
+                               'kkt_tolerance': 1e-6})
+    assert not res.success
+    assert res.status == 4
 
 
 ###########################

@@ -109,6 +109,7 @@ def test_result():
     assert isinstance(res.mip_node_count, int)
     assert isinstance(res.mip_dual_bound, float)
     assert isinstance(res.mip_gap, float)
+    assert '_constraint_tolerance' not in res
 
     A, b, c, numbers, M = magic_square(6)
     res = milp(c=c*0, constraints=(A, b, b), bounds=(0, 1), integrality=1,
