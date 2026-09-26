@@ -14,7 +14,7 @@ Spherical Voronoi Code
 import numpy as np
 import scipy
 from . import _voronoi
-from scipy.spatial import cKDTree
+from scipy.spatial._ckdtree import cKDTree
 from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['SphericalVoronoi']
