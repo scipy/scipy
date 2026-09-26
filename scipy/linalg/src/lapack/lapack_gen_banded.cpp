@@ -113,6 +113,36 @@ namespace lapack {
         }
 
         template <class T>
+        static PyObject *lansb(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {"k", "ab", "norm", "uplo", "ldab",
+                                           nullptr};
+            static constexpr Ctx<T> ctx("lansb", "OO|OOO", kwlist);
+            PARSE_ARGS();
+            
+            using R = real_of_t<T>;
+            SCALAR_OPT(char, norm, '1');
+            SCALAR_OPT(char, uplo, 'U');
+            CHECK(uplo == 'U' || uplo == 'L', uplo);
+            SCALAR_REQ(CBLAS_INT, k);  CHECK(k >= 0, k);
+            
+            ARRAY_IN(T, ab, 2);
+            
+            CBLAS_INT band_rows;
+            if (!work_size(k + 1LL, &band_rows)) { return nullptr; }
+            SCALAR_OPT(CBLAS_INT, ldab, band_rows);
+            CHECK(ldab >= band_rows, ldab);
+            
+            CBLAS_INT n = shape(ab, 1), work_len;
+            CHECKARRAY(shape(ab, 0) == ldab, ab);
+            if (!work_size(1LL * n + 1, &work_len)) { return nullptr; }
+            ARRAY_HIDDEN(R, work, work_len);
+            
+            R res = lapack::lansb(norm, uplo, n, k, ab.data<T>(), ldab, work.data<R>());
+            RETURN(res);
+        }
+        
+        template <class T>
         static PyObject *pbcon(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"kd", "ab", "anorm", "ldab", "uplo",
@@ -246,6 +276,7 @@ namespace lapack {
             FAMILY(pbcon),
             FAMILY(gbcon),
             FAMILY(langb),
+            FAMILY(lansb),
             {nullptr, nullptr, 0, nullptr},
         };
 

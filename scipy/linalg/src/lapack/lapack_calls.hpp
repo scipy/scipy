@@ -241,6 +241,11 @@ namespace lapack {
         f32 BLAS_FUNC(clangb)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *);
         f64 BLAS_FUNC(zlangb)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *);
 
+        f32 BLAS_FUNC(slansb)(char *, char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *);
+        f64 BLAS_FUNC(dlansb)(char *, char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *);
+        f32 BLAS_FUNC(clansb)(char *, char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *);
+        f64 BLAS_FUNC(zlansb)(char *, char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *);
+
         /* `tol` and `work` are real beside a complex `a`: a pivot threshold and the diagonal
          * magnitudes the pivoting compares, both of which are magnitudes. */
         void BLAS_FUNC(spstrf)(char *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *);
@@ -1063,6 +1068,15 @@ namespace lapack {
         { return BLAS_FUNC(clangb)(&norm, &n, &kl, &ku, ab, &ldab, work); }
     inline f64 langb(char norm, CBLAS_INT n, CBLAS_INT kl, CBLAS_INT ku, c128 *ab, CBLAS_INT ldab, f64 *work)
         { return BLAS_FUNC(zlangb)(&norm, &n, &kl, &ku, ab, &ldab, work); }
+
+    inline f32 lansb(char norm, char uplo, CBLAS_INT n, CBLAS_INT k, f32 *ab, CBLAS_INT ldab, f32 *work)
+        { return BLAS_FUNC(slansb)(&norm, &uplo, &n, &k, ab, &ldab, work); }
+    inline f64 lansb(char norm, char uplo, CBLAS_INT n, CBLAS_INT k, f64 *ab, CBLAS_INT ldab, f64 *work)
+        { return BLAS_FUNC(dlansb)(&norm, &uplo, &n, &k, ab, &ldab, work); }
+    inline f32 lansb(char norm, char uplo, CBLAS_INT n, CBLAS_INT k, c64 *ab, CBLAS_INT ldab, f32 *work)
+        { return BLAS_FUNC(clansb)(&norm, &uplo, &n, &k, ab, &ldab, work); }
+    inline f64 lansb(char norm, char uplo, CBLAS_INT n, CBLAS_INT k, c128 *ab, CBLAS_INT ldab, f64 *work)
+        { return BLAS_FUNC(zlansb)(&norm, &uplo, &n, &k, ab, &ldab, work); }
 
     inline void pstrf(char uplo, CBLAS_INT n, f32 *a, CBLAS_INT lda, CBLAS_INT *piv, CBLAS_INT *rank, f32 tol, f32 *work, CBLAS_INT *info)
         { BLAS_FUNC(spstrf)(&uplo, &n, a, &lda, piv, rank, &tol, work, info); }
