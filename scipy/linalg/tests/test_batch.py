@@ -756,9 +756,8 @@ def test_shapes_solve_like(func, core_shape):
 
     # 1.4 : b.ndim == 2 : b has batch dims *but* no trailing dims
     b = np.ones((4, m))
-    pattern = "Shape mismatch|incompatible shapes|shapes of a|shape mismatch"
+    pattern = "Shape mismatch|incompatible shapes|incompatible with"
     with pytest.raises(ValueError, match=pattern):
-        # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
 
     # ### 2. a.ndim > 2 ###
@@ -786,7 +785,7 @@ def test_shapes_solve_like(func, core_shape):
 
     # 2.4 : b has batch dims but no trailing dims
     b = np.ones((5, 4, m))
-    pattern = "Shape mismatch|incompatible shapes|shapes of a|shape mismatch"
+    pattern = "Shape mismatch|incompatible shapes|incompatible with"
     with pytest.raises(ValueError, match=pattern):
         # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)

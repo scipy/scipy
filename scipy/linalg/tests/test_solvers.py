@@ -156,13 +156,13 @@ class TestSolveContinuousAre:
         (np.diag([1.], 1),
          np.array([[0], [1]]),
          block_diag(1., 2.),
-         1,
+         np.array([[1]]),
          None),
         # Test Case 1: carex #2
         (np.array([[4, 3], [-4.5, -3.5]]),
          np.array([[1], [-1]]),
          np.array([[9, 6], [6, 4.]]),
-         1,
+         np.array([[1]]),
          None),
         # Test Case 2: carex #3
         (np.array([[0, 1, 0, 0],
@@ -227,7 +227,7 @@ class TestSolveContinuousAre:
         (np.array([[1, 0], [0, -2.]]),
          np.array([[1e-6], [0]]),
          np.ones((2, 2)),
-         1.,
+         np.array([[1.]]),
          'Bad residual accuracy'),
         # Test Case 7: carex #8
         (block_diag(-0.1, -0.02),
@@ -239,7 +239,7 @@ class TestSolveContinuousAre:
         (np.array([[0, 1e6], [0, 0]]),
          np.array([[0], [1.]]),
          np.eye(2),
-         1.,
+         np.array([[1.]]),
          None),
         # Test Case 9: carex #10
         (np.array([[1.0000001, 1], [1., 1.0000001]]),
@@ -251,7 +251,7 @@ class TestSolveContinuousAre:
         (np.array([[3, 1.], [4, 2]]),
          np.array([[1], [1]]),
          np.array([[-11, -5], [-5, -2.]]),
-         1.,
+         np.array([[1.]]),
          None),
         # Test Case 11: carex #12
         (np.array([[7000000., 2000000., -0.],
@@ -270,7 +270,7 @@ class TestSolveContinuousAre:
                    [0, 0, 0, -1e6]]),
          np.array([[0, 0, 0, 1e6]]).T,
          np.diag([1, 0, 1, 0]),
-         1.,
+         np.array([[1.]]),
          None),
         # Test Case 13: carex #14
         (np.array([[-1e-6, 1, 0, 0],
@@ -279,7 +279,7 @@ class TestSolveContinuousAre:
                    [0, 0, -1, 1e-6]]),
          np.ones((4, 1)),
          np.ones((4, 4)),
-         1.,
+         np.array([[1.]]),
          None),
         # Test Case 14: carex #15
         (mat15['A'], mat15['B'], mat15['Q'], mat15['R'], None),
@@ -294,7 +294,7 @@ class TestSolveContinuousAre:
         (np.diag(np.ones((20, )), 1),
          np.flipud(np.eye(21, 1)),
          np.eye(21, 1) * np.eye(21, 1).T,
-         1,
+         np.array([[1]]),
          'Bad Residual Accuracy'),
         # Test Case 17: carex #18
         (mat18['A'], mat18['B'], mat18['Q'], mat18['R'], None),

@@ -1118,34 +1118,45 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 """
 
 
-def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill,
-                          ignore_dtypes):
-    xp = array_namespace(*arrays)
-    dtype = xp.result_type(*arrays[ignore_dtypes:], xp.float32)
-    device = xp_device(arrays[0]) if len(arrays) else None
-
+def validate_from_signature(names, core_shapes, signature):
     # ENH: parse more efficiently with regex.
     # Preserve functions (e.g. max, min) and `eval` below.
-    inputs, outputs = signature.split("->")
+    inputs, _ = signature.split("->")
     inputs = inputs.lstrip("(").rstrip(")").split("),(")
     input_dim_to_letter = {}
     for i, input in enumerate(inputs):
         for j, l in enumerate(input.split(",")):
             input_dim_to_letter[(i, j)] = l
+        inputs[i] = ", ".join(input.split(","))
 
     letter_to_length = {'': ()}
     for i, core_shape in enumerate(core_shapes):
         for j, length in enumerate(core_shape):
             l = input_dim_to_letter[(i, j)]
-            if letter_to_length.get(l, None):
+            if l in letter_to_length:
                 if letter_to_length[l] != length:
+                    shapes = ", ".join([f"{names[k]}: {core_shapes[k]}"
+                                        for k in range(len(names))])
+                    signatures = ", ".join([f"{names[k]}: ({inputs[k]})"
+                                            for k in range(len(names))])
                     message = (
-                        f"The core shape(s) of the array argument(s), {core_shapes}, "
-                        f"is/are incompatible with the function signature, {signature}."
+                        "The core shape(s) of the array argument(s): \n"
+                        f"{shapes}\n"
+                        "is/are incompatible with the shapes in the signature: \n"
+                        f"{signatures}"
                     )
                     raise ValueError(message)
             else:
                 letter_to_length[l] = length
+    return letter_to_length
+
+
+def output_from_signature(arrays, signature, batch_shape, letter_to_length,
+                          zero_size_fill, ignore_dtypes):
+    xp = array_namespace(*arrays)
+    dtype = xp.result_type(*arrays[ignore_dtypes:], xp.float32)
+    device = xp_device(arrays[0]) if len(arrays) else None
+    _, outputs = signature.split("->")
 
     results = []
     # This is a hack to avoid having to rethink the parsing strategy, e.g.
@@ -1247,6 +1258,11 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
                 if ndim == "1|2":  # special case for `solve`, etc.
                     ndim = 2 if array.ndim >= 2 else 1
 
+                if array is not None and array.ndim < ndim:
+                    message = (f"Argument `{names[i]}` has {array.ndim} dimensions, "
+                               f"but at least {ndim} dimension(s) is/are required.")
+                    raise ValueError(message)
+
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
                 core_shapes.append(shape[-ndim:] if ndim > 0 else ())
@@ -1255,6 +1271,12 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
             if is_numpy(xp):
                 _deprecate_dtypes(f.__name__, *arrays)
 
+            # Raise if core shapes are incompatible
+            if signature is not None:
+                sig = (signature(*arrays, *other_args, **kwargs)
+                       if callable(signature) else signature)
+                letter_to_length = validate_from_signature(names, core_shapes, sig)
+
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
@@ -1262,11 +1284,12 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
             zero_size_batch = (math.prod(batch_shape) == 0)
             zero_size_fill_ = 0 if zero_size_batch else zero_size_fill
             zero_size_core = any(math.prod(shape) == 0 for shape in core_shapes)
+
             if zero_size_batch or (zero_size_core and (zero_size_fill_ is not None)):
-                sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
-                    return output_from_signature(arrays, batch_shape, core_shapes,
-                                                 sig, zero_size_fill_, ignore_dtypes)
+                    return output_from_signature(
+                        arrays, sig, batch_shape, letter_to_length,
+                        zero_size_fill_, ignore_dtypes)
                 elif zero_size_batch:
                     f_name = f.__name__.lstrip('_')
                     message = f'`{f_name}` does not support zero-size batches.'
@@ -1311,7 +1334,7 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
             batch_note += ("\nNote that calls with zero-size batches are unsupported "
                            "and will raise a ``ValueError``.")
         elif isinstance(signature, str):
-            batch_note += f"\nThe NEP 5 signature of this function is {signature}."
+            batch_note += f"\nThe NEP 5 signature of this function is ``{signature}``."
         doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
