@@ -904,6 +904,8 @@ if HAVE_SCPDT:
         'scipy.spatial.minkowski_distance_p',
         'scipy.spatial.minkowski_distance',
         'scipy.spatial.distance_matrix',
+        'scipy.special.mathieu_cem',
+        'scipy.special.mathieu_sem',
         'scipy.stats.tiecorrect',
     ])
 

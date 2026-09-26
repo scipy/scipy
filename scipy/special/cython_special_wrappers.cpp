@@ -454,6 +454,14 @@ void special_mathieu_sem(double m, double q, double x, double *out, double *out_
    return special::mathieu_sem(m, q, x, *out, *out_diff);
 }
 
+void special_mathieu_ce(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_ce(m, q, x, *out, *out_diff);
+}
+
+void special_mathieu_se(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_se(m, q, x, *out, *out_diff);
+}
+
 // Exp
 
 double xsf_expm1(double x) { return xsf::expm1(x); }
@@ -869,4 +877,3 @@ double boost_stdtridf_double(double p, double t) { return stdtridf_double(p, t);
 float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
-
