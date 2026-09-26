@@ -45,14 +45,16 @@ def _sqrtm_triu(T, blocksize=64):
     """
     T_diag = np.diag(T)
     keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
+    r_dtype = np.float32 if T.dtype in [np.float32, np.complex64] else np.float64
+    c_dtype = np.complex64 if r_dtype == np.float32 else np.complex128
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
-        T = np.asarray(T, dtype=np.complex128, order="C")
-        T_diag = np.asarray(T_diag, dtype=np.complex128)
+        T = np.asarray(T, dtype=c_dtype, order="C")
+        T_diag = np.asarray(T_diag, dtype=c_dtype)
     else:
-        T = np.asarray(T, dtype=np.float64, order="C")
-        T_diag = np.asarray(T_diag, dtype=np.float64)
+        T = np.asarray(T, dtype=r_dtype, order="C")
+        T_diag = np.asarray(T_diag, dtype=r_dtype)
 
     R = np.diag(np.sqrt(T_diag))
 

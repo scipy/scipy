@@ -2,6 +2,8 @@
 
 import numpy as np
 from numpy.testing import assert_, assert_equal
+import pytest
+
 from scipy.linalg import clarkson_woodruff_transform
 from scipy.linalg._sketches import cwt_matrix
 from scipy.sparse import issparse, random_array
@@ -48,6 +50,24 @@ class TestClarksonWoodruffTransform:
                     A, self.n_sketch_rows, seed=seed
                 )
                 assert_(sketch.shape == (self.n_sketch_rows, self.n_cols))
+
+    @pytest.mark.parametrize("dtype", [
+        int, np.float32, np.float64, np.complex64, np.complex128
+    ])
+    @pytest.mark.parametrize("n", [0, 2, 5])
+    def test_shape_dtype(self, dtype, n):
+        rng = np.random.default_rng(seed=12345)
+        n_rows = 1
+
+        a = rng.normal(size=(n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = a.astype(dtype)
+
+        sketch = clarkson_woodruff_transform(a, n_rows)
+
+        assert sketch.shape == (n_rows, n)
+        assert sketch.dtype == dtype
 
     def test_seed_returns_identical_transform_matrix(self):
         for seed in self.seeds:
