@@ -43,6 +43,7 @@ import math
 
 import numpy as np
 from numpy.linalg import norm
+from numpy.testing import assert_allclose
 import pytest
 
 import scipy.spatial.distance
@@ -1467,6 +1468,23 @@ class TestSomeDistanceFunctions:
         for x, y in self.cases:
             dist = weuclidean(x, y)
             assert math.isclose(dist, math.sqrt(5.0), abs_tol=1.5e-7)
+
+    # an empty input reaches `np.mean`, which warns before returning `nan`
+    @pytest.mark.filterwarnings("ignore:Mean of empty slice:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+    def test_hamming(self):
+        x, y = self.cases[0]
+        # x and y differ in two of their three positions
+        assert_allclose(hamming(x, y), 2.0 / 3.0)
+
+        assert_allclose(hamming([1, 0, 0], [0, 1, 0]), 2.0 / 3.0)
+        assert_allclose(hamming([1, 0, 0], [1, 0, 0]), 0.0)
+
+        # weighted case
+        assert_allclose(hamming([1, 0, 0], [0, 1, 0], w=[1.0, 2.0, 3.0]), 0.5)
+
+        # an empty input has no positions to compare, and yields nan
+        assert np.isnan(hamming([], []))
 
     def test_sqeuclidean(self):
         for x, y in self.cases:
