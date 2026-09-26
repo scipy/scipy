@@ -2950,7 +2950,7 @@ def _penalty_matrix_banded(t):
     ``fda::bsplinepen`` and other independent constructions, and a
     conditioning analysis are in the companion report (steps 1-3 above
     are its eqs. (4)-(5), (8)-(9) and (11) respectively):
-    https://github.com/aadya940/scipy-bspline-testing
+    :doi:`10.5281/zenodo.22983807`
     """
     order = 4 # assuming a cubic spline
     m = len(t) - order # number of coefficients
@@ -2979,7 +2979,7 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     s = log10(lam / r), r = tr(X^T W X) / tr(Omega), so the fixed search
     window is scale-free."""
     # Implementation decisions detailed in the following companion report:
-    # https://github.com/aadya940/scipy-bspline-testing/blob/main/B_Splines_with_arbitary_knots-gcv.pdf
+    # https://doi.org/10.5281/zenodo.22983807
     # Eq. (32)
     n = y.shape[0]
 
@@ -3310,7 +3310,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     if t is not None:
         # user-provided knots: penalized least squares in the B-spline
         # basis on ``t``. The construction is described in the companion
-        # report, https://github.com/aadya940/scipy-bspline-testing
+        # report, https://doi.org/10.5281/zenodo.22983807
         return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis,
                                                  xp=xp, device=device)
 
