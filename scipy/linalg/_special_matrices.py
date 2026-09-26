@@ -1016,7 +1016,7 @@ def fiedler(a):
         batch_shape, n = a.shape[:-1], a.shape[-1]
         return xp.empty(batch_shape + (n, n), dtype=a.dtype, device=xp_device(a))
     elif xp_size(a) == 1:
-        return xp.asarray([[0.]], device=xp_device(a))
+        return xp.asarray([[0.]], dtype=a.dtype, device=xp_device(a),)
     else:
         return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
