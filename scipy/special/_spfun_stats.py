@@ -35,7 +35,7 @@ analysis."""
 import numpy as np
 
 import scipy.special._gufuncs as _gufuncs
-from scipy.special import gammaln as loggam
+from scipy.special._ufuncs import gammaln as loggam
 from scipy.special._ufunc_tools import _with_cache_optimization
 
 

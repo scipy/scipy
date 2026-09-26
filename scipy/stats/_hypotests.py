@@ -4,10 +4,10 @@ import math
 import numpy as np
 import warnings
 from itertools import combinations
-import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
+from ._crosstab import crosstab
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
@@ -966,7 +966,7 @@ def somersd(x, y=None, alternative='two-sided'):
     if x.ndim == 1:
         if x.size != y.size:
             raise ValueError("Rankings must be of equal length.")
-        table = scipy.stats.contingency.crosstab(x, y)[1]
+        table = crosstab(x, y)[1]
     elif x.ndim == 2:
         if np.any(x < 0):
             raise ValueError("All elements of the contingency table must be "
@@ -1822,7 +1822,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # get ranks of x and y in the pooled sample
     z = xp.concat([xa, ya], axis=-1)
     # in case of ties, use midrank (see [1])
-    r = scipy.stats.rankdata(z, method='average', axis=-1)
+    r = _stats_py.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
     rx = r[..., :length_x]
     ry = r[..., length_x:]
