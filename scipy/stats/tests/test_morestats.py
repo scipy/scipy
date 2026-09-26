@@ -2439,10 +2439,11 @@ class TestPpccMax:
         data = [1]
         assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
-    def test_empty_input(self):
-        message = "`x` must contain at least one observation."
+    @pytest.mark.parametrize("x", [[], [1.0]])
+    def test_too_few_observations(self, x):
+        message = "`x` must contain at least two observations."
         with pytest.raises(ValueError, match=message):
-            stats.ppcc_max([])
+            stats.ppcc_max(x)
 
     def test_ppcc_max_basic(self):
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
@@ -2820,10 +2821,11 @@ class TestBoxcoxNormmax(NormmaxTest):
         maxlog = stats.boxcox_normmax(self.x)
         assert_allclose(maxlog, 1.804465, rtol=1e-6)
 
-    def test_empty_input(self):
-        message = "`x` must contain at least one observation."
+    @pytest.mark.parametrize("x", [[], [1.0]])
+    def test_too_few_observations(self, x):
+        message = "`x` must contain at least two observations."
         with pytest.raises(ValueError, match=message):
-            stats.boxcox_normmax([], method="pearsonr")
+            stats.boxcox_normmax(x, method="pearsonr")
 
     def test_mle(self):
         maxlog = stats.boxcox_normmax(self.x, method='mle')
