@@ -315,8 +315,7 @@ class FitResult:
 
 
 @xp_capabilities(out_of_scope=True)
-def fit(dist, data, bounds=None, *, guess=None, method='mle',
-        optimizer=optimize.differential_evolution):
+def fit(dist, data, bounds=None, *, guess=None, method='mle', optimizer=None):
     r"""Fit a discrete or continuous distribution to data.
 
     Given a distribution, data, and bounds on the parameters of the
@@ -544,6 +543,12 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
     # --- Input Validation / Standardization --- #
     user_bounds = bounds
     user_guess = guess
+
+    # optimzer used to be controlled by np.random.seed; now it is not. Oh well.
+    if optimizer is None:
+        rng = np.random.default_rng()
+        def optimizer(*args, **kwargs):
+            return optimize.differential_evolution(*args, rng=rng, **kwargs)
 
     # distribution input validation and information collection
     if hasattr(dist, "pdf"):  # can't use isinstance for types

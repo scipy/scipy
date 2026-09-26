@@ -108,7 +108,13 @@ class TestHausdorff:
         # random state
         rs = check_random_state(None)
         old_global_state = rs.get_state()
-        directed_hausdorff(self.path_1, self.path_2, seed)
+        # Preserve positional use of `rng` to check
+        message = "Positional use of..."
+        if isinstance(seed, np.random.Generator):
+            directed_hausdorff(self.path_1, self.path_2, seed)
+        else:
+            with pytest.warns(FutureWarning, match=message):
+                directed_hausdorff(self.path_1, self.path_2, seed)
         rs2 = check_random_state(None)
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
@@ -162,7 +168,9 @@ class TestHausdorff:
     ])
     def test_subsets(self, A, B, seed, expected, num_parallel_threads):
         # verify fix for gh-11332
-        actual = directed_hausdorff(u=A, v=B, seed=seed)
+        message = "Use of keyword argument `seed`"
+        with pytest.warns(DeprecationWarning, match=message):
+            actual = directed_hausdorff(u=A, v=B, seed=seed)
         # check distance
         assert_allclose(actual[0], expected[0])
         starting_seed = seed

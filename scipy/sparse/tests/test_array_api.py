@@ -473,7 +473,7 @@ def test_default_is_matrix_kronsum():
 
 @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_default_is_matrix_random():
-    m = scipy.sparse.random(3, 3)
+    m = scipy.sparse.random(3, 3, rng=np.random.default_rng())
     assert not isinstance(m, scipy.sparse.sparray)
 
 

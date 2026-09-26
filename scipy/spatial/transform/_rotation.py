@@ -2333,16 +2333,18 @@ class Rotation:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.spatial.transform import Rotation as R
+        >>> rng = np.random.default_rng()
 
         Sample a single rotation:
 
-        >>> R.random().as_euler('zxy', degrees=True)
+        >>> R.random(rng=rng).as_euler('zxy', degrees=True)
         array([-110.5976185 ,   55.32758512,   76.3289269 ])  # random
 
         Sample a stack of rotations:
 
-        >>> R.random(5).as_euler('zxy', degrees=True)
+        >>> R.random(5, rng=rng).as_euler('zxy', degrees=True)
         array([[-110.5976185 ,   55.32758512,   76.3289269 ],  # random
                [ -91.59132005,  -14.3629884 ,  -93.91933182],
                [  25.23835501,   45.02035145, -121.67867086],
@@ -2358,7 +2360,8 @@ class Rotation:
         # deprecate `num`.
         if num is not None and shape is not None:
             raise ValueError("Only one of `num` or `shape` can be specified.")
-        sample = cython_backend.random(num, rng, shape=shape)
+        # changing to rng=rng here breaks control of np.random.seed
+        sample = cython_backend.random(num, rng=rng, shape=shape)
         return Rotation(sample, normalize=True, copy=False)
 
     @staticmethod
@@ -2720,7 +2723,7 @@ class Slerp:
 
     Setup the fixed keyframe rotations and times:
 
-    >>> key_rots = R.random(5, random_state=2342345)
+    >>> key_rots = R.random(5, rng=2342345)
     >>> key_times = [0, 1, 2, 3, 4]
 
     Create the interpolator object:
@@ -2735,27 +2738,27 @@ class Slerp:
     The keyframe rotations expressed as Euler angles:
 
     >>> key_rots.as_euler('xyz', degrees=True)
-    array([[ 14.31443779, -27.50095894,  -3.7275787 ],
-           [ -1.79924227, -24.69421529, 164.57701743],
-           [146.15020772,  43.22849451, -31.34891088],
-           [ 46.39959442,  11.62126073, -45.99719267],
-           [-88.94647804, -49.64400082, -65.80546984]])
+    array([[  41.28446155,  -41.80199969, -120.34989205],
+           [  34.84314322,  -59.00489852,  -26.15462016],
+           [-125.56725748,  -25.77047529,  169.6907449 ],
+           [  67.67095865,  -30.68453926, -124.51433145],
+           [ -67.29669851,  -58.99355917,  -27.8543882 ]])
 
     The interpolated rotations expressed as Euler angles. These agree with the
     keyframe rotations at both endpoints of the range of keyframe times.
 
     >>> interp_rots.as_euler('xyz', degrees=True)
-    array([[  14.31443779,  -27.50095894,   -3.7275787 ],
-           [   4.74588574,  -32.44683966,   81.25139984],
-           [  10.71094749,  -31.56690154,   38.06896408],
-           [  -1.79924227,  -24.69421529,  164.57701743],
-           [  11.72796022,   51.64207311, -171.7374683 ],
-           [ 146.15020772,   43.22849451,  -31.34891088],
-           [  68.10921869,   20.67625074,  -48.74886034],
-           [  46.39959442,   11.62126073,  -45.99719267],
-           [  12.35552615,    4.21525086,  -64.89288124],
-           [ -30.08117143,  -19.90769513,  -78.98121326],
-           [ -88.94647804,  -49.64400082,  -65.80546984]])
+    array([[  41.28446155,  -41.80199969, -120.34989205],
+           [  44.29252033,  -51.12010352,  -78.23150635],
+           [  43.97985176,  -46.26223206, -100.11069124],
+           [  34.84314322,  -59.00489852,  -26.15462016],
+           [-133.11159059,  -73.16789237,  158.36693059],
+           [-125.56725748,  -25.77047529,  169.6907449 ],
+           [ 104.59281178,  -46.06663997, -135.49508528],
+           [  67.67095865,  -30.68453926, -124.51433145],
+           [  51.86575416,  -47.64617962, -119.34291477],
+           [   8.17722901,  -66.00718979,  -88.81636872],
+           [ -67.29669851,  -58.99355917,  -27.8543882 ]])
 
     """
 

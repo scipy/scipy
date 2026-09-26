@@ -37,7 +37,7 @@ def random_uniform(shape, rng):
 
 def random_uniform_sparse(shape, rng):
     return scipy.sparse.random(shape[0], shape[1],
-                               density=0.1, format='csr', random_state=rng)
+                               density=0.1, format='csr', rng=rng)
 
 
 def random_uniform_integer(shape, rng):

@@ -2856,7 +2856,7 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
-    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> method = stats.PermutationMethod(n_resamples=9999, rng=rng)
     >>> res = stats.anderson_ksamp(samples, variant='continuous', method=method)
     >>> res.pvalue
     0.699
@@ -4089,7 +4089,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> import numpy as np
     >>> x = np.array([0.5, 0.825, 0.375, 0.5])
     >>> y = np.array([0.525, 0.775, 0.325, 0.55])
-    >>> res = wilcoxon(x, y, alternative='greater')
+    >>> res = wilcoxon(x, y, alternative='greater', method='exact')
     >>> res
     WilcoxonResult(statistic=5.0, pvalue=0.5625)
 
@@ -4097,9 +4097,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     produced different results:
 
     >>> d = [-0.025, 0.05, 0.05, -0.05]
-    >>> ref = wilcoxon(d, alternative='greater')
+    >>> ref = wilcoxon(d, alternative='greater', method='exact')
     >>> ref
-    WilcoxonResult(statistic=6.0, pvalue=0.5)
+    WilcoxonResult(statistic=np.float64(6.0), pvalue=np.float64(0.4375))
 
     The substantial difference is due to roundoff error in the results of
     ``x-y``:
@@ -4115,8 +4115,19 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     For example:
 
     >>> d2 = np.around(x - y, decimals=3)
-    >>> wilcoxon(d2, alternative='greater')
-    WilcoxonResult(statistic=6.0, pvalue=0.5)
+    >>> wilcoxon(d2, alternative='greater', method='exact')
+    WilcoxonResult(statistic=np.float64(6.0), pvalue=np.float64(0.4375))
+
+    Further note that ``method='exact'`` uses a null distribution that is exact
+    only when there are no ties and zeros. To perform an exact test considering
+    the possibility of ties and zeros, use a permutation test with sufficient
+    resamples to exhaust all possible "permutations" of the data.
+
+    >>> from scipy.stats import PermutationMethod
+    >>> rng = np.random.default_rng()
+    >>> method = PermutationMethod(n_resamples=np.inf, rng=rng)
+    >>> wilcoxon(d2, alternative='greater', method=method)
+    WilcoxonResult(statistic=np.float64(6.0), pvalue=np.float64(0.5))
 
     """
     # replace approx by asymptotic to ensure backwards compatibility

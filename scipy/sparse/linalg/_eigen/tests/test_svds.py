@@ -423,13 +423,23 @@ class SVDSCommonTests:
         _check_svds(A, k, *res1a)
 
     def test_svd_random_state(self):
-        # the legacy `random_state` argument should work for now,
+        # the legacy `random_state` argument should continue to work with `random_state`
+        # and `rng` keyword arguments,
         # even with NumPy <2.2.
         # Regression test for gh-25069
         rng = np.random.default_rng(0)
         A = rng.random((5, 5))
-        res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
+        # use `random_state` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
         _check_svds(A, 1, *res)
+
+        if np.__version__ < "2.2":
+            # `default_rng` added support for `RandomState` in NP 2.2
+            return
+        res = svds(A, 1, solver=self.solver, rng=np.random.RandomState(0))
+        _check_svds(A, 1, *res)
+
 
     @pytest.mark.filterwarnings("ignore:Exited") # Ignore LOBPCG early exit
     def test_svd_rng_3(self):

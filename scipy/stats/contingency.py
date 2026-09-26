@@ -308,7 +308,8 @@ def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
     >>> obs = np.asarray([[12, 3],
     ...                   [17, 16]])
     >>> res = chi2_contingency(obs, correction=False)
-    >>> ref = chi2_contingency(obs, correction=False, method=PermutationMethod())
+    >>> rng = np.random.default_rng()
+    >>> ref = chi2_contingency(obs, correction=False, method=PermutationMethod(rng=rng))
     >>> res.pvalue, ref.pvalue
     (0.0614122539870913, 0.1074)  # may vary
 

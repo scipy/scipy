@@ -527,12 +527,14 @@ class TestDifferentialEvolutionSolver:
 
         inits = ['random', 'latinhypercube', 'sobol', 'halton']
         for init in inits:
-            differential_evolution(self.quadratic,
-                                   [(-100, 100)],
-                                   polish=False,
-                                   rng=rng,
-                                   tol=0.5,
-                                   init=init)
+            # use `seed` to check that DeprecationWarning is emitted
+            with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+                differential_evolution(self.quadratic,
+                                    [(-100, 100)],
+                                    polish=False,
+                                    seed=rng,
+                                    tol=0.5,
+                                    init=init)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -614,15 +616,17 @@ class TestDifferentialEvolutionSolver:
 
     def test_population_initiation(self):
         # test the different modes of population initiation
+        rng = np.random.default_rng()
 
         # init must be either 'latinhypercube' or 'random'
         # raising ValueError is something else is passed in
         assert_raises(ValueError,
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
+                      rng=rng,
                       **{'init': 'rubbish'})
 
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, rng=rng)
 
         # check that population initiation:
         # 1) resets _nfev to 0
@@ -635,11 +639,13 @@ class TestDifferentialEvolutionSolver:
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+        # if we don't provide an `rng` and `np.random.seed` has been
+        # set, `halton`
         solver.init_population_qmc(qmc_engine='halton')
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, init='sobol')
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, init='sobol', rng=rng)
         solver.init_population_qmc(qmc_engine='sobol')
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
@@ -671,13 +677,14 @@ class TestDifferentialEvolutionSolver:
         assert_raises(ValueError,
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
+                      rng=rng,
                       **{'init': population})
 
         # provide an initial solution
         # bounds are [(0, 2), (0, 2)]
         x0 = np.random.uniform(low=0.0, high=2.0, size=2)
         solver = DifferentialEvolutionSolver(
-            rosen, self.bounds, x0=x0
+            rosen, self.bounds, x0=x0, rng=rng
         )
         # parameters are scaled to unit interval
         assert_allclose(solver.population[0], x0 / 2.0)

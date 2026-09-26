@@ -3660,7 +3660,7 @@ class TestMultivariateT:
         def integrand(x):
             return stats.multivariate_t.pdf(x.T, mean, cov, df)
 
-        ref = qmc_quad(integrand, a, b, qrng=stats.qmc.Halton(d=dim, seed=rng))
+        ref = qmc_quad(integrand, a, b, qrng=stats.qmc.Halton(d=dim, rng=rng))
         assert_allclose(res, ref.integral, rtol=1e-3)
 
         def integrand(*zyx):

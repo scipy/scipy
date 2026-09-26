@@ -352,7 +352,8 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
     Univariate samples, exact p-value.
 
-    >>> res = stats.spearmanrho(x, y, method=stats.PermutationMethod())
+    >>> rng = np.random.default_rng(98145152315484)
+    >>> res = stats.spearmanrho(x, y, method=stats.PermutationMethod(rng=rng))
     >>> res.statistic
     np.float64(0.8207826816681233)
     >>> res.pvalue
@@ -360,7 +361,6 @@ def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
 
     Batch of univariate samples, one vectorized call.
 
-    >>> rng = np.random.default_rng(98145152315484)
     >>> x2 = rng.standard_normal((2, 100))
     >>> y2 = rng.standard_normal((2, 100))
     >>> res = stats.spearmanrho(x2, y2, axis=-1)

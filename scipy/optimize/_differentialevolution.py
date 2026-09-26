@@ -411,16 +411,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     function is implemented in `rosen` in `scipy.optimize`.
 
     >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = differential_evolution(rosen, bounds)
+    >>> result = differential_evolution(rosen, bounds, rng=rng)
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Now repeat, but with parallelization.
 
     >>> result = differential_evolution(rosen, bounds, updating='deferred',
-    ...                                 workers=2)
+    ...                                 workers=2, rng=rng)
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
@@ -1086,11 +1087,11 @@ class DifferentialEvolutionSolver:
 
         # Create an array for population of candidate solutions.
         if qmc_engine == 'latinhypercube':
-            sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+            sampler = qmc.LatinHypercube(d=self.parameter_count, rng=rng)
         elif qmc_engine == 'sobol':
-            sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+            sampler = qmc.Sobol(d=self.parameter_count, rng=rng)
         elif qmc_engine == 'halton':
-            sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+            sampler = qmc.Halton(d=self.parameter_count, rng=rng)
         else:
             raise ValueError(self.__init_error_msg)
 

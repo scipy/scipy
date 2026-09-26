@@ -13,11 +13,11 @@ dim = 2
 sample = {}
 
 # Sobol'
-engine = qmc.Sobol(d=dim, seed=rng)
+engine = qmc.Sobol(d=dim, rng=rng)
 sample["Sobol'"] = engine.random(n_sample)
 
 # Halton
-engine = qmc.Halton(d=dim, seed=rng)
+engine = qmc.Halton(d=dim, rng=rng)
 sample["Halton"] = engine.random(n_sample)
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))

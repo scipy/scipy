@@ -1097,10 +1097,11 @@ def test_as_euler_nd_rotation(xp, ndim: int):
 def test_inv(xp):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
-    rnd = np.random.RandomState(0)
+    rnd = np.random.default_rng(0)
     n = 10
-    # preserve use of old random_state during SPEC 7 transition
-    p = Rotation.random(num=n, random_state=rnd)
+    # use `random_state` to check that DeprecationWarning is emitted
+    with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+        p = Rotation.random(num=n, random_state=rnd)
     p = rotation_to_xp(p, xp)
     p_mat = p.as_matrix()
     q_mat = p.inv().as_matrix()
@@ -1791,7 +1792,7 @@ def test_n_rotations(xp):
     assert_equal(len(r), 2)
     assert_equal(len(r[:-1]), 1)
 
-
+np.random.seed(0)
 def test_random_rotation():
     # No xp testing since random rotations are always using NumPy
     rng = np.random.default_rng(0)
@@ -1813,7 +1814,9 @@ def test_random_rotation():
         Rotation.random(num=3,rng=rng, shape=(2, 2))
     with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
         Rotation.random(rng=rng, shape=2.5)
-    with pytest.raises(TypeError, match="takes from 0 to 2 positional arguments"):
+    # could not seem to make this work without nested contexts
+    with (pytest.raises(TypeError, match="takes from 0 to 2 positional arguments") as _,
+          pytest.warns(FutureWarning, match="Positional use of `rng`") as _):
         Rotation.random(1, rng, None)  # Shape should be kwarg only
 
 
