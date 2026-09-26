@@ -565,9 +565,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     use and how to set up that minimizer. This parameter will be passed to
     `scipy.optimize.minimize`.
 
+    >>> rng = np.random.default_rng()
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=200)
+    ...                    niter=200, rng=rng)
     >>> # the global minimum is:
     >>> ret.x, ret.fun
     -0.1951, -1.0009
@@ -589,7 +590,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=200)
+    ...                    niter=200, rng=rng)
     >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))
@@ -615,7 +616,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=200, take_step=mytakestep)
+    ...                    niter=200, take_step=mytakestep, rng=rng)
     >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))

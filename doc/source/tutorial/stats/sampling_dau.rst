@@ -10,7 +10,7 @@ Discrete Alias Urn (DAU)
 * Speed:
 
   * Set-up: slow (linear with the vector-length)
-  * Sampling: very fast 
+  * Sampling: very fast
 
 
 DAU samples from distributions with arbitrary but finite probability vectors
@@ -21,7 +21,7 @@ constructing the tables is O(N).
 
     >>> import numpy as np
     >>> from scipy.stats.sampling import DiscreteAliasUrn
-    >>> 
+    >>>
     >>> pv = [0.18, 0.02, 0.8]
     >>> urng = np.random.default_rng()
     >>> rng = DiscreteAliasUrn(pv, random_state=urng)
@@ -50,7 +50,7 @@ method in the distribution object:
     ...         return x**self.c
     ...     def support(self):
     ...         return (0, 10)
-    ... 
+    ...
     >>> dist = Distribution(2)
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)
     >>> rng.rvs()
@@ -68,7 +68,7 @@ method in the distribution object:
     ...         return x**self.c
     ...     def support(self):
     ...         return (0, 10)
-    ... 
+    ...
     >>> dist = Distribution(2)
     >>> urng = np.random.default_rng()
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)

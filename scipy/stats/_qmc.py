@@ -1179,8 +1179,10 @@ class Halton(QMCEngine):
     --------
     Generate samples from a low discrepancy sequence of Halton.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(d=2, scramble=False)
+    >>> rng = np.random.default_rng()
+    >>> sampler = qmc.Halton(d=2, scramble=False, rng=rng)
     >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.        , 0.        ],
@@ -1412,8 +1414,10 @@ class LatinHypercube(QMCEngine):
     --------
     Generate samples from a Latin hypercube generator.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=2)
+    >>> rng = np.random.default_rng()
+    >>> sampler = qmc.LatinHypercube(d=2, rng=rng)
     >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.1545328 , 0.53664833], # random
@@ -1443,7 +1447,7 @@ class LatinHypercube(QMCEngine):
 
     Using a base LHS as a baseline.
 
-    >>> sampler = qmc.LatinHypercube(d=2)
+    >>> sampler = qmc.LatinHypercube(d=2, rng=rng)
     >>> sample = sampler.random(n=5)
     >>> qmc.discrepancy(sample)
     0.0196...  # random
@@ -1451,7 +1455,7 @@ class LatinHypercube(QMCEngine):
     Use the `optimization` keyword argument to produce a LHS with
     lower discrepancy at higher computational cost.
 
-    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd", rng=rng)
     >>> sample = sampler.random(n=5)
     >>> qmc.discrepancy(sample)
     0.0176...  # random
@@ -1460,7 +1464,7 @@ class LatinHypercube(QMCEngine):
     LHS of strength 2. In this case, the number of sample points must be the
     square of a prime number.
 
-    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
+    >>> sampler = qmc.LatinHypercube(d=2, strength=2, rng=rng)
     >>> sample = sampler.random(n=9)
     >>> qmc.discrepancy(sample)
     0.00526...  # random
@@ -1487,8 +1491,10 @@ class LatinHypercube(QMCEngine):
     Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol,
     the first step is to create a sample in the unit hypercube:
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=6)
+    >>> rng = np.random.default_rng()
+    >>> sampler = qmc.LatinHypercube(d=6, rng=rng)
     >>> sample = sampler.random(n=50)
 
     Then the sample can be scaled to the appropriate bounds:
@@ -1709,8 +1715,10 @@ class Sobol(QMCEngine):
     --------
     Generate samples from a low discrepancy sequence of Sobol'.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Sobol(d=2, scramble=False)
+    >>> rng = np.random.default_rng()
+    >>> sampler = qmc.Sobol(d=2, scramble=False, rng=rng)
     >>> sample = sampler.random_base2(m=3)
     >>> sample
     array([[0.   , 0.   ],
@@ -2335,9 +2343,11 @@ class MultivariateNormalQMC:
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
-    >>> dist = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
+    >>> rng = np.random.default_rng(7214469735)
+    >>> dist = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]], rng=rng)
     >>> sample = dist.random(512)
     >>> _ = plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
@@ -2509,10 +2519,13 @@ class MultinomialQMC:
     by the `pvals` associated to each category.
     Then, we sample this distribution 64 times.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
+    >>> rng = np.random.default_rng()
     >>> dist = qmc.MultinomialQMC(
-    ...     pvals=[0.2, 0.4, 0.4], n_trials=10, engine=qmc.Halton(d=1)
+    ...     pvals=[0.2, 0.4, 0.4], n_trials=10, engine=qmc.Halton(d=1, rng=rng),
+    ...     rng=rng,
     ... )
     >>> sample = dist.random(64)
 

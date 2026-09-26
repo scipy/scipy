@@ -96,12 +96,14 @@ class TestBootstrap:
         rng = np.random.RandomState(0)
 
         x = rng.rand(10, 11, 12)
-        # SPEC-007 leave one call with random_state to ensure it still works
-        res1 = bootstrap((xp.asarray(x),), xp.mean, batch=None, method=method,
-                         random_state=0, axis=axis, n_resamples=100)
+        # use `random_state` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res1 = bootstrap((xp.asarray(x),), xp.mean, batch=None, method=method,
+                             random_state=0, axis=axis, n_resamples=100)
         rng = np.random.RandomState(0)
-        res2 = bootstrap((xp.asarray(x),), xp.mean, batch=10, method=method,
-                         axis=axis, n_resamples=100, random_state=rng)
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res2 = bootstrap((xp.asarray(x),), xp.mean, batch=10, method=method,
+                             axis=axis, n_resamples=100, random_state=rng)
 
         xp_assert_close(res2.confidence_interval.low, res1.confidence_interval.low)
         xp_assert_close(res2.confidence_interval.high, res1.confidence_interval.high)
@@ -394,14 +396,17 @@ class TestBootstrap:
         n_replications = 1000
         data1 = dist1.rvs(size=(n_replications, n1), random_state=rng)
         data2 = dist2.rvs(size=(n_replications, n2), random_state=rng)
-        res = bootstrap((xp.asarray(data1), xp.asarray(data2)),
-                        statistic=my_stat,
-                        confidence_level=confidence_level,
-                        n_resamples=n_resamples,
-                        batch=50,
-                        method=method,
-                        axis=-1,
-                        random_state=rng)
+        # Preserve use of `random_state` kwarg to test DeprecationWarning
+        message = "Use of keyword argument"
+        with pytest.warns(DeprecationWarning, match=message):
+            res = bootstrap((xp.asarray(data1), xp.asarray(data2)),
+                            statistic=my_stat,
+                            confidence_level=confidence_level,
+                            n_resamples=n_resamples,
+                            batch=50,
+                            method=method,
+                            axis=-1,
+                            random_state=rng)
         ci = res.confidence_interval
 
         # ci contains vectors of lower and upper confidence interval bounds
@@ -679,7 +684,7 @@ class TestBootstrap:
                              xp.std(data, axis=axis, correction=1)])
 
         res = bootstrap((sample,), statistic, method=method, axis=-1,
-                        n_resamples=9999, batch=200, random_state=rng)
+                        n_resamples=9999, batch=200, rng=rng)
 
         params = xp.asarray([1, 0.5])
         counts = xp.count_nonzero((res.confidence_interval.low.T < params)
@@ -1388,7 +1393,8 @@ class TestPermutationTest:
             permutation_test(data, stat, rng='herring')
 
     # -- Test Parameters -- #
-    # SPEC-007 leave one call with seed to check it still works
+    # SPEC-007 leave one call with `random_state`` to check it still works
+    # and DeprecationWarning is emitted
     @pytest.mark.parametrize('random_state', [np.random.RandomState,
                                               np.random.default_rng])
     @pytest.mark.parametrize('permutation_type',
@@ -1409,20 +1415,23 @@ class TestPermutationTest:
 
         kwds = {'n_resamples': 100, 'permutation_type': permutation_type,
                 'vectorized': True}
-        res1 = stats.permutation_test((x, y), statistic, batch=1,
-                                      random_state=random_state(0), **kwds)
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res1 = stats.permutation_test((x, y), statistic, batch=1,
+                                          random_state=random_state(0), **kwds)
         assert statistic.counter == 101
         assert statistic.batch_size == 1
 
         statistic.counter = 0
-        res2 = stats.permutation_test((x, y), statistic, batch=50,
-                                      random_state=random_state(0), **kwds)
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res2 = stats.permutation_test((x, y), statistic, batch=50,
+                                          random_state=random_state(0), **kwds)
         assert statistic.counter == 3
         assert statistic.batch_size == 50
 
         statistic.counter = 0
-        res3 = stats.permutation_test((x, y), statistic, batch=100,
-                                      random_state=random_state(0), **kwds)
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res3 = stats.permutation_test((x, y), statistic, batch=100,
+                                          random_state=random_state(0), **kwds)
         assert statistic.counter == 2
         assert statistic.batch_size == 100
 
@@ -1447,8 +1456,11 @@ class TestPermutationTest:
 
         kwds = {'permutation_type': permutation_type,
                 'vectorized': True}
-        res = stats.permutation_test((x, y), statistic, n_resamples=3,
-                                     random_state=random_state(0), **kwds)
+
+        # use `random_state` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res = stats.permutation_test((x, y), statistic, n_resamples=3,
+                                        random_state=random_state(0), **kwds)
         assert xp_size(res.null_distribution) == 3
 
         res = stats.permutation_test((x, y), statistic, **kwds)

@@ -1884,4 +1884,5 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     prefixes = (os.path.dirname(__file__),)
     warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
 
-    return random(m, n, density, format, dtype, rng)
+    # using rng=rng here breaks control of np.random.seed
+    return random(m, n, density, format, dtype, rng=rng)

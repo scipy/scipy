@@ -132,6 +132,20 @@ class TestSobolIndices:
         )
         assert isinstance(res._bootstrap_result, BootstrapResult)
 
+        # call twice with same `rng` to get the same result
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        ref_ci = res.bootstrap(rng=rng)
+        rng = np.random.default_rng(28631265345463262246170309650372465332)
+        ref_ci = res.bootstrap(rng=rng)
+        assert_allclose(ref_ci.first_order.confidence_interval.low,
+                        ref_ci.first_order.confidence_interval.low)
+        assert_allclose(ref_ci.first_order.confidence_interval.high,
+                        ref_ci.first_order.confidence_interval.high)
+        assert_allclose(ref_ci.total_order.confidence_interval.low,
+                        ref_ci.total_order.confidence_interval.low)
+        assert_allclose(ref_ci.total_order.confidence_interval.high,
+                        ref_ci.total_order.confidence_interval.high)
+
     def test_func_dict(self, ishigami_ref_indices):
         rng = np.random.default_rng(28631265345463262246170309650372465332)
         n = 4096
@@ -150,7 +164,6 @@ class TestSobolIndices:
             'f_AB': f_ishigami(AB).reshape((3, 1, -1))
         }
 
-        # preserve use of old random_state during SPEC 7 transition
         res = sobol_indices(
             func=func, n=n,
             dists=dists,

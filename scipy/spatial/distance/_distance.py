@@ -324,6 +324,7 @@ def directed_hausdorff(u, v, rng=0):
 
     >>> from scipy.spatial.distance import directed_hausdorff
     >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> u = np.array([(1.0, 0.0),
     ...               (0.0, 1.0),
     ...               (-1.0, 0.0),
@@ -333,21 +334,21 @@ def directed_hausdorff(u, v, rng=0):
     ...               (-2.0, 0.0),
     ...               (0.0, -4.0)])
 
-    >>> directed_hausdorff(u, v)[0]
+    >>> directed_hausdorff(u, v, rng=rng)[0]
     2.23606797749979
-    >>> directed_hausdorff(v, u)[0]
+    >>> directed_hausdorff(v, u, rng=rng)[0]
     3.0
 
     Find the general (symmetric) Hausdorff distance between two 2-D
     arrays of coordinates:
 
-    >>> max(directed_hausdorff(u, v)[0], directed_hausdorff(v, u)[0])
+    >>> max(directed_hausdorff(u, v, rng=rng)[0], directed_hausdorff(v, u, rng=rng)[0])
     3.0
 
     Find the indices of the points that generate the Hausdorff distance
     (the Hausdorff pair):
 
-    >>> directed_hausdorff(v, u)[1:]
+    >>> directed_hausdorff(v, u, rng=rng)[1:]
     (3, 3)
 
     """

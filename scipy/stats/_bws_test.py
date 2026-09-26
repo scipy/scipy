@@ -164,6 +164,7 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     as follows.
 
     >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> x = [1, 2, 3, 4, 6, 7, 8]
     >>> y = [5, 9, 10, 11, 12, 13, 14]
 
@@ -177,8 +178,8 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     statistic against the *exact* distribution of the test statistic under the
     null hypothesis.
 
-    >>> from scipy.stats import bws_test
-    >>> res = bws_test(x, y)
+    >>> from scipy.stats import bws_test, PermutationMethod
+    >>> res = bws_test(x, y, method=PermutationMethod(rng=rng))
     >>> print(res.statistic)
     5.132167152575315
 

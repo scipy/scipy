@@ -2146,7 +2146,7 @@ class TestWilcoxon:
     def test_permutation_method(self, size, xp):
         rng = np.random.default_rng(92348034828501345)
         x = rng.random(size=size).tolist()
-        res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod())
+        res = stats.wilcoxon(xp.asarray(x), method=stats.PermutationMethod(rng=rng))
         ref = stats.wilcoxon(x, method='exact')  # all backends test against NumPy
         dtype = xpx.default_dtype(xp)
         xp_assert_equal(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
@@ -2156,10 +2156,12 @@ class TestWilcoxon:
         rng = np.random.default_rng(59234803482850134)
         pm = stats.PermutationMethod(n_resamples=99, rng=rng)
         ref = stats.wilcoxon(x, method=pm)
+
         # preserve use of old random_state during SPEC 7 transition
         rng = np.random.default_rng(59234803482850134)
-        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
-        res = stats.wilcoxon(x, method=pm)
+        with pytest.warns(DeprecationWarning, match="Use of keyword argument..."):
+            pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+            res = stats.wilcoxon(x, method=pm)
 
         xp_assert_equal(xp.round(res.pvalue*100)/100, res.pvalue)  # n_resamples used
         xp_assert_equal(res.pvalue, ref.pvalue)  # rng/random_state used

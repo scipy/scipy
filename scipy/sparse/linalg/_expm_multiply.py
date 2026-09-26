@@ -42,6 +42,7 @@ def _trace(A):
         return A.trace()
 
 
+# TODO: convert to `rng`?
 def traceest(A, m3, seed=None):
     """Estimate `np.trace(A)` using `3*m3` matrix-vector products.
 

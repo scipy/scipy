@@ -19,6 +19,7 @@ from scipy._lib._array_api import (
     xp_copy, xp_assert_close, xp_assert_equal
 )
 
+
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -250,8 +251,9 @@ class TestKMeans:
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
-        # use `seed` to ensure backwards compatibility after SPEC7
-        kmeans(xp.asarray(data), 2, seed=1)
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            kmeans(xp.asarray(data), 2, seed=1)
 
     def test_kmeans_simple(self, xp):
         rng = np.random.default_rng(54321)
@@ -315,8 +317,9 @@ class TestKMeans:
         initc = data1[:3]
         code = xp_copy(initc, xp=xp)
 
-        # use `seed` to ensure backwards compatibility after SPEC7
-        kmeans2(data1, code, iter=1, seed=1)[0]
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            kmeans2(data1, code, iter=1, seed=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
     def test_kmeans2_rank1_2(self, xp):
@@ -442,15 +445,18 @@ class TestKMeans:
         ]
 
         for seed in seed_list:
+            if isinstance(seed, np.random.RandomState) and np.__version__ < "2.2":
+                # `default_rng` added support for `RandomState` in NP 2.2
+                continue
             seed1 = deepcopy(seed)
             seed2 = deepcopy(seed)
             data = xp.asarray(TESTDATA_2D)
             # test for kmeans
-            res1, _ = kmeans(data, 2, seed=seed1)
-            res2, _ = kmeans(data, 2, seed=seed2)
+            res1, _ = kmeans(data, 2, rng=seed1)
+            res2, _ = kmeans(data, 2, rng=seed2)
             xp_assert_close(res1, res2)  # should be same results
             # test for kmeans2
             for minit in ["random", "points", "++"]:
-                res1, _ = kmeans2(data, 2, minit=minit, seed=seed1)
-                res2, _ = kmeans2(data, 2, minit=minit, seed=seed2)
+                res1, _ = kmeans2(data, 2, minit=minit, rng=seed1)
+                res2, _ = kmeans2(data, 2, minit=minit, rng=seed2)
                 xp_assert_close(res1, res2)  # should be same results

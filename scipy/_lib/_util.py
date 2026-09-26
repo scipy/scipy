@@ -139,7 +139,7 @@ _rng_desc = (
 
 
 # SPEC 7
-def _transition_to_rng(old_name, *, position_num=None, end_version=None,
+def _transition_to_rng(old_name, *, position_num=None, end_version="2.4.0",
                        replace_doc=True):
     """Example decorator to transition from old PRNG usage to new `rng` behavior
 
@@ -351,6 +351,8 @@ def check_random_state(seed):
 
     """
     if seed is None or seed is np.random:
+        # can we wrap this with np.random.default_rng?
+        # It doesn't have _bit_generator attribute. This can cause problems.
         return np.random.mtrand._rand
     if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)

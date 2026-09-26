@@ -739,11 +739,11 @@ class SHGO:
                     self.nc = 0
                     self.sampling_method = 'sobol'
                     self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
-                                                seed=0)
+                                                rng=0)
                 else:
                     self.sampling_method = 'halton'
                     self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
-                                                 seed=0)
+                                                 rng=0)
 
                 def sampling_method(n, d):
                     return self.qmc_engine.random(n)

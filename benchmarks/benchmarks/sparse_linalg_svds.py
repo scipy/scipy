@@ -64,7 +64,7 @@ class BenchSVDS(Benchmark):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 # parameters `maxiter` and `tol` are tuned for fair comparison
-                _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
+                _, s, _ = svds(self.A, k=k, solver=solver, rng=self.rng,
                                maxiter = 200, tol=1e-6)
             accuracy = np.sum(np.abs(1 - s[int(k/2):] / self.top_singular_values))
             # ensure that we are benchmarking a consistent outcome;

@@ -625,10 +625,11 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     >>> import numpy as np
     >>> from scipy.optimize import dual_annealing
+    >>> rng = np.random.default_rng()
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = dual_annealing(func, bounds=list(zip(lw, up)))
+    >>> ret = dual_annealing(func, bounds=list(zip(lw, up)), rng=rng)
     >>> ret.x
     array([-4.26437714e-09, -3.91699361e-09, -1.86149218e-09, -3.97165720e-09,
            -6.29151648e-09, -6.53145322e-09, -3.93616815e-09, -6.55623025e-09,

@@ -218,7 +218,7 @@ class TestDistributions:
             check_moment_funcs(dist, result_shape)  # this needs to get split up
             check_lmoment_funcs(dist, result_shape)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
-            qrng = qmc.Halton(d=1, seed=rng)
+            qrng = qmc.Halton(d=1, rng=rng)
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
@@ -855,7 +855,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
         sample_method = dist.sample
 
     if rng_type != np.random.Generator:
-        rng = rng_type(d=1, seed=rng)
+        rng = rng_type(d=1, rng=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 

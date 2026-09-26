@@ -2963,7 +2963,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # Draw uniform low-discrepancy sequences scrambled with each RNG
         uniforms = []
         for rng in rngs:
-            qrng = qrng_class(seed=rng, **kwargs)
+            qrng = qrng_class(rng=rng, **kwargs)
             uniform = qrng.random(n_low_discrepancy)
             uniform = uniform.reshape(n_low_discrepancy if sample_shape else ())[()]
             uniforms.append(uniform)

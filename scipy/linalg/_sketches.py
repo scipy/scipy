@@ -116,14 +116,14 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     >>> from scipy import sparse
     >>> rng = np.random.default_rng()
     >>> *shape, density, sketch_n_rows = 15000, 100, 0.01, 200
-    >>> A = sparse.random_array(shape, density=density, format='csc')
-    >>> B = sparse.random_array(shape, density=density, format='csr')
-    >>> C = sparse.random_array(shape, density=density, format='coo')
+    >>> A = sparse.random_array(shape, density=density, format='csc', rng=rng)
+    >>> B = sparse.random_array(shape, density=density, format='csr', rng=rng)
+    >>> C = sparse.random_array(shape, density=density, format='coo', rng=rng)
     >>> D = rng.standard_normal(shape)
-    >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
-    >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
-    >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
-    >>> SD = linalg.clarkson_woodruff_transform(D, sketch_n_rows) # slowest
+    >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows, rng=rng) # fastest
+    >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows, rng=rng) # fast
+    >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows, rng=rng) # slower
+    >>> SD = linalg.clarkson_woodruff_transform(D, sketch_n_rows, rng=rng) # slowest
 
     That said, this method does perform well on dense inputs, just slower
     on a relative scale.
@@ -148,7 +148,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     Apply the transform to create a new matrix with 200 rows:
 
     >>> sketch_n_rows = 200
-    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows, seed=rng)
+    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows, rng=rng)
     >>> sketch.shape
     (200, 100)
 
@@ -166,7 +166,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     >>> b = rng.standard_normal(n_rows)
     >>> x = linalg.lstsq(A, b)[0]
     >>> Ab = np.hstack((A, b.reshape(-1, 1)))
-    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows, seed=rng)
+    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows, rng=rng)
     >>> SA, Sb = SAb[:, :-1], SAb[:, -1]
     >>> x_sketched = linalg.lstsq(SA, Sb)[0]
 

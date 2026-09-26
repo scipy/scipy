@@ -22,6 +22,7 @@ np.import_array()
 __all__ = ['directed_hausdorff']
 
 @cython.boundscheck(False)
+# I guess this is not going to transition to using `rng`?
 def directed_hausdorff(const double[:,::1] ar1, const double[:,::1] ar2, seed=0):
 
     cdef double cmax, cmin, d = 0

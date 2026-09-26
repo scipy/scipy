@@ -544,16 +544,24 @@ class QMCEngineTests:
         rng=170382760648021597650530316304495310428,
         **kwargs
     ) -> QMCEngine:
-        # preserve use of `seed` during SPEC 7 transition because
-        # some tests rely on behavior with integer `seed` (which is
-        # different from behavior with integer `rng`)
+        # Preserve use of `seed` during SPEC 7 transition to test DeprecationWarning.
+        # But also, passing an integer to `seed` vs `rng` produces different results,
+        # and some tests fail. This may be an issue for functions that use QMCEngines
+        # with `seed` argument under the hood. The user could be passing an integer
+        # to the function's `rng` argument, so they don't see a DeprecationWarning,
+        # and that is currently passed as the QMCEngine's `seed` argument. If/when
+        # we start passing it to the QMCEngine's `rng` argument, instead, the results
+        # will change.
+        message = 'Use of keyword argument...'
         if self.can_scramble:
-            return self.qmce(scramble=scramble, seed=rng, **kwargs)
+            with pytest.warns(DeprecationWarning, match=message):
+                return self.qmce(scramble=scramble, seed=rng, **kwargs)
         else:
             if scramble:
                 pytest.skip()
             else:
-                return self.qmce(seed=rng, **kwargs)
+                with pytest.warns(DeprecationWarning, match=message):
+                    return self.qmce(seed=rng, **kwargs)
 
     def reference(self, scramble: bool) -> np.ndarray:
         return self.scramble_nd if scramble else self.unscramble_nd
@@ -1085,8 +1093,9 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         n_trials = 100
         expected = np.atleast_2d(n_trials * p).astype(int)
-        # preserve use of legacy keyword during SPEC 7 transition
-        engine = qmc.MultinomialQMC(p, n_trials=n_trials, seed=rng)
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            engine = qmc.MultinomialQMC(p, n_trials=n_trials, seed=rng)
         assert_allclose(engine.random(1), expected, atol=1)
 
     def test_MultinomialDistribution(self):
@@ -1152,9 +1161,10 @@ class TestNormalQMC:
     def test_NormalQMCSeeded(self):
         # test even dimension
         rng = np.random.default_rng(274600237797326520096085022671371676017)
-        # preserve use of legacy keyword during SPEC 7 transition
-        engine = qmc.MultivariateNormalQMC(
-            mean=np.zeros(2), inv_transform=False, seed=rng)
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            engine = qmc.MultivariateNormalQMC(
+                mean=np.zeros(2), inv_transform=False, seed=rng)
         samples = engine.random(n=2)
         samples_expected = np.array([[-0.932001, -0.522923],
                                      [-1.477655, 0.846851]])
@@ -1537,13 +1547,20 @@ def test_deterministic(engine):
     seed_number = 2359834584
 
     rng = np.random.RandomState(seed_number)
-    res1 = engine(d=1, seed=rng).random(4)
+    # use `seed` to check that DeprecationWarning is emitted
+    # but actually, there is an error when a RandomState is used for `rng`
+    # This should be OK with NumPy >= 2.2; look into this
+    with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+        res1 = engine(d=1, seed=rng).random(4)
     rng = np.random.RandomState(seed_number)
-    res2 = engine(d=1, seed=rng).random(4)
+    with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+        res2 = engine(d=1, seed=rng).random(4)
     assert_equal(res1, res2)
 
     rng = np.random.default_rng(seed_number)
-    res1 = engine(d=1, seed=rng).random(4)
+    # continue to check `seed` vs `rng` during deprecation period
+    with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+        res1 = engine(d=1, seed=rng).random(4)
     res2 = engine(d=1, rng=seed_number).random(4)
     assert_equal(res1, res2)
     rng = np.random.default_rng(seed_number)
