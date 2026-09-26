@@ -3221,6 +3221,11 @@ class genpareto_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Generalized Pareto distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_Pareto_distribution
+
     %(example)s
 
     """
@@ -3410,6 +3415,11 @@ class genextreme_gen(rv_continuous):
     `genextreme` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Generalized extreme value distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution
 
     %(example)s
 
@@ -4326,6 +4336,11 @@ class gumbel_r_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
+
     %(example)s
 
     """
@@ -4457,6 +4472,11 @@ class gumbel_l_gen(rv_continuous):
     log-Weibull and Gompertz distributions.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
 
     %(example)s
 
