@@ -164,8 +164,7 @@ class TestBatch:
     def test_fractional_matrix_power(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5},
-                               test_zero_size_dtype=False)
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
         # test that `t` can be passed by position
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
