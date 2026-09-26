@@ -3221,6 +3221,11 @@ class genpareto_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Generalized Pareto distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_Pareto_distribution
+
     %(example)s
 
     """
@@ -3410,6 +3415,11 @@ class genextreme_gen(rv_continuous):
     `genextreme` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Generalized extreme value distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution
 
     %(example)s
 
@@ -3968,7 +3978,7 @@ class genhalflogistic_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = \frac{2 (1 - c x)^{1/(c-1)}}{[1 + (1 - c x)^{1/c}]^2}
+        f(x, c) = \frac{2 (1 - c x)^{1/c-1}}{[1 + (1 - c x)^{1/c}]^2}
 
     for :math:`0 \le x \le 1/c`, and :math:`c > 0`.
 
@@ -4326,6 +4336,11 @@ class gumbel_r_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
+
     %(example)s
 
     """
@@ -4457,6 +4472,11 @@ class gumbel_l_gen(rv_continuous):
     log-Weibull and Gompertz distributions.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
 
     %(example)s
 
@@ -6653,7 +6673,7 @@ class loggamma_gen(rv_continuous):
         f(x, c) = \frac{\exp(c x - \exp(x))}
                        {\Gamma(c)}
 
-    for all :math:`x, c > 0`. Here, :math:`\Gamma` is the
+    for real :math:`x` and :math:`c > 0`. Here, :math:`\Gamma` is the
     gamma function (`scipy.special.gamma`).
 
     `loggamma` takes ``c`` as a shape parameter for :math:`c`.
@@ -7971,21 +7991,21 @@ class ncf_gen(rv_continuous):
     .. math::
 
         f(x, n_1, n_2, \lambda) =
-            \exp\left(\frac{\lambda}{2} +
+            \exp\left(-\frac{\lambda}{2} +
                       \lambda n_1 \frac{x}{2(n_1 x + n_2)}
                 \right)
             n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
             (n_2 + n_1 x)^{-(n_1 + n_2)/2}
-            \gamma(n_1/2) \gamma(1 + n_2/2) \\
+            \Gamma(n_1/2) \Gamma(1 + n_2/2) \\
             \frac{L^{\frac{n_1}{2}-1}_{n_2/2}
                 \left(-\lambda n_1 \frac{x}{2(n_1 x + n_2)}\right)}
             {B(n_1/2, n_2/2)
-                \gamma\left(\frac{n_1 + n_2}{2}\right)}
+                \Gamma\left(\frac{n_1 + n_2}{2}\right)}
 
     for :math:`n_1, n_2 > 0`, :math:`\lambda \ge 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
     the denominator, :math:`\lambda` the non-centrality parameter,
-    :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
+    :math:`\Gamma` is the gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
     `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
@@ -8693,7 +8713,7 @@ class powerlaw_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}
+        f(x; a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
 
     with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 

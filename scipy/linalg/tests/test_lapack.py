@@ -26,6 +26,7 @@ from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.sparse import diags_array
+from scipy._lib._testutils import IS_WASM
 
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
@@ -35,6 +36,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+@pytest.mark.skipif(IS_WASM, reason="re-loading extension modules hangs in WASM")
 @pytest.mark.parametrize('module_name, routine', [
     ('_fblas', 'daxpy'),
     ('_fblas_64', 'daxpy'),
@@ -64,8 +66,10 @@ def test_wrapper_traverses_its_type():
     # The wrappers are instances of a heap type and own a reference to it, so
     # they have to report it to the GC.  Without that the type -> module ->
     # wrapper cycle is never collected and the extension module cannot unload.
+    # `get_referents` only calls the wrapper's own `tp_traverse`; `get_referrers`
+    # would walk every tracked object and trip over unrelated extension types.
     func = get_lapack_funcs('gesv', dtype=np.float64)
-    assert any(ref is func for ref in gc.get_referrers(type(func)))
+    assert any(ref is type(func) for ref in gc.get_referents(func))
 
 
 def test_ilaver():
