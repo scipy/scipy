@@ -1,4 +1,5 @@
 #include "_common_array_utils.h"
+#include "_linalg_bandwidth.h"
 
 static float snorm1(float*, const Py_ssize_t);
 static double dnorm1(double*, const Py_ssize_t);
