@@ -6069,6 +6069,16 @@ class TestTTestCI:
 
 @make_xp_test_case(stats.ttest_ind)
 class TestTTestIndMore:
+    @pytest.mark.parametrize('scale', [2.**-300, 2.**300])
+    def test_gh26169(self, scale, xp):
+        a = xp.asarray([-1., 0., 1.], dtype=xp.float64) * scale
+        with np.errstate(all='raise'):
+            res = stats.ttest_ind(a, a + 2*scale, equal_var=False)
+        xp_assert_equal(res.df, xp.asarray(4., dtype=xp.float64))
+        xp_assert_close(res.statistic, xp.asarray(-np.sqrt(6), dtype=xp.float64))
+        xp_assert_close(res.pvalue,
+                        xp.asarray(1 - 1.2*np.sqrt(0.6), dtype=xp.float64))
+
     @make_xp_test_case(stats.ttest_ind_from_stats)
     def test_ttest_ind_with_uneq_var(self, xp):
         # check vs. R `t.test`, e.g.
@@ -7839,6 +7849,29 @@ class TestAlexanderGovern:
 
 @make_xp_test_case(stats.f_oneway)
 class TestFOneWay:
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    @pytest.mark.parametrize('separation', [0, 8])
+    def test_unequal_var_offset_invariance(self, dtype, separation, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray(np.tile([-1., 0., 1.], 100), dtype=dtype)
+        samples = [a + i*separation for i in range(7)]
+        ref = stats.f_oneway(*samples, equal_var=False)
+        res = stats.f_oneway(*(sample + 1e6 for sample in samples),
+                             equal_var=False)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
+        if separation == 0:
+            xp_assert_equal(res.statistic, xp.asarray(0., dtype=dtype))
+            xp_assert_equal(res.pvalue, xp.asarray(1., dtype=dtype))
+
+    @pytest.mark.parametrize('scale', [2.**-511, 2.**500])
+    def test_gh26146(self, scale, xp):
+        a = xp.asarray([-1., 0., 1.], dtype=xp.float64) * scale
+        with np.errstate(all='raise'):
+            res = stats.f_oneway(a, a + 2*scale, a + 4*scale, equal_var=False)
+        xp_assert_close(res.statistic, xp.asarray(72/7, dtype=xp.float64))
+        xp_assert_close(res.pvalue, xp.asarray(49/1849, dtype=xp.float64))
 
     def test_trivial(self, xp):
         # A trivial test of stats.f_oneway, with F=0.
