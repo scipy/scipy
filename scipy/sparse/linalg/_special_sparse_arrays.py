@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse import kron, eye_array, dia_array
 
 __all__ = ['LaplacianNd']

@@ -78,12 +78,12 @@ References
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
-from scipy.special import airy
 
 # Local imports.
 # There is no .pyi file for _specfun
 from . import _specfun
 from . import _ufuncs
+from ._ufuncs import airy
 
 
 __all__ = [

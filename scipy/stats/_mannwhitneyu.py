@@ -8,7 +8,7 @@ from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy._external.array_api_extra as xpx
 from scipy import special
-from scipy import stats
+from scipy.stats._resampling import PermutationMethod, permutation_test
 from scipy.stats._stats_py import _rankdata, _get_pvalue, _SimpleNormal
 from scipy.stats._morestats import wilcoxon_result_unpacker, wilcoxon_outputs
 from scipy.stats._wilcoxon import _correction_sign
@@ -195,7 +195,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    if not isinstance(method, stats.PermutationMethod):
+    if not isinstance(method, PermutationMethod):
         methods = {"asymptotic", "exact", "auto"}
         method = method.lower()
         if method not in methods:
@@ -533,8 +533,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                                 alternative=alternative, axis=axis,
                                 method="asymptotic").statistic
 
-        res = stats.permutation_test((x, y), statistic, axis=axis,
-                                     **method._asdict(), alternative=alternative)
+        res = permutation_test((x, y), statistic, axis=axis,
+                               **method._asdict(), alternative=alternative)
         p = res.pvalue
 
     # Ensure that test statistic is not greater than 1

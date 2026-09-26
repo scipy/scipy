@@ -7,7 +7,8 @@ import warnings
 
 import numpy as np
 
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.optimize._optimize import _status_message, _wrap_callback
