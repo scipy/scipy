@@ -4,9 +4,7 @@
 #include "sparsetools.h"
 #include "csr.h"
 
-extern "C" {
 #include "csr_impl.h"
-}
 
 #define SPTOOLS_CSR_DEFINE_TEMPLATE(I, T) \
   template void csr_diagonal(const I k, const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Yx[]); \
