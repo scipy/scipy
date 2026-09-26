@@ -448,9 +448,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        test_zero_size_dtype = fun != linalg.solve_discrete_lyapunov
-        self.batch_test(fun, (A, B), n_out=n_out,
-                        test_zero_size_dtype=test_zero_size_dtype)
+        self.batch_test(fun, (A, B), n_out=n_out)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cossin(self, dtype):
