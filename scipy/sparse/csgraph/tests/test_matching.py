@@ -4,9 +4,10 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_equal
 import pytest
 
-from scipy.sparse import csr_array, coo_array, diags_array
+from scipy.sparse import csr_array, csc_array, coo_array, diags_array
 from scipy.sparse.csgraph import (
-    maximum_bipartite_matching, min_weight_full_bipartite_matching
+    maximum_bipartite_matching, min_weight_full_bipartite_matching,
+    structural_rank
 )
 
 
@@ -108,6 +109,100 @@ def test_maximum_bipartite_matching_feasibility_of_result():
     for u, v in zip(x, range(graph.shape[1])):
         if u != -1:
             assert graph[u, v]
+
+
+def test_maximum_bipartite_matching_duplicate_entries_in_csr_input():
+    # Regression test for GitHub issue #26160: a CSR input that stores the
+    # same entry more than once (so has_canonical_format is False) used to
+    # push the same row onto the fixed-size DFS stack repeatedly, overflowing
+    # it and corrupting memory. Rows are {0, 1} and {0}, with column 0 stored
+    # K extra times in row 1.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    assert not graph.has_canonical_format
+    x = maximum_bipartite_matching(graph, perm_type='row')
+    y = maximum_bipartite_matching(graph, perm_type='column')
+    expected_matching = np.array([1, 0])
+    assert_array_equal(x, expected_matching)
+    assert_array_equal(y, expected_matching)
+
+
+def test_structural_rank_duplicate_entries_in_csr_input():
+    # Structural rank delegates to maximum_bipartite_matching, so it must be
+    # guarded against duplicate CSR entries the same way (gh-26160).
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    assert_equal(structural_rank(graph), 2)
+
+
+def test_min_weight_full_bipartite_matching_duplicate_entries_in_csr_input():
+    # Regression test for GitHub issue #26160: min_weight_full_bipartite_matching
+    # used to overflow fixed-size stacks in _hopcroft_karp and _lapjvsp when the
+    # (weighted) input stored the same entry more than once.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
+    src, dst = min_weight_full_bipartite_matching(graph)
+    # The graph is 2 x 2 with an edge from each row, so a full matching must
+    # exist and cover both rows and both columns.
+    assert_array_equal(src, np.array([0, 1]))
+    assert_array_equal(dst, np.array([1, 0]))
+    for u, v in zip(src, dst):
+        assert graph[u, v] != 0
+
+
+def test_duplicate_entries_in_csc_input():
+    # gh-26160: the duplicate-entry overflow is also reachable through a CSC
+    # input, because converting CSC to CSR preserves duplicates and the
+    # column-oriented twin of the CSR test graph has column 0 connected to
+    # both rows (row 1 K times) and column 1 to row 0.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0] + [1] * K + [0]
+    indptr = [0, 1 + K, 2 + K]
+    graph = csc_array((data, indices, indptr), shape=(2, 2))
+    assert not graph.has_canonical_format
+    x = maximum_bipartite_matching(graph, perm_type='row')
+    y = maximum_bipartite_matching(graph, perm_type='column')
+    expected_matching = np.array([1, 0])
+    assert_array_equal(x, expected_matching)
+    assert_array_equal(y, expected_matching)
+    assert_equal(structural_rank(graph), 2)
+    src, dst = min_weight_full_bipartite_matching(graph)
+    assert_array_equal(src, np.array([0, 1]))
+    assert_array_equal(dst, np.array([1, 0]))
+
+
+def test_matching_input_duplicate_entries_not_mutated():
+    # gh-26160: duplicate entries must be merged on an internal copy so that
+    # the caller's matrix is left untouched. tocsr() returns a CSR input
+    # unchanged and sum_duplicates() mutates in place.
+    K = 100_000
+    data = np.ones(2 + K)
+    indices = [0, 1] + [0] * K
+    indptr = [0, 2, 2 + K]
+    for func in (maximum_bipartite_matching, min_weight_full_bipartite_matching):
+        graph = csr_array((data, indices, indptr), shape=(2, 2))
+        data_before = graph.data.copy()
+        indices_before = graph.indices.copy()
+        indptr_before = graph.indptr.copy()
+        canonical_before = graph.has_canonical_format
+        if func is maximum_bipartite_matching:
+            func(graph, perm_type='row')
+        else:
+            func(graph)
+        assert graph.has_canonical_format == canonical_before
+        assert_array_equal(graph.data, data_before)
+        assert_array_equal(graph.indices, indices_before)
+        assert_array_equal(graph.indptr, indptr_before)
 
 
 def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
