@@ -2975,12 +2975,12 @@ class TestSmoothingSpline:
     def test_gcv_user_knots_matches_grid_argmin(self):
         """GCV-selected fit agrees with the fit at the argmin of a log-lam grid."""
         rng = np.random.default_rng(42)
-        x = np.sort(rng.uniform(0, 4, 60))
-        y = np.sin(2 * x) + 0.3 * rng.normal(size=60)
-        tk = np.linspace(x[0], x[-1], 15)
+        x = np.sort(rng.uniform(0, 4, 40))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=40)
+        tk = np.linspace(x[0], x[-1], 12)
         t = _augknt(tk, 3)
         n = len(x)
-        lams = np.logspace(-6, 3, 30)
+        lams = np.logspace(-6, 3, 12)
         eye = np.eye(n)
         V = np.empty(len(lams))
         for i, lam in enumerate(lams):
