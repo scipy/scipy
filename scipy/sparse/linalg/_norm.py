@@ -3,7 +3,7 @@
 """
 import numpy as np
 from scipy.sparse import issparse
-from scipy.sparse.linalg import svds
+from scipy.sparse.linalg._eigen._svds import svds
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 import scipy.sparse as sp
 

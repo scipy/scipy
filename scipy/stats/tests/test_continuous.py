@@ -278,11 +278,10 @@ class TestDistributions:
                     check_ccdf2(dist, False, x, y, xy_result_shape, methods)
                     check_ccdf2(dist, True, x, y, xy_result_shape, methods)
 
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot(self):
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
-            return
+        import matplotlib.pyplot as plt
 
         X = Uniform(a=0., b=1.)
         ax = X.plot()

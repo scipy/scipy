@@ -347,6 +347,19 @@ class TestFcluster:
         assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
                            xp.asarray([1, 2, 3]))
 
+    @make_xp_test_case(single, maxdists)
+    @pytest.mark.parametrize("criterion", ["maxclust", "maxclust_monocrit"])
+    @pytest.mark.parametrize("t", [0, -1, 0.5])
+    def test_fcluster_maxclust_t_less_than_one_gh_21206(self, t, criterion, xp):
+        # No threshold can give fewer than one cluster, so the search for one
+        # ran off the end of the criterion array and the result was whatever
+        # happened to be in memory there.
+        y = xp.asarray([[1.], [4.], [5.], [9.]])
+        Z = single(y)
+        kwargs = {'monocrit': maxdists(Z)} if 'monocrit' in criterion else {}
+        with assert_raises(ValueError, match="at least 1"):
+            fcluster(Z, t=t, criterion=criterion, **kwargs)
+
 
 @make_xp_test_case(leaders)
 class TestLeaders:
@@ -951,6 +964,7 @@ class TestDendrogram:
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_valid_label_size(self, xp):
         link = xp.asarray([
@@ -979,6 +993,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     @pytest.mark.parametrize("orientation", ['top', 'bottom', 'left', 'right'])
     def test_dendrogram_plot(self, orientation, xp):
@@ -1051,6 +1066,7 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
     @pytest.mark.usefixtures("mpl_agg")
     def test_dendrogram_truncate_mode(self, xp):
         Z = xp.asarray(linkage(hierarchy_test_data.ytdist, 'single'))
