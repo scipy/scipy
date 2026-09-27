@@ -171,20 +171,20 @@ def test_czt_int_args():
 
 @make_xp_test_case(czt_points)
 def test_czt_points_int_args(xp):
-    xp_assert_close(czt_points(11, w=2, xp=xp),
+    xp_assert_close(czt_points(11, w=xp.asarray(2, dtype=xp.int64)),
                     1/(2**xp.arange(11, dtype=xp.complex128)), rtol=1e-14)
 
 
 @make_xp_test_case(czt_points)
 def test_czt_points(xp):
     for N in (1, 2, 3, 8, 11, 100, 101, 10007):
-        xp_assert_close(czt_points(N, xp=xp),
+        xp_assert_close(czt_points(N, a=xp.asarray(1+0j, dtype=xp.complex128)),
                         xp.exp(2j*xp.pi*xp.arange(N, dtype=xp.float64)/N),
                         rtol=1e-14)
 
-    xp_assert_close(czt_points(7, w=1, xp=xp),
+    xp_assert_close(czt_points(7, w=xp.asarray(1, dtype=xp.int64)),
                     xp.ones(7, dtype=xp.complex128), rtol=1e-30)
-    xp_assert_close(czt_points(11, w=2, xp=xp),
+    xp_assert_close(czt_points(11, w=xp.asarray(2, dtype=xp.int64)),
                     1/(2**xp.arange(11, dtype=xp.complex128)), rtol=1e-14)
 
     if is_numpy(xp):
@@ -200,7 +200,29 @@ def test_czt_points_dtype(xp):
         value = xp.asarray(1, dtype=dtype)
         expected = (xp.complex128 if xp.isdtype(dtype, "complex floating")
                     else xp.float64)
-        assert czt_points(7, w=value, a=value, xp=xp).dtype == expected
+        assert czt_points(7, w=value, a=value).dtype == expected
+
+
+def test_czt_points_python_scalars():
+    xp_assert_close(czt_points(3), np.exp(2j*np.pi*np.arange(3)/3))
+    xp_assert_close(czt_points(3, w=1j), np.array([1+0j, -1j, -1+0j]))
+    xp_assert_close(czt_points(3, w=2, a=2), np.array([2., 1., 0.5]))
+
+
+@make_xp_test_case(czt_points)
+@pytest.mark.parametrize('w, a', [
+    (np.asarray([[1j], [2j]]), 1+0j),
+    (None, np.asarray([[1j], [2j]])),
+    (1j, np.asarray([[1j], [2j]])),
+    (np.asarray([[1j], [2j]]), np.asarray([1+0j, 2j, 3+0j])),
+    (np.asarray([1j, 2j, 3j]), np.asarray([[1j], [2j]])),
+])
+def test_czt_points_array_inputs(w, a, xp):
+    k = np.arange(3)
+    expected = a * (np.exp(2j*np.pi*k/3) if w is None else w**-k)
+    w = xp.asarray(w) if isinstance(w, np.ndarray) else w
+    a = xp.asarray(a) if isinstance(a, np.ndarray) else a
+    xp_assert_close(czt_points(3, w=w, a=a), xp.asarray(expected))
 
 
 @pytest.mark.parametrize('cls, args', [(CZT, (100,)), (ZoomFFT, (100, 0.2))])

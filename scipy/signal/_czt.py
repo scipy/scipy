@@ -6,8 +6,7 @@ import cmath
 import numbers
 import numpy as np
 from numpy import pi, arange
-from scipy._lib._array_api import xp_result_type
-from scipy._external.array_api_compat import numpy as np_compat
+from scipy._lib._array_api import array_namespace, xp_result_device, xp_result_type
 from scipy.fft import fft, ifft, next_fast_len
 
 __all__ = ['czt', 'zoom_fft', 'CZT', 'ZoomFFT', 'czt_points']
@@ -29,7 +28,7 @@ def _validate_sizes(n, m):
     return m
 
 
-def czt_points(m, w=None, a=1+0j, *, xp=None, device=None):
+def czt_points(m, w=None, a=1+0j):
     """
     Return the points at which the chirp z-transform is computed.
 
@@ -37,26 +36,31 @@ def czt_points(m, w=None, a=1+0j, *, xp=None, device=None):
     ----------
     m : int
         The number of points desired.
-    w : complex, optional
+    w : complex or array_like, optional
         The ratio between points in each step.
         Defaults to equally spaced points around the entire unit circle.
-    a : complex, optional
+    a : complex or array_like, optional
         The starting point in the complex plane.  Default is 1+0j.
-    xp : array_namespace, optional
-        The namespace for the return array. Default is None, where NumPy is used.
-    device : device, optional
-        The device for the return array. Default is None.
 
     Returns
     -------
     out : ndarray
         The points in the Z plane at which `CZT` samples the z-transform,
         when called with arguments `m`, `w`, and `a`, as complex numbers.
+        The shape is determined by broadcasting `a`, `w` (if provided), and
+        an array of shape ``(m,)`` together.
 
     See Also
     --------
     CZT : Class that creates a callable chirp z-transform function.
     czt : Convenience function for quickly calculating CZT.
+
+    Notes
+    -----
+    Array inputs `a` and `w` must be broadcastable with each other and with
+    an array of shape ``(m,)``. For example, an input of shape ``(2, 1)``
+    with the other input scalar produces an output of shape ``(2, m)``,
+    containing two sets of points.
 
     Examples
     --------
@@ -80,8 +84,8 @@ def czt_points(m, w=None, a=1+0j, *, xp=None, device=None):
     >>> plt.axis('equal')
     >>> plt.show()
     """
-    if xp is None:
-        xp = np_compat
+    xp = array_namespace(a, w)
+    device = xp_result_device(a, w)
 
     m = _validate_sizes(1, m)
 
