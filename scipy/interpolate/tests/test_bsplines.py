@@ -3000,6 +3000,17 @@ class TestSmoothingSpline:
         atol = max(np.max(np.abs(f_star - f_lo)), np.max(np.abs(f_hi - f_star)))
         xp_assert_close(f_auto, f_star, atol=atol)
 
+    @pytest.mark.parametrize("n_breaks", [5, 13, 21, 29, 34, 42])
+    def test_gcv_user_knots_stays_bounded(self, n_breaks):
+        """Regression: the GCV fit must not blow up between the data sites."""
+        rng = np.random.default_rng(8)
+        x = np.sort(rng.uniform(0, 4, 40))
+        y = np.sin(2 * x) + 0.2 * rng.normal(size=40)
+        t = _augknt(np.linspace(x[0], x[-1], n_breaks), 3)
+        f = make_smoothing_spline(x, y, lam=None, t=t)
+        x_dense = np.linspace(x[0], x[-1], 2000)
+        assert np.max(np.abs(f(x_dense))) < 2.0
+
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
         rng = np.random.default_rng(7)
