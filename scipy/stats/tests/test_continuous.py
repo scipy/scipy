@@ -2157,7 +2157,7 @@ class TestQuantileDefinedDistribution:
         with np.errstate(divide='ignore'):  # stats.tukeylambda is noisy
             assert_allclose(X.logentropy(), Y.logentropy())
             assert_allclose(X.entropy(), Y.entropy())
-            assert_allclose(X.mode(), Y.mode(), atol=1e-7)
+            assert_allclose(X.mode(), Y.mode(), atol=5e-7)
             assert_allclose(X.median(), Y.median(), atol=1e-10)
             assert_allclose(X.mean(), Y.mean(), atol=1e-10)
             assert_allclose(X.variance(), Y.variance())

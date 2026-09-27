@@ -4437,7 +4437,7 @@ def _make_distribution_custom(dist):
         distribution_subclass = ContinuousDistribution
     else:
         message = ("The argument of `make_distribution` must implement "
-                   "either `pdf`/`icdf`/`iccdf` OR `pmf` (not both).")
+                   "either `pdf`/'cdf'/'ccdf'/`icdf`/`iccdf` OR `pmf` (not both).")
         raise ValueError(message)
 
     _x_param = _RealParameter('x', domain=_x_support, typical=typical)
