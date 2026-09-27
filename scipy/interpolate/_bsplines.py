@@ -2565,7 +2565,7 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 
 def _compute_b_inv(A):
     """
-    Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
+    Inverse 4 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
     ``U`` is a unit upper triangular banded matrix using an algorithm
     proposed in [1].
 
@@ -2577,8 +2577,7 @@ def _compute_b_inv(A):
     Returns
     -------
     B : array, shape (4, n)
-        3 unique bands of the symmetric matrix that is an inverse to ``A``.
-        The first row is filled with zeros.
+        4 unique bands of the symmetric matrix that is an inverse to ``A``.
 
     Notes
     -----
@@ -2626,8 +2625,6 @@ def _compute_b_inv(A):
     for i in range(n - 1, -1, -1):
         for j in range(min(3, n - i - 1), -1, -1):
             find_b_inv_elem(i, j, U, D, B)
-    # the first row contains garbage and should be removed
-    B[0] = [0.] * n
     return B
 
 
