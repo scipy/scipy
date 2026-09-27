@@ -102,6 +102,9 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 solve = _get_solver.umfpack_factor.solve
             else:  # factorized doesn't pass permc_spec
                 solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
+
+            return solve
+
         else:
             if lstsq:  # sometimes necessary as solution is approached
                 def _solve(r):
