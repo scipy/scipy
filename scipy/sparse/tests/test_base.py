@@ -3186,7 +3186,8 @@ class _TestSlicingAssign:
 
     def test_slice_sparse_assignment(self):
         rng = np.random.default_rng(42)
-        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8), p=[0.6, 0.2, 0.1, 0.1])
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
 
         cases = [
             # _set_intXslice_sparse
@@ -3214,14 +3215,17 @@ class _TestSlicingAssign:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for key, rhs_shape in cases:
-                rhs_dense = rng.choice([0.0, 5.0, 9.0], size=rhs_shape, p=[0.5, 0.25, 0.25])
+                ravel_dense = rhs_shape[1] == 1 and not isinstance(key[1], slice)
+                rhs_dense = rng.choice([0.0, 5.0, 9.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
                 rhs_sp = self.csr_container(rhs_dense)
 
                 B = base_dense.copy()
                 A = self.spcreator(B)
                 A[key] = rhs_sp
-                B[key] = rhs_dense if rhs_shape[1] != 1 or isinstance(key[1], slice) else rhs_dense.ravel()
-                assert_array_equal(A.toarray(), B, err_msg=f"key={key}, rhs_shape={rhs_shape}")
+                B[key] = rhs_dense.ravel() if ravel_dense else rhs_dense
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
 
     def test_slice_sparse_assignment_empty_rhs(self):
         A = self.spcreator(np.ones((4, 5)))
@@ -3653,7 +3657,8 @@ class _TestFancyIndexingAssign:
 
     def test_fancy_sparse_assignment(self):
         rng = np.random.default_rng(43)
-        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8), p=[0.6, 0.2, 0.1, 0.1])
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
 
         cases = [
             # _set_intXarray_sparse
@@ -3677,14 +3682,17 @@ class _TestFancyIndexingAssign:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for key, rhs_shape in cases:
-                rhs_dense = rng.choice([0.0, 6.0, 8.0], size=rhs_shape, p=[0.5, 0.25, 0.25])
+                rhs_dense = rng.choice([0.0, 6.0, 8.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
                 rhs_sp = self.csr_container(rhs_dense)
 
                 B = base_dense.copy()
                 A = self.spcreator(B)
+                ravel_dense = B[key].ndim == 1
                 A[key] = rhs_sp
-                B[key] = rhs_dense.ravel() if B[key].ndim == 1 else rhs_dense
-                assert_array_equal(A.toarray(), B, err_msg=f"key={key}, rhs_shape={rhs_shape}")
+                B[key] = rhs_dense.ravel() if ravel_dense else rhs_dense
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
 
 
 class _TestFancyMultidim:
@@ -3826,7 +3834,8 @@ class _TestFancyMultidimAssign:
 
     def test_fancy_assign_sparse(self):
         rng = np.random.default_rng(44)
-        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8), p=[0.6, 0.2, 0.1, 0.1])
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
 
         cases = [
             # _set_columnXarray_sparse (outer indexing)
@@ -3835,23 +3844,28 @@ class _TestFancyMultidimAssign:
             ((np.array([[0], [3], [-1]]), np.array([[1, 4, 6, -1]])), (1, 4)),
             ((np.array([[0], [3], [-1]]), np.array([[1, 4, 6, -1]])), (3, 1)),
             # _set_arrayXarray_sparse (2D inner & broadcasted indexing)
-            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])), (2, 3)),
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (2, 3)),
             ((np.array([[1, 2, 3]]), np.array([[3], [4]])), (2, 3)),
-            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])), (1, 3)),
-            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])), (2, 1)),
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (1, 3)),
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (2, 1)),
         ]
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for key, rhs_shape in cases:
-                rhs_dense = rng.choice([0.0, 7.0, 9.0], size=rhs_shape, p=[0.5, 0.25, 0.25])
+                rhs_dense = rng.choice([0.0, 7.0, 9.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
                 rhs_sp = self.csr_container(rhs_dense)
 
                 B = base_dense.copy()
                 A = self.spcreator(B)
                 A[key] = rhs_sp
                 B[key] = rhs_dense
-                assert_array_equal(A.toarray(), B, err_msg=f"key={key}, rhs_shape={rhs_shape}")
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
 
 
 class _TestArithmetic:
