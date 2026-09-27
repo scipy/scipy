@@ -584,10 +584,10 @@ def authors(ctx_obj, revision_args):
 @click.option("--all", default=False, is_flag=True,
     help="This overrides `--diff-against` and `--files` "
          "to lint all local files (excluding subprojects).")
-@click.option("--no-cython", default=True, is_flag=True,
-    help="Do not run cython-lint.")
+@click.option("--cython/--no-cython", default=True,
+    help="Run cython-lint (default), or skip it with `--no-cython`.")
 @click.pass_context
-def lint(ctx, fix, diff_against, files, all, no_cython):
+def lint(ctx, fix, diff_against, files, all, cython):
     """🔦 Run linter on modified files and check for
     disallowed Unicode characters, possibly-invalid test names, and
     array-creation calls that omit `device=`."""
@@ -601,7 +601,7 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         cmd_lint += [f'--files={files}']
     if all:
         cmd_lint += ['--all']
-    if no_cython:
+    if not cython:
         cmd_lint += ['--no-cython']
     if fix:
         cmd_lint += ['--fix']
