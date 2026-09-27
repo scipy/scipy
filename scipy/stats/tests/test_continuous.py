@@ -1560,7 +1560,7 @@ class TestMakeDistribution:
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(MyTestDistribution())(n=10)
 
-        message = "The argument of `make_distribution` must implement either..."
+        message = "The argument of `make_distribution` must implement at least..."
         class MyTestDistribution:
             __make_distribution_version__ = "1.16.0"
             parameters = {'n': {'endpoints': (0, np.inf)}}

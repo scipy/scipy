@@ -4022,19 +4022,21 @@ def make_distribution(dist):
             the values of the parameters dict described above. (``domain_type`` is
             inferred which methods are defined.)
 
-        The class **must** also define either:
+        The class **must** also define at least one of the following methods:
+        ``pdf``, ``pmf``, ``cdf``, ``ccdf``, ``icdf``,  and ``iccdf``.
 
-        - a ``pdf``, ``cdf``, ``ccdf``, ``icdf``, or ``iccdf`` method; OR
-        - a ``pmf`` method.
+        It **may not** not define both ``pdf`` and ``pmf``. Subject to that restriction,
+        if the class defines ``pmf``, the support of the distribution is discrete (i.e.
+        accepts only integral values); otherwise, the support is continuous.
 
-        This determines whether the support of the distribution is continuous or
-        discrete (i.e. accepts only integral values). It **may** define methods
+        The class **may** also define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``,
         ``logpdf``, ``logpmf``,
-        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
-        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
+        ``logcdf``, ``logccdf``,
+        ``ilogcdf``, ``ilogccdf``,
         ``moment``, ``lmoment``, and ``sample``.
-        If defined, these methods must accept the parameters of the distribution as
+
+        Defined methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
         the corresponding method of `ContinuousDistribution`/`DiscreteDistribution`.
         When multiple parameterizations are defined, these methods must accept
@@ -4423,21 +4425,20 @@ def _make_distribution_custom(dist):
     domain_type, domain_info, typical = _get_domain_info(dist.support)
     _x_support = domain_type(**domain_info)
 
-    if hasattr(dist, 'pdf') and not hasattr(dist, 'pmf'):
+    if not hasattr(dist, 'pmf') and (hasattr(dist, 'pdf') or
+                                     hasattr(dist, 'cdf') or
+                                     hasattr(dist, 'ccdf') or
+                                     hasattr(dist, 'icdf') or
+                                     hasattr(dist, 'iccdf')):
         pxf = 'PDF'
         distribution_subclass = ContinuousDistribution
     elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
         pxf = 'PMF'
         distribution_subclass = DiscreteDistribution
-    elif not hasattr(dist, 'pmf') and (hasattr(dist, 'cdf') or
-                                       hasattr(dist, 'ccdf') or
-                                       hasattr(dist, 'icdf') or
-                                       hasattr(dist, 'iccdf')):
-        pxf = 'PDF'
-        distribution_subclass = ContinuousDistribution
     else:
-        message = ("The argument of `make_distribution` must implement "
-                   "either `pdf`/'cdf'/'ccdf'/`icdf`/`iccdf` OR `pmf` (not both).")
+        message = ("The argument of `make_distribution` must implement at least one "
+                   "of `pdf`/`pmf`/`cdf`/`ccdf`/`icdf`/`iccdf`, and may not implement "
+                   "both `pdf` and `pmf`.")
         raise ValueError(message)
 
     _x_param = _RealParameter('x', domain=_x_support, typical=typical)
