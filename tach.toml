@@ -143,6 +143,7 @@ path = "scipy.stats"
 depends_on = [
     "scipy._lib",
     "scipy.fft",
+    "scipy.differentiate",
     "scipy.integrate",
     "scipy.interpolate",
     "scipy.linalg",
