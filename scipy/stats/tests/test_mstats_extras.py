@@ -1,10 +1,18 @@
+import warnings
+import pytest
+
 import numpy as np
 import numpy.ma as ma
-import scipy.stats.mstats as ms
-
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_allclose)
 
+with warnings.catch_warnings():
+    warnings.filterwarnings(action="ignore",
+                            message="`scipy.stats.mstats` is deprecated",
+                            category=DeprecationWarning)
+    import scipy.stats.mstats as ms
+
+pytestmark = pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning")  # noqa: E501
 
 def test_compare_medians_ms():
     x = np.arange(7)
