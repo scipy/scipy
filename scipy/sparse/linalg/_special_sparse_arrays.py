@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import khatri_rao
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse import kron, eye_array, dia_array
 
@@ -257,19 +258,23 @@ of_the_second_derivative
         N = np.prod(grid_shape)
         super().__init__(dtype=dtype, shape=(N, N))
 
+    def _grid_shape_min(self, m):
+        """Return the per-dimension number of 1d eigenpairs needed to
+        determine the `m` largest eigenvalues, i.e., ``min(n, m)`` in each
+        direction, or the full `grid_shape` if `m` is ``None``.
+        """
+        if m is None:
+            return tuple(self.grid_shape)
+        return tuple(min(n, m) for n in self.grid_shape)
+
     def _eigenvalue_ordering(self, m):
         """Compute `m` largest eigenvalues in each of the ``N`` directions,
         i.e., up to ``m * N`` total, order them and return `m` largest.
         """
         grid_shape = self.grid_shape
-        if m is None:
-            indices = np.indices(grid_shape)
-            Leig = np.zeros(grid_shape)
-        else:
-            grid_shape_min = min(grid_shape,
-                                 tuple(np.ones_like(grid_shape) * m))
-            indices = np.indices(grid_shape_min)
-            Leig = np.zeros(grid_shape_min)
+        grid_shape_min = self._grid_shape_min(m)
+        indices = np.indices(grid_shape_min)
+        Leig = np.zeros(grid_shape_min)
 
         for j, n in zip(indices, grid_shape):
             if self.boundary_conditions == 'dirichlet':
@@ -305,41 +310,32 @@ of_the_second_derivative
         eigenvalues, _ = self._eigenvalue_ordering(m)
         return eigenvalues
 
-    def _ev1d(self, j, n):
-        """Return 1 eigenvector in 1d with index `j`
-        and number of grid points `n` where ``j < n``.
+    def _ev1d(self, m, n):
+        """Return the first `m` eigenvectors in 1d for `n` grid points
+        as the columns of an ``(n, m)`` array, where ``m <= n``.
         """
+        i = np.arange(n)
+        j = np.arange(m)
         if self.boundary_conditions == 'dirichlet':
-            i = np.pi * (np.arange(n) + 1) / (n + 1)
-            ev = np.sqrt(2. / (n + 1.)) * np.sin(i * (j + 1))
+            theta = np.pi * (i + 1) / (n + 1)
+            ev = np.sqrt(2. / (n + 1.)) * np.sin(np.outer(theta, j + 1))
         elif self.boundary_conditions == 'neumann':
-            i = np.pi * (np.arange(n) + 0.5) / n
-            ev = np.sqrt((1. if j == 0 else 2.) / n) * np.cos(i * j)
+            theta = np.pi * (i + 0.5) / n
+            ev = np.sqrt(2. / n) * np.cos(np.outer(theta, j))
+            ev[:, 0] = np.sqrt(1. / n)
         else:  # boundary_conditions == 'periodic'
-            if j == 0:
-                ev = np.sqrt(1. / n) * np.ones(n)
-            elif j + 1 == n and n % 2 == 0:
-                ev = np.sqrt(1. / n) * np.tile([1, -1], n//2)
-            elif (j + 1) % 2 == 0:
-                i = np.pi * (np.arange(n) + 0.5) / n
-                ev = np.sqrt(2. / n) * np.sin(i * (j + 1))
-            else:
-                i = np.pi * (np.arange(n) + 0.5) / n
-                ev = np.sqrt(2. / n) * np.cos(i * j)
+            theta = np.pi * (i + 0.5) / n
+            ev = np.empty((n, m))
+            odd = (j + 1) % 2 == 0
+            ev[:, ~odd] = np.sqrt(2. / n) * np.cos(np.outer(theta, j[~odd]))
+            ev[:, odd] = np.sqrt(2. / n) * np.sin(np.outer(theta, j[odd] + 1))
+            ev[:, 0] = np.sqrt(1. / n)
+            if m == n and n % 2 == 0:
+                ev[:, n - 1] = np.sqrt(1. / n) * np.tile([1, -1], n // 2)
         # make small values exact zeros correcting round-off errors
         # due to symmetry of eigenvectors the exact 0. is correct
         ev[np.abs(ev) < np.finfo(np.float64).eps] = 0.
         return ev
-
-    def _one_eve(self, k):
-        """Return 1 eigenvector in Nd with multi-index `j`
-        as a tensor product of the corresponding 1d eigenvectors.
-        """
-        phi = [self._ev1d(j, n) for j, n in zip(k, self.grid_shape)]
-        result = phi[0]
-        for phi in phi[1:]:
-            result = np.tensordot(result, phi, axes=0)
-        return np.asarray(result).ravel()
 
     def eigenvectors(self, m=None):
         """Return the requested number of eigenvectors for ordered eigenvalues.
@@ -357,16 +353,17 @@ of_the_second_derivative
             The columns are ordered according to the `m` ordered eigenvalues.
         """
         _, ind = self._eigenvalue_ordering(m)
-        if m is None:
-            grid_shape_min = self.grid_shape
-        else:
-            grid_shape_min = min(self.grid_shape,
-                                tuple(np.ones_like(self.grid_shape) * m))
-
+        grid_shape_min = self._grid_shape_min(m)
         N_indices = np.unravel_index(ind, grid_shape_min)
-        N_indices = [tuple(x) for x in zip(*N_indices)]
-        eigenvectors_list = [self._one_eve(k) for k in N_indices]
-        return np.column_stack(eigenvectors_list)
+
+        eigenvectors = None
+        for j, n, m_n in zip(N_indices, self.grid_shape, grid_shape_min):
+            factors = self._ev1d(m_n, n)[:, j]
+            if eigenvectors is None:
+                eigenvectors = factors
+            else:
+                eigenvectors = khatri_rao(eigenvectors, factors)
+        return eigenvectors
 
     def toarray(self):
         """
