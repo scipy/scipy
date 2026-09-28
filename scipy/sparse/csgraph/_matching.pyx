@@ -6,7 +6,7 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import issparse, csr_array
+from scipy.sparse import issparse
 from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy,
                                    safely_cast_index_arrays)
 
@@ -197,7 +197,8 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
 
     # Finally, during our depth-first search, we keep track of the path along
     # which we move. This will simplify the updates to the matching that occur
-    # when an augmenting path is found.
+    # when an augmenting path is found. Reset parents each phase so they also
+    # identify children that have already been pushed by the current row.
     cdef ITYPE_t[:] parents = np.empty(i, dtype=ITYPE)
 
     # The breadth-first search part of the algorithm. This will terminate when
@@ -208,6 +209,7 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
         head = 0
         tail = 0
         for v in range(i):
+            parents[v] = -1
             if x[v] < 0:
                 dist[v] = 0
                 # Enqueue v. Note that in an ordinary circular buffer, we would
@@ -256,8 +258,6 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
                     # Without this, v would be explored once for every path
                     # that leads to it, and the number of such paths can grow
                     # exponentially with the depth of the search (gh-26147).
-                    # A popped vertex can be marked already only when the
-                    # input contains duplicate entries.
                     if dist[v] == INF:
                         continue
                     dist_v = dist[v]
@@ -281,9 +281,14 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
                                         break
                                     v = parents[v]
                                 break
-                            stack[stack_head] = yu
-                            stack_head += 1
-                            parents[yu] = v
+                            # Duplicate entries can lead to the same child
+                            # more than once. Push it only once from v, so
+                            # that the stack stays bounded by the row count.
+                            # Keep its distance until it is actually explored.
+                            if parents[yu] != v:
+                                stack[stack_head] = yu
+                                stack_head += 1
+                                parents[yu] = v
                     if done:
                         break
 
@@ -473,6 +478,9 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
                          "got %s" % (biadjacency.dtype,))
 
     biadjacency = biadjacency.astype(np.double)
+    # astype makes a copy, but only sums duplicates when the dtype changes.
+    # The weighted search requires one entry per edge, with summed weights.
+    biadjacency.sum_duplicates()
 
     if maximize:
         biadjacency = -biadjacency
@@ -493,10 +501,10 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
         biadjacency = biadjacency.tocsc(copy=False) if j < i else biadjacency.tocsr(copy=False)
 
     indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
-    if indices is not biadjacency.indices:
-        # create a new object without copying data
-        biadjacency = csr_array((biadjacency.data, indices, indptr),
-                                shape=biadjacency.shape, dtype=biadjacency.dtype)
+    # astype above owns these arrays. Preserve the CSR or CSC format when
+    # replacing the index arrays with the safely cast ones.
+    biadjacency.indices = indices
+    biadjacency.indptr = indptr
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also

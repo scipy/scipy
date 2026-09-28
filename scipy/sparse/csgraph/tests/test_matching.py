@@ -6,7 +6,8 @@ import pytest
 
 from scipy.sparse import csr_array, coo_array, diags_array
 from scipy.sparse.csgraph import (
-    maximum_bipartite_matching, min_weight_full_bipartite_matching
+    maximum_bipartite_matching, min_weight_full_bipartite_matching,
+    structural_rank
 )
 
 
@@ -110,6 +111,36 @@ def test_maximum_bipartite_matching_feasibility_of_result():
             assert graph[u, v]
 
 
+@pytest.mark.parametrize('sparse_format', ['csr', 'csc', 'coo'])
+@pytest.mark.parametrize('value', [0, 1])
+def test_maximum_bipartite_matching_duplicate_entries(sparse_format, value):
+    # gh-26160: unsorted duplicates must not push the same row repeatedly.
+    # After row 2 finds an augmenting path through row 1, row 0 must remain
+    # available for the search from row 3, even though it was also pushed.
+    repeats = 1000
+    indices = [0, 2, 1, 3] + [0, 1] * repeats + [0]
+    indptr = [0, 2, 4, 4 + 2 * repeats, 5 + 2 * repeats]
+    graph = csr_array((np.full(len(indices), value), indices, indptr),
+                      shape=(4, 4)).asformat(sparse_format)
+    original = graph.copy()
+    assert not graph.has_canonical_format
+
+    x = maximum_bipartite_matching(graph, perm_type='column')
+    y = maximum_bipartite_matching(graph, perm_type='row')
+    assert_array_equal(x, [2, 3, 1, 0])
+    assert_array_equal(y, [3, 2, 0, 1])
+    assert_equal(structural_rank(graph), 4)
+
+    assert not graph.has_canonical_format
+    assert_array_equal(graph.data, original.data)
+    if sparse_format == 'coo':
+        assert_array_equal(graph.row, original.row)
+        assert_array_equal(graph.col, original.col)
+    else:
+        assert_array_equal(graph.indices, original.indices)
+        assert_array_equal(graph.indptr, original.indptr)
+
+
 def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
     np.random.seed(42)
     A = diags_array(np.ones(25), offsets=0, format='csr')
@@ -201,6 +232,72 @@ def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
     row_ind1, col_ind1 = min_weight_full_bipartite_matching(biadjacency1)
     assert len(row_ind1) == 0
     assert len(col_ind1) == 0
+
+
+@pytest.mark.parametrize('sparse_format', ['csr', 'csc', 'coo'])
+@pytest.mark.parametrize('shape', [(2, 2), (2, 3), (3, 2)])
+@pytest.mark.parametrize('maximize', [False, True])
+@pytest.mark.parametrize('index_dtype', [np.int32, np.int64])
+def test_min_weight_full_matching_duplicate_entries(sparse_format, shape,
+                                                    maximize, index_dtype):
+    # gh-26160: duplicates can overflow both the feasibility search stack
+    # and the weighted search workspace, including for rectangular inputs.
+    repeats = 1000
+    indices = np.array([0, 1] + [0] * repeats, dtype=index_dtype)
+    indptr = np.array([0, 2] + [2 + repeats] * (shape[0] - 1),
+                      dtype=index_dtype)
+    graph = csr_array((np.ones(len(indices)), indices, indptr),
+                      shape=shape).asformat(sparse_format)
+    original = graph.copy()
+    assert not graph.has_canonical_format
+
+    rows, cols = min_weight_full_bipartite_matching(graph, maximize=maximize)
+    assert_array_equal(rows, [0, 1])
+    assert_array_equal(cols, [1, 0])
+
+    assert not graph.has_canonical_format
+    assert_array_equal(graph.data, original.data)
+    if sparse_format == 'coo':
+        assert_array_equal(graph.row, original.row)
+        assert_array_equal(graph.col, original.col)
+    else:
+        assert_array_equal(graph.indices, original.indices)
+        assert_array_equal(graph.indptr, original.indptr)
+
+
+@pytest.mark.parametrize('sparse_format', ['csr', 'csc', 'coo'])
+@pytest.mark.parametrize('maximize', [False, True])
+def test_min_weight_full_matching_duplicate_workspace(sparse_format, maximize):
+    # With one row, the feasibility search needs no stack pushes. Duplicates
+    # must also not overflow the separate workspace in the weighted search.
+    repeats = 1000
+    graph = csr_array((np.ones(repeats), np.zeros(repeats, dtype=int),
+                       [0, repeats]), shape=(1, 2)).asformat(sparse_format)
+    rows, cols = min_weight_full_bipartite_matching(graph, maximize=maximize)
+    assert_array_equal(rows, [0])
+    assert_array_equal(cols, [0])
+
+
+@pytest.mark.parametrize('sparse_format', ['csr', 'csc', 'coo'])
+@pytest.mark.parametrize('maximize', [False, True])
+def test_min_weight_full_matching_duplicate_weights(sparse_format, maximize):
+    # Duplicate weights add to 6, so the diagonal costs 7 and the other
+    # matching costs 6. Considering either duplicate separately is wrong.
+    graph = csr_array(([1., 3., 5., 3., 1.], [0, 1, 0, 0, 1], [0, 3, 5]),
+                      shape=(2, 2)).asformat(sparse_format)
+    rows, cols = min_weight_full_bipartite_matching(graph, maximize=maximize)
+    assert_array_equal(rows, [0, 1])
+    assert_array_equal(cols, [0, 1] if maximize else [1, 0])
+
+
+@pytest.mark.parametrize('sparse_format', ['csr', 'csc', 'coo'])
+def test_min_weight_full_matching_duplicate_weights_cancel(sparse_format):
+    # Sum duplicates before removing zeros, including for COO inputs.
+    graph = csr_array(([1., -1.], [0, 0], [0, 2]),
+                      shape=(1, 1)).asformat(sparse_format)
+    with pytest.warns(UserWarning, match='explicit zero weights'):
+        with pytest.raises(ValueError, match='no full matching exists'):
+            min_weight_full_bipartite_matching(graph)
 
 
 @pytest.mark.parametrize('biadjacency',
