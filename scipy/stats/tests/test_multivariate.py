@@ -1076,6 +1076,16 @@ class TestMultivariateNormal:
         cdf_i = cubature(dist_i.pdf, [-np.inf]*ndim, x - m).estimate
         assert_allclose(cdf, cdf_i, atol=5e-6)
 
+    @pytest.mark.parametrize("cov, expected", [
+        ([[1., 0.5], [0.5, 1.]], 1/3),
+        ([[1., 0.], [0.5, 1.]], 1/3),
+        ([[1., 0.5], [0., 1.]], 1/4),
+    ])
+    def test_bivariate_cdf_lower_triangle(self, cov, expected):
+        # Regression test for gh-26296: only the lower triangle is used.
+        res = multivariate_normal.cdf([0., 0.], cov=cov)
+        assert_allclose(res, expected, rtol=1e-14)
+
     def test_cdf_known(self):
         # https://github.com/scipy/scipy/pull/17410#issuecomment-1312628547
         for ndim in range(2, 12):
