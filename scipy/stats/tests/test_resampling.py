@@ -1393,13 +1393,14 @@ class TestPermutationTest:
             permutation_test(data, stat, rng='herring')
 
     # -- Test Parameters -- #
-    # SPEC-007 leave one call with `random_state`` to check it still works
-    # and DeprecationWarning is emitted
     @pytest.mark.parametrize('random_state', [np.random.RandomState,
                                               np.random.default_rng])
     @pytest.mark.parametrize('permutation_type',
                              ['pairings', 'samples', 'independent'])
     def test_batch(self, permutation_type, random_state, xp):
+        if np.__version__ < "2.2" and random_state == np.random.RandomState:
+            pytest.skip("NumPy 2.2+ required to pass RandomState by `rng` kwarg")
+
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
         x = xp.asarray(self.rng.random(10))
