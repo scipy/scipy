@@ -639,8 +639,6 @@ class TestDifferentialEvolutionSolver:
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-        # if we don't provide an `rng` and `np.random.seed` has been
-        # set, `halton`
         solver.init_population_qmc(qmc_engine='halton')
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))

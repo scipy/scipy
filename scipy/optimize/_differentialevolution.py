@@ -1086,14 +1086,19 @@ class DifferentialEvolutionSolver:
         rng = self.random_number_generator
 
         # Create an array for population of candidate solutions.
-        if qmc_engine == 'latinhypercube':
-            sampler = qmc.LatinHypercube(d=self.parameter_count, rng=rng)
-        elif qmc_engine == 'sobol':
-            sampler = qmc.Sobol(d=self.parameter_count, rng=rng)
-        elif qmc_engine == 'halton':
-            sampler = qmc.Halton(d=self.parameter_count, rng=rng)
-        else:
-            raise ValueError(self.__init_error_msg)
+        with warnings.catch_warnings():
+            message = "Use of keyword argument `seed` is deprecated"
+            warnings.filterwarnings("ignore", message=message,
+                                    category=DeprecationWarning)
+
+            if qmc_engine == 'latinhypercube':
+                sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+            elif qmc_engine == 'sobol':
+                sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+            elif qmc_engine == 'halton':
+                sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+            else:
+                raise ValueError(self.__init_error_msg)
 
         self.population = sampler.random(n=self.num_population_members)
 

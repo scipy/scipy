@@ -2,6 +2,7 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
+import warnings
 
 import numpy as np
 
@@ -78,8 +79,11 @@ def sample_A_B(
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     d = len(dists)
-    # Can we change from `seed` to `rng` here? Behavior will change for integers.
-    A_B = qmc.Sobol(d=2*d, rng=rng, bits=64).random(n).T
+    with warnings.catch_warnings():
+        message = "Use of keyword argument `seed` is deprecated"
+        warnings.filterwarnings("ignore", message=message,
+                                category=DeprecationWarning)
+        A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n).T
     A_B = A_B.reshape(2, d, -1)
     try:
         for d_, dist in enumerate(dists):

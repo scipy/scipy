@@ -1792,7 +1792,7 @@ def test_n_rotations(xp):
     assert_equal(len(r), 2)
     assert_equal(len(r[:-1]), 1)
 
-np.random.seed(0)
+
 def test_random_rotation():
     # No xp testing since random rotations are always using NumPy
     rng = np.random.default_rng(0)

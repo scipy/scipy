@@ -11,6 +11,7 @@ __all__ = ['kron', 'kronsum', 'hstack', 'vstack', 'block_diag',
 import numbers
 import math
 import os
+import warnings
 from warnings import warn
 import numpy as np
 
@@ -1884,5 +1885,8 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     prefixes = (os.path.dirname(__file__),)
     warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
 
-    # using rng=rng here breaks control of np.random.seed
-    return random(m, n, density, format, dtype, rng=rng)
+    with warnings.catch_warnings():
+        message = "Positional use of `rng`"
+        warnings.filterwarnings("ignore", message=message,
+                                category=FutureWarning)
+        return random(m, n, density, format, dtype, rng)

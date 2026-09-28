@@ -223,11 +223,9 @@ class TestBasinHopping:
         # These methods take extensive amount of time on this problem
         niter = 10 if method in ('COBYLA', 'COBYQA') else self.niter
 
-        # use `seed` to check that DeprecationWarning is emitted
-        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
-            res = basinhopping(func2d_nograd, self.x0[i],
-                                minimizer_kwargs=minimizer_kwargs,
-                                niter=niter, disp=self.disp, seed=1234)
+        res = basinhopping(func2d_nograd, self.x0[i],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=niter, disp=self.disp, rng=1234)
 
         tol = 2 if method == 'COBYLA' else self.tol
         assert_almost_equal(res.x, self.sol[i], decimal=tol)

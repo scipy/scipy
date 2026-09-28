@@ -351,8 +351,6 @@ def check_random_state(seed):
 
     """
     if seed is None or seed is np.random:
-        # can we wrap this with np.random.default_rng?
-        # It doesn't have _bit_generator attribute. This can cause problems.
         return np.random.mtrand._rand
     if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)

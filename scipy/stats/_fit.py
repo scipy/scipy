@@ -544,11 +544,9 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle', optimizer=None):
     user_bounds = bounds
     user_guess = guess
 
-    # optimzer used to be controlled by np.random.seed; now it is not. Oh well.
     if optimizer is None:
-        rng = np.random.default_rng()
         def optimizer(*args, **kwargs):
-            return optimize.differential_evolution(*args, rng=rng, **kwargs)
+            return optimize.differential_evolution(*args, rng=None, **kwargs)
 
     # distribution input validation and information collection
     if hasattr(dist, "pdf"):  # can't use isinstance for types

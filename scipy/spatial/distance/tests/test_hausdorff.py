@@ -108,7 +108,7 @@ class TestHausdorff:
         # random state
         rs = check_random_state(None)
         old_global_state = rs.get_state()
-        # Preserve positional use of `rng` to check
+        # Preserve positional use of `rng` to check  that warning is emitted
         message = "Positional use of..."
         if isinstance(seed, np.random.Generator):
             directed_hausdorff(self.path_1, self.path_2, seed)
@@ -168,6 +168,7 @@ class TestHausdorff:
     ])
     def test_subsets(self, A, B, seed, expected, num_parallel_threads):
         # verify fix for gh-11332
+        # Preserve use of kwarg `seed` to check that warning is emitted
         message = "Use of keyword argument `seed`"
         with pytest.warns(DeprecationWarning, match=message):
             actual = directed_hausdorff(u=A, v=B, seed=seed)

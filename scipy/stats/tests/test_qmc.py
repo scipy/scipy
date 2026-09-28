@@ -545,13 +545,6 @@ class QMCEngineTests:
         **kwargs
     ) -> QMCEngine:
         # Preserve use of `seed` during SPEC 7 transition to test DeprecationWarning.
-        # But also, passing an integer to `seed` vs `rng` produces different results,
-        # and some tests fail. This may be an issue for functions that use QMCEngines
-        # with `seed` argument under the hood. The user could be passing an integer
-        # to the function's `rng` argument, so they don't see a DeprecationWarning,
-        # and that is currently passed as the QMCEngine's `seed` argument. If/when
-        # we start passing it to the QMCEngine's `rng` argument, instead, the results
-        # will change.
         message = 'Use of keyword argument...'
         if self.can_scramble:
             with pytest.warns(DeprecationWarning, match=message):

@@ -20,7 +20,7 @@ from scipy._lib._util import (check_random_state, MapWrapper,
                               _item_for_scalar_function)
 import scipy._external.array_api_extra as xpx
 from scipy._external.array_api_extra.testing import lazy_xp_function
-from scipy import cluster, interpolate, linalg, optimize, sparse, stats
+from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
 lazy_xp_function(_contains_nan)
@@ -491,8 +491,8 @@ class TestTransitionToRNG:
         A = rng.random((10, 10))
         return sparse.linalg.svds(A, **kwargs)
 
-    # def random_rotation(self, **kwargs):
-    #     return spatial.transform.Rotation.random(3, **kwargs).as_matrix()
+    def random_rotation(self, **kwargs):
+        return spatial.transform.Rotation.random(3, **kwargs).as_matrix()
 
     def goodness_of_fit(self, **kwargs):
         rng = np.random.default_rng(3458934594269824562)
@@ -574,7 +574,7 @@ class TestTransitionToRNG:
         (dual_annealing, "seed"),
         (check_grad, "seed"),
         (random_array, 'random_state'),
-        # (random_rotation, "random_state"),  # not behaving as expected (gh-23869?)
+        (random_rotation, "random_state"),
         (goodness_of_fit, "random_state"),
         (permutation_test, "random_state"),
         (bootstrap, "random_state"),

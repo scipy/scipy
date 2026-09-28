@@ -1342,7 +1342,11 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         estimates = xpx.at(estimates)[i].set(sum_product(integrands, dA, log))
 
         # Get a new, independently-scrambled QRNG for next time
-        qrng = type(qrng)(rng=rngs[i], **qrng._init_quad)
+        with warnings.catch_warnings():
+            message = "Use of keyword argument `seed` is deprecated"
+            warnings.filterwarnings("ignore", message=message,
+                                    category=DeprecationWarning)
+            qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
     integral = mean(estimates, log)
     standard_error = sem(estimates, m=integral, log=log)

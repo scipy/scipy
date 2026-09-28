@@ -731,19 +731,24 @@ class SHGO:
             self.iterate_complex = self.iterate_delaunay
             # Sampling method used
             if sampling_method in ['halton', 'sobol']:
-                if sampling_method == 'sobol':
-                    self.n = int(2 ** np.ceil(np.log2(self.n)))
-                    # self.n #TODO: Should always be self.n, this is
-                    # unacceptable for shgo, check that nfev behaves as
-                    # expected.
-                    self.nc = 0
-                    self.sampling_method = 'sobol'
-                    self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
-                                                rng=0)
-                else:
-                    self.sampling_method = 'halton'
-                    self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
-                                                 rng=0)
+                with warnings.catch_warnings():
+                    message = "Use of keyword argument `seed` is deprecated"
+                    warnings.filterwarnings("ignore", message=message,
+                                            category=DeprecationWarning)
+
+                    if sampling_method == 'sobol':
+                        self.n = int(2 ** np.ceil(np.log2(self.n)))
+                        # self.n #TODO: Should always be self.n, this is
+                        # unacceptable for shgo, check that nfev behaves as
+                        # expected.
+                        self.nc = 0
+                        self.sampling_method = 'sobol'
+                        self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
+                                                    seed=0)
+                    else:
+                        self.sampling_method = 'halton'
+                        self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
+                                                    seed=0)
 
                 def sampling_method(n, d):
                     return self.qmc_engine.random(n)

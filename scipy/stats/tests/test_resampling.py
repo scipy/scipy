@@ -1415,23 +1415,20 @@ class TestPermutationTest:
 
         kwds = {'n_resamples': 100, 'permutation_type': permutation_type,
                 'vectorized': True}
-        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
-            res1 = stats.permutation_test((x, y), statistic, batch=1,
-                                          random_state=random_state(0), **kwds)
+        res1 = stats.permutation_test((x, y), statistic, batch=1,
+                                        rng=random_state(0), **kwds)
         assert statistic.counter == 101
         assert statistic.batch_size == 1
 
         statistic.counter = 0
-        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
-            res2 = stats.permutation_test((x, y), statistic, batch=50,
-                                          random_state=random_state(0), **kwds)
+        res2 = stats.permutation_test((x, y), statistic, batch=50,
+                                        rng=random_state(0), **kwds)
         assert statistic.counter == 3
         assert statistic.batch_size == 50
 
         statistic.counter = 0
-        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
-            res3 = stats.permutation_test((x, y), statistic, batch=100,
-                                          random_state=random_state(0), **kwds)
+        res3 = stats.permutation_test((x, y), statistic, batch=100,
+                                        rng=random_state(0), **kwds)
         assert statistic.counter == 2
         assert statistic.batch_size == 100
 
@@ -1460,7 +1457,7 @@ class TestPermutationTest:
         # use `random_state` to check that DeprecationWarning is emitted
         with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
             res = stats.permutation_test((x, y), statistic, n_resamples=3,
-                                        random_state=random_state(0), **kwds)
+                                         random_state=random_state(0), **kwds)
         assert xp_size(res.null_distribution) == 3
 
         res = stats.permutation_test((x, y), statistic, **kwds)

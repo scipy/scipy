@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from types import EllipsisType, GenericAlias, ModuleType
+import warnings
 
 import numpy as np
 
@@ -2360,8 +2361,11 @@ class Rotation:
         # deprecate `num`.
         if num is not None and shape is not None:
             raise ValueError("Only one of `num` or `shape` can be specified.")
-        # changing to rng=rng here breaks control of np.random.seed
-        sample = cython_backend.random(num, rng=rng, shape=shape)
+        with warnings.catch_warnings():
+            message = "Positional use of `rng`"
+            warnings.filterwarnings("ignore", message=message,
+                                    category=FutureWarning)
+            sample = cython_backend.random(num, rng, shape=shape)
         return Rotation(sample, normalize=True, copy=False)
 
     @staticmethod
