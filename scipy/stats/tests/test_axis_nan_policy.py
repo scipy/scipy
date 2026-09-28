@@ -18,20 +18,13 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy._lib._util import AxisError
+from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
 
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
-
-
-def _using_accelerate():
-    config = np.show_config('dicts')
-    return config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
-
-
-RTOL = 1e-6 if _using_accelerate() else 1e-15
+RTOL = 1e-6 if USING_ACCELERATE else 1e-15
 
 
 tolerance_overrides = {stats.epps_singleton_2samp: 1e-10}
@@ -377,6 +370,9 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
 # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
 @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                            'RuntimeWarning')
+@pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
@@ -414,6 +410,9 @@ if SCIPY_XSLOW:
     @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
     # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:One or more sample arguments is too small:'
+                                'RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore:Mean of empty slice:RuntimeWarning')
 
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
@@ -631,6 +630,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # - Any results returned by the three versions should be the same.
     with warnings.catch_warnings():  # treat warnings as errors
         warnings.simplefilter("error")
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         ea_str, eb_str, ec_str = None, None, None
         try:
@@ -1147,7 +1147,9 @@ def test_masked_stat_1d():
     females3 = [20, 11, 17, 1000, 12]
     mask3 = [False, False, False, True, False]
     females3 = np.ma.masked_array(females3, mask=mask3)
-    res3 = stats.mannwhitneyu(males, females3)
+    message = "Support for NumPy masked arrays is deprecated..."
+    with pytest.warns(DeprecationWarning, match=message):
+        res3 = stats.mannwhitneyu(males, females3)
     np.testing.assert_array_equal(res3, res)
 
     # same result when extra nan is omitted and additional element is masked

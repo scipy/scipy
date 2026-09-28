@@ -44,7 +44,8 @@ from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
-from scipy.sparse.linalg import gmres, splu
+from scipy.sparse.linalg._isolve.iterative import gmres
+from scipy.sparse.linalg._dsolve.linsolve import splu
 
 from . import _arpacklib
 

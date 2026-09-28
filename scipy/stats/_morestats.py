@@ -11,7 +11,6 @@ from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib.deprecation import _NoValue
 import scipy._external.array_api_extra as xpx
 
 from scipy._lib._array_api import (
@@ -32,7 +31,6 @@ from scipy._lib._array_api import (
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
-from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency  # noqa:F401
@@ -2347,24 +2345,8 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-AndersonResult = _make_tuple_bunch('AndersonResult',
-                                   ['statistic', 'critical_values',
-                                    'significance_level'], ['fit_result'])
-
-
-_anderson_warning_message = (
-"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
-`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
-tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
-p-value via Monte Carlo simulation. When `method` is specified, the result object will
-include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
-available, and a p-value will always be computed according to one of the available
-`method` options.""".replace('\n', ' '))
-
-
 @xp_capabilities(np_only=True)
-def anderson(x, dist='norm', *, method=None):
+def anderson(x, dist='norm', *, method="interpolate"):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2385,19 +2367,10 @@ def anderson(x, dist='norm', *, method=None):
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
         If `method` is ``"interpolated"``, the p-value is interpolated from
-        pre-calculated tables.
+        pre-calculated tables (without extrapolating).
         If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
-
-        .. versionadded:: 1.17.0
-            If `method` is not specified, `anderson` will emit a ``FutureWarning``
-            specifying that the user must opt into a p-value calculation method.
-            When `method` is specified, the object returned will include a ``pvalue``
-            attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
-            no longer be available, and a p-value will always be computed according to
-            one of the available `method` options.
 
     Returns
     -------
@@ -2410,51 +2383,12 @@ def anderson(x, dist='norm', *, method=None):
             The p-value corresponding with the test statistic, calculated according to
             the specified `method`.
 
-        If `method` is unspecified, this is an object with the following attributes:
-
-        statistic : float
-            The Anderson-Darling test statistic.
-        critical_values : list
-            The critical values for this distribution.
-        significance_level : list
-            The significance levels for the corresponding critical values
-            in percents.  The function returns critical values for a
-            differing set of significance levels depending on the
-            distribution that is being tested against.
-        fit_result : `~scipy.stats._result_classes.FitResult`
-            An object containing the results of fitting the distribution to
-            the data.
-
-        .. deprecated:: 1.17.0
-            The tuple-unpacking behavior of the return object and attributes
-            ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
-            available, and the object returned will have attributes ``statistic`` and
-            ``pvalue``.
-
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
 
     Notes
     -----
-    Critical values provided when `method` is unspecified are for the following
-    significance levels:
-
-    normal/exponential
-        15%, 10%, 5%, 2.5%, 1%
-    logistic
-        25%, 10%, 5%, 2.5%, 1%, 0.5%
-    gumbel_l / gumbel_r
-        25%, 10%, 5%, 2.5%, 1%
-    weibull_min
-        50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
-
-    If the returned statistic is larger than these critical values then
-    for the corresponding significance level, the null hypothesis that
-    the data come from the chosen distribution can be rejected.
-    The returned statistic is referred to as 'A2' in the references.
-
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
     conditions for a maximum likelihood estimate have been verified and
@@ -2591,17 +2525,6 @@ def anderson(x, dist='norm', *, method=None):
 
     i = arange(1, N + 1)
     A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
-
-    # FitResult initializer expects an optimize result, so let's work with it
-    message = '`anderson` successfully fit the distribution to the data.'
-    res = optimize.OptimizeResult(success=True, message=message)
-    res.x = np.array(fit_params)
-    fit_result = FitResult(getattr(distributions, dist), y,
-                           discrete=False, res=res)
-
-    if method is None:
-        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
-        return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
@@ -2753,7 +2676,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 
 
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
+def anderson_ksamp(samples, *, variant="midrank", method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2766,14 +2689,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     ----------
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
-    midrank : bool, optional
-        Variant of Anderson-Darling test which is computed. Default
-        (True) is the midrank test applicable to continuous and
-        discrete populations. If False, the right side empirical
-        distribution is used.
-
-        .. deprecated:: 1.17.0
-            Use parameter `variant` instead.
     variant : {'midrank', 'right', 'continuous'}
         Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
         to both continuous and discrete populations. ``'discrete'`` and ``'continuous'``
@@ -2786,7 +2701,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
         instance of `PermutationMethod`, the p-value is computed using
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
-        from tabulated values.
+        from tabulated values (without extrapolating).
 
     Returns
     -------
@@ -2795,13 +2710,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
 
         statistic : float
             Normalized k-sample Anderson-Darling test statistic.
-        critical_values : array
-            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-            0.5%, 0.1%.
-
-            .. deprecated:: 1.17.0
-                 Present only when `variant` is unspecified.
-
         pvalue : float
             The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
@@ -2895,18 +2803,6 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if variant == _NoValue or midrank != _NoValue:
-        message = ("Parameter `variant` has been introduced to replace `midrank`; "
-                   "`midrank` will be removed in SciPy 2.0.0. Specify `variant` to "
-                   "silence this warning. Note that the returned object will no longer "
-                   "be unpackable as a tuple, and `critical_values` will be omitted.")
-        warnings.warn(message, category=UserWarning, stacklevel=2)
-
-    return_critical_values = False
-    if variant == _NoValue:
-        return_critical_values = True
-        variant = 'midrank' if midrank else 'right'
-
     if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
     elif variant == 'right':
@@ -2967,14 +2863,7 @@ def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     else:
         p = res.pvalue if method is not None else p
 
-    if return_critical_values:
-        # create result object with alias for backward compatibility
-        res = Anderson_ksampResult(A2, critical, p)
-        res.significance_level = p
-    else:
-        res = SignificanceResult(statistic=A2, pvalue=p)
-
-    return res
+    return SignificanceResult(statistic=A2, pvalue=p)
 
 
 
@@ -3944,16 +3833,6 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
 
-        .. warning::
-            When `y` is provided, `wilcoxon` calculates the test statistic
-            based on the ranks of the absolute values of ``d = x - y``.
-            Roundoff error in the subtraction can result in elements of ``d``
-            being assigned different ranks even when they would be tied with
-            exact arithmetic. Rather than passing `x` and `y` separately,
-            consider computing the difference ``x - y``, rounding as needed to
-            ensure that only truly unique elements are numerically distinct,
-            and passing the result as `x`, leaving `y` at the default (None).
-
     zero_method : {"wilcox", "pratt", "zsplit"}, optional
         There are different conventions for handling pairs of observations
         with equal values ("zero-differences", or "zeros").
@@ -4033,8 +3912,24 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       ``method='exact'`` is used when ``len(d) <= 50``, and
       ``method='asymptotic'`` is used otherwise.
 
-    The presence of "ties" (i.e. not all elements of ``d`` are unique) or
-    "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
+    .. warning::
+
+        The presence of "ties" (i.e. not all elements of ``d`` are unique) or
+        "zeros" (i.e. elements of ``d`` are zero) is determined based on exact
+        floating point equality. That is, elements are treated as zeros only
+        where ``d == 0``, and elements at indices ``i`` and ``j`` are only
+        treated as ties where ``d[i] == d[j]``. Adjust values as needed to
+        ensure that elements will be treated as ties or zeros as intended.
+
+        As an example of a potential pitfall, when `x` and `y` are provided,
+        roundoff error in the subtraction can result in elements of ``d``
+        being assigned different ranks even when they would be tied with
+        exact arithmetic. Rather than passing `x` and `y` separately,
+        consider computing the difference ``d = x - y`` explicitly. Adjust as
+        needed to ensure that only truly unique elements are numerically distinct,
+        then pass the result as `x`, leaving `y` at the default (None).
+
+    The presence of ties and zeros changes the null distribution
     of the test statistic, and ``method='exact'`` no longer calculates
     the exact p-value. If ``method='asymptotic'``, the z-statistic is adjusted
     for more accurate comparison against the standard normal, but still,
@@ -4044,7 +3939,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
 
-    The presence of ties and zeros affects the resolution of ``method='auto'``
+    The presence of ties and zeros also affects the resolution of ``method='auto'``
     accordingly: exhaustive permutations are performed when ``len(d) <= 13``,
     and the asymptotic method is used otherwise. Note that they asymptotic
     method may not be very accurate even for ``len(d) > 14``; the threshold

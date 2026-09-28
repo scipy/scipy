@@ -236,6 +236,7 @@ class TestUtils:
             reason="minimum_spanning_tree ignores zero distances (#18892)",
             strict=True,
     )
+    @pytest.mark.filterwarnings("ignore:Sample contains duplicate points:UserWarning")
     @pytest.mark.thread_unsafe
     def test_geometric_discrepancy_mst_with_zero_distances(self):
         sample = np.array([[0, 0], [0, 0], [0, 1]])

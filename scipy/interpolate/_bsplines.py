@@ -7,11 +7,11 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded)
+                          solve, solve_banded, solveh_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, diags_array
 from scipy.special import poch
 from itertools import combinations
 
@@ -80,6 +80,15 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
     rows = np.where(in_band)[0]
     col[rows] = A_packed[rows, p[rows]]
     return col
+
+
+def _validate_bc_type(bc_type):
+    if bc_type is not None and bc_type != "periodic":
+        raise ValueError("Only None and 'periodic' boundary conditions "
+                         f"are recognised, found {bc_type}")
+
+    return bc_type
+
 
 def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
     """
@@ -306,6 +315,11 @@ def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
 
     return ab_reduced, rhs
 
+def _validate_periodic_knot_vector(t, k):
+    """Check that the knot vector is periodic."""
+    T = t[-k-1] - t[k]
+    if not np.allclose(t[:2*k+1] + T, t[-2*k-1:]):
+        raise ValueError("The knot vector t is not periodic.")
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -1930,8 +1944,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
-        * ``"not-a-knot"`` (default): The first and second segments are the
-          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"not-a-knot"`` (default for ``k > 1``): The first and second segments
+          are the same polynomial. This is equivalent to having ``bc_type=None``
+          for ``k > 1``.
         * ``"periodic"``: The values and the first ``k-1`` derivatives at the
           ends are equivalent.
 
@@ -2036,6 +2051,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         # delegate to CuPy, *and* return a SciPy BSpline object
         import cupyx.scipy.interpolate as csi
         b = csi.make_interp_spline(x, y, k, t, bc_type, axis, check_finite)
+        # This is a workaround that should be cleaned up once cupy returns a spline
+        # with extrapolate="periodic". See the following cupy issue:
+        # https://github.com/cupy/cupy/issues/10304
+        b.extrapolate = "periodic" if bc_type == "periodic" else b.extrapolate
         return BSpline.construct_fast(b.t, b.c, b.k, b.extrapolate, b.axis)
 
     # convert string aliases for the boundary conditions
@@ -2070,22 +2089,25 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
             raise ValueError("Too much info for k=0: t and bc_type can only "
-                             "be None.")
+                             "be None or 'periodic'.")
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-        return BSpline.construct_fast(t, c, k, axis=axis)
+        extrapolate = "periodic" if bc_type == "periodic" else True
+        return BSpline.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
     if k == 1 and t is None:
         if not (deriv_l is None and deriv_r is None):
-            raise ValueError("Too much info for k=1: bc_type can only be None.")
+            raise ValueError("Too much info for k=1: bc_type can only be None "
+                             "or 'periodic'.")
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-        return BSpline.construct_fast(t, c, k, axis=axis)
+        extrapolate = "periodic" if bc_type=="periodic" else True
+        return BSpline.construct_fast(t, c, k, extrapolate=extrapolate, axis=axis)
 
     k = operator.index(k)
 
@@ -2186,7 +2208,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr",
-clamp_values=None):
+clamp_values=None, bc_type=None):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
     The result is a linear combination
@@ -2237,6 +2259,17 @@ clamp_values=None):
         ``k + 1`` located exactly at the clamped endpoint(s) and be equal to
         ``x[0]`` and ``x[-1]``.
         Default is None.
+    bc_type : str, optional
+        Boundary conditions.
+        Default is ``None``.
+        The following boundary conditions are recognized:
+
+        * ``None`` (default): No boundary conditions are applied.
+        * ``"periodic"``: The values and the first ``k-1`` derivatives at the
+          ends are equivalent. Currently not supported for method="norm-eq".
+
+        .. versionchanged:: 2.0.0
+            New keyword argument `bc_type`.
 
     Returns
     -------
@@ -2265,6 +2298,10 @@ clamp_values=None):
     holds for the standard clamped knot vector construction as well as
     other constructions with the same boundary multiplicity, such as
     not-a-knot boundary conditions.
+
+    When ``bc_type="periodic"`` is supplied, the knot vector has to be
+    periodic. This means ``t[:2*k+1] + T == t[-2*k-1:]``, where
+    ``T = t[-k-1] - t[k]`` is the period of the spline.
 
     Examples
     --------
@@ -2335,30 +2372,28 @@ clamp_values=None):
         # C routines in _dierckx currently require C contiguity
         y = y.copy(order='C')
 
-    if x.ndim != 1:
-        raise ValueError("Expect x to be a 1-D sequence.")
-    if x.shape[0] < k+1:
-        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
-    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
-    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
     if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
+    bc_type = _validate_bc_type(bc_type)
+    fpcheck(x, t, k, periodic=(bc_type == "periodic"))
     if clamp_values is not None:
+        if bc_type == "periodic":
+            raise ValueError("Periodic splines cannot have clamp values.")
         ci, cf = _validate_clamp_values(
             clamp_values, k, t, y, x, xp, check_finite=check_finite,
         )
     else:
         ci, cf = None, None
+    if bc_type == "periodic":
+        _validate_periodic_knot_vector(t, k)
 
     # number of coefficients
     n = t.size - k - 1
@@ -2374,6 +2409,11 @@ clamp_values=None):
     yy = yy.reshape(-1, extradim)
 
     if method == "norm-eq":
+
+        if bc_type == "periodic":
+            raise NotImplementedError("Periodic boundary conditions are not "
+                                      "implemented for method 'norm-eq'.")
+
         # construct A.T @ A and rhs with A the colocation matrix, and
         # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
         lower = True
@@ -2403,8 +2443,11 @@ clamp_values=None):
             c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
 
     elif method == "qr":
+
+        periodic = (bc_type == 'periodic')
+
         _, _, c, _, _ = _lsq_solve_qr(
-            x, yy, t, k, w, ci=ci, cf=cf,
+            x, yy, t, k, w, periodic=periodic, ci=ci, cf=cf,
         )
 
         if was_complex:
@@ -2417,8 +2460,10 @@ clamp_values=None):
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-    return BSpline.construct_fast(t, c, k, axis=axis)
+    extrap = "periodic" if bc_type=="periodic" else True
+    return BSpline.construct_fast(t, c, k, extrapolate=extrap, axis=axis)
 
 
 ######################
@@ -2851,8 +2896,236 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+def _deboor_derivative_matrix(t, order):
+    r"""
+    Build the matrix that differentiates a spline via de Boor's formula.
+
+    A spline of order :math:`m` (degree :math:`m - 1`) with coefficients
+    :math:`\gamma` has a derivative which is a spline of order
+    :math:`m - 1` on the *same* knot vector :math:`\tau`:
+
+    .. math::
+
+        f'(u) = \sum_{j} (m - 1)\,
+                \frac{\gamma_j - \gamma_{j-1}}{\tau_{j+m-1} - \tau_j}\,
+                B_{j,\,m-1}(u)
+
+    Differentiation is therefore a linear map on coefficients. This
+    function returns its matrix :math:`D`, so that the derivative has
+    coefficients :math:`D \gamma`.
+
+    This is the matrix form of the coefficient computation inside
+    `BSpline.derivative` (and FITPACK's ``splder``), with one
+    bookkeeping difference: those return the derivative on the trimmed
+    knot vector ``t[1:-1]``, dropping one boundary knot per end, while
+    here the full knot vector is kept, so the degenerate boundary
+    entries appear as explicit zero rows. Keeping ``t`` fixed is what
+    lets the two derivative matrices compose with each other and with
+    the hat-function mass matrix on the same knots in
+    `_penalty_matrix_banded`.
+
+    Notes
+    -----
+    Row :math:`j` holds :math:`+d_j` in column :math:`j` and
+    :math:`-d_j` in column :math:`j - 1`, where
+    :math:`d_j = (m - 1) / (\tau_{j+m-1} - \tau_j)` is the factor
+    multiplying the coefficient difference in the formula above.
+
+    For a clamped knot vector the denominator vanishes at
+    :math:`j = 0` and :math:`j = N`, where the repeated boundary knots
+    coincide. Those coefficients are set to zero, making the first and
+    last rows identically zero; this is why formulations assuming
+    clamped knots omit those terms from the sum entirely.
+
+    References
+    ----------
+    .. [1] C. de Boor, "B(asic)-Spline Basics", 1986, eq. (10.3)
+           (Algorithm 10); the Remark following it treats the
+           vanishing-denominator case at repeated knots.
+           https://ftp.cs.wisc.edu/Approx/bsplbasic.pdf
+    .. [2] N. M. Patrikalakis, T. Maekawa, W. Cho, "Shape Interrogation
+           for Computer Aided Design and Manufacturing", eq. (1.65).
+           :doi:`10.1007/978-3-642-04074-0`
+           https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html
+
+    """
+    N = len(t) - order
+    d = np.zeros(N + 1)
+    j = np.arange(N + 1)
+    mask = np.where(t[j + order - 1] - t[j] > 0)
+    d[mask] = (order - 1) / (t[j[mask] + order - 1] - t[j[mask]])
+
+    # row j: +d_j at column j, -d_j at column j-1
+    return diags_array([d[:N], -d[1:]], offsets=[0, -1], shape=(N + 1, N))
+
+
+def _penalty_matrix_banded(t):
+    r"""Penalty matrix of a cubic smoothing spline on the knot vector ``t``.
+
+    Computes the matrix form of the second-derivative penalty
+    :math:`\int (f''(u))^2 du`, i.e.
+    :math:`\Omega_{ij} = \int B_i''(u) B_j''(u) du` for the cubic
+    B-spline basis on ``t``, exactly and without numerical integration:
+
+    1. ``C = D2 @ D1`` expresses the second derivative of each cubic
+       B-spline in the basis of linear B-splines ("hat functions") on the
+       same knots; ``D1`` and ``D2`` apply de Boor's derivative formula
+       (stated and explained in the docstring of
+       `_deboor_derivative_matrix`) once each.
+    2. ``R`` is the mass (Gram) matrix of the hat functions,
+       ``R[p, q] = integral(N_p * N_q)``, which is tridiagonal with the
+       closed-form entries ``(t[p+2] - t[p]) / 3`` on the diagonal and
+       ``(t[p+2] - t[p+1]) / 6`` off it. Here the hat function ``N_p``
+       is the degree-one B-spline built on the three knots
+       ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
+       ``t[p+2]``.
+    3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
+       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       accepted by ``scipy.linalg.solveh_banded``.
+
+    ``Omega`` depends on ``t`` only (no data enters), is symmetric
+    positive semi-definite, and its null space is the straight lines,
+    which have zero curvature. This null space is why the assembled
+    system ``X.T @ W @ X + lam * Omega`` grows ill-conditioned as
+    ``lam`` grows (condition number proportional to ``lam``): in two
+    directions of coefficient space only the data term contributes,
+    while all others scale with ``lam``.
+
+    The full derivation with worked examples, the validation against
+    ``fda::bsplinepen`` and other independent constructions, and a
+    conditioning analysis are in the companion report (steps 1-3 above
+    are its eqs. (4)-(5), (8)-(9) and (11) respectively):
+    :doi:`10.5281/zenodo.22983807`
+    """
+    order = 4 # assuming a cubic spline
+    m = len(t) - order # number of coefficients
+
+    D1 = _deboor_derivative_matrix(t, order)      # cubic to quadratic coeffs
+    D2 = _deboor_derivative_matrix(t, order - 1)  # quadratic to linear coeffs
+    C = D2 @ D1                                   # cubic to linear (f'') coeffs
+    R_size = len(t) - 2 # len(t) - order (because linear)
+
+    d0 = (t[2:] - t[:-2]) / 3.0
+    d1 = (t[2:-1] - t[1:-2]) / 6.0
+    R = diags_array([d1, d0, d1], offsets=[-1, 0, 1], shape=(R_size, R_size))
+
+    omega = C.T @ R @ C
+    omega_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        omega_banded[i, : m - i] = omega.diagonal(-i)
+
+    return omega_banded
+
+
+def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
+    """`make_smoothing_spline` path for a user-provided knot vector ``t``.
+
+    Solves the penalized least-squares problem in the cubic B-spline basis
+    on ``t`` via the normal equations,
+
+        (X^T W X + lam * Omega) c = X^T W y,
+
+    with ``Omega`` from `_penalty_matrix_banded`. Both matrices are 7-banded
+    symmetric, so the system is solved with a banded Cholesky factorization.
+    Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
+    """
+    if lam is None:
+        raise NotImplementedError(
+            "automatic GCV selection of `lam` is not supported with user knots, "
+            "pass `lam` explicitly")
+    if np.ndim(lam) != 0:
+        raise NotImplementedError(
+            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+            f"got an array of shape {np.shape(lam)}."
+        )
+    if lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+    if np.ndim(y) > 1:
+        raise NotImplementedError(
+            "batched `y` is not supported with user-provided knots yet; "
+            "`y` must be 1-D")
+    t = np.ascontiguousarray(t, dtype=float)
+    if not np.all(np.isfinite(t)):
+        raise ValueError("`t` must not contain infs or nans")
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("`t` must be a 1-D non-decreasing array")
+    if len(t) < 8:
+        raise ValueError(
+            "`t` must contain at least 8 knots (a cubic spline needs at "
+            f"least one base interval); got {len(t) = }")
+    if not (t[0] == t[3] and t[-4] == t[-1]):
+        raise ValueError(
+            "`t` must be clamped: the first 4 and last 4 knots must each "
+            "be equal (boundary knots repeated to multiplicity 4). "
+            "Without clamping, the penalty integrates over regions the "
+            "data cannot constrain and straight lines are penalized.")
+    # Each repeat of an interior knot removes one continuity requirement.
+    # A double knot lets f'' step at the knot: both one-sided values are
+    # finite and the penalty charges them through the neighboring
+    # intervals, so Omega stays exact. A triple knot lets f' have a
+    # corner, whose true penalty (integral of a delta squared) is
+    # infinite, yet Omega returns a finite value because the hat function
+    # at the triple knot has zero width and drops that contribution: the
+    # corner would come for free at every lam. Full derivation in the
+    # companion report, Sec. 15 FAQ 2 (link in make_smoothing_spline).
+    vals, counts = np.unique(t, return_counts=True)
+    if counts[0] != 4 or counts[-1] != 4:
+        raise ValueError(
+            "boundary knots in `t` must have multiplicity exactly 4")
+    if np.any(counts[1:-1] > 2):
+        raise ValueError(
+            "interior knots in `t` must not have multiplicity greater "
+            "than 2: the penalty, the integral of (f'')^2, is only defined "
+            "for functions with a continuous first derivative, which "
+            "requires interior multiplicity at most 2")
+    if x[0] < t[3] or x[-1] > t[-4]:
+        raise ValueError(
+            "all `x` values must lie within the base interval "
+            f"[t[3], t[-4]] = [{t[3]}, {t[-4]}]")
+
+    m = len(t) - 4
+    if lam == 0 and m > len(x):
+        raise ValueError(
+            "with `lam=0` the fit is an unpenalized least-squares problem, "
+            "which needs at least as many data points as basis functions; "
+            f"got {len(x)} points and {m} = len(t) - 4 basis functions. "
+            "Use fewer knots, or pass `lam` > 0.")
+
+    X = BSpline.design_matrix(x, t, 3)
+
+    omega = _penalty_matrix_banded(t)
+    XtWX = X.T @ X.multiply(w[:, None])
+    XtWy = X.T @ (w * y)
+    XtWX_banded = np.zeros((4, m))
+    for i in range(4):
+        # Convert to LAPACK symmetric lower-banded storage,
+        # as accepted by solveh_banded.
+        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+    try:
+        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+    except LinAlgError as e:
+        # why only the two extremes of lam can fail: companion report,
+        # Sec. 15 FAQ 1 (link in make_smoothing_spline)
+        raise ValueError(
+            "the system `X^T W X + lam * Omega` is not positive definite, so "
+            "the coefficients are not uniquely determined. This happens only "
+            "at the two extremes of `lam`. At `lam` zero or near zero: the "
+            "support of some basis function contains no data, i.e. some "
+            "interval (t[j], t[j+4]) has no `x` in it (use fewer knots, or a "
+            "larger `lam`, which lets the penalty determine the coefficients "
+            "the data cannot see). At very large `lam`: the system is "
+            "numerically singular, since its condition number grows "
+            "proportionally to `lam` (use a smaller `lam`; the fit there is "
+            "already indistinguishable from its straight-line limit).") from e
+    c = np.ascontiguousarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
+    return BSpline.construct_fast(t, c, 3, axis=axis)
+
+
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
-def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
+def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
@@ -2889,6 +3162,16 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
+    t : array_like, shape (nt,), optional
+        Knot vector. Must be non-decreasing, with all ``x`` values inside
+        the base interval ``[t[3], t[-4]]``; boundary knots must be
+        repeated 4 times (clamped), and interior knots may repeat only to
+        multiplicity 2 (higher multiplicity would allow kinks or jumps,
+        for which the penalty :math:`\int (f'')^2` is not defined).
+        ``t`` can only be passed when ``lam``
+        is given explicitly. Default is None, in which case a clamped knot
+        vector at the data sites is used,
+        ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
         The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
@@ -2918,7 +3201,22 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     In cases when the initial problem is ill-posed (for example, the product
     :math:`X^T W X` where :math:`X` is a design matrix is not a positive
-    defined matrix) a ValueError is raised.
+    defined matrix) a ValueError is raised. This also happens when ``lam``
+    is very large: the condition number of the linear system solved
+    internally grows proportionally to ``lam``, so the achievable
+    accuracy degrades as ``eps * cond`` until, eventually, the system
+    becomes numerically singular.
+
+    If ``t`` is not specified, the function returns a natural cubic
+    smoothing spline with knots at the data sites (zero second
+    derivative at the two boundary knots). If ``t`` is specified, the
+    function returns a cubic spline with these predefined knots
+    (sometimes referred to as an O'Sullivan penalized spline [5]_); no
+    boundary conditions are imposed. In particular, if the given ``t``
+    contains all the data sites, the natural boundary behavior is not
+    lost: the unconstrained minimizer satisfies the natural conditions
+    on its own, so the two paths return the same spline. The returned
+    `BSpline` has ``extrapolate=True``.
 
     References
     ----------
@@ -2938,6 +3236,10 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         BSc thesis, 2022.
         `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
         Russian)
+    .. [5] M. P. Wand and J. T. Ormerod, "On semiparametric regression
+        with O'Sullivan penalised splines", Australian & New Zealand
+        Journal of Statistics, vol. 50, no. 2, pp. 179-198, 2008.
+        :doi:`10.1111/j.1467-842X.2008.00507.x`
 
     Examples
     --------
@@ -2967,9 +3269,12 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
-    xp = array_namespace(x, y)
+    # include the optional arrays so that a namespace or device mismatch
+    # between any of the inputs raises consistently (both helpers
+    # ignore Nones)
+    xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
-    device = xp_result_device(x, y)
+    device = xp_result_device(x, y, w, t)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -2987,7 +3292,6 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         if any(w <= 0):
             raise ValueError('Invalid vector of weights')
 
-    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
 
     if n <= 4:
@@ -2996,6 +3300,15 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     # Internals assume that the data axis is the zero-th axis
     axis = normalize_axis_index(axis, y.ndim)
     y = np.moveaxis(y, axis, 0)
+
+    if t is not None:
+        # user-provided knots: penalized least squares in the B-spline
+        # basis on ``t``. The construction is described in the companion
+        # report, https://doi.org/10.5281/zenodo.22983807
+        return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis,
+                                                 xp=xp, device=device)
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
 
     # flatten the trailing axes of y to simplify further manipulations
     y_shape1 = y.shape[1:]
@@ -3025,7 +3338,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     # last elements
     X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
     X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
-                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+                (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
     X[3, -2] = X_bspl[-1, -1]
 
     # create penalty matrix and divide it by vector of weights: W^{-1} E
