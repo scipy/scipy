@@ -1537,7 +1537,7 @@ class StateSpace(LinearTimeInvariant):
     convert to the specific system representation first. For example, call
     ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
-    The :ref:`tutorial_signal_state_space_representation` section of the
+    The :ref:`tutorial_signal-StateSpaceRepresentation` section of the
     :ref:`user_guide` presents the corresponding definitions of continuous-time and
     disrcete time state space systems.
 
