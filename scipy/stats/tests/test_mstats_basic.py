@@ -21,10 +21,7 @@ from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
-with warnings.catch_warnings():
-    warnings.filterwarnings(action="ignore",
-                            message="`scipy.stats.mstats` is deprecated",
-                            category=DeprecationWarning)
+with pytest.warns(DeprecationWarning, match="`scipy.stats.mstats` is deprecated"):
     import scipy.stats.mstats as mstats
 
 pytestmark = [
