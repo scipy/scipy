@@ -759,27 +759,18 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         or a single such random int if size not provided.
     """
 
+    if gen is None:
+        # default is RandomState singleton used by np.random.
+        gen = np.random.mtrand._rand
+
     if isinstance(gen, np.random.RandomState):
         gen = np.random.default_rng(gen)
 
     if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
-    else:
-        if gen is None:
-            # default is RandomState singleton used by np.random.
-            gen = np.random.mtrand._rand
-        if endpoint:
-            # inclusive of endpoint
-            # remember that low and high can be arrays, so don't modify in
-            # place
-            if high is None:
-                return gen.randint(low + 1, size=size, dtype=dtype)
-            if high is not None:
-                return gen.randint(low, high=high + 1, size=size, dtype=dtype)
 
-        # exclusive
-        return gen.randint(low, high=high, size=size, dtype=dtype)
+    raise TypeError("gen must be a RandomState or Generator, if present")
 
 
 @contextmanager
