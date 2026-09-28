@@ -758,6 +758,10 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
+
+    if isinstance(gen, np.random.RandomState):
+        gen = np.random.default_rng(gen)
+
     if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)

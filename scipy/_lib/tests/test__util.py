@@ -234,6 +234,16 @@ class TestRngIntegers:
         assert arr.shape == (100, )
 
 
+    def test_generator_randomstate_equal(self):
+        seed = np.random.default_rng().integers(2**32)
+        rng = np.random.RandomState(seed)
+        gen = np.random.default_rng(np.random.RandomState(seed))
+
+        arr_rng = rng_integers(rng, low=0, high=10**9, size=1000, endpoint=False)
+        arr_gen = rng_integers(gen, low=0, high=10**9, size=1000, endpoint=False)
+        assert_equal(arr_rng, arr_gen)
+
+
 class TestValidateInt:
 
     @pytest.mark.parametrize('n', [4, np.uint8(4), np.int16(4), np.array(4)])
