@@ -26,7 +26,7 @@ from scipy.interpolate import (
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
 
-from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
+from scipy.interpolate._bsplines import (_not_a_knot, _augknt, _compute_b_inv,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr,
                                          _penalty_matrix_banded)
@@ -3010,6 +3010,24 @@ class TestSmoothingSpline:
         f = make_smoothing_spline(x, y, lam=None, t=t)
         x_dense = np.linspace(x[0], x[-1], 2000)
         assert np.max(np.abs(f(x_dense))) < 2.0
+
+    def test_compute_b_inv_all_four_bands(self):
+        """All four bands of the inverse are computed, none is zeroed out."""
+        rng = np.random.default_rng(3)
+        n = 12
+        A = np.zeros((n, n))
+        for d in range(4):
+            v = rng.random(n - d) * (0.3 if d else 1.0)
+            A += np.diag(v, d) + (np.diag(v, -d) if d else 0)
+        A += 4 * np.eye(n)
+        ab = np.zeros((4, n))
+        for d in range(4):
+            ab[3 - d, d:] = np.diagonal(A, d)
+
+        B = _compute_b_inv(ab)
+        inv = np.linalg.inv(A)
+        for d in range(4):
+            xp_assert_close(B[3 - d, d:], np.diagonal(inv, d), atol=1e-14)
 
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
