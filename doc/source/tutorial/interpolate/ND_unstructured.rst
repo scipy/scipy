@@ -96,23 +96,23 @@ outside of the observed data range.
 1-D Example
 -----------
 
-This example compares the usage of the `RBFInterpolator` and `UnivariateSpline`
-classes from the `scipy.interpolate` module.
+Radial basis functions are most useful for scattered multidimensional data,
+but can be used for one-dimensional data as well. This example compares the
+usage of the `RBFInterpolator` and a 1D-specific routine, `make_interp_spline`.
 
 .. plot::
     :alt: " "
 
     >>> import numpy as np
-    >>> from scipy.interpolate import RBFInterpolator, InterpolatedUnivariateSpline
+    >>> from scipy.interpolate import RBFInterpolator, make_interp_spline
     >>> import matplotlib.pyplot as plt
-
     >>> # setup data
-    >>> x = np.linspace(0, 10, 9).reshape(-1, 1)
+    >>> x = np.linspace(0, 10, 9)
     >>> y = np.sin(x)
-    >>> xi = np.linspace(0, 10, 101).reshape(-1, 1)
+    >>> xi = np.linspace(0, 10, 101)
 
-    >>> # use fitpack2 method
-    >>> ius = InterpolatedUnivariateSpline(x, y)
+    >>> # use a 1D-specific method
+    >>> ius = make_interp_spline(x, y, k=3)
     >>> yi = ius(xi)
 
     >>> fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -122,6 +122,7 @@ classes from the `scipy.interpolate` module.
     >>> ax1.set_title('Interpolation using univariate spline')
 
     >>> # use RBF method
+    >>> x, y, xi = x.reshape(-1, 1), y.reshape(-1, 1), xi.reshape(-1, 1)
     >>> rbf = RBFInterpolator(x, y)
     >>> fi = rbf(xi)
 

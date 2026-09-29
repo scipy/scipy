@@ -34,7 +34,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.12", "3.15-dev"] # this run will use python dev versions when available
@@ -122,6 +122,12 @@ jobs:
         run: |
           python -m pip install --group typecheck
           pyrefly check --output-format=github
+
+      - name: Report CPU details
+        run: |
+          # Diagnostics for CPU-dependent failures (gh-26286)
+          lscpu
+          spin python --no-build -- -c "import numpy as np; import scipy.linalg; np.show_runtime()"
 
       - name: Test SciPy
         run: |
