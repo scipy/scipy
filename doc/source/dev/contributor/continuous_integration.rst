@@ -53,8 +53,7 @@ On forks, GitHub Actions workflows are skipped by default so that they do not
 consume the fork owner's Actions minutes. To get CI feedback on your own fork,
 set the repository variable ``SCIPY_FORK_CI`` to ``true`` (in your fork's
 *Settings > Secrets and variables > Actions > Variables*). This enables the
-``Lint`` workflow and the first ``Linux Tests`` job
-(``pyrefly (py3.12) & dev deps (py3.15), fast, spin``); all other jobs remain
+``Lint`` workflow and the first ``Linux Tests`` job; all other jobs remain
 restricted to ``scipy/scipy``.
 
 CircleCI
