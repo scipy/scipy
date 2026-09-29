@@ -30,9 +30,7 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.stats._finite_differences import _derivative
 
-# for scipy.stats.entropy. Attempts to import just that function or file
-# have cause import problems
-from scipy import stats
+from scipy.stats._entropy import entropy
 
 from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
@@ -3848,7 +3846,7 @@ class rv_discrete(rv_generic):
 
     def _entropy(self, *args):
         if hasattr(self, 'pk'):
-            return stats.entropy(self.pk)
+            return entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
             return _expect(lambda x: entr(self._pmf(x, *args)),
@@ -4191,7 +4189,7 @@ class rv_sample(rv_discrete):
         return Y
 
     def _entropy(self):
-        return stats.entropy(self.pk)
+        return entropy(self.pk)
 
     def generic_moment(self, n):
         n = asarray(n)

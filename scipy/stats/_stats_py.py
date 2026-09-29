@@ -10228,6 +10228,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 1:
         return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
+        if np.all(np.isfinite(deltas)):
+            # Scale before taking the norm to avoid squaring tiny CDF gaps.
+            return np.hypot.reduce((u_cdf - v_cdf) * np.sqrt(deltas))
+        # Preserve existing NaN/inf behavior for non-finite support gaps.
         return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 

@@ -2455,6 +2455,7 @@ def test_gh_5430():
 
 
 @skip_xp_backends("cupy", reason="tests a private scipy utility")
+@skip_xp_backends("mparray", reason="tests a private scipy utility")
 @pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_gaussian_kernel1d(xp):
     radius = 10

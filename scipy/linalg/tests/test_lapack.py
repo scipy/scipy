@@ -26,6 +26,7 @@ from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.sparse import diags_array
+from scipy._lib._testutils import IS_WASM
 
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
@@ -35,6 +36,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+@pytest.mark.skipif(IS_WASM, reason="re-loading extension modules hangs in WASM")
 @pytest.mark.parametrize('module_name, routine', [
     ('_fblas', 'daxpy'),
     ('_fblas_64', 'daxpy'),
@@ -64,8 +66,10 @@ def test_wrapper_traverses_its_type():
     # The wrappers are instances of a heap type and own a reference to it, so
     # they have to report it to the GC.  Without that the type -> module ->
     # wrapper cycle is never collected and the extension module cannot unload.
+    # `get_referents` only calls the wrapper's own `tp_traverse`; `get_referrers`
+    # would walk every tracked object and trip over unrelated extension types.
     func = get_lapack_funcs('gesv', dtype=np.float64)
-    assert any(ref is func for ref in gc.get_referrers(type(func)))
+    assert any(ref is type(func) for ref in gc.get_referents(func))
 
 
 def test_ilaver():
@@ -3662,6 +3666,30 @@ def test_langb(dtype, norm):
     ref = lange(norm, A)
     res = langb(norm, kl, ku, ab)
     assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['M', '1', 'I', 'F'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_lansb(dtype, norm, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is a symmetric band matrix of shape n x n with k super/sub-diagonals
+    n, k = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, k + 1)] = 0
+    A[np.tril_indices(n, -k - 1)] = 0
+    A = np.triu(A) + np.triu(A, 1).T   # symmetric, not conjugated
+
+    ab = _to_banded(0, k, A) if uplo == 'U' else _to_banded(k, 0, A)
+
+    lansb, lange = get_lapack_funcs(('lansb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = lansb(k, ab, norm=norm, uplo=uplo)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
 
 
 @pytest.mark.parametrize('dtype', REAL_DTYPES)

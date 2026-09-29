@@ -2,7 +2,8 @@ from collections.abc import Iterable
 import numpy as np
 
 from scipy._lib._util import _asarray_validated, _apply_over_batch
-from scipy.linalg import block_diag, LinAlgError
+from scipy.linalg._special_matrices import block_diag
+from scipy.linalg._misc import LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
 
 __all__ = ['cossin']
