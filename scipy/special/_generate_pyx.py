@@ -114,6 +114,8 @@ special_ufuncs = [
     "_lgam1p",
     "_log1mexp",
     "_log1pmx",
+    "_mathieu_ce",
+    "_mathieu_se",
     "_mathieu_cem",
     "_mathieu_sem",
     "_nbinom_cdf",

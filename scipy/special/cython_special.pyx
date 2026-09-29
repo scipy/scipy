@@ -710,6 +710,10 @@ Available functions
 
         double mathieu_b(double, double)
 
+- :py:func:`~scipy.special.mathieu_ce`::
+
+        void mathieu_ce(double, double, double, double *, double *)
+
 - :py:func:`~scipy.special.mathieu_cem`::
 
         void mathieu_cem(double, double, double, double *, double *)
@@ -729,6 +733,10 @@ Available functions
 - :py:func:`~scipy.special.mathieu_modsem2`::
 
         void mathieu_modsem2(double, double, double, double *, double *)
+
+- :py:func:`~scipy.special.mathieu_se`::
+
+        void mathieu_se(double, double, double, double *, double *)
 
 - :py:func:`~scipy.special.mathieu_sem`::
 
@@ -1134,11 +1142,13 @@ cdef extern from r"cython_special_wrappers.h":
     double special_kerp(double) nogil
     npy_double _func_special_mathieu_a "special_mathieu_a"(npy_double, npy_double) nogil
     npy_double _func_special_mathieu_b "special_mathieu_b"(npy_double, npy_double) nogil
+    void _func_special_mathieu_ce "special_mathieu_ce"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_special_mathieu_cem "special_mathieu_cem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    void _func_special_mathieu_se "special_mathieu_se"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_special_mathieu_sem "special_mathieu_sem"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
     void _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
@@ -2684,6 +2694,16 @@ cpdef double mathieu_b(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_b"""
     return _func_special_mathieu_b(x0, x1)
 
+cdef void mathieu_ce(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
+    """See the documentation for scipy.special.mathieu_ce"""
+    _func_special_mathieu_ce(x0, x1, x2, y0, y1)
+
+def _mathieu_ce_pywrap(double x0, double x1, double x2):
+    cdef double y0
+    cdef double y1
+    mathieu_ce(x0, x1, x2, &y0, &y1)
+    return y0, y1
+
 cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
     """See the documentation for scipy.special.mathieu_cem"""
     _func_special_mathieu_cem(x0, x1, x2, y0, y1)
@@ -2732,6 +2752,16 @@ def _mathieu_modsem2_pywrap(double x0, double x1, double x2):
     cdef double y0
     cdef double y1
     mathieu_modsem2(x0, x1, x2, &y0, &y1)
+    return y0, y1
+
+cdef void mathieu_se(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
+    """See the documentation for scipy.special.mathieu_se"""
+    _func_special_mathieu_se(x0, x1, x2, y0, y1)
+
+def _mathieu_se_pywrap(double x0, double x1, double x2):
+    cdef double y0
+    cdef double y1
+    mathieu_se(x0, x1, x2, &y0, &y1)
     return y0, y1
 
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil:
@@ -3325,3 +3355,20 @@ cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
 cpdef double zetac(double x0) noexcept nogil:
     """See the documentation for scipy.special.zetac"""
     return xsf_zetac(x0)
+
+
+# Warn when downstream Cython modules import the legacy Mathieu entry points.
+from scipy._lib.deprecation import deprecate_cython_api
+import scipy.special.cython_special as _self
+
+deprecate_cython_api(
+    _self, "mathieu_cem", "mathieu_ce",
+    message=("Deprecated in SciPy 2.0.0; will be removed in SciPy 2.2.0. "
+             "Convert x from degrees to radians; the derivative is unchanged."),
+)
+deprecate_cython_api(
+    _self, "mathieu_sem", "mathieu_se",
+    message=("Deprecated in SciPy 2.0.0; will be removed in SciPy 2.2.0. "
+             "Convert x from degrees to radians; the derivative is unchanged."),
+)
+del deprecate_cython_api, _self

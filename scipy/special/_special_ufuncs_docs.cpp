@@ -10381,7 +10381,7 @@ const char *mathieu_a_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -10390,12 +10390,12 @@ const char *mathieu_a_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the even solution, ``ce_m(z, q)``, of
+        Characteristic value for the even solution, :math:`\mathrm{ce}_m(x, q)`, of
         Mathieu's equation.
 
     See Also
     --------
-    mathieu_b, mathieu_cem, mathieu_sem
+    mathieu_b, mathieu_ce, mathieu_se
 
     References
     ----------
@@ -10412,7 +10412,7 @@ const char *mathieu_b_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -10421,18 +10421,22 @@ const char *mathieu_b_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the odd solution, ``se_m(z, q)``, of Mathieu's
-        equation.
+        Characteristic value for the odd solution, :math:`\mathrm{se}_m(x, q)`, of
+        Mathieu's equation.
 
     See Also
     --------
-    mathieu_a, mathieu_cem, mathieu_sem
+    mathieu_a, mathieu_ce, mathieu_se
 
     References
     ----------
     .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
            https://github.com/brorson/ScipyMathieuPaper
 
+    )";
+
+const char *_mathieu_ce_doc = R"(
+    Internal function. Use `mathieu_ce`.
     )";
 
 const char *_mathieu_cem_doc = R"(
@@ -10569,6 +10573,10 @@ const char *mathieu_modsem2_doc = R"(
     --------
     mathieu_modcem2
 
+    )";
+
+const char *_mathieu_se_doc = R"(
+    Internal function. Use `mathieu_se`.
     )";
 
 const char *_mathieu_sem_doc = R"(

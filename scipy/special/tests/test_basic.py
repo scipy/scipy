@@ -4403,10 +4403,10 @@ def ce_fourier_coefficient_using_integral(k, n, q):
     This function is used as an alternative implementation of
     mathieu_even_coef().
     """
-    period = 180 if n % 2 == 0 else 360
+    period = np.pi if n % 2 == 0 else 2*np.pi
     # For k = 0, the factor outside the integral is (1/period).
     # For k = 1, 2, 3, ..., the factor is (2/period).
-    c = (1/period)*quad(lambda t: special.mathieu_cem(n, q, t)[0],
+    c = (1/period)*quad(lambda t: special.mathieu_ce(n, q, t)[0],
                         -period/2, period/2,
                         weight='cos', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     if k > 0:
@@ -4425,14 +4425,49 @@ def se_fourier_coefficient_using_integral(k, n, q):
     # function with k == 0, but we'll check anyway.)
     if k == 0:
         return 0.0
-    period = 180 if n % 2 == 0 else 360
-    c = (2/period)*quad(lambda t: special.mathieu_sem(n, q, t)[0],
+    period = np.pi if n % 2 == 0 else 2*np.pi
+    c = (2/period)*quad(lambda t: special.mathieu_se(n, q, t)[0],
                         -period/2, period/2,
                         weight='sin', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     return c
 
 
 class TestMathieu:
+
+    _angular = [("mathieu_cem", "mathieu_ce"), ("mathieu_sem", "mathieu_se")]
+
+    @pytest.mark.parametrize("name", ["mathieu_ce", "mathieu_se"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_angular_q0(self, name, dtype):
+        # For q = 0, the Mathieu functions reduce to
+        # ce_m(x) = cos(m*x) and se_m(x) = sin(m*x)
+        m = np.arange(5, dtype=dtype)[:, None]
+        x = np.linspace(-2*np.pi, 2*np.pi, 31, dtype=dtype)
+        y, yp = getattr(special, name)(m, dtype(0), x)
+        if name == "mathieu_ce":
+            expected = np.cos(m*x)
+            expected[0] = 1/np.sqrt(2)
+            expected_derivative = -m*np.sin(m*x)
+        else:
+            expected = np.sin(m*x)
+            expected_derivative = m*np.cos(m*x)
+        tol = 5e-6 if dtype == np.float32 else 1e-14
+        assert_allclose(y, expected, rtol=tol, atol=tol)
+        assert_allclose(yp, expected_derivative, rtol=tol, atol=tol)
+        assert y.dtype == yp.dtype == dtype
+
+    @pytest.mark.parametrize("old, new", _angular)
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_legacy_agreement(self, old, new, dtype):
+        m = np.arange(5, dtype=dtype)[:, None, None]
+        q = np.asarray([-5., 0.1, 1., 10.], dtype=dtype)[:, None]
+        x = np.linspace(-2.0 * np.pi, 2.0 * np.pi, 31, dtype=dtype)
+        legacy_x = np.rad2deg(x)
+        with pytest.warns(DeprecationWarning, match=f"{old}.*2.0.0.*2.2.0.*{new}"):
+            expected = getattr(special, old)(m, q, legacy_x)
+        actual = getattr(special, new)(m, q, x)
+        tol = 1e-5 if dtype == np.float32 else 1e-13
+        assert_allclose(actual, expected, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize('n, q', [(4, 3.5), (8, 4.25)])
     def test_mathieu_even_coef_against_integral_n_even(self, n, q):

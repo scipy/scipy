@@ -103,7 +103,9 @@ extern const char *_landau_sf_doc;
 extern const char *_lgam1p_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_mathieu_ce_doc;
 extern const char *_mathieu_cem_doc;
+extern const char *_mathieu_se_doc;
 extern const char *_mathieu_sem_doc;
 extern const char *_nbinom_cdf_doc;
 extern const char *_nbinom_isf_doc;
@@ -1696,6 +1698,12 @@ _special_ufuncs_module_exec(PyObject *module)
                           "mathieu_b", mathieu_b_doc);
     PyModule_AddObjectRef(module, "mathieu_b", mathieu_b);
 
+    PyObject *_mathieu_ce =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Even, float, xsf::mathieu::AngleUnitPolicy::Radians>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Even, double, xsf::mathieu::AngleUnitPolicy::Radians>{}},
+                          2, "_mathieu_ce", _mathieu_ce_doc);
+    PyModule_AddObjectRef(module, "_mathieu_ce", _mathieu_ce);
+
     PyObject *_mathieu_cem =
         xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Even, float>{},
                            special::mathieu_xem<xsf::mathieu::Parity::Even, double>{}},
@@ -1722,6 +1730,12 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_ff>(xsf::msm2), static_cast<xsf::numpy::ddd_dd>(xsf::msm2)}, 2,
                           "mathieu_modsem2", mathieu_modsem2_doc);
     PyModule_AddObjectRef(module, "mathieu_modsem2", mathieu_modsem2);
+
+    PyObject *_mathieu_se =
+        xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Odd, float, xsf::mathieu::AngleUnitPolicy::Radians>{},
+                           special::mathieu_xem<xsf::mathieu::Parity::Odd, double, xsf::mathieu::AngleUnitPolicy::Radians>{}},
+                          2, "_mathieu_se", _mathieu_se_doc);
+    PyModule_AddObjectRef(module, "_mathieu_se", _mathieu_se);
 
     PyObject *_mathieu_sem =
         xsf::numpy::ufunc({special::mathieu_xem<xsf::mathieu::Parity::Odd, float>{},
