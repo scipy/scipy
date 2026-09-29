@@ -404,15 +404,22 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return x, 0
+            # The recursively updated residual can drift far from the true
+            # one, e.g. when x0 is large compared to the solution, so
+            # confirm convergence with a fresh b - A @ x before reporting
+            # success. If it fails, resync r and keep iterating.
+            r = b - matvec(x)
+            if np.linalg.norm(r) < atol:
+                return x, 0
+            rho_prev = None
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
-        if iteration > 0:
+        if iteration > 0 and rho_prev is not None:
             beta = rho_cur / rho_prev
             p *= beta
             p += z
-        else:  # First spin
+        else:  # First spin, or restarted after a residual resync
             p = np.empty_like(r)
             p[:] = z[:]
 

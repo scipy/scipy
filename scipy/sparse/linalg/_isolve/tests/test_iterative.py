@@ -619,6 +619,20 @@ def test_x0_working(solver, xp, batch_A, batch_b):
     _assert_success(A=A, x=x, b=b, xp=xp, rtol=1e-5)
 
 
+def test_cg_large_x0_false_convergence():
+    # gh-26300: a large x0 makes the recursively updated residual drift far
+    # from the true one, so cg used to return info=0 while norm(b - A @ x)
+    # exceeded the requested tolerance by many orders of magnitude.
+    A = np.diag([1., 1e10])
+    b = np.ones(2)
+    rtol = 1e-8
+
+    x, info = cg(A, b, x0=np.full(2, 1e6), rtol=rtol, atol=0.0)
+
+    assert info == 0
+    _assert_success(A=A, x=x, b=b, xp=np, rtol=rtol)
+
+
 @pytest.mark.parametrize("batch_A", [()])
 @pytest.mark.parametrize("batch_b", [()])
 def test_x0_equals_Mb(case, xp, batch_A, batch_b):
