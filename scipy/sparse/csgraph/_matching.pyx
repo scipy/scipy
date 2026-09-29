@@ -481,7 +481,6 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
         # stacks in _hopcroft_karp and _lapjvsp below, overflowing them and
         # corrupting memory (gh-26160). Merge duplicates, summing their
         # weights per scipy's standard semantics, before the search.
-        biadjacency = biadjacency.copy()
         biadjacency.sum_duplicates()
 
     if maximize:
