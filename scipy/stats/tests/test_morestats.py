@@ -248,6 +248,7 @@ class TestShapiro:
         xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
 
+@make_xp_test_case(stats.anderson)
 class TestAnderson:
     def test_normal(self):
         rs = RandomState(1234567890)
@@ -389,25 +390,29 @@ class TestAnderson:
 
     @pytest.mark.parametrize('dist',
                              ['gumbel_l', 'gumbel_r', 'logistic', 'weibull_min'])
-    def test_input_validation_dist_batch(self, dist):
+    def test_input_validation_dist_batch(self, dist, xp):
         rng = np.random.default_rng(95432334703)
-        x = rng.random(size=(5, 100))
-        message = f"`{dist}` is not implemented for batched input."
-
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = f"`dist='{dist}'` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
         with pytest.raises(NotImplementedError, match=message):
             stats.anderson(x, dist, axis=-1)
 
 
+@make_xp_test_case(stats.anderson)
 class TestAndersonMethod:
     def test_method_input_validation(self):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
             stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
 
-    def test_method_input_validation_method(self):
+    def test_method_input_validation_method(self, xp):
         rng = np.random.default_rng(95432334703)
-        x = rng.random(size=(5, 100))
-        message = "Only `method='interpolate'` is implemented for batched input."
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = "The provided `method` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
         with pytest.raises(NotImplementedError, match=message):
             stats.anderson(x, method=stats.MonteCarloMethod(rng=rng), axis=-1)
 

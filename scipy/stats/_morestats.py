@@ -32,7 +32,7 @@ from scipy._lib._array_api import (
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
-from ._stats_py import (_get_pvalue, SignificanceResult,
+from ._stats_py import (_get_pvalue, SignificanceResult, _SimpleExponential,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency  # noqa:F401
 from . import distributions
@@ -2346,7 +2346,9 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('jax.numpy', 'no attempt'),
+                                ('torch', 'no attempt'),
+                                ('dask.array', 'no attempt')])
 @_axis_nan_policy_factory(SignificanceResult)
 def anderson(x, dist='norm', *, method="interpolate", axis=0):
     """Anderson-Darling test for data coming from a particular distribution.
@@ -2455,31 +2457,48 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
     if dist not in dists:
         raise ValueError(f"Invalid distribution; dist must be in {dists}.")
 
-    x = np.asarray(x)
-    if x.ndim > 1:
-        if dist not in {'norm', 'expon'}:
-            message = f"`dist=`{dist}` is not implemented for batched input."
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+
+    if dist not in {'norm', 'expon'}:
+        if not is_numpy(xp):
+            message = f"`dist='{dist}'` is not implemented for the provided array type."
             raise NotImplementedError(message)
-        if method != 'interpolate':
-            message = "Only `method='interpolate'` is implemented for batched input."
+        elif x.ndim > 1:
+            message = f"`dist='{dist}'` is not implemented for batched input."
+            raise NotImplementedError(message)
+
+    if method != 'interpolate':
+        if not is_numpy(xp):
+            message = ("The provided `method` is not "
+                       "implemented for the provided array type.")
+            raise NotImplementedError(message)
+        elif x.ndim > 1:
+            message = "The provided `method` is not implemented for batched input."
             raise NotImplementedError(message)
 
     y = sort(x, axis=-1)
-    xbar = np.mean(x, axis=-1, keepdims=True)
-    N = y.shape[-1]
+    y = xp_promote(y, force_floating=True, xp=xp)
+    dtype = y.dtype
+    device = xp_device(y)
+    xbar = xp.mean(y, axis=-1, keepdims=True)
+    N = xp.asarray(y.shape[-1], dtype=dtype, device=device)
+
     if dist == 'norm':
-        s = np.std(x, ddof=1, axis=-1, keepdims=True)
+        s = xp.std(x, correction=1, axis=-1, keepdims=True)
         w = (y - xbar) / s
-        logcdf = distributions.norm.logcdf(w)
-        logsf = distributions.norm.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
+        logcdf = _SimpleNormal().logcdf(w)
+        logsf = _SimpleNormal().logsf(w)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
         critical = _Avals_norm / (1.0 + 0.75/N + 2.25/N/N)
     elif dist == 'expon':
         w = y / xbar
-        logcdf = distributions.expon.logcdf(w)
-        logsf = distributions.expon.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
+        logcdf = xp.where(w > 0, _SimpleExponential().logcdf(w), -math.inf)
+        logsf = xp.where(w > 0, _SimpleExponential().logsf(w), 0)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
         critical = _Avals_expon / (1.0 + 0.6/N)
+
+    # Other distributions are NumPy-only for now
     elif dist == 'logistic':
         def rootfunc(ab, xj, N):
             a, b = ab
@@ -2527,17 +2546,18 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _get_As_weibull(c)
 
-    i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[..., ::-1]),
+    i = xp.arange(1, N + 1, device=device)
+    A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + logsf[..., ::-1]),
                      axis=-1, keepdims=False)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
-        kwargs = dict(dtype=A2.dtype, device=xp_device(A2))
-        critical = np.asarray(critical, **kwargs)
-        sig = np.asarray(sig, **kwargs)
-        pvalue = xp_interp(np.atleast_1d(A2), critical, sig)
-        pvalue = np.reshape(pvalue, A2.shape)[()]
+        kwargs = dict(dtype=A2.dtype, device=device)
+        critical = xp.asarray(critical, **kwargs)
+        sig = xp.asarray(sig, **kwargs)
+        pvalue = xp_interp(xpx.atleast_nd(A2, ndim=1), critical, sig, xp=xp)
+        pvalue = xp.reshape(pvalue, A2.shape)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     elif isinstance(method, stats.MonteCarloMethod):
         pvalue = _anderson_simulate_pvalue(x, dist, method)
     else:
