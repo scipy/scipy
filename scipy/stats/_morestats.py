@@ -2346,9 +2346,7 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', 'no attempt'),
-                                ('torch', 'no attempt'),
-                                ('dask.array', 'no attempt')])
+@xp_capabilities()
 @_axis_nan_policy_factory(SignificanceResult)
 def anderson(x, dist='norm', *, method="interpolate", axis=0):
     """Anderson-Darling test for data coming from a particular distribution.
@@ -2482,12 +2480,13 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
             message = "The provided `method` is not implemented for batched input."
             raise NotImplementedError(message)
 
-    y = sort(x, axis=-1)
+    y = xp.sort(x, axis=-1)
     y = xp_promote(y, force_floating=True, xp=xp)
     dtype = y.dtype
     device = xp_device(y)
     xbar = xp.mean(y, axis=-1, keepdims=True)
-    N = xp.asarray(y.shape[-1], dtype=dtype, device=device)
+    N_int = y.shape[-1]
+    N = xp.asarray(N_int, dtype=dtype, device=device)
 
     if dist == 'norm':
         s = xp.std(x, correction=1, axis=-1, keepdims=True)
@@ -2495,13 +2494,15 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         logcdf = _SimpleNormal().logcdf(w)
         logsf = _SimpleNormal().logsf(w)
         sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
-        critical = _Avals_norm / (1.0 + 0.75/N + 2.25/N/N)
+        Avals_norm = xp.asarray(_Avals_norm, dtype=dtype, device=device)
+        critical = Avals_norm / (1.0 + 0.75/N + 2.25/N/N)
     elif dist == 'expon':
         w = y / xbar
         logcdf = xp.where(w > 0, _SimpleExponential().logcdf(w), -math.inf)
         logsf = xp.where(w > 0, _SimpleExponential().logsf(w), 0)
         sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
-        critical = _Avals_expon / (1.0 + 0.6/N)
+        Avals_expon = xp.asarray(_Avals_expon, dtype=dtype, device=device)
+        critical = Avals_expon / (1.0 + 0.6/N)
 
     # Other distributions are NumPy-only for now
     elif dist == 'logistic':
@@ -2551,15 +2552,12 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _get_As_weibull(c)
 
-    i = xp.arange(1, N + 1, device=device, dtype=dtype)
-    A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + logsf[..., ::-1]),
+    i = xp.arange(1, N_int + 1, device=device, dtype=dtype)
+    A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + xp.flip(logsf, axis=-1)),
                      axis=-1, keepdims=False)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
-        kwargs = dict(dtype=A2.dtype, device=device)
-        critical = xp.asarray(critical, **kwargs)
-        sig = xp.asarray(sig, **kwargs)
         pvalue = xp_interp(xpx.atleast_nd(A2, ndim=1), critical, sig, xp=xp)
         pvalue = xp.reshape(pvalue, A2.shape)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue

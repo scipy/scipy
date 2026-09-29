@@ -274,7 +274,7 @@ class TestAnderson:
         x = xp.asarray(x)
         res = stats.anderson(x)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_normal(self, xp, dtype):
