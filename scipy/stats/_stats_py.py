@@ -11330,7 +11330,7 @@ def _log1mexp(x):
 
     def f2(x):
         # good for exp(x) close to 1
-        return xp.real(xp.log(-special.expm1(x + 0j)))
+        return xp.real(xp.log(-xp.expm1(x + 0j)))
 
     x = xp_promote(x, force_floating=True, xp=xp)
     res = xpx.apply_where(x < -1, (x,), f1, f2)

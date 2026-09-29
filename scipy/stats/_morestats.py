@@ -2457,6 +2457,11 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
     if dist not in dists:
         raise ValueError(f"Invalid distribution; dist must be in {dists}.")
 
+    if not((method == 'interpolate') or isinstance(method, stats.MonteCarloMethod)):
+        message = ("`method` must be either 'interpolate' "
+                   "or an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+
     xp = array_namespace(x)
     x = xp.asarray(x)
 
@@ -2546,7 +2551,7 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _get_As_weibull(c)
 
-    i = xp.arange(1, N + 1, device=device)
+    i = xp.arange(1, N + 1, device=device, dtype=dtype)
     A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + logsf[..., ::-1]),
                      axis=-1, keepdims=False)
 
@@ -2558,12 +2563,9 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         pvalue = xp_interp(xpx.atleast_nd(A2, ndim=1), critical, sig, xp=xp)
         pvalue = xp.reshape(pvalue, A2.shape)
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-    elif isinstance(method, stats.MonteCarloMethod):
-        pvalue = _anderson_simulate_pvalue(x, dist, method)
     else:
-        message = ("`method` must be either 'interpolate' or "
-                   "an instance of `MonteCarloMethod`.")
-        raise ValueError(message)
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+
     return SignificanceResult(statistic=A2, pvalue=pvalue)
 
 

@@ -1236,7 +1236,8 @@ def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
     x1, x, y = xp_promote(x1, x, y, force_floating=True, xp=xp)
 
     if is_numpy(xp) and x.ndim <= 1 and y.ndim <= 1:
-        return np.interp(x1, x, y, left=left, right=right)
+        res = np.interp(x1, x, y, left=left, right=right)
+        return res.astype(x1.dtype)
 
     ndim = max(x1.ndim, x.ndim, y.ndim)
     x1 = xpx.atleast_nd(x1, ndim=ndim)
