@@ -650,7 +650,7 @@ def _xp_result_devices(*args):
 
 
 # np.r_ replacement
-def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
+def concat_1d(xp: ModuleType, *arrays: Iterable[ArrayLike]) -> Array:
     """A replacement for `np.r_` as `xp.concat` does not accept python scalars
        or 0-D arrays.
 
@@ -660,10 +660,10 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """
     _, devices = _xp_result_devices(*arrays)
     arys = [
-        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)  # pyrefly:ignore[missing-attribute]
+        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)
         for a, d in zip(arrays, devices)
     ]
-    return xp.concat(arys)  # pyrefly:ignore[missing-attribute]
+    return xp.concat(arys)
 
 
 ### MArray Helpers ###
