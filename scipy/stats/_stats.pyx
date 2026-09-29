@@ -805,3 +805,6 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
                                            arg + log_values_[i, k])
 
     return np.asarray(estimate)
+
+
+include "_wasserstein_distance.pxi"
