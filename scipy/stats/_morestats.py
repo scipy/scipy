@@ -2488,6 +2488,10 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
     N_int = y.shape[-1]
     N = xp.asarray(N_int, dtype=dtype, device=device)
 
+    if N_int == 0:  # only needed for axis_nan_policy testing
+        NaN = xp.squeeze(xp.full_like(xbar, xp.nan), axis=-1)
+        return SignificanceResult(statistic=NaN, pvalue=NaN)
+
     if dist == 'norm':
         s = xp.std(x, correction=1, axis=-1, keepdims=True)
         w = (y - xbar) / s
