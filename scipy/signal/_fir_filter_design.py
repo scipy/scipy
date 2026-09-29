@@ -749,10 +749,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
                              f"{eps}) to a repeated value")
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
-    x = np.linspace(0.0, nyq, nfreqs)
-    fx = np.interp(x, np.asarray(freq), np.asarray(gain))  # XXX array-api-extra#193
-    x = xp.asarray(x, device=device)
-    fx = xp.asarray(fx, device=device)
+    x = xp.linspace(0.0, nyq, nfreqs, dtype=xp.float64, device=device)
+    fx = xpx.interp(x, freq, gain, xp=xp)
 
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
