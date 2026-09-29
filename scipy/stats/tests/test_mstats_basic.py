@@ -9,7 +9,6 @@ from numpy import nan
 import numpy.ma as ma
 from numpy.ma import masked, nomask
 
-import scipy.stats.mstats as mstats
 from scipy import stats
 from .common_tests import check_named_results
 import pytest
@@ -21,6 +20,14 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
 from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
+
+with pytest.warns(DeprecationWarning, match="`scipy.stats.mstats` is deprecated"):
+    import scipy.stats.mstats as mstats
+
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning"),  # noqa: E501
+]
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
