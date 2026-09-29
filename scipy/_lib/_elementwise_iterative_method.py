@@ -102,10 +102,6 @@ def _initialize(func, xs, args, kwargs=None, complex_ok=False, multi_output_ok=F
     # calling `func` once on the combined array. For now, keep them separate.
     xat = xp_result_type(*xs, force_floating=True, xp=xp)
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
-    # NumPy >= 2.6 returns read-only views even for arrays that did not need
-    # broadcasting; keep those arrays so that `func` can still write to them.
-    xas = [x if getattr(x, "shape", None) == xa.shape else xa
-           for x, xa in zip((*xs, *args), xas)]
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
     device = xp_device(xs[0])
