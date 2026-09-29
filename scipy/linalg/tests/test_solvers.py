@@ -860,3 +860,11 @@ class TestSolveSylvester:
 
         assert res.shape == (m, n)
         assert res.dtype == ref.dtype
+
+    def test_singular_warns(self):
+        # A and B share an eigenvalue -> Sylvester equation is singular
+        a = np.array([[1.0, 0.0], [0.0, 2.0]])
+        b = np.array([[-1.0, 0.0], [0.0, -3.0]])
+        q = np.ones((2, 2))
+        with pytest.warns(UserWarning, match="singular"):
+            solve_sylvester(a, b, q)
