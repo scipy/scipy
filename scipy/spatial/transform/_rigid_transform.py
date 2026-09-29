@@ -1399,7 +1399,8 @@ class RigidTransform:
         # supported for now.
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
-        if is_array and xp.isdtype(indexer.dtype, "integral"):  # pyrefly:ignore[missing-attribute]
+        # pyrefly:ignore[missing-attribute]
+        if is_array and xp.isdtype(indexer.dtype, "integral"):
             if self._matrix.shape[0] == 0:
                 raise IndexError("cannot take from an empty array")
             return RigidTransform(

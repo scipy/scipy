@@ -2227,7 +2227,8 @@ class Rotation:
         # indexing.
         if is_array and indexer.dtype == self._xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
-        if is_array and self._xp.isdtype(indexer.dtype, "integral"):  # pyrefly:ignore[missing-attribute]
+        # pyrefly:ignore[missing-attribute]
+        if is_array and self._xp.isdtype(indexer.dtype, "integral"):
             # xp.take is implementation-defined for zero-dim arrays, hence we raise
             # pre-emptively to have consistent behavior across frameworks.
             if self._quat.shape[0] == 0:

@@ -318,7 +318,8 @@ def setitem(
     xp = array_namespace(matrix)
     if isinstance(indexer, EllipsisType):
         return xpx.at(matrix)[indexer].set(value)
-    if is_array_api_obj(indexer) and indexer.dtype == xp.bool:  # pyrefly:ignore[missing-attribute]
+    # pyrefly:ignore[missing-attribute]
+    if is_array_api_obj(indexer) and indexer.dtype == xp.bool:
         return xpx.at(matrix)[indexer].set(value)
     return xpx.at(matrix)[indexer, ...].set(value)
 
