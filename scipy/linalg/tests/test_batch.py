@@ -155,10 +155,12 @@ class TestBatch:
         self.batch_test(linalg.null_space, A)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_funm(self, dtype):
+    @pytest.mark.parametrize('disp', [False, True])
+    def test_funm(self, dtype, disp):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin, disp=disp),
+                        n_out=(1 if disp else 2))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_fractional_matrix_power(self, dtype):
