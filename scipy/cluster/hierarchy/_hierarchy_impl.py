@@ -40,7 +40,7 @@ import bisect
 from collections import deque
 
 import numpy as np
-from . import _hierarchy, _optimal_leaf_ordering  # type:ignore[attr-defined]
+from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
                                    is_lazy_array, xp_capabilities, xp_copy,

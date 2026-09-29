@@ -490,7 +490,7 @@ class Covariance:
 
 class CovViaPrecision(Covariance):
 
-    __class_getitem__ = None  # type:ignore[assignment]
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, precision, covariance=None):
         precision = self._validate_matrix(precision, 'precision')
@@ -567,7 +567,7 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
-    __class_getitem__ = None  # type:ignore[assignment]
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, cholesky):
         L = self._validate_matrix(cholesky, 'cholesky')
@@ -593,7 +593,7 @@ class CovViaCholesky(Covariance):
 
 class CovViaEigendecomposition(Covariance):
 
-    __class_getitem__ = None  # type:ignore[assignment]
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, eigendecomposition):
         eigenvalues, eigenvectors = eigendecomposition
@@ -654,7 +654,7 @@ class CovViaPSD(Covariance):
     Representation of a covariance provided via an instance of _PSD
     """
 
-    __class_getitem__ = None  # type:ignore[assignment]
+    __class_getitem__ = None  # pyrefly:ignore[bad-assignment]
 
     def __init__(self, psd):
         self._LP = psd.U

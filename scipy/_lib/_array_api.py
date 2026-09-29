@@ -660,10 +660,10 @@ def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
     """
     _, devices = _xp_result_devices(*arrays)
     arys = [
-        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)  # type:ignore[union-attr]
+        xpx.atleast_nd(xp.asarray(a, device=d), ndim=1, xp=xp)  # pyrefly:ignore[missing-attribute]
         for a, d in zip(arrays, devices)
     ]
-    return xp.concat(arys)  # type:ignore[union-attr]
+    return xp.concat(arys)  # pyrefly:ignore[missing-attribute]
 
 
 ### MArray Helpers ###

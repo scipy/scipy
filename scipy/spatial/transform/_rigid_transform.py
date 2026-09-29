@@ -1025,7 +1025,7 @@ class RigidTransform:
         if not all(isinstance(x, RigidTransform) for x in transforms):
             raise TypeError("input must contain RigidTransform objects only")
 
-        xp = array_namespace(transforms[0].as_matrix())  # type:ignore[index]
+        xp = array_namespace(transforms[0].as_matrix())  # pyrefly:ignore[bad-index]
         matrix = xp.concat(
             [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
         )
@@ -1397,9 +1397,9 @@ class RigidTransform:
         # https://github.com/data-apis/array-api/pull/900#issuecomment-2674432480)
         # Ideally we would converge to [indexer, ...] indexing, but this is not
         # supported for now.
-        if is_array and indexer.dtype == xp.bool:  # type:ignore[union-attr]
+        if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
-        if is_array and xp.isdtype(indexer.dtype, "integral"):  # type:ignore[union-attr]
+        if is_array and xp.isdtype(indexer.dtype, "integral"):  # pyrefly:ignore[missing-attribute]
             if self._matrix.shape[0] == 0:
                 raise IndexError("cannot take from an empty array")
             return RigidTransform(
