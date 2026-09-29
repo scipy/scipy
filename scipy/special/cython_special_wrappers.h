@@ -141,6 +141,17 @@ npy_cdouble special_crgamma(npy_cdouble z);
 
 double special_ellipk(double m);
 
+double xsf_elliprc(double x, double y);
+npy_cdouble xsf_celliprc(npy_cdouble x, npy_cdouble y);
+double xsf_elliprd(double x, double y, double z);
+npy_cdouble xsf_celliprd(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprf(double x, double y, double z);
+npy_cdouble xsf_celliprf(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprg(double x, double y, double z);
+npy_cdouble xsf_celliprg(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprj(double x, double y, double z, double p);
+npy_cdouble xsf_celliprj(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p);
+
 double cephes_expn_wrap(Py_ssize_t n, double x);
 double xsf_iv(double v, double x);
 double cephes_jv_wrap(double v, double x);
