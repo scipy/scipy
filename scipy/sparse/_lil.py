@@ -342,19 +342,28 @@ class _lil_base(_spbase, IndexMixin):
         nonempty_row_idxs = [r for r in row_idxs if self.rows[r]]
         if not nonempty_row_idxs:
           return
-        uniq_cols = set(col_idxs.tolist())
+
+        # If we have many more column indices to clear than actual columns,
+        # avoid creating a set of unique column indices to check against.
+        if (len(col_idxs) > 1024 and
+                sum(len(self.rows[r]) for r in nonempty_row_idxs) < 32):
+            def should_delete(row_k):
+                return (col_idxs == row_k).any()
+        else:
+            uniq_cols = set(col_idxs.tolist())
+            def should_delete(row_k):
+                return row_k in uniq_cols
+
         for r in nonempty_row_idxs:
             curr_row = self.rows[r]
             curr_data = self.data[r]
             for k in reversed(range(len(curr_row))):
-                if curr_row[k] in uniq_cols:
+                if should_delete(curr_row[k]):
                     del curr_row[k]
                     del curr_data[k]
 
     def _set_columnXarray_sparse(self, row, col, x):
         # outer indexing
-        if 0 in row.shape or 0 in col.shape:
-            return
         rhs_row, rhs_col, rhs_data = _prepare_sparse_rhs(
             x, row.shape[0], col.shape[0], self.dtype
         )
