@@ -367,12 +367,49 @@ class TestAnderson:
         m = np.inf
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
+    @pytest.mark.parametrize("dist, seed, statistic, pvalue", [
+        ('norm', 45893496961,
+         [0.64732893065, 0.60961089894, 1.18923899825, 0.74493160203, 0.37722093992],
+         [0.09118613775, 0.11191418347, 0.01, 0.05054289312, 0.15]),
+        ('expon', 45893502399,
+         [1.44862480223, 0.80811541086, 0.95432334703, 1.96676416917, 1.92172696793],
+         [0.03737809713, 0.15, 0.1349146277 , 0.01, 0.01104929362]),
+    ])
+    def test_batch(self, dist, seed, statistic, pvalue):
+        # test_axis_nan_policy throws random data at `anderson`, which will almost
+        # always result in p < 0.01. These seeds were chosen such that `anderson`
+        # from SciPy 1.18 would produce one extreme pvalue (on either end) and
+        # three nontrivial pvalues. The pvalues were interpolated using `np.interp`
+        # with the non-rounded critical values.
+        rng = np.random.default_rng(seed)
+        x = getattr(stats, dist).rvs(size=(5, 100), random_state=rng)
+        res = stats.anderson(x, dist=dist, axis=-1, method='interpolate')
+        np.testing.assert_allclose(res.statistic, statistic, atol=1e-10)
+        np.testing.assert_allclose(res.pvalue, pvalue, atol=1e-10)
+
+    @pytest.mark.parametrize('dist',
+                             ['gumbel_l', 'gumbel_r', 'logistic', 'weibull_min'])
+    def test_input_validation_dist_batch(self, dist):
+        rng = np.random.default_rng(95432334703)
+        x = rng.random(size=(5, 100))
+        message = f"`{dist}` is not implemented for batched input."
+
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, dist, axis=-1)
+
 
 class TestAndersonMethod:
     def test_method_input_validation(self):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
             stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
+
+    def test_method_input_validation_method(self):
+        rng = np.random.default_rng(95432334703)
+        x = rng.random(size=(5, 100))
+        message = "Only `method='interpolate'` is implemented for batched input."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, method=stats.MonteCarloMethod(rng=rng), axis=-1)
 
     def test_monte_carlo_method(self):
         rng = np.random.default_rng(94982389149239)
