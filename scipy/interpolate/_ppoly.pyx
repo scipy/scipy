@@ -666,7 +666,7 @@ cdef double_or_complex evaluate_poly1(double s, const double_or_complex[:,:,::1]
         Order of derivative (> 0) or antiderivative (< 0) to evaluate.
 
     """
-    cdef int kp, k
+    cdef int kp, k, _k
     cdef double_or_complex res, z
     cdef double prefactor
 
@@ -674,7 +674,7 @@ cdef double_or_complex evaluate_poly1(double s, const double_or_complex[:,:,::1]
     z = 1.0
 
     if dx < 0:
-        for k in range(-dx):
+        for _k in range(-dx):
             z *= s
 
     for kp in range(c.shape[0]):
