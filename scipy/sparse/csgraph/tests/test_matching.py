@@ -1,13 +1,14 @@
 from itertools import product
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_equal
 import pytest
+from numpy.testing import assert_array_equal, assert_equal
 
-from scipy.sparse import csr_array, csc_array, coo_array, diags_array
+from scipy.sparse import coo_array, csc_array, csr_array, diags_array
 from scipy.sparse.csgraph import (
-    maximum_bipartite_matching, min_weight_full_bipartite_matching,
-    structural_rank
+    maximum_bipartite_matching,
+    min_weight_full_bipartite_matching,
+    structural_rank,
 )
 
 
@@ -159,16 +160,23 @@ def test_min_weight_full_bipartite_matching_duplicate_entries_in_csr_input():
         assert graph[u, v] != 0
 
 
-def test_duplicate_entries_in_csc_input():
-    # gh-26160: the duplicate-entry overflow is also reachable through a CSC
-    # input, because converting CSC to CSR preserves duplicates and the
-    # column-oriented twin of the CSR test graph has column 0 connected to
-    # both rows (row 1 K times) and column 1 to row 0.
+@pytest.mark.parametrize("sparse_format", ["csc", "coo"])
+def test_duplicate_entries_in_non_csr_input(sparse_format):
+    # gh-26160: converting CSC or COO input to CSR must preserve duplicates
+    # until the matching routines merge them. Both formats encode the same
+    # graph: row 0 connects to columns 0 and 1; row 1 connects to column 0 K
+    # times.
     K = 100_000
     data = np.ones(2 + K)
-    indices = [0] + [1] * K + [0]
-    indptr = [0, 1 + K, 2 + K]
-    graph = csc_array((data, indices, indptr), shape=(2, 2))
+    if sparse_format == "csc":
+        indices = [0] + [1] * K + [0]
+        indptr = [0, 1 + K, 2 + K]
+        graph = csc_array((data, indices, indptr), shape=(2, 2))
+    else:
+        row = [0, 0] + [1] * K
+        col = [0, 1] + [0] * K
+        graph = coo_array((data, (row, col)), shape=(2, 2))
+
     assert not graph.has_canonical_format
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
