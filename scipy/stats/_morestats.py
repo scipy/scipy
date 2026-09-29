@@ -2669,14 +2669,9 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-Anderson_ksampResult = _make_tuple_bunch(
-    'Anderson_ksampResult',
-    ['statistic', 'critical_values', 'pvalue'], []
-)
-
-
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, *, variant="midrank", method=None):
+def anderson_ksamp(samples, *, variant="midrank", method=None,
+                   axis=0, nan_policy='propagate', keepdims=False):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2702,10 +2697,30 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
         from tabulated values (without extrapolating).
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
-    res : Anderson_ksampResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
@@ -2786,6 +2801,12 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
     0.699
 
     """
+    return _anderson_ksamp(*samples, variant=variant, method=method,
+                           axis=axis, nan_policy=nan_policy, keepdims=keepdims)
+
+
+@_axis_nan_policy_factory(SignificanceResult, n_samples=None)
+def _anderson_ksamp(*samples, variant="midrank", method=None):
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2863,6 +2884,8 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
     else:
         p = res.pvalue if method is not None else p
 
+    A2 = np.asarray(A2)[()]
+    p = np.asarray(p)[()]
     return SignificanceResult(statistic=A2, pvalue=p)
 
 

@@ -636,7 +636,10 @@ class TestAndersonKSamp:
                       (np.ones(5), np.ones(5)))
 
     def test_empty_sample(self):
-        assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
+        with pytest.warns(SmallSampleWarning, match='One or more sample arguments...'):
+            res = stats.anderson_ksamp((np.ones(5), []))
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
 
     def test_result_attributes(self):
         # Pass a mixture of lists and arrays
