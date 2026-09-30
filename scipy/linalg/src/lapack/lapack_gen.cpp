@@ -589,13 +589,13 @@ namespace lapack {
         /* The documented LWORK minimum is smaller than the MINWRK the routine enforces
          * (INFO = -19 below it).  MINWRK depends on whether ILAENV's crossover sends the
          * call through a QR/LQ factorization first (paths 1/1t) or not (paths 2/2t), and
-         * that crossover is implementation-defined, so require the larger of the two:
+         * that crossover is implementation-defined, so default to the larger of the two:
          *   real:    path 1 mn*(3mn+20),  path 2 max(mn*(2mn+19), 4mn+mx)
          *   complex: path 1 mn*(mn+5),    path 2 3mn+mx
-         * This is a safe minimum bound for lwork - it might change in the future depending
+         * This is a safe default for lwork - it might change in the future depending
          * on the underlying LAPACK routine implementation. */
         template <class T>
-        static long long gesvdx_minimum_lwork(CBLAS_INT minmn, CBLAS_INT maxmn) noexcept
+        static long long gesvdx_default_lwork(CBLAS_INT minmn, CBLAS_INT maxmn) noexcept
         {
             if (minmn == 0) { return 1; }
             return is_complex_v<T>
@@ -644,11 +644,13 @@ namespace lapack {
                 CHECK(iu >= il && iu <= minmn, iu);
             }
 
-            const long long lwork_bound = gesvdx_minimum_lwork<T>(minmn, maxmn);
-            CBLAS_INT minimum_lwork;
-            if (!work_size(lwork_bound, &minimum_lwork)) { return nullptr; }
-            SCALAR_OPT(CBLAS_INT, lwork, minimum_lwork);
-            CHECK(lwork >= minimum_lwork, lwork);
+            /* A caller's `lwork` goes to LAPACK as given, as in `gesvd`: LAPACK checks it
+             * against the minimum of the path it takes.  Only `lwork < 1` is refused -- `work`
+             * is not returned, so `-1` would run a workspace query that looks like a result. */
+            CBLAS_INT default_lwork;
+            if (!work_size(gesvdx_default_lwork<T>(minmn, maxmn), &default_lwork)) { return nullptr; }
+            SCALAR_OPT(CBLAS_INT, lwork, default_lwork);
+            CHECK(lwork >= 1, lwork);
 
             CBLAS_INT u0  = compute_u  ? m : 1,     u1  = compute_u  ? minmn : 1;
             CBLAS_INT vt0 = compute_vh ? minmn : 1, vt1 = compute_vh ? n : 1;
@@ -701,10 +703,6 @@ namespace lapack {
         /**
          * With `lwork = -1` gesvdx only writes `work[0]`, so every array it is handed is a null
          * pointer.  The size does not depend on `range`, so the query asks for all of them.
-         *
-         * On some paths, the optimal size can be below the minimum that `gesvdx` requires
-         * (see `gesvdx_minimum_lwork`); the larger of the two is reported so the result is
-         * always accepted by `gesvdx`.
          */
         template <class T>
         static PyObject *gesvdx_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
@@ -719,7 +717,7 @@ namespace lapack {
             SCALAR_OPT(CBLAS_INT, compute_u, 1);  CHECK(compute_u == 0 || compute_u == 1, compute_u);
             SCALAR_OPT(CBLAS_INT, compute_vh, 1); CHECK(compute_vh == 0 || compute_vh == 1, compute_vh);
 
-            CBLAS_INT minmn = std::min(m, n), maxmn = std::max(m, n);
+            CBLAS_INT minmn = std::min(m, n);
             CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
             CBLAS_INT ldu = compute_u ? std::max<CBLAS_INT>(1, m) : 1;
             CBLAS_INT ldvt = compute_vh ? std::max<CBLAS_INT>(1, minmn) : 1;
@@ -737,10 +735,6 @@ namespace lapack {
                                &work, -1, nullptr, &info);
             }
 
-            const long long minimum = gesvdx_minimum_lwork<T>(minmn, maxmn);
-            if (info == 0 && static_cast<long long>(std::real(work)) < minimum) {
-                work = T(static_cast<R>(minimum));
-            }
             return make_result(work, static_cast<long long>(info));
         }
 

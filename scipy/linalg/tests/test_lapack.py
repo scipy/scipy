@@ -3827,7 +3827,8 @@ def test_gesvdx_empty(dtype, shape, range_):
     dict(range='V', vl=2.0, vu=1.0),
     dict(compute_u=2),
     dict(compute_vh=-1),
-    dict(lwork=1),
+    dict(lwork=0),
+    dict(lwork=-1),
 ])
 def test_gesvdx_invalid_arguments(dtype, kwargs):
     # Caught by the wrapper before LAPACK sees them.
@@ -3838,8 +3839,8 @@ def test_gesvdx_invalid_arguments(dtype, kwargs):
 
 
 # (50, 50), (40, 30) and complex (300, 300) take the direct path, where the
-# optimal size LAPACK reports is below the minimum `gesvdx` accepts; the query
-# must still report a size `gesvdx` accepts.
+# optimal size LAPACK reports is below the default `gesvdx` uses; `gesvdx` must
+# still accept it.
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5),
                                    (5, 20), (50, 50), (40, 30), (300, 300)])

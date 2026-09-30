@@ -611,11 +611,12 @@ namespace lapack {
                  "    Index of the last singular value to return, 1-based in descending order;\n"
                  "    used only when `range` is ``'I'``. Default is ``min(m, n)``.\n";
             s += std::string("lwork : int, optional\n"
-                 "    Size of the workspace. Default, and minimum, is ")
+                 "    Size of the workspace, passed to LAPACK as given. Default is ")
                + (t.is_complex ? "``max(k * (k + 5), 3 * k + max(m, n))``"
                                : "``max(k * (3 * k + 20), 4 * k + max(m, n))``")
                + "\n    with ``k = min(m, n)``, or 1 when `a` is empty. Use ``"
-               + std::string(1, name[0]) + "gesvdx_lwork`` for the optimal value.\n";
+               + std::string(1, name[0]) + "gesvdx_lwork`` for the optimal value. A size\n"
+                 "    below what LAPACK needs gives ``info = -19``.\n";
             s += P_OVERWRITE_A;
 
             s += "\nReturns\n-------\n";
@@ -654,8 +655,7 @@ namespace lapack {
             s += "\nReturns\n-------\n";
             s += "work : " + std::string(t.scalar) + "\n"
                  "    Optimal size of the `work` array, as a scalar of the routine's dtype.\n"
-                 "    Never less than the minimum ``" + std::string(1, name[0]) + "gesvdx`` accepts, and the\n"
-                 "    same for every `range`.\n";
+                 "    The same for every `range`.\n";
             s += R_INFO;
             return s;
         }
