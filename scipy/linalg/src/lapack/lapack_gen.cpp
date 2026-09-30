@@ -675,21 +675,20 @@ namespace lapack {
                 ARRAY_HIDDEN(R, rwork, rwork_len);
 
                 lapack::gesvdx(jobu, jobvt, range, m, n, a.data<T>(), lda,
-                            vl, vu, il, iu, &ns, s.data<R>(),
-                            u.data<T>(), ldu, vt.data<T>(), ldvt,
-                            work.data<T>(), lwork, rwork.data<R>(),
-                            iwork.data<CBLAS_INT>(), &info);
+                               vl, vu, il, iu, &ns, s.data<R>(),
+                               u.data<T>(), ldu, vt.data<T>(), ldvt,
+                               work.data<T>(), lwork, rwork.data<R>(),
+                               iwork.data<CBLAS_INT>(), &info);
             }
             else {
                 lapack::gesvdx(jobu, jobvt, range, m, n, a.data<T>(), lda,
-                            vl, vu, il, iu, &ns, s.data<R>(),
-                            u.data<T>(), ldu, vt.data<T>(), ldvt,
-                            work.data<T>(), lwork,
-                            iwork.data<CBLAS_INT>(), &info);
+                               vl, vu, il, iu, &ns, s.data<R>(),
+                               u.data<T>(), ldu, vt.data<T>(), ldvt,
+                               work.data<T>(), lwork,
+                               iwork.data<CBLAS_INT>(), &info);
             }
 
-            return make_result(u, s, vt, static_cast<long long>(ns),
-                            static_cast<long long>(info));
+            return make_result(u, s, vt, static_cast<long long>(ns), static_cast<long long>(info));
         }
 
 
