@@ -1271,12 +1271,6 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
             if is_numpy(xp):
                 _deprecate_dtypes(f.__name__, *arrays)
 
-            # Raise if core shapes are incompatible
-            if signature is not None:
-                sig = (signature(*arrays, *other_args, **kwargs)
-                       if callable(signature) else signature)
-                letter_to_length = validate_from_signature(names, core_shapes, sig)
-
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
@@ -1287,6 +1281,11 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
 
             if zero_size_batch or (zero_size_core and (zero_size_fill_ is not None)):
                 if signature is not None:
+                # Raise if core shapes are incompatible
+                    sig = (signature(*arrays, *other_args, **kwargs)
+                           if callable(signature) else signature)
+                    letter_to_length = validate_from_signature(names, core_shapes, sig)
+                # Otherwise, produce the appropriate output
                     return output_from_signature(
                         arrays, sig, batch_shape, letter_to_length,
                         zero_size_fill_, ignore_dtypes)
