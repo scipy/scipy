@@ -256,6 +256,15 @@ class Radau(OdeSolver):
     first_step : float or None, optional
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.18.0
     **extraneous
         Any additional keyword arguments will be ignored.
 
@@ -282,7 +291,9 @@ class Radau(OdeSolver):
     njev : int
         Number of evaluations of the Jacobian.
     nlu : int
-        Number of LU decompositions.
+        Number of LU decompositions. 
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------
@@ -294,9 +305,9 @@ class Radau(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, **extraneous):
+                 vectorized=False, first_step=None, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
-        super().__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized, tcrit=tcrit)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -410,6 +421,8 @@ class Radau(OdeSolver):
         max_step = self.max_step
         atol = self.atol
         rtol = self.rtol
+        
+        tcrit = self._find_next_tcrit()
 
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
@@ -442,8 +455,8 @@ class Radau(OdeSolver):
             h = h_abs * self.direction
             t_new = t + h
 
-            if self.direction * (t_new - self.t_bound) > 0:
-                t_new = self.t_bound
+            if self.direction * (t_new - tcrit) > 0:
+                t_new = tcrit
 
             h = t_new - t
             h_abs = np.abs(h)
