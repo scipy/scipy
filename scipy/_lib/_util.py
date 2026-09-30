@@ -1142,7 +1142,7 @@ def validate_from_signature(names, core_shapes, signature):
                     message = (
                         "The core shape(s) of the array argument(s): \n"
                         f"{shapes}\n"
-                        "is/are incompatible with the shapes in the signature: \n"
+                        "is/are incompatible with the shape(s) in the signature: \n"
                         f"{signatures}"
                     )
                     raise ValueError(message)
