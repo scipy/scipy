@@ -499,7 +499,7 @@ class TestWithCacheOptimization:
         assert actual is out
         _assert_same_result(actual, desired)
 
-    def test_axis_axes_validation(self):
+    def test_gufunc_axis_axes_validation(self):
         x1 = np.arange(12.0).reshape(1, 4, 3)
         x2 = np.arange(6.0).reshape(2, 1, 3)
 
