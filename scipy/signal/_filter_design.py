@@ -4724,12 +4724,12 @@ def buttap(N, *, xp=None, device=None):
 
     Notes
     -----
-    Here, a cutoff frequency of :math:`\omega_c = 1\,`\ rad/s and and a gain of
-    :math:`k=1` is assumed. The transfer function can be expressed as [1]_
+    Here, a cutoff frequency of :math:`\omega_c = 1\,`\ rad/s and a gain of
+    :math:`k=1` are assumed. The transfer function can be expressed as [1]_
 
     .. math::
 
-        H(s) = k \prod_{i=0}^{N-1} \frac{\omega_c}{s - s_l}
+        H(s) = k \prod_{l=0}^{N-1} \frac{\omega_c}{s - s_l}
                  \quad\text{with poles}\quad
           s_l = -\omega_c\exp\!\left\{ j\pi\frac{2l+1-N}{2N} \right\} \,.
 
@@ -4778,7 +4778,8 @@ def buttap(N, *, xp=None, device=None):
     >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
     >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
     ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
-    ...         yticklabels=['-3π/2', '-π', '-π/2', '0'], xlim=(f[0], f[-1]))
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
     >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
     >>> for ax_ in (ax0, ax1):
     ...     ax_.axvline(1.0, color='C2', ls='--', alpha=.5, label='Cutoff frequency')
@@ -4844,7 +4845,7 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     >>> k
     0.49130668209006784
 
-    Plot of the frequency response of a 3rd-order prototype with a passband riple
+    Plot of the frequency response of a 3rd-order prototype with a passband ripple
     of 5 dB:
 
     >>> import numpy as np
@@ -4863,7 +4864,8 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
     >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
     ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
-    ...         yticklabels=['-3π/2', '-π', '-π/2', '0'], xlim=(f[0], f[-1]))
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
     >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
     >>> for ax_ in (ax0, ax1):
     ...     ax_.axvline(1.0, color='C2', ls='--', alpha=.5, label='Cutoff frequency')
