@@ -2610,6 +2610,14 @@ def bei_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    ----------
+    Compute the first 5 zeros of the Kelvin function bei.
+
+    >>> from scipy.special._basic import bei_zeros
+    >>> ndarray = special.bi_zeros(3)
+    >>> ndarray
+    array([ 5.02622395,  9.4554063 , 13.89348785, 18.33398346, 22.77543929])
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
