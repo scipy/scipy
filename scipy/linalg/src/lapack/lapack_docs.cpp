@@ -614,7 +614,8 @@ namespace lapack {
                  "    Size of the workspace. Default, and minimum, is ")
                + (t.is_complex ? "``max(k * (k + 5), 3 * k + max(m, n))``"
                                : "``max(k * (3 * k + 20), 4 * k + max(m, n))``")
-               + "\n    with ``k = min(m, n)``, or 1 when `a` is empty.\n";
+               + "\n    with ``k = min(m, n)``, or 1 when `a` is empty. Use ``"
+               + std::string(1, name[0]) + "gesvdx_lwork`` for the optimal value.\n";
             s += P_OVERWRITE_A;
 
             s += "\nReturns\n-------\n";
@@ -634,6 +635,28 @@ namespace lapack {
                  "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
                  "    if positive, that many singular vectors failed to converge, or\n"
                  "    ``2 * min(m, n) + 1`` for an internal error in ``?bdsvdx``.\n";
+            return s;
+        }
+
+        static std::string
+        doc_gesvdx_lwork(const char *name, const Dtype &t)
+        {
+            std::string s;
+            s += std::string(name) + "(m, n, compute_u=1, compute_vh=1)\n\n";
+            s += "Query the optimal `lwork` for ``" + std::string(1, name[0]) + "gesvdx``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_M;
+            s += P_N;
+            s += "compute_u : {0, 1}, optional\n    If 1, left singular vectors are computed; if 0, they are not. Default is 1.\n";
+            s += "compute_vh : {0, 1}, optional\n    If 1, right singular vectors are computed; if 0, they are not. Default is 1.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n"
+                 "    Optimal size of the `work` array, as a scalar of the routine's dtype.\n"
+                 "    Never less than the minimum ``" + std::string(1, name[0]) + "gesvdx`` accepts, and the\n"
+                 "    same for every `range`.\n";
+            s += R_INFO;
             return s;
         }
 
@@ -4618,6 +4641,7 @@ namespace lapack {
             DOC_FAMILY(gesdd_lwork),
             DOC_FAMILY(gesvd),
             DOC_FAMILY(gesvdx),
+            DOC_FAMILY(gesvdx_lwork),
             DOC_FAMILY(gesvd_lwork),
             DOC_FAMILY(gels),
             DOC_FAMILY(gels_lwork),

@@ -3835,3 +3835,57 @@ def test_gesvdx_invalid_arguments(dtype, kwargs):
     gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
     with assert_raises(ValueError):
         gesvdx(a, **kwargs)
+
+
+# (50, 50), (40, 30) and complex (300, 300) take the direct path, where the
+# optimal size LAPACK reports is below the minimum `gesvdx` accepts; the query
+# must still report a size `gesvdx` accepts.
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5),
+                                   (5, 20), (50, 50), (40, 30), (300, 300)])
+@pytest.mark.parametrize('compute_uv', [0, 1])
+def test_gesvdx_lwork_is_accepted_by_gesvdx(dtype, shape, compute_uv):
+    rng = np.random.default_rng(1985412312)
+    a = rng.standard_normal(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        a = a + 1j * rng.standard_normal(shape)
+    a = a.astype(dtype)
+    gesvdx, gesvdx_lwork = get_lapack_funcs(('gesvdx', 'gesvdx_lwork'), (a,))
+
+    lwork = _compute_lwork(gesvdx_lwork, *shape,
+                           compute_u=compute_uv, compute_vh=compute_uv)
+    u, s, vt, ns, info = gesvdx(a, compute_u=compute_uv,
+                                compute_vh=compute_uv, lwork=lwork)
+    assert info == 0
+    assert ns == min(shape)
+    tol = 100 * np.finfo(dtype).eps
+    assert_allclose(s, np.linalg.svd(a, compute_uv=False),
+                    rtol=tol, atol=tol * s[0])
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(0, 3), (3, 0), (0, 0)])
+def test_gesvdx_lwork_empty(dtype, shape):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    work, info = gesvdx_lwork(*shape)
+    assert info == 0
+    assert work.real >= 1
+
+    a = np.zeros(shape, dtype=dtype)
+    gesvdx = get_lapack_funcs('gesvdx', dtype=dtype)
+    *_, ns, info = gesvdx(a, lwork=int(work.real))
+    assert info == 0
+    assert ns == 0
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('kwargs', [
+    dict(m=-1, n=2),
+    dict(m=2, n=-1),
+    dict(m=3, n=2, compute_u=2),
+    dict(m=3, n=2, compute_vh=-1),
+])
+def test_gesvdx_lwork_invalid_arguments(dtype, kwargs):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    with assert_raises(ValueError):
+        gesvdx_lwork(**kwargs)

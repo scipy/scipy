@@ -586,6 +586,23 @@ namespace lapack {
             return make_result(u, s, vt, static_cast<long long>(info));
         }
 
+        /* The documented LWORK minimum is smaller than the MINWRK the routine enforces
+         * (INFO = -19 below it).  MINWRK depends on whether ILAENV's crossover sends the
+         * call through a QR/LQ factorization first (paths 1/1t) or not (paths 2/2t), and
+         * that crossover is implementation-defined, so require the larger of the two:
+         *   real:    path 1 mn*(3mn+20),  path 2 max(mn*(2mn+19), 4mn+mx)
+         *   complex: path 1 mn*(mn+5),    path 2 3mn+mx
+         * This is a safe minimum bound for lwork - it might change in the future depending
+         * on the underlying LAPACK routine implementation. */
+        template <class T>
+        static long long gesvdx_minimum_lwork(CBLAS_INT minmn, CBLAS_INT maxmn) noexcept
+        {
+            if (minmn == 0) { return 1; }
+            return is_complex_v<T>
+                ? std::max(1LL * minmn * (minmn + 5LL), 3LL * minmn + maxmn)
+                : std::max(1LL * minmn * (3LL * minmn + 20), 4LL * minmn + maxmn);
+        }
+
         template <class T>
         static PyObject *gesvdx(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
@@ -627,20 +644,7 @@ namespace lapack {
                 CHECK(iu >= il && iu <= minmn, iu);
             }
 
-            /* The documented LWORK minimum is smaller than the MINWRK the routine enforces
-             * (INFO = -19 below it).  MINWRK depends on whether ILAENV's crossover sends the
-             * call through a QR/LQ factorization first (paths 1/1t) or not (paths 2/2t), and
-             * that crossover is implementation-defined, so require the larger of the two:
-             *   real:    path 1 mn*(3mn+20),  path 2 max(mn*(2mn+19), 4mn+mx)
-             *   complex: path 1 mn*(mn+5),    path 2 3mn+mx                                
-             * This is a safe minimum bound for lwork - it might change in the future depending
-             * on the underlying LAPACK routine implementation. */
-            long long lwork_bound = 1;
-            if (minmn > 0) {
-                lwork_bound = is_complex_v<T>
-                    ? std::max(1LL * minmn * (minmn + 5LL), 3LL * minmn + maxmn)
-                    : std::max(1LL * minmn * (3LL * minmn + 20), 4LL * minmn + maxmn);
-            }
+            const long long lwork_bound = gesvdx_minimum_lwork<T>(minmn, maxmn);
             CBLAS_INT minimum_lwork;
             if (!work_size(lwork_bound, &minimum_lwork)) { return nullptr; }
             SCALAR_OPT(CBLAS_INT, lwork, minimum_lwork);
@@ -691,6 +695,53 @@ namespace lapack {
             }
 
             return make_result(u, s, vt, static_cast<long long>(ns), static_cast<long long>(info));
+        }
+
+
+        /**
+         * With `lwork = -1` gesvdx only writes `work[0]`, so every array it is handed is a null
+         * pointer.  The size does not depend on `range`, so the query asks for all of them.
+         *
+         * On some paths, the optimal size can be below the minimum that `gesvdx` requires
+         * (see `gesvdx_minimum_lwork`); the larger of the two is reported so the result is
+         * always accepted by `gesvdx`.
+         */
+        template <class T>
+        static PyObject *gesvdx_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {"m", "n", "compute_u", "compute_vh", nullptr};
+            static constexpr Ctx<T> ctx("gesvdx_lwork", "OO|OO", kwlist);
+            PARSE_ARGS();
+
+            using R = real_of_t<T>;
+            SCALAR_REQ(CBLAS_INT, m);             CHECK(m >= 0, m);
+            SCALAR_REQ(CBLAS_INT, n);             CHECK(n >= 0, n);
+            SCALAR_OPT(CBLAS_INT, compute_u, 1);  CHECK(compute_u == 0 || compute_u == 1, compute_u);
+            SCALAR_OPT(CBLAS_INT, compute_vh, 1); CHECK(compute_vh == 0 || compute_vh == 1, compute_vh);
+
+            CBLAS_INT minmn = std::min(m, n), maxmn = std::max(m, n);
+            CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
+            CBLAS_INT ldu = compute_u ? std::max<CBLAS_INT>(1, m) : 1;
+            CBLAS_INT ldvt = compute_vh ? std::max<CBLAS_INT>(1, minmn) : 1;
+            T work{};
+            CBLAS_INT ns = 0, info = 0;
+
+            if constexpr (is_complex_v<T>) {
+                lapack::gesvdx(compute_u ? 'V' : 'N', compute_vh ? 'V' : 'N', 'A', m, n, nullptr, lda,
+                               R(0), R(0), 1, minmn, &ns, nullptr, nullptr, ldu, nullptr, ldvt,
+                               &work, -1, nullptr, nullptr, &info);
+            }
+            else {
+                lapack::gesvdx(compute_u ? 'V' : 'N', compute_vh ? 'V' : 'N', 'A', m, n, nullptr, lda,
+                               R(0), R(0), 1, minmn, &ns, nullptr, nullptr, ldu, nullptr, ldvt,
+                               &work, -1, nullptr, &info);
+            }
+
+            const long long minimum = gesvdx_minimum_lwork<T>(minmn, maxmn);
+            if (info == 0 && static_cast<long long>(std::real(work)) < minimum) {
+                work = T(static_cast<R>(minimum));
+            }
+            return make_result(work, static_cast<long long>(info));
         }
 
 
@@ -1486,6 +1537,7 @@ namespace lapack {
             FAMILY(gesdd_lwork),
             FAMILY(gesvd),
             FAMILY(gesvdx),
+            FAMILY(gesvdx_lwork),
             FAMILY(gesvd_lwork),
             FAMILY(gels),
             FAMILY(gels_lwork),
