@@ -632,7 +632,9 @@ namespace lapack {
              * call through a QR/LQ factorization first (paths 1/1t) or not (paths 2/2t), and
              * that crossover is implementation-defined, so require the larger of the two:
              *   real:    path 1 mn*(3mn+20),  path 2 max(mn*(2mn+19), 4mn+mx)
-             *   complex: path 1 mn*(mn+5),    path 2 3mn+mx                                */
+             *   complex: path 1 mn*(mn+5),    path 2 3mn+mx                                
+             * This is a safe minimum bound for lwork - it might change in the future depending
+             * on the underlying LAPACK routine implementation. */
             long long lwork_bound = 1;
             if (minmn > 0) {
                 lwork_bound = is_complex_v<T>
