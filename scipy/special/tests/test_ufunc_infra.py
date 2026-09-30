@@ -499,6 +499,42 @@ class TestWithCacheOptimization:
         assert actual is out
         _assert_same_result(actual, desired)
 
+    def test_axis_axes_validation(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        with pytest.raises(TypeError, match="cannot specify both 'axis'.*"):
+            _vecdot_cached_wrapper(x1, x2, axis=1, axes=[(1,), (1,), ()])
+
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        with pytest.raises(TypeError, match="axis can only be used with.*"):
+            _solve_cached_wrapper(a, b, axis=1)
+
+        with pytest.raises(TypeError, match="axes should be a list"):
+            _solve_cached_wrapper(a, b, axes=((1, 3), (0, 3), (1, 3)))
+
+        with pytest.raises(ValueError, match="axes should have one entry.*"):
+            _solve_cached_wrapper(a, b, axes=[(1, 3), (0, 3)])
+
+        with pytest.raises(TypeError, match=r"axes item \d+ should be a tuple"):
+            _solve_cached_wrapper(a, b, axes=[[1, 3], (0, 3), (1, 3)])
+
+        with pytest.raises(
+                ValueError, match=r"axes item \d+ should have length.*"
+        ):
+            _solve_cached_wrapper(a, b, axes=[(1,), (0, 3), (1, 3)])
+
 
 class TestMakeUFuncWrapper:
     @pytest.mark.parametrize(
