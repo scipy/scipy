@@ -65,10 +65,9 @@ Cython's old syntax for using NumPy arrays should be removed and replaced with
 Cython memoryviews.
 
 Binary sizes of extensions built from Cython code are large, and compile times
-are long. We should aim to combine extension modules where possible (e.g.,
-``stats._boost`` contains many extension modules now), and limit the use of
-Cython to places where it's the best choice. Note that conversion of Cython
-to C++ is ongoing in ``scipy.special``.
+are long. We should aim to combine extension modules where possible and limit the use of
+Cython to places where it's the best choice. Note that most ``scipy.special``
+kernels have moved to C++ in XSF (see the ``special`` section below).
 
 
 Use of Pythran
@@ -410,6 +409,15 @@ math implement by a few of the metrics.
 
 special
 ```````
+Most ``scipy.special`` kernels now live in
+`XSF <https://github.com/scipy/xsf>`__.
+The future plan is to move the remaining kernels to C++ in XSF or
+`Boost.Math <https://www.boost.org/doc/libs/latest/libs/math/doc/html/index.html>`__.
+The `XSF roadmap <https://github.com/scipy/xsf/issues/220>`__ discusses sharing
+numerical routines between SciPy and `CuPy <https://cupy.dev/>`__, caching
+intermediate results within ufunc and gufunc calls, and documenting how to write
+XSF kernels that can run on both CPU and GPU.
+
 Though there are still a lot of functions that need improvements in precision,
 probably the only show-stoppers are hypergeometric functions, parabolic cylinder
 functions, and spheroidal wave functions. Three possible ways to handle this:
