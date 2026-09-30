@@ -897,35 +897,37 @@ class TestNBinom:
 
 
 class TestGenInvGauss:
-    def setup_method(self):
-        self.rng = np.random.default_rng(6473281180)
-
     @pytest.mark.slow
     def test_rvs_with_mode_shift(self):
+        rng = np.random.default_rng(6473281180)
         # ratio_unif w/ mode shift
         gig = stats.geninvgauss(2.3, 1.5)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_without_mode_shift(self):
+        rng = np.random.default_rng(6473281180)
         # ratio_unif w/o mode shift
         gig = stats.geninvgauss(0.9, 0.75)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_new_method(self):
+        rng = np.random.default_rng(6473281180)
         # new algorithm of Hoermann / Leydold
         gig = stats.geninvgauss(0.1, 0.2)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_p_zero(self):
+        rng = np.random.default_rng(6473281180)
+
         def my_ks_check(p, b):
             gig = stats.geninvgauss(p, b)
-            rvs = gig.rvs(size=1500, random_state=self.rng)
+            rvs = gig.rvs(size=1500, random_state=rng)
             return stats.kstest(rvs, gig.cdf)[1] > 0.05
         # boundary cases when p = 0
         assert_equal(my_ks_check(0, 0.2), True)  # new algo
@@ -5681,9 +5683,6 @@ class TestGumbelR:
 
 
 class TestLevyStable:
-    def setup_method(self):
-        self.rng = np.random.default_rng(7195199371)
-
     @pytest.fixture(autouse=True)
     def reset_levy_stable_params(self):
         """Setup default parameters for levy_stable generator"""
@@ -5805,12 +5804,13 @@ class TestLevyStable:
             delta,
             sample_size,
     ):
+        rng = np.random.default_rng(7195199371)
         stats.levy_stable.parameterization = parameterization
         ls = stats.levy_stable(
             alpha=alpha, beta=beta, scale=gamma, loc=delta
         )
         _, p = stats.kstest(
-            ls.rvs(size=sample_size, random_state=self.rng), ls.cdf
+            ls.rvs(size=sample_size, random_state=rng), ls.cdf
         )
         assert p > 0.05
 
@@ -5818,11 +5818,12 @@ class TestLevyStable:
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
+        rng = np.random.default_rng(7195199371)
         alpha = 1.0
         loc = 0.5
         scale = 1.5
         x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
-                                  size=5000, random_state=self.rng)
+                                  size=5000, random_state=rng)
         stat, p = stats.kstest(x, 'levy_stable',
                                args=(alpha, beta, loc, scale))
         assert p > 0.01
@@ -5864,9 +5865,10 @@ class TestLevyStable:
     )
     def test_fit_rvs(self, alpha, beta, delta, gamma, parametrization):
         """Test that fit agrees with rvs for each parametrization."""
+        rng = np.random.default_rng(7195199371)
         stats.levy_stable.parametrization = parametrization
         data = stats.levy_stable.rvs(
-            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=self.rng
+            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=rng
         )
         fit = stats.levy_stable._fitstart(data)
         alpha_obs, beta_obs, delta_obs, gamma_obs = fit

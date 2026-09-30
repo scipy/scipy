@@ -194,6 +194,9 @@ def _tukey_lmbda_quantile(p, lmbda):
 
 @pytest.mark.slow
 @check_version(mpmath, '0.19')
+@pytest.mark.thread_unsafe(
+    reason="mpmath's global precision context is not thread-safe"
+)
 class TestCDFlib:
 
     def test_bdtrin(self):
