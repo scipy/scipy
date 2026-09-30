@@ -584,27 +584,23 @@ class TestAndersonKSamp:
         x1 = np.linspace(1, 100, 100)
         # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
+        with pytest.warns(UserWarning, match='p-value floored'):
             s, p = stats.anderson_ksamp([x1, x1 + 40.5], variant="right")
         assert_almost_equal(s, 41.105, 3)
-        assert_equal(p, 0.001)
+        assert_almost_equal(p, 0.001)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
+        with pytest.warns(UserWarning, match='p-value floored'):
             s, p = stats.anderson_ksamp([x1, x1 + 40.5])
         assert_almost_equal(s, 41.235, 3)
-        assert_equal(p, 0.001)
+        assert_almost_equal(p, 0.001)
 
         # test case: similar distributions --> p-value capped at 0.25
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
+        with pytest.warns(UserWarning, match='p-value capped'):
             s, p = stats.anderson_ksamp([x1, x1 + .5], variant="right")
         assert_almost_equal(s, -1.2824, 4)
         assert_equal(p, 0.25)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
+        with pytest.warns(UserWarning, match='p-value capped'):
             s, p = stats.anderson_ksamp([x1, x1 + .5])
         assert_almost_equal(s, -1.2944, 4)
         assert_equal(p, 0.25)
@@ -664,6 +660,18 @@ class TestAndersonKSamp:
         res = stats.anderson_ksamp(samples, variant='continuous')
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue)
+
+    def test_vectorized(self):
+        rng = np.random.default_rng(2341589258312)
+        x = rng.random((3, 20))
+        y = rng.random((3, 21)) + 1e-1
+        kwargs = dict(variant='continuous', axis=-1)
+        method = stats.PermutationMethod(rng=rng)
+        ref = stats.anderson_ksamp((x, y), **kwargs)
+        res = stats.anderson_ksamp((x, y), **kwargs, method=method)
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)
+        assert np.all(res.pvalue < 0.25) and np.all(res.pvalue > 0.001)
 
 
 @make_xp_test_case(stats.ansari)

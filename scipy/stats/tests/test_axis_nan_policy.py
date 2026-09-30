@@ -103,7 +103,7 @@ def kendalltau(*args, _no_deco=False, **kwargs):
 
 def anderson_ksamp(*args, _no_deco=False, **kwargs):
     if _no_deco:
-        return stats._morestats._anderson_ksamp(*args, _no_deco=_no_deco, **kwargs)
+        return stats._morestats._anderson_ksamp(*args, **kwargs)
     return stats.anderson_ksamp(args, **kwargs)
 
 
@@ -228,6 +228,7 @@ axis_nan_policy_cases = [
      1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
     (anderson_ksamp, tuple(), dict(), 3, 2, False, None),
+    (anderson_ksamp, tuple(), dict(variant='continuous'), 3, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in

@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, around, arange, sort, amin, amax, sqrt, array,
                    exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
@@ -2581,12 +2581,17 @@ def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
     """
     A2kN = 0.
 
+    # this is something `xpx.searchsorted` should do
+    batch_shape = np.broadcast_shapes(Z.shape[:-1],
+                                      *(sample.shape[:-1] for sample in samples))
+    Z = np.broadcast_to(Z, batch_shape + Z.shape[-1:])
+
     j = np.arange(1, N)
     for i in arange(0, k):
-        s = np.sort(samples[i])
-        Mij = s.searchsorted(Z[:-1], side='right')
+        s = np.sort(samples[i], axis=-1)
+        Mij = xpx.searchsorted(s, Z[..., :-1], side='right')  # requires axis=-1
         inner = (N*Mij - j*n[i])**2 / (j * (N - j))
-        A2kN += inner.sum() / n[i]
+        A2kN += inner.sum(axis=-1) / n[i]
     return A2kN / N
 
 
@@ -2801,25 +2806,33 @@ def anderson_ksamp(samples, *, variant="midrank", method=None,
     0.699
 
     """
-    return _anderson_ksamp(*samples, variant=variant, method=method,
-                           axis=axis, nan_policy=nan_policy, keepdims=keepdims)
+    override = {} if variant == 'continuous' else dict(vectorization=True)
+    anp = _axis_nan_policy_factory(SignificanceResult, n_samples=None,
+                                   override=override)
+    return anp(_anderson_ksamp)(*samples, variant=variant, method=method,
+                                axis=axis, nan_policy=nan_policy, keepdims=keepdims)
 
 
-@_axis_nan_policy_factory(SignificanceResult, n_samples=None)
-def _anderson_ksamp(*samples, variant="midrank", method=None):
+def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0):
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
 
     samples = list(map(np.asarray, samples))
-    Z = np.sort(np.hstack(samples))
-    N = Z.size
-    Zstar = np.unique(Z)
-    if Zstar.size < 2:
-        raise ValueError("anderson_ksamp needs more than one distinct "
-                         "observation")
+    Z = np.sort(np.concat(samples, axis=-1), axis=-1)
+    N = Z.shape[-1]
 
-    n = np.array([sample.size for sample in samples])
+    if Z.ndim == 1:
+        Zstar = np.unique(Z)
+        if Zstar.size < 2:
+            raise ValueError("anderson_ksamp needs more than one distinct "
+                             "observation")
+    else:
+        Zstar = None
+        if variant in {'midrank', 'right'}:
+            raise ValueError("How did you get here?")
+
+    n = np.asarray([sample.shape[-1] for sample in samples])
     if np.any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
@@ -2836,24 +2849,27 @@ def _anderson_ksamp(*samples, variant="midrank", method=None):
 
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    def statistic(*samples):
+    def statistic(*samples, axis=-1):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
     if method is not None:
-        res = stats.permutation_test(samples, statistic, **method._asdict(),
-                                     alternative='greater')
+        vectorized = (variant == 'continuous')
+        res = stats.permutation_test(samples, statistic, **method._asdict(), axis=-1,
+                                     alternative='greater', vectorized=vectorized)
 
+    # for non-masked arrays, all these calculations are independent of batch size
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
     h = hs_cs[-1] + 1
     g = (hs_cs / arange(2, N)).sum()
-
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
     b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
     c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
     d = (2*h + 6)*k**2 - 4*h*k
     sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
     m = k - 1
+
+    # A2 is the (scalar) statistic; it has the shape of the batch
     A2 = (A2kN - m) / math.sqrt(sigmasq)
 
     # The b_i values are the interpolation coefficients from Table 2
@@ -2865,22 +2881,18 @@ def _anderson_ksamp(*samples, variant="midrank", method=None):
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
 
-    if A2 < critical.min() and method is None:
-        p = sig.max()
-        msg = (f"p-value capped: true value larger than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    if np.any(A2 < critical.min()) and method is None:
+        msg = (f"p-value capped: true value larger than {sig[0]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif A2 > critical.max() and method is None:
-        p = sig.min()
-        msg = (f"p-value floored: true value smaller than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    elif np.any(A2 > critical.max()) and method is None:
+        msg = (f"p-value floored: true value smaller than {sig[-1]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif method is None:
+
+    if method is None:
         # interpolation of probit of significance level
-        pf = np.polyfit(critical, log(sig), 2)
-        p = math.exp(np.polyval(pf, A2))
+        p = np.exp(np.interp(A2, critical, np.log(sig)))
     else:
         p = res.pvalue if method is not None else p
 
