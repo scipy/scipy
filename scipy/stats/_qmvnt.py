@@ -37,7 +37,7 @@ import numpy as np
 
 from scipy.fft import fft, ifft
 from scipy.special import ndtr as phi, ndtri as phinv
-from scipy.special._ufuncs import _bivariate_normal_sf as _bvnu
+from scipy.special._ufuncs import _bivariate_normal_cdf
 from scipy.stats._qmc import primes_from_2_to
 
 from ._qmvnt_cy import _qmvn_inner, _qmvt_inner
@@ -472,7 +472,7 @@ def _bvn(a, b, A):
     a, b : (2,) array_like
         The low and high integration bounds.
     A : (2, 2) array_like
-        Covariance matrix.
+        Covariance matrix. Only the lower triangular portion is used.
 
     Returns
     -------
@@ -482,16 +482,19 @@ def _bvn(a, b, A):
     Notes
     -----
     Computed via 4-corner inclusion-exclusion on the standardized bivariate normal
-    survival function ``_bvnu`` with correlation ``r = s12 / (s1 * s2)``, where
-    ``s12 = A[0, 1]`` is the covariance between ``X[0]`` and ``X[1]``. The result is
+    CDF ``_bivariate_normal_cdf`` with correlation ``r = s12 / (s1 * s2)``, where
+    ``s12 = A[1, 0]`` is the covariance between ``X[0]`` and ``X[1]``. The result is
     clipped to ``[0, 1]``.
     """
     s1 = math.sqrt(A[0, 0])
     s2 = math.sqrt(A[1, 1])
-    s12 = A[0, 1]
+    s12 = A[1, 0]
     r = s12 / (s1 * s2)
     xl, xu = a[0] / s1, b[0] / s1
     yl, yu = a[1] / s2, b[1] / s2
-    p = _bvnu(xl, yl, r) - _bvnu(xu, yl, r) - _bvnu(xl, yu, r) + _bvnu(xu, yu, r)
+    p = (_bivariate_normal_cdf(xu, yu, r)
+         - _bivariate_normal_cdf(xl, yu, r)
+         - _bivariate_normal_cdf(xu, yl, r)
+         + _bivariate_normal_cdf(xl, yl, r))
     p = max( 0., min( p, 1. ) )
     return p

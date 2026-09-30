@@ -10,10 +10,7 @@ if not cy.version().version_compare('>=3.2.0')
   error('tests requires Cython >= 3.2.0')
 endif
 
-cython_args = []
-if cy.version().version_compare('>=3.1.0')
-  cython_args += ['-Xfreethreading_compatible=True']
-endif
+cython_args = ['-Xfreethreading_compatible=True']
 
 py3.extension_module(
   'extending',

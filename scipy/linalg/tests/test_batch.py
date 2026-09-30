@@ -136,7 +136,8 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype):  # matrix in, matrix out
         rng = np.random.default_rng(8342310302941288912051)
-        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        shape = (5, 3, 4, 6) if fun == linalg.pinv else (5, 3, 4, 4)
+        A = get_random(shape, dtype=dtype, rng=rng)
 
         # sqrtm can return complex output for real input resulting in i/o type
         # mismatch. Nudge the eigenvalues to positive side to avoid this.
@@ -154,10 +155,12 @@ class TestBatch:
         self.batch_test(linalg.null_space, A)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_funm(self, dtype):
+    @pytest.mark.parametrize('disp', [False, True])
+    def test_funm(self, dtype, disp):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin, disp=disp),
+                        n_out=(1 if disp else 2))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_fractional_matrix_power(self, dtype):
@@ -616,7 +619,7 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_matmul_toeplitz(self, separate_r, xdim, dtype):
         rng = np.random.default_rng(8342310302941288912051)
-        c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        c = get_random((2, 3, 4 if separate_r else 5), dtype=dtype, rng=rng)
         r = get_random((2, 3, 5), dtype=dtype, rng=rng)
         c_or_cr = (c, r) if separate_r else c
         x = get_random(xdim, dtype=dtype, rng=rng)

@@ -78,6 +78,31 @@ or::
     spin build -j6
 
 
+Controlling installed configuration details
+--------------------------------------------
+
+``scipy.show_config()`` provides a lot of detail about build-time dependencies
+and build machine/configuration. This is quite useful for diagnostics, but
+not reproducible across machines - at least for relocatable packages - because
+it embeds build machine paths and compiler options (which can also contain
+paths). There is a build option to achieve reproducible builds:
+``-Dconfig-output``.
+
+The default, ``-Dconfig-output=auto``, selects portable output when
+``SOURCE_DATE_EPOCH`` is set at Meson configuration time, and full output
+otherwise. Redistributors can always omit build-host paths and other
+host-dependent details from binary artifacts with::
+
+    python -m build -Csetup-args=-Dconfig-output=portable
+
+Use ``-Dconfig-output=full`` to retain detailed diagnostics even when
+``SOURCE_DATE_EPOCH`` is set.  Portable mode reports paths,
+compiler commands, all compiler and linker flags (including optimization
+flags), and OpenBLAS configuration as ``unknown``.  It keeps compiler IDs,
+versions, linker IDs, dependency versions, ABI information, and machine details.
+Explicit ``full`` and ``portable`` settings override the automatic choice.
+
+
 Use GCC and Clang builds in parallel
 ------------------------------------
 

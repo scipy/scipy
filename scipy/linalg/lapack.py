@@ -386,6 +386,11 @@ All functions
    clange
    zlange
 
+   slansb
+   dlansb
+   clansb
+   zlansb
+
    slantr
    dlantr
    clantr
@@ -443,6 +448,11 @@ All functions
 
    sormrz_lwork
    dormrz_lwork
+
+   spbcon
+   dpbcon
+   cpbcon
+   zpbcon
 
    spbsv
    dpbsv

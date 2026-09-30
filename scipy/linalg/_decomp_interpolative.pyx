@@ -134,7 +134,7 @@ __all__ = ['idd_estrank', 'idd_reconid', 'iddp_aid',
 
 def idd_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     cdef blas_int n = A.shape[1], intone = 1
-    cdef int j = 0
+    cdef int _j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v1
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v2
@@ -144,7 +144,7 @@ def idd_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     v1 = rng.uniform(low=-1., high=1., size=n)
     v1 /= dnrm2(&n, &v1[0], &intone)
 
-    for j in range(its):
+    for _j in range(its):
         u1 = A.matvec(v1)
         u2 = B.matvec(v1)
         u1 -= u2
@@ -461,7 +461,7 @@ def idd_reconid(B, idx, proj):
 
 def idd_snorm(A: LinearOperator, *, rng, int its=20):
     cdef blas_int n = A.shape[1], intone = 1
-    cdef int j = 0
+    cdef int _j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] u
@@ -469,7 +469,7 @@ def idd_snorm(A: LinearOperator, *, rng, int its=20):
     v = rng.uniform(low=-1., high=1., size=n)
     v /= dnrm2(&n, &v[0], &intone)
 
-    for j in range(its):
+    for _j in range(its):
         u = A.matvec(v)
         v = A.rmatvec(u)
         snorm = dnrm2(&n, &v[0], &intone)
@@ -1114,7 +1114,7 @@ def iddr_svd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank)
 
 def idz_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     cdef blas_int n = A.shape[1], intone = 1
-    cdef int j = 0
+    cdef int _j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v1
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v2
@@ -1124,7 +1124,7 @@ def idz_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     v1 = rng.uniform(low=-1, high=1, size=(n, 2)).view(np.complex128).ravel()
     v1 /= dznrm2(&n, &v1[0], &intone)
 
-    for j in range(its):
+    for _j in range(its):
         u1 = A.matvec(v1)
         u2 = B.matvec(v1)
         u1 -= u2
@@ -1404,7 +1404,7 @@ def idz_reconid(B, idx, proj):
 
 def idz_snorm(A: LinearOperator, *, rng, int its=20):
     cdef blas_int n = A.shape[1], intone = 1
-    cdef int j = 0
+    cdef int _j = 0
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] u
@@ -1412,7 +1412,7 @@ def idz_snorm(A: LinearOperator, *, rng, int its=20):
     v = rng.uniform(low=-1, high=1, size=(n, 2)).view(np.complex128).ravel()
     v /= dznrm2(&n, &v[0], &intone)
 
-    for j in range(its):
+    for _j in range(its):
         u = A.matvec(v)
         v = A.rmatvec(u)
         snorm = dznrm2(&n, &v[0], &intone)

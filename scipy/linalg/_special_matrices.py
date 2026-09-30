@@ -4,7 +4,7 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, xp_size, xp_promote, xp_device
+    array_namespace, xp_capabilities, xp_promote, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -277,7 +277,7 @@ def hadamard(n, dtype=int):
 
 
 @xp_capabilities()
-@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
+@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)", zero_size_fill=None)
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -347,7 +347,7 @@ def leslie(f, s):
     return a
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=2)
+@xp_capabilities(allow_dask_compute=2)
 def block_diag(*arrs):
     """
     Create a block diagonal array from provided arrays.
@@ -1012,17 +1012,11 @@ def fiedler(a):
     xp = array_namespace(a)
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
-    if xp_size(a) == 0:
-        batch_shape, n = a.shape[:-1], a.shape[-1]
-        return xp.empty(batch_shape + (n, n), dtype=a.dtype, device=xp_device(a))
-    elif xp_size(a) == 1:
-        return xp.asarray([[0.]], device=xp_device(a))
-    else:
-        return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
+    return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)")
+@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)", zero_size_fill=None)
 def fiedler_companion(a):
     """Returns a Fiedler companion matrix.
 
@@ -1121,7 +1115,8 @@ def _convolution_matrix_signature(a, n, mode='full'):
 
 
 @xp_capabilities(np_only=True)
-@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature)
+@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature,
+                   zero_size_fill=None)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.

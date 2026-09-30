@@ -25,6 +25,7 @@ py3.install_sources([
     'test_mgc.py',
     'test_morestats.py',
     'test_mstats_basic.py',
+    'test_mstats_deprecation.py',
     'test_mstats_extras.py',
     'test_multicomp.py',
     'test_multivariate.py',

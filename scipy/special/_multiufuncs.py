@@ -290,7 +290,7 @@ assoc_legendre_p = MultiUFunc(
     branch_cut : array_like of ints, optional
         Selects branch cut. Must be 2 (default) or 3.
         2: cut on the real axis ``|z| > 1``
-        3: cut on the real axis ``-1 < z < 1``
+        3: cut on the real axis ``z < 1``
     norm : bool, optional
         If ``True``, compute the normalized associated Legendre polynomial.
         Default is ``False``.
@@ -373,7 +373,7 @@ assoc_legendre_p_all = MultiUFunc(
     branch_cut : array_like of ints, optional
         Selects branch cut. Must be 2 (default) or 3.
         2: cut on the real axis ``|z| > 1``
-        3: cut on the real axis ``-1 < z < 1``
+        3: cut on the real axis ``z < 1``
     norm : bool, optional
         If ``True``, compute the normalized associated Legendre polynomials.
         Default is ``False``.

@@ -801,6 +801,22 @@ class TestConstructUtils:
         X.coords = tuple(co.astype(np.int64) for co in X.coords)
         assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
+    @pytest.mark.parametrize("n_empty", [1, 2])
+    def test_block_diag_idx_dtype_overflow(self, n_empty):
+        # see gh-23417
+        A = coo_array((1, 2**31 - 10))
+        B = coo_array(np.eye(1, 16, k=15))
+        c_offset = n_empty * (2**31 - 10)
+
+        C = construct.block_diag([A] * n_empty + [B])
+
+        assert_array_equal(C.coords[1], [c_offset + 15])
+        assert_array_equal(C.coords[0], [n_empty])
+
+        assert C.coords[1].dtype == np.int64
+        assert C.coords[0].dtype == np.int64
+        assert C.shape == (n_empty + 1, c_offset + 16)
+
     @pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
@@ -1075,8 +1091,7 @@ def test_permute_dims():
     sXXtransposed = sXX.transpose(axes=(0, 2, 1, 3))
     assert_equal(sXXtransposed.shape, (3, 2, 2, 3))
     assert_equal(sXXpermuted.toarray(), sXXtransposed.toarray())
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(sXXpermuted.toarray(), np.transpose(npxx, axes=(0, 2, 1, 3)))
+    assert_equal(sXXpermuted.toarray(), np.permute_dims(npxx, axes=(0, 2, 1, 3)))
 
 
 def test_3d_permute_dims():
@@ -1087,8 +1102,7 @@ def test_3d_permute_dims():
     out = construct.permute_dims(A, axes=(2, 1, 0))
     assert_equal(out.shape, (2, 4, 1))
     assert_equal(out.toarray(), tgt)
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(out.toarray(), np.transpose(x, axes=(2, 1, 0)))
+    assert_equal(out.toarray(), np.permute_dims(x, axes=(2, 1, 0)))
 
 
 def test_canonical_format_permute_dims():
@@ -1147,8 +1161,7 @@ def test_sparse_format_permute_dims(format):
     out = construct.permute_dims(SA, axes=(1, 0))
     assert out.format == "coo"
     assert out.shape == (3, 2)
-    # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
-    assert_equal(out.toarray(), np.transpose(A, axes=(1, 0)))
+    assert_equal(out.toarray(), np.permute_dims(A, axes=(1, 0)))
     assert not out.has_canonical_format
 
 

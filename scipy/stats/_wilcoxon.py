@@ -1,6 +1,6 @@
 import numpy as np
 
-from scipy import stats
+from ._resampling import PermutationMethod, permutation_test
 from ._stats_py import _get_pvalue, _rankdata, _SimpleNormal
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
@@ -103,7 +103,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     if alternative not in alternatives:
         raise ValueError(message)
 
-    if not isinstance(method, stats.PermutationMethod):
+    if not isinstance(method, PermutationMethod):
         methods = {"auto", "asymptotic", "exact"}
         message = (f"`method` must be one of {methods} or "
                    "an instance of `stats.PermutationMethod`.")
@@ -235,7 +235,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             # are 2**n, where n is the sample size.
             # if n <= 13, the p-value is deterministic since 2**13 is less
             # than 9999, the default number of n_resamples
-            method = stats.PermutationMethod()
+            method = PermutationMethod()
         else:
             # if there are ties and the sample size is too large to
             # run a deterministic permutation test, fall back to asymptotic
@@ -266,7 +266,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             p = np.clip(p, 0, 1)
         p = xp.asarray(p, dtype=d.dtype, device=xp_device(d))
     else:  # `PermutationMethod` instance (already validated)
-        p = stats.permutation_test(
+        p = permutation_test(
             # permutation_test always uses `axis=-1` as `_wilcoxon_statistic` assumes
             (d,), lambda d, axis: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
             permutation_type='samples', **method._asdict(),

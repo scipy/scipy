@@ -213,7 +213,7 @@ class OddsRatioResult:
 
         Parameters
         ----------
-        confidence_level: float
+        confidence_level : float
             Desired confidence level for the confidence interval.
             The value must be given as a fraction between 0 and 1.
             Default is 0.95 (meaning 95%).
