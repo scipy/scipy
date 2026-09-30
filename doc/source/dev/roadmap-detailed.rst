@@ -65,8 +65,7 @@ Cython's old syntax for using NumPy arrays should be removed and replaced with
 Cython memoryviews.
 
 Binary sizes of extensions built from Cython code are large, and compile times
-are long. We should aim to combine extension modules where possible (e.g.,
-``stats._boost`` contains many extension modules now), and limit the use of
+are long. We should aim to combine extension modules where possible and limit the use of
 Cython to places where it's the best choice. Note that most ``scipy.special``
 kernels have moved to C++ in XSF (see the ``special`` section below).
 
