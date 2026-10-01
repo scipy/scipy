@@ -46,7 +46,7 @@ template<typename T>
 int
 _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -92,7 +92,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     call_gesdd(&jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, NULL, &info);
     if (info != 0) { info = -100; return (int)info; }
 
-    lwork = (CBLAS_INT)(detail::real_part(tmp));
+    lwork = (CBLAS_INT)(std::real(tmp));
     if(lwork == 0) { lwork = 1; }
 
     /*
@@ -210,7 +210,7 @@ template<typename T>
 int
 _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==npy_cf32 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -255,7 +255,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     call_gesvd(&jobz, &jobz, &intm, &intn, NULL, &intm, NULL, NULL, &ldu, NULL, &ldvh, &tmp, &lwork, NULL, &info);
     if (info != 0) { info = -100; return (int)info; }
 
-    lwork = (CBLAS_INT)(detail::real_part(tmp));
+    lwork = (CBLAS_INT)(std::real(tmp));
     if(lwork == 0) { lwork = 1; }
 
     /*

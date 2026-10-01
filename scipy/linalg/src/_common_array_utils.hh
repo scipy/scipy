@@ -3,310 +3,15 @@
  */
 #pragma once
 
-/*
- * declare LAPACK prototypes
- */
+#include "lapack_calls.hpp"
 
-extern "C" {
-
-/* ?GETRF */
-void
-BLAS_FUNC(sgetrf)(CBLAS_INT *m, CBLAS_INT *n, float a[], CBLAS_INT *lda,
-                  CBLAS_INT ipiv[], CBLAS_INT *info
-);
-void
-BLAS_FUNC(dgetrf)(CBLAS_INT *m, CBLAS_INT *n, double a[], CBLAS_INT *lda,
-                  CBLAS_INT ipiv[], CBLAS_INT *info
-);
-void
-BLAS_FUNC(cgetrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 a[], CBLAS_INT *lda,
-                  CBLAS_INT ipiv[], CBLAS_INT *info
-);
-void
-BLAS_FUNC(zgetrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 a[], CBLAS_INT *lda,
-                  CBLAS_INT ipiv[], CBLAS_INT *info
-);
-
-
-/* ?GETRI */
-void
-BLAS_FUNC(sgetri)(CBLAS_INT *n, float a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
-                  float work[], CBLAS_INT *lwork, CBLAS_INT *info
-);
-void
-BLAS_FUNC(dgetri)(CBLAS_INT *n, double a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
-                  double work[], CBLAS_INT *lwork, CBLAS_INT *info
-);
-void
-BLAS_FUNC(cgetri)(CBLAS_INT *n, npy_complex64 a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
-                  npy_complex64 work[], CBLAS_INT *lwork, CBLAS_INT *info
-);
-void
-BLAS_FUNC(zgetri)(CBLAS_INT *n, npy_complex128 a[], CBLAS_INT *lda, CBLAS_INT ipiv[],
-                  npy_complex128 work[], CBLAS_INT *lwork, CBLAS_INT *info
-);
-
-
-/* ?GETRS */
-void BLAS_FUNC(sgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-
-/* ?GECON */
-void BLAS_FUNC(sgecon)(char* norm, CBLAS_INT* n, float* a,       CBLAS_INT* lda, float* anorm,  float* rcond,  float* work,       CBLAS_INT* iwork, CBLAS_INT* info);
-void BLAS_FUNC(dgecon)(char* norm, CBLAS_INT* n, double* a,      CBLAS_INT* lda, double* anorm, double* rcond, double* work,      CBLAS_INT* iwork, CBLAS_INT* info);
-void BLAS_FUNC(cgecon)(char* norm, CBLAS_INT* n, npy_complex64* a,  CBLAS_INT* lda, float* anorm,  float* rcond,  npy_complex64* work,  float* rwork,     CBLAS_INT* info);
-void BLAS_FUNC(zgecon)(char* norm, CBLAS_INT* n, npy_complex128* a, CBLAS_INT* lda, double* anorm, double* rcond, npy_complex128* work, double* rwork,    CBLAS_INT* info);
-
-
-/* ?TRTRI */
-void BLAS_FUNC(strtri)(char *uplo, char *diag, CBLAS_INT *n, float* a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(dtrtri)(char *uplo, char *diag, CBLAS_INT *n, double* a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(ctrtri)(char *uplo, char *diag, CBLAS_INT *n, npy_complex64* a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(ztrtri)(char *uplo, char *diag, CBLAS_INT *n, npy_complex128* a, CBLAS_INT *lda, CBLAS_INT *info);
-
-/* ?TRCON */
-void BLAS_FUNC(strcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dtrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(ctrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *rcond, npy_complex64 *work, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(ztrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *rcond, npy_complex128 *work, double *rwork, CBLAS_INT *info);
-
-/* ?TRTRS */
-void BLAS_FUNC(strtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dtrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(ctrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(ztrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-/* ?POTRF */
-void BLAS_FUNC(spotrf)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(dpotrf)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(cpotrf)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(zpotrf)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *info);
-
-/* ?POTRI */
-void BLAS_FUNC(spotri)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(dpotri)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(cpotri)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *info);
-void BLAS_FUNC(zpotri)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *info);
-
-/* ?POCON */
-void BLAS_FUNC(spocon)(char *uplo, CBLAS_INT *n, float* a, CBLAS_INT *lda, float *anorm, float *rcond, float* work, CBLAS_INT* iwork, CBLAS_INT *info);
-void BLAS_FUNC(dpocon)(char *uplo, CBLAS_INT *n, double* a, CBLAS_INT *lda, double *anorm, double *rcond, double* work, CBLAS_INT* iwork, CBLAS_INT *info);
-void BLAS_FUNC(cpocon)(char *uplo, CBLAS_INT *n, npy_complex64* a, CBLAS_INT *lda, float *anorm, float *rcond, npy_complex64* work, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zpocon)(char *uplo, CBLAS_INT *n, npy_complex128* a, CBLAS_INT *lda, double *anorm, double *rcond, npy_complex128* work, double *rwork, CBLAS_INT *info);
-
-/* ?POTRS*/
-void BLAS_FUNC(spotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-/* ?SYTRF*/
-void BLAS_FUNC(ssytrf)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dsytrf)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(csytrf)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(zsytrf)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-
-/* ?SYTRI */
-void BLAS_FUNC(ssytri)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *work, CBLAS_INT *info);
-void BLAS_FUNC(dsytri)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *work, CBLAS_INT *info);
-void BLAS_FUNC(csytri)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *info);
-void BLAS_FUNC(zsytri)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *info);
-
-/* ?SYCON*/
-void BLAS_FUNC(ssycon)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond,  float *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dsycon)(char *uplo, CBLAS_INT *n, double *a,CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(csycon)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
-void BLAS_FUNC(zsycon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
-
-/* ?HETRF */
-void BLAS_FUNC(chetrf)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(zhetrf)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-
-/* ?HETRI */
-void BLAS_FUNC(chetri)(char *uplo, CBLAS_INT *n, npy_complex64 *a,  CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *work, CBLAS_INT *info);
-void BLAS_FUNC(zhetri)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *work, CBLAS_INT *info);
-
-/* ?SYTRS*/
-void BLAS_FUNC(ssytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dsytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(csytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zsytrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-/* ?HECON*/
-void BLAS_FUNC(checon)(char *uplo, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
-void BLAS_FUNC(zhecon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
-
-/* ?HETRS*/
-void BLAS_FUNC(chetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zhetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-
-/* ?GTTRF */
-void BLAS_FUNC(sgttrf)(CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(dgttrf)(CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(cgttrf)(CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(zgttrf)(CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
-
-/* ?GTTRS */
-void BLAS_FUNC(sgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-
-/* ?GTCON */
-void BLAS_FUNC(sgtcon)(char *norm, CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dgtcon)(char *norm, CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(cgtcon)(char *norm, CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
-void BLAS_FUNC(zgtcon)(char *norm, CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
-
-/* ?GBTRF */
-void BLAS_FUNC(sgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(dgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(cgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
-void BLAS_FUNC(zgbtrf)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, CBLAS_INT *info);
-
-/* ?GBTRS */
-void BLAS_FUNC(sgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zgbtrs)(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *nrhs, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
-
-/* ?GBCON */
-void BLAS_FUNC(sgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, float *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, double *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(cgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex64 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zgbcon)(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, npy_complex128 *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, double *rwork, CBLAS_INT *info);
-
-
-/* ?GESVD*/
-void BLAS_FUNC(sgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-
-/* ?GESDD*/
-void BLAS_FUNC(sgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(cgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(zgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
-
-
-/* ?GEQRF */
-void BLAS_FUNC(sgeqrf)(CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dgeqrf)(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cgeqrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(zgeqrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-
-
-/* ?GEQP3 */
-void BLAS_FUNC(sgeqp3)(CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *jpvt, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dgeqp3)(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *jpvt, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cgeqp3)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *jpvt, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zgeqp3)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *jpvt, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-
-/* ?ORGQR, ?UNGQR */
-void BLAS_FUNC(sorgqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, float *a, CBLAS_INT *lda, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dorgqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, double *a, CBLAS_INT *lda, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cungqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(zungqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
-
-
-
-/* ?GELSS*/
-void BLAS_FUNC(sgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a,  CBLAS_INT *lda, npy_complex64 *b,  CBLAS_INT *ldb, float *s,  float *rcond,  CBLAS_INT *rank, npy_complex64 *work,  CBLAS_INT *lwork, float *rwork,  CBLAS_INT *info);
-void BLAS_FUNC(zgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-
-/* ?GELSD*/
-void BLAS_FUNC(sgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(dgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(cgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(zgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
-
-
-/* ?GELSY*/
-void BLAS_FUNC(sgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, float *rcond, CBLAS_INT *rank, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-
-/* ?GEEV, non-symmetric eigenvalues */
-
-typedef npy_complex64 c64_t;
-typedef npy_complex128 c128_t;
-
-void BLAS_FUNC(sgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, float *a,  CBLAS_INT *lda, float *wr,  float *wi,  float *vl,  CBLAS_INT *ldvl, float *vr,  CBLAS_INT *ldvr, float *work,  CBLAS_INT *lwork,                CBLAS_INT *info);
-void BLAS_FUNC(dgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *wr, double *wi, double *vl, CBLAS_INT *ldvl, double *vr, CBLAS_INT *ldvr, double *work, CBLAS_INT *lwork,                CBLAS_INT *info);
-void BLAS_FUNC(cgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, c64_t *a,  CBLAS_INT *lda, c64_t *w,               c64_t *vl,  CBLAS_INT *ldvl, c64_t *vr,  CBLAS_INT *ldvr, c64_t *work,  CBLAS_INT *lwork, float *rwork,  CBLAS_INT *info);
-void BLAS_FUNC(zgeev)(char *jobvl, char *jobvr, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *w,              c128_t *vl, CBLAS_INT *ldvl, c128_t *vr, CBLAS_INT *ldvr, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-
-/* ?GGEV, generalized eigenvalue problem */
-void BLAS_FUNC(sggev)(char *jobvl, char *jobvr, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *alphar, float *alphai, float *beta, float *vl, CBLAS_INT *ldvl, float *vr, CBLAS_INT *ldvr, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dggev)(char *jobvl, char *jobvr, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *alphar, double *alphai, double *beta, double *vl, CBLAS_INT *ldvl, double *vr, CBLAS_INT *ldvr, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cggev)(char *jobvl, char *jobvr, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, c64_t *alpha, c64_t *beta, c64_t *vl, CBLAS_INT *ldvl, c64_t *vr, CBLAS_INT *ldvr, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zggev)(char *jobvl, char *jobvr, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, c128_t *alpha, c128_t *beta, c128_t *vl, CBLAS_INT *ldvl, c128_t *vr, CBLAS_INT *ldvr, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-/* ?SY/HEEV symmetric/hermitian eigenvalue problem */
-void BLAS_FUNC(ssyev)(char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dsyev)(char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(cheev)(char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zheev)(char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-/* ?SY/HEEVD symmetric/hermitian eigenvalue problem */
-void BLAS_FUNC(ssyevd)(char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(dsyevd)(char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(cheevd)(char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(zheevd)(char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-
-/* ?SY/HEEVR symmetric/hermitian eigenvalue problem */
-void BLAS_FUNC(ssyevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(dsyevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(cheevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(zheevr)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, CBLAS_INT *isuppz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-
-/* ?SY/HEEVX symmetric/hermitian eigenvalue problem */
-void BLAS_FUNC(ssyevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(dsyevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(cheevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(zheevx)(char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-
-/* ?SY/HEGV symmetric/hermitian generalized eigenvalue problem */
-void BLAS_FUNC(ssygv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(dsygv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
-void BLAS_FUNC(chegv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
-void BLAS_FUNC(zhegv)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
-
-/* ?SY/HEGVD symmetric/hermitian generalized eigenvalue problem */
-void BLAS_FUNC(ssygvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *w, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(dsygvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *w, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(chegvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *w, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-void BLAS_FUNC(zhegvd)(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *w, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *lrwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info);
-
-/* ?SY/HEGVX symmetric/hermitian generalized eigenvalue problem */
-void BLAS_FUNC(ssygvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, float *z, CBLAS_INT *ldz, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(dsygvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(chegvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, c64_t *a, CBLAS_INT *lda, c64_t *b, CBLAS_INT *ldb, float *vl, float *vu, CBLAS_INT *il, CBLAS_INT *iu, float *abstol, CBLAS_INT *m, float *w, c64_t *z, CBLAS_INT *ldz, c64_t *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-void BLAS_FUNC(zhegvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT *n, c128_t *a, CBLAS_INT *lda, c128_t *b, CBLAS_INT *ldb, double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol, CBLAS_INT *m, double *w, c128_t *z, CBLAS_INT *ldz, c128_t *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *ifail, CBLAS_INT *info);
-
-
-} // extern "C"
-
+using namespace lapack;
 
 namespace sp_linalg {
 
 
 /*
- * Generate type overloads, to map from C array types (float, double, npy_complex64, npy_complex128)
+ * Generate type overloads, to map from C array types (f32, f64, c64, c128)
  * to LAPACK prefixes, "sdcz".
  */
 #define GEN_GETRF(PREFIX, TYPE) \
@@ -316,10 +21,10 @@ call_getrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv,
     BLAS_FUNC(PREFIX ## getrf)(m, n, a, lda, ipiv, info); \
 };
 
-GEN_GETRF(s,float)
-GEN_GETRF(d,double)
-GEN_GETRF(c,npy_complex64)
-GEN_GETRF(z,npy_complex128)
+GEN_GETRF(s,f32)
+GEN_GETRF(d,f64)
+GEN_GETRF(c,c64)
+GEN_GETRF(z,c128)
 
 
 #define GEN_GETRS(PREFIX, TYPE) \
@@ -329,10 +34,10 @@ call_getrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, 
     BLAS_FUNC(PREFIX ## getrs)(trans, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
 
-GEN_GETRS(s,float)
-GEN_GETRS(d,double)
-GEN_GETRS(c,npy_complex64)
-GEN_GETRS(z,npy_complex128)
+GEN_GETRS(s,f32)
+GEN_GETRS(d,f64)
+GEN_GETRS(c,c64)
+GEN_GETRS(z,c128)
 
 
 #define GEN_GETRI(PREFIX, TYPE) \
@@ -342,10 +47,10 @@ call_getri(CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, C
     BLAS_FUNC(PREFIX ## getri)(n, a, lda, ipiv, work, lwork, info); \
 };
 
-GEN_GETRI(s,float)
-GEN_GETRI(d,double)
-GEN_GETRI(c,npy_complex64)
-GEN_GETRI(z,npy_complex128)
+GEN_GETRI(s,f32)
+GEN_GETRI(d,f64)
+GEN_GETRI(c,c64)
+GEN_GETRI(z,c128)
 
 
 // NB: iwork for real arrays or rwork for complex arrays
@@ -356,10 +61,10 @@ call_gecon(char* norm, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTY
     BLAS_FUNC(PREFIX ## gecon)(norm, n, a, lda, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
 
-GEN_GECON(s, float, float, CBLAS_INT)
-GEN_GECON(d, double, double, CBLAS_INT)
-GEN_GECON(c, npy_complex64, float, float)
-GEN_GECON(z, npy_complex128, double, double)
+GEN_GECON(s, f32, f32, CBLAS_INT)
+GEN_GECON(d, f64, f64, CBLAS_INT)
+GEN_GECON(c, c64, f32, f32)
+GEN_GECON(z, c128, f64, f64)
 
 
 #define GEN_TRTRI(PREFIX, TYPE) \
@@ -369,10 +74,10 @@ call_trtri(char* uplo, char *diag, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_
     BLAS_FUNC(PREFIX ## trtri)(uplo, diag, n, a, lda, info); \
 };
 
-GEN_TRTRI(s, float)
-GEN_TRTRI(d, double)
-GEN_TRTRI(c, npy_complex64)
-GEN_TRTRI(z, npy_complex128)
+GEN_TRTRI(s, f32)
+GEN_TRTRI(d, f64)
+GEN_TRTRI(c, c64)
+GEN_TRTRI(z, c128)
 
 
 #define GEN_TRCON(PREFIX, CTYPE, RTYPE, WTYPE) \
@@ -382,10 +87,10 @@ call_trcon(char* norm, char *uplo, char *diag, CBLAS_INT *n, CTYPE *a, CBLAS_INT
     BLAS_FUNC(PREFIX ## trcon)(norm, uplo, diag, n, a, lda, rcond, work, (WTYPE *)irwork, info); \
 };
 
-GEN_TRCON(s, float, float, CBLAS_INT)
-GEN_TRCON(d, double, double, CBLAS_INT)
-GEN_TRCON(c, npy_complex64, float, float)
-GEN_TRCON(z, npy_complex128, double, double)
+GEN_TRCON(s, f32, f32, CBLAS_INT)
+GEN_TRCON(d, f64, f64, CBLAS_INT)
+GEN_TRCON(c, c64, f32, f32)
+GEN_TRCON(z, c128, f64, f64)
 
 
 #define GEN_TRTRS(PREFIX, TYPE) \
@@ -395,10 +100,10 @@ call_trtrs(char* uplo, char *trans, char *diag, CBLAS_INT* n, CBLAS_INT* nrhs, T
     BLAS_FUNC(PREFIX ## trtrs)(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info); \
 };
 
-GEN_TRTRS(s, float)
-GEN_TRTRS(d, double)
-GEN_TRTRS(c, npy_complex64)
-GEN_TRTRS(z, npy_complex128)
+GEN_TRTRS(s, f32)
+GEN_TRTRS(d, f64)
+GEN_TRTRS(c, c64)
+GEN_TRTRS(z, c128)
 
 
 #define GEN_POTRF(PREFIX, TYPE) \
@@ -408,10 +113,10 @@ call_potrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
     BLAS_FUNC(PREFIX ## potrf)(uplo, n, a, lda, info); \
 };
 
-GEN_POTRF(s, float)
-GEN_POTRF(d, double)
-GEN_POTRF(c, npy_complex64)
-GEN_POTRF(z, npy_complex128)
+GEN_POTRF(s, f32)
+GEN_POTRF(d, f64)
+GEN_POTRF(c, c64)
+GEN_POTRF(z, c128)
 
 
 #define GEN_POTRI(PREFIX, TYPE) \
@@ -421,10 +126,10 @@ call_potri(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
     BLAS_FUNC(PREFIX ## potri)(uplo, n, a, lda, info); \
 };
 
-GEN_POTRI(s, float)
-GEN_POTRI(d, double)
-GEN_POTRI(c, npy_complex64)
-GEN_POTRI(z, npy_complex128)
+GEN_POTRI(s, f32)
+GEN_POTRI(d, f64)
+GEN_POTRI(c, c64)
+GEN_POTRI(z, c128)
 
 
 // NB: iwork for real arrays or rwork for complex arrays
@@ -435,10 +140,10 @@ call_pocon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, RTYPE* anorm, RTY
     BLAS_FUNC(PREFIX ## pocon)(uplo, n, a, lda, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
 
-GEN_POCON(s, float, float, CBLAS_INT)
-GEN_POCON(d, double, double, CBLAS_INT)
-GEN_POCON(c, npy_complex64, float, float)
-GEN_POCON(z, npy_complex128, double, double)
+GEN_POCON(s, f32, f32, CBLAS_INT)
+GEN_POCON(d, f64, f64, CBLAS_INT)
+GEN_POCON(c, c64, f32, f32)
+GEN_POCON(z, c128, f64, f64)
 
 
 #define GEN_POTRS(PREFIX, TYPE) \
@@ -448,10 +153,10 @@ call_potrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, T
     BLAS_FUNC(PREFIX ## potrs)(uplo, n, nrhs, a, lda, b, ldb, info); \
 };
 
-GEN_POTRS(s, float)
-GEN_POTRS(d, double)
-GEN_POTRS(c, npy_complex64)
-GEN_POTRS(z, npy_complex128)
+GEN_POTRS(s, f32)
+GEN_POTRS(d, f64)
+GEN_POTRS(c, c64)
+GEN_POTRS(z, c128)
 
 
 #define GEN_SYTRF(PREFIX, TYPE) \
@@ -461,13 +166,13 @@ call_sytrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, T
     BLAS_FUNC(PREFIX ## sytrf)(uplo, n, a, lda, ipiv, work, lwork, info); \
 };
 
-GEN_SYTRF(s, float)
-GEN_SYTRF(d, double)
-GEN_SYTRF(c, npy_complex64)
-GEN_SYTRF(z, npy_complex128)
+GEN_SYTRF(s, f32)
+GEN_SYTRF(d, f64)
+GEN_SYTRF(c, c64)
+GEN_SYTRF(z, c128)
 
 
-// dispatch to sSYtrf for "float hermitian"
+// dispatch to sSYtrf for "f32 hermitian"
 #define GEN_HETRF(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
@@ -475,10 +180,10 @@ call_hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, T
     BLAS_FUNC(PREFIX ## L_PREFIX ## trf)(uplo, n, a, lda, ipiv, work, lwork, info); \
 };
 
-GEN_HETRF(s, sy, float)
-GEN_HETRF(d, sy, double)
-GEN_HETRF(c, he, npy_complex64)
-GEN_HETRF(z, he, npy_complex128)
+GEN_HETRF(s, sy, f32)
+GEN_HETRF(d, sy, f64)
+GEN_HETRF(c, he, c64)
+GEN_HETRF(z, he, c128)
 
 
 #define GEN_SYTRI(PREFIX, TYPE) \
@@ -488,13 +193,13 @@ call_sytri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, T
     BLAS_FUNC(PREFIX ## sytri)(uplo, n, a, lda, ipiv, work, info); \
 };
 
-GEN_SYTRI(s, float)
-GEN_SYTRI(d, double)
-GEN_SYTRI(c, npy_complex64)
-GEN_SYTRI(z, npy_complex128)
+GEN_SYTRI(s, f32)
+GEN_SYTRI(d, f64)
+GEN_SYTRI(c, c64)
+GEN_SYTRI(z, c128)
 
 
-// dispatch to sSYtri for "float hermitian"
+// dispatch to sSYtri for "f32 hermitian"
 #define GEN_HETRI(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
@@ -502,10 +207,10 @@ call_hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, T
     BLAS_FUNC(PREFIX ## L_PREFIX ## tri)(uplo, n, a, lda, ipiv, work, info); \
 };
 
-GEN_HETRI(s, sy, float)
-GEN_HETRI(d, sy, double)
-GEN_HETRI(c, he, npy_complex64)
-GEN_HETRI(z, he, npy_complex128)
+GEN_HETRI(s, sy, f32)
+GEN_HETRI(d, sy, f64)
+GEN_HETRI(c, he, c64)
+GEN_HETRI(z, he, c128)
 
 
 // NB: iwork for real arrays only, no rwork for complex routines (10 arguments for s- d- variants; 9 arguments for c- and z- variants)
@@ -516,8 +221,8 @@ call_sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, 
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
 
-GEN_SYCON(s, float, float, CBLAS_INT)
-GEN_SYCON(d, double, double, CBLAS_INT)
+GEN_SYCON(s, f32, f32, CBLAS_INT)
+GEN_SYCON(d, f64, f64, CBLAS_INT)
 
 #define GEN_SYCON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
@@ -526,11 +231,11 @@ call_sycon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, 
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
 };
 
-GEN_SYCON_CZ(c, npy_complex64, float, float)
-GEN_SYCON_CZ(z, npy_complex128, double, double)
+GEN_SYCON_CZ(c, c64, f32, f32)
+GEN_SYCON_CZ(z, c128, f64, f64)
 
 
-// dispatch to sSYcon for "float hermitian"
+// dispatch to sSYcon for "f32 hermitian"
 #define GEN_HECON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
 call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
@@ -538,8 +243,8 @@ call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, 
     BLAS_FUNC(PREFIX ## sycon)(uplo, n, a, lda, ipiv, anorm, rcond, work, (WTYPE *)irwork, info); \
 };
 
-GEN_HECON(s, float, float, CBLAS_INT)
-GEN_HECON(d, double, double, CBLAS_INT)
+GEN_HECON(s, f32, f32, CBLAS_INT)
+GEN_HECON(d, f64, f64, CBLAS_INT)
 
 #define GEN_HECON_CZ(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
@@ -548,8 +253,8 @@ call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, 
     BLAS_FUNC(PREFIX ## hecon)(uplo, n, a, lda, ipiv, anorm, rcond, work, info); \
 };
 
-GEN_HECON_CZ(c, npy_complex64, float, float)
-GEN_HECON_CZ(z, npy_complex128, double, double)
+GEN_HECON_CZ(c, c64, f32, f32)
+GEN_HECON_CZ(z, c128, f64, f64)
 
 
 #define GEN_SYTRS(PREFIX, TYPE) \
@@ -559,13 +264,13 @@ call_sytrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, C
     BLAS_FUNC(PREFIX ## sytrs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
 
-GEN_SYTRS(s, float)
-GEN_SYTRS(d, double)
-GEN_SYTRS(c, npy_complex64)
-GEN_SYTRS(z, npy_complex128)
+GEN_SYTRS(s, f32)
+GEN_SYTRS(d, f64)
+GEN_SYTRS(c, c64)
+GEN_SYTRS(z, c128)
 
 
-// dispatch to sSYtrs for "float hermitian"
+// dispatch to sSYtrs for "f32 hermitian"
 #define GEN_HETRS(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
@@ -573,10 +278,10 @@ call_hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, C
     BLAS_FUNC(PREFIX ## L_PREFIX ## trs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
 };
 
-GEN_HETRS(s, sy, float)
-GEN_HETRS(d, sy, double)
-GEN_HETRS(c, he, npy_complex64)
-GEN_HETRS(z, he, npy_complex128)
+GEN_HETRS(s, sy, f32)
+GEN_HETRS(d, sy, f64)
+GEN_HETRS(c, he, c64)
+GEN_HETRS(z, he, c128)
 
 
 #define GEN_GTTRF(PREFIX, TYPE) \
@@ -586,10 +291,10 @@ call_gttrf(CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv
     BLAS_FUNC(PREFIX ## gttrf)(n, dl, d, du, du2, ipiv, info); \
 };
 
-GEN_GTTRF(s, float)
-GEN_GTTRF(d, double)
-GEN_GTTRF(c, npy_complex64)
-GEN_GTTRF(z, npy_complex128)
+GEN_GTTRF(s, f32)
+GEN_GTTRF(d, f64)
+GEN_GTTRF(c, c64)
+GEN_GTTRF(z, c128)
 
 
 #define GEN_GTTRS(PREFIX, TYPE) \
@@ -599,10 +304,10 @@ call_gttrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *dl, TYPE *d, TYPE *
     BLAS_FUNC(PREFIX ## gttrs)(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info); \
 };
 
-GEN_GTTRS(s, float)
-GEN_GTTRS(d, double)
-GEN_GTTRS(c, npy_complex64)
-GEN_GTTRS(z, npy_complex128)
+GEN_GTTRS(s, f32)
+GEN_GTTRS(d, f64)
+GEN_GTTRS(c, c64)
+GEN_GTTRS(z, c128)
 
 
 #define GEN_GTCON(PREFIX, TYPE) \
@@ -612,8 +317,8 @@ call_gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBL
     BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, iwork, info); \
 };
 
-GEN_GTCON(s, float)
-GEN_GTCON(d, double)
+GEN_GTCON(s, f32)
+GEN_GTCON(d, f64)
 
 
 // NB: `iwork` is not used for c- and z- variants of ?gtcon
@@ -624,8 +329,8 @@ call_gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBL
     BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, info); \
 };
 
-GEN_GTCON_CZ(c, npy_complex64, float)
-GEN_GTCON_CZ(z, npy_complex128, double)
+GEN_GTCON_CZ(c, c64, f32)
+GEN_GTCON_CZ(z, c128, f64)
 
 
 #define GEN_GBTRF(PREFIX, TYPE) \
@@ -635,10 +340,10 @@ call_gbtrf(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, C
     BLAS_FUNC(PREFIX ## gbtrf)(m, n, kl, ku, ab, ldab, ipiv, info); \
 };
 
-GEN_GBTRF(s, float)
-GEN_GBTRF(d, double)
-GEN_GBTRF(c, npy_complex64)
-GEN_GBTRF(z, npy_complex128)
+GEN_GBTRF(s, f32)
+GEN_GBTRF(d, f64)
+GEN_GBTRF(c, c64)
+GEN_GBTRF(z, c128)
 
 
 #define GEN_GBTRS(PREFIX, TYPE) \
@@ -648,10 +353,10 @@ call_gbtrs(char *trans, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, CBLAS_INT *n
     BLAS_FUNC(PREFIX ## gbtrs)(trans, n, kl, ku, nrhs, ab, ldab, ipiv, b, ldb, info); \
 };
 
-GEN_GBTRS(s, float)
-GEN_GBTRS(d, double)
-GEN_GBTRS(c, npy_complex64)
-GEN_GBTRS(z, npy_complex128)
+GEN_GBTRS(s, f32)
+GEN_GBTRS(d, f64)
+GEN_GBTRS(c, c64)
+GEN_GBTRS(z, c128)
 
 
 // s- and d- versions of `gbcon` need integer iwork.
@@ -662,11 +367,11 @@ call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBL
     BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (CBLAS_INT *)irwork, info); \
 };
 
-GEN_GBCON(s, float)
-GEN_GBCON(d, double)
+GEN_GBCON(s, f32)
+GEN_GBCON(d, f64)
 
 
-// c- and z- variants need floating type rwork instead of iwork.
+// c- and z- variants need f32ing type rwork instead of iwork.
 #define GEN_GBCON_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
 call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
@@ -674,8 +379,8 @@ call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBL
     BLAS_FUNC(PREFIX ## gbcon)(norm, n, kl, ku, ab, ldab, ipiv, anorm, rcond, work, (RTYPE *)irwork, info); \
 };
 
-GEN_GBCON_CZ(c, npy_complex64, float)
-GEN_GBCON_CZ(z, npy_complex128, double)
+GEN_GBCON_CZ(c, c64, f32)
+GEN_GBCON_CZ(z, c128, f64)
 
 
 #define GEN_GEQRF(PREFIX, TYPE) \
@@ -685,10 +390,10 @@ call_geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE 
     BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
 };
 
-GEN_GEQRF(s, float);
-GEN_GEQRF(d, double);
-GEN_GEQRF(c, npy_complex64);
-GEN_GEQRF(z, npy_complex128);
+GEN_GEQRF(s, f32);
+GEN_GEQRF(d, f64);
+GEN_GEQRF(c, c64);
+GEN_GEQRF(z, c128);
 
 
 // N.B. `rwork` is not used for `s` and `d` variants, so swallowed prior to calling LAPACK
@@ -699,8 +404,8 @@ call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt,
     BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, info); \
 };
 
-GEN_GEQP3(s, float);
-GEN_GEQP3(d, double);
+GEN_GEQP3(s, f32);
+GEN_GEQP3(d, f64);
 
 
 #define GEN_GEQP3_CZ(PREFIX, TYPE, RTYPE) \
@@ -710,8 +415,8 @@ call_geqp3(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *jpvt,
     BLAS_FUNC(PREFIX ## geqp3)(m, n, a, lda, jpvt, tau, work, lwork, (RTYPE *)rwork, info); \
 };
 
-GEN_GEQP3_CZ(c, npy_complex64, float);
-GEN_GEQP3_CZ(z, npy_complex128, double);
+GEN_GEQP3_CZ(c, c64, f32);
+GEN_GEQP3_CZ(z, c128, f64);
 
 
 // NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
@@ -722,10 +427,10 @@ call_or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda
     BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
 };
 
-GEN_OR_UN_GQR(sor, float)
-GEN_OR_UN_GQR(dor, double)
-GEN_OR_UN_GQR(cun, npy_complex64)
-GEN_OR_UN_GQR(zun, npy_complex128)
+GEN_OR_UN_GQR(sor, f32)
+GEN_OR_UN_GQR(dor, f64)
+GEN_OR_UN_GQR(cun, c64)
+GEN_OR_UN_GQR(zun, c128)
 
 
 /*
@@ -740,33 +445,33 @@ GEN_OR_UN_GQR(zun, npy_complex128)
  *     and s- and d- variants swallow it.
  */
 inline void call_gesvd(
-    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda,
-    float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork,
-    float *rwork, CBLAS_INT *info)
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, f32 *a, CBLAS_INT *lda,
+    f32 *s, f32 *u, CBLAS_INT *ldu, f32 *vt, CBLAS_INT *ldvt, f32 *work, CBLAS_INT *lwork,
+    f32 *rwork, CBLAS_INT *info)
 {
     BLAS_FUNC(sgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 };
 
 inline void call_gesvd(
-    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda,
-    double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork,
-    double *rwork, CBLAS_INT *info)
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, f64 *a, CBLAS_INT *lda,
+    f64 *s, f64 *u, CBLAS_INT *ldu, f64 *vt, CBLAS_INT *ldvt, f64 *work, CBLAS_INT *lwork,
+    f64 *rwork, CBLAS_INT *info)
 {
     BLAS_FUNC(dgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 };
 
 inline void call_gesvd(
-    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda,
-    float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt,
-    npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info)
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, c64 *a, CBLAS_INT *lda,
+    f32 *s, c64 *u, CBLAS_INT *ldu, c64 *vt, CBLAS_INT *ldvt,
+    c64 *work, CBLAS_INT *lwork, f32 *rwork, CBLAS_INT *info)
 {
     BLAS_FUNC(cgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
 };
 
 inline void call_gesvd(
-    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda,
-    double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt,
-    npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info)
+    char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, c128 *a, CBLAS_INT *lda,
+    f64 *s, c128 *u, CBLAS_INT *ldu, c128 *vt, CBLAS_INT *ldvt,
+    c128 *work, CBLAS_INT *lwork, f64 *rwork, CBLAS_INT *info)
 {
     BLAS_FUNC(zgesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
 };
@@ -783,29 +488,29 @@ inline void call_gesvd(
  */
 
 inline void call_gesdd(
-    char *jobz, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu,
-    float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, f32 *a, CBLAS_INT *lda, f32 *s, f32 *u, CBLAS_INT *ldu,
+    f32 *vt, CBLAS_INT *ldvt, f32 *work, CBLAS_INT *lwork, f32 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
 {
     BLAS_FUNC(sgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info);
 };
 
 inline void call_gesdd(
-    char *jobz, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu,
-    double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, f64 *a, CBLAS_INT *lda, f64 *s, f64 *u, CBLAS_INT *ldu,
+    f64 *vt, CBLAS_INT *ldvt, f64 *work, CBLAS_INT *lwork, f64 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
 {
     BLAS_FUNC(dgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info);
 };
 
 inline void call_gesdd(
-    char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu,
-    npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, c64 *a, CBLAS_INT *lda, f32 *s, c64 *u, CBLAS_INT *ldu,
+    c64 *vt, CBLAS_INT *ldvt, c64 *work, CBLAS_INT *lwork, f32 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
 {
     BLAS_FUNC(cgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
 };
 
 inline void call_gesdd(
-    char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu,
-    npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+    char *jobz, CBLAS_INT *m, CBLAS_INT *n, c128 *a, CBLAS_INT *lda, f64 *s, c128 *u, CBLAS_INT *ldu,
+    c128 *vt, CBLAS_INT *ldvt, c128 *work, CBLAS_INT *lwork, f64 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
 {
     BLAS_FUNC(zgesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info);
 };
@@ -819,8 +524,8 @@ call_gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, info); \
 };
 
-GEN_GELSS_SD(s, float, float)
-GEN_GELSS_SD(d, double, double)
+GEN_GELSS_SD(s, f32, f32)
+GEN_GELSS_SD(d, f64, f64)
 
 
 #define GEN_GELSS_CZ(PREFIX, TYPE, RTYPE) \
@@ -830,8 +535,8 @@ call_gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, info); \
 };
 
-GEN_GELSS_CZ(c, npy_complex64, float)
-GEN_GELSS_CZ(z, npy_complex128, double)
+GEN_GELSS_CZ(c, c64, f32)
+GEN_GELSS_CZ(z, c128, f64)
 
 
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
@@ -842,8 +547,8 @@ call_gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, iwork, info); \
 };
 
-GEN_GELSD_SD(s, float, float)
-GEN_GELSD_SD(d, double, double)
+GEN_GELSD_SD(s, f32, f32)
+GEN_GELSD_SD(d, f64, f64)
 
 
 #define GEN_GELSD_CZ(PREFIX, TYPE, RTYPE) \
@@ -853,8 +558,8 @@ call_gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, iwork, info); \
 };
 
-GEN_GELSD_CZ(c, npy_complex64, float)
-GEN_GELSD_CZ(z, npy_complex128, double)
+GEN_GELSD_CZ(c, c64, f32)
+GEN_GELSD_CZ(z, c128, f64)
 
 
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
@@ -865,8 +570,8 @@ call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, info); \
 };
 
-GEN_GELSY_SD(s, float, float)
-GEN_GELSY_SD(d, double, double)
+GEN_GELSY_SD(s, f32, f32)
+GEN_GELSY_SD(d, f64, f64)
 
 
 #define GEN_GELSY_CZ(PREFIX, TYPE, RTYPE) \
@@ -876,8 +581,8 @@ call_gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda,
     BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, rwork, info); \
 };
 
-GEN_GELSY_CZ(c, npy_complex64, float)
-GEN_GELSY_CZ(z, npy_complex128, double)
+GEN_GELSY_CZ(c, c64, f32)
+GEN_GELSY_CZ(z, c128, f64)
 
 
 /*
@@ -903,8 +608,8 @@ call_geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE 
     BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, wi, vl, ldvl, vr, ldvr, work, lwork, info); \
 };
 
-GEN_GEEV_SD(s, float)
-GEN_GEEV_SD(d, double)
+GEN_GEEV_SD(s, f32)
+GEN_GEEV_SD(d, f64)
 
 #define GEN_GEEV_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
@@ -914,8 +619,8 @@ call_geev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE 
     BLAS_FUNC(PREFIX ## geev)(jobvl, jobvr, n, a, lda, wr, vl, ldvl, vr, ldvr, work, lwork, rwork, info); \
 };
 
-GEN_GEEV_CZ(c, npy_complex64, float)
-GEN_GEEV_CZ(z, npy_complex128, double)
+GEN_GEEV_CZ(c, c64, f32)
+GEN_GEEV_CZ(z, c128, f64)
 
 
 /*
@@ -930,8 +635,8 @@ call_ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE 
     BLAS_FUNC(PREFIX ## ggev)(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info); \
 };
 
-GEN_GGEV_SD(s, float)
-GEN_GGEV_SD(d, double)
+GEN_GGEV_SD(s, f32)
+GEN_GGEV_SD(d, f64)
 
 
 #define GEN_GGEV_CZ(PREFIX, TYPE, RTYPE) \
@@ -941,8 +646,8 @@ call_ggev(char *jobvl, char *jobvr, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE 
     BLAS_FUNC(PREFIX ## ggev)(jobvl, jobvr, n, a, lda, b, ldb, alphar, beta, vl, ldvl, vr, ldvr, work, lwork, rwork, info); \
 };
 
-GEN_GGEV_CZ(c, npy_complex64, float)
-GEN_GGEV_CZ(z, npy_complex128, double)
+GEN_GGEV_CZ(c, c64, f32)
+GEN_GGEV_CZ(z, c128, f64)
 
 
 /*
@@ -957,8 +662,8 @@ call_sy_he_evr(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS
     BLAS_FUNC(PREFIX ## syevr)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, iwork, liwork, info); \
 };
 
-GEN_SYEVR(s, float, float);
-GEN_SYEVR(d, double, double);
+GEN_SYEVR(s, f32, f32);
+GEN_SYEVR(d, f64, f64);
 
 
 #define GEN_HEEVR(PREFIX, TYPE, RTYPE) \
@@ -968,8 +673,8 @@ call_sy_he_evr(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS
     BLAS_FUNC(PREFIX ## heevr)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, isuppz, work, lwork, rwork, lrwork, iwork, liwork, info); \
 };
 
-GEN_HEEVR(c, c64_t, float);
-GEN_HEEVR(z, c128_t, double);
+GEN_HEEVR(c, c64, f32);
+GEN_HEEVR(z, c128, f64);
 
 
 /*
@@ -984,8 +689,8 @@ call_sy_he_ev(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTY
     BLAS_FUNC(PREFIX ## syev)(jobz, uplo, n, a, lda, w, work, lwork, info); \
 };
 
-GEN_SYEV(s, float, float);
-GEN_SYEV(d, double, double);
+GEN_SYEV(s, f32, f32);
+GEN_SYEV(d, f64, f64);
 
 
 #define GEN_HEEV(PREFIX, TYPE, RTYPE) \
@@ -995,8 +700,8 @@ call_sy_he_ev(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTY
     BLAS_FUNC(PREFIX ## heev)(jobz, uplo, n, a, lda, w, work, lwork, rwork, info); \
 };
 
-GEN_HEEV(c, c64_t, float);
-GEN_HEEV(z, c128_t, double);
+GEN_HEEV(c, c64, f32);
+GEN_HEEV(z, c128, f64);
 
 
 /*
@@ -1011,8 +716,8 @@ call_sy_he_evd(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RT
     BLAS_FUNC(PREFIX ## syevd)(jobz, uplo, n, a, lda, w, work, lwork, iwork, liwork, info); \
 };
 
-GEN_SYEVD(s, float, float);
-GEN_SYEVD(d, double, double);
+GEN_SYEVD(s, f32, f32);
+GEN_SYEVD(d, f64, f64);
 
 
 #define GEN_HEEVD(PREFIX, TYPE, RTYPE) \
@@ -1022,8 +727,8 @@ call_sy_he_evd(char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RT
     BLAS_FUNC(PREFIX ## heevd)(jobz, uplo, n, a, lda, w, work, lwork, rwork, lrwork, iwork, liwork, info); \
 };
 
-GEN_HEEVD(c, c64_t, float);
-GEN_HEEVD(z, c128_t, double);
+GEN_HEEVD(c, c64, f32);
+GEN_HEEVD(z, c128, f64);
 
 
 /*
@@ -1038,8 +743,8 @@ call_sy_he_evx(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS
     BLAS_FUNC(PREFIX ## syevx)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, iwork, ifail, info); \
 };
 
-GEN_SYEVX(s, float, float);
-GEN_SYEVX(d, double, double);
+GEN_SYEVX(s, f32, f32);
+GEN_SYEVX(d, f64, f64);
 
 
 #define GEN_HEEVX(PREFIX, TYPE, RTYPE) \
@@ -1049,8 +754,8 @@ call_sy_he_evx(char *jobz, char *range, char *uplo, CBLAS_INT *n, TYPE *a, CBLAS
     BLAS_FUNC(PREFIX ## heevx)(jobz, range, uplo, n, a, lda, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, rwork, iwork, ifail, info); \
 };
 
-GEN_HEEVX(c, c64_t, float);
-GEN_HEEVX(z, c128_t, double);
+GEN_HEEVX(c, c64, f32);
+GEN_HEEVX(z, c128, f64);
 
 
 /*
@@ -1065,8 +770,8 @@ call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, C
     BLAS_FUNC(PREFIX ## sygv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, info); \
 };
 
-GEN_SYGV(s, float, float);
-GEN_SYGV(d, double, double);
+GEN_SYGV(s, f32, f32);
+GEN_SYGV(d, f64, f64);
 
 
 #define GEN_HEGV(PREFIX, TYPE, RTYPE) \
@@ -1076,8 +781,8 @@ call_sy_he_gv(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, C
     BLAS_FUNC(PREFIX ## hegv)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, info); \
 };
 
-GEN_HEGV(c, c64_t, float);
-GEN_HEGV(z, c128_t, double);
+GEN_HEGV(c, c64, f32);
+GEN_HEGV(z, c128, f64);
 
 
 /*
@@ -1092,8 +797,8 @@ call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, 
     BLAS_FUNC(PREFIX ## sygvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, iwork, liwork, info); \
 };
 
-GEN_SYGVD(s, float, float);
-GEN_SYGVD(d, double, double);
+GEN_SYGVD(s, f32, f32);
+GEN_SYGVD(d, f64, f64);
 
 
 #define GEN_HEGVD(PREFIX, TYPE, RTYPE) \
@@ -1103,8 +808,8 @@ call_sy_he_gvd(CBLAS_INT *itype, char *jobz, char *uplo, CBLAS_INT *n, TYPE *a, 
     BLAS_FUNC(PREFIX ## hegvd)(itype, jobz, uplo, n, a, lda, b, ldb, w, work, lwork, rwork, lrwork, iwork, liwork, info); \
 };
 
-GEN_HEGVD(c, c64_t, float);
-GEN_HEGVD(z, c128_t, double);
+GEN_HEGVD(c, c64, f32);
+GEN_HEGVD(z, c128, f64);
 
 
 /*
@@ -1119,8 +824,8 @@ call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT 
     BLAS_FUNC(PREFIX ## sygvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, iwork, ifail, info); \
 };
 
-GEN_SYGVX(s, float, float);
-GEN_SYGVX(d, double, double)
+GEN_SYGVX(s, f32, f32);
+GEN_SYGVX(d, f64, f64)
 
 
 #define GEN_HEGVX(PREFIX, TYPE, RTYPE) \
@@ -1130,8 +835,8 @@ call_sy_he_gvx(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CBLAS_INT 
     BLAS_FUNC(PREFIX ## hegvx)(itype, jobz, range, uplo, n, a, lda, b, ldb, vl, vu, il, iu, abstol, m, w, z, ldz, work, lwork, rwork, iwork, ifail, info); \
 };
 
-GEN_HEGVX(c, c64_t, float);
-GEN_HEGVX(z, c128_t, double);
+GEN_HEGVX(c, c64, f32);
+GEN_HEGVX(z, c128, f64);
 
 
 // Structure tags; python side maps assume_a strings to these values
@@ -1179,7 +884,7 @@ struct SliceStatus {
     Py_ssize_t structure;
     int is_singular;
     int is_ill_conditioned;
-    double rcond;
+    f64 rcond;
     Py_ssize_t lapack_info;
 };
 
@@ -1225,11 +930,11 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  * lwork defensive handler :
  *  cf https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/lapack.py#L1004
  *
- *  Round floating-point lwork returned by lapack to integer.
+ *  Round f32ing-point lwork returned by lapack to integer.
  *
  *  Several LAPACK routines compute optimal values for LWORK, which
- *  they return in a floating-point variable. However, for large
- *  values of LWORK, single-precision floating point is not sufficient
+ *  they return in a f32ing-point variable. However, for large
+ *  values of LWORK, single-precision f32ing point is not sufficient
  *  to hold the exact value --- some LAPACK versions (<= 3.5.0 at
  *  least) truncate the returned integer to single precision and in
  *  some cases this can be smaller than the required value.
@@ -1241,12 +946,12 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  *  to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
  */
 template<typename T>
-CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
+CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
     using real_type = typename detail::type_traits<T>::real_type;
 
-    real_type value = detail::real_part(_lwrk) * fudge_factor;
-    if((std::is_same<real_type, float>::value) ||
-       (std::is_same<real_type, npy_complex64>::value)
+    real_type value = std::real(_lwrk) * fudge_factor;
+    if((std::is_same<real_type, f32>::value) ||
+       (std::is_same<real_type, c64>::value)
     ) {
         // Single-precision routine -- take next fp value to work
         // around possible truncation in LAPACK code
@@ -1691,13 +1396,21 @@ fill_other_triangle(char uplo, T *data, npy_intp n) {
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<n; j++){
-                data[j + i*n] = detail::conj(data[i + j*n]);
+                if constexpr(is_complex_v<T>) {
+                    data[j + i*n] = std::conj(data[i + j*n]);
+                } else {
+                    data[j + i*n] = data[i + j*n];
+                }
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=0; j<i+1; j++){
-                data[j + i*n] = detail::conj(data[i + j*n]);
+                if constexpr(is_complex_v<T>) {
+                    data[j + i*n] = std::conj(data[i + j*n]);
+                } else {
+                    data[j + i*n] = data[i + j*n];
+                }
             }
         }
     }

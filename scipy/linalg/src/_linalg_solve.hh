@@ -25,7 +25,7 @@ inline void solve_slice_general(
         // getrf success, check the condition number
         call_gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
-        status.rcond = (double)rcond;
+        status.rcond = (f64)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
@@ -61,7 +61,7 @@ inline void solve_slice_triangular(
         call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
-            status.rcond = (double)rcond;
+            status.rcond = (f64)rcond;
         }
     }
 }
@@ -87,7 +87,7 @@ inline void solve_slice_cholesky(
         call_pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
-            status.rcond = (double)rcond;
+            status.rcond = (f64)rcond;
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, solve
@@ -131,7 +131,7 @@ void solve_slice_sym_herm(
         }
 
         if (info >= 0) {
-            status.rcond = (double)rcond;
+            status.rcond = (f64)rcond;
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
             // finally, solve
@@ -181,7 +181,7 @@ void solve_slice_tridiag(
         // gttrf success, check the condition number
         call_gtcon(&norm, &N, dl, d, du, du2, ipiv, &anorm, &rcond, work2, iwork, &info);
 
-        status.rcond = (double)rcond;
+        status.rcond = (f64)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
@@ -217,7 +217,7 @@ inline void solve_slice_banded(
         // gbtrf success, check condition number
         call_gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
 
-        status.rcond = (double)rcond;
+        status.rcond = (f64)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
 
@@ -266,8 +266,8 @@ inline void solve_slice_diagonal(
         if(absa > maxa) {maxa = absa;}
         if(absinva > maxinva) {maxinva = absinva;}
     }
-    double cond = (double)maxa * (double)maxinva;
-    double rcond = 1.0 / cond;
+    f64 cond = (f64)maxa * (f64)maxinva;
+    f64 rcond = 1.0 / cond;
     status.is_ill_conditioned = (rcond != rcond) || (rcond < detail::numeric_limits<real_type>::eps);
     status.rcond = rcond;
 }
@@ -421,7 +421,7 @@ template<typename T>
 int
 _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
 
     char trans = transposed ? 'T' : 'N';
     npy_intp lower_band = 0, upper_band = 0;
