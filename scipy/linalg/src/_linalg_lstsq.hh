@@ -7,9 +7,9 @@ namespace sp_linalg {
 
 template<typename T>
 int
-_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -164,9 +164,9 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -326,9 +326,9 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -483,7 +483,7 @@ done:
 
 template<typename T>
 int
-_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     int info;
     if (strcmp(lapack_driver, "gelss") == 0) {
