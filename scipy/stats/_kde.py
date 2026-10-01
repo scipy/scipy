@@ -52,10 +52,11 @@ class gaussian_kde:
         array, otherwise a 2-D array with shape (# of dims, # of data).
     bw_method : str, scalar or callable, optional
         The method used to calculate the bandwidth factor.  This can be
-        'scott', 'silverman', a scalar constant or a callable.  If a scalar,
-        this will be used directly as `factor`.  If a callable, it should
-        take a `gaussian_kde` instance as only parameter and return a scalar.
-        If None (default), 'scott' is used.  See Notes for more details.
+        'scott', 'silverman', 'sheather-jones', a scalar constant or a
+        callable.  If a scalar, this will be used directly as `factor`.  If
+        a callable, it should take a `gaussian_kde` instance as only
+        parameter and return a scalar.  If None (default), 'scott' is used.
+        See Notes for more details.
     weights : array_like, optional
         weights of datapoints. This must be the same shape as dataset.
         If None (default), the samples are assumed to be equally weighted
@@ -127,6 +128,14 @@ class gaussian_kde:
     may be more robust in the univariate case; see documentation of the
     ``set_bandwidth`` method for implementing a custom bandwidth rule.
 
+    The Sheather-Jones method [7]_ [8]_, selected via
+    ``bw_method='sheather-jones'``, is a plug-in bandwidth selector that
+    estimates the optimal bandwidth by computing the roughness of the second
+    derivative of the KDE using a closed-form solution for the Gaussian kernel.
+    It is available only for univariate data and does not support weighted
+    samples.  It generally provides better bandwidth selection than Scott's or
+    Silverman's rules for a variety of density shapes.
+
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
     found in [1]_.
@@ -159,6 +168,12 @@ class gaussian_kde:
            Series A (General), 132, 272
     .. [6] Kernel density estimation. *Wikipedia.*
            https://en.wikipedia.org/wiki/Kernel_density_estimation
+    .. [7] S.J. Sheather and M.C. Jones, "A Reliable Data-Based Bandwidth
+           Selection Method for Kernel Density Estimation", Journal of the
+           Royal Statistical Society. Series B (Methodological), Vol. 53,
+           No. 3, pp. 683-690, 1991.
+    .. [8] G.H. Givens and J.A. Hoeting, "Computational Statistics",
+           2nd ed., John Wiley & Sons, Hoboken, NJ, 2013.
 
     Examples
     --------
@@ -514,6 +529,119 @@ class gaussian_kde:
         """
         return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
 
+    def sheather_jones_factor(self):
+        """Compute the Sheather-Jones plug-in bandwidth factor.
+
+        Uses a closed-form solution for the roughness of the second
+        derivative of the Gaussian KDE to derive the optimal bandwidth.
+        Only supports univariate, unweighted data.
+
+        Returns
+        -------
+        s : float
+            The Sheather-Jones bandwidth factor.
+
+        Raises
+        ------
+        ValueError
+            If the data is multivariate (d > 1).
+        NotImplementedError
+            If the data is weighted.
+
+        References
+        ----------
+        .. [1] S.J. Sheather and M.C. Jones, "A Reliable Data-Based
+               Bandwidth Selection Method for Kernel Density Estimation",
+               J. R. Stat. Soc. B, Vol. 53, No. 3, pp. 683-690, 1991.
+        .. [2] G.H. Givens and J.A. Hoeting, "Computational Statistics",
+               2nd ed., Wiley, 2013.
+        """
+        if self.d != 1:
+            raise ValueError(
+                "Sheather-Jones bandwidth selection is only supported "
+                "for univariate data (d=1)."
+            )
+        if hasattr(self, '_weights') and not np.allclose(
+                self._weights, 1.0 / self.n):
+            raise NotImplementedError(
+                "Sheather-Jones bandwidth selection is not implemented "
+                "for weighted data."
+            )
+
+        n = self.n
+        X = self.dataset.ravel()
+        R_K = 1.0 / (2.0 * sqrt(pi))
+
+        # Pilot bandwidth: Silverman's rule of thumb (absolute bandwidth)
+        sigma_hat = np.std(X, ddof=1)
+        h_0 = ((4.0 / (3.0 * n)) ** (1.0 / 5.0)) * sigma_hat
+
+        # Compute roughness of f''(x) using the closed-form solution
+        # for the Gaussian kernel.
+        #
+        # For each pair (X_i, X_j), compute:
+        #   mu = (X_i + X_j) / 2
+        #   s  = h_0 / sqrt(2)
+        #   D  = 1 / sqrt(2 * pi * s^2)
+        #   H  = exp(-(X_i - X_j)^2 / (4 * h_0^2))
+        #
+        # Then the 4th-degree Hermite polynomial term B' involves the
+        # raw moments E[Z^k] for Z ~ N(mu, s^2) evaluated against the
+        # kernel second derivative product.
+        #
+        # roughness = (1 / (n^2 * h_0^6)) * sum_{i,j} B(X_i, X_j)
+        # h_hat = (R_K / (n * roughness))^(1/5)
+
+        # Vectorized pairwise computation using outer products
+        Xi = X[:, np.newaxis]  # (n, 1)
+        Xj = X[np.newaxis, :]  # (1, n)
+
+        mean_mu = (Xi + Xj) / 2.0
+        sd_sigma_sq = (h_0 ** 2) / 2.0  # s^2
+
+        D = 1.0 / sqrt(2.0 * pi * sd_sigma_sq)
+        H = exp(-(Xi - Xj) ** 2 / (4.0 * h_0 ** 2))
+
+        # Raw moments of Z ~ N(mu, s^2)
+        m1 = mean_mu
+        m2 = mean_mu ** 2 + sd_sigma_sq
+        m3 = mean_mu ** 3 + 3.0 * mean_mu * sd_sigma_sq
+        m4 = (mean_mu ** 4 + 6.0 * mean_mu ** 2 * sd_sigma_sq
+              + 3.0 * sd_sigma_sq ** 2)
+
+        h4 = h_0 ** 4
+        h2 = h_0 ** 2
+        u = Xi
+        v = Xj
+
+        # 4th-degree polynomial from the second derivative product
+        B_prime = (
+            -2.0 * m3 * v / h4
+            + m2 * v ** 2 / h4
+            + 4.0 * u * m2 * v / h4
+            - 2.0 * u * m1 * v ** 2 / h4
+            - 2.0 * u ** 2 * m1 * v / h4
+            + u ** 2 * v ** 2 / h4
+            + m4 / h4
+            - 2.0 * u * m3 / h4
+            + u ** 2 * m2 / h4
+            + 2.0 * m1 * v / h2
+            - v ** 2 / h2
+            - 2.0 * m2 / h2
+            + 2.0 * u * m1 / h2
+            - u ** 2 / h2
+            + 1.0
+        )
+
+        A_B = (B_prime / D) * (H / (2.0 * pi))
+
+        roughness = (1.0 / (n ** 2 * h_0 ** 6)) * np.sum(A_B)
+        h_hat = (R_K / (n * roughness)) ** (1.0 / 5.0)
+
+        # Return as a factor relative to the data standard deviation,
+        # since _compute_covariance multiplies factor by sqrt(data_cov)
+        return h_hat / sigma_hat
+
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
     covariance_factor.__doc__ = """Computes the bandwidth factor `factor`.
@@ -537,11 +665,15 @@ class gaussian_kde:
         ----------
         bw_method : str, scalar or callable, optional
             The method used to calculate the bandwidth factor.  This can be
-            'scott', 'silverman', a scalar constant or a callable.  If a
-            scalar, this will be used directly as `factor`.  If a callable,
-            it should take a `gaussian_kde` instance as only parameter and
-            return a scalar.  If None (default), nothing happens; the current
-            `covariance_factor` method is kept.
+            'scott', 'silverman', 'sheather-jones', a scalar constant or a
+            callable.  If a scalar, this will be used directly as `factor`.
+            If a callable, it should take a `gaussian_kde` instance as only
+            parameter and return a scalar.  If None (default), nothing
+            happens; the current `covariance_factor` method is kept.
+
+            The 'sheather-jones' method implements the Sheather-Jones plug-in
+            bandwidth selector, which is only available for univariate,
+            unweighted data.
 
         Notes
         -----
@@ -577,6 +709,8 @@ class gaussian_kde:
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
+        elif bw_method == 'sheather-jones':
+            self.covariance_factor = self.sheather_jones_factor
         elif np.isscalar(bw_method) and not isinstance(bw_method, str):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
@@ -584,8 +718,8 @@ class gaussian_kde:
             self._bw_method = bw_method
             self.covariance_factor = lambda: self._bw_method(self)
         else:
-            msg = "`bw_method` should be 'scott', 'silverman', a scalar " \
-                  "or a callable."
+            msg = "`bw_method` should be 'scott', 'silverman', " \
+                  "'sheather-jones', a scalar or a callable."
             raise ValueError(msg)
 
         self._compute_covariance()
