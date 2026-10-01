@@ -16,7 +16,7 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
         if(wi[j] == 0.) {
             // If the j-th eigenvalue is real, then u(j) = VL(:,j), the j-th column of VL.
             for (CBLAS_INT i=0; i<n; i++) {
-                dst[i*n + j] = detail::cpack(v[i + j*ldv], real_type(0.));
+                dst[i*n + j] = std::complex<real_type>(v[i + j*ldv], real_type(0.));
             }
             j += 1;
         }
@@ -25,8 +25,8 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
             // then u(j) = VL(:,j) + i*VL(:,j+1) and u(j+1) = VL(:,j) - i*VL(:,j+1).
             for (CBLAS_INT i=0; i<n; i++) {
                 real_type re = v[i + j*ldv], im = v[i + (j+1)*ldv];
-                dst[i*n + j] = detail::cpack(re, im);     // VL(i, j)
-                dst[i*n + j + 1] = detail::cpack(re, -im);  // VL(i, j+1)
+                dst[i*n + j] = std::complex<real_type>(re, im);     // VL(i, j)
+                dst[i*n + j + 1] = std::complex<real_type>(re, -im);  // VL(i, j+1)
             }
             j += 2;
         }
@@ -38,7 +38,7 @@ template<typename T>
 int
 _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==npy_cf32 etc
     using npy_complex_type = typename detail::type_traits<T>::npy_complex_type;
     SliceStatus slice_status;
 
@@ -184,7 +184,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         else {
             // convert wr,wi into w
             for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = detail::cpack(wr[i], wi[i]);
+                ptr_W[i] = std::complex<real_type>(wr[i], wi[i]);
             }
             ptr_W += n;
 
@@ -211,7 +211,7 @@ template<typename T>
 int
 _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==npy_cf32 etc
     using npy_complex_type = typename detail::type_traits<T>::npy_complex_type;
     SliceStatus slice_status;
 
@@ -385,7 +385,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         else {
             // convert alphar,alphai,beta into w
             for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = detail::cpack(alphar[i], alphai[i]);
+                ptr_W[i] = std::complex<real_type>(alphar[i], alphai[i]);
             }
             ptr_W += n;
 
@@ -439,7 +439,7 @@ _eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm,
 template<typename T>
 int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_Z,
         int *intp_M, int overwrite_a, int overwrite_b, int itype, char jobz, char range, char uplo,
-        double vl, double vu, int il, int iu, Eigh_driver lapack_driver, SliceStatusVec& vec_status)
+        f64 vl, f64 vu, int il, int iu, Eigh_driver lapack_driver, SliceStatusVec& vec_status)
 {
     using real_type = typename detail::type_traits<T>::real_type;
     SliceStatus slice_status;
@@ -481,7 +481,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     // from the LAPACK documentation is not needed.
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
-    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for float and c64_t
+    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for f32 and c64_t
     CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
     CBLAS_INT int_iu = iu + 1;
     CBLAS_INT int_itype = (CBLAS_INT)itype;

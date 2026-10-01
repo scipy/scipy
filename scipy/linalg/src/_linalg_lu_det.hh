@@ -38,8 +38,8 @@ inline void getrf(CBLAS_INT *m, CBLAS_INT *n, T *a, CBLAS_INT *lda, CBLAS_INT *i
 {
     if      constexpr (std::is_same_v<T, float>)                BLAS_FUNC(sgetrf)(m, n, a, lda, ipiv, info);
     else if constexpr (std::is_same_v<T, double>)               BLAS_FUNC(dgetrf)(m, n, a, lda, ipiv, info);
-    else if constexpr (std::is_same_v<T, std::complex<float>>)  BLAS_FUNC(cgetrf)(m, n, reinterpret_cast<npy_complex64*>(a), lda, ipiv, info);
-    else if constexpr (std::is_same_v<T, std::complex<double>>) BLAS_FUNC(zgetrf)(m, n, reinterpret_cast<npy_complex128*>(a), lda, ipiv, info);
+    else if constexpr (std::is_same_v<T, std::complex<float>>)  BLAS_FUNC(cgetrf)(m, n, a, lda, ipiv, info);
+    else if constexpr (std::is_same_v<T, std::complex<double>>) BLAS_FUNC(zgetrf)(m, n, a, lda, ipiv, info);
 }
 
 
