@@ -211,7 +211,7 @@ template<typename T>
 int
 _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==npy_cf32 etc
+    using real_type = real_of_t<T>; // f32 if T==f64 etc
     using cmplx_type = complex_of_t<T>;
     SliceStatus slice_status;
 
@@ -481,7 +481,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     // from the LAPACK documentation is not needed.
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
-    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for f32 and c64_t
+    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for f32 and c64
     CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
     CBLAS_INT int_iu = iu + 1;
     CBLAS_INT int_itype = (CBLAS_INT)itype;

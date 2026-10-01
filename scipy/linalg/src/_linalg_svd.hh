@@ -210,7 +210,7 @@ template<typename T>
 int
 _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==npy_cf32 etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------

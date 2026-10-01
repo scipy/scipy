@@ -571,7 +571,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_x = NULL;
     PyArrayObject *ap_rank = NULL;
     PyObject *ret_lst = NULL, *s_ret = NULL;
-    f64 rcond;
+    double rcond;
     const char *lapack_driver = NULL;
     int overwrite_a = 0;
     int overwrite_b = 0;
@@ -847,8 +847,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int eigvals_only = 0;
     int lower = 0;
     int vals_range = 0;
-    f64 vl = -std::numeric_limits<f64>::infinity();
-    f64 vu = std::numeric_limits<f64>::infinity();
+    double vl = -std::numeric_limits<double>::infinity();
+    double vu = std::numeric_limits<double>::infinity();
     int il = -1;
     int iu = -1;
     Eigh_driver lapack_driver;
@@ -1475,7 +1475,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
 
-    // longf64/clongf64 are rejected by the Python wrapper in _misc.py
+    // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
     bool has_contiguous = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
                           || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
 
@@ -1589,7 +1589,7 @@ static char doc_det[] = (
     "Parameters\n"
     "----------\n"
     "a : (..., N, N) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "overwrite_a : bool\n"
     "    If True and the input is 2D contiguous and writable, the input\n"
     "    buffer is used directly as the getrf workspace (destroyed on exit).\n"
@@ -1611,7 +1611,7 @@ static char doc_lu[] = (
     "Parameters\n"
     "----------\n"
     "a : (..., M, N) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "permute_l : bool\n"
     "    If True, L is returned already permuted (P @ L) and P is empty.\n"
     "overwrite_a : bool\n"
@@ -1641,7 +1641,7 @@ static char doc_bandwidth[] = (
     "Parameters\n"
     "----------\n"
     "a : (N, M) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "\n"
     "Returns\n"
     "-------\n"
