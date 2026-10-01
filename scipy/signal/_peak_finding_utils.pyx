@@ -32,6 +32,8 @@ def _local_maxima_1d(const np.float64_t[::1] x not None, bint wrap=False):
     wrap : bool
         Set True to wrap search around the end of an array.
 
+        .. versionadded:: 1.18.1
+
     Returns
     -------
     midpoints : ndarray
