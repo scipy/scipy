@@ -771,7 +771,10 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
 
     PyObject *eval_jacobi = xsf::numpy::ufunc(
-        {[](npy_intp n, double alpha, double beta, double x) {
+        {[](long int n, double alpha, double beta, double x) {
+             return xsf::eval_jacobi(static_cast<int>(n), alpha, beta, x);
+         },
+         [](long long int n, double alpha, double beta, double x) {
              return xsf::eval_jacobi(static_cast<int>(n), alpha, beta, x);
          },
          static_cast<xsf::numpy::ffff_f>(xsf::eval_jacobi),
@@ -781,7 +784,10 @@ _special_ufuncs_module_exec(PyObject *module)
     PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
 
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
-        {[](npy_intp n, double p, double q, double x) {
+        {[](long int n, double p, double q, double x) {
+             return xsf::eval_sh_jacobi(static_cast<int>(n), p, q, x);
+         },
+         [](long long int n, double p, double q, double x) {
              return xsf::eval_sh_jacobi(static_cast<int>(n), p, q, x);
          },
          static_cast<xsf::numpy::ffff_f>(xsf::eval_sh_jacobi),
