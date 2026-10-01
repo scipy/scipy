@@ -125,6 +125,10 @@ const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_trivariate_normal_cdf_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_cauchy_isf_doc = R"(
     _cauchy_isf(p, loc, scale)
 
