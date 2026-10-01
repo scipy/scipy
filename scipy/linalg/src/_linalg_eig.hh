@@ -16,7 +16,7 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
         if(wi[j] == 0.) {
             // If the j-th eigenvalue is real, then u(j) = VL(:,j), the j-th column of VL.
             for (CBLAS_INT i=0; i<n; i++) {
-                dst[i*n + j] = std::complex<real_type>(v[i + j*ldv], real_type(0.));
+                dst[i*n + j] = complex_of_t<real_type>(v[i + j*ldv], real_type(0.));
             }
             j += 1;
         }
@@ -25,8 +25,8 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
             // then u(j) = VL(:,j) + i*VL(:,j+1) and u(j+1) = VL(:,j) - i*VL(:,j+1).
             for (CBLAS_INT i=0; i<n; i++) {
                 real_type re = v[i + j*ldv], im = v[i + (j+1)*ldv];
-                dst[i*n + j] = std::complex<real_type>(re, im);     // VL(i, j)
-                dst[i*n + j + 1] = std::complex<real_type>(re, -im);  // VL(i, j+1)
+                dst[i*n + j] = complex_of_t<real_type>(re, im);     // VL(i, j)
+                dst[i*n + j + 1] = complex_of_t<real_type>(re, -im);  // VL(i, j+1)
             }
             j += 2;
         }
