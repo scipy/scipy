@@ -3,8 +3,6 @@
  */
 #pragma once
 
-#include "lapack_calls.hpp"
-
 using namespace lapack;
 
 namespace sp_linalg {
