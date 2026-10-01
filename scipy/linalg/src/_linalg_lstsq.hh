@@ -9,7 +9,7 @@ template<typename T>
 int
 _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -59,7 +59,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     CBLAS_INT rank = min_mn;
 
     // query LWORK
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
     call_gelss(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
     if(info != 0) { return -100; }
 
@@ -104,7 +104,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -166,7 +166,7 @@ template<typename T>
 int
 _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -211,14 +211,14 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     // query LWORK, LRWORK and LIWORK
     // XXX: bump LRWORK and LIWORK up to improve perf? lwork=-1 query returns the *minimum* values
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
     real_type tmp_lrwork = 0;
     CBLAS_INT liwork = 0, lrwork = 0;
     call_gelsd(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, &tmp_lrwork, &liwork, &info);
 
     if(info != 0) { return -100; }
     lwork = _calc_lwork(tmp);
-    lrwork = detail::type_traits<T>::is_complex ? _calc_lwork(tmp_lrwork) : 0 ;
+    lrwork = is_complex_v<T> ? _calc_lwork(tmp_lrwork) : 0;
 
     if ((lwork < 0) || (lrwork < 0) || (liwork < 0)) {return -111;}
 
@@ -260,7 +260,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(lrwork*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -328,7 +328,7 @@ template<typename T>
 int
 _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // f32 if T==c64 etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -371,7 +371,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     CBLAS_INT rank = min_mn;
 
     // query LWORK
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
     call_gelsy(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
     if(info != 0) { return -100; }
 
@@ -415,7 +415,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
 
         if (rwork == NULL) {

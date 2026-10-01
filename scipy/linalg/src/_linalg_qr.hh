@@ -9,7 +9,7 @@ template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
+    using real_type = real_of_t<T>;
     SliceStatus slice_status;
 
     // ------------------------------------------------------------------------
@@ -57,8 +57,8 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
-    T tmp_factor = detail::numeric_limits<T>::zero;
-    T tmp_or_un_gqr = detail::numeric_limits<T>::zero;
+    T tmp_factor = 0.0;
+    T tmp_or_un_gqr = 0.0;
     CBLAS_INT lwork = -1;
 
     if (!pivoting) {
@@ -133,7 +133,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     // `c/zgeqp3` needs rwork
     void *rwork = NULL;
-    if (pivoting && detail::type_traits<T>::is_complex) {
+    if (pivoting && is_complex_v<T>) {
         rwork = PyMem_RawMalloc(2 * N * sizeof(real_type));
 
         if (rwork == NULL) {
