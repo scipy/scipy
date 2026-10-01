@@ -10,8 +10,10 @@
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
 
+using namespace wrapper;
+using namespace lapack;
+
 #include "scipy_blas_defines.h"
-#include "_npymath.hh"
 #include "_common_array_utils.hh"
 
 #include "_linalg_cholesky.hh"

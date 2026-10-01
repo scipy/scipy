@@ -32,6 +32,13 @@ namespace wrapper {
     template <class T> using real_of_t = typename real_of<T>::type;
 
     /**
+     * @brief Complex counterpart of a flavor: f32 -> c64, f64 -> c128, c64 -> c64, c128 -> c128.
+     */
+    template <class T> struct complex_of                    { using type = std::complex<T>; };
+    template <class T> struct complex_of<std::complex<T>>   { using type = std::complex<T>; };
+    template <class T> using complex_of_t = typename complex_of<T>::type;
+
+    /**
      * @brief Whether a flavor is complex, for the `if constexpr` branches where the real and
      *        complex routines take genuinely different argument lists (`gees`'s split
      *        `wr`/`wi` versus a single complex `w`).

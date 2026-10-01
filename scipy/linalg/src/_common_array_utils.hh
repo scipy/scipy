@@ -3,8 +3,6 @@
  */
 #pragma once
 
-using namespace lapack;
-
 namespace sp_linalg {
 
 
@@ -945,7 +943,7 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  */
 template<typename T>
 CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
-    using real_type = typename detail::type_traits<T>::real_type;
+    using real_type = real_of_t<T>;
 
     real_type value = std::real(_lwrk) * fudge_factor;
     if((std::is_same<real_type, f32>::value) ||
@@ -1082,18 +1080,16 @@ void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n
  */
 
 template<typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_(T* A, const npy_intp n)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
-    using value_type = typename detail::type_traits<T>::value_type;
-    value_type *pA = reinterpret_cast<value_type *>(A);
+    using real_type = real_of_t<T>;
 
     real_type norm = 0.0;
     for (CBLAS_INT i = 0; i < n; i++) {
         real_type tmp = 0.0;
         for (CBLAS_INT j = 0; j < n; j++) {
-            tmp += std::abs(pA[i * n + j]);
+            tmp += std::abs(A[i * n + j]);
         }
 
         if (tmp > norm) { norm = tmp; }
@@ -1104,26 +1100,24 @@ norm1_(T* A, const npy_intp n)
 
 
 template<typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
-    using value_type = typename detail::type_traits<T>::value_type;
-    value_type *pA = reinterpret_cast<value_type *>(A);
+    using real_type = real_of_t<T>;
 
     Py_ssize_t i, j;
     real_type temp = 0.0;
     real_type *rwork = (real_type *)work;
 
     // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { rwork[i] = std::abs(pA[i]);
+    for (i = 0; i < n; i++) { rwork[i] = std::abs(A[i]);
      }
     // Add absolute values of remaining rows of A to work
     for (i = 1; i < n; i++) {
         // only loop over the upper triangle
-        rwork[i] += std::abs(pA[i*n + i]);
+        rwork[i] += std::abs(A[i*n + i]);
         for (j = i+1; j < n; j++) {
-            temp = std::abs(pA[i*n + j]);
+            temp = std::abs(A[i*n + j]);
             rwork[j] += temp;
             rwork[i] += temp;
         }
@@ -1135,12 +1129,10 @@ norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
-    using value_type = typename detail::type_traits<T>::value_type;
-    value_type *pA = reinterpret_cast<value_type *>(A);
+    using real_type = real_of_t<T>;
 
     Py_ssize_t i, j;
     real_type temp = 0.0;
@@ -1149,9 +1141,9 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
     for (i = 0; i < n; i++) { rwork[i] = 0.0; }
 
     for (i=0; i < n; i++) {
-        rwork[i] += std::abs(pA[i*n + i]);
+        rwork[i] += std::abs(A[i*n + i]);
         for (j=0; j < i; j++) {
-            temp = std::abs(pA[i*n + j]);
+            temp = std::abs(A[i*n + j]);
             rwork[j] += temp;
             rwork[i] += temp;
         }
@@ -1164,7 +1156,7 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 
 
 template<typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
     // NB: transpose for the F order
     if (uplo == 'U') {return norm1_sym_herm_lower(A, work, n);}
@@ -1174,25 +1166,21 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
 
 
 template<typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
-    using real_type = typename detail::type_traits<T>::real_type;
-    using value_type = typename detail::type_traits<T>::value_type;
+    using real_type = real_of_t<T>;
 
-    value_type *pd = reinterpret_cast<value_type *>(d);
-    value_type *pdu = reinterpret_cast<value_type *>(du);
-    value_type *pdl = reinterpret_cast<value_type *>(dl);
     real_type *rwork = (real_type *)work;
 
     npy_intp i;
     for (i=0; i<n; i++) {
-        rwork[i] = std::abs(pd[i]);
+        rwork[i] = std::abs(d[i]);
     }
     for (i=0; i<n-1; i++) {
-        rwork[i] += std::abs(pdl[i]);
+        rwork[i] += std::abs(dl[i]);
     }
     for (i=1; i<n-1; i++) {
-        rwork[i] += std::abs(pdu[i-1]);
+        rwork[i] += std::abs(du[i-1]);
     }
 
     real_type temp = 0.0;
@@ -1206,31 +1194,29 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
  * is always such that its number of rows is `2 * kl + ku + 1`.
  */
 template <typename T>
-typename detail::type_traits<T>::real_type
+real_of_t<T>
 norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_intp n) {
-    using real_type = typename detail::type_traits<T>::real_type;
-    using value_type = typename detail::type_traits<T>::value_type;
+    using real_type = real_of_t<T>;
 
-    value_type *pab = reinterpret_cast<value_type *>(ab);
     real_type *rwork = (real_type *)work;
 
     npy_intp i, j;
     npy_intp ldab = 2 * kl + ku + 1;
 
     for (i = 0; i < n; i++) {
-        rwork[i] = std::abs(pab[i * ldab + kl + ku]);
+        rwork[i] = std::abs(ab[i * ldab + kl + ku]);
     }
 
     for (i = 0; i < kl; i++) { // run over lower bands
         for (j = 0; j < n - i - 1; j++) {
-            rwork[j] += std::abs(pab[j * ldab + kl + ku + i + 1]);
+            rwork[j] += std::abs(ab[j * ldab + kl + ku + i + 1]);
         }
     }
 
 
     for (i = 0; i < ku; i++) { // run over upper bands
         for (j = i + 1; j < n; j++) {
-            rwork[j] += std::abs(pab[j * ldab + kl + ku - i - 1]);
+            rwork[j] += std::abs(ab[j * ldab + kl + ku - i - 1]);
         }
     }
 
@@ -1248,16 +1234,14 @@ template<typename T>
 void
 bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
 {
-    using value_type = typename detail::type_traits<T>::value_type;
-    value_type *p_data = reinterpret_cast<value_type *>(data);
-    value_type zero = value_type(0.);
+    T zero = T(0.);
 
     Py_ssize_t lb = 0, ub = 0;
     for (Py_ssize_t c = 0; c < m-1; c++)
     {
         for (Py_ssize_t r = n-1; r > c + lb; r--)
         {
-            if (p_data[c*n + r] != zero) { lb = r - c; break; }
+            if (data[c*n + r] != zero) { lb = r - c; break; }
         }
         if (c + lb + 1 > m) { break; }
     }
@@ -1265,7 +1249,7 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
     {
         for (Py_ssize_t r = 0; r < c - ub; r++)
         {
-            if (p_data[c*n + r] != zero) { ub = c - r; break; }
+            if (data[c*n + r] != zero) { ub = c - r; break; }
 
         }
         if (c <= ub) { break; }
@@ -1287,22 +1271,20 @@ template<typename T>
 void
 bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
 {
-    using value_type = typename detail::type_traits<T>::value_type;
-    value_type *p_data = reinterpret_cast<value_type *>(data);
-    value_type zero = value_type(0.);
+    T zero = T(0.);
 
     s1 = s1 / sizeof(T);
     s2 = s2 / sizeof(T);
     npy_intp lb = 0, ub = 0;
     for (npy_intp c = 0; c < m-1; c++) {
         for (npy_intp r = n-1; r > c + lb; r--) {
-            if (p_data[c * s2 + r * s1] != zero) { lb = r - c; break; }
+            if (data[c * s2 + r * s1] != zero) { lb = r - c; break; }
         }
         if (c + lb + 1 > m) { break; }
     }
     for (npy_intp c = m-1; c > 0; c--) {
         for (npy_intp r = 0; r < c - ub; r++) {
-            if (p_data[c * s2 + r * s1] != zero) { ub = c - r; break; }
+            if (data[c * s2 + r * s1] != zero) { ub = c - r; break; }
         }
         if (c <= ub) { break; }
     }
@@ -1329,14 +1311,12 @@ template<typename T>
 std::tuple<bool, bool>
 is_sym_or_herm(const T *data, npy_intp n) {
     // Return a pair of (is_symmetric, is_hermitian)
-    using value_type = typename detail::type_traits<T>::value_type;
-    const value_type *p_data = reinterpret_cast<const value_type *>(data);
     bool all_sym = true, all_herm = true;
 
     for (npy_intp i=0; i < n; i++) {
         for (npy_intp j=0; j < n; j++) {
-            value_type elem1 = p_data[i*n + j];
-            value_type elem2 = p_data[i + j*n];
+            T elem1 = data[i*n + j];
+            T elem2 = data[i + j*n];
             all_sym = all_sym && (elem1 == elem2);
             all_herm = all_herm && (elem1 == std::conj(elem2));
             if(!(all_sym || all_herm)) {
@@ -1505,14 +1485,14 @@ zero_other_triangle(char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_i
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<m; j++){
-                data[j + i*lda] = detail::numeric_limits<T>::zero;
+                data[j + i*lda] = 0.0;
             }
         }
     } else {
         for (npy_intp i=0; i<n; i++) {
             npy_intp stop = std::min(i, m);
             for (npy_intp j=0; j < stop; j++){
-                data[j + i*lda] = detail::numeric_limits<T>::zero;
+                data[j + i*lda] = 0.0;
             }
         }
     }
@@ -1524,7 +1504,7 @@ inline void
 nan_matrix(T * data, npy_intp n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            data[i * n + j] = detail::numeric_limits<T>::nan;
+            data[i * n + j] = std::numeric_limits<T>::quiet_NaN;
         }
     }
 }
