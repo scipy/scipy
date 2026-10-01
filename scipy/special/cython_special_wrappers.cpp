@@ -4,9 +4,9 @@
 
 #include "cython_special_wrappers.h"
 #include <xsf/agm.h>
-#include <xsf/airy.h>
-#include <xsf/amos.h>
-#include <xsf/bessel.h>
+#include <xsf/cpu/airy.h>
+#include <xsf/cpu/amos.h>
+#include <xsf/cpu/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
@@ -18,30 +18,30 @@
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
 #include <xsf/erf.h>
-#include <xsf/exp.h>
+#include <xsf/cpu/exp.h>
 #include <xsf/expint.h>
-#include <xsf/fresnel.h>
+#include <xsf/cpu/fresnel.h>
 #include <xsf/gamma.h>
-#include <xsf/hyp0f1.h>
+#include <xsf/cpu/hyp0f1.h>
 #include <xsf/hyp2f1.h>
-#include <xsf/hyperu.h>
-#include <xsf/kelvin.h>
+#include <xsf/cpu/hyperu.h>
+#include <xsf/cpu/kelvin.h>
 #include <xsf/lambertw.h>
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu_legacy.h>
+#include <xsf/cpu/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/orthogonal_eval.h>
-#include <xsf/par_cyl.h>
+#include <xsf/cpu/par_cyl.h>
 #include <xsf/sici.h>
-#include <xsf/specfun.h>
+#include <xsf/cpu/specfun.h>
 #include <xsf/spence.h>
-#include <xsf/sph_bessel.h>
-#include <xsf/sph_harm.h>
-#include <xsf/sphd_wave.h>
+#include <xsf/cpu/sph_bessel.h>
+#include <xsf/cpu/sph_harm.h>
+#include <xsf/cpu/sphd_wave.h>
 #include <xsf/stats.h>
-#include <xsf/struve.h>
+#include <xsf/cpu/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/wright.h>
@@ -171,7 +171,7 @@ npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x)
 }
 
 double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x) {
-    return xsf::eval_jacobi(static_cast<std::ptrdiff_t>(n), alpha, beta, x);
+    return xsf::eval_jacobi(static_cast<int>(n), alpha, beta, x);
 }
 
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
@@ -181,7 +181,7 @@ npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
 }
 
 double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x) {
-    return xsf::eval_sh_jacobi(static_cast<std::ptrdiff_t>(n), p, q, x);
+    return xsf::eval_sh_jacobi(static_cast<int>(n), p, q, x);
 }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }
