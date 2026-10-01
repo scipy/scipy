@@ -367,7 +367,7 @@ GEN_GBCON(s, f32)
 GEN_GBCON(d, f64)
 
 
-// c- and z- variants need f32ing type rwork instead of iwork.
+// c- and z- variants need floating type rwork instead of iwork.
 #define GEN_GBCON_CZ(PREFIX, TYPE, RTYPE) \
 inline void \
 call_gbcon(char *norm, CBLAS_INT *n, CBLAS_INT *kl, CBLAS_INT *ku, TYPE *ab, CBLAS_INT *ldab, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, void *irwork, CBLAS_INT *info) \
@@ -926,11 +926,11 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  * lwork defensive handler :
  *  cf https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/lapack.py#L1004
  *
- *  Round f32ing-point lwork returned by lapack to integer.
+ *  Round floating-point lwork returned by lapack to integer.
  *
  *  Several LAPACK routines compute optimal values for LWORK, which
- *  they return in a f32ing-point variable. However, for large
- *  values of LWORK, single-precision f32ing point is not sufficient
+ *  they return in a floating-point variable. However, for large
+ *  values of LWORK, single-precision floating point is not sufficient
  *  to hold the exact value --- some LAPACK versions (<= 3.5.0 at
  *  least) truncate the returned integer to single precision and in
  *  some cases this can be smaller than the required value.
