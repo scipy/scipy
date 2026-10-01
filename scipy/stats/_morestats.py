@@ -2852,7 +2852,7 @@ def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp
 
     n = xp.asarray([sample.shape[-1] for sample in samples], **dtype_device)
     if xp.any(n == 0):
-        raise ValueError("`anderson_ksamp` encountered sample without observations.")
+        raise ValueError("`anderson_ksamp` encountered a sample without observations.")
 
     if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank

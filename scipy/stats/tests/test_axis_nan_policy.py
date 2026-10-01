@@ -102,8 +102,13 @@ def kendalltau(*args, _no_deco=False, **kwargs):
 
 
 def anderson_ksamp(*args, _no_deco=False, **kwargs):
+    # The tests need to be able to call the function w/out decorator behavior
+    # Typically that is done using the `_no_deco` kwarg that is added
+    # by the decorator. But the public function doesn't have the decorator because
+    # how we want the decorator to behave depends on the method. So we have
+    # to handle `_no_deco` manually.
     if _no_deco:
-        return stats._morestats._anderson_ksamp(*args, **kwargs)
+        return stats._morestats._anderson_ksamp(*args, k=len(args), **kwargs)
     return stats.anderson_ksamp(args, **kwargs)
 
 
@@ -264,8 +269,8 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "`x` and `y` must have length at least 2.",
                       "Inputs must not be empty.",
                       "All `x` coordinates are identical.",
-                      "anderson_ksamp encountered sample without observations",
-                      "anderson_ksamp needs more than one distinct observation",
+                      "`anderson_ksamp` encountered a sample without observations",
+                      "`anderson_ksamp` needs more than one distinct observation",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
