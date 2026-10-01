@@ -66,7 +66,6 @@ def _local_maxima_1d(const np.float64_t[::1] x not None, bint wrap=False):
     i = 0 if wrap else 1
     # Last sample, can't be maxima without wrapping
     i_max = size if wrap else size - 1
-    distance = 0
 
     with nogil:
         while i < i_max:
