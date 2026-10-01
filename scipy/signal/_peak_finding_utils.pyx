@@ -57,13 +57,13 @@ def _local_maxima_1d(const np.float64_t[::1] x not None, bint wrap=False):
         np.intp_t[::1] midpoints, left_edges, right_edges
         np.intp_t m, i, i_ahead, i_max, size
 
+    size = x.shape[0]
     # Preallocate, there can't be more maxima than half the size of `x`
-    midpoints = np.empty(x.shape[0] // 2, dtype=np.intp)
-    left_edges = np.empty(x.shape[0] // 2, dtype=np.intp)
-    right_edges = np.empty(x.shape[0] // 2, dtype=np.intp)
+    midpoints = np.empty(size // 2, dtype=np.intp)
+    left_edges = np.empty(size // 2, dtype=np.intp)
+    right_edges = np.empty(size // 2, dtype=np.intp)
     m = 0  # Pointer to the end of valid area in allocated arrays
 
-    size = x.shape[0]
     # Pointer to current sample, first can't be maxima without wrapping
     i = 0 if wrap else 1
     # Last sample, can't be maxima without wrapping
