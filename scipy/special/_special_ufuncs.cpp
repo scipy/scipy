@@ -43,6 +43,7 @@
 #include <xsf/mathieu_legacy.h>
 #include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
+#include <xsf/orthogonal_eval.h>
 #include <xsf/par_cyl.h>
 #include <xsf/specfun.h>
 #include <xsf/spence.h>
@@ -192,6 +193,8 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_jacobi_doc;
+extern const char *eval_sh_jacobi_doc;
 extern const char *exp1_doc;
 extern const char *expm1_doc;
 extern const char *exp2_doc;
@@ -766,6 +769,26 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
+
+    PyObject *eval_jacobi = xsf::numpy::ufunc(
+        {[](npy_intp n, double alpha, double beta, double x) {
+             return xsf::eval_jacobi(static_cast<std::ptrdiff_t>(n), alpha, beta, x);
+         },
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_jacobi), static_cast<xsf::numpy::dddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
+        "eval_jacobi", eval_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
+
+    PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
+        {[](npy_intp n, double p, double q, double x) {
+             return xsf::eval_sh_jacobi(static_cast<std::ptrdiff_t>(n), p, q, x);
+         },
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_sh_jacobi), static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
+        "eval_sh_jacobi", eval_sh_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),
