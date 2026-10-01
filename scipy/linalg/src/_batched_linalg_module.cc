@@ -1221,10 +1221,10 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
             info = lu_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_l), (f64*)PyArray_DATA(ap_u), (f64*)scratch, slice_info);
             break;
         case NPY_COMPLEX64:
-            info = lu_dispatch<std::complex<f32>>(ctx, (std::complex<f32>*)PyArray_DATA(ap_a), (std::complex<f32>*)PyArray_DATA(ap_l), (std::complex<f32>*)PyArray_DATA(ap_u), (std::complex<f32>*)scratch, slice_info);
+            info = lu_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_l), (c64 *)PyArray_DATA(ap_u), (c64 *)scratch, slice_info);
             break;
         case NPY_COMPLEX128:
-            info = lu_dispatch<std::complex<f64>>(ctx, (std::complex<f64>*)PyArray_DATA(ap_a), (std::complex<f64>*)PyArray_DATA(ap_l), (std::complex<f64>*)PyArray_DATA(ap_u), (std::complex<f64>*)scratch, slice_info);
+            info = lu_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_l), (c128 *)PyArray_DATA(ap_u), (c128 *)scratch, slice_info);
             break;
     }
 
@@ -1360,10 +1360,10 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
             info = det_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_det), (f64*)scratch, slice_info);
             break;
         case NPY_COMPLEX64:
-            info = det_dispatch<std::complex<f32>>(ctx, (std::complex<f32>*)PyArray_DATA(ap_a), (std::complex<f32>*)PyArray_DATA(ap_det), (std::complex<f32>*)scratch, slice_info);
+            info = det_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_det), (c64 *)scratch, slice_info);
             break;
         case NPY_COMPLEX128:
-            info = det_dispatch<std::complex<f64>>(ctx, (std::complex<f64>*)PyArray_DATA(ap_a), (std::complex<f64>*)PyArray_DATA(ap_det), (std::complex<f64>*)scratch, slice_info);
+            info = det_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_det), (c128 *)scratch, slice_info);
             break;
     }
 
@@ -1521,10 +1521,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         if (use_contiguous) {
             switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_contiguous_scalar<f32>                (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_contiguous_scalar<f64>               (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<std::complex<f32>>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_contiguous_scalar<std::complex<f64>> (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT32:    bandwidth_contiguous_scalar<f32>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_contiguous_scalar<f64>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<c64>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_contiguous_scalar<c128>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
             }
             if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
         } else {
@@ -1556,10 +1556,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
                 case NPY_UINT16:      bandwidth_strided_scalar<npy_uint16>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_UINT32:      bandwidth_strided_scalar<npy_uint32>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_UINT64:      bandwidth_strided_scalar<npy_uint64>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT:       bandwidth_strided_scalar<f32>                     (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_DOUBLE:      bandwidth_strided_scalar<f64>                    (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:   bandwidth_strided_scalar<std::complex<f32>>       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128:  bandwidth_strided_scalar<std::complex<f64>>      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT:       bandwidth_strided_scalar<f32>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_DOUBLE:      bandwidth_strided_scalar<f64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:   bandwidth_strided_scalar<c64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128:  bandwidth_strided_scalar<c128>                      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 default:
                     Py_DECREF(ap_lb); Py_DECREF(ap_ub);
                     PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
