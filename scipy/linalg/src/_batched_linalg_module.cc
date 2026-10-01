@@ -7,6 +7,9 @@
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 
+#include "lapack_calls.hpp"
+#include "wrapper_types.hpp"
+
 #include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
