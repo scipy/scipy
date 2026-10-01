@@ -20,6 +20,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_jax,
     is_dask,
+    is_torch,
     xp_size,
     xp_promote,
     xp_result_type,
@@ -2591,7 +2592,10 @@ def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
     j = xp.arange(1, N, dtype=Z.dtype, device=Z.device)
     for i in range(0, k):
         s = xp.sort(samples[i], axis=-1)
-        Mij = xpx.searchsorted(s, Z[..., :-1], side='right')  # requires axis=-1
+        Z_1 = Z[..., :-1]
+        # without this, "boundary tensor is non-contiguous"
+        s, Z_1 = (s.contiguous(), Z_1.contiguous()) if is_torch(xp) else (s, Z_1)
+        Mij = xpx.searchsorted(s, Z_1, side='right')  # requires axis=-1
         Mij = xp.astype(Mij, Z.dtype)
         inner = (N*Mij - j*n[i])**2 / (j * (N - j))
         A2kN += xp.sum(inner, axis=-1) / n[i]
@@ -2684,8 +2688,7 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-@xp_capabilities(skip_backends=[('torch', 'no attempt'),
-                                ('jax.numpy', 'no attempt'),
+@xp_capabilities(skip_backends=[('jax.numpy', 'no attempt'),
                                 ('dask.array', 'no attempt')])
 def anderson_ksamp(samples, *, variant="midrank", method=None,
                    axis=0, nan_policy='propagate', keepdims=False):
@@ -2840,15 +2843,12 @@ def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp
 
     N = Z.shape[-1]
 
+    Zstar = None   # midrank/right will always be one-dimensional
     if Z.ndim == 1:
         Zstar = xp.unique_values(Z)
-        if Zstar.size < 2:
-            raise ValueError("`anderson_ksamp` needs more "
-                             "than one distinct observation.")
-    else:
-        Zstar = None
-        if variant in {'midrank', 'right'}:
-            raise ValueError("How did you get here?")
+        if xp_size(Zstar) < 2:
+            message = "`anderson_ksamp` needs more than one distinct observation."
+            raise ValueError(message)
 
     n = xp.asarray([sample.shape[-1] for sample in samples], **dtype_device)
     if xp.any(n == 0):

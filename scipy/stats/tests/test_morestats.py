@@ -477,7 +477,7 @@ class TestAndersonKSamp:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    # @pytest.mark.xslow
+    @pytest.mark.xslow
     @pytest.mark.parametrize('variant, Tk, p', [('midrank', 3.294, 0.0041),
                                                 ('right', 3.288, 0.0041),
                                                 # 'continuous' reference: SciPy 1.18
