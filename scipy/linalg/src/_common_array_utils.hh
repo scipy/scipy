@@ -168,7 +168,7 @@ GEN_SYTRF(c, c64)
 GEN_SYTRF(z, c128)
 
 
-// dispatch to sSYtrf for "f32 hermitian"
+// dispatch to sSYtrf for "float hermitian"
 #define GEN_HETRF(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *lwork, CBLAS_INT* info) \
@@ -195,7 +195,7 @@ GEN_SYTRI(c, c64)
 GEN_SYTRI(z, c128)
 
 
-// dispatch to sSYtri for "f32 hermitian"
+// dispatch to sSYtri for "float hermitian"
 #define GEN_HETRI(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetri(char *uplo, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *work, CBLAS_INT *info) \
@@ -231,7 +231,7 @@ GEN_SYCON_CZ(c, c64, f32, f32)
 GEN_SYCON_CZ(z, c128, f64, f64)
 
 
-// dispatch to sSYcon for "f32 hermitian"
+// dispatch to sSYcon for "float hermitian"
 #define GEN_HECON(PREFIX, CTYPE, RTYPE, WTYPE) \
 inline void \
 call_hecon(char* uplo, CBLAS_INT* n, CTYPE* a, CBLAS_INT* lda, CBLAS_INT *ipiv, RTYPE* anorm, RTYPE* rcond, CTYPE* work, void *irwork, CBLAS_INT* info) \
@@ -266,7 +266,7 @@ GEN_SYTRS(c, c64)
 GEN_SYTRS(z, c128)
 
 
-// dispatch to sSYtrs for "f32 hermitian"
+// dispatch to sSYtrs for "float hermitian"
 #define GEN_HETRS(PREFIX, L_PREFIX, TYPE) \
 inline void \
 call_hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
@@ -880,7 +880,7 @@ struct SliceStatus {
     Py_ssize_t structure;
     int is_singular;
     int is_ill_conditioned;
-    f64 rcond;
+    double rcond;
     Py_ssize_t lapack_info;
 };
 

@@ -572,7 +572,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_x = NULL;
     PyArrayObject *ap_rank = NULL;
     PyObject *ret_lst = NULL, *s_ret = NULL;
-    f64 rcond;
+    double rcond;
     const char *lapack_driver = NULL;
     int overwrite_a = 0;
     int overwrite_b = 0;
@@ -848,8 +848,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int eigvals_only = 0;
     int lower = 0;
     int vals_range = 0;
-    f64 vl = -std::numeric_limits<f64>::infinity();
-    f64 vu = std::numeric_limits<f64>::infinity();
+    double vl = -std::numeric_limits<double>::infinity();
+    double vu = std::numeric_limits<double>::infinity();
     int il = -1;
     int iu = -1;
     Eigh_driver lapack_driver;
@@ -1464,10 +1464,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         if (use_fast_path) {
             switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_s(&((const float *)a_data)[offset],                                n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_d(&((const double *)a_data)[offset],                               n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_c(&reinterpret_cast<const std::complex<float> *>(a_data)[offset],  n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_z(&reinterpret_cast<const std::complex<double> *>(a_data)[offset], n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT32:    bandwidth_s(&((const f32 *)a_data)[offset],                    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_d(&((const f64 *)a_data)[offset],                    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_c(&reinterpret_cast<const c64 *>(a_data)[offset],    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_z(&reinterpret_cast<const c128 *>(a_data)[offset],   n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
             }
             if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
         } else {
@@ -1532,7 +1532,7 @@ static char doc_det[] = (
     "Parameters\n"
     "----------\n"
     "a : (..., N, N) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "overwrite_a : bool\n"
     "    If True and the input is 2D contiguous and writable, the input\n"
     "    buffer is used directly as the getrf workspace (destroyed on exit).\n"
@@ -1554,7 +1554,7 @@ static char doc_lu[] = (
     "Parameters\n"
     "----------\n"
     "a : (..., M, N) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "permute_l : bool\n"
     "    If True, L is returned already permuted (P @ L) and P is empty.\n"
     "overwrite_a : bool\n"
@@ -1584,7 +1584,7 @@ static char doc_bandwidth[] = (
     "Parameters\n"
     "----------\n"
     "a : (N, M) ndarray\n"
-    "    Input array of type f3232, f3264, complex64, or complex128.\n"
+    "    Input array of type float32, float64, complex64, or complex128.\n"
     "\n"
     "Returns\n"
     "-------\n"
