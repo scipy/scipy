@@ -1114,7 +1114,6 @@ cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
     return PyUFunc_getfperr()
 
 from . cimport _complexstuff
-cimport scipy.special._ufuncs_cxx
 
 ctypedef long double long_double
 ctypedef float complex float_complex
@@ -1273,6 +1272,17 @@ cdef extern from r"cython_special_wrappers.h":
     npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
+
+    double xsf_elliprc(double x, double y) nogil
+    npy_cdouble xsf_celliprc(npy_cdouble x, npy_cdouble y) nogil
+    double xsf_elliprd(double x, double y, double z) nogil
+    npy_cdouble xsf_celliprd(npy_cdouble x, npy_cdouble y, npy_cdouble z) nogil
+    double xsf_elliprf(double x, double y, double z) nogil
+    npy_cdouble xsf_celliprf(npy_cdouble x, npy_cdouble y, npy_cdouble z) nogil
+    double xsf_elliprg(double x, double y, double z) nogil
+    npy_cdouble xsf_celliprg(npy_cdouble x, npy_cdouble y, npy_cdouble z) nogil
+    double xsf_elliprj(double x, double y, double z, double p) nogil
+    npy_cdouble xsf_celliprj(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p) nogil
 
     double xsf_besselpoly(double a, double lmbda, double nu) nogil
     double xsf_beta(double a, double b) nogil
@@ -1989,37 +1999,57 @@ cpdef double ellipkm1(double x0) noexcept nogil:
 cpdef Dd_number_t elliprc(Dd_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.elliprc"""
     if Dd_number_t is double:
-        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RC)(x0, x1)
+        return xsf_elliprc(x0, x1)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RC)(x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_celliprc(
+                _complexstuff.npy_cdouble_from_double_complex(x0),
+                _complexstuff.npy_cdouble_from_double_complex(x1)))
 
 cpdef Dd_number_t elliprd(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprd"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RD)(x0, x1, x2)
+        return xsf_elliprd(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RD)(x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_celliprd(
+                _complexstuff.npy_cdouble_from_double_complex(x0),
+                _complexstuff.npy_cdouble_from_double_complex(x1),
+                _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t elliprf(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprf"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RF)(x0, x1, x2)
+        return xsf_elliprf(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RF)(x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_celliprf(
+                _complexstuff.npy_cdouble_from_double_complex(x0),
+                _complexstuff.npy_cdouble_from_double_complex(x1),
+                _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t elliprg(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.elliprg"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RG)(x0, x1, x2)
+        return xsf_elliprg(x0, x1, x2)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RG)(x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_celliprg(
+                _complexstuff.npy_cdouble_from_double_complex(x0),
+                _complexstuff.npy_cdouble_from_double_complex(x1),
+                _complexstuff.npy_cdouble_from_double_complex(x2)))
 
 cpdef Dd_number_t elliprj(Dd_number_t x0, Dd_number_t x1, Dd_number_t x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.elliprj"""
     if Dd_number_t is double:
-        return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_fellint_RJ)(x0, x1, x2, x3)
+        return xsf_elliprj(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex, double complex, double complex, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cellint_RJ)(x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_celliprj(
+                _complexstuff.npy_cdouble_from_double_complex(x0),
+                _complexstuff.npy_cdouble_from_double_complex(x1),
+                _complexstuff.npy_cdouble_from_double_complex(x2),
+                _complexstuff.npy_cdouble_from_double_complex(x3)))
 
 cpdef double entr(double x0) noexcept nogil:
     """See the documentation for scipy.special.entr"""
