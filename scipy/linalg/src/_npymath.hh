@@ -3,7 +3,6 @@
  */
 #pragma once
 
-#include <wrapper_types.hpp>
 using namespace wrapper;
 
 namespace sp_linalg {
