@@ -18,7 +18,7 @@ __all__ = ['_local_maxima_1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']
 
 
-def _local_maxima_1d(const np.float64_t[::1] x not None):
+def _local_maxima_1d(const np.float64_t[::1] x not None, bint wrap=False):
     """
     Find local maxima in a 1D array.
 
@@ -29,6 +29,8 @@ def _local_maxima_1d(const np.float64_t[::1] x not None):
     ----------
     x : ndarray
         The array to search for local maxima.
+    wrap : bool
+        Set True to wrap search around the end of an array.
 
     Returns
     -------
@@ -51,7 +53,7 @@ def _local_maxima_1d(const np.float64_t[::1] x not None):
     """
     cdef:
         np.intp_t[::1] midpoints, left_edges, right_edges
-        np.intp_t m, i, i_ahead, i_max
+        np.intp_t m, i, i_ahead, i_max, size
 
     # Preallocate, there can't be more maxima than half the size of `x`
     midpoints = np.empty(x.shape[0] // 2, dtype=np.intp)
@@ -59,23 +61,31 @@ def _local_maxima_1d(const np.float64_t[::1] x not None):
     right_edges = np.empty(x.shape[0] // 2, dtype=np.intp)
     m = 0  # Pointer to the end of valid area in allocated arrays
 
+    size = x.shape[0]
+    # Pointer to current sample, first can't be maxima without wrapping
+    i = 0 if wrap else 1
+    # Last sample, can't be maxima without wrapping
+    i_max = size if wrap else size - 1
+    distance = 0
+
     with nogil:
-        i = 1  # Pointer to current sample, first one can't be maxima
-        i_max = x.shape[0] - 1  # Last sample can't be maxima
         while i < i_max:
             # Test if previous sample is smaller
-            if x[i - 1] < x[i]:
-                i_ahead = i + 1  # Index to look ahead of current sample
+            if x[(i + size - 1) % size] < x[i]:
+                i_ahead = i + 1 # Index to look ahead of current sample
+
+                # Look at most one traversal past i or until end the of array
+                search_end = i + size if wrap else size
 
                 # Find next sample that is unequal to x[i]
-                while i_ahead < i_max and x[i_ahead] == x[i]:
+                while i_ahead < search_end and x[i_ahead % size] == x[i]:
                     i_ahead += 1
 
                 # Maxima is found if next unequal sample is smaller than x[i]
-                if x[i_ahead] < x[i]:
+                if i_ahead < search_end and x[i_ahead % size] < x[i]:
                     left_edges[m] = i
-                    right_edges[m] = i_ahead - 1
-                    midpoints[m] = (left_edges[m] + right_edges[m]) // 2
+                    right_edges[m] = (i_ahead - 1) % size
+                    midpoints[m] = (left_edges[m] + ((right_edges[m] - left_edges[m] + size) % size) // 2) % size
                     m += 1
                     # Skip samples that can't be maximum
                     i = i_ahead
