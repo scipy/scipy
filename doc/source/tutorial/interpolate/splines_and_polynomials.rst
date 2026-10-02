@@ -194,6 +194,103 @@ We stress that the coefficients are given in the
 of :math:`1, x, \cdots, x^k`.
 
 
+.. _tutorial-interpolate_bspl_control_points:
+
+Coefficients and control points
+-------------------------------
+
+The b-spline coefficients have a simple geometric interpretation: they are
+the *control points* of the spline. The polyline connecting the control
+points --- the *control polygon* --- follows the shape of the spline, and the
+spline lies within the convex hull of its control points. How exactly the
+coefficients map onto the control points depends on whether the spline
+represents a function or a curve.
+
+**Spline functions.** For a function, :math:`y = f(x)`, the coefficients are
+scalars, and they only give the :math:`y`-coordinates of the control points.
+The matching :math:`x`-coordinates are the so-called *Greville abscissae*,
+which are averages of ``k`` consecutive knots,
+
+.. math::
+
+    \xi_j = \frac{t_{j+1} + t_{j+2} + \dots + t_{j+k}}{k} ,
+    \qquad j = 0, 1, \dots, n-1 ,
+
+where ``n = len(t) - k - 1`` is the number of coefficients.
+
+.. plot::
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import make_interp_spline
+    >>> x = np.linspace(0, 2*np.pi, 8)
+    >>> spl = make_interp_spline(x, np.sin(x), k=3)
+    >>> n = len(spl.t) - spl.k - 1
+    >>> xg = np.array([spl.t[j+1:j+spl.k+1].mean() for j in range(n)])
+
+    The control points are ``(xg[j], spl.c[j])``. Plot them together with the
+    spline:
+
+    >>> xx = np.linspace(x[0], x[-1], 200)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xx, spl(xx), label='spline')
+    >>> ax.plot(xg, spl.c, 'o--', label='control polygon')
+    >>> ax.plot(x, np.sin(x), 'kx', label='data')
+    >>> ax.set_title('y = f(x): coefficients are heights')
+    >>> ax.legend()
+    >>> plt.show()
+
+**Parametric curves.** For a curve in :math:`d` dimensions, e.g. constructed
+by `make_splprep`, each coefficient is itself a point: the coefficient array
+has shape ``(n, d)``, and its rows are the control points.
+
+.. plot::
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import BSpline, make_splprep
+    >>> theta = np.linspace(0, 1.5*np.pi, 10)
+    >>> data = [theta*np.cos(theta), theta*np.sin(theta)]
+    >>> spl, u = make_splprep(data, s=0)
+    >>> spl.c.shape
+    (10, 2)
+
+    Since a basis element is non-zero on at most ``k+1`` knot intervals,
+    moving a single control point only changes the curve locally:
+
+    >>> c_moved = spl.c.copy()
+    >>> c_moved[5] += [1.5, 1.5]
+    >>> spl_moved = BSpline(spl.t, c_moved, spl.k)
+
+    Plot the curve together with its control polygon (left), and the effect of
+    moving a control point (right):
+
+    >>> uu = np.linspace(0, 1, 300)
+    >>> fig, axs = plt.subplots(1, 2, figsize=(7, 5), layout='constrained')
+    >>> ax = axs[0]
+    >>> ax.plot(*spl(uu), label='spline')
+    >>> ax.plot(*spl.c.T, 'o--', label='control polygon')
+    >>> ax.plot(*data, 'kx', label='data')
+    >>> ax.set_title('parametric curve: rows of c are points')
+    >>> ax.set_aspect('equal')
+    >>> ax.legend(loc='center')
+    >>> ax = axs[1]
+    >>> ax.plot(*spl(uu), color='C0', alpha=0.4, label='original')
+    >>> ax.plot(*spl_moved(uu).T, color='C0', label='moved')
+    >>> ax.plot(*c_moved.T, 'o--', color='C1', label='control polygon')
+    >>> ax.plot(*spl.c[5], 's', color='C1', alpha=0.4)
+    >>> ax.set_title('moving control point 5')
+    >>> ax.set_aspect('equal')
+    >>> ax.legend(loc='center')
+    >>> plt.show()
+
+Note the transposes: ``spl.c`` has shape ``(n, d)``, so ``spl.c.T`` unpacks
+into the ``x`` and ``y`` coordinates of the control points. ``spl(uu)``
+already has shape ``(d, len(uu))``, because `make_splprep` constructs the
+spline with ``axis=1``, while ``spl_moved``, constructed directly from the
+``(n, d)`` coefficient array, evaluates to shape ``(len(uu), d)``.
+
+
 .. _tutorial-interpolate_bspl_basis:
 
 B-spline basis elements
