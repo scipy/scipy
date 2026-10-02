@@ -907,6 +907,15 @@ class BSpline:
         --------
         splder, splantider
 
+        Notes
+        -----
+        The coefficient array of the returned instance follows the FITPACK
+        convention and is padded with trailing zeros so that
+        ``len(b.c) == len(b.t)``. These extra coefficients are ignored when
+        the spline is evaluated. If an array with exactly
+        ``len(b.t) - b.k - 1`` coefficients is needed, slice it as
+        ``b.c[:len(b.t) - b.k - 1, ...]``.
+
         """
         if hasattr(self._delegate_to, "derivative"):
             # NumPy backend class lacks derivative method because it relies on
