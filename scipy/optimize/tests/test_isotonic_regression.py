@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 
-from scipy.optimize._pava_pybind import pava
+from scipy.optimize._pava import pava
 from scipy.optimize import isotonic_regression
 
 

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from ._optimize import OptimizeResult
-from ._pava_pybind import pava
+from ._pava import pava
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -120,7 +120,7 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    yarr = np.atleast_1d(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
+    yarr = np.atleast_1d(y)  # Check yarr.ndim == 1 is implicit in pava.
     order = slice(None) if increasing else slice(None, None, -1)
     x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
     if weights is None:
@@ -137,7 +137,7 @@ def isotonic_regression(
 
         wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
-    r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
+    r = np.full(shape=n + 1, fill_value=-1, dtype=np.int64)
     x, wx, r, b = pava(x, wx, r)
     # Now that we know the number of blocks b, we only keep the relevant part
     # of r and wx.
