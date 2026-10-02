@@ -27,6 +27,7 @@ Filters
    generic_filter1d - 1-D generic filter along the given axis
    generic_gradient_magnitude
    generic_laplace
+   hampel_filter - 1-D Hampel filter for outlier detection
    laplace - N-D Laplace filter based on approximate second derivatives
    maximum_filter
    maximum_filter1d
