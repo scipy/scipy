@@ -4718,7 +4718,7 @@ def buttap(N, *, xp=None, device=None):
     z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
     p : ndarray[complex128]
-        Poles of the transfer function as an `(N,)` array.
+        Poles of the transfer function as an ``(N,)`` array.
     k : float
         Gain of the transfer function, which is always one.
 
@@ -4729,14 +4729,13 @@ def buttap(N, *, xp=None, device=None):
 
     .. math::
 
-        H(s) = k \prod_{l=0}^{N-1} \frac{\omega_c}{s - s_l}
+        H(s) = k \prod_{l=0}^{N-1} \frac{\omega_c}{s - p_l}
                  \quad\text{with poles}\quad
-          s_l = -\omega_c\exp\!\left\{ j\pi\frac{2l+1-N}{2N} \right\} \,.
+          p_l = -\omega_c\exp\!\left\{ j\pi\frac{2l+1-N}{2N} \right\} \,.
 
     Hence, this function returns no zeros and `N` poles. Note that the poles are ordered
-    in a way so that the :math:`l`\-th pole is the conjugate complex of the
-    :math:`(N-1-l)`\-th pole. I.e., if :math:`N` is odd, then the :math:`(N//2)`-th pole
-    is always :math:`-1`.
+    in a way so that the ``l``-th and ``(N-1-l)``-th pole are complex conjugates of each
+    other. Furthermore, if `N` is odd, then the ``(N//2)``-th pole is always :math:`-1`.
 
     References
     ----------
@@ -4860,7 +4859,7 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True)
     >>> ax0.set(title='3rd-order Chebyshev type I prototype', ylim=(-60, 3),
     ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
-    >>> ax0.fill((0, 0, 1, 1), (0, -5, -5, 0), 'C2', alpha=.3, label="5 dB ripple band")
+    >>> ax0.fill((0, 0, 1, 1), (0, -5, -5, 0), 'C3', alpha=.3, label="5 dB ripple band")
     >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
     >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
     ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
