@@ -150,3 +150,11 @@ class TestVsNumpyNorm:
                     for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
+
+    def test_norm_dtype_match(self):
+        # https://github.com/scipy/scipy/issues/26281
+        for dtype in (np.float32, np.float64, np.complex64, np.complex128):
+            M = np.array([[1, 2], [-3, 4]], dtype=dtype)
+            S = scipy.sparse.csr_array(M)
+            for ord in (1, np.inf, -1, -np.inf, 'fro', None):
+                assert spnorm(S, ord=ord).dtype == npnorm(M, ord=ord).dtype
