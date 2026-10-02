@@ -246,13 +246,16 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     LSQR may converge more rapidly on the system ``A@M(inverse)@z =
     b``, after which x can be recovered by solving M@x = z.
 
-    The ``var`` estimate accumulates over the iterations actually taken and
-    only approaches the requested diagonals as the bidiagonalization nears
-    ``n`` steps.  Since `lsqr` stops as soon as ``x`` meets the tolerances,
-    which is usually much earlier, ``var`` is normally an underestimate.
-    Accuracy degrades further on larger problems, where the
-    bidiagonalization vectors lose orthogonality in floating point, so
-    ``var`` should be treated as a rough indication only.
+    The ``var`` estimate is accumulated over the iterations actually taken
+    and only equals the requested diagonals after ``n`` steps in exact
+    arithmetic.  With the default tolerances `lsqr` stops long before that,
+    and ``var`` comes out too small by a factor that depends on the problem
+    and can be large.  Iterating further does not reliably help: once the
+    bidiagonalization vectors lose orthogonality in floating point, some
+    entries can come out too large instead.  This is an error in the
+    diagonals themselves, separate from the usual caveat that formal errors
+    understate the true uncertainty, so ``var`` should not be relied on as a
+    variance estimate.
 
     If A is symmetric, LSQR should not be used!
 
