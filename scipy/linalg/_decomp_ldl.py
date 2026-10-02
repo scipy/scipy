@@ -7,6 +7,7 @@ from numpy.exceptions import ComplexWarning
 
 from scipy._lib._util import _apply_over_batch
 from ._decomp import _asarray_validated
+from ._misc import LinAlgWarning
 from .lapack import get_lapack_funcs, _compute_lwork
 
 __all__ = ['ldl']
@@ -151,6 +152,11 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
         raise ValueError(f'{s.upper()} exited with the internal error "illegal value '
                          f'in argument number {-info}". See LAPACK documentation '
                          'for the error codes.')
+    if info > 0:
+        warn('The factorization may be incorrect: the matrix is singular and '
+             'LAPACK returned info > 0. This may be due to a bug in the blocked '
+             'LAPACK routine ?LASYF for matrices with n > 64.',
+             LinAlgWarning, stacklevel=2)
 
     swap_arr, pivot_arr = _ldl_sanitize_ipiv(piv, lower=lower)
     d, lu = _ldl_get_d_and_l(ldu, pivot_arr, lower=lower, hermitian=hermitian)

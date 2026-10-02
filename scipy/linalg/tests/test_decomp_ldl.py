@@ -4,7 +4,7 @@ from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    tril, triu_indices_from, spacing, float32, float64,
                    complex64, complex128)
 from numpy.exceptions import ComplexWarning
-from scipy.linalg import ldl
+from scipy.linalg import ldl, LinAlgWarning
 import pytest
 
 
@@ -13,9 +13,11 @@ def test_args():
     # Nonsquare array
     with pytest.raises(ValueError):
         ldl(A[:, :2])
-    # Complex matrix with imaginary diagonal entries with "hermitian=True"
+    # Complex matrix with imaginary diagonal entries with "hermitian=True".
+    # Use a matrix whose real part is nonsingular so that only the
+    # ComplexWarning (and not the LinAlgWarning for singular matrices) fires.
     with pytest.warns(ComplexWarning):
-        ldl(A*1j)
+        ldl(A + A*1j)
 
 
 def test_empty_array():
@@ -134,3 +136,37 @@ def test_ldl_type_size_combinations_complex(n, dtype):
     u, d2, p = ldl(x, lower=0, hermitian=0)
     assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg2)
     assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg2)
+
+
+def _singular_psd(n):
+    # Singular PSD matrix: the top-left 2x2 block is rank one.
+    A = np.diag(np.full(n, 0.04))
+    A[:2, :2] = 0.0625
+    return A
+
+
+def test_ldl_singular_matrix_warns():
+    # gh-26330: LAPACK returns info > 0 when D is exactly singular.
+    # For n > 64 the blocked ?LASYF routine may return incorrect factors,
+    # so ldl must warn instead of silently returning them.
+    A = _singular_psd(65)
+    with pytest.warns(LinAlgWarning):
+        ldl(A, lower=True)
+
+
+def test_ldl_singular_matrix_warns_upper():
+    # Same as above but requesting the upper triangular factor.
+    A = _singular_psd(65)
+    with pytest.warns(LinAlgWarning):
+        ldl(A, lower=False)
+
+
+@pytest.mark.parametrize("lower", [True, False])
+def test_ldl_singular_matrix_n64_unblocked(lower):
+    # n = 64 takes the unblocked code path. LAPACK still reports info > 0
+    # for the singular matrix, so the warning fires, but the returned
+    # factors are correct (unlike the blocked ?LASYF path for n > 64).
+    A = _singular_psd(64)
+    with pytest.warns(LinAlgWarning):
+        lu, d, perm = ldl(A, lower=lower)
+    assert_allclose(lu.dot(d).dot(lu.T), A, atol=1e-12, rtol=0)
