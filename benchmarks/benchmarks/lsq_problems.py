@@ -10,7 +10,7 @@ from scipy.integrate import odeint
 class LSQBenchmarkProblem:
     """Template class for nonlinear least squares benchmark problems.
 
-    The optimized variable is n-dimensional vector x and the objective function 
+    The optimized variable is n-dimensional vector x and the objective function
     has the form
 
     F(x) = ||f(x)||^2 = sum(f_i(x)^2, i = 1, ..., m)

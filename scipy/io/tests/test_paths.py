@@ -5,10 +5,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
+import pytest
 
 import scipy.io
 import scipy.io.wavfile
 import scipy.sparse
+from scipy._lib._testutils import IS_WASM
 
 
 class TestPaths:
@@ -59,6 +61,7 @@ class TestPaths:
             scipy.io.hb_write(path, data)
             assert path.is_file()
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_mmio_read(self):
         # Save data with string path, load with pathlib.Path
         with TemporaryDirectory() as temp_dir:
@@ -69,6 +72,7 @@ class TestPaths:
             data_new = scipy.io.mmread(path, spmatrix=False)
             assert (data_new != data).nnz == 0
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_mmio_write(self):
         with TemporaryDirectory() as temp_dir:
             data = scipy.sparse.eye_array(3, format='csr')

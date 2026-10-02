@@ -7,7 +7,8 @@ import warnings
 
 import numpy as np
 
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.optimize._optimize import _status_message, _wrap_callback
@@ -995,7 +996,7 @@ class DifferentialEvolutionSolver:
             x0_scaled = self._unscale_parameters(np.asarray(x0))
             if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
                 raise ValueError(
-                    "Some entries in x0 lay outside the specified bounds"
+                    "Some entries in x0 lie outside the specified bounds"
                 )
             self.population[0] = x0_scaled
 

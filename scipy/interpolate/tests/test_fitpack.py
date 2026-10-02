@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 )
 from pytest import raises as assert_raises
 import pytest
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_WASM
 
 from scipy.interpolate import RectBivariateSpline
 from scipy.interpolate import make_splrep
@@ -97,9 +97,11 @@ class TestSmokeTests:
                         xp_assert_close(spl.t, tck[0], atol=1e-15)
                         xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
-                    with assert_raises(ValueError):
-                        spl = make_splrep(x, v, k=k, s=s,
-                                          xb=xb, xe=xe, bc_type='periodic')
+                    # Periodic BC with s > 0 doesn't require v[0] == v[-1];
+                    # see gh-24693
+                    spl = make_splrep(x, v, k=k, s=s,
+                                        xb=xb, xe=xe, bc_type='periodic')
+                    xp_assert_close(spl(xb), spl(xe), atol=1e-5)
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -304,6 +306,7 @@ class TestSplder:
     def test_order0_diff(self):
         assert_raises(ValueError, splder, self.spl, 4)
 
+    @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_kink(self):
         # Should refuse to differentiate splines with kinks
 

@@ -13,8 +13,9 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
-                                   xp_default_dtype, make_xp_pytest_param,
+                                   make_xp_pytest_param,
                                    xp_assert_close)
 
 
@@ -162,7 +163,7 @@ class TestBlockDiag:
 
     def test_dtype(self, xp):
         x = block_diag(xp.asarray([[1.5]]))
-        assert x.dtype == xp_default_dtype(xp)
+        assert x.dtype == xpx.default_dtype(xp)
 
         x = block_diag(xp.asarray([[True]]))
         assert x.dtype == xp.bool
@@ -515,21 +516,24 @@ def test_dft():
 
 
 @make_xp_test_case(fiedler)
-def test_fiedler(xp):
-    f = fiedler(xp.asarray([]))
+@pytest.mark.parametrize('dtype', ["float32", "float64"])
+def test_fiedler(xp, dtype):
+    dtype = getattr(xp, dtype)
+    f = fiedler(xp.asarray([], dtype=dtype))
     assert xp_size(f) == 0
     assert f.shape == (0, 0)
+    assert f.dtype == dtype
 
-    f = fiedler(xp.asarray([123.]))
-    xp_assert_equal(f, xp.asarray([[0.]]))
+    f = fiedler(xp.asarray([123.], dtype=dtype))
+    xp_assert_equal(f, xp.asarray([[0.]], dtype=dtype))
 
-    f = fiedler(xp.arange(1, 7))
+    f = fiedler(xp.arange(1, 7, dtype=dtype))
     des = xp.asarray([[0, 1, 2, 3, 4, 5],
                       [1, 0, 1, 2, 3, 4],
                       [2, 1, 0, 1, 2, 3],
                       [3, 2, 1, 0, 1, 2],
                       [4, 3, 2, 1, 0, 1],
-                      [5, 4, 3, 2, 1, 0]])
+                      [5, 4, 3, 2, 1, 0]], dtype=dtype)
     xp_assert_equal(f, des)
 
 
@@ -594,23 +598,36 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.parametrize('f, args',
-                         [make_xp_pytest_param(circulant, ()),
-                          make_xp_pytest_param(companion, ()),
-                          make_xp_pytest_param(convolution_matrix, (5, 'same')),
-                          make_xp_pytest_param(fiedler, ()),
-                          make_xp_pytest_param(fiedler_companion, ()),
-                          make_xp_pytest_param(hankel, (np.arange(9),)),
-                          make_xp_pytest_param(leslie, (np.arange(9,
-                                                                  dtype=np.float64),)),
-                          make_xp_pytest_param(toeplitz, (np.arange(9),)),])
-def test_batch(f, args, xp):
+@pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+@pytest.mark.parametrize('f, args, kwargs', [
+    make_xp_pytest_param(circulant, (), {}),
+    make_xp_pytest_param(companion, (), {}),
+    make_xp_pytest_param(convolution_matrix, (), dict(n=5, mode='full')),
+    make_xp_pytest_param(convolution_matrix, (), dict(n=5, mode='valid')),
+    make_xp_pytest_param(convolution_matrix, (), dict(n=5, mode='same')),
+    make_xp_pytest_param(fiedler, (), {}),
+    make_xp_pytest_param(fiedler_companion, (), {}),
+    make_xp_pytest_param(hankel, (np.arange(9),), {}),
+    make_xp_pytest_param(leslie, (np.arange(9),), {}),
+    make_xp_pytest_param(toeplitz, (np.arange(9),), {}),
+])
+def test_batch(dtype, f, args, kwargs, xp):
+    dtype = xpx.default_dtype(xp) if dtype is None else getattr(xp, dtype)
     rng = np.random.default_rng(283592436523456)
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
 
-    res = f(xp.asarray(A), *list(map(xp.asarray, args)))
-    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
-    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]))
+    ref = np.asarray([f(a, *args, **kwargs) for a in A.reshape(-1, m)])
+    args = [xp.asarray(arg, dtype=dtype) for arg in args]
+    res = f(xp.asarray(A, dtype=dtype), *args, **kwargs)
+
+    ref = xp.asarray(ref.reshape(A.shape[:-1] + ref.shape[-2:]), dtype=dtype)
+    xp_assert_close(res, ref)
+
+    # test zero-size batch
+    batch_shape = (0,)
+    A = rng.random(batch_shape + (m,))
+    res = f(xp.asarray(A, dtype=dtype), *args, **kwargs)
+    ref = xp.empty(batch_shape + ref.shape[-2:], dtype=dtype)
     xp_assert_close(res, ref)

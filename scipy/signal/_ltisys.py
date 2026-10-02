@@ -2661,6 +2661,8 @@ def _order_complex_poles(poles):
     real_poles, complex_i, conjugate complex_i, ....
     The lexicographic sort on the complex poles is added to help the user to
     compare sets of poles.
+
+    Currently, this helper is only used by `_valid_inputs` and `place_poles`.
     """
     ordered_poles = np.sort(poles[np.isreal(poles)])
     im_poles = []
@@ -3100,7 +3102,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-
+    ...
     >>> A = np.array([[ 1.380,  -0.2077,  6.715, -5.676  ],
     ...               [-0.5814, -4.290,   0,      0.6750 ],
     ...               [ 1.067,   4.273,  -6.654,  5.893  ],
@@ -3122,7 +3124,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     >>> fsf2 = signal.place_poles(A, B, P)  # uses YT method
     >>> fsf2.computed_poles
-    array([-8.6659, -5.0566, -0.5   , -0.2   ])
+    array([-8.6659+0.j, -5.0566+0.j, -0.5   +0.j, -0.2   +0.j])
+
 
     >>> fsf3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
     >>> fsf3.X
@@ -3328,8 +3331,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback = Bunch()
     full_state_feedback.gain_matrix = gain_matrix
     full_state_feedback.computed_poles = _order_complex_poles(
-        np.linalg.eig(A - np.dot(B, gain_matrix))[0]
-        )
+        linalg.eigvals(A - np.dot(B, gain_matrix)))  # complex-valued poles
     full_state_feedback.requested_poles = poles
     full_state_feedback.X = transfer_matrix
     full_state_feedback.rtol = cur_rtol

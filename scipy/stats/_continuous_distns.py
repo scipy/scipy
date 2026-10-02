@@ -411,6 +411,11 @@ class norm_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Normal_distribution
+
     %(example)s
 
     """
@@ -776,7 +781,7 @@ class beta_gen(rv_continuous):
         return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        return scu._beta_ppf(q, a, b)
+        return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
         a_plus_b = a + b
@@ -1180,7 +1185,8 @@ class burr_gen(rv_continuous):
     ----------
     .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
        Mathematical Statistics, 13(2), pp 215-232 (1942).
-    .. [2] https://en.wikipedia.org/wiki/Dagum_distribution
+    .. [2] "Dagum distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Dagum_distribution
     .. [3] Kleiber, Christian. "A guide to the Dagum distributions."
        Modeling Income Distributions and Lorenz Curves  pp 97-117 (2008).
 
@@ -1304,10 +1310,11 @@ class burr12_gen(rv_continuous):
     .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
        Mathematical Statistics, 13(2), pp 215-232 (1942).
 
-    .. [2] https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
+    .. [2] NIST Dataplot Reference Manual, Volume 2, "B12PDF",
+           https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
 
-    .. [3] "Burr distribution",
-       https://en.wikipedia.org/wiki/Burr_distribution
+    .. [3] "Burr distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Burr_distribution
 
     %(example)s
 
@@ -1549,6 +1556,11 @@ class chi_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Chi distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi_distribution
+
     %(example)s
 
     """
@@ -1641,6 +1653,11 @@ class chi2_gen(rv_continuous):
     ``scale = 2``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Chi-squared distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Chi-squared_distribution
 
     %(example)s
 
@@ -2438,7 +2455,7 @@ class fatiguelife_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Birnbaum-Saunders distribution",
+    .. [1] "Birnbaum-Saunders distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Birnbaum-Saunders_distribution
 
     %(example)s
@@ -3204,6 +3221,11 @@ class genpareto_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Generalized Pareto distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_Pareto_distribution
+
     %(example)s
 
     """
@@ -3393,6 +3415,11 @@ class genextreme_gen(rv_continuous):
     `genextreme` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Generalized extreme value distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution
 
     %(example)s
 
@@ -3951,7 +3978,7 @@ class genhalflogistic_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = \frac{2 (1 - c x)^{1/(c-1)}}{[1 + (1 - c x)^{1/c}]^2}
+        f(x, c) = \frac{2 (1 - c x)^{1/c-1}}{[1 + (1 - c x)^{1/c}]^2}
 
     for :math:`0 \le x \le 1/c`, and :math:`c > 0`.
 
@@ -4309,6 +4336,11 @@ class gumbel_r_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
+
     %(example)s
 
     """
@@ -4440,6 +4472,11 @@ class gumbel_l_gen(rv_continuous):
     log-Weibull and Gompertz distributions.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
 
     %(example)s
 
@@ -6180,8 +6217,8 @@ class laplace_asymmetric_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Asymmetric Laplace distribution", Wikipedia
-            https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
+    .. [1] "Asymmetric Laplace distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
 
     .. [2] Kozubowski TJ and Podgórski K. A Multivariate and
            Asymmetric Generalization of Laplace Distribution,
@@ -6636,7 +6673,7 @@ class loggamma_gen(rv_continuous):
         f(x, c) = \frac{\exp(c x - \exp(x))}
                        {\Gamma(c)}
 
-    for all :math:`x, c > 0`. Here, :math:`\Gamma` is the
+    for real :math:`x` and :math:`c > 0`. Here, :math:`\Gamma` is the
     gamma function (`scipy.special.gamma`).
 
     `loggamma` takes ``c`` as a shape parameter for :math:`c`.
@@ -7738,7 +7775,7 @@ class nakagami_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Nakagami distribution", Wikipedia
+    .. [1] "Nakagami distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Nakagami_distribution
     .. [2] M. Nakagami, "The m-distribution - A general formula of intensity
            distribution of rapid fading", Statistical methods in radio wave
@@ -7954,21 +7991,21 @@ class ncf_gen(rv_continuous):
     .. math::
 
         f(x, n_1, n_2, \lambda) =
-            \exp\left(\frac{\lambda}{2} +
+            \exp\left(-\frac{\lambda}{2} +
                       \lambda n_1 \frac{x}{2(n_1 x + n_2)}
                 \right)
             n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
             (n_2 + n_1 x)^{-(n_1 + n_2)/2}
-            \gamma(n_1/2) \gamma(1 + n_2/2) \\
+            \Gamma(n_1/2) \Gamma(1 + n_2/2) \\
             \frac{L^{\frac{n_1}{2}-1}_{n_2/2}
                 \left(-\lambda n_1 \frac{x}{2(n_1 x + n_2)}\right)}
             {B(n_1/2, n_2/2)
-                \gamma\left(\frac{n_1 + n_2}{2}\right)}
+                \Gamma\left(\frac{n_1 + n_2}{2}\right)}
 
     for :math:`n_1, n_2 > 0`, :math:`\lambda \ge 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
     the denominator, :math:`\lambda` the non-centrality parameter,
-    :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
+    :math:`\Gamma` is the gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
     `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
@@ -8676,7 +8713,7 @@ class powerlaw_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}
+        f(x; a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
 
     with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 
@@ -9018,7 +9055,7 @@ class powernorm_gen(rv_continuous):
     References
     ----------
     .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.13,
-           https://www.itl.nist.gov/div898/handbook//eda/section3/eda366d.htm
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366d.htm
 
     %(example)s
 
@@ -9471,7 +9508,7 @@ class irwinhall_gen(rv_continuous):
             Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
 
     %(example)s
-    """  # noqa: E501
+    """
 
     @replace_notes_in_docstring(rv_continuous, notes="""\
         Raises a ``NotImplementedError`` for the Irwin-Hall distribution because
@@ -9631,7 +9668,7 @@ class semicircular_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Wigner semicircle distribution",
+    .. [1] "Wigner semicircle distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Wigner_semicircle_distribution
 
     %(example)s
@@ -9697,7 +9734,7 @@ class skewcauchy_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Skewed generalized *t* distribution", Wikipedia
+    .. [1] "Skewed generalized *t* distribution", Wikipedia,
        https://en.wikipedia.org/wiki/Skewed_generalized_t_distribution#Skewed_Cauchy_distribution
 
     %(example)s
@@ -11351,31 +11388,7 @@ class vonmises_gen(rv_continuous):
                 # some large kappa such that r[0](kappa) = 1.0 numerically.
                 return 1e16
             elif r > 0:
-                def solve_for_kappa(kappa):
-                    return sc.i1e(kappa)/sc.i0e(kappa) - r
-
-                # The bounds of the root of r[0](kappa) = r are derived from
-                # selected bounds of r[0](x) given in [1, Eq. 11 & 16].  See
-                # gh-20102 for details.
-                #
-                # [1] Amos, D. E. (1973).  Computation of Modified Bessel
-                #     Functions and Their Ratios.  Mathematics of Computation,
-                #     28(125): 239-251.
-                lower_bound = r/(1-r)/(1+r)
-                upper_bound = 2*lower_bound
-
-                # The bounds are violated numerically for certain values of r,
-                # where solve_for_kappa evaluated at the bounds have the same
-                # sign.  This indicates numerical imprecision of i1e()/i0e().
-                # Return the violated bound in this case as it's more accurate.
-                if solve_for_kappa(lower_bound) >= 0:
-                    return lower_bound
-                elif solve_for_kappa(upper_bound) <= 0:
-                    return upper_bound
-                else:
-                    root_res = root_scalar(solve_for_kappa, method="brentq",
-                                           bracket=(lower_bound, upper_bound))
-                    return root_res.root
+                return scu._iv_ratioinv(1, r)
             else:
                 # if the provided floc is very far from the circular mean,
                 # the mean resultant length r can become negative.
@@ -11568,7 +11581,7 @@ class gennorm_gen(rv_continuous):
     References
     ----------
 
-    .. [1] "Generalized normal distribution, Version 1",
+    .. [1] "Generalized normal distribution, Version 1", Wikipedia,
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
 
     .. [2] Nardon, Martina, and Paolo Pianca. "Simulation techniques for
@@ -11596,6 +11609,10 @@ class gennorm_gen(rv_continuous):
         # evaluating (.5 + c) first prevents numerical cancellation
         return (0.5 + c) - c * sc.gammaincc(1.0/beta, abs(x)**beta)
 
+    def _logcdf(self, x, beta):
+        val = sc.log_gammaincc(1.0/beta, abs(x)**beta) - np.log(2)
+        return xpx.apply_where(x > 0, val, scu._log1mexp, fill_value=val)
+
     def _ppf(self, x, beta):
         c = np.sign(x - 0.5)
         # evaluating (1. + c) first prevents numerical cancellation
@@ -11603,6 +11620,9 @@ class gennorm_gen(rv_continuous):
 
     def _sf(self, x, beta):
         return self._cdf(-x, beta)
+
+    def _logsf(self, x, beta):
+        return self._logcdf(-x, beta)
 
     def _isf(self, x, beta):
         return -self._ppf(x, beta)
@@ -11676,7 +11696,7 @@ class halfgennorm_gen(rv_continuous):
     References
     ----------
 
-    .. [1] "Generalized normal distribution, Version 1",  Wikipedia,
+    .. [1] "Generalized normal distribution, Version 1", Wikipedia,
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
     .. [2] "Generalized gamma distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Generalized_gamma_distribution
@@ -11755,7 +11775,7 @@ class crystalball_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Crystal Ball Function",
+    .. [1] "Crystal Ball Function", Wikipedia,
            https://en.wikipedia.org/wiki/Crystal_Ball_function
 
     %(example)s
@@ -11940,7 +11960,7 @@ class argus_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "ARGUS distribution",
+    .. [1] "ARGUS distribution", Wikipedia,
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
@@ -12329,7 +12349,7 @@ class studentized_range_gen(rv_continuous):
     References
     ----------
 
-    .. [1] "Studentized range distribution",
+    .. [1] "Studentized range distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Studentized_range_distribution
     .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
            Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
@@ -12647,6 +12667,7 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
+_distn_names: list[str]
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']

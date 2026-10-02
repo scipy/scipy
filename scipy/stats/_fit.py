@@ -1207,7 +1207,7 @@ def _fit_norm(data, floc=None, fscale=None):
     return loc, scale
 
 
-_fit_funs = {stats.norm: _fit_norm}  # type: ignore[attr-defined]
+_fit_funs = {stats.norm: _fit_norm}
 
 
 # Vectorized goodness of fit statistic functions. These accept a frozen
@@ -1276,7 +1276,7 @@ def _filliben(dist, data, axis):
 
     # [7] Section 8 # 4
     return _corr(X, M)
-_filliben.alternative = 'less'  # type: ignore[attr-defined]
+_filliben.alternative = 'less'  # pyrefly: ignore[missing-attribute]
 
 
 def _cramer_von_mises(dist, data, axis):

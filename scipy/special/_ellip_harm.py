@@ -95,7 +95,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     >>> a, a_err
     (583.44366156701483, 6.4580890640310646e-11)
 
-    """  # noqa: E501
+    """
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
 

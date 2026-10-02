@@ -430,7 +430,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
 
-  if ((wa = malloc(4*n * sizeof(double)))==NULL) {
+  if ((wa = PyMem_RawMalloc(4*n * sizeof(double)))==NULL) {
     PyErr_NoMemory();
     goto fail;
   }
@@ -445,7 +445,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   if (info < 0) goto fail;            /* Python Terminated */
 
 
-  free(wa);
+  PyMem_RawFree(wa);
   Py_DECREF(extra_args);
   Py_DECREF(ap_diag);
 
@@ -470,7 +470,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_fjac);
   Py_XDECREF(ap_r);
   Py_XDECREF(ap_qtf);
-  if (allocated) free(wa);
+  if (allocated) PyMem_RawFree(wa);
   return NULL;
 }
 
@@ -574,7 +574,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
   ldfjac = dims[1];
 
-  if ((wa = malloc(4*n * sizeof(double)))==NULL) {
+  if ((wa = PyMem_RawMalloc(4*n * sizeof(double)))==NULL) {
     PyErr_NoMemory();
     goto fail;
   }
@@ -588,7 +588,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
   if (info < 0) goto fail;            /* Python Terminated */
 
-  free(wa);
+  PyMem_RawFree(wa);
   Py_DECREF(extra_args);
   Py_DECREF(ap_diag);
 
@@ -613,7 +613,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_diag);
   Py_XDECREF(ap_r);
   Py_XDECREF(ap_qtf);
-  if (allocated) free(wa);
+  if (allocated) PyMem_RawFree(wa);
   return NULL;
 
 }
@@ -715,7 +715,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   qtf = (double *) PyArray_DATA(ap_qtf);
   fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
-  wa = (double *)malloc((3*n + m)* sizeof(double));
+  wa = (double *)PyMem_RawMalloc((3*n + m)* sizeof(double));
   if (wa == NULL) {
     PyErr_NoMemory();
     goto fail;
@@ -730,7 +730,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
 
   if (info < 0) goto fail;           /* Python error */
 
-  free(wa);
+  PyMem_RawFree(wa);
   Py_DECREF(extra_args);
   Py_DECREF(ap_diag);
 
@@ -755,7 +755,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_diag);
   Py_XDECREF(ap_ipvt);
   Py_XDECREF(ap_qtf);
-  if (allocated) free(wa);
+  if (allocated) PyMem_RawFree(wa);
   return NULL;
 }
 
@@ -858,7 +858,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   qtf = (double *) PyArray_DATA(ap_qtf);
   fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
-  wa = (double *)malloc((3*n + m)* sizeof(double));
+  wa = (double *)PyMem_RawMalloc((3*n + m)* sizeof(double));
   if (wa == NULL) {
     PyErr_NoMemory();
     goto fail;
@@ -873,7 +873,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
   if (info < 0) goto fail;           /* Python error */
 
-  free(wa);
+  PyMem_RawFree(wa);
   Py_DECREF(extra_args);
   Py_DECREF(ap_diag);
 
@@ -898,7 +898,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_diag);
   Py_XDECREF(ap_ipvt);
   Py_XDECREF(ap_qtf);
-  if (allocated) free(wa);
+  if (allocated) PyMem_RawFree(wa);
   return NULL;
 }
 

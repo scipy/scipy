@@ -130,15 +130,15 @@ class Ratkowsky02(Benchmark):
         - b_m x[2]))^2
 
     where
-    
+
     .. math::
-        
+
         \begin{cases}
         a=[8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62, 67.08]\\
         b=[9., 14., 21., 28., 42., 57., 63., 70., 79.]\\
-        \end{cases}       
-        
-        
+        \end{cases}
+
+
     Here :math:`x_1 \in [1, 100]`, :math:`x_2 \in [0.1, 5]` and
     :math:`x_3 \in [0.01, 0.5]`
 
@@ -176,7 +176,7 @@ class Ripple01(Benchmark):
 
     .. math::
 
-        f_{\text{Ripple01}}(x) = \sum_{i=1}^2 -e^{-2 \log 2 
+        f_{\text{Ripple01}}(x) = \sum_{i=1}^2 -e^{-2 \log 2
         (\frac{x_i-0.1}{0.8})^2} \left[\sin^6(5 \pi x_i)
         + 0.1\cos^2(500 \pi x_i) \right]
 
@@ -216,7 +216,7 @@ class Ripple25(Benchmark):
 
     .. math::
 
-        f_{\text{Ripple25}}(x) = \sum_{i=1}^2 -e^{-2 
+        f_{\text{Ripple25}}(x) = \sum_{i=1}^2 -e^{-2
         \log 2 (\frac{x_i-0.1}{0.8})^2}
         \left[\sin^6(5 \pi x_i) \right]
 

@@ -886,6 +886,15 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
+@pytest.mark.parametrize('method', bracket_methods)
+@pytest.mark.parametrize('endpoint', [0, 1])
+def test_gh25955_endpoint_root_iterations(method, endpoint):
+    root, result = method(lambda x: x - endpoint, 0, 1, full_output=True)
+
+    assert root == endpoint
+    assert result.iterations == 0
+
+
 def test_gh_14486_converged_false():
     """Test that zero slope with secant method results in a converged=False"""
     def lhs(x):
@@ -995,19 +1004,19 @@ def test_bisect_special_parameter(method):
 class TestRidderUnderflow:
     def test_gh_issue_underflow(self):
         # Regression test for underflow in Ridder's method.
-        # Previously, intermediate calculations (fm*fm) would underflow 
+        # Previously, intermediate calculations (fm*fm) would underflow
         # to zero before the ratio converged, causing a Runtime Error.
-        
+
         def f(x): return x**5
 
         # Before the fix, this raised a RuntimeError.
         root, result = optimize.ridder(
-            f, -1, 5, 
-            xtol=1e-300, 
-            full_output=True, 
+            f, -1, 5,
+            xtol=1e-300,
+            full_output=True,
             maxiter=10000
         )
-        
+
         assert result.converged
         assert abs(root) < 1e-10  # Ensuring zero is found
 
@@ -1023,10 +1032,10 @@ class TestRidderUnderflow:
         # Calls: f(-1), f(1) [init], then f(0) [iter 1] -> Exit.
         # Total = 3 calls.
         root, result = optimize.ridder(
-            f, -1, 1, 
+            f, -1, 1,
             full_output=True
         )
-        
+
         assert result.converged
         assert root == 0.0
         assert result.function_calls == nfev

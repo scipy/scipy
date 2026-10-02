@@ -2,12 +2,13 @@ import threading
 import numpy as np
 
 from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
+                                   xp_device,
                                    xp_promote, is_lazy_array, is_jax, is_marray,
                                    _count_nonmasked)
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy._external.array_api_extra as xpx
 from scipy import special
-from scipy import stats
+from scipy.stats._resampling import PermutationMethod, permutation_test
 from scipy.stats._stats_py import _rankdata, _get_pvalue, _SimpleNormal
 from scipy.stats._morestats import wilcoxon_result_unpacker, wilcoxon_outputs
 from scipy.stats._wilcoxon import _correction_sign
@@ -194,7 +195,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    if not isinstance(method, stats.PermutationMethod):
+    if not isinstance(method, PermutationMethod):
         methods = {"asymptotic", "exact", "auto"}
         method = method.lower()
         if method not in methods:
@@ -489,10 +490,19 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
     ranks = xp.astype(ranks, x.dtype, copy=False)
     t = xp.astype(t, x.dtype, copy=False)
-    R1 = xp.sum(ranks[..., :x.shape[-1]], axis=-1)         # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
+    # method 2, steps 2 and 3. Subtracting the constant inside the sum keeps the
+    # accumulation at the magnitude of U1 rather than that of R1. R1 can be much
+    # larger than U1, and in low precision it is represented more coarsely, so
+    # forming R1 first and cancelling afterwards carries that coarseness into the
+    # result. See gh-24777.
+    # `n1` is a Python int here, or an MArray of `x.dtype` when masked; asarray
+    # with an explicit dtype covers both without promoting `ranks`.
+    offset = xp.asarray((n1 + 1) / 2, dtype=ranks.dtype, device=xp_device(ranks))
+    U1 = xp.sum(ranks[..., :x.shape[-1]] - offset[..., xp.newaxis], axis=-1)
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
-
+    if is_marray(xp):  # should _count_nonmasked mask count=0?
+        mask = U1.mask | (n1.data == 0) | (n2.data == 0)
+        U1, U2 = xp.asarray(U1.data, mask=mask), xp.asarray(U2.data, mask=mask)
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for exact p-value, f is a factor
     elif alternative == "less":
@@ -523,8 +533,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                                 alternative=alternative, axis=axis,
                                 method="asymptotic").statistic
 
-        res = stats.permutation_test((x, y), statistic, axis=axis,
-                                     **method._asdict(), alternative=alternative)
+        res = permutation_test((x, y), statistic, axis=axis,
+                               **method._asdict(), alternative=alternative)
         p = res.pvalue
 
     # Ensure that test statistic is not greater than 1

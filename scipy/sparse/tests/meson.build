@@ -9,6 +9,7 @@ python_sources = [
   'test_construct.py',
   'test_csc.py',
   'test_csr.py',
+  'test_deprecations.py',
   'test_dok.py',
   'test_extract.py',
   'test_indexing1d.py',

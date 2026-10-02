@@ -5,7 +5,7 @@
    <div class="prename">{{ module }}.{{ class }}.</div>
    <div class="empty"></div>
 
-{{ fullname }}
+{{ name }}
 {{ underline }}
 
 .. currentmodule:: {{ module }}

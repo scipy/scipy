@@ -1,12 +1,15 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
+import functools
 import itertools
 from types import GenericAlias
 
 import numpy as np
 
 import scipy.sparse.linalg as ssl
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_result_device
+)
 from scipy._external.array_api_compat import is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
@@ -307,7 +310,9 @@ class RegularGridInterpolator:
                 if xp_v != xp:
                     raise e
 
-        self._asarray = xp.asarray
+        # the NumPy round-trip must return results on the inputs' device
+        device = xp_result_device(*points, values)
+        self._asarray = functools.partial(xp.asarray, device=device)
         self.method = method
         self._spline = None
         self.bounds_error = bounds_error
@@ -766,7 +771,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> x = np.array([0.0]) # x axis has length 1
     >>> y = np.linspace(0, 10, 11)
-    >>> points = (x, y) 
+    >>> points = (x, y)
     >>> values = value_func_2d(*np.meshgrid(*points, indexing='ij'))
     >>> xi = np.array([[1.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
@@ -777,7 +782,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> xi = np.array([[0.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
-    ...         fill_value = 42) 
+    ...         fill_value = 42)
     array([-1.5])   # interpolation as normal along y
 
     """

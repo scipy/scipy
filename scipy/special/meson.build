@@ -4,7 +4,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
-  fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
@@ -13,17 +12,13 @@ _ufuncs_pxi_pxd_sources = [
 ]
 
 ufuncs_sources = [
-  '_cosine.c',
-  'xsf_wrappers.cpp',
+  'cython_special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
 
 ufuncs_cxx_sources = [
-  '_wright.cxx',
-  'ellint_carlson_wrap.cxx',
   'sf_error.cc',
-  'wright.cc'
 ]
 
 cdflib_lib = static_library('cdflib',
@@ -32,20 +27,14 @@ cdflib_lib = static_library('cdflib',
   gnu_symbol_visibility: 'hidden',
 )
 
-# The -Wno-psabi arg is used to silence a warning that the ABI of
-# passing structure with complex float member changed in GCC 4.4,
-# which is not relevant for scipy.special.
 ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  ufuncs_cpp_args += ['-Wno-psabi']
-endif
 
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_args: version_link_args,
-  cpp_args: ufuncs_cpp_args,
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1'] + ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
 )
@@ -104,34 +93,19 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+    boost_math_dep,
     xsf_dep,
     np_dep,
+    lapack_dep
   ],
   link_args: version_link_args,
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
 )
-
-ellint_files = [
-  'ellint_carlson_wrap.hh',
-  'ellint_carlson_cpp_lite/_rc.hh',
-  'ellint_carlson_cpp_lite/_rd.hh',
-  'ellint_carlson_cpp_lite/_rf.hh',
-  'ellint_carlson_cpp_lite/_rg.hh',
-  'ellint_carlson_cpp_lite/_rj.hh',
-  'ellint_carlson_cpp_lite/ellint_argcheck.hh',
-  'ellint_carlson_cpp_lite/ellint_arith_aux.hh',
-  'ellint_carlson_cpp_lite/ellint_arithmetic.hh',
-  'ellint_carlson_cpp_lite/ellint_carlson.hh',
-  'ellint_carlson_cpp_lite/ellint_common.hh',
-  'ellint_carlson_cpp_lite/ellint_typing.hh',
-]
-
-ellint_dep = declare_dependency(sources: ellint_files)
 
 ufuncs_cxx_cpp_args = [
   cython_cpp_args,
@@ -147,7 +121,7 @@ py3.extension_module('_ufuncs_cxx',
   cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
 )
@@ -166,42 +140,17 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
-    '_cosine.c',
-    'xsf_wrappers.cpp',
+    'cython_special_wrappers.cpp',
     'sf_error.cc',
-    'dd_real_wrappers.cpp'
-  ],
+    'dd_real_wrappers.cpp'],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  cpp_args: ['-DBOOST_MATH_STANDALONE=1', '-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-)
-
-py3.extension_module('_comb',
-  cython_gen.process('_comb.pyx'),
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special'
-)
-
-py3.extension_module('_test_internal',
-  [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep, np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special',
-  install_tag: 'tests'
-)
-
-py3.install_sources(
-  '_test_internal.pyi',
-  subdir: 'scipy/special',
-  install_tag: 'tests'
 )
 
 npz_files = [
@@ -252,22 +201,16 @@ python_sources = [
   '_mptestutils.py',
   '_multiufuncs.py',
   '_orthogonal.py',
-  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_support_alternative_backends.py',
   '_testutils.py',
   '_ufuncs.pyi',
-  'add_newdocs.py',
-  'basic.py',
   'cython_special.pxd',
   'cython_special.pyi',
-  'orthogonal.py',
-  'sf_error.py',
-  'specfun.py',
-  'spfun_stats.py',
-  '_ufunc_tools.py'
+  '_ufunc_tools.py',
+  '_mathieu.py'
 ]
 
 py3.install_sources(

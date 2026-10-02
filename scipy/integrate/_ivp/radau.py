@@ -360,7 +360,7 @@ class Radau(OdeSolver):
                 groups = group_columns(sparsity)
                 sparsity = (sparsity, groups)
 
-            def jac_wrapped(t, y, f):
+            def jac_wrapped(t, y, f=None):
                 self.njev += 1
                 J, self.jac_factor = num_jac(self.fun_vectorized, t, y, f,
                                              self.atol, self.jac_factor,

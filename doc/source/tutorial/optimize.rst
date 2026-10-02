@@ -1058,6 +1058,11 @@ meet your needs (e.g. execution time, objective function value).
      - ✓
      - (✓)
      - (✓)
+   * - biteopt
+     - ✓
+     - 
+     - 
+     -
 
 (✓) = Depending on the chosen local minimizer
 

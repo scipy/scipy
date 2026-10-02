@@ -9,7 +9,8 @@ import os
 from warnings import warn
 
 from ._coo import coo_array, coo_matrix
-from ._base import sparray, spmatrix
+from ._base import sparray
+from ._matrix import spmatrix
 
 
 def find(A):
@@ -64,7 +65,7 @@ def tril(A, k=0, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -127,7 +128,7 @@ def tril(A, k=0, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
@@ -164,7 +165,7 @@ def triu(A, k=0, format=None):
         That removes any deprecation warnings as well.
         For more general information about sparrays, see
         :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
-        Handling of this no sparse input case will change no earlier than v1.20.
+        Handling of this no sparse input case will change no earlier than v2.1.
 
     Parameters
     ----------
@@ -228,7 +229,7 @@ def triu(A, k=0, format=None):
         For more information, see the spmatrix to sparray migration guide
         https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
 
-        This function will be changed no earlier than v1.20.
+        This function will be changed no earlier than v2.1.
         """
         prefixes = (os.path.dirname(__file__),)
         warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)

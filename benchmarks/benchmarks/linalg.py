@@ -215,6 +215,24 @@ class BatchedEigBench(Benchmark):
             sl.eig(self.a)
 
 
+class BatchedEighBench(Benchmark):
+    params = [
+        [(10, 10, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],
+        ["scipy", "numpy"]
+    ]
+    param_names = ["shape", "module"]
+
+    def setup(self, shape, module):
+        a_sqrt = random(shape)
+        self.a = a_sqrt @ a_sqrt.swapaxes(-2, -1)
+
+    def time_eigh(self, shape, module):
+        if module == "numpy":
+            nl.eigh(self.a)
+        else:
+            sl.eigh(self.a)
+
+
 class BatchedCholeskyBench(Benchmark):
     params = [
         [(100, 3, 3), (100, 10, 10), (100, 20, 20), (100, 100, 100), (100, 100)],

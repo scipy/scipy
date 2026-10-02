@@ -88,9 +88,9 @@ Utility classes:
    :toctree: generated/
 
    DisjointSet -- data structure for incremental connectivity queries
-   
+
 Warnings:
-    
+
 .. autosummary::
    :toctree: generated/
 

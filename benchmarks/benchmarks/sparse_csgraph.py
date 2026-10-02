@@ -2,7 +2,7 @@
 import numpy as np
 import scipy.sparse
 
-from .common import Benchmark, safe_import
+from .common import Benchmark, require_memory, safe_import
 
 with safe_import():
     from scipy.sparse.csgraph import laplacian, connected_components
@@ -37,6 +37,8 @@ class StronglyConnectedComponents(Benchmark):
         n = 1_000_000
         rng = np.random.default_rng(42)
         if kind == "random":
+            # measured 3.2 GB: 100*n nnz at ~32 B each (int32 indices)
+            require_memory(32 * 100 * n)
             self.G = scipy.sparse.random_array(
                 shape=(n, n),
                 density=100 / n,
@@ -44,6 +46,8 @@ class StronglyConnectedComponents(Benchmark):
                 rng=rng,
             )
         elif kind == "single_scc":
+            # measured 4.0 GB: 100*n nnz at ~40 B each (int64 indices, COO build)
+            require_memory(40 * 100 * n)
             # Hamiltonian cycle (one giant SCC) plus random edges.
             perm = rng.permutation(n)
             row = np.concatenate([perm, rng.integers(0, n, size=99 * n)])

@@ -486,7 +486,7 @@ def savgol_filter_signature(x, *args, **kwds):
 
 
 def sawtooth_signature(t, width=1):
-    return array_namespace(t)
+    return array_namespace(t, width)
 
 
 def sepfir2d_signature(input, hrow, hcol):

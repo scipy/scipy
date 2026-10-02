@@ -1,6 +1,7 @@
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
   dependencies: [np_dep, ccallback_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -53,11 +54,6 @@ py3.install_sources([
     '_quadpack_py.py',
     '_tanhsinh.py',
     '_cubature.py',
-    'dop.py',
-    'lsoda.py',
-    'odepack.py',
-    'quadpack.py',
-    'vode.py',
     'src/LICENSE_DOP'
   ],
   subdir: 'scipy/integrate'

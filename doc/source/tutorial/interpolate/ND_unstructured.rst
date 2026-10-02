@@ -96,23 +96,23 @@ outside of the observed data range.
 1-D Example
 -----------
 
-This example compares the usage of the `RBFInterpolator` and `UnivariateSpline`
-classes from the `scipy.interpolate` module.
+Radial basis functions are most useful for scattered multidimensional data,
+but can be used for one-dimensional data as well. This example compares the
+usage of the `RBFInterpolator` and a 1D-specific routine, `make_interp_spline`.
 
 .. plot::
     :alt: " "
 
     >>> import numpy as np
-    >>> from scipy.interpolate import RBFInterpolator, InterpolatedUnivariateSpline
+    >>> from scipy.interpolate import RBFInterpolator, make_interp_spline
     >>> import matplotlib.pyplot as plt
-
     >>> # setup data
-    >>> x = np.linspace(0, 10, 9).reshape(-1, 1)
+    >>> x = np.linspace(0, 10, 9)
     >>> y = np.sin(x)
-    >>> xi = np.linspace(0, 10, 101).reshape(-1, 1)
+    >>> xi = np.linspace(0, 10, 101)
 
-    >>> # use fitpack2 method
-    >>> ius = InterpolatedUnivariateSpline(x, y)
+    >>> # use a 1D-specific method
+    >>> ius = make_interp_spline(x, y, k=3)
     >>> yi = ius(xi)
 
     >>> fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -122,6 +122,7 @@ classes from the `scipy.interpolate` module.
     >>> ax1.set_title('Interpolation using univariate spline')
 
     >>> # use RBF method
+    >>> x, y, xi = x.reshape(-1, 1), y.reshape(-1, 1), xi.reshape(-1, 1)
     >>> rbf = RBFInterpolator(x, y)
     >>> fi = rbf(xi)
 
@@ -176,3 +177,77 @@ This example shows how to interpolate scattered 2-D data:
     ...     ylim=(-2, 2),
     ... )
     >>> fig.colorbar(mapping)
+
+
+.. _rbfinterpolate_custom_kernels:
+
+Using Custom Kernels
+--------------------
+
+It  is possible to extend `RBFInterpolator` with user supplied kernels which
+are passed using function pointers and `scipy.LowLevelCallable` to wrap a
+compiled kernel with signature ``double (double)``, where the argument is the
+scalar distance *r*.  Both `epsilon` and `degree` must be supplied explicitly;
+neither has a default.
+
+.. note::
+    Only NumPy arrays currently supported with a `scipy.LowLevelCallable` kernel.
+
+This can be done usig pythran to compile python to C++ or by directly writing
+and compile a C/C++ function.
+
+**Pythran**
+
+Use [pythran]_ and expose it as a capsule::
+
+    # custom_kernel.py
+    import numpy as np
+
+    def my_kernel(r):
+        return np.exp(-r ** 2) * r
+
+    # pythran export capsule my_kernel(float64)
+
+Compile with pythran::
+
+    pythran custom_kernel.py
+
+Then in wrap the function in a ``LowLevelCallable``::
+
+    from custom_kernel import my_kernel  # capsule object
+    from scipy import LowLevelCallable
+
+    llc = LowLevelCallable(my_kernel, signature="double (double)")
+
+    interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
+**C/C++**::
+
+    // custom_kernel.c
+    #include <math.h>
+    double my_kernel(double r) {
+        return exp(-r * r) / r;
+    }
+
+Compile::
+
+    clang -shared -fPIC -O3 -o custom_kernel.dylib custom_kernel.c
+
+Then wrap the function in a ``LowLevelCallable``::
+
+    import ctypes
+    from scipy import LowLevelCallable
+    from scipy.interpolate import RBFInterpolator
+
+    lib = ctypes.CDLL('./custom_kernel.dylib')
+    lib.my_kernel.restype  = ctypes.c_double
+    lib.my_kernel.argtypes = [ctypes.c_double]
+
+    llc = LowLevelCallable(lib.my_kernel)
+    interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
+
+
+References
+~~~~~~~~~~
+
+.. [pythran] https://pythran.readthedocs.io/en/latest/examples/Third%20Party%20Libraries.html#With-Pythran

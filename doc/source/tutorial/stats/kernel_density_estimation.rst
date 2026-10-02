@@ -37,6 +37,7 @@ at the bottom of the figure (this is called a rug plot):
     >>> x_eval = np.linspace(-10, 10, num=200)
     >>> ax.plot(x_eval, kde1(x_eval), 'k-', label="Scott's Rule")
     >>> ax.plot(x_eval, kde2(x_eval), 'r-', label="Silverman's Rule")
+    >>> ax.legend()
 
     >>> plt.show()
 
@@ -55,6 +56,7 @@ get a less smoothed-out result.
     >>> ax.plot(x1, np.zeros(x1.shape), 'b+', ms=20)  # rug plot
     >>> kde3 = stats.gaussian_kde(x1, bw_method=my_kde_bandwidth)
     >>> ax.plot(x_eval, kde3(x_eval), 'g-', label="With smaller BW")
+    >>> ax.legend()
 
     >>> plt.show()
 

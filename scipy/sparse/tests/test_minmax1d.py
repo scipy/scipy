@@ -82,8 +82,8 @@ class Test_MinMaxMixin1D:
                 mat.argmax(axis=axis)
 
 
-@pytest.mark.parametrize("spcreator", formats_for_minmax)
 class Test_ShapeMinMax2DWithAxis:
+    @pytest.mark.parametrize("spcreator", formats_for_minmax)
     def test_minmax(self, spcreator):
         dat = np.array([[-1, 5, 0, 3], [0, 0, -1, -2], [0, 0, 1, 2]])
         datsp = spcreator(dat)
@@ -103,14 +103,12 @@ class Test_ShapeMinMax2DWithAxis:
             for ax in [0, 1]:
                 assert isinstance(spminmax(axis=ax), np.ndarray)
 
+    @pytest.mark.parametrize("spm", [coo_matrix, csr_matrix, csc_matrix, bsr_matrix])
+    @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
+    def test_minmax_spmatrix(self, spm):
         # verify spmatrix behavior
-        spmat_form = {
-            'coo': coo_matrix,
-            'csr': csr_matrix,
-            'csc': csc_matrix,
-            'bsr': bsr_matrix,
-        }
-        datspm = spmat_form[datsp.format](dat)
+        dat = np.array([[-1, 5, 0, 3], [0, 0, -1, -2], [0, 0, 1, 2]])
+        datspm = spm(dat)
 
         for spm, npm in [
             (datspm.min, np.min),

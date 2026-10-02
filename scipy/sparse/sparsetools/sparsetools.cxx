@@ -270,7 +270,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
             if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
-                arg_list[j] = std::malloc(sizeof(npy_int64));
+                arg_list[j] = PyMem_RawMalloc(sizeof(npy_int64));
                 if (arg_list[j] == NULL) {
                     PyErr_NoMemory();
                     goto fail;
@@ -279,7 +279,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             }
             else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
                      && value == (npy_int32)value) {
-                arg_list[j] = std::malloc(sizeof(npy_int32));
+                arg_list[j] = PyMem_RawMalloc(sizeof(npy_int32));
                 if (arg_list[j] == NULL) {
                     PyErr_NoMemory();
                     goto fail;
@@ -450,7 +450,7 @@ fail:
         }
         Py_XDECREF(arg_arrays[j]);
         if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
-            std::free(arg_list[j]);
+            PyMem_RawFree(arg_list[j]);
         }
         else if (*p == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);

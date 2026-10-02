@@ -26,10 +26,6 @@ CUPY_BLACKLIST = [
     'sosfilt_zi', 'remez',
 ]
 
-# freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
-CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
-
-
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -46,13 +42,24 @@ def delegate_xp(delegator, module_name):
 
             # try delegating to a cupyx/jax namesake
             if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
-                func_name = CUPY_RENAMES.get(func.__name__, func.__name__)
-
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
-                cupyx_func = getattr(cupyx_module, func_name)
+                try:
+                    cupyx_func = getattr(cupyx_module, func.__name__)
+                except AttributeError:
+                    if func.__name__ != "freqz_sos":
+                        raise
+                    # CuPy < 14 exposes this under the old SciPy name.
+                    cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
+                # cupyx functions have no `device` kwarg (cupy#9848); they create on the
+                # current cuda device, so honor a device request via the
+                # cupy.cuda.Device context manager
+                device = kwds.pop('device', None)
+                if device is not None:
+                    with device:
+                        return cupyx_func(*args, **kwds)
                 return cupyx_func(*args, **kwds)
             elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
                 spx = scipy_namespace_for(xp)
@@ -77,7 +84,6 @@ untested = {
     "band_stop_obj",
     "bode",
     "check_NOLA",
-    "chirp",
     "coherence",
     "csd",
     "czt",
@@ -89,7 +95,6 @@ untested = {
     "find_peaks",
     "find_peaks_cwt",
     "freqresp",
-    "gausspulse",
     "iirdesign", # There's no reason this shouldn't work. It just needs tests.
     "istft",
     "lombscargle",
@@ -162,6 +167,12 @@ abcd_normalize_extra_note = \
 
     """
 
+chirp_extra_note = \
+    """CuPy delegates to ``cupyx.scipy.signal.chirp``, which does not support
+    ``complex=True``.
+
+    """
+
 welch_extra_note = \
     """Support for CuPy and JAX is provided by delegation to
     ``cupyx.scipy.signal.welch`` and ``jax.scipy.signal.welch``.
@@ -196,6 +207,7 @@ capabilities_overrides = {
 
     "cheby2": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
+    "chirp": xp_capabilities(extra_note=chirp_extra_note),
     "cont2discrete": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "convolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                                 allow_dask_compute=True,
@@ -241,8 +253,6 @@ capabilities_overrides = {
     "firwin2": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                jax_jit=False, allow_dask_compute=True,
                                reason="firwin2 uses np.interp"),
-    "fftconvolve": xp_capabilities(cpu_only=True,
-                                   exceptions=["cupy", "jax.numpy", "torch"]),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -255,7 +265,6 @@ capabilities_overrides = {
                                    jax_jit=False, allow_dask_compute=True),
     "invres": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "invresz": xp_capabilities(np_only=True, exceptions=["cupy"]),
-    "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
     "iirfilter": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "kaiser_atten": xp_capabilities(
@@ -320,9 +329,6 @@ capabilities_overrides = {
     "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False,
                                      reason="convolve1d is cpu-only"),
-    "sawtooth": xp_capabilities(jax_jit=False,
-                                skip_backends=[("dask.array", "dask tests fail")]),
-    "sepfir2d": xp_capabilities(np_only=True),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
@@ -339,7 +345,6 @@ capabilities_overrides = {
                 "sosfiltfilt directly sets shape attributes on arrays"
                 " which dask doesn't like"
             ),
-            ("torch", "negative strides"),
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],

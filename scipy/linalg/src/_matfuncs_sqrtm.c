@@ -49,7 +49,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
     // n + n for wr, wi (needed for gees calls)
     // lwork for work
     size_t buffer_size = 4*n*n + 2*n + lwork;
-    float* restrict buffer = malloc(buffer_size*sizeof(float));
+    float* restrict buffer = PyMem_RawMalloc(buffer_size*sizeof(float));
     if (buffer == NULL) { *sq_info = -101; return; }
 
     // --------------------------------------------------------------------
@@ -110,7 +110,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
             BLAS_FUNC(sgees)("V", "N", NULL, &intn, data, &intn, &sdim, wr, wi, vs, &intn, work, &lwork, NULL, &info);
             if (info != 0)
             {
-                free(buffer);
+                PyMem_RawFree(buffer);
                 *sq_info = -102;
                 return;
             }
@@ -303,7 +303,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
     /*====================================================================
     |                  END OF nxn SLICE LOOP                             |
     ====================================================================*/
-    free(buffer);
+    PyMem_RawFree(buffer);
     return;
 }
 
@@ -335,7 +335,7 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
     if (info != 0) { *sq_info = -100; return; }
     lwork = (CBLAS_INT)tmp_float;
     size_t buffer_size = 4*n*n + 2*n + lwork;
-    double* restrict buffer = malloc(buffer_size*sizeof(double));
+    double* restrict buffer = PyMem_RawMalloc(buffer_size*sizeof(double));
     if (buffer == NULL) { *sq_info = -101; return; }
 
     double* restrict data = &buffer[0];
@@ -370,7 +370,7 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
             BLAS_FUNC(dgees)("V", "N", NULL, &intn, data, &intn, &sdim, wr, wi, vs, &intn, work, &lwork, NULL, &info);
             if (info != 0)
             {
-                free(buffer);
+                PyMem_RawFree(buffer);
                 *sq_info = -102;
                 return;
             }
@@ -496,7 +496,7 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
             if (upcasted_to_complex) { zebra_pattern_d(&ret_data[2*idx*n*n], n*n); }
         }
     }
-    free(buffer);
+    PyMem_RawFree(buffer);
     return;
 }
 
@@ -526,7 +526,7 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
 
     lwork = (CBLAS_INT)crealf(tmp_float);
     size_t buffer_size = 2*n*n + 2*n + lwork;
-    SCIPY_C* buffer = malloc(buffer_size*sizeof(SCIPY_C));
+    SCIPY_C* buffer = PyMem_RawMalloc(buffer_size*sizeof(SCIPY_C));
     if (buffer == NULL) { *sq_info = -101; return; }
 
 
@@ -572,7 +572,7 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
             BLAS_FUNC(cgees)("V", "N", NULL, &intn, data, &intn, &sdim, w, vs, &intn, work, &lwork, rwork, NULL, &info);
             if (info != 0)
             {
-                free(buffer);
+                PyMem_RawFree(buffer);
                 *sq_info = -102;
                 return;
             }
@@ -598,7 +598,7 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
         if (info != 0) { *isIllconditioned = 1; }
         swap_cf_c(data, &ret_data[idx*n*n], n, n, n);
     }
-    free(buffer);
+    PyMem_RawFree(buffer);
     return;
 }
 
@@ -628,7 +628,7 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
 
     lwork = (CBLAS_INT)creal(tmp_float);
     size_t buffer_size = 2*n*n + 2*n + lwork;
-    SCIPY_Z* buffer = malloc(buffer_size*sizeof(SCIPY_Z));
+    SCIPY_Z* buffer = PyMem_RawMalloc(buffer_size*sizeof(SCIPY_Z));
     if (buffer == NULL) { *sq_info = -101; return; }
 
 
@@ -674,7 +674,7 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
             BLAS_FUNC(zgees)("V", "N", NULL, &intn, data, &intn, &sdim, w, vs, &intn, work, &lwork, rwork, NULL, &info);
             if (info != 0)
             {
-                free(buffer);
+                PyMem_RawFree(buffer);
                 *sq_info = -102;
                 return;
             }
@@ -700,7 +700,7 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
         if (info != 0) { *isIllconditioned = 1; }
         swap_cf_z(data, &ret_data[idx*n*n], n, n, n);
     }
-    free(buffer);
+    PyMem_RawFree(buffer);
     return;
 }
 

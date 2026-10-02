@@ -16,14 +16,15 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_size,
     xp_device,
+    xp_result_device,
     xp_swapaxes,
     is_lazy_array,
 )
 from scipy._external import array_api_extra as xpx
 from scipy.special import ndtr, ndtri
-from scipy import stats
 
 from ._common import ConfidenceInterval
+from ._quantile import quantile
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
 
@@ -227,7 +228,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [xp.arange(n)]
+        data_iv = [xp.arange(n, device=xp_device(data_iv[0]))]
 
     confidence_level_float = float(confidence_level)
 
@@ -660,7 +661,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
-    ci = stats.quantile(theta_hat_b, interval, axis=-1)
+    ci = quantile(theta_hat_b, interval, axis=-1)
     if not is_lazy_array(ci) and xp.any(xp.isnan(ci)):
         msg = (
             "The BCa confidence interval cannot be calculated. "
@@ -1072,7 +1073,8 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
 
     xp = array_namespace(*n_observations, significance, *vals)
 
-    significance = xp.asarray(significance)
+    device = xp_result_device(significance, *n_observations, *vals)
+    significance = xp.asarray(significance, device=device)
     if not xp.isdtype(significance.dtype, "real floating"):
         raise ValueError("`significance` must be of floating point dtype.")
 
@@ -1487,7 +1489,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     for indices in _batch_generator(perm_generator, batch=batch):
         # Creating a tensor from a list of numpy.ndarrays is extremely slow...
         indices = np.asarray(indices)
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data))
 
         # `indices` is 2D: each row is a permutation of the indices.
         # We use it to index `data` along its last axis, which corresponds
@@ -1542,7 +1544,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     null_distribution = []
 
     for indices in batched_perm_generator:
-        indices = xp.asarray(indices)
+        indices = xp.asarray(indices, device=xp_device(data[0]))
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
         # for samples, and the last is for observations. Swap the first two
@@ -2172,7 +2174,7 @@ class ResamplingMethod:
 
     """
     n_resamples: int = 9999
-    batch: int = None  # type: ignore[assignment]
+    batch: int | None = None
 
 
 @dataclass
@@ -2232,9 +2234,9 @@ class MonteCarloMethod(ResamplingMethod):
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
-                   "`rng`. Support for `random_state` will be removed in SciPy 1.19.0. "
+                   "`rng`. Support for `random_state` will be removed in SciPy 2.0.0. "
                    "To silence this warning and ensure consistent behavior in SciPy "
-                   "1.19.0, control the RNG using attribute `rng`. Values set using "
+                   "2.0.0, control the RNG using attribute `rng`. Values set using "
                    "attribute `rng` will be validated by `np.random.default_rng`, so "
                    "the behavior corresponding with a given value may change compared "
                    "to use of `random_state`. For example, 1) `None` will result in "
@@ -2294,8 +2296,7 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    _rng: object = field(init=False, repr=False, default=None)
 
     @property
     def random_state(self):
@@ -2309,8 +2310,8 @@ class PermutationMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
-    def rng(self):  # noqa: F811
+    @property
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
@@ -2384,8 +2385,8 @@ class BootstrapMethod(ResamplingMethod):
         accelerated bootstrap ('BCa', default).
 
     """
-    rng: object  # type: ignore[misc]
-    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    rng: object
+    _rng: object = field(init=False, repr=False, default=None)
     method: str = 'BCa'
 
     @property
@@ -2400,8 +2401,8 @@ class BootstrapMethod(ResamplingMethod):
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
-    @property  # type: ignore[no-redef]
-    def rng(self):  # noqa: F811
+    @property
+    def rng(self):
         return self._rng
 
     def __init__(self, n_resamples=9999, batch=None, random_state=None,

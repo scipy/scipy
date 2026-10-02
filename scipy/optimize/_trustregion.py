@@ -255,12 +255,14 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # calculate the predicted value at the proposed point
         predicted_value = m(p)
 
-        # define the local approximation at the proposed point
         x_proposed = x + p
-        m_proposed = subproblem(x_proposed, fun, jac, hess, hessp, **subproblem_init_kw)
 
         # evaluate the ratio defined in equation (4.4)
-        actual_reduction = m.fun - m_proposed.fun
+        proposed_value = fun(x_proposed)
+        # Treat NaN trial values as rejected steps.
+        if np.isnan(proposed_value):
+            proposed_value = np.inf
+        actual_reduction = m.fun - proposed_value
         predicted_reduction = m.fun - predicted_value
         if predicted_reduction <= 0:
             warnflag = 2
@@ -276,7 +278,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # if the ratio is high enough then accept the proposed step
         if rho > eta:
             x = x_proposed
-            m = m_proposed
+            m = subproblem(x, fun, jac, hess, hessp, **subproblem_init_kw)
 
         # append the best guess, call back, increment the iteration count
         if return_all:

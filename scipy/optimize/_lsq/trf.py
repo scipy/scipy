@@ -97,7 +97,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
 from scipy.sparse.linalg import lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import OptimizeResult
 
 from .common import (
     step_size_to_bound, find_active_constraints, in_bounds,
@@ -204,7 +204,7 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
 
 
 def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
-               x_scale, loss_function, tr_solver, tr_options, verbose, 
+               x_scale, loss_function, tr_solver, tr_options, verbose,
                callback=None):
     x = x0.copy()
 
@@ -387,9 +387,9 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
         else:
             step_norm = 0
             actual_reduction = 0
-            
+
         iteration += 1
-            
+
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(
@@ -413,7 +413,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
 
 def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
-                  x_scale, loss_function, tr_solver, tr_options, verbose, 
+                  x_scale, loss_function, tr_solver, tr_options, verbose,
                   callback=None):
     x = x0.copy()
 
@@ -564,7 +564,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             actual_reduction = 0
 
         iteration += 1
-        
+
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(

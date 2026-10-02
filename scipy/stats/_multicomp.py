@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from scipy import stats
+from scipy.stats._multivariate import multivariate_t
 from scipy.optimize import minimize_scalar
 from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
@@ -189,7 +189,7 @@ class DunnettResult:
 @xp_capabilities(np_only=True)
 @_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
-    *samples: "npt.ArrayLike",  # noqa: D417
+    *samples: "npt.ArrayLike",
     control: "npt.ArrayLike",
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
     rng: SeedType = None
@@ -445,7 +445,7 @@ def _pvalue_dunnett(
     """
     statistic = statistic.reshape(-1, 1)
 
-    mvt = stats.multivariate_t(shape=rho, df=df, seed=rng)
+    mvt = multivariate_t(shape=rho, df=df, seed=rng)
     if alternative == "two-sided":
         statistic = abs(statistic)
         pvalue = 1 - mvt.cdf(statistic, lower_limit=-statistic)

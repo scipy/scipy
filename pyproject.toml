@@ -27,7 +27,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.19.0.dev0"
+version = "2.0.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -99,6 +99,7 @@ build = [
     "pybind11>=2.13.2",
     "pythran>=0.18.1",
     "numpy>=2.0.0",
+    "ninja>=1.8.2",
 ]
 
 test-core = [
@@ -125,11 +126,14 @@ test-parallel = [
 test-docs = [
     { include-group = "test-core" },
     "scipy-doctest>=2.0.0",
+    "matplotlib",
 ]
 test-array-types = [
     { include-group = "test-core" },
     "array-api-strict>=2.3.1",
     "marray",
+    # for PyPI: 'sparse; sys_platform != "win32" or platform_machine != "ARM64"'
+    "sparse",
 ]
 test = [
     { include-group = "optional-runtime-deps" },
@@ -150,14 +154,24 @@ coverage = [
     { include-group = "test" },  # includes all optional test and runtime deps for maximum coverage
     "pytest-cov",
 ]
-
+openblas32 = [
+    "scipy-openblas32==0.3.34.237.0",
+    'pkgconf==2.5.1.post1; sys_platform == "win32"',
+]
+openblas64 = [
+    "scipy-openblas64==0.3.34.237.0",
+    'pkgconf==2.5.1.post1; sys_platform == "win32"',
+]
 bench = [
-    # https://github.com/airspeed-velocity/asv/issues/1537
-    "asv==0.6.4",
+    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
+    # benchmark job past its time limit; revisit when that is fixed upstream
+    "asv==0.6.5",
+    "pyfftw",
+    "cffi", 
 ]
 
 doc = [
-    "sphinx>=5.0.0,<8.2.0",
+    "sphinx>=8.2.0,<8.3.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -178,12 +192,25 @@ dev-cli = [
 ]
 
 typecheck = [
-    "mypy==1.19.1",
-    "pyrefly==0.63.0",
+    # type checkers
+    "pyrefly==1.1.1",
+    # typing deps
     "typing_extensions",
+    # stub deps
+    "types-cffi",
     "types-psutil",
+    "types-pyyaml",
+    # import deps
+    "array_api_strict",
+    "cython",
+    "dask",
+    "matplotlib",
     "pybind11",
+    # circular dependency issues, https://github.com/scipy/scipy/issues/19783
+    # "scikit-umfpack",
     "sphinx",
+    "sympy",
+    "uarray",
 ]
 
 lint = [
@@ -213,18 +240,19 @@ install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
 skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
-# We're only testing with essential test dependencies, not optional ones.
-# Some of those require binary wheels (often missing for some platforms),
-# or they slow down the test suite runs too much or simply aren't necessary.
-test-requires = [
-    "pytest",
-    "pytest-xdist",
-    "threadpoolctl",
-    "pooch",
-    "hypothesis",
-]
+
+# pin the tools cibuildwheel itself uses (pip, build, delocate, delvewheel). This is
+# the default, but state it explicitly - everything else here is pinned deliberately.
+dependency-versions = "pinned"
+
+# we install all build dependencies ourselves in the cibw_before_build step
+build-frontend = { name = "build", args = ["--no-isolation"] }
 before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
+before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+
+[tool.cibuildwheel.config-settings]
+setup-args = ["-Dconfig-output=portable"]
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
@@ -236,25 +264,37 @@ musllinux-aarch64-image = "musllinux_1_2"
 # RUNNER_OS is a GitHub Actions specific env var; define it here so it's
 # defined when running cibuildwheel locally
 RUNNER_OS="Linux"
-PKG_CONFIG_PATH = "/project/.openblas"
-
-[tool.cibuildwheel.macos.environment]
-PKG_CONFIG_PATH = "{project}"
+# /project will be the $PWD equivalent inside the Docker container used to build the wheel.
+# Linux is the only platform where this can be set here: macOS and Windows need a
+# CIBW_ENVIRONMENT_* from wheels.yml for values that depend on the build matrix, and that
+# replaces this table wholesale rather than merging into it.
+PKG_CONFIG_PATH="/project/.openblas"
 
 [tool.cibuildwheel.windows]
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
-[tool.cibuildwheel.windows.environment]
-# This does not work because pkg-config does not like backslashes,
-PKG_CONFIG_PATH = "{project}"
-# do this instead (which will override this setting)
-# set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
+[tool.cibuildwheel.pyodide]
+build-frontend = { name = "pyodide-build" }
+before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
+before-test = ""
+repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
+test-requires = ["pytest", "hypothesis", "threadpoolctl", "pooch"]
+test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
+[tool.cibuildwheel.pyodide.config-settings]
+setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack", "-Dconfig-output=portable"]
+build-dir = "build/pyodide"
+
+[tool.cibuildwheel.pyodide.environment]
+PKG_CONFIG_PATH = "$(pwd)/.blis/lib/pkgconfig:$(pwd)/.blis/share/pkgconfig"
+# Stop Ninja from moving long link commands into a response file,
+# which the pyodide-build pywasmcross wrapper does not read. See:
+# https://github.com/pyodide/pyodide-build/issues/398
+MESON_RSP_THRESHOLD = "131072"
 
 [tool.spin.commands]
 "Build & Develop" = [
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
-  ".spin/cmds.py:mypy",
   ".spin/cmds.py:lint",
   ".spin/cmds.py:check",
   "spin.cmds.pip.install"

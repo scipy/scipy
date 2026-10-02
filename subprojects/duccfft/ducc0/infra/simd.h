@@ -3,7 +3,7 @@
  *
  *  For details see section 9 of https://wg21.link/N4808
  *
- *  \copyright Copyright (C) 2019-2021 Max-Planck-Society
+ *  \copyright Copyright (C) 2019-2026 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
@@ -55,10 +55,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DUCC0_SIMD_H
 #define DUCC0_SIMD_H
 
+// NOTE: this header is only there to potentially #define __GLIBCXX__
+// Do not delete this #include or move it farther below!
+#include <cstdint>
+
 // for some reason, MacOS doesn't seem to have stdx::simd_abi::deduce_t (yet?),
 // so we don't use the standard library SIMD support on MacOS.
 // In fact, we only trust libstdc++ at the moment to implement this fully.
-#if (!defined (DUCC0_NO_SIMD)) && __has_include(<experimental/simd>) && defined(__GLIBCXX__) && defined(__GNUC__) && (__GNUC__>=12)
+#if (!defined (DUCC0_NO_SIMD)) && (!defined(__APPLE__)) && __has_include(<experimental/simd>) && defined(__GLIBCXX__) && defined(__GNUC__) && (__GNUC__>=12)
 #include <cstdint>
 #include <cstdlib>
 #include <cmath>
@@ -92,8 +96,11 @@ template<typename T, int N> constexpr bool simd_exists_h()
   {
   if constexpr (N>1)
     if constexpr (vectorizable<T>)
-      if constexpr (!std::is_same_v<stdx::simd<T, stdx::simd_abi::deduce_t<T, N>>, stdx::fixed_size_simd<T, N>>)
-        return true;
+      {
+      using type = stdx::simd<T, stdx::simd_abi::deduce_t<T, N>>;
+      if constexpr (!std::is_same_v<type, stdx::fixed_size_simd<T, N>>)
+        return sizeof(type)==N*sizeof(T);
+      }
   return false;
   }
 template<typename T, int N> constexpr inline bool simd_exists = simd_exists_h<T,N>();
@@ -110,8 +117,13 @@ template<typename T, typename Abi> inline stdx::simd<T,Abi> sin(stdx::simd<T,Abi
 template<typename T, typename Abi> inline stdx::simd<T,Abi> cos(stdx::simd<T,Abi> in)
   { return apply(in,[](T v){return cos(v);}); }
 
-template<typename M, typename T> T blend(M mask, T a, T b)
+template<typename M, typename T> inline T blend(M mask, T a, T b)
   { T res=b; where(mask, res) = a; return res; }
+
+template<typename Tsimd> inline Tsimd loadu(const typename Tsimd::value_type *ptr)
+  { return Tsimd(ptr, element_aligned_tag()); }
+template<typename Tsimd> inline void storeu(Tsimd v, typename Tsimd::value_type *ptr)
+  { v.copy_to(ptr, element_aligned_tag()); }
 
 }
 
@@ -121,7 +133,11 @@ using detail_simd::simd_select;
 using detail_simd::simd_exists;
 using detail_simd::vectorizable;
 using detail_simd::blend;
+using detail_simd::loadu;
+using detail_simd::storeu;
 
+template<typename Tsimd> inline void unaligned_add(typename Tsimd::value_type *ptr, Tsimd v)
+  { storeu(loadu<Tsimd>(ptr)+v, ptr); }
 }
 
 #else
@@ -850,6 +866,10 @@ template<typename T, size_t len> inline vtp<T,len> sin(vtp<T,len> in)
 template<typename T, size_t len> inline vtp<T,len> cos(vtp<T,len> in)
   { return apply(in,[](T v){return std::cos(v);}); }
 
+template<typename Tsimd> inline Tsimd loadu(const typename Tsimd::value_type *ptr)
+  { return Tsimd(ptr, element_aligned_tag()); }
+template<typename Tsimd> inline void storeu(Tsimd v, typename Tsimd::value_type *ptr)
+  { v.copy_to(ptr, element_aligned_tag()); }
 }
 
 using detail_simd::element_aligned_tag;
@@ -857,7 +877,11 @@ using detail_simd::native_simd;
 using detail_simd::simd_select;
 using detail_simd::simd_exists;
 using detail_simd::vectorizable;
+using detail_simd::loadu;
+using detail_simd::storeu;
 
+template<typename Tsimd> inline void unaligned_add(typename Tsimd::value_type *ptr, Tsimd v)
+  { storeu(loadu<Tsimd>(ptr)+v, ptr); }
 }
 #endif
 #endif

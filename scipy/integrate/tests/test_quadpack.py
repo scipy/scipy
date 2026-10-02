@@ -10,6 +10,7 @@ from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
 from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._testutils import IS_WASM
 
 import ctypes
 import ctypes.util
@@ -63,9 +64,15 @@ class TestCtypesQuad:
         assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
         assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
+    @pytest.mark.skipif(
+        IS_WASM, reason="ctypes cannot resolve libm symbols by name in Pyodide/WASM"
+    )
     def test_ctypes_sine(self):
         quad(LowLevelCallable(sine_ctypes), 0, 1)
 
+    @pytest.mark.skipif(
+        IS_WASM, reason="ctypes cannot resolve libm symbols by name in Pyodide/WASM"
+    )
     def test_ctypes_variants(self):
         sin_0 = get_clib_test_routine('_sin_0', ctypes.c_double,
                                       ctypes.c_double, ctypes.c_void_p)

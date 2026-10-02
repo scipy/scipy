@@ -65,10 +65,9 @@ Cython's old syntax for using NumPy arrays should be removed and replaced with
 Cython memoryviews.
 
 Binary sizes of extensions built from Cython code are large, and compile times
-are long. We should aim to combine extension modules where possible (e.g.,
-``stats._boost`` contains many extension modules now), and limit the use of
-Cython to places where it's the best choice. Note that conversion of Cython
-to C++ is ongoing in ``scipy.special``.
+are long. We should aim to combine extension modules where possible and limit the use of
+Cython to places where it's the best choice. Note that most ``scipy.special``
+kernels have moved to C++ in XSF (see the ``special`` section below).
 
 
 Use of Pythran
@@ -84,8 +83,7 @@ Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
 of our dependencies and building release quality wheels. Reliability of CI has
 not been good recently (H1 2023), due to the large amount of configurations to
-support and some CI jobs needing an overhaul. We aim to reduce build times by
-removing the remaining distutils-based jobs when we drop that build system
+support and some CI jobs needing an overhaul. We aim to reduce build times
 and make the set of configurations in CI jobs more orthogonal.
 
 
@@ -252,12 +250,6 @@ is in good shape, however we can make a number of improvements:
    `gh-21130 <https://github.com/scipy/scipy/pull/21130>`__)
 
 
-misc
-````
-All features have been removed from ``scipy.misc``, and the namespace itself
-will eventually be removed.
-
-
 ndimage
 ```````
 Underlying ``ndimage`` is a powerful interpolation engine.  Users come
@@ -417,6 +409,15 @@ math implement by a few of the metrics.
 
 special
 ```````
+Most ``scipy.special`` kernels now live in
+`XSF <https://github.com/scipy/xsf>`__.
+The future plan is to move the remaining kernels to C++ in XSF or
+`Boost.Math <https://www.boost.org/doc/libs/latest/libs/math/doc/html/index.html>`__.
+The `XSF roadmap <https://github.com/scipy/xsf/issues/220>`__ discusses sharing
+numerical routines between SciPy and `CuPy <https://cupy.dev/>`__, caching
+intermediate results within ufunc and gufunc calls, and documenting how to write
+XSF kernels that can run on both CPU and GPU.
+
 Though there are still a lot of functions that need improvements in precision,
 probably the only show-stoppers are hypergeometric functions, parabolic cylinder
 functions, and spheroidal wave functions. Three possible ways to handle this:

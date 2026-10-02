@@ -2,6 +2,8 @@
 import numpy as np
 
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
+import scipy._external.array_api_extra as xpx
 from . import _batched_linalg
 
 # Local imports.
@@ -165,18 +167,19 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # accommodate empty matrix
     if a1.size == 0:
+        k = min(m, n)
         u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
 
         batch_shape = a1.shape[:-2]
-        s = np.empty_like(a1, shape=batch_shape + (0,), dtype=s0.dtype)
+        s = np.empty_like(a1, shape=batch_shape + (k,), dtype=s0.dtype)
         if full_matrices:
             u = np.empty_like(a1, shape=batch_shape + (m, m), dtype=u0.dtype)
             u[...] = np.identity(m)
             v = np.empty_like(a1, shape=batch_shape + (n, n), dtype=v0.dtype)
             v[...] = np.identity(n)
         else:
-            u = np.empty_like(a1, shape=batch_shape + (m, 0), dtype=u0.dtype)
-            v = np.empty_like(a1, shape=batch_shape + (0, n), dtype=v0.dtype)
+            u = np.empty_like(a1, shape=batch_shape + (m, k), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=batch_shape + (k, n), dtype=v0.dtype)
         if compute_uv:
             return u, s, v
         else:
@@ -301,7 +304,12 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
-@_apply_over_batch(('s', 1))
+def _diagsvd_signature(s, M, N):
+    return f"(i)->({M}, {N})"
+
+
+@xp_capabilities()
+@_apply_over_batch(('s', 1), signature=_diagsvd_signature)
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -341,20 +349,23 @@ def diagsvd(s, M, N):
            [0, 0, 0]])
 
     """
-    part = np.diag(s)
-    typ = part.dtype.char
-    MorN = len(s)
+    xp = array_namespace(s)
+    s = xp.asarray(s)
+    part = xpx.create_diagonal(s, xp=xp)
+    MorN = s.shape[0]
     if MorN == M:
-        return np.hstack((part, np.zeros((M, N - M), dtype=typ)))
+        return xp.concat((part,xp.zeros((M, N - M), dtype=part.dtype,
+                                        device=xp_device(part))), axis=1)
     elif MorN == N:
-        return np.r_[part, np.zeros((M - N, N), dtype=typ)]
+        return xp.concat((part, xp.zeros((M - N, N), dtype=part.dtype,
+                                         device=xp_device(part))), axis=0)
     else:
         raise ValueError("Length of s must be M or N.")
 
 
 # Orthonormal decomposition
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,j)->(i,j)")
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD.
@@ -403,7 +414,7 @@ def orth(A, rcond=None):
     return Q
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(m,n)->(n,n)", zero_size_fill=None)
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
@@ -482,7 +493,13 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
     return Q
 
 
-@_apply_over_batch(('A', 2), ('B', 2))
+def _subspace_angles_signature(A, B):
+    _, n = A.shape[-2:]
+    _, k = B.shape[-2:]
+    return f"(i,j),(i,k)->float({min(n,k)},)"
+
+
+@_apply_over_batch(('A', 2), ('B', 2), signature=_subspace_angles_signature)
 def subspace_angles(A, B):
     r"""
     Compute the subspace angles between two matrices.

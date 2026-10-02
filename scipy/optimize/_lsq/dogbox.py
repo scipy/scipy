@@ -44,7 +44,7 @@ import numpy as np
 from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import OptimizeResult
 from scipy._lib._util import _call_callback_maybe_halt
 
 
@@ -324,7 +324,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             actual_reduction = 0
 
         iteration += 1
-        
+
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(

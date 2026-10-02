@@ -10,7 +10,7 @@ import pytest
 pooch = pytest.importorskip("pooch")
 
 
-data_dir = data_fetcher.path  # type: ignore
+data_dir = data_fetcher.path
 
 
 def _has_hash(path, expected_hash):

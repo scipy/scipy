@@ -3,6 +3,7 @@
 #include <xsf/sph_harm.h>
 #include <xsf/stats.h>
 
+#include "mdspan_helpers.h"
 #include "sf_error.h"
 
 extern const char *lpn_all_doc;
@@ -57,18 +58,6 @@ void _poisson_binom_map_dims(const npy_intp *dims, npy_intp *new_dims) {
     new_dims[0] = dims[0];
 }
 
-
-// Helper to wrap a 1D std::vector in a contiguous mdspan
-template <typename T>
-auto _as_mdspan(std::vector<T>& vec) {
-    return std::mdspan<T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
-}
-
-template <typename T>
-auto _as_mdspan(const std::vector<T>& vec) {
-    return std::mdspan<const T, std::dextents<ptrdiff_t, 1>>(vec.data(), vec.size());
-}
-
 /* gufunc kernels which use internal caches.
  *
  * Such caches live only during the course of a single call to the ufunc
@@ -84,13 +73,13 @@ auto _as_mdspan(const std::vector<T>& vec) {
  * more information.
  */
 
-template <typename T_1d>
+template <typename Int, typename T_1d>
 struct _poisson_binom_pmf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
     T* last_p_ptr = nullptr;
-    T operator()(long long int k, T_1d p) {
+    T operator()(Int k, T_1d p) {
         if (!last_p_ptr) {
             dist.resize(p.extent(0) + 1);
         }
@@ -98,21 +87,21 @@ struct _poisson_binom_pmf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
              * this will yield a cache hit for each inner iteration. The cache is
              * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_pmf_all(p, _as_mdspan(dist));
+            xsf::poisson_binom_pmf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_pmf(_as_mdspan(dist), k);
+        return xsf::take_from_pmf(special::as_mdspan(dist), k);
     }
 };
 
-template <typename T_1d>
+template <typename Int, typename T_1d>
 struct _poisson_binom_cdf_kernel {
     using T = typename T_1d::value_type;
 
     std::vector<T> dist;
     T* last_p_ptr = nullptr;
-    T operator()(long long int k, T_1d p) {
+    T operator()(Int k, T_1d p) {
         if (!last_p_ptr) {
             dist.resize(p.extent(0) + 1);
         }
@@ -120,11 +109,11 @@ struct _poisson_binom_cdf_kernel {
             /* If p is stepped through in the outer loops and k in the inner loops,
             * this will yield a cache hit for each inner iteration. The cache is
             * overwritten unconditionally whenever this steps to a new slice of p. */
-            xsf::poisson_binom_cdf_all(p, _as_mdspan(dist));
+            xsf::poisson_binom_cdf_all(p, special::as_mdspan(dist));
             last_p_ptr = p.data_handle();
         }
 
-        return xsf::take_from_discrete_cdf(_as_mdspan(dist), k);
+        return xsf::take_from_discrete_cdf(special::as_mdspan(dist), k);
     }
 };
 
@@ -307,8 +296,9 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_pmf = xsf::numpy::gufunc(
         {
-            _poisson_binom_pmf_kernel<xsf::numpy::float_1d>{},
-            _poisson_binom_pmf_kernel<xsf::numpy::double_1d>{}
+            _poisson_binom_pmf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_pmf_kernel<std::int64_t, xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_pmf",
@@ -320,8 +310,9 @@ _gufuncs_module_exec(PyObject *module)
 
     PyObject *_poisson_binom_cdf = xsf::numpy::gufunc(
         {
-            _poisson_binom_cdf_kernel<xsf::numpy::float_1d>{},
-            _poisson_binom_cdf_kernel<xsf::numpy::double_1d>{}
+            _poisson_binom_cdf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_cdf_kernel<std::int64_t, xsf::numpy::double_1d>{}
         },
         1,
         "_poisson_binom_cdf",

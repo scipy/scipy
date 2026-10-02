@@ -1250,7 +1250,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.cdf(-0.25, 0.25) == X.cdf(0.25) - X.cdf(-0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1458,7 +1458,7 @@ class _ProbabilityDistribution(ABC):
         >>> X.ccdf(-0.25, 0.25) == X.cdf(-0.25) + X.ccdf(0.25)
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1632,7 +1632,7 @@ class _ProbabilityDistribution(ABC):
         Similarly, the term "logarithmic difference" of :math:`w` and :math:`z`
         is used here to mean :math:`\log(\exp(w)-\exp(z))`.
 
-        If ``y < x``, the CDF is negative, and therefore the log-CCDF
+        If ``y < x``, the CDF is negative, and therefore the log-CDF
         is complex with imaginary part :math:`\pi`. For
         consistency, the result of this function always has complex dtype
         when `y` is provided, regardless of the value of the imaginary part.
@@ -1657,7 +1657,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logcdf(0.), np.log(X.cdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -1757,16 +1757,16 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-         A two-argument variant of this function is:
+        A two-argument variant of this function is:
 
         .. math::
 
             G(x, y) = 1 - F(x, y) = P(X < x \quad \text{or} \quad X > y)
 
         `logccdf` computes the logarithm of the complementary cumulative
-        distribution function ("log-CCDF"), :math:`\log(G(x))`/:math:`\log(G(x, y))`,
-        but it may be numerically favorable compared to the naive implementation
-        (computing the CDF and taking the logarithm).
+        distribution function ("log-CCDF"), :math:`\log(G(x))` and
+        :math:`\log(G(x, y))`, but it may be numerically favorable compared to the
+        naive implementation (computing the CCDF and taking the logarithm).
 
         `logccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
@@ -1851,7 +1851,7 @@ class _ProbabilityDistribution(ABC):
         >>> np.allclose(X.logccdf(0.), np.log(X.ccdf(0.)))
         True
 
-        """  # noqa: E501
+        """
         raise NotImplementedError()
 
     @abstractmethod

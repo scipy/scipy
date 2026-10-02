@@ -1,4 +1,6 @@
 import numpy as np
+
+from scipy._lib._array_api import xp_capabilities
 from scipy.linalg import solve_banded
 from ._rotation import Rotation
 
@@ -248,6 +250,7 @@ def _create_block_3_diagonal_matrix(A, B, d):
     return result
 
 
+@xp_capabilities(np_only=True)
 class RotationSpline:
     """Interpolate rotations with continuous angular rate and acceleration.
 

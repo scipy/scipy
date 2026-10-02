@@ -121,6 +121,10 @@ class NonlinearConstraint:
     >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
     def __init__(self, fun, lb, ub, jac='2-point', hess=None,
                  keep_feasible=False, finite_diff_rel_step=None,
                  finite_diff_jac_sparsity=None):

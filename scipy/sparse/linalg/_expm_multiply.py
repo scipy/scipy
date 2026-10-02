@@ -4,11 +4,11 @@ from warnings import warn
 import numpy as np
 
 import scipy.linalg
-import scipy.sparse.linalg
 from scipy.linalg._decomp_qr import qr
 from scipy.sparse._sputils import is_pydata_spmatrix
-from scipy.sparse.linalg import aslinearoperator
-from scipy.sparse.linalg._interface import IdentityOperator
+from scipy.sparse.linalg._interface import (
+    aslinearoperator, IdentityOperator, LinearOperator
+)
 from scipy.sparse.linalg._onenormest import onenormest
 
 __all__ = ['expm_multiply']
@@ -93,14 +93,14 @@ def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.issparse(A):
         # Creates a sparse matrix in dia format
-        out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+        out = scipy.sparse.eye_array(A.shape[0], A.shape[1], dtype=A.dtype)
         if scipy.sparse.issparse(A):
             return out.asformat(A.format)
         return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
         import sparse
         return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
-    elif isinstance(A, scipy.sparse.linalg.LinearOperator):
+    elif isinstance(A, LinearOperator):
         return IdentityOperator(A.shape, dtype=A.dtype)
     else:
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
@@ -248,7 +248,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
                          ' are incompatible')
     ident = _ident_like(A)
-    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
+    is_linear_operator = isinstance(A, LinearOperator)
     n = A.shape[0]
     if len(B.shape) == 1:
         n0 = 1
@@ -649,7 +649,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
                          ' are incompatible')
     ident = _ident_like(A)
-    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
+    is_linear_operator = isinstance(A, LinearOperator)
     n = A.shape[0]
     if len(B.shape) == 1:
         n0 = 1
