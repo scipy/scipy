@@ -81,24 +81,24 @@ is being used. For example, the above code can be rewritten as:
     >>> linalg.inv(A)
     array([[-2. ,  1. ],
           [ 1.5, -0.5]])
-    >>> b = np.array([[5,6]]) #2D array
+    >>> b = np.array([[5,6]]) # 2D array
     >>> b
     array([[5, 6]])
     >>> b.T
     array([[5],
           [6]])
-    >>> A*b #not matrix multiplication!
+    >>> A*b # not matrix multiplication!
     array([[ 5, 12],
           [15, 24]])
-    >>> A.dot(b.T) #matrix multiplication
+    >>> A.dot(b.T) # matrix multiplication
     array([[17],
           [39]])
     >>> b = np.array([5,6]) #1D array
     >>> b
     array([5, 6])
-    >>> b.T  #not matrix transpose!
+    >>> b.T  # not matrix transpose!
     array([5, 6])
-    >>> A.dot(b)  #does not matter for multiplication
+    >>> A.dot(b)  # does not matter for multiplication
     array([17, 39])
 
 ``scipy.linalg`` operations can be applied equally to
@@ -150,10 +150,18 @@ The following example demonstrates this computation in SciPy
     array([[-1.48,  0.36,  0.88],
           [ 0.56,  0.08, -0.36],
           [ 0.16, -0.12,  0.04]])
-    >>> A.dot(linalg.inv(A)) #double check
+    >>> A.dot(linalg.inv(A)) # double check
     array([[  1.00000000e+00,  -1.11022302e-16,  -5.55111512e-17],
           [  3.05311332e-16,   1.00000000e+00,   1.87350135e-16],
           [  2.22044605e-16,  -1.11022302e-16,   1.00000000e+00]])
+
+The result of ``A.dot(linalg.inv(A))`` is theoretically the identity matrix, because multiplying a matrix by its inverse gives the identity matrix:
+
+.. math::
+
+   \mathbf{A}\mathbf{A}^{-1} = \mathbf{I}.
+
+You may notice that the entries that should be zero are instead shown as tiny values such as ``-5.55111512e-17``. This is happening because the calculations use floating-point numbers, which can introduce small round-off errors. Since these values are extremely close to zero, the result is effectively the identity matrix.
 
 Solving a linear system
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -241,12 +249,13 @@ In SciPy, this is computed as shown in this example:
 
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> A = np.array([[1,2],[3,4]])
+    >>> A = np.array([[1, 3, 5], [2, 5, 1], [2, 3, 8]])
     >>> A
-    array([[1, 2],
-          [3, 4]])
+    array([[1, 3, 5],
+          [2, 5, 1],
+          [2, 3, 8]])
     >>> linalg.det(A)
-    -2.0
+    -25.0
 
 
 Computing norms
