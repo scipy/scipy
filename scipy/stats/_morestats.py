@@ -2688,8 +2688,10 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', 'no attempt'),
-                                ('dask.array', 'no attempt')])
+@xp_capabilities(
+    skip_backends=[('jax.numpy', 'no attempt'), ('dask.array', 'no attempt')],
+    extra_note=("For non-NumPy arrays, only ``variant='continuous'`` is compatible "
+                "with batch input and permutation `method`."))
 def anderson_ksamp(samples, *, variant="midrank", method=None,
                    axis=0, nan_policy='propagate', keepdims=False):
     """The Anderson-Darling test for k-samples.
