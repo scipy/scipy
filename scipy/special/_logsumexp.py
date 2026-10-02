@@ -403,18 +403,32 @@ def log_softmax(x, axis=None):
     x = xp.asarray(x)
 
     x_max = xp.max(x, axis=axis, keepdims=True)
+    # Captured before non-finite maxima are replaced. After that replacement
+    # a +inf maximum becomes 0 and would look finite.
+    finite_max = xp.isfinite(x_max)
 
     if x_max.ndim > 0:
-        x_max = xpx.at(x_max, ~xp.isfinite(x_max)).set(0)
+        x_max = xpx.at(x_max, ~finite_max).set(0)
     elif not xp.isfinite(x_max):
         x_max = 0
 
     tmp = x - x_max
     exp_tmp = xp.exp(tmp)
+    # A finite maximum is attained, so one or more shifted terms are exactly
+    # zero and their exponentials are 1. Sum those separately and use log1p
+    # for the rest: log(n + r) = log(n) + log1p(r / n). Adding r into the
+    # same sum as the 1s flushes r to zero once it is below machine epsilon.
+    at_max = (tmp == 0) & finite_max
+    zeros = xp.zeros_like(exp_tmp)
+    remainder = xp.sum(xp.where(at_max, zeros, exp_tmp), axis=axis, keepdims=True)
+    n_at_max = xp.sum(
+        xp.where(at_max, xp.ones_like(exp_tmp), zeros), axis=axis, keepdims=True
+    )
 
     # suppress warnings about log of zero
-    with np.errstate(divide='ignore'):
-        s = xp.sum(exp_tmp, axis=axis, keepdims=True)
-        out = xp.log(s)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        plain = xp.log(xp.sum(exp_tmp, axis=axis, keepdims=True))
+        accurate = xp.log(n_at_max) + xp.log1p(remainder / n_at_max)
+        out = xp.where(finite_max, accurate, plain)
 
     return tmp - out
