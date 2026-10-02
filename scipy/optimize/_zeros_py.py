@@ -147,6 +147,7 @@ def _muller(f, x0, x1, x2, args=(), xtol=None, rtol=0.0, maxiter=50,
         raise ValueError("maxiter must be greater than 0")
 
     funcalls = 0
+    tiny = np.finfo(dtype).tiny
 
     def evaluate(p):
         nonlocal funcalls
@@ -155,7 +156,9 @@ def _muller(f, x0, x1, x2, args=(), xtol=None, rtol=0.0, maxiter=50,
         if value.ndim != 0:
             raise ValueError("f must return a scalar")
         # In particular, abs(minimum_signed_integer) must not wrap negative.
-        return value.astype(np.result_type(dtype, value.dtype), copy=False)[()]
+        if value.dtype.kind in 'biu':
+            value = value.astype(np.result_type(dtype, value.dtype))
+        return value[()]
 
     def normalize(value, scale):
         # Complex division can overflow its reciprocal for subnormal scale,
@@ -182,7 +185,11 @@ def _muller(f, x0, x1, x2, args=(), xtol=None, rtol=0.0, maxiter=50,
         # overflow/underflow in the discriminant when f or x is rescaled.
         with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
             scale = max(abs(p1 - p0), abs(p2 - p1), abs(p2 - p0))
-            if np.isfinite(scale):
+            if np.isfinite(scale) and scale >= tiny:
+                h0 = (p1 - p0) / scale
+                h1 = (p2 - p1) / scale
+                h2 = (p2 - p0) / scale
+            elif np.isfinite(scale):
                 h0 = normalize(p1 - p0, scale)
                 h1 = normalize(p2 - p1, scale)
                 h2 = normalize(p2 - p0, scale)
@@ -193,7 +200,10 @@ def _muller(f, x0, x1, x2, args=(), xtol=None, rtol=0.0, maxiter=50,
                 u0, u1, u2 = (normalize(p, scale) for p in (p0, p1, p2))
                 h0, h1, h2 = u1-u0, u2-u1, u2-u0
             fscale = max(abs(f0), abs(f1), abs(f2))
-            q0, q1, q2 = (normalize(v, fscale) for v in (f0, f1, f2))
+            if fscale >= np.finfo(fscale.dtype).tiny:
+                q0, q1, q2 = f0 / fscale, f1 / fscale, f2 / fscale
+            else:
+                q0, q1, q2 = (normalize(v, fscale) for v in (f0, f1, f2))
             d0, d1 = (q1 - q0) / h0, (q2 - q1) / h1
             a = (d1 - d0) / h2
             b = d1 + h1 * a

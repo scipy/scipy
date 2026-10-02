@@ -1235,6 +1235,14 @@ class TestMuller:
         assert res.converged
         assert_allclose(res.root**2, -1, atol=1e-13)
 
+    def test_lower_precision_subnormal_function(self):
+        def f(z):
+            return np.complex64(1e-40) * np.complex64(z*z+1)
+
+        res = root_scalar(f, x0=-1., x1=0., x2=1., method='muller')
+        assert res.converged
+        assert_allclose(res.root**2, -1, atol=1e-7)
+
     def test_linear_interpolation(self):
         res = root_scalar(lambda z: 2*z-7, x0=0, x1=1, x2=2, method='muller')
         assert res.converged
