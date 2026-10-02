@@ -171,7 +171,7 @@ npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x)
 }
 
 double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x) {
-    return xsf::eval_jacobi(static_cast<int>(n), alpha, beta, x);
+    return xsf::eval_jacobi(n, alpha, beta, x);
 }
 
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
@@ -181,7 +181,7 @@ npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
 }
 
 double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x) {
-    return xsf::eval_sh_jacobi(static_cast<int>(n), p, q, x);
+    return xsf::eval_sh_jacobi(n, p, q, x);
 }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }
