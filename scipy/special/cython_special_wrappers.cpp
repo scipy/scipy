@@ -12,6 +12,7 @@
 #include <xsf/boxcox.h>
 #include <xsf/cdflib.h>
 #include <xsf/convex_analysis.h>
+#include <xsf/cpu/ellint_carlson.h>
 #include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
@@ -361,6 +362,36 @@ double xsf_wrightomega(double z) { return xsf::wrightomega(z); }
 npy_cdouble xsf_cwrightomega(npy_cdouble z) { return to_ccomplex(xsf::wrightomega(to_complex(z))); }
 
 double special_ellipk(double m) { return xsf::ellipk(m); }
+
+double xsf_elliprc(double x, double y) { return xsf::cpu::elliprc(x, y); }
+
+npy_cdouble xsf_celliprc(npy_cdouble x, npy_cdouble y) {
+    return to_ccomplex(xsf::cpu::elliprc(to_complex(x), to_complex(y)));
+}
+
+double xsf_elliprd(double x, double y, double z) { return xsf::cpu::elliprd(x, y, z); }
+
+npy_cdouble xsf_celliprd(npy_cdouble x, npy_cdouble y, npy_cdouble z) {
+    return to_ccomplex(xsf::cpu::elliprd(to_complex(x), to_complex(y), to_complex(z)));
+}
+
+double xsf_elliprf(double x, double y, double z) { return xsf::cpu::elliprf(x, y, z); }
+
+npy_cdouble xsf_celliprf(npy_cdouble x, npy_cdouble y, npy_cdouble z) {
+    return to_ccomplex(xsf::cpu::elliprf(to_complex(x), to_complex(y), to_complex(z)));
+}
+
+double xsf_elliprg(double x, double y, double z) { return xsf::cpu::elliprg(x, y, z); }
+
+npy_cdouble xsf_celliprg(npy_cdouble x, npy_cdouble y, npy_cdouble z) {
+    return to_ccomplex(xsf::cpu::elliprg(to_complex(x), to_complex(y), to_complex(z)));
+}
+
+double xsf_elliprj(double x, double y, double z, double p) { return xsf::cpu::elliprj(x, y, z, p); }
+
+npy_cdouble xsf_celliprj(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p) {
+    return to_ccomplex(xsf::cpu::elliprj(to_complex(x), to_complex(y), to_complex(z), to_complex(p)));
+}
 
 double xsf_beta(double a, double b) { return xsf::beta(a, b); }
 

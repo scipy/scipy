@@ -22,6 +22,11 @@ from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:`scipy.stats.mstats` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning"),  # noqa: E501
+]
 
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 RTOL = 1e-6 if USING_ACCELERATE else 1e-15
