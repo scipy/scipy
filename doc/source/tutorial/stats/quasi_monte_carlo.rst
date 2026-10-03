@@ -155,7 +155,8 @@ skip some points, or reset it. Let's take 5 points from
 :class:`scipy.stats.qmc.Halton`. And then ask for a second set of 5 points:
 
     >>> from scipy.stats import qmc
-    >>> engine = qmc.Halton(d=2)
+    >>> rng = np.random.default_rng()
+    >>> engine = qmc.Halton(d=2, rng=rng)
     >>> engine.random(5)
     array([[0.22166437, 0.07980522],  # random
            [0.72166437, 0.93165708],
@@ -206,8 +207,8 @@ defined. The following is an example wrapping `numpy.random.Generator`.
     >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed=None):
-    ...         super().__init__(d=d, seed=seed)
+    ...     def __init__(self, d, rng=None):
+    ...         super().__init__(d=d, rng=rng)
     ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...

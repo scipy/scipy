@@ -1100,16 +1100,16 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=Non
     Examples
     --------
     >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> def func(x):
     ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
     ...     return [2 * x[0], -1.5 * x[1]**2]
     >>> from scipy.optimize import check_grad
-    >>> check_grad(func, grad, [1.5, -1.5])
+    >>> check_grad(func, grad, [1.5, -1.5], rng=rng)
     2.9802322387695312e-08  # may vary
-    >>> rng = np.random.default_rng()
     >>> check_grad(func, grad, [1.5, -1.5],
-    ...             direction='random', seed=rng)
+    ...             direction='random', rng=rng)
     2.9802322387695312e-08
 
     """

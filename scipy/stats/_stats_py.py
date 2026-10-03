@@ -4588,7 +4588,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     To perform an exact permutation version of the test:
 
     >>> rng = np.random.default_rng(7796654889291491997)
-    >>> method = stats.PermutationMethod(n_resamples=np.inf, random_state=rng)
+    >>> method = stats.PermutationMethod(n_resamples=np.inf, rng=rng)
     >>> stats.pearsonr(x, y, method=method)
     PearsonRResult(statistic=-0.828503883588428, pvalue=0.028174603174603175)
 
@@ -5374,26 +5374,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> res.statistic, res.pvalue
     (0.09800224850707953, 0.3320271757932076)
 
-    For small samples, consider performing a permutation test instead of
-    relying on the asymptotic p-value. Note that to calculate the null
-    distribution of the statistic (for all possibly pairings between
-    observations in sample ``x`` and ``y``), only one of the two inputs needs
-    to be permuted.
+    For small samples, consider using `scipy.stats.spearmanrho` to perform
+    an exact permutation test.
 
-    >>> x = [1.76405235, 0.40015721, 0.97873798,
-    ... 2.2408932, 1.86755799, -0.97727788]
-    >>> y = [2.71414076, 0.2488, 0.87551913,
-    ... 2.6514917, 2.01160156, 0.47699563]
-
-    >>> def statistic(x): # permute only `x`
-    ...     return stats.spearmanr(x, y).statistic
-    >>> res_exact = stats.permutation_test((x,), statistic,
-    ...     permutation_type='pairings')
-    >>> res_asymptotic = stats.spearmanr(x, y)
-    >>> res_exact.pvalue, res_asymptotic.pvalue # asymptotic pvalue is too low
-    (0.10277777777777777, 0.07239650145772594)
-
-    For a more detailed example, see :ref:`hypothesis_spearmanr`.
     """
     if axis is not None and axis > 1:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays, "

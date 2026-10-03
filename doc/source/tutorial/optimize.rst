@@ -962,7 +962,8 @@ different optimization results later.
           x: array([439.48096952, 453.97740589])
          xl: array([[439.48096952, 453.97740589]])
 
-   >>> results['DA'] = optimize.dual_annealing(eggholder, bounds)
+   >>> rng = np.random.default_rng()
+   >>> results['DA'] = optimize.dual_annealing(eggholder, bounds, rng=rng)
    >>> results['DA']
         fun: -956.9182316237413  # may vary
     message: ['Maximum number of iteration reached']
@@ -977,7 +978,8 @@ contains information on the number of function evaluations, whether the
 optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
-   >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
+   >>> rng = np.random.default_rng()
+   >>> results['DE'] = optimize.differential_evolution(eggholder, bounds, rng=rng)
 
 :func:`shgo` has a second method, which returns all local minima rather than
 only what it thinks is the global minimum::
@@ -1060,8 +1062,8 @@ meet your needs (e.g. execution time, objective function value).
      - (✓)
    * - biteopt
      - ✓
-     - 
-     - 
+     -
+     -
      -
 
 (✓) = Depending on the chosen local minimizer
@@ -2059,7 +2061,9 @@ Lambda functions do not meet that requirement.
     >>> import numpy as np
     >>> from scipy.optimize import rosen, differential_evolution, Bounds
     >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
-    >>> res = differential_evolution(rosen, bnds, workers=2, updating='deferred')
+    >>> rng = np.random.default_rng()
+    >>> res = differential_evolution(rosen, bnds, workers=2,
+    ...                              updating='deferred', rng=rng)
 
 It is also possible to use a map-like callable as a worker. Here the map-like function
 is provided with a series of vectors that the optimization algorithm provides.
@@ -2071,8 +2075,10 @@ This example is semantically identical to the previous example.
 ::
 
     >>> from multiprocessing import Pool
+    >>> rng = np.random.default_rng()
     >>> with Pool(2) as pwl:
-    ...     res = differential_evolution(rosen, bnds, workers=pwl.map, updating='deferred')
+    ...     res = differential_evolution(rosen, bnds, workers=pwl.map,
+    ...                                  updating='deferred', rng=rng)
 
 It can be an advantage to use this pattern because the Pool can be re-used for further
 calculations - there is a significant amount of overhead in creating those objects.

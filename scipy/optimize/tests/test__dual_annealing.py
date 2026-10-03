@@ -124,8 +124,10 @@ class TestDualAnnealing:
         assert ret.success
 
     def test_low_dim_no_ls(self):
-        ret = dual_annealing(self.func, self.ld_bounds,
-                             no_local_search=True, seed=self.seed)
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            ret = dual_annealing(self.func, self.ld_bounds,
+                                no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
     @pytest.mark.fail_slow(10)

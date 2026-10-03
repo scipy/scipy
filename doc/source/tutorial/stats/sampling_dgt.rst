@@ -104,8 +104,8 @@ time but require a more expensive setup.
     2     # may vary
 
 Unfortunately, the PPF is rarely available in closed form or too slow when
-available. The user only has to provide the probability vector and the 
-PPF (inverse CDF) can be evaluated using the ``ppf`` method. This 
+available. The user only has to provide the probability vector and the
+PPF (inverse CDF) can be evaluated using the ``ppf`` method. This
 method calculates the (exact) PPF of the given distribution.
 
 For example, to calculate the PPF of a binomial distribution with :math:`n=4` and
