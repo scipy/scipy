@@ -16,6 +16,7 @@ from .test_continuous_basic import check_distribution_rvs
 import numpy as np
 
 import scipy.linalg
+from scipy._lib._array_api import xp_assert_close
 
 from scipy.stats._multivariate import (_PSD,
                                        _lnB,
@@ -1050,6 +1051,134 @@ class TestMultivariateNormal:
         assert_allclose(cdf2, cdf1, rtol=1e-4)
         assert_allclose(cdf3, cdf1, rtol=1e-4)
         assert_allclose(cdf4, cdf1, rtol=1e-4)
+
+    @pytest.mark.parametrize(
+        "cov",
+        [
+            [[4.0, 0.6, -0.3], [0.6, 9.0, 0.6], [-0.3, 0.6, 0.25],],
+            [[4.0, 0.6, 0.1], [0.6, 9.0, 1.5], [0.1, 1.5, 0.25],],
+        ],
+        ids=["correlated", "singular"],
+    )
+    @pytest.mark.parametrize(
+        "lower, upper",
+        [
+            ([-1.2, -0.8, -0.4], [0.3, 0.7, 1.1],),
+            ([-1.2, -np.inf, -0.4], [np.inf, 0.7, 1.1],),
+        ],
+        ids=["finite-box", "mixed-bounds"],
+    )
+    def test_trivariate_cdf_vs_qmvn(self, cov, lower, upper):
+        # Compare with the QMC integrator used before the trivariate fast path.
+        from scipy.stats._qmvnt import _qmvn
+        # `_qmvn` returns a Python float; `multivariate_normal.cdf`` returns
+        # a NumPy scalar.
+        from scipy._lib._array_api_no_0d import xp_assert_close
+        mean = np.array([1.0, -2.0, 3.0])
+        rng = np.random.default_rng(34987)
+        ref = _qmvn(100_000, cov, lower, upper, rng)[0]
+        res = multivariate_normal.cdf(
+            mean + upper,
+            mean,
+            cov,
+            lower_limit=mean + lower,
+            allow_singular=True,
+            rng=rng,
+        )
+        xp_assert_close(res, ref, rtol=1e-5, atol=1e-6)
+
+    @pytest.mark.parametrize("cov, ref", [
+        ([[1., 0., 0.], [0.5, 1., 0.], [0.5, 0.5, 1.]], 0.25),
+        ([[0., 0., 0.], [0., 1., 0.], [0., 0.5, 1.]], 1/3),
+    ], ids=["trivariate", "bivariate-reduction"])
+    def test_trivariate_cdf_lower_triangle(self, cov, ref):
+        # Only the lower triangle defines the covariance. The orthant
+        # probabilities for these correlations are known analytically.
+        res = multivariate_normal.cdf(np.zeros(3), cov=cov, allow_singular=True)
+        xp_assert_close(res, np.float64(ref), rtol=1e-14)
+
+    @pytest.mark.parametrize("ndim", [1, 2, 3])
+    @pytest.mark.parametrize("upper", [7., np.inf])
+    def test_trivariate_cdf_upper_tail(self, ndim, upper):
+        variance = np.zeros(3)
+        variance[:ndim] = 1
+        lower = np.full(3, -np.inf)
+        lower[:ndim] = 6
+        res = multivariate_normal.cdf(
+            np.full(3, upper), cov=np.diag(variance), lower_limit=lower,
+            allow_singular=True
+        )
+        ref = (norm.sf(6) - norm.sf(upper))**ndim
+        xp_assert_close(res, ref, rtol=1e-12, atol=0)
+
+    def test_trivariate_cdf_mixed_tails(self):
+        # X = (Z, -Z, Z): reflecting the first and third coordinates
+        # must also change the signs of their correlations with the second.
+        signs = np.array([1., -1., 1.])
+        res = multivariate_normal.cdf(
+            [7., -6., 7.], cov=np.outer(signs, signs),
+            lower_limit=[6., -7., 6.], allow_singular=True
+        )
+        ref = norm.sf(6) - norm.sf(7)
+        xp_assert_close(res, ref, rtol=1e-12, atol=0)
+
+    @pytest.mark.parametrize("ndim, lower, upper", [
+        (0, 0., 0.), (1, 0., 0.), (2, 0., 0.),
+        (2, 0., 1.), (2, -1., 0.), (2, 0.1, 1.), (2, -1., -0.1)
+    ])
+    def test_trivariate_cdf_zero_variance_bounds(self, ndim, lower, upper):
+        variance = np.zeros(3)
+        variance[:ndim] = 1.
+        a, b = np.full(3, -np.inf), np.array([0.3, 0.7, 1.])
+        a[ndim:], b[ndim:] = lower, upper
+        res = multivariate_normal.cdf(
+            b, cov=np.diag(variance), lower_limit=a, allow_singular=True
+        )
+        ref = np.float64(np.prod(norm.cdf(b[:ndim]))
+                         if lower <= 0 <= upper else 0.)
+        xp_assert_close(res, ref, rtol=1e-14)
+
+    def test_trivariate_cdf_nearly_singular(self):
+        # SciPy accepts this covariance within its singularity tolerance,
+        # but its slightly negative determinant is rejected by XSF.
+        from scipy.stats._qmvnt import _tvn
+
+        cov = np.full((3, 3), -0.5 - 1e-12)
+        np.fill_diagonal(cov, 1.)
+        # Ensure this covers the QMC fallback.
+        assert np.isnan(_tvn(np.full(3, -np.inf), np.ones(3), cov))
+        # At correlation -0.5, X + Y + Z = 0, so all three cannot exceed 1.
+        pair = multivariate_normal.cdf([-1., -1.],
+                                       cov=[[1., -0.5], [-0.5, 1.]])
+        ref = 1 - 3*norm.sf(1) + 3*pair
+        res = multivariate_normal.cdf(
+            np.ones(3), cov=cov, allow_singular=True,
+            rng=np.random.default_rng(34987)
+        )
+        # The fallback uses stochastic QMC integration.
+        xp_assert_close(res, ref, rtol=1e-4)
+
+    def test_trivariate_cdf_negative_zero_variance(self):
+        # A slightly negative variance from round-off is treated as zero.
+        cov = [[-1e-13, 0., 0.], [0., 1., 0.5], [0., 0.5, 1.]]
+        ref = multivariate_normal.cdf([1., 1.], cov=[[1., 0.5], [0.5, 1.]])
+        res = multivariate_normal.cdf(np.ones(3), cov=cov, allow_singular=True)
+        xp_assert_close(res, ref, rtol=1e-14)
+
+    @pytest.mark.parametrize("bound", ["upper", "lower"])
+    @pytest.mark.parametrize("ndim, singular", [
+        (1, False), (2, False), (3, False), (4, False), (3, True)
+    ])
+    def test_cdf_nan_bounds(self, bound, ndim, singular):
+        lower, upper = np.full(ndim, -np.inf), np.ones(ndim)
+        (upper if bound == "upper" else lower)[0] = np.nan
+        variance = np.ones(ndim)
+        variance[0] = 0. if singular else 1.
+        res = multivariate_normal.cdf(
+            upper, cov=np.diag(variance), lower_limit=lower,
+            allow_singular=True
+        )
+        assert np.isnan(res)
 
     def test_cdf_signs(self):
         # check that sign of output is correct when np.any(lower > x)
