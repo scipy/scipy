@@ -768,6 +768,9 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     """
     dist = _parse_dist_kw(dist)
+    if len(x) < 2:
+        # the correlation below needs at least two points
+        raise ValueError("`x` must contain at least two observations.")
     osm_uniform = _calc_uniform_order_statistic_medians(len(x))
     osr = sort(x)
 
@@ -1422,6 +1425,8 @@ def boxcox_normmax(
             return getattr(optimizer(func_wrapped), 'x', None)
 
     def _pearsonr(x):
+        if len(x) < 2:
+            raise ValueError("`x` must contain at least two observations.")
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
