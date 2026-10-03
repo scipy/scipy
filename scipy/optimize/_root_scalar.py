@@ -14,7 +14,7 @@ from ._numdiff import approx_derivative
 __all__ = ['root_scalar']
 
 ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
-                       'newton', 'secant', 'halley']
+                       'newton', 'secant', 'halley', 'muller']
 
 
 class MemoizeDer:
@@ -63,7 +63,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
                 fprime=None, fprime2=None,
                 x0=None, x1=None,
                 xtol=None, rtol=None, maxiter=None,
-                options=None):
+                options=None, *, x2=None):
     """
     Find a root of a scalar function.
 
@@ -91,6 +91,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
         - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
         - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
+        - 'muller'    :ref:`(see here) <optimize.root_scalar-muller>`
 
     bracket : A sequence of 2 floats, optional
         An interval bracketing a root. ``f(x, *args)`` must have different
@@ -105,9 +106,9 @@ def root_scalar(f, args=(), method=None, bracket=None,
         value of the objective function and of the first and second derivatives.
         `fprime2` can also be a callable returning the second derivative of `f`.
         In this case, it must accept the same arguments as `f`.
-    x0 : float, optional
+    x0 : float or complex, optional
         Initial guess.
-    x1 : float, optional
+    x1 : float or complex, optional
         A second guess.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -118,6 +119,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     options : dict, optional
         A dictionary of solver options. E.g., ``k``, see
         :obj:`show_options()` for details.
+    x2 : float or complex, optional
+        A third initial guess, required for Muller's method.
 
     Returns
     -------
@@ -147,25 +150,27 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     Arguments for each method are as follows (x=required, o=optional).
 
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    |                    method                     | f | args | bracket | x0 | x1 | fprime | fprime2 | xtol | rtol | maxiter | options |
-    +===============================================+===+======+=========+====+====+========+=========+======+======+=========+=========+
-    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | o  |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   o    |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |   x    |    x    |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    |                    method                     | f | args | bracket | x0 | x1 | x2 | fprime | fprime2 | xtol | rtol | maxiter | options |
+    +===============================================+===+======+=========+====+====+====+========+=========+======+======+=========+=========+
+    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | o  |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |    |   o    |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |    |   x    |    x    |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`muller <optimize.root_scalar-muller>`   | x |  o   |         | x  | x  | x  |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
 
     Examples
     --------
@@ -254,6 +259,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     if not method:
         if bracket is not None:
             method = 'brentq'
+        elif x2 is not None:
+            method = 'muller'
         elif x0 is not None:
             if fprime:
                 if fprime2:
@@ -269,7 +276,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
                          'nor starting point provided.')
 
     meth = method.lower()
-    map2underlying = {'halley': 'newton', 'secant': 'newton'}
+    map2underlying = {'halley': 'newton', 'secant': 'newton', 'muller': '_muller'}
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
@@ -335,6 +342,16 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2, **kwargs)
+    elif meth in ['muller']:
+        if x0 is None:
+            raise ValueError(f'x0 must not be None for {method}')
+        if x1 is None:
+            raise ValueError(f'x1 must not be None for {method}')
+        if x2 is None:
+            raise ValueError(f'x2 must not be None for {method}')
+        kwargs.pop('full_output')
+        kwargs.pop('disp')
+        sol = methodc(f, x0, x1, x2, args=args, **kwargs)
     else:
         raise ValueError(f'Unknown solver {method}')
 
@@ -432,6 +449,62 @@ def _root_scalar_secant_doc():
     options: dict, optional
         Specifies any method-specific options not covered above.
 
+    """
+    pass
+
+
+def _root_scalar_muller_doc():
+    r"""
+    Find a real or complex root by quadratic interpolation [1]_.
+
+    Options
+    -------
+    args : tuple, optional
+        Extra arguments passed to the objective function.
+    xtol : float, optional
+        Absolute tolerance on the step. Default is the square root of the
+        machine precision of the promoted initial guesses.
+    rtol : float, optional
+        Relative tolerance on the step, relative to the new iterate.
+        Default is zero.
+    maxiter : int, optional
+        Maximum number of iterations. Default is 50.
+    x0, x1, x2 : float or complex
+        Three distinct, finite scalar initial guesses. All are required.
+        They are promoted to a common complex floating-point dtype.
+    options : dict, optional
+        Additional options are ``fatol`` and ``frtol``, absolute and relative
+        tolerances on the function value. Both default to zero. ``frtol`` is
+        relative to the smallest absolute function value at the three
+        initial guesses.
+
+    Notes
+    -----
+    The objective must support complex input, even when the initial guesses
+    are real. Unlike a bracketing method, Muller does not guarantee convergence
+    or restrict the root to a real interval.
+
+    Iteration stops when ``abs(step) <= xtol + rtol*abs(x)`` or
+    ``abs(f(x)) <= fatol + frtol*f_initial``, where ``f_initial`` is the
+    smallest initial absolute function value. A small step alone does not
+    guarantee a small residual; check the returned root when necessary.
+
+    References
+    ----------
+    .. [1] D. E. Muller, "A Method for Solving Algebraic Equations Using an
+           Automatic Computer", Mathematical Tables and Other Aids to
+           Computation, 10(56), 208-215, 1956. :doi:`10.2307/2001916`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import root_scalar
+    >>> sol = root_scalar(lambda z: z**2 + 1, method='muller',
+    ...                   x0=-1, x1=0, x2=1)
+    >>> sol.converged
+    True
+    >>> bool(np.isclose(sol.root**2, -1))
+    True
     """
     pass
 
