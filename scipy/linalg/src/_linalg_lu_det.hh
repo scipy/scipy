@@ -136,7 +136,7 @@ CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT 
     CBLAS_INT mn = m < n ? m : n;
     CBLAS_INT info = 0;
 
-    call_getrf(&m, &n, f_buf, &m, ipiv, &info);
+    getrf(m, n, f_buf, m, ipiv, &info);
 
     if (info < 0) { return info; }
 
@@ -260,7 +260,7 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
 template<typename T>
 T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
 {
-    call_getrf(&n, &n, f_buf, &n, ipiv, info);
+    getrf(n, n, f_buf, n, ipiv, info);
 
     if (*info < 0) { return T(0); }
     if (*info > 0) { return T(0); }
