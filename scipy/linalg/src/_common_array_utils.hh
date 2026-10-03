@@ -5,6 +5,15 @@
 
 namespace sp_linalg {
 
+using namespace lapack;
+using wrapper::f32;
+using wrapper::f64;
+using wrapper::c64;
+using wrapper::c128;
+using wrapper::real_of_t;
+using wrapper::complex_of_t;
+using wrapper::is_complex_v;
+
 
 /*
  * Generate type overloads, to map from C array types (f32, f64, c64, c128)
@@ -1494,17 +1503,6 @@ zero_other_triangle(char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_i
             for (npy_intp j=0; j < stop; j++){
                 data[j + i*lda] = 0.0;
             }
-        }
-    }
-}
-
-
-template<typename T>
-inline void
-nan_matrix(T * data, npy_intp n) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            data[i * n + j] = std::numeric_limits<T>::quiet_NaN;
         }
     }
 }
