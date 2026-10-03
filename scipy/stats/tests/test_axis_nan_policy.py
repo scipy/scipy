@@ -220,6 +220,8 @@ axis_nan_policy_cases = [
     (stats.circmedian, tuple(), dict(convention='geometric'),
      1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.anderson, tuple(), dict(), 1, 2, False, tuple),
+    (stats.anderson, ('expon',), dict(), 1, 2, False, tuple),
 ]
 
 # If the message is one of those expected, put nans in
