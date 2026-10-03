@@ -52,8 +52,9 @@ class FortranFile:
     the size to facilitate backwards seeking.
 
     This class only supports files written with both sizes for the record.
-    It also does not support the subrecords used in Intel and gfortran compilers
-    for records which are greater than 2GB with a 4-byte header.
+    For records which are greater than 2GB with a 4-byte header, Intel and
+    gfortran compilers split the data into subrecords. These subrecords are
+    supported when their continuation markers use the compiler convention.
 
     An example of an unformatted sequential file in Fortran would be written as::
 
@@ -124,7 +125,7 @@ class FortranFile:
 
         self._header_dtype = header_dtype
 
-    def _read_size(self, eof_ok=False):
+    def _read_size(self, eof_ok=False, signed=False):
         n = self._header_dtype.itemsize
         b = self._fp.read(n)
         if (not b) and eof_ok:
@@ -132,7 +133,10 @@ class FortranFile:
         elif len(b) < n:
             raise FortranFormattingError(
                 "End of file in the middle of the record size")
-        return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
+        dtype = self._header_dtype
+        if signed and dtype.kind == 'u':
+            dtype = np.dtype(dtype.str.replace('u', 'i', 1))
+        return int(np.frombuffer(b, dtype=dtype, count=1)[0])
 
     def write_record(self, *items):
         """
@@ -250,7 +254,30 @@ class FortranFile:
         elif not dtypes:
             raise ValueError('Must specify at least one dtype')
 
-        first_size = self._read_size(eof_ok=True)
+        first_size_marker = self._read_size(eof_ok=True, signed=True)
+        payload = None
+        if first_size_marker < 0:
+            chunks = []
+            marker = first_size_marker
+            while True:
+                size = abs(marker)
+                chunk = self._fp.read(size)
+                if len(chunk) != size:
+                    raise FortranFormattingError(
+                        "End of file in the middle of a record")
+                trailing_marker = self._read_size(signed=True)
+                if abs(trailing_marker) != size:
+                    raise ValueError(
+                        'Sizes do not agree in the header and footer for '
+                        'this record - check header dtype')
+                chunks.append(chunk)
+                if marker > 0:
+                    break
+                marker = self._read_size(signed=True)
+            payload = b''.join(chunks)
+            first_size = len(payload)
+        else:
+            first_size = first_size_marker
 
         dtypes = tuple(np.dtype(dtype) for dtype in dtypes)
         block_size = sum(dtype.itemsize for dtype in dtypes)
@@ -268,8 +295,15 @@ class FortranFile:
                              f'expected size ({block_size}) of multi-item record')
 
         data = []
+        payload_offset = 0
         for dtype in dtypes:
-            r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
+            if payload is None:
+                r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
+            else:
+                nbytes = num_blocks * dtype.itemsize
+                r = np.frombuffer(payload, dtype=dtype, count=num_blocks,
+                                  offset=payload_offset)
+                payload_offset += nbytes
             if len(r) != num_blocks:
                 raise FortranFormattingError(
                     "End of file in the middle of a record")
@@ -281,10 +315,11 @@ class FortranFile:
 
             data.append(r)
 
-        second_size = self._read_size()
-        if first_size != second_size:
-            raise ValueError('Sizes do not agree in the header and footer for '
-                             'this record - check header dtype')
+        if payload is None:
+            second_size = self._read_size(signed=True)
+            if first_size != second_size:
+                raise ValueError('Sizes do not agree in the header and footer '
+                                 'for this record - check header dtype')
 
         # Unpack result
         if len(dtypes) == 1:
