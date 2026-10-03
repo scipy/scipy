@@ -48,6 +48,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_ass
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
 
+pytestmark = pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning")  # noqa: E501
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
