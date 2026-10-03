@@ -27,3 +27,6 @@ max_line_length = 130
 
 [*.md]
 max_line_length = 80
+
+[*.sh]
+end_of_line = lf
