@@ -343,12 +343,14 @@ its support, i.e. every interval ``(t[j], t[j+4])`` must contain some
 ``x``. With many knots and few data points this fails, and
 ``make_smoothing_spline`` raises a ``ValueError``. Any positive ``lam``
 reduces this requirement, the penalty determines the coefficients that the
-data cannot see, so in some sense some work is taken off the data. The
-only condition in that case is that the dataset should contain at least
-two distinct ``x`` values.
+data cannot see, so in some sense some work is taken off the data.
+Theoretically, the only condition in that case is that the dataset should
+contain at least two distinct ``x`` values. In practice,
+``make_smoothing_spline`` always requires at least 5 data points,
+regardless of ``lam`` or ``t``.
 
 At the other extreme, a very large ``lam`` makes the linear system
-numerically singular, the data term is massively dominated out by the penalty, 
+numerically singular, the data term is massively dominated by the penalty,
 whose matrix is itself singular (a straight line has zero penalty). Useful
 values of ``lam`` sit far away from both extremes. The failures only start
 once one term of the linear system falls below the roundoff of the other,
@@ -372,7 +374,7 @@ generalized cross-validation (GCV) criterion:
     >>>
     >>> spl = make_smoothing_spline(x, y, t=t)   # lam=None is the default
     >>> xnew = np.linspace(x[0], x[-1], 400)
-    >>> plt.plot(xnew, spl(xnew), label='GCV-selected $\\lambda$')
+    >>> plt.plot(xnew, spl(xnew), label=r'GCV-selected $\lambda$')
     >>> plt.plot(x, y, 'o', alpha=0.4)
     >>> plt.legend()
     >>> plt.tight_layout()
