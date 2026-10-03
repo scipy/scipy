@@ -1,11 +1,12 @@
 import functools
 import operator
+import warnings
 from math import prod
 from types import GenericAlias
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
-from scipy.linalg import (get_lapack_funcs, LinAlgError,
+from scipy.linalg import (get_lapack_funcs, LinAlgError, LinAlgWarning,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)
 from scipy.optimize import minimize_scalar
@@ -2618,6 +2619,11 @@ def _compute_b_inv(A, factor=None):
     ----------
     A : array, shape (4, n)
         Matrix to inverse, stored in LAPACK banded storage.
+    factor : array, shape (4, n), optional
+        A precomputed Cholesky factor of ``A``, as returned by
+        `scipy.linalg.cholesky_banded`. If given, ``A`` is not factorized
+        again. The factor is scaled in place and must not be reused after
+        this call.
 
     Returns
     -------
@@ -3059,11 +3065,15 @@ def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
     anorm = lansb(kd, _lhs, norm='1', uplo='U')
     factor = cholesky_banded(_lhs, lower=False)
     rcond, info = pbcon(kd, factor, anorm, uplo='U')
-    if info == 0 and rcond < np.finfo(_lhs.dtype).eps:
-        raise LinAlgError(
-            "The system (X^T W X + lam * Omega) is numerically singular: "
-            f"the estimated reciprocal condition number is {rcond:.2e} "
-            f"for lam={lam:.2e}."
+    if info < 0:
+        raise ValueError(
+            f"illegal value in argument {-info} of internal pbcon")
+    if rcond < np.finfo(_lhs.dtype).eps:
+        warnings.warn(
+            "The system (X^T W X + lam * Omega) is ill-conditioned "
+            f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
+            "not be accurate.",
+            LinAlgWarning, stacklevel=3,
         )
     c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:

@@ -3095,12 +3095,12 @@ class TestSmoothingSpline:
             xp_assert_close(B[3 - d, d:], np.diagonal(inv, d), atol=1e-14)
 
     def test_solve_coefficients_singular_system(self):
-        """A numerically singular system raises an informative error."""
+        """An ill-conditioned system emits an informative warning."""
         n = 12
         ab = np.zeros((4, n))
         ab[3] = 1.0
         ab[3, -1] = 1e-18
-        with pytest.raises(sl.LinAlgError, match="numerically singular"):
+        with pytest.warns(sl.LinAlgWarning, match="ill-conditioned"):
             _solve_smoothing_spline_coefficients(
                 ab, 0.0, np.zeros_like(ab), np.ones(n))
 
