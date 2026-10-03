@@ -8,7 +8,7 @@ from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (assert_array_equal, assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_array_almost_equal, assert_array_less,
                            assert_, assert_allclose, assert_equal)
 import pytest
@@ -453,41 +453,40 @@ class TestAndersonMethod:
         assert res.pvalue == pvalue_min
 
 
+@make_xp_test_case(stats.anderson_ksamp)
 class TestAndersonKSamp:
-    def test_example1a(self):
+    @pytest.mark.parametrize('variant, Tk, p', [('right', 4.449, 0.0021),
+                                                ('midrank', 4.480, 0.002),
+                                                # 'continuous' reference: SciPy 1.18
+                                                ('continuous', 4.5785, 0.001967)])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_example1(self, variant, Tk, p, dtype, xp):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
         # Methods Based on Ranks, p. 309)
-        # Pass a mixture of lists and arrays
-        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
-        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
+        dtype = dict(dtype=getattr(xp, dtype))
+        t1 = xp.asarray([38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0], **dtype)
+        t2 = xp.asarray([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8], **dtype)
+        t3 = xp.asarray([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0], **dtype)
+        t4 = xp.asarray([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8], **dtype)
+        res = stats.anderson_ksamp((t1, t2, t3, t4), variant=variant)
 
-        Tk, p = stats.anderson_ksamp((t1, t2, t3, t4), variant="right")
+        xp_assert_close(res.statistic, xp.asarray(Tk, **dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(p, **dtype), atol=0.00025)
 
-        assert_almost_equal(Tk, 4.449, 3)
-        assert_allclose(p, 0.0021, atol=0.00025)
-
-    def test_example1b(self):
-        # Example data from Scholz & Stephens (1987), originally
-        # published in Lehmann (1995, Nonparametrics, Statistical
-        # Methods Based on Ranks, p. 309)
-        # Pass arrays
-        t1 = np.array([38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0])
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
-        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        Tk, p = stats.anderson_ksamp((t1, t2, t3, t4))
-
-        assert_almost_equal(Tk, 4.480, 3)
-        assert_allclose(p, 0.0020, atol=0.00025)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.xslow
-    def test_example2a(self):
+    @pytest.mark.parametrize('variant, Tk, p', [('midrank', 3.294, 0.0041),
+                                                ('right', 3.288, 0.0041),
+                                                # 'continuous' reference: SciPy 1.18
+                                                ('continuous', 3.4569, 0.0032)])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_example2(self, variant, Tk, p, dtype, xp):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
-        # Pass lists instead of arrays
+        dtype = dict(dtype=getattr(xp, dtype))
         t1 = [194, 15, 41, 29, 33, 181]
         t2 = [413, 14, 58, 37, 100, 65, 9, 169, 447, 184, 36, 201, 118]
         t3 = [34, 31, 18, 18, 67, 57, 62, 7, 22, 34]
@@ -509,46 +508,23 @@ class TestAndersonKSamp:
                61, 34]
 
         samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-        Tk, p = stats.anderson_ksamp(samples, variant="right")
-        assert_almost_equal(Tk, 3.288, 3)
-        assert_allclose(p, 0.0041, atol=0.00025)
+        samples = [xp.asarray(sample, **dtype) for sample in samples]
+
+        res = stats.anderson_ksamp(samples, variant=variant)
+        xp_assert_close(res.statistic, xp.asarray(Tk, **dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(p, **dtype), atol=0.00025)
+
+        if not is_numpy(xp):
+            return
 
         rng = np.random.default_rng(6989860141921615054)
         method = stats.PermutationMethod(n_resamples=9999, rng=rng)
-        res = stats.anderson_ksamp(samples, variant="right", method=method)
-        assert_array_equal(res.statistic, Tk)
-        assert_allclose(res.pvalue, p, atol=6e-4)
+        res2 = stats.anderson_ksamp(samples, variant=variant, method=method)
+        xp_assert_close(res2.statistic, res.statistic)
+        atol = 1e-3 if variant == 'continuous' else 6e-4
+        xp_assert_close(res2.pvalue, res.pvalue, atol=atol)
 
-    def test_example2b(self):
-        # Example data taken from an earlier technical report of
-        # Scholz and Stephens
-        t1 = [194, 15, 41, 29, 33, 181]
-        t2 = [413, 14, 58, 37, 100, 65, 9, 169, 447, 184, 36, 201, 118]
-        t3 = [34, 31, 18, 18, 67, 57, 62, 7, 22, 34]
-        t4 = [90, 10, 60, 186, 61, 49, 14, 24, 56, 20, 79, 84, 44, 59, 29,
-              118, 25, 156, 310, 76, 26, 44, 23, 62]
-        t5 = [130, 208, 70, 101, 208]
-        t6 = [74, 57, 48, 29, 502, 12, 70, 21, 29, 386, 59, 27]
-        t7 = [55, 320, 56, 104, 220, 239, 47, 246, 176, 182, 33]
-        t8 = [23, 261, 87, 7, 120, 14, 62, 47, 225, 71, 246, 21, 42, 20, 5,
-              12, 120, 11, 3, 14, 71, 11, 14, 11, 16, 90, 1, 16, 52, 95]
-        t9 = [97, 51, 11, 4, 141, 18, 142, 68, 77, 80, 1, 16, 106, 206, 82,
-              54, 31, 216, 46, 111, 39, 63, 18, 191, 18, 163, 24]
-        t10 = [50, 44, 102, 72, 22, 39, 3, 15, 197, 188, 79, 88, 46, 5, 5, 36,
-               22, 139, 210, 97, 30, 23, 13, 14]
-        t11 = [359, 9, 12, 270, 603, 3, 104, 2, 438]
-        t12 = [50, 254, 5, 283, 35, 12]
-        t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
-        t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
-               61, 34]
-
-        Tk, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14))
-
-        assert_almost_equal(Tk, 3.294, 3)
-        assert_allclose(p, 0.0041, atol=0.00025)
-
-    def test_R_kSamples(self):
+    def test_R_kSamples(self, xp):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
         # r1 = 1:100
@@ -580,85 +556,103 @@ class TestAndersonKSamp:
         # res <- kSamples::ad.test(r1, r1 + 13.5)
         # res$ad[1, "T.AD"] # 6.2982
         # res$ad[1, " asympt. P-value"] # 0.00118
+        dtype = xp.float64
 
-        x1 = np.linspace(1, 100, 100)
+        x1 = xp.linspace(1, 100, 100, dtype=dtype)
         # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
+        with pytest.warns(UserWarning, match='p-value floored'):
             s, p = stats.anderson_ksamp([x1, x1 + 40.5], variant="right")
-        assert_almost_equal(s, 41.105, 3)
-        assert_equal(p, 0.001)
+        xp_assert_close(s, xp.asarray(41.105, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.001, dtype=dtype))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
+        with pytest.warns(UserWarning, match='p-value floored'):
             s, p = stats.anderson_ksamp([x1, x1 + 40.5])
-        assert_almost_equal(s, 41.235, 3)
-        assert_equal(p, 0.001)
+        xp_assert_close(s, xp.asarray(41.235, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.001, dtype=dtype))
 
         # test case: similar distributions --> p-value capped at 0.25
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
+        with pytest.warns(UserWarning, match='p-value capped'):
             s, p = stats.anderson_ksamp([x1, x1 + .5], variant="right")
-        assert_almost_equal(s, -1.2824, 4)
-        assert_equal(p, 0.25)
+        xp_assert_close(s, xp.asarray(-1.2824, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.25, dtype=dtype))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
+        # test case: similar distributions --> p-value capped at 0.25
+        with pytest.warns(UserWarning, match='p-value capped'):
             s, p = stats.anderson_ksamp([x1, x1 + .5])
-        assert_almost_equal(s, -1.2944, 4)
-        assert_equal(p, 0.25)
+        xp_assert_close(s, xp.asarray(-1.2944, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.25, dtype=dtype))
 
         # test case: check interpolated p-value in [0.01, 0.25] (no ties)
         s, p = stats.anderson_ksamp([x1, x1 + 7.5], variant="right")
-        assert_almost_equal(s, 1.4923, 4)
-        assert_allclose(p, 0.0775, atol=0.005, rtol=0)
+        xp_assert_close(s, xp.asarray(1.4923, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.0775, dtype=dtype), atol=0.005, rtol=0)
 
         # test case: check interpolated p-value in [0.01, 0.25] (w/ ties)
         s, p = stats.anderson_ksamp([x1, x1 + 6])
-        assert_almost_equal(s, 0.6389, 4)
-        assert_allclose(p, 0.1798, atol=0.005, rtol=0)
+        xp_assert_close(s, xp.asarray(0.6389, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.1798, dtype=dtype), atol=0.005, rtol=0)
 
         # test extended critical values for p=0.001 and p=0.005
         s, p = stats.anderson_ksamp([x1, x1 + 11.5], variant="right")
-        assert_almost_equal(s, 4.5042, 4)
-        assert_allclose(p, 0.00545, atol=0.0005, rtol=0)
+        xp_assert_close(s, xp.asarray(4.5042, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.00545, dtype=dtype), atol=0.005, rtol=0)
 
         s, p = stats.anderson_ksamp([x1, x1 + 13.5], variant="right")
-        assert_almost_equal(s, 6.2982, 4)
-        assert_allclose(p, 0.00118, atol=0.0001, rtol=0)
+        xp_assert_close(s, xp.asarray(6.2982, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.00118, dtype=dtype), atol=0.0001, rtol=0)
 
-    def test_not_enough_samples(self):
-        assert_raises(ValueError, stats.anderson_ksamp, np.ones(5))
+    def test_not_enough_samples(self, xp):
+        message = "`anderson_ksamp` needs at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((xp.ones(5),))
 
-    def test_no_distinct_observations(self):
-        assert_raises(ValueError, stats.anderson_ksamp,
-                      (np.ones(5), np.ones(5)))
+    def test_no_distinct_observations(self, xp):
+        message = "`anderson_ksamp` needs more than one..."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((xp.ones(5), xp.ones(5)))
 
-    def test_empty_sample(self):
-        assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
+    def test_empty_sample(self, xp):
+        message = 'One or more sample arguments...'
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.anderson_ksamp((xp.ones(5), xp.asarray([])))
+        xp_assert_equal(res.statistic, xp.asarray(np.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_result_attributes(self):
-        # Pass a mixture of lists and arrays
-        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        res = stats.anderson_ksamp((t1, t2), variant="right")
-
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    def test_variant_input_validation(self):
-        x = np.arange(10)
+    def test_variant_input_validation(self, xp):
+        x = xp.arange(10)
         message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
         with pytest.raises(ValueError, match=message):
             stats.anderson_ksamp((x, x), variant='Camelot')
 
     @pytest.mark.parametrize('n_samples', [2, 3])
-    def test_variant_continuous(self, n_samples):
+    def test_variant_continuous(self, n_samples, xp):
         rng = np.random.default_rng(20182053007)
         samples = rng.random((n_samples, 15)) + 0.1*np.arange(n_samples)[:, np.newaxis]
+        samples = [xp.asarray(sample) for sample in samples]
         ref = stats.anderson_ksamp(samples, variant='right')
         res = stats.anderson_ksamp(samples, variant='continuous')
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
+
+    def test_vectorized(self, xp):
+        rng = np.random.default_rng(2341589258312)
+        x = xp.asarray(rng.random((3, 20)))
+        y = xp.asarray(rng.random((3, 21)) + 1e-1)
+        kwargs = dict(variant='continuous', axis=-1)
+        method = stats.PermutationMethod(rng=rng)
+        ref = stats.anderson_ksamp((x, y), **kwargs)
+        res = stats.anderson_ksamp((x, y), **kwargs, method=method)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, atol=5e-3)
+        assert xp.all(res.pvalue < 0.25) and xp.all(res.pvalue > 0.001)
+
+    # Check that lists are still accepted and converted to NumPy arrays
+    def test_accepts_lists(self):
+        rng = np.random.default_rng(20182053007)
+        samples = rng.random((2, 15))
+        ref = stats.anderson_ksamp(samples)
+        res = stats.anderson_ksamp(samples.tolist())
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue)
 

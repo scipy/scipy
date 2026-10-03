@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, around, arange, sort, amin, amax, sqrt, array,
                    exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
@@ -20,6 +20,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_jax,
     is_dask,
+    is_torch,
     xp_size,
     xp_promote,
     xp_result_type,
@@ -27,6 +28,7 @@ from scipy._lib._array_api import (
     xp_ravel,
     _count_nonmasked,
     is_lazy_array,
+    xp_interp,
 )
 
 from ._ansari_swilk_statistics import gscale
@@ -2579,14 +2581,24 @@ def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
         The A2KN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
     A2kN = 0.
 
-    j = np.arange(1, N)
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        Mij = s.searchsorted(Z[:-1], side='right')
+    # this is something `xpx.searchsorted` should do
+    batch_shape = xp.broadcast_shapes(Z.shape[:-1],
+                                      *(sample.shape[:-1] for sample in samples))
+    Z = xp.broadcast_to(Z, batch_shape + Z.shape[-1:])
+
+    j = xp.arange(1, N, dtype=Z.dtype, device=Z.device)
+    for i in range(0, k):
+        s = xp.sort(samples[i], axis=-1)
+        Z_1 = Z[..., :-1]
+        # without this, "boundary tensor is non-contiguous"
+        s, Z_1 = (s.contiguous(), Z_1.contiguous()) if is_torch(xp) else (s, Z_1)
+        Mij = xpx.searchsorted(s, Z_1, side='right')  # requires axis=-1
+        Mij = xp.astype(Mij, Z.dtype)
         inner = (N*Mij - j*n[i])**2 / (j * (N - j))
-        A2kN += inner.sum() / n[i]
+        A2kN += xp.sum(inner, axis=-1) / n[i]
     return A2kN / N
 
 
@@ -2614,21 +2626,26 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
         The A2aKN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
     A2akN = 0.
-    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    Z_ssorted_left = xp.astype(xp.searchsorted(Z, Zstar, side='left'), Z.dtype)
     if N == Zstar.size:
         lj = 1.
     else:
-        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
+        Z_ssorted_right = xp.astype(xp.searchsorted(Z, Zstar, side='right'), Z.dtype)
+        lj = Z_ssorted_right - Z_ssorted_left
+    # probably should work with integers until the end
+    # but I'm just going to translate what's here.
     Bj = Z_ssorted_left + lj / 2.
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        s_ssorted_right = s.searchsorted(Zstar, side='right')
-        Mij = s_ssorted_right.astype(float)
-        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
+    for i in range(0, k):
+        s = xp.sort(samples[i])
+        s_ssorted_right = xp.astype(xp.searchsorted(s, Zstar, side='right'), Z.dtype)
+        s_ssorted_left =  xp.astype(xp.searchsorted(s, Zstar, side='left'), Z.dtype)
+        Mij = s_ssorted_right
+        fij = s_ssorted_right - s_ssorted_left
         Mij -= fij / 2.
         inner = lj / float(N) * (N*Mij - Bj*n[i])**2 / (Bj*(N - Bj) - N*lj/4.)
-        A2akN += inner.sum() / n[i]
+        A2akN += xp.sum(inner) / n[i]
     A2akN *= (N - 1.) / N
     return A2akN
 
@@ -2657,26 +2674,26 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
         The A2KN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
+
     A2kN = 0.
-    lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
-                                                              'left')
-    Bj = lj.cumsum()
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        Mij = s.searchsorted(Zstar[:-1], side='right')
+    lj = xp.astype(xp.searchsorted(Z, Zstar[:-1], side='right')
+                   - xp.searchsorted(Z, Zstar[:-1], side='left'), Z.dtype)
+    Bj = xp.cumulative_sum(lj, axis=-1)
+    for i in range(0, k):
+        s = xp.sort(samples[i])
+        Mij = xp.astype(xp.searchsorted(s, Zstar[:-1], side='right'), Z.dtype)
         inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
-        A2kN += inner.sum() / n[i]
+        A2kN += xp.sum(inner) / n[i]
     return A2kN
 
 
-Anderson_ksampResult = _make_tuple_bunch(
-    'Anderson_ksampResult',
-    ['statistic', 'critical_values', 'pvalue'], []
-)
-
-
-@xp_capabilities(np_only=True)
-def anderson_ksamp(samples, *, variant="midrank", method=None):
+@xp_capabilities(
+    skip_backends=[('jax.numpy', 'no attempt'), ('dask.array', 'no attempt')],
+    extra_note=("For non-NumPy arrays, only ``variant='continuous'`` is compatible "
+                "with batch input and permutation `method`."))
+def anderson_ksamp(samples, *, variant="midrank", method=None,
+                   axis=0, nan_policy='propagate', keepdims=False):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2702,10 +2719,30 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
         from tabulated values (without extrapolating).
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
-    res : Anderson_ksampResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
@@ -2788,20 +2825,36 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
     """
     k = len(samples)
     if (k < 2):
-        raise ValueError("anderson_ksamp needs at least two samples")
+        raise ValueError("`anderson_ksamp` needs at least two samples.")
 
-    samples = list(map(np.asarray, samples))
-    Z = np.sort(np.hstack(samples))
-    N = Z.size
-    Zstar = np.unique(Z)
-    if Zstar.size < 2:
-        raise ValueError("anderson_ksamp needs more than one distinct "
-                         "observation")
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    override = {} if variant == 'continuous' else dict(vectorization=True)
+    anp = _axis_nan_policy_factory(SignificanceResult, n_samples=None,
+                                   override=override)
+    return anp(_anderson_ksamp)(*samples, variant=variant, method=method,
+                                axis=axis, nan_policy=nan_policy, keepdims=keepdims,
+                                k=k, xp=xp)
 
-    n = np.array([sample.size for sample in samples])
-    if np.any(n == 0):
-        raise ValueError("anderson_ksamp encountered sample without "
-                         "observations")
+
+def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp=None):
+    xp = array_namespace(*samples) if xp is None else xp
+
+    Z = xp.sort(xp.concat(samples, axis=-1), axis=-1)
+    dtype_device = dict(dtype=Z.dtype, device=xp_device(Z))
+
+    N = Z.shape[-1]
+
+    Zstar = None   # midrank/right will always be one-dimensional
+    if Z.ndim == 1:
+        Zstar = xp.unique_values(Z)
+        if xp_size(Zstar) < 2:
+            message = "`anderson_ksamp` needs more than one distinct observation."
+            raise ValueError(message)
+
+    n = xp.asarray([sample.shape[-1] for sample in samples], **dtype_device)
+    if xp.any(n == 0):
+        raise ValueError("`anderson_ksamp` encountered a sample without observations.")
 
     if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
@@ -2815,56 +2868,56 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
 
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    def statistic(*samples):
+    def statistic(*samples, axis=-1):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
     if method is not None:
-        res = stats.permutation_test(samples, statistic, **method._asdict(),
-                                     alternative='greater')
+        vectorized = (variant == 'continuous')
+        res = stats.permutation_test(samples, statistic, **method._asdict(), axis=-1,
+                                     alternative='greater', vectorized=vectorized)
 
-    H = (1. / n).sum()
-    hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
+    # for non-masked arrays, all these calculations are independent of batch size
+    H = xp.sum(1. / n)
+    hs_cs = xp.cumulative_sum(1. / xp.arange(N - 1, 1, -1, **dtype_device))
     h = hs_cs[-1] + 1
-    g = (hs_cs / arange(2, N)).sum()
-
+    g = xp.sum(hs_cs / xp.arange(2, N, **dtype_device))
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
     b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
     c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
     d = (2*h + 6)*k**2 - 4*h*k
     sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
     m = k - 1
-    A2 = (A2kN - m) / math.sqrt(sigmasq)
+
+    # A2 is the (scalar) statistic; it has the shape of the batch
+    A2 = (A2kN - m) / sigmasq**0.5
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
-    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085])
-    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615])
-    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396, -0.345, -0.154])
-    critical = b0 + b1 / math.sqrt(m) + b2 / m
+    b0 = xp.asarray([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085], **dtype_device)
+    b1 = xp.asarray([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615], **dtype_device)
+    b2 = xp.asarray([0.105, 0.305, 0.362, 0.391, 0.396, 0.345, 0.154], **dtype_device)
+    critical = b0 + b1 / math.sqrt(m) - b2 / m
 
-    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
+    sig = xp.asarray([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001], **dtype_device)
 
-    if A2 < critical.min() and method is None:
-        p = sig.max()
-        msg = (f"p-value capped: true value larger than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    if xp.any(A2 < xp.min(critical)) and method is None:
+        msg = (f"p-value capped: true value larger than {sig[0]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif A2 > critical.max() and method is None:
-        p = sig.min()
-        msg = (f"p-value floored: true value smaller than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    elif xp.any(A2 > xp.max(critical)) and method is None:
+        msg = (f"p-value floored: true value smaller than {sig[-1]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif method is None:
+
+    if method is None:
         # interpolation of probit of significance level
-        pf = np.polyfit(critical, log(sig), 2)
-        p = math.exp(np.polyval(pf, A2))
+        p = xp.exp(xp_interp(A2, critical, xp.log(sig)))
     else:
         p = res.pvalue if method is not None else p
 
+    A2 = A2[()] if A2.ndim == 0 else A2
+    p = p[()] if p.ndim == 0 else p
     return SignificanceResult(statistic=A2, pvalue=p)
-
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -2872,7 +2925,6 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
-    # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
     # but initially it doesn't seem worth the extra complexity
 
@@ -2881,46 +2933,70 @@ class _ABW:
         self.m = None
         self.n = None
         self.astart = None
+        self.step = None
         self.total = None
         self.freqs = None
+        self._scores = None
 
-    def _recalc(self, n, m):
+    def _recalc(self, n, m, scores=None):
         """When necessary, recalculate exact distribution."""
-        if n != self.n or m != self.m:
+        if scores is not None:
+            scores = np.rint(2 * np.asarray(scores)).astype(np.int64)
+            scores.sort()
+            expected = 2 * np.minimum(np.arange(1, n + m + 1),
+                                      np.arange(n + m, 0, -1))
+            expected.sort()
+            scores = None if np.array_equal(scores, expected) else tuple(scores)
+
+        if n != self.n or m != self.m or scores != self._scores:
             self.n, self.m = n, m
+            self._scores = scores
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = gscale(n, m)
-            self.astart = astart  # minimum value of statistic
-            # Exact distribution of test statistic under null hypothesis
-            # expressed as frequencies/counts/integers to maintain precision.
-            # Stored as floats to avoid overflow of sums.
-            self.freqs = a1.astype(np.float64)
+            if scores is None:
+                astart, freqs, _ = gscale(n, m)
+                self.astart = astart  # minimum value of statistic
+                self.step = 1
+                self.freqs = freqs.astype(np.float64)
+            else:
+                # Under the null, every selection of n of the pooled observations
+                # is equally likely.  Form the distribution of the corresponding
+                # sums of doubled midranks; doubling makes all scores integral.
+                scores = np.asarray(scores)
+                max_sum = scores[-n:].sum()
+                counts = np.zeros((n + 1, max_sum + 1), dtype=np.float64)
+                counts[0, 0] = 1
+                upper = 0
+                for i, score in enumerate(scores):
+                    upper = min(upper + score, max_sum)
+                    for j in range(min(i + 1, n), 0, -1):
+                        counts[j, score:upper + 1] += counts[j - 1, :upper-score + 1]
+                min_sum = scores[:n].sum()
+                self.astart = min_sum / 2
+                self.step = 0.5
+                self.freqs = counts[n, min_sum:max_sum + 1]
             self.total = self.freqs.sum()  # could calculate from m and n
             # probability mass is self.freqs / self.total;
 
-    def pmf(self, k, n, m):
+    def pmf(self, k, n, m, scores=None):
         """Probability mass function."""
-        self._recalc(n, m)
-        # The convention here is that PMF at k = 12.5 is the same as at k = 12,
-        # -> use `floor` in case of ties.
-        ind = np.floor(k - self.astart).astype(int)
+        self._recalc(n, m, scores)
+        index = (k - self.astart) / self.step
+        ind = (np.floor(index) if self.step == 1 else np.rint(index)).astype(int)
         return self.freqs[ind] / self.total
 
-    def cdf(self, k, n, m):
+    def cdf(self, k, n, m, scores=None):
         """Cumulative distribution function."""
-        self._recalc(n, m)
-        # Null distribution derived without considering ties is
-        # approximate. Round down to avoid Type I error.
-        ind = np.ceil(k - self.astart).astype(int)
+        self._recalc(n, m, scores)
+        index = (k - self.astart) / self.step
+        ind = (np.ceil(index) if self.step == 1 else np.floor(index)).astype(int)
         return self.freqs[:ind+1].sum() / self.total
 
-    def sf(self, k, n, m):
+    def sf(self, k, n, m, scores=None):
         """Survival function."""
-        self._recalc(n, m)
-        # Null distribution derived without considering ties is
-        # approximate. Round down to avoid Type I error.
-        ind = np.floor(k - self.astart).astype(int)
+        self._recalc(n, m, scores)
+        index = (k - self.astart) / self.step
+        ind = (np.floor(index) if self.step == 1 else np.ceil(index)).astype(int)
         return self.freqs[ind:].sum() / self.total
 
 
@@ -2967,7 +3043,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
           against the normal distribution, correcting for ties.
         * ``'exact'``: computes the exact *p*-value by comparing the observed
           statistic against the exact distribution of the statistic under the
-          null hypothesis. No correction is made for ties.
+          null hypothesis, accounting for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of both
           samples is less than or equal to 55 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
@@ -3094,22 +3170,25 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
         method = 'exact' if ((m < 55) and (n < 55) and not repeats) else 'asymptotic'
 
     if method == 'exact':
-        # np.vectorize converts to NumPy here, and we convert back to the result
-        # type before returning
-        cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
-        sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
-        def get_ansari_pvalue(AB):
-            if alternative == 'two-sided':
-                pval = 2.0 * np.minimum(cdf(AB, n, m), sf(AB, n, m))
-            elif alternative == 'greater':
-                # AB statistic is _smaller_ when ratio of scales is larger,
-                # so this is the opposite of the usual calculation
-                pval = cdf(AB, n, m)
-            else:
-                pval = sf(AB, n, m)
-            return pval
+        def get_ansari_pvalue(AB, scores):
+            AB = np.asarray(AB)
+            scores = np.asarray(scores).reshape((-1, N))
+            pval = np.empty(AB.size)
+            for i, (statistic, score) in enumerate(zip(AB.flat, scores)):
+                cdf = _abw_state.a.cdf(statistic, n, m, score)
+                sf = _abw_state.a.sf(statistic, n, m, score)
+                if alternative == 'two-sided':
+                    pval[i] = 2.0 * min(cdf, sf)
+                elif alternative == 'greater':
+                    # AB statistic is _smaller_ when ratio of scales is larger,
+                    # so this is the opposite of the usual calculation
+                    pval[i] = cdf
+                else:
+                    pval[i] = sf
+            return pval.reshape(AB.shape)
 
-        pval = xpx.lazy_apply(get_ansari_pvalue, AB, shape=AB.shape)
+        pval = xpx.lazy_apply(get_ansari_pvalue, AB, symrank, shape=AB.shape,
+                              as_numpy=True)
         pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
         AB = AB[()] if AB.ndim == 0 else AB
         pval = pval[()] if pval.ndim == 0 else pval
