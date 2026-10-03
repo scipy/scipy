@@ -292,6 +292,17 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         }
     )
 
+    if model_status == _h.HighsModelStatus.kOptimal:
+        # Native solve mode is authoritative: relaxation and semi-variable
+        # normalization can differ from the input integrality.
+        native_options = highs.getOptions()
+        if info.mip_node_count >= 0:
+            constraint_tolerance = native_options.mip_feasibility_tolerance
+        else:
+            constraint_tolerance = native_options.primal_feasibility_tolerance
+        if np.isfinite(constraint_tolerance):
+            res['_constraint_tolerance'] = constraint_tolerance
+
     if isMip:
         res.update(
             {
