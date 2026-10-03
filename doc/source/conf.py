@@ -11,11 +11,9 @@ from docutils.parsers.rst import Directive
 from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
-from numpydoc.docscrape_sphinx import SphinxDocString
 from sphinx.util import inspect
 
 import scipy
-from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
 import scipy._lib.uarray as ua
@@ -523,10 +521,17 @@ def linkcode_resolve(domain, info):
         return None
 
 
-# Tell overwrite numpydoc's logic to render examples containing rng.
-SphinxDocString._str_examples = _rng_html_rewrite(
-    SphinxDocString._str_examples
-)
+# Strip seeds from the rendered examples so that readers do not copy them.
+# numpydoc connects its own ``autodoc-process-docstring`` handler at the default
+# priority (500), so connecting at a higher priority (see ``setup`` below) runs
+# after it and rewrites the RST that numpydoc rendered, including the ``.. plot::``
+# block that ``numpydoc_use_plots`` adds.
+# Hexadecimal or decimal seed, case-insensitive.
+_RNG_SEED_RE = re.compile(r"np\.random\.default_rng\((0x[0-9A-F]+|\d+)\)", re.I)
+
+
+def _strip_rng_seeds(app, what, name, obj, options, lines):
+    lines[:] = [_RNG_SEED_RE.sub("np.random.default_rng()", line) for line in lines]
 
 
 class LegacyDirective(Directive):
@@ -626,3 +631,4 @@ def _note_extension_dependency(app, what, name, obj, options, lines):
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
     app.connect("autodoc-process-docstring", _note_extension_dependency)
+    app.connect("autodoc-process-docstring", _strip_rng_seeds, priority=600)
