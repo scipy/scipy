@@ -4,6 +4,7 @@ import itertools
 import re
 import contextlib
 import warnings
+import sys
 from types import ModuleType
 
 import numpy as np
@@ -40,8 +41,10 @@ uses_output_dtype = skip_xp_backends(
 )
 
 def _xfail_cupy14(xp, reason):
-    if is_cupy(xp) and Version(xp.__version__).major >= 14:
-        pytest.xfail(reason)
+    if is_cupy(xp):
+        import cupy
+        if Version(cupy.__version__).major >= 14:
+            pytest.xfail(reason)
 
 
 def uses_output_array(f):
@@ -3374,9 +3377,14 @@ def test_median_filter_lim2():
     ("14.0.0rc1", True), ("14.2.0", True),
     ("15.0.0b3", True), ("9.0.0", False),
 ])
-def test_cupy_version_xfail(version, xfail):
-    xp = ModuleType("cupy")
-    xp.__version__ = version
+@pytest.mark.parametrize("namespace", [
+    "cupy", "scipy._external.array_api_compat.cupy",
+])
+def test_cupy_version_xfail(version, xfail, namespace, monkeypatch):
+    cupy = ModuleType("cupy")
+    cupy.__version__ = version
+    monkeypatch.setitem(sys.modules, "cupy", cupy)
+    xp = ModuleType(namespace)
     if xfail:
         with pytest.raises(pytest.xfail.Exception):
             _xfail_cupy14(xp, "known CuPy behavior")
