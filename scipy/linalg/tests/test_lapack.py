@@ -3708,3 +3708,183 @@ def test_stevd(dtype, compute_v):
         eps = np.finfo(dtype).eps
         assert_allclose(V @ np.diag(U) @ V.T, A, atol=eps**0.8)
 
+
+
+def _gesvdx_example(dtype):
+    """A 3x2 matrix with singular values 5 and 3, and its leading rank-one term."""
+    rng = np.random.default_rng(1638083107694713882823079058616272161)
+    if np.issubdtype(dtype, np.complexfloating):
+        U = unitary_group.rvs(3, random_state=rng)[:, :2]
+        V = unitary_group.rvs(2, random_state=rng)
+    else:
+        U = ortho_group.rvs(3, random_state=rng)[:, :2]
+        V = ortho_group.rvs(2, random_state=rng)
+    a = (U @ np.diag([5.0, 3.0]) @ V.conj().T).astype(dtype)
+    top = 5.0 * np.outer(U[:, 0], V[:, 0].conj())
+    return a, top
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_subset_by_index(dtype):
+    a, top = _gesvdx_example(dtype)
+    tol = 100 * np.finfo(dtype).eps
+    direct = getattr(lapack, f'{"sdcz"[DTYPES.index(dtype)]}gesvdx')
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    for func in (direct, gesvdx):
+        u, s, vt, ns, info = func(a, range='I', il=1, iu=1)
+        assert info == 0
+        assert ns == 1
+        assert_allclose(s[:ns], [5.0], rtol=tol)
+        assert_allclose(u[:, :ns] @ np.diag(s[:ns]) @ vt[:ns, :], top, atol=5 * tol)
+
+        # il counts from the largest singular value
+        u, s, vt, ns, info = func(a, range='I', il=2, iu=2)
+        assert info == 0
+        assert ns == 1
+        assert_allclose(s[:ns], [3.0], rtol=tol)
+
+
+# (3, 2)/(20, 5) take the QR-first path in reference LAPACK, (10, 9) the direct
+# bidiagonalization, and the transposes the LQ variants. Each path has its own
+# minimum lwork, and the default must satisfy all of them.
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5), (5, 20)])
+def test_gesvdx_all(dtype, shape):
+    rng = np.random.default_rng(78235023470)
+    a = rng.standard_normal(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        a = a + 1j * rng.standard_normal(shape)
+    a = a.astype(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+    k = min(shape)
+
+    u, s, vt, ns, info = gesvdx(a)
+    assert info == 0
+    assert ns == k
+    assert u.shape == (shape[0], k)
+    assert vt.shape == (k, shape[1])
+    tol = 100 * np.finfo(dtype).eps
+    assert_allclose(s, np.linalg.svd(a, compute_uv=False), rtol=tol)
+    assert_allclose(u @ np.diag(s) @ vt, a, atol=tol * np.linalg.norm(a))
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_subset_by_value(dtype):
+    a, top = _gesvdx_example(dtype)
+    tol = 100 * np.finfo(dtype).eps
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, range='V', vl=4.0, vu=6.0)
+    assert info == 0
+    assert ns == 1
+    assert_allclose(s[:ns], [5.0], rtol=tol)
+    assert_allclose(u[:, :ns] @ np.diag(s[:ns]) @ vt[:ns, :], top, atol=5 * tol)
+
+    # an interval holding no singular value
+    *_, ns, info = gesvdx(a, range='V', vl=6.0, vu=7.0)
+    assert info == 0
+    assert ns == 0
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_no_vectors(dtype):
+    a, _ = _gesvdx_example(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, compute_u=0, compute_vh=0)
+    assert info == 0
+    assert ns == 2
+    assert u.shape == (1, 1)
+    assert vt.shape == (1, 1)
+    assert_allclose(s, [5.0, 3.0], rtol=100 * np.finfo(dtype).eps)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(0, 3), (3, 0), (0, 0)])
+@pytest.mark.parametrize('range_', ['A', 'I', 'V'])
+def test_gesvdx_empty(dtype, shape, range_):
+    a = np.zeros(shape, dtype=dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, range=range_)
+    assert info == 0
+    assert ns == 0
+    assert s.shape == (0,)
+    assert u.shape == (shape[0], 0)
+    assert vt.shape == (0, shape[1])
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('kwargs', [
+    dict(range='X'),
+    dict(range='I', il=0, iu=1),
+    dict(range='I', il=2, iu=1),
+    dict(range='I', il=1, iu=3),
+    dict(range='V', vl=-1.0, vu=1.0),
+    dict(range='V', vl=2.0, vu=1.0),
+    dict(compute_u=2),
+    dict(compute_vh=-1),
+    dict(lwork=0),
+    dict(lwork=-1),
+])
+def test_gesvdx_invalid_arguments(dtype, kwargs):
+    # Caught by the wrapper before LAPACK sees them.
+    a, _ = _gesvdx_example(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+    with assert_raises(ValueError):
+        gesvdx(a, **kwargs)
+
+
+# (50, 50), (40, 30) and complex (300, 300) take the direct path, where the
+# optimal size LAPACK reports is below the default `gesvdx` uses; `gesvdx` must
+# still accept it.
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5),
+                                   (5, 20), (50, 50), (40, 30), (300, 300)])
+@pytest.mark.parametrize('compute_uv', [0, 1])
+def test_gesvdx_lwork_is_accepted_by_gesvdx(dtype, shape, compute_uv):
+    rng = np.random.default_rng(1985412312)
+    a = rng.standard_normal(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        a = a + 1j * rng.standard_normal(shape)
+    a = a.astype(dtype)
+    gesvdx, gesvdx_lwork = get_lapack_funcs(('gesvdx', 'gesvdx_lwork'), (a,))
+
+    lwork = _compute_lwork(gesvdx_lwork, *shape,
+                           compute_u=compute_uv, compute_vh=compute_uv)
+    u, s, vt, ns, info = gesvdx(a, compute_u=compute_uv,
+                                compute_vh=compute_uv, lwork=lwork)
+    assert info == 0
+    assert ns == min(shape)
+    tol = 100 * np.finfo(dtype).eps
+    assert_allclose(s, np.linalg.svd(a, compute_uv=False),
+                    rtol=tol, atol=tol * s[0])
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(0, 3), (3, 0), (0, 0)])
+def test_gesvdx_lwork_empty(dtype, shape):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    work, info = gesvdx_lwork(*shape)
+    assert info == 0
+    assert work.real >= 1
+
+    a = np.zeros(shape, dtype=dtype)
+    gesvdx = get_lapack_funcs('gesvdx', dtype=dtype)
+    *_, ns, info = gesvdx(a, lwork=int(work.real))
+    assert info == 0
+    assert ns == 0
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('kwargs', [
+    dict(m=-1, n=2),
+    dict(m=2, n=-1),
+    dict(m=3, n=2, compute_u=2),
+    dict(m=3, n=2, compute_vh=-1),
+])
+def test_gesvdx_lwork_invalid_arguments(dtype, kwargs):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    with assert_raises(ValueError):
+        gesvdx_lwork(**kwargs)
