@@ -444,6 +444,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
+    When using the HiGHS methods, the solver uses floating point arithmetic,
+    so the solution may be inexact. The feasibility (and for linear programs,
+    the optimality) conditions are satisfied to within tolerances.
+    Variables with integrality constraints are likewise integral only to
+    within tolerance. In such a case, returned values are not rounded, as doing
+    so can possibly violate constraints.
+
     .. versionadded:: 1.6.0
 
     Method :ref:`'interior-point' <optimize.linprog-interior-point>`
