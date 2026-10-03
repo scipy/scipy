@@ -7,7 +7,7 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded, solveh_banded)
+                          solve, solve_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
@@ -2608,7 +2608,7 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 #  Smoothing spline helpers #
 #############################
 
-def _compute_b_inv(A):
+def _compute_b_inv(A, factor=None):
     """
     Inverse 4 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
     ``U`` is a unit upper triangular banded matrix using an algorithm
@@ -2658,7 +2658,8 @@ def _compute_b_inv(A):
                 rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
             B[-j - 1, i + j] = rng_sum
 
-    U = cholesky_banded(A)
+    # a passed-in factor is scaled in place and must not be reused after
+    U = cholesky_banded(A) if factor is None else factor
     for i in range(2, 5):
         U[-i, i-1:] /= U[-1, :-i+1]
     D = 1. / (U[-1])**2
@@ -3033,8 +3034,6 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
         # the system is rectangular so we can't apply the t=None path's
         # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
         # compute the residual directly
-        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
-        # use it to estimate rcond of the banded system before solving
         c, tr = _solve_smoothing_spline_coefficients(
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
         )
@@ -3054,13 +3053,25 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
                                          compute_trace=False):
     _lhs = XtWX_banded + lam * omega
-    c = solveh_banded(_lhs, XtWy, lower=False)
+    lansb, pbcon = get_lapack_funcs(('lansb', 'pbcon'), (_lhs,))
+    kd = _lhs.shape[0] - 1
+    # pbcon needs the 1-norm of the unfactored matrix
+    anorm = lansb(kd, _lhs, norm='1', uplo='U')
+    factor = cholesky_banded(_lhs, lower=False)
+    rcond, info = pbcon(kd, factor, anorm, uplo='U')
+    if info == 0 and rcond < np.finfo(_lhs.dtype).eps:
+        raise LinAlgError(
+            "The system (X^T W X + lam * Omega) is numerically singular: "
+            f"the estimated reciprocal condition number is {rcond:.2e} "
+            f"for lam={lam:.2e}."
+        )
+    c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:
         return c, None
     # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
     # 7-banded, so only the central bands of the inverse are needed
     # (Hutchinson & de Hoog, upper-banded storage).
-    b_banded = _compute_b_inv(_lhs)
+    b_banded = _compute_b_inv(_lhs, factor)
     tr = b_banded * XtWX_banded
     tr[:-1] *= 2
     return c, tr.sum()
