@@ -760,7 +760,6 @@ def test_shapes_solve_like(func, core_shape):
     b = np.ones((4, m))
     pattern = "Shape mismatch|incompatible shapes|shapes of a|shape mismatch"
     with pytest.raises(ValueError, match=pattern):
-        # fails to broadcast `b` vs `a` (to fix: append a length-1 trailing dim)
         func(a, b)
 
     # ### 2. a.ndim > 2 ###

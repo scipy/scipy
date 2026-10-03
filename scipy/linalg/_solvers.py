@@ -453,7 +453,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     >>> a = np.array([[4, 3], [-4.5, -3.5]])
     >>> b = np.array([[1], [-1]])
     >>> q = np.array([[9, 6], [6, 4.]])
-    >>> r = 1
+    >>> r = np.array([[1]])
     >>> x = linalg.solve_continuous_are(a, b, q, r)
     >>> x
     array([[ 21.72792206,  14.48528137],
@@ -467,7 +467,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 @_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
-                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
+                   signature="(i,i),(i,j),(i,i),(j,j),(i,i),(i,j)->(i,i)")
 def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
@@ -685,7 +685,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 @_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
-                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
+                   signature="(i,i),(i,j),(i,i),(j,j),(i,i),(i,j)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
