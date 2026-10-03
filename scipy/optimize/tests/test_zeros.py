@@ -1048,6 +1048,7 @@ class TestMuller:
     def test_quadratic(self, roots, scale):
         # Exact interpolation of any quadratic must find a root in one step.
         r0, r1 = roots
+
         def f(z):
             return scale * (z-r0) * (z-r1)
 
@@ -1125,6 +1126,7 @@ class TestMuller:
 
     def test_position_relative_tolerance(self):
         kw = dict(x0=0, x1=1e6, x2=2e6, method='muller', maxiter=1, xtol=0)
+
         def f(z):
             return (z/1e6)**3-2
 
@@ -1139,6 +1141,7 @@ class TestMuller:
     def test_function_tolerance(self, option):
         kw = dict(x0=0, x1=1, x2=2, method='muller', xtol=0, rtol=0,
                   maxiter=1)
+
         def f(z):
             return z**3-2
 
@@ -1148,13 +1151,13 @@ class TestMuller:
         assert not tight.converged
         assert loose.root == tight.root
 
-    def test_relative_function_tolerance_rescaling(self):
-        for scale in [1e-200, 1, 1e200]:
-            res = root_scalar(lambda z: scale*(z**3-2), x0=0, x1=1, x2=2,
-                              method='muller', xtol=0, maxiter=1,
-                              options={'frtol': 0.5})
-            assert res.converged
-            assert res.iterations == 1
+    @pytest.mark.parametrize('scale', [1e-200, 1, 1e200])
+    def test_relative_function_tolerance_rescaling(self, scale):
+        res = root_scalar(lambda z: scale*(z**3-2), x0=0, x1=1, x2=2,
+                          method='muller', xtol=0, maxiter=1,
+                          options={'frtol': 0.5})
+        assert res.converged
+        assert res.iterations == 1
 
     @pytest.mark.parametrize('missing', ['x0', 'x1', 'x2'])
     def test_missing_guess(self, missing):
