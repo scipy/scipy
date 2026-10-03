@@ -7,13 +7,9 @@
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 
+#include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
-
-using namespace wrapper;
-using namespace lapack;
-
-#include "scipy_blas_defines.h"
 #include "_common_array_utils.hh"
 
 #include "_linalg_cholesky.hh"
@@ -669,13 +665,13 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _lstsq<f32>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (f32)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<f32>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
             info = _lstsq<f64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _lstsq<c64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (f32)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<c64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
             info = _lstsq<c128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
