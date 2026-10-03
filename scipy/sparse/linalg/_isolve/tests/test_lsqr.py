@@ -126,3 +126,18 @@ def test_nD():
     b = np.ones((2, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         lsqr(A, b)
+
+
+@pytest.mark.parametrize('damp', [0.0, 1.5])
+def test_calc_var(damp):
+    # gh-22232: var only matches the diagonals of (A'A + damp^2*I)^{-1} once
+    # the bidiagonalization has run the full n steps
+    k = 10
+    rng = np.random.RandomState(0)
+    A = rng.randn(3 * k, k)
+    rhs = rng.randn(3 * k)
+    out = lsqr(A, rhs, damp=damp, atol=0, btol=0, conlim=0, iter_lim=k,
+               calc_var=True)
+    assert_equal(out[2], k)
+    expected = np.diag(np.linalg.inv(A.T @ A + damp**2 * np.eye(k)))
+    assert_allclose(out[-1], expected, rtol=1e-6)
