@@ -7,9 +7,9 @@ namespace sp_linalg {
 
 template<typename T>
 int
-_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -59,8 +59,12 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     CBLAS_INT rank = min_mn;
 
     // query LWORK
-    T tmp = detail::numeric_limits<T>::zero;
-    call_gelss(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    T tmp = 0.0;
+    if constexpr (!is_complex_v<T>) {
+        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+    } else {
+        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+    }
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -104,7 +108,7 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -130,7 +134,11 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         } // NB. gelss needs LDB = max(1, m, n)
 
         // perform the least squares
-        call_gelss(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, &info);
+        } else {
+            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -164,9 +172,9 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -211,14 +219,18 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     // query LWORK, LRWORK and LIWORK
     // XXX: bump LRWORK and LIWORK up to improve perf? lwork=-1 query returns the *minimum* values
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
     real_type tmp_lrwork = 0;
     CBLAS_INT liwork = 0, lrwork = 0;
-    call_gelsd(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, &tmp_lrwork, &liwork, &info);
+    if constexpr (!is_complex_v<T>) {
+        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &liwork, &info);
+    } else {
+        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &tmp_lrwork, &liwork, &info);
+    }
 
     if(info != 0) { return -100; }
     lwork = _calc_lwork(tmp);
-    lrwork = detail::type_traits<T>::is_complex ? _calc_lwork(tmp_lrwork) : 0 ;
+    lrwork = is_complex_v<T> ? _calc_lwork(tmp_lrwork) : 0;
 
     if ((lwork < 0) || (lrwork < 0) || (liwork < 0)) {return -111;}
 
@@ -260,7 +272,7 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(lrwork*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -294,7 +306,11 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         } // NB. gelsd needs ldb = max(1, m, n)
 
         // perform the least squares
-        call_gelsd(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, iwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, iwork, &info);
+        } else {
+            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, iwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -326,9 +342,9 @@ done:
 
 template<typename T>
 int
-_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -371,8 +387,12 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     CBLAS_INT rank = min_mn;
 
     // query LWORK
-    T tmp = detail::numeric_limits<T>::zero;
-    call_gelsy(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    T tmp = 0.0;
+    if constexpr (!is_complex_v<T>) {
+        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+    } else {
+        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+    }
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -415,7 +435,7 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     }
 
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
 
         if (rwork == NULL) {
@@ -452,7 +472,11 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}
 
         // perform the least squares
-        call_gelsy(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, jpvt, &r_rcond, &rank, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, &info);
+        } else {
+            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -483,7 +507,7 @@ done:
 
 template<typename T>
 int
-_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, double rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
+_lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank, f64 rcond, const char * lapack_driver, const int overwrite_a, const int overwrite_b, SliceStatusVec& vec_status)
 {
     int info;
     if (strcmp(lapack_driver, "gelss") == 0) {

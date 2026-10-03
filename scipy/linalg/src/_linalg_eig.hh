@@ -16,7 +16,7 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
         if(wi[j] == 0.) {
             // If the j-th eigenvalue is real, then u(j) = VL(:,j), the j-th column of VL.
             for (CBLAS_INT i=0; i<n; i++) {
-                dst[i*n + j] = detail::cpack(v[i + j*ldv], real_type(0.));
+                dst[i*n + j] = complex_of_t<real_type>(v[i + j*ldv], real_type(0.));
             }
             j += 1;
         }
@@ -25,8 +25,8 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
             // then u(j) = VL(:,j) + i*VL(:,j+1) and u(j+1) = VL(:,j) - i*VL(:,j+1).
             for (CBLAS_INT i=0; i<n; i++) {
                 real_type re = v[i + j*ldv], im = v[i + (j+1)*ldv];
-                dst[i*n + j] = detail::cpack(re, im);     // VL(i, j)
-                dst[i*n + j + 1] = detail::cpack(re, -im);  // VL(i, j+1)
+                dst[i*n + j] = complex_of_t<real_type>(re, im);     // VL(i, j)
+                dst[i*n + j + 1] = complex_of_t<real_type>(re, -im);  // VL(i, j+1)
             }
             j += 2;
         }
@@ -38,8 +38,8 @@ template<typename T>
 int
 _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
-    using npy_complex_type = typename detail::type_traits<T>::npy_complex_type;
+    using real_type = real_of_t<T>; // f32 if T==npy_cf32 etc
+    using cmplx_type = complex_of_t<T>;
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -58,19 +58,19 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     }
 
     // Output array pointers
-    npy_complex_type *ptr_W = (npy_complex_type *)PyArray_DATA(ap_w);
+    cmplx_type *ptr_W = (cmplx_type *)PyArray_DATA(ap_w);
 
     int compute_vl = (ap_vl != NULL);
     int compute_vr = (ap_vr != NULL);
 
-    npy_complex_type *ptr_vl = compute_vl ? (npy_complex_type *)PyArray_DATA(ap_vl) : NULL;
-    npy_complex_type *ptr_vr = compute_vr ? (npy_complex_type *)PyArray_DATA(ap_vr) : NULL;
+    cmplx_type *ptr_vl = compute_vl ? (cmplx_type *)PyArray_DATA(ap_vl) : NULL;
+    cmplx_type *ptr_vr = compute_vr ? (cmplx_type *)PyArray_DATA(ap_vr) : NULL;
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
 
     char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
     CBLAS_INT lda = n;
@@ -79,7 +79,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
     // c- and z variants: lwork query segfaults with rwork=NULL, allocate it straight away
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -87,7 +87,11 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
     }
 
     // query LWORK
-    call_geev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    if constexpr (!is_complex_v<T>) {
+        geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
+    } else {
+        geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
+    }
     if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
@@ -111,7 +115,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
     npy_intp data_size = overwrite_a ? 0 : n*n;
-    npy_intp wi_size = detail::type_traits<T>::is_complex ? 0 : n;
+    npy_intp wi_size = is_complex_v<T>? 0 : n;
     npy_intp bufsize = data_size + wi_size + lwork + n;
 
     npy_intp vl_size = compute_vl ? ldvl*n : 0;
@@ -157,7 +161,11 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         // will need to adjust the data pointer here, too.
 
         // compute eigenvalues for the slice
-        call_geev(&jobvl, &jobvr, &intn, data, &lda, wr, wi, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            geev(jobvl, jobvr, intn, data, lda, wr, wi, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
+        } else {
+            geev(jobvl, jobvr, intn, data, lda, wr, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -168,7 +176,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         }
 
         // copy-and-transpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (detail::type_traits<T>::is_complex) {
+        if constexpr (is_complex_v<T>) {
             memcpy(ptr_W, wr, n*sizeof(T));
             ptr_W += n;
 
@@ -184,7 +192,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         else {
             // convert wr,wi into w
             for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = detail::cpack(wr[i], wi[i]);
+                ptr_W[i] = complex_of_t<T>(wr[i], wi[i]);
             }
             ptr_W += n;
 
@@ -211,8 +219,8 @@ template<typename T>
 int
 _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type; // float if T==npy_cfloat etc
-    using npy_complex_type = typename detail::type_traits<T>::npy_complex_type;
+    using real_type = real_of_t<T>; // f32 if T==f64 etc
+    using cmplx_type = complex_of_t<T>;
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
@@ -235,20 +243,20 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     }
 
     // Output array pointers
-    npy_complex_type *ptr_W = (npy_complex_type *)PyArray_DATA(ap_w);
+    cmplx_type *ptr_W = (cmplx_type *)PyArray_DATA(ap_w);
     T *ptr_beta = (T *)PyArray_DATA(ap_beta);
 
     int compute_vl = (ap_vl != NULL);
     int compute_vr = (ap_vr != NULL);
 
-    npy_complex_type *ptr_vl = compute_vl ? (npy_complex_type *)PyArray_DATA(ap_vl) : NULL;
-    npy_complex_type *ptr_vr = compute_vr ? (npy_complex_type *)PyArray_DATA(ap_vr) : NULL;
+    cmplx_type *ptr_vl = compute_vl ? (cmplx_type *)PyArray_DATA(ap_vl) : NULL;
+    cmplx_type *ptr_vr = compute_vr ? (cmplx_type *)PyArray_DATA(ap_vr) : NULL;
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = detail::numeric_limits<T>::zero;
+    T tmp = 0.0;
 
     char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
     CBLAS_INT lda = n;
@@ -258,7 +266,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
     real_type *rwork = NULL;
-    if constexpr (detail::type_traits<T>::is_complex) {
+    if constexpr (is_complex_v<T>) {
         rwork = (real_type *)PyMem_RawMalloc(8*n*sizeof(real_type));
         if (rwork == NULL) {
             return -100;
@@ -266,7 +274,11 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
     }
 
     // query LWORK
-    call_ggev(&jobvl, &jobvr, &intn, NULL, &lda, NULL, &ldb, NULL, NULL, NULL, NULL, &ldvl, NULL, &ldvr, &tmp, &lwork, rwork, &info);
+    if constexpr (!is_complex_v<T>) {
+        ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
+    } else {
+        ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
+    }
     if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
     lwork = _calc_lwork(tmp);
@@ -290,7 +302,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
-    npy_intp alphai_size = detail::type_traits<T>::is_complex ? 0 : n ;
+    npy_intp alphai_size = is_complex_v<T> ? 0 : n ;
     npy_intp A_size = overwrite_a ? 0 : n*n;
     npy_intp B_size = overwrite_b ? 0 : n*n;
 
@@ -354,7 +366,11 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
 
         // compute eigenvalues for the slice
-        call_ggev(&jobvl, &jobvr, &intn, data_A, &lda, data_B, &ldb, alphar, alphai, beta, buf_vl, &ldvl, buf_vr, &ldvr, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, alphai, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
+        } else {
+            ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -365,7 +381,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         }
 
         // copy-and-transpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (detail::type_traits<T>::is_complex) {
+        if constexpr (is_complex_v<T>) {
             // alphar and beta are complex and compatible with the W array
             memcpy(ptr_W, alphar, n*sizeof(T));
             ptr_W += n;
@@ -385,7 +401,7 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         else {
             // convert alphar,alphai,beta into w
             for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = detail::cpack(alphar[i], alphai[i]);
+                ptr_W[i] = complex_of_t<T>(alphar[i], alphai[i]);
             }
             ptr_W += n;
 
@@ -439,9 +455,9 @@ _eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm,
 template<typename T>
 int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_Z,
         int *intp_M, int overwrite_a, int overwrite_b, int itype, char jobz, char range, char uplo,
-        double vl, double vu, int il, int iu, Eigh_driver lapack_driver, SliceStatusVec& vec_status)
+        f64 vl, f64 vu, int il, int iu, Eigh_driver lapack_driver, SliceStatusVec& vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
+    using real_type = real_of_t<T>;
     SliceStatus slice_status;
 
     // -------------------------------------------------------------------
@@ -481,14 +497,14 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     // from the LAPACK documentation is not needed.
     // -------------------------------------------------------------------
     CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
-    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for float and c64_t
+    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for f32 and c64
     CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
     CBLAS_INT int_iu = iu + 1;
     CBLAS_INT int_itype = (CBLAS_INT)itype;
-    real_type abstol = detail::numeric_limits<real_type>::zero;
+    real_type abstol = 0.0;
 
-    T tmp_work = detail::numeric_limits<T>::zero;
-    real_type tmp_rwork = detail::numeric_limits<real_type>::zero;
+    T tmp_work = 0.0;
+    real_type tmp_rwork = 0.0;
     CBLAS_INT tmp_iwork = 0;
 
     CBLAS_INT lwork = -1, lrwork = -1, liwork = -1;
@@ -496,37 +512,65 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     // lwork probe
     switch (lapack_driver) {
         case Eigh_driver::EV : {
-            call_sy_he_ev(&jobz, &uplo, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
+            } else {
+                syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
+            }
             break;
         }
 
         case Eigh_driver::EVD : {
-            call_sy_he_evd(&jobz, &uplo, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+            } else {
+                syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+            }
             break;
         }
 
         case Eigh_driver::EVR : {
-            call_sy_he_evr(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+            } else {
+                syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+            }
             break;
         }
 
         case Eigh_driver::EVX : {
-            call_sy_he_evx(&jobz, &range, &uplo, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            if constexpr (!is_complex_v<T>) {
+                syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
+            } else {
+                syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            }
             break;
         }
 
         case Eigh_driver::GV : {
-            call_sy_he_gv(&int_itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
+            } else {
+                sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
+            }
             break;
         }
 
         case Eigh_driver::GVD : {
-            call_sy_he_gvd(&int_itype, &jobz, &uplo, &intn, NULL, &intn, NULL, &intn, NULL, &tmp_work, &lwork, &tmp_rwork, &lrwork, &tmp_iwork, &liwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+            } else {
+                sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+            }
             break;
         }
 
         case Eigh_driver::GVX : {
-            call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, NULL, &intn, NULL, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, NULL, NULL, &intn, &tmp_work, &lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            if constexpr (!is_complex_v<T>) {
+                sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
+            } else {
+                sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+            }
             break;
         }
 
@@ -541,7 +585,7 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     lwork = _calc_lwork(tmp_work);
 
     // process `lrwork` probe
-    if constexpr (!detail::type_traits<T>::is_complex) {
+    if constexpr (!is_complex_v<T>) {
         lrwork = 0;  // for real numbers LAPACK does not require `rwork`, hence set corresponding buffer size to 0.
     } else {
         if (lapack_driver == Eigh_driver::EV || lapack_driver == Eigh_driver::GV) {
@@ -711,37 +755,65 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         // Actual LAPACK call
         switch (lapack_driver) {
             case Eigh_driver::EV : {
-                call_sy_he_ev(&jobz, &uplo, &intn, buff_A, &intn, lapack_w, work, &lwork, rwork, &info);
+                if constexpr (!is_complex_v<T>) {
+                    syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, &info);
+                } else {
+                    syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, &info);
+                }
                 break;
             }
 
             case Eigh_driver::EVD : {
-                call_sy_he_evd(&jobz, &uplo, &intn, buff_A, &intn, lapack_w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+                if constexpr (!is_complex_v<T>) {
+                    syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, iwork, liwork, &info);
+                } else {
+                    syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                }
                 break;
             }
 
             case Eigh_driver::EVR : {
-                call_sy_he_evr(&jobz, &range, &uplo, &intn, buff_A, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, lapack_w, buff_Z, &intn, isuppz, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+                if constexpr (!is_complex_v<T>) {
+                    syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, iwork, liwork, &info);
+                } else {
+                    syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                }
                 break;
             }
 
             case Eigh_driver::EVX : {
-                call_sy_he_evx(&jobz, &range, &uplo, &intn, buff_A, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, lapack_w, buff_Z, &intn, work, &lwork, rwork, iwork, ifail, &info);
+                if constexpr (!is_complex_v<T>) {
+                    syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
+                } else {
+                    syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
+                }
                 break;
             }
 
             case Eigh_driver::GV : {
-                call_sy_he_gv(&int_itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &info);
+                if constexpr (!is_complex_v<T>) {
+                    sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, &info);
+                } else {
+                    sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, &info);
+                }
                 break;
             }
 
             case Eigh_driver::GVD : {
-                call_sy_he_gvd(&int_itype, &jobz, &uplo, &intn, buff_A, &intn, buff_B, &intn, lapack_w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+                if constexpr (!is_complex_v<T>) {
+                    sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, iwork, liwork, &info);
+                } else {
+                    sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                }
                 break;
             }
 
             case Eigh_driver::GVX : {
-                call_sy_he_gvx(&int_itype, &jobz, &range, &uplo, &intn, buff_A, &intn, buff_B, &intn, &r_vl, &r_vu, &int_il, &int_iu, &abstol, &intm, lapack_w, buff_Z, &intn, work, &lwork, rwork, iwork, ifail, &info);
+                if constexpr (!is_complex_v<T>) {
+                    sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
+                } else {
+                    sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
+                }
                 break;
             }
 

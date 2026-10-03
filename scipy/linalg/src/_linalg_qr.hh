@@ -9,7 +9,7 @@ template<typename T>
 int
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
 {
-    using real_type = typename detail::type_traits<T>::real_type;
+    using real_type = real_of_t<T>;
     SliceStatus slice_status;
 
     // ------------------------------------------------------------------------
@@ -57,20 +57,24 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
-    T tmp_factor = detail::numeric_limits<T>::zero;
-    T tmp_or_un_gqr = detail::numeric_limits<T>::zero;
+    T tmp_factor = 0.0;
+    T tmp_or_un_gqr = 0.0;
     CBLAS_INT lwork = -1;
 
     if (!pivoting) {
-        call_geqrf(&intm, &intn, NULL, &intm, NULL, &tmp_factor, &lwork, &info);
+        geqrf(intm, intn, NULL, intm, NULL, &tmp_factor, lwork, &info);
     } else {
-        call_geqp3(&intm, &intn, NULL, &intm, NULL, NULL, &tmp_factor, &lwork, NULL, &info);
+        if constexpr (!is_complex_v<T>) {
+            geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, &info);
+        } else {
+            geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
+        }
     }
     if (info != 0) { info = -100; return (int)info; }
 
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
-        call_or_un_gqr(&intm, &middle_dim, &K, NULL, &intm, NULL, &tmp_or_un_gqr, &lwork, &info);
+        orgqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
     }
     if (info != 0) { info = -100; return (int)info; }
 
@@ -132,9 +136,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     T *data_A = &buffer[lwork + tau_size];
 
     // `c/zgeqp3` needs rwork
-    void *rwork = NULL;
-    if (pivoting && detail::type_traits<T>::is_complex) {
-        rwork = PyMem_RawMalloc(2 * N * sizeof(real_type));
+    real_type *rwork = NULL;
+    if (pivoting && is_complex_v<T>) {
+        rwork = (real_type *)PyMem_RawMalloc(2 * N * sizeof(real_type));
 
         if (rwork == NULL) {
             PyMem_RawFree(buffer);
@@ -194,13 +198,17 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // ---------------------------------------------------------------
 
         // Factorization step, identical for each of the modes so do jointly.
-        if (pivoting) {
-            call_geqp3(&intm, &intn, data_A, &intm, slice_ptr_jpvt, slice_ptr_tau, work, &lwork, rwork, &info);
+        if (!pivoting) {
+            geqrf(intm, intn, data_A, intm, slice_ptr_tau, work, lwork, &info);
+        } else {
+            if constexpr (!is_complex_v<T>) {
+                geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, &info);
+            } else {
+                geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, rwork, &info);
+            }
             for (CBLAS_INT i = 0; i < intn; i++) {
                 slice_ptr_jpvt[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
             }
-        } else {
-            call_geqrf(&intm, &intn, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
         }
 
         if (info != 0) {
@@ -225,7 +233,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
         // Construct the Q matrix if required, same handling for both modes; dimensions are set already.
         if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
-            call_or_un_gqr(&intm, &middle_dim, &K, data_A, &intm, slice_ptr_tau, work, &lwork, &info);
+            orgqr(intm, middle_dim, K, data_A, intm, slice_ptr_tau, work, lwork, &info);
 
             if (info != 0) {
                 slice_status.lapack_info = (Py_ssize_t)info;

@@ -8,7 +8,8 @@
 #include "numpy/npy_math.h"
 
 #include "scipy_blas_defines.h"
-#include "_npymath.hh"
+#include "lapack_calls.hpp"
+#include "wrapper_types.hpp"
 #include "_common_array_utils.hh"
 
 #include "_linalg_cholesky.hh"
@@ -19,6 +20,7 @@
 #include "_linalg_qr.hh"
 #include "_linalg_solve.hh"
 #include "_linalg_svd.hh"
+
 
 using namespace sp_linalg;
 
@@ -109,16 +111,16 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_Ainv);
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _inverse<float>(ap_Am, (float *)buf, structure, lower, overwrite_a, vec_status);
+            info = _inverse<f32>(ap_Am, (f32 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _inverse<double>(ap_Am, (double *)buf, structure, lower, overwrite_a, vec_status);
+            info = _inverse<f64>(ap_Am, (f64 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, lower, overwrite_a, vec_status);
+            info = _inverse<c64>(ap_Am, (c64 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, lower, overwrite_a, vec_status);
+            info = _inverse<c128>(ap_Am, (c128 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -214,16 +216,16 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+            info = _solve<f32>(ap_Am, ap_b, (f32 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+            info = _solve<f64>(ap_Am, ap_b, (f64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+            info = _solve<c64>(ap_Am, ap_b, (c64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+            info = _solve<c128>(ap_Am, ap_b, (c128 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -399,16 +401,16 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _qr<float>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            info = _qr<f32>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _qr<double>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            info = _qr<f64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _qr<npy_complex64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            info = _qr<c64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _qr<npy_complex128>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
+            info = _qr<c128>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -517,16 +519,16 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
+            info = _svd<f32>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
+            info = _svd<f64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
+            info = _svd<c64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
+            info = _svd<c128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -663,16 +665,16 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _lstsq<float>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<f32>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _lstsq<double>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<f64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _lstsq<npy_complex64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<c64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _lstsq<npy_complex128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
+            info = _lstsq<c128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -789,16 +791,16 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _eig<float>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
+            info = _eig<f32>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _eig<double>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
+            info = _eig<f64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _eig<npy_complex64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
+            info = _eig<c64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _eig<npy_complex128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
+            info = _eig<c128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
@@ -946,16 +948,16 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Pass in pointer to `M` to be able to return to python side
     switch (typenum) {
         case NPY_FLOAT32:
-            info = _eigh<float>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<f32>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_FLOAT64:
-            info = _eigh<double>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<f64>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_COMPLEX64:
-            info = _eigh<c64_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<c64>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
         case NPY_COMPLEX128:
-            info = _eigh<c128_t>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
+            info = _eigh<c128>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
             break;
     }
 
@@ -1023,16 +1025,16 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _cholesky<float>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
+            info = _cholesky<f32>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _cholesky<double>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
+            info = _cholesky<f64>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _cholesky<npy_complex64>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
+            info = _cholesky<c64>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _cholesky<npy_complex128>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
+            info = _cholesky<c128>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
             break;
     }
 
@@ -1209,16 +1211,16 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Dispatch to templated C++ code
     switch (typenum) {
         case NPY_FLOAT32:
-            info = lu_dispatch<float>(ctx, (float*)PyArray_DATA(ap_a), (float*)PyArray_DATA(ap_l), (float*)PyArray_DATA(ap_u), (float*)scratch, slice_info);
+            info = lu_dispatch<f32>(ctx, (f32*)PyArray_DATA(ap_a), (f32*)PyArray_DATA(ap_l), (f32*)PyArray_DATA(ap_u), (f32*)scratch, slice_info);
             break;
         case NPY_FLOAT64:
-            info = lu_dispatch<double>(ctx, (double*)PyArray_DATA(ap_a), (double*)PyArray_DATA(ap_l), (double*)PyArray_DATA(ap_u), (double*)scratch, slice_info);
+            info = lu_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_l), (f64*)PyArray_DATA(ap_u), (f64*)scratch, slice_info);
             break;
         case NPY_COMPLEX64:
-            info = lu_dispatch<std::complex<float>>(ctx, (std::complex<float>*)PyArray_DATA(ap_a), (std::complex<float>*)PyArray_DATA(ap_l), (std::complex<float>*)PyArray_DATA(ap_u), (std::complex<float>*)scratch, slice_info);
+            info = lu_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_l), (c64 *)PyArray_DATA(ap_u), (c64 *)scratch, slice_info);
             break;
         case NPY_COMPLEX128:
-            info = lu_dispatch<std::complex<double>>(ctx, (std::complex<double>*)PyArray_DATA(ap_a), (std::complex<double>*)PyArray_DATA(ap_l), (std::complex<double>*)PyArray_DATA(ap_u), (std::complex<double>*)scratch, slice_info);
+            info = lu_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_l), (c128 *)PyArray_DATA(ap_u), (c128 *)scratch, slice_info);
             break;
     }
 
@@ -1348,16 +1350,16 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Dispatch to templated C++ code
     switch (typenum) {
         case NPY_FLOAT32:
-            info = det_dispatch<float>(ctx, (float*)PyArray_DATA(ap_a), (float*)PyArray_DATA(ap_det), (float*)scratch, slice_info);
+            info = det_dispatch<f32>(ctx, (f32*)PyArray_DATA(ap_a), (f32*)PyArray_DATA(ap_det), (f32*)scratch, slice_info);
             break;
         case NPY_FLOAT64:
-            info = det_dispatch<double>(ctx, (double*)PyArray_DATA(ap_a), (double*)PyArray_DATA(ap_det), (double*)scratch, slice_info);
+            info = det_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_det), (f64*)scratch, slice_info);
             break;
         case NPY_COMPLEX64:
-            info = det_dispatch<std::complex<float>>(ctx, (std::complex<float>*)PyArray_DATA(ap_a), (std::complex<float>*)PyArray_DATA(ap_det), (std::complex<float>*)scratch, slice_info);
+            info = det_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_det), (c64 *)scratch, slice_info);
             break;
         case NPY_COMPLEX128:
-            info = det_dispatch<std::complex<double>>(ctx, (std::complex<double>*)PyArray_DATA(ap_a), (std::complex<double>*)PyArray_DATA(ap_det), (std::complex<double>*)scratch, slice_info);
+            info = det_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_det), (c128 *)scratch, slice_info);
             break;
     }
 
@@ -1515,10 +1517,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
         if (use_contiguous) {
             switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_contiguous_scalar<float>                (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_contiguous_scalar<double>               (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<std::complex<float>>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_contiguous_scalar<std::complex<double>> (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT32:    bandwidth_contiguous_scalar<f32>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT64:    bandwidth_contiguous_scalar<f64>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:  bandwidth_contiguous_scalar<c64>   (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128: bandwidth_contiguous_scalar<c128>  (a_data, offset, n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
             }
             if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
         } else {
@@ -1550,10 +1552,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
                 case NPY_UINT16:      bandwidth_strided_scalar<npy_uint16>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_UINT32:      bandwidth_strided_scalar<npy_uint32>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 case NPY_UINT64:      bandwidth_strided_scalar<npy_uint64>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT:       bandwidth_strided_scalar<float>                     (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_DOUBLE:      bandwidth_strided_scalar<double>                    (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:   bandwidth_strided_scalar<std::complex<float>>       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128:  bandwidth_strided_scalar<std::complex<double>>      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_FLOAT:       bandwidth_strided_scalar<f32>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_DOUBLE:      bandwidth_strided_scalar<f64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX64:   bandwidth_strided_scalar<c64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
+                case NPY_COMPLEX128:  bandwidth_strided_scalar<c128>                      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
                 default:
                     Py_DECREF(ap_lb); Py_DECREF(ap_ub);
                     PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
