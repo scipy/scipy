@@ -87,7 +87,6 @@ untested = {
     "coherence",
     "csd",
     "czt",
-    "czt_points",
     "dbode",
     "dfreqresp",
     "dlsim",

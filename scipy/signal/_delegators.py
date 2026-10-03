@@ -114,7 +114,7 @@ def correlation_lags_signature(in1_len, in2_len, mode='full'):
 
 
 def czt_points_signature(m, w=None, a=(1+0j)):
-    return np
+    return array_namespace(a, w)
 
 
 def gammatone_signature(
