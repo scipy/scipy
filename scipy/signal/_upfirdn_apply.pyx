@@ -418,8 +418,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 @cython.cdivision(True)  # faster modulo
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
-cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
-                      np.intp_t len_h, DTYPE_t *out,
+cdef void _apply_impl(DTYPE_t * restrict x, np.intp_t len_x, DTYPE_t * restrict h_trans_flip,
+                      np.intp_t len_h, DTYPE_t * restrict out,
                       np.intp_t up, np.intp_t down, MODE mode,
                       DTYPE_t cval, np.intp_t len_out) noexcept nogil:
     cdef np.intp_t h_per_phase = len_h // up
