@@ -60,7 +60,11 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
     // query LWORK
     T tmp = 0.0;
-    call_gelss(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    if constexpr (!is_complex_v<T>) {
+        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+    } else {
+        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+    }
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -130,7 +134,11 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         } // NB. gelss needs LDB = max(1, m, n)
 
         // perform the least squares
-        call_gelss(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, &info);
+        } else {
+            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -214,7 +222,11 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     T tmp = 0.0;
     real_type tmp_lrwork = 0;
     CBLAS_INT liwork = 0, lrwork = 0;
-    call_gelsd(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, &tmp_lrwork, &liwork, &info);
+    if constexpr (!is_complex_v<T>) {
+        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &liwork, &info);
+    } else {
+        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &tmp_lrwork, &liwork, &info);
+    }
 
     if(info != 0) { return -100; }
     lwork = _calc_lwork(tmp);
@@ -294,7 +306,11 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         } // NB. gelsd needs ldb = max(1, m, n)
 
         // perform the least squares
-        call_gelsd(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, ptr_S, &r_rcond, &rank, work, &lwork, rwork, iwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, iwork, &info);
+        } else {
+            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, iwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;
@@ -372,7 +388,11 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
 
     // query LWORK
     T tmp = 0.0;
-    call_gelsy(&intm, &intn, &int_nrhs, NULL, &lda, NULL, &ldb, NULL, &r_rcond, &rank, &tmp, &lwork, NULL, &info);
+    if constexpr (!is_complex_v<T>) {
+        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+    } else {
+        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+    }
     if(info != 0) { return -100; }
 
     lwork = _calc_lwork(tmp);
@@ -452,7 +472,11 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}
 
         // perform the least squares
-        call_gelsy(&intm, &intn, &int_nrhs, data_a, &lda, data_b, &ldb, jpvt, &r_rcond, &rank, work, &lwork, rwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, &info);
+        } else {
+            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, rwork, &info);
+        }
 
         if(info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;

@@ -18,19 +18,23 @@ void invert_slice_general(
     real_type rcond;
     real_type anorm = norm1_(data, (npy_intp)N);
 
-    call_getrf(&N, &N, data, &N, ipiv, &info);
+    getrf(N, N, data, N, ipiv, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
-        call_gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
+        if constexpr(!is_complex_v<T>) {
+            gecon(norm, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+        } else {
+            gecon(norm, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
+        }
 
         status.rcond = (double)rcond;
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
             // finally, invert
-            call_getri(&N, data, &N, ipiv, work, &lwork, &info);
+            getri(N, data, N, ipiv, work, lwork, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -56,19 +60,23 @@ void invert_slice_cholesky(
 
     real_type rcond;
 
-    call_potrf(&uplo, &N, data, &N, &info);
+    potrf(uplo, N, data, N, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
-        call_pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            pocon(uplo, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+        } else {
+            pocon(uplo, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
+        }
 
         if (info >= 0) {
             status.rcond = (double)rcond;
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
             // finally, invert
-            call_potri(&uplo, &N, data, &N, &info);
+            potri(uplo, N, data, N, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -91,19 +99,27 @@ void invert_slice_sym_herm(
     real_type rcond;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
-    if(is_symm_not_herm) {
-        call_sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    if constexpr (!is_complex_v<T>) {
+       sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
     } else {
-        call_hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+        if(is_symm_not_herm) {
+            sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
+        } else {
+            hetrf(uplo, N, data, N, ipiv, work, lwork, &info);
+        }
     }
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // {sy,he}trf success
-        if (is_symm_not_herm) {
-            call_sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        if constexpr (!is_complex_v<T>) {
+            sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
         } else {
-            call_hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+            if (is_symm_not_herm) {
+                sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
+            } else {
+                hecon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
+            }
         }
 
         if (info >= 0) {
@@ -111,11 +127,16 @@ void invert_slice_sym_herm(
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
             // finally, invert
-            if (is_symm_not_herm) {
-                call_sytri(&uplo, &N, data, &N, ipiv, work, &info);
+            if constexpr (!is_complex_v<T>) {
+                sytri(uplo, N, data, N, ipiv, work, &info);
             } else {
-                call_hetri(&uplo, &N, data, &N, ipiv, work, &info);
+                if (is_symm_not_herm) {
+                    sytri(uplo, N, data, N, ipiv, work, &info);
+                } else {
+                    hetri(uplo, N, data, N, ipiv, work, &info);
+                }
             }
+
             status.is_singular = (info > 0);
         }
     }
@@ -138,13 +159,18 @@ void invert_slice_triangular(
     char norm = '1';
     real_type rcond;
 
-    call_trtri(&uplo, &diag, &N, data, &N, &info);
+    trtri(uplo, diag, N, data, N, &info);
     status.is_singular  = (info > 0);
 
     status.lapack_info = (Py_ssize_t)info;
     if(info >= 0) {
 
-        call_trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
+        if constexpr(!is_complex_v<T>) {
+            trcon(norm, uplo, diag, N, data, N, &rcond, work, (CBLAS_INT *)irwork, &info);
+        } else {
+            trcon(norm, uplo, diag, N, data, N, &rcond, work, (real_type *)irwork, &info);
+        }
+
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
             status.rcond = (double)rcond;
@@ -223,7 +249,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     T tmp1 = 0.0;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
-    call_getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    getri(intn, NULL, intn, NULL, &tmp, lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_1 = _calc_lwork(tmp, 1.01);
@@ -233,7 +259,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // also query sytrf
-    call_sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
+    sytrf(uplo, intn, NULL, intn, NULL, &tmp1, lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_2 = _calc_lwork(tmp);
