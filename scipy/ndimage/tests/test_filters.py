@@ -4,10 +4,11 @@ import itertools
 import re
 import contextlib
 import warnings
-import importlib
+from types import ModuleType
 
 import numpy as np
 import pytest
+from packaging.version import Version
 from numpy.testing import assert_allclose, assert_array_equal
 from hypothesis import strategies as st
 from hypothesis import given, settings
@@ -38,10 +39,9 @@ uses_output_dtype = skip_xp_backends(
     reason="output=dtype is numpy-specific"
 )
 
-try:
-    CUPY_VERSION = importlib.metadata.version('cupy')
-except ImportError:
-    CUPY_VERSION = None
+def _xfail_cupy14(xp, reason):
+    if is_cupy(xp) and Version(xp.__version__).major >= 14:
+        pytest.xfail(reason)
 
 
 def uses_output_array(f):
@@ -504,11 +504,8 @@ class TestNdimageFilters:
         assert output.dtype.type == xp.float32
 
     @make_xp_test_case(ndimage.correlate, ndimage.convolve)
-    @xfail_xp_backends(
-        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-        reason="multiple modes work in CuPy 14"
-    )
     def test_correlate_mode_sequence(self, xp):
+        _xfail_cupy14(xp, "multiple modes work in CuPy 14")
 
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
@@ -1718,11 +1715,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.minimum_filter)
-    @xfail_xp_backends(
-        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-        reason="multiple modes work in CuPy 14"
-    )
     def test_minimum_filter07(self, xp):
+        _xfail_cupy14(xp, "multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1815,11 +1809,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     @make_xp_test_case(ndimage.maximum_filter)
-    @xfail_xp_backends(
-        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-        reason="multiple modes work in CuPy 14"
-    )
     def test_maximum_filter07(self, xp):
+        _xfail_cupy14(xp, "multiple modes work in CuPy 14")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2010,11 +2001,8 @@ class TestNdimageFilters:
     @make_xp_test_case(
         ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
     )
-    @xfail_xp_backends(
-        "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-        reason="multiple modes work in CuPy 14"
-    )
     def test_rank08_1(self, xp):
+        _xfail_cupy14(xp, "multiple modes work in CuPy 14")
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
                             [5, 6, 9, 3, 5]])
@@ -2630,11 +2618,8 @@ def test_multiple_modes_sequentially(xp):
 
 
 @make_xp_test_case(ndimage.prewitt)
-@xfail_xp_backends(
-    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-    reason="https://github.com/cupy/cupy/issues/9760"
-)
 def test_multiple_modes_prewitt(xp):
+    _xfail_cupy14(xp, "https://github.com/cupy/cupy/issues/9760")
     # Test prewitt filter for multiple extrapolation modes
 
     arr = xp.asarray([[1., 0., 0.],
@@ -2652,11 +2637,8 @@ def test_multiple_modes_prewitt(xp):
 
 
 @make_xp_test_case(ndimage.sobel)
-@xfail_xp_backends(
-    "cupy", CUPY_VERSION and CUPY_VERSION >= "14",
-    reason="https://github.com/cupy/cupy/issues/9760"
-)
 def test_multiple_modes_sobel(xp):
+    _xfail_cupy14(xp, "https://github.com/cupy/cupy/issues/9760")
     # Test sobel filter for multiple extrapolation modes
 
     arr = xp.asarray([[1., 0., 0.],
@@ -3385,3 +3367,22 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+@pytest.mark.parametrize("version,xfail", [
+    ("13.6.0", False), ("14.0.0.dev0", True),
+    ("14.0.0rc1", True), ("14.2.0", True),
+    ("15.0.0b3", True), ("9.0.0", False),
+])
+def test_cupy_version_xfail(version, xfail):
+    xp = ModuleType("cupy")
+    xp.__version__ = version
+    if xfail:
+        with pytest.raises(pytest.xfail.Exception):
+            _xfail_cupy14(xp, "known CuPy behavior")
+    else:
+        _xfail_cupy14(xp, "known CuPy behavior")
+
+
+def test_cupy_version_xfail_numpy():
+    _xfail_cupy14(np, "known CuPy behavior")
