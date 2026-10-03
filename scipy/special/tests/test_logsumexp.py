@@ -35,6 +35,32 @@ def test_wrap_radians(xp):
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 @make_xp_test_case(logsumexp)
 class TestLogSumExp:
+    @pytest.mark.parametrize('offset', [0., 1000.])
+    @pytest.mark.parametrize('weight', [1., -1.])
+    @pytest.mark.parametrize('axis', [0, 1])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_cancelled_leading_terms(self, xp, offset, weight, axis, keepdims):
+        # gh-26340: equal largest terms cancel, leaving a finite smaller term.
+        a = xp.asarray([[offset, offset, offset - 1],
+                        [offset + 1, offset + 1, offset]])
+        b = xp.asarray([1., -1., weight])
+        if axis == 0:
+            a = xp.permute_dims(a, (1, 0))
+            b = xp.expand_dims(b, axis=1)
+        a_before, b_before = xp.asarray(a, copy=True), xp.asarray(b, copy=True)
+        expected = xp.asarray([offset - 1, offset])
+        if keepdims:
+            expected = xp.expand_dims(expected, axis=axis)
+        result, sign = logsumexp(a, b=b, axis=axis, keepdims=keepdims,
+                                return_sign=True)
+        xp_assert_close(result, expected)
+        xp_assert_equal(sign, xp.full_like(expected, weight))
+        result = logsumexp(a, b=b, axis=axis, keepdims=keepdims)
+        xp_assert_close(result, expected if weight > 0
+                        else xp.full_like(expected, xp.nan))
+        xp_assert_equal(a, a_before)
+        xp_assert_equal(b, b_before)
+
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
