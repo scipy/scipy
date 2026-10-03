@@ -327,7 +327,9 @@ def check_option(highs_inst, option, value):
         if not hoptmanager.check_double_option(option, value):
             return -1, "Invalid option value."
     if expected_type is int:
-        if not hoptmanager.check_int_option(option, value):
+        # enum instances (e.g. HighsDebugLevel)
+        # must be converted explicitly to int
+        if not hoptmanager.check_int_option(option, int(value)):
             return -1, "Invalid option value."
 
     if expected_type is None:
