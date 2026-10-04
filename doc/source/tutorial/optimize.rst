@@ -224,7 +224,7 @@ gradient.
     >>> expensive.count
     6
 
-When we call minimize, we specify ``jac==True`` to indicate that the provided
+When we call minimize, we specify ``jac=True`` to indicate that the provided
 function returns both the objective function and its gradient. While
 convenient, not all :mod:`scipy.optimize` functions support this feature,
 and moreover, it is only for sharing calculations between the function and its
@@ -683,6 +683,7 @@ be provided by the user or defined using :class:`HessianUpdateStrategy`.
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac='2-point', hess=BFGS())
 
 **Solving the Optimization Problem**
+
 The optimization problem is solved using:
 
     >>> x0 = np.array([0.5, 0])
@@ -1376,7 +1377,7 @@ point: :math:`g\left(x\right)=x.` Clearly, the fixed point of :math:`g`
 is the root of :math:`f\left(x\right)=g\left(x\right)-x.`
 Equivalently, the root of :math:`f` is the fixed point of
 :math:`g\left(x\right)=f\left(x\right)+x.` The routine
-:obj:`fixed_point` provides a simple iterative method using Aitkens
+:obj:`fixed_point` provides a simple iterative method using Aitken's
 sequence acceleration to estimate the fixed point of :math:`g` given a
 starting point.
 
@@ -1557,7 +1558,7 @@ so that the whole 2-D operator is represented by
    h_x^{-2} L \otimes I + h_y^{-2} I \otimes L
 
 The matrix :math:`J_2` of the Jacobian corresponding to the integral
-is more difficult to calculate, and since *all* of it entries are
+is more difficult to calculate, and since *all* of its entries are
 nonzero, it will be difficult to invert. :math:`J_1` on the other hand
 is a relatively simple matrix, and can be inverted by
 :obj:`scipy.sparse.linalg.splu` (or the inverse can be approximated by
@@ -1785,7 +1786,7 @@ We can also check that all constraints are satisfied within reasonable tolerance
     >>> print(b_ub - (A_ub @ x).flatten())  # this is equivalent to result.slack
     [ 6.52747190e-10, -2.26730279e-09]  # may vary
     >>> print(b_eq - (A_eq @ x).flatten())  # this is equivalent to result.con
-    [ 9.78840831e-09, 1.04662945e-08]]  # may vary
+    [ 9.78840831e-09, 1.04662945e-08]   # may vary
     >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
     [True, True, True, True]
 
@@ -1943,7 +1944,7 @@ programming problem in that the decision variables can only assume integer
 values.  Specifically, our decision variables can only be :math:`0` or
 :math:`1`, so this is known as a *binary integer linear program* (BILP). Such
 a problem falls within the larger class of *mixed integer linear programs*
-(MILPs), which we we can solve with :func:`milp`.
+(MILPs), which we can solve with :func:`milp`.
 
 In our example, there are 8 items to choose from, and the size and value of
 each is specified as follows.
@@ -1997,7 +1998,7 @@ Let's check the result:
     array([1., 1., 0., 1., 1., 1., 0., 0.])
 
 This means that we should select the items 1, 2, 4, 5, 6 to optimize the total
-value under the size constraint. Note that this is different from we would have
+value under the size constraint. Note that this is different from what we would have
 obtained had we solved the *linear programming relaxation* (without integrality
 constraints) and attempted to round the decision variables.
 
