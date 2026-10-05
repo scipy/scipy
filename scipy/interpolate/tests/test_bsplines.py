@@ -4009,34 +4009,71 @@ class TestMakeLSQNdBSplineFromGrid:
 
 
 class TestMakeLSQNdBSplinePublicAPI:
-    def test_scattered_data(self):
-        x = np.array(
-            [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [0.5, 0.5]]
-        )
-        y = x[:, 0] + 2.0 * x[:, 1]
-        t = (
-            np.array([0.0, 0.0, 1.0, 1.0]),
-            np.array([0.0, 0.0, 1.0, 1.0]),
-        )
-
-        spl = make_lsq_ndbspline(x, y, t, k=1)
-
-        assert isinstance(spl, NdBSpline)
-        xp_assert_close(spl([[0.25, 0.75]]), np.array([1.75]), atol=1e-13)
-
-    def test_gridded_data(self):
-        points = (np.linspace(0.0, 1.0, 4), np.linspace(-1.0, 1.0, 5))
+    @pytest.mark.parametrize("data_layout", ["scattered", "grid"])
+    @pytest.mark.parametrize("k", [1, 2, 3, (2, 3)])
+    @pytest.mark.parametrize("weighted", [False, True])
+    @pytest.mark.parametrize("solver", [ssl.lsqr, ssl.lsmr])
+    def test_public_arguments(self, data_layout, k, weighted, solver):
+        points = (np.linspace(-1.0, 1.0, 11), np.linspace(-2.0, 2.0, 12))
         x0, x1 = np.meshgrid(*points, indexing="ij")
-        values = x0 + 2.0 * x1
-        t = (
-            np.array([0.0, 0.0, 1.0, 1.0]),
-            np.array([-1.0, -1.0, 1.0, 1.0]),
+        values = np.stack(
+            (
+                1.0 + 2.0 * x0 - 0.5 * x1 + 0.25 * x0 * x1,
+                -1.0 + 0.5 * x0 + 0.75 * x1,
+            ),
+            axis=-1,
+        )
+        degrees = (k, k) if np.isscalar(k) else k
+        bounds = ((-1.0, 1.0), (-2.0, 2.0))
+        t = tuple(
+            np.r_[
+                [lo] * (degree + 1),
+                0.5 * (lo + hi),
+                [hi] * (degree + 1),
+            ]
+            for degree, (lo, hi) in zip(degrees, bounds)
+        )
+        w_grid = 1.0 + 0.1 * (x0 + 1.0) + 0.05 * (x1 + 2.0)
+        w = w_grid if weighted else None
+        solver_args = {"atol": 1e-12, "btol": 1e-12}
+        if solver is ssl.lsqr:
+            solver_args["iter_lim"] = 200
+        else:
+            solver_args["maxiter"] = 200
+
+        if data_layout == "scattered":
+            x = np.column_stack((x0.ravel(), x1.ravel()))
+            y = values.reshape((-1, values.shape[-1]))
+            if w is not None:
+                w = w.ravel()
+            spl = make_lsq_ndbspline(
+                x, y, t, k=k, w=w, solver=solver, **solver_args
+            )
+        else:
+            spl = make_lsq_ndbspline_from_grid(
+                points,
+                values,
+                t,
+                k=k,
+                w=w,
+                solver=solver,
+                **solver_args,
+            )
+
+        x_eval = np.array([[-0.75, -1.5], [0.0, 0.25], [0.8, 1.25]])
+        expected = np.column_stack(
+            (
+                1.0
+                + 2.0 * x_eval[:, 0]
+                - 0.5 * x_eval[:, 1]
+                + 0.25 * x_eval[:, 0] * x_eval[:, 1],
+                -1.0 + 0.5 * x_eval[:, 0] + 0.75 * x_eval[:, 1],
+            )
         )
 
-        spl = make_lsq_ndbspline_from_grid(points, values, t, k=1)
-
+        assert spl.k == degrees
         assert isinstance(spl, NdBSpline)
-        xp_assert_close(spl([[0.25, 0.5]]), np.array([1.25]), atol=1e-13)
+        xp_assert_close(spl(x_eval), expected, atol=1e-10)
 
 
 class TestMakeND:
