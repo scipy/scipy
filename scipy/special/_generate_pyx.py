@@ -158,6 +158,7 @@ special_ufuncs = [
     "_spherical_yn",
     "_spherical_yn_d",
     "_stirling2_inexact",
+    "_trivariate_normal_cdf",
     "_von_mises_cdf",
     "_zeta",
     "agm",
