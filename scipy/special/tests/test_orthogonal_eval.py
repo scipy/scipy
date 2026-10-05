@@ -173,10 +173,7 @@ class TestRecurrence:
         def polyfunc(*p):
             p0 = p[0].astype(np.intp)
             p = (p0,) + p[1:]
-            for sig in func.types:
-                if np.dtype(sig[0]) == p0.dtype:
-                    p0_type_char = sig[0]
-                    break
+            p0_type_char = p0.dtype.char
             kw = dict(sig=p0_type_char + (len(p)-1)*'d' + '->d')
             return func(*p, **kw)
 

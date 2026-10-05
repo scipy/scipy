@@ -773,6 +773,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *eval_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::i4ddd_d>(xsf::eval_jacobi),
          static_cast<xsf::numpy::i8ddd_d>(xsf::eval_jacobi),
+         [](long n, double alpha, double beta, double x) { return xsf::eval_jacobi(n, alpha, beta, x); },
          static_cast<xsf::numpy::ffff_f>(xsf::eval_jacobi),
          static_cast<xsf::numpy::fffF_F>(xsf::eval_jacobi), static_cast<xsf::numpy::dddd_d>(xsf::eval_jacobi),
          static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
@@ -782,6 +783,7 @@ _special_ufuncs_module_exec(PyObject *module)
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::i4ddd_d>(xsf::eval_sh_jacobi),
          static_cast<xsf::numpy::i8ddd_d>(xsf::eval_sh_jacobi),
+         [](long n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); },
          static_cast<xsf::numpy::ffff_f>(xsf::eval_sh_jacobi),
          static_cast<xsf::numpy::fffF_F>(xsf::eval_sh_jacobi), static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi),
          static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
