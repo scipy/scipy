@@ -1,5 +1,6 @@
 import functools
 import operator
+import os
 import warnings
 from math import prod
 from types import GenericAlias
@@ -3052,7 +3053,10 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     # The bounds of `log(lam/r)` are (eps, 1/eps) where `eps`
     # is the machine precision 2.2 * 1e-16, hence (-15, 15) is
     # strictly in the live area for the bounds.
-    res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
+    # ignore warnings during the lam search, the final solve warns anyway
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", LinAlgWarning)
+        res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
     lam_hat = r * 10 ** res.x
     return lam_hat
 
@@ -3069,11 +3073,13 @@ def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
         raise ValueError(
             f"illegal value in argument {-info} of internal pbcon")
     if rcond < np.finfo(_lhs.dtype).eps:
+        # show the warning at the user's call site
+        _warn_skips = (os.path.dirname(os.path.dirname(__file__)),)
         warnings.warn(
             "The system (X^T W X + lam * Omega) is ill-conditioned "
             f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
             "not be accurate.",
-            LinAlgWarning, stacklevel=3,
+            LinAlgWarning, skip_file_prefixes=_warn_skips,
         )
     c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:
