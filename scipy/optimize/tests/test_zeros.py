@@ -984,63 +984,6 @@ def test_maxiter_int_check_gh10236(method):
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
-@pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
-                                    zeros.brentq, zeros.brenth])
-def test_bisect_special_parameter(method):
-    # give some zeros method strange parameters
-    # and check whether an exception appears
-    root = 0.1
-    args = (1e-09, 0.004, 10, 0.27456)
-    rtolbad = 4 * np.finfo(float).eps / 2
-
-    def f(x):
-        return x - root
-
-    with pytest.raises(ValueError, match="xtol too small"):
-       method(f, -1e8, 1e7, args=args, xtol=-1e-6, rtol=TOL)
-    with pytest.raises(ValueError, match="rtol too small"):
-       method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
-
-class TestRidderUnderflow:
-    def test_gh_issue_underflow(self):
-        # Regression test for underflow in Ridder's method.
-        # Previously, intermediate calculations (fm*fm) would underflow
-        # to zero before the ratio converged, causing a Runtime Error.
-
-        def f(x): return x**5
-
-        # Before the fix, this raised a RuntimeError.
-        root, result = optimize.ridder(
-            f, -1, 5,
-            xtol=1e-300,
-            full_output=True,
-            maxiter=10000
-        )
-
-        assert result.converged
-        assert abs(root) < 1e-10  # Ensuring zero is found
-
-    def test_early_exit_funcalls(self):
-        # Test case for when midpoint is reached early (fm == 0).
-        nfev = 0
-        def f(x):
-            nonlocal nfev
-            nfev += 1
-            return x
-
-        # Root == 0, the midpoint of [-1, 1].
-        # Calls: f(-1), f(1) [init], then f(0) [iter 1] -> Exit.
-        # Total = 3 calls.
-        root, result = optimize.ridder(
-            f, -1, 1,
-            full_output=True
-        )
-
-        assert result.converged
-        assert root == 0.0
-        assert result.function_calls == nfev
-        assert result.function_calls == 3
-
 
 class TestMuller:
     @pytest.mark.parametrize('roots', [(2, 5), (1j, -1j), (2+3j, -1+2j)])
@@ -1287,3 +1230,62 @@ class TestMuller:
         doc = optimize.show_options('root_scalar', 'muller', disp=False)
         assert 'frtol' in doc
         assert 'x2' in doc
+
+
+
+@pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
+                                    zeros.brentq, zeros.brenth])
+def test_bisect_special_parameter(method):
+    # give some zeros method strange parameters
+    # and check whether an exception appears
+    root = 0.1
+    args = (1e-09, 0.004, 10, 0.27456)
+    rtolbad = 4 * np.finfo(float).eps / 2
+
+    def f(x):
+        return x - root
+
+    with pytest.raises(ValueError, match="xtol too small"):
+       method(f, -1e8, 1e7, args=args, xtol=-1e-6, rtol=TOL)
+    with pytest.raises(ValueError, match="rtol too small"):
+       method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)
+
+class TestRidderUnderflow:
+    def test_gh_issue_underflow(self):
+        # Regression test for underflow in Ridder's method.
+        # Previously, intermediate calculations (fm*fm) would underflow
+        # to zero before the ratio converged, causing a Runtime Error.
+
+        def f(x): return x**5
+
+        # Before the fix, this raised a RuntimeError.
+        root, result = optimize.ridder(
+            f, -1, 5,
+            xtol=1e-300,
+            full_output=True,
+            maxiter=10000
+        )
+
+        assert result.converged
+        assert abs(root) < 1e-10  # Ensuring zero is found
+
+    def test_early_exit_funcalls(self):
+        # Test case for when midpoint is reached early (fm == 0).
+        nfev = 0
+        def f(x):
+            nonlocal nfev
+            nfev += 1
+            return x
+
+        # Root == 0, the midpoint of [-1, 1].
+        # Calls: f(-1), f(1) [init], then f(0) [iter 1] -> Exit.
+        # Total = 3 calls.
+        root, result = optimize.ridder(
+            f, -1, 1,
+            full_output=True
+        )
+
+        assert result.converged
+        assert root == 0.0
+        assert result.function_calls == nfev
+        assert result.function_calls == 3
