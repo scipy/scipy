@@ -20,6 +20,7 @@
 #include <xsf/cephes/unity.h>
 #include <xsf/cosine.h>
 #include <xsf/convex_analysis.h>
+#include <xsf/cpu/ellint_carlson.h>
 #include <xsf/cpu/stats.h>
 #include <xsf/digamma.h>
 #include <xsf/digammainv.h>
@@ -180,6 +181,11 @@ extern const char *ellipj_doc;
 extern const char *ellipk_doc;
 extern const char *ellipkm1_doc;
 extern const char *ellipkinc_doc;
+extern const char *elliprc_doc;
+extern const char *elliprd_doc;
+extern const char *elliprf_doc;
+extern const char *elliprg_doc;
+extern const char *elliprj_doc;
 extern const char *erf_doc;
 extern const char *erfc_doc;
 extern const char *erfcinv_doc;
@@ -1015,6 +1021,52 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ellipkm1), static_cast<xsf::numpy::d_d>(xsf::ellipkm1)},
                           "ellipkm1", ellipkm1_doc);
     PyModule_AddObjectRef(module, "ellipkm1", ellipkm1);
+
+    PyObject *elliprc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::cpu::elliprc), static_cast<xsf::numpy::dd_d>(xsf::cpu::elliprc),
+         static_cast<xsf::numpy::FF_F>(xsf::cpu::elliprc), static_cast<xsf::numpy::DD_D>(xsf::cpu::elliprc)},
+        "elliprc", elliprc_doc);
+    PyModule_AddObjectRef(module, "elliprc", elliprc);
+
+    PyObject *elliprd = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprd), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprd),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprd(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprd(x, y, z);
+         }},
+        "elliprd", elliprd_doc);
+    PyModule_AddObjectRef(module, "elliprd", elliprd);
+
+    PyObject *elliprf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprf), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprf),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprf(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprf(x, y, z);
+         }},
+        "elliprf", elliprf_doc);
+    PyModule_AddObjectRef(module, "elliprf", elliprf);
+
+    PyObject *elliprg = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprg), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprg),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprg(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprg(x, y, z);
+         }},
+        "elliprg", elliprg_doc);
+    PyModule_AddObjectRef(module, "elliprg", elliprg);
+
+    PyObject *elliprj = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ffff_f>(xsf::cpu::elliprj), static_cast<xsf::numpy::dddd_d>(xsf::cpu::elliprj),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z, std::complex<float> p) {
+             return xsf::cpu::elliprj(x, y, z, p);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z, std::complex<double> p) {
+             return xsf::cpu::elliprj(x, y, z, p);
+         }},
+        "elliprj", elliprj_doc);
+    PyModule_AddObjectRef(module, "elliprj", elliprj);
 
     PyObject *erfcinv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cephes::erfcinv),

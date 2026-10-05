@@ -288,13 +288,13 @@ cdef class ordered_pairs:
     def set(ordered_pairs self):
         cdef:
             ordered_pair *pair
-            np.intp_t i, n
+            np.intp_t _i, n
             set results
         results = set()
         pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
         # other platforms
-        for i in range(n):
+        for _i in range(n):
             results.add((pair.i, pair.j))
             pair += 1
         return results
