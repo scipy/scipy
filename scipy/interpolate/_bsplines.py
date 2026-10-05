@@ -1172,12 +1172,47 @@ class BSpline:
 
         Notes
         -----
-        The coefficient array of the returned instance follows the FITPACK
-        convention and may be padded with trailing zeros, so that ``len(b.c)``
-        can be greater than ``len(b.t) - b.k - 1``. These extra coefficients
-        are ignored when the spline is evaluated. If an array with exactly
-        ``len(b.t) - b.k - 1`` coefficients is needed, slice it as
-        ``b.c[:len(b.t) - b.k - 1, ...]``.
+        The coefficient array of the returned instance will be padded with
+        trailing zeros, so that ``len(b.c)`` is greater than
+        ``len(b.t) - b.k - 1``. The trailing coefficients never enter
+        evaluations. If an array with exactly ``len(b.t) - b.k - 1``
+        coefficients is needed, slice it as ``b.c[:len(b.t) - b.k - 1, ...]``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``, unless the coefficients are padded:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> b = spl.derivative()             # b is a quadratic spline
+        >>> len(b.t), len(b.c), b.k          # knots, coefficients, degree of b
+        (13, 13, 2)
+        >>> b.c[len(b.t) - b.k - 1:]         # zero padding, unused in evaluations
+        array([0., 0., 0.])
+
+        Slice off the padding to get exactly ``len(b.t) - b.k - 1`` coefficients:
+
+        >>> c = b.c[:len(b.t) - b.k - 1]
+        >>> len(c)
+        10
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``b``) and
+        after (``BSpline(b.t, c, b.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(b.t, c, b.k)(xx), b(xx))
+        True
 
         """
         if hasattr(self._delegate_to, "derivative"):
@@ -1225,12 +1260,57 @@ class BSpline:
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
 
-        The coefficient array of the returned instance follows the FITPACK
-        convention and may be padded with trailing entries (repeats of the
-        last coefficient), so that ``len(b.c)`` can be greater than
-        ``len(b.t) - b.k - 1``. These extra coefficients are ignored when the
-        spline is evaluated. If an array with exactly ``len(b.t) - b.k - 1``
-        coefficients is needed, slice it as ``b.c[:len(b.t) - b.k - 1, ...]``.
+        The coefficient array of the returned instance will be padded with
+        trailing entries, so that ``len(b.c)`` is greater than ``len(b.t) - b.k - 1``.
+        The trailing coefficients never enter evaluations. If an array with
+        exactly ``len(b.t) - b.k - 1`` coefficients is needed, slice it as
+        ``b.c[:len(b.t) - b.k - 1, ...]``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``, unless the coefficients are padded:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> b = spl.derivative()             # b is a quadratic spline
+        >>> len(b.t), len(b.c), b.k          # knots, coefficients, degree of b
+        (13, 13, 2)
+        >>> a = b.antiderivative()           # a is cubic again, same curve as spl
+        >>> len(a.t), len(a.c), a.k          # knots, coefficients, degree of a
+        (15, 15, 3)
+        >>> a.c[len(a.t) - a.k - 1:]         # repeat padding, unused in evaluations
+        array([9999.45597889, 9999.45597889, 9999.45597889, 9999.45597889])
+
+        `spl` and `a` evaluate to the same values:
+
+        >>> spl([2.5, 3.5])
+        array([ 39.64717498, 149.63703598])
+        >>> a([2.5, 3.5])
+        array([ 39.64717498, 149.63703598])
+
+        Slice off the padding to get exactly ``len(a.t) - a.k - 1`` coefficients:
+
+        >>> c = a.c[:len(a.t) - a.k - 1]
+        >>> len(c)
+        11
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``a``) and
+        after (``BSpline(a.t, c, a.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(a.t, c, a.k)(xx), a(xx))
+        True
 
         """
         if hasattr(self._delegate_to, "antiderivative"):
