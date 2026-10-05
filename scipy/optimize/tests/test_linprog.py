@@ -349,6 +349,18 @@ def test_highs_status_message():
     assert status == 4
     assert message.startswith(msg)
 
+    # HiGHS reports a node limit as a solution limit
+    from scipy.optimize._highspy._core import HighsModelStatus
+    status, message = _highs_to_scipy_status_message(
+        HighsModelStatus.kSolutionLimit, "Solution limit reached")
+    msg = "Node or solution limit reached. (HiGHS Status 16:"
+    assert status == 1
+    assert message.startswith(msg)
+
+    for highs_status in HighsModelStatus.__members__.values():
+        _, message = _highs_to_scipy_status_message(highs_status, "")
+        assert not message.startswith("The HiGHS status code was not recognized")
+
 
 def test_bug_17380():
     linprog([1, 1], A_ub=[[-1, 0]], b_ub=[-2.5], integrality=[1, 1])
