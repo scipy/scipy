@@ -5175,7 +5175,7 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     Examples
     --------
     The following plot depicts the response of a 3rd-order prototype with a passband
-    ripple of 5 dB and a stoppband attenuation of 20 dB:
+    ripple of 5 dB and a stopband attenuation of 20 dB:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -5189,7 +5189,7 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     ...
     >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
     ...                              figsize=(6, 4))
-    >>> ax0.set(title='3rd-order Chebyshev type II prototype', ylim=(-60, 3),
+    >>> ax0.set(title='3rd-order elliptic filter prototype', ylim=(-60, 3),
     ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
     >>> ax0.fill((0, 0, 1, 1), (1, -5, -5, 1), 'C3', alpha=.3, label="5 dB ripple band")
     >>> ax0.fill((1, 1, 10, 10), (-20, -60, -60, -20), 'C4', alpha=.3,
