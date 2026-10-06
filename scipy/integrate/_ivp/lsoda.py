@@ -1,9 +1,11 @@
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy.integrate._ode import ode
 from .common import validate_tol, validate_first_step, warn_extraneous
 from .base import OdeSolver, DenseOutput
 
 
+@xp_capabilities(np_only=True)
 class LSODA(OdeSolver):
     """Adams/BDF method with automatic stiffness detection and switching.
 

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, warn_extraneous, validate_first_step)
@@ -180,6 +181,7 @@ class RungeKutta(OdeSolver):
         return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
 
 
+@xp_capabilities(np_only=True)
 class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
 
@@ -371,6 +373,7 @@ class RK23(RungeKutta):
                   [0, -1, 1]])
 
 
+@xp_capabilities(np_only=True)
 class RK45(RungeKutta):
     """Explicit Runge-Kutta method of order 5(4).
 
@@ -565,6 +568,7 @@ class RK45(RungeKutta):
         [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]])
 
 
+@xp_capabilities(np_only=True)
 class DOP853(RungeKutta):
     r"""Explicit Runge-Kutta method of order 8.
 

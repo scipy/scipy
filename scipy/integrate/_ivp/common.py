@@ -1,6 +1,7 @@
 from itertools import groupby
 from warnings import warn
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy.sparse import find, csc_array, isspmatrix, csc_matrix
 
 
@@ -134,6 +135,7 @@ def select_initial_step(fun, t0, y0, t_bound,
     return min(100 * h0, h1, interval_length, max_step)
 
 
+@xp_capabilities(np_only=True)
 class OdeSolution:
     """Continuous ODE solution.
 
