@@ -158,7 +158,7 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
+        Called as ``callback(res)``, where ``res`` is an object
         similar to that returned by `derivative` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -167,7 +167,7 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -784,7 +784,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -1006,7 +1006,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
