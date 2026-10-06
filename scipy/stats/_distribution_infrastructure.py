@@ -3937,7 +3937,7 @@ class CircularDistribution(UnivariateDistribution):
         return (a2 - rho**4) / (1 - rho)**2
 
     def _moment_central_general(self, order, **params):
-        general_central_moments = {0: self._one}
+        general_central_moments = {0: self._one + 0j}
         return general_central_moments.get(order, None)
 
     def _moment_central_transform(self, order, **params):
@@ -4659,8 +4659,9 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
-        if not isinstance(X, ContinuousDistribution):
-            message = "Transformations are currently only supported for continuous RVs."
+        if isinstance(X, CircularDistribution) or not isinstance(X, ContinuousDistribution):
+            message = ("Transformations are currently supported only for continuous, "
+                       "linear RVs.")
             raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
@@ -5450,6 +5451,9 @@ class Mixture(_ProbabilityDistribution):
             if not var._shape == ():
                 message = "All elements of `components` must have scalar shapes."
                 raise ValueError(message)
+            if isinstance(var, CircularDistribution):
+                message = "`Mixture` does not currently support circular components."
+                raise NotImplementedError(message)
             continuous = continuous and isinstance(var, ContinuousDistribution)
 
         if weights is None:

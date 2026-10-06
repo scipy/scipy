@@ -1,4 +1,5 @@
 import itertools as it
+import operator
 import os
 import pickle
 from copy import deepcopy
@@ -1715,7 +1716,7 @@ class TestTransforms:
         X = stats.Binomial(n=10, p=0.5)
         # This is applied at the top level TransformedDistribution,
         # so testing one subclass is enough
-        message = "Transformations are currently only supported for continuous RVs."
+        message = "Transformations are currently supported only for continuous, linear RVs."
         with pytest.raises(NotImplementedError, match=message):
             stats.exp(X)
 
@@ -2589,6 +2590,21 @@ class TestCircular:
                 assert_allclose(X.moment(order, kind=kind, method='quadrature'),
                                 X.moment(order, kind=kind, method='formula'))
 
+    def test_mixture(self):
+        X = stats.VonMises(mu=0, kappa=1)
+        message = "`Mixture` does not currently support circular components."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.Mixture([X, X])
+
+    @pytest.mark.parametrize("op, args", [
+        (stats.abs, ()), (stats.exp, ()), (stats.log, ()), (operator.neg, ()),
+        (operator.add, (1,)), (operator.sub, (1,)), (operator.pow, (1,)),
+        (operator.mul, (1,)), (operator.truediv, (1,)), (stats.truncate, (1, 2))])
+    def test_transform(self, op, args):
+        X = stats.VonMises(mu=0, kappa=1)
+        message = "Transformations are currently supported only for continuous, linear RVs."
+        with pytest.raises(NotImplementedError, match=message):
+            op(X, *args)
 
 
 def test_zipfian_distribution_wrapper():
