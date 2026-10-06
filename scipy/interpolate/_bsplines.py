@@ -3041,8 +3041,11 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
         # the system is rectangular so we can't apply the t=None path's
         # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
         # compute the residual directly
+        # skip the rcond estimate during the search, the final solve
+        # at the selected lam checks it and warns
         c, tr = _solve_smoothing_spline_coefficients(
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
+            check_conditioning=False,
         )
         rss = np.sum(w * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
@@ -3053,34 +3056,33 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     # The bounds of `log(lam/r)` are (eps, 1/eps) where `eps`
     # is the machine precision 2.2 * 1e-16, hence (-15, 15) is
     # strictly in the live area for the bounds.
-    # ignore warnings during the lam search, the final solve warns anyway
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LinAlgWarning)
-        res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
+    res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
     lam_hat = r * 10 ** res.x
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         compute_trace=False):
+                                         compute_trace=False,
+                                         check_conditioning=True):
     _lhs = XtWX_banded + lam * omega
-    lansb, pbcon = get_lapack_funcs(('lansb', 'pbcon'), (_lhs,))
-    kd = _lhs.shape[0] - 1
-    # pbcon needs the 1-norm of the unfactored matrix
-    anorm = lansb(kd, _lhs, norm='1', uplo='U')
     factor = cholesky_banded(_lhs, lower=False)
-    rcond, info = pbcon(kd, factor, anorm, uplo='U')
-    if info < 0:
-        raise ValueError(
-            f"illegal value in argument {-info} of internal pbcon")
-    if rcond < np.finfo(_lhs.dtype).eps:
-        # show the warning at the user's call site
-        _warn_skips = (os.path.dirname(os.path.dirname(__file__)),)
-        warnings.warn(
-            "The system (X^T W X + lam * Omega) is ill-conditioned "
-            f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
-            "not be accurate.",
-            LinAlgWarning, skip_file_prefixes=_warn_skips,
-        )
+    if check_conditioning:
+        lansb, pbcon = get_lapack_funcs(('lansb', 'pbcon'), (_lhs,))
+        kd = _lhs.shape[0] - 1
+        # pbcon needs the 1-norm of the unfactored matrix
+        anorm = lansb(kd, _lhs, norm='1', uplo='U')
+        rcond, info = pbcon(kd, factor, anorm, uplo='U')
+        if info < 0:
+            raise ValueError(
+                f"illegal value in argument {-info} of internal pbcon")
+        if rcond < np.finfo(_lhs.dtype).eps:
+            # show the warning at the user's call site
+            _warn_skips = (os.path.dirname(os.path.dirname(__file__)),)
+            warnings.warn(
+                "The system (X^T W X + lam * Omega) is ill-conditioned "
+                f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
+                "not be accurate.",
+                LinAlgWarning, skip_file_prefixes=_warn_skips,
+            )
     c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:
         return c, None
