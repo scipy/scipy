@@ -5,6 +5,8 @@ from numpy.testing import assert_equal
 import pytest
 from scipy.sparse import coo_array, lil_array
 
+pytestmark = pytest.mark.thread_unsafe
+
 
 def _assert_rhs_not_densified(A, key, rhs_sp, dense_nbytes):
     tracemalloc.start()
