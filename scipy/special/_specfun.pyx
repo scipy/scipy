@@ -3,27 +3,27 @@ from libcpp.complex cimport complex as ccomplex
 cimport numpy as cnp
 cnp.import_array()
 
-cdef extern from "xsf/airy.h" nogil:
+cdef extern from "xsf/cpu/airy.h" nogil:
     void specfun_airyzo 'xsf::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
-cdef extern from "xsf/fresnel.h" nogil:
+cdef extern from "xsf/cpu/fresnel.h" nogil:
     void specfun_fcszo 'xsf::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
-cdef extern from "xsf/kelvin.h" nogil:
+cdef extern from "xsf/cpu/kelvin.h" nogil:
     void specfun_klvnzo 'xsf::klvnzo'(int nt, int kd, double *zo)
 
-cdef extern from "xsf/par_cyl.h" nogil:
+cdef extern from "xsf/cpu/par_cyl.h" nogil:
     void specfun_pbdv 'xsf::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'xsf::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
-cdef extern from "xsf/specfun/specfun.h" namespace "xsf::specfun":
+cdef extern from "xsf/cpu/specfun/specfun.h" namespace "xsf::specfun":
 
     cpdef enum class Status:
         OK = 0
         NoMemory
         Other
 
-cdef extern from "xsf/specfun/specfun.h" nogil:
+cdef extern from "xsf/cpu/specfun/specfun.h" nogil:
     void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
     void specfun_cpbdn 'xsf::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
     void specfun_cyzo 'xsf::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)

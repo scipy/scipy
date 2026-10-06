@@ -143,6 +143,16 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853', method=None)
 
+    @pytest.mark.parametrize('integrator', ['dopri5', 'dop853', 'vode', 'lsoda'])
+    def test_ode_tuple_return(self, integrator):
+        # Functions returning a tuple work properly across integrators
+        # without triggering legacy f2py SystemError (gh-5134).
+        r = ode(lambda t, y: (y[0],)).set_integrator(integrator)
+        r.set_initial_value([1.0], 0.0)
+        res = r.integrate(1.0)
+        assert_(r.successful())
+        assert_allclose(res, [np.e], rtol=1e-5)
+
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
         # All solvers (vode, zvode, lsoda) now support concurrent usage
