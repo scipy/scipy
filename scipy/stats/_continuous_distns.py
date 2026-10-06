@@ -1874,10 +1874,10 @@ class dpareto_lognorm_gen(rv_continuous):
         \left( R(y_1) + R(y_2) \right)
 
     where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
-    :math:`\phi` and :math:`\Phi` are the normal PDF and CDF, respectively,
+    :math:`\phi` and :math:`\Phi` are the standard normal PDF and CDF, respectively,
     :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
     and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
-    for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
+    for :math:`x > 0`, real :math:`\mu`, :math:`\sigma > 0`,
     :math:`\alpha > 0`, and :math:`\beta > 0` [1]_.
 
     `dpareto_lognorm` takes
