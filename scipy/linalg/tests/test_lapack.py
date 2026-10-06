@@ -3838,12 +3838,12 @@ def test_gesvdx_invalid_arguments(dtype, kwargs):
         gesvdx(a, **kwargs)
 
 
-# (50, 50), (40, 30) and complex (300, 300) take the direct path, where the
-# optimal size LAPACK reports is below the default `gesvdx` uses; `gesvdx` must
-# still accept it.
+# (50, 50), (40, 30) and (64, 64) take the direct path, where the optimal size
+# LAPACK reports is below the default `gesvdx` uses (complex only from about
+# 62 x 62 on); `gesvdx` must still accept it.
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5),
-                                   (5, 20), (50, 50), (40, 30), (300, 300)])
+                                   (5, 20), (50, 50), (40, 30), (64, 64)])
 @pytest.mark.parametrize('compute_uv', [0, 1])
 def test_gesvdx_lwork_is_accepted_by_gesvdx(dtype, shape, compute_uv):
     rng = np.random.default_rng(1985412312)
