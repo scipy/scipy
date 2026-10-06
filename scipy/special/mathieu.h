@@ -39,7 +39,7 @@
 
 #include <xsf/error.h>
 #include <xsf/mathieu.h>
-#include <xsf/mathieu_legacy.h>
+#include <xsf/cpu/mathieu_legacy.h>
 
 #include "mdspan_helpers.h"
 #include "tridiagonal.h"

@@ -4,9 +4,9 @@
 
 #include "cython_special_wrappers.h"
 #include <xsf/agm.h>
-#include <xsf/airy.h>
-#include <xsf/amos.h>
-#include <xsf/bessel.h>
+#include <xsf/cpu/airy.h>
+#include <xsf/cpu/amos.h>
+#include <xsf/cpu/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
@@ -18,29 +18,30 @@
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
 #include <xsf/erf.h>
-#include <xsf/exp.h>
+#include <xsf/cpu/exp.h>
 #include <xsf/expint.h>
-#include <xsf/fresnel.h>
+#include <xsf/cpu/fresnel.h>
 #include <xsf/gamma.h>
-#include <xsf/hyp0f1.h>
+#include <xsf/cpu/hyp0f1.h>
 #include <xsf/hyp2f1.h>
-#include <xsf/hyperu.h>
-#include <xsf/kelvin.h>
+#include <xsf/cpu/hyperu.h>
+#include <xsf/cpu/kelvin.h>
 #include <xsf/lambertw.h>
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
 #include <xsf/loggamma.h>
-#include <xsf/mathieu_legacy.h>
+#include <xsf/cpu/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
-#include <xsf/par_cyl.h>
+#include <xsf/orthogonal_eval.h>
+#include <xsf/cpu/par_cyl.h>
 #include <xsf/sici.h>
-#include <xsf/specfun.h>
+#include <xsf/cpu/specfun.h>
 #include <xsf/spence.h>
-#include <xsf/sph_bessel.h>
-#include <xsf/sph_harm.h>
-#include <xsf/sphd_wave.h>
+#include <xsf/cpu/sph_bessel.h>
+#include <xsf/cpu/sph_harm.h>
+#include <xsf/cpu/sphd_wave.h>
 #include <xsf/stats.h>
-#include <xsf/struve.h>
+#include <xsf/cpu/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/wright.h>
@@ -161,6 +162,26 @@ void it2i0k0_wrap(double x, double *i0int, double *k0int) { xsf::it2i0k0(x, *i0i
 
 void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
+}
+
+double xsf_eval_jacobi(double n, double alpha, double beta, double x) { return xsf::eval_jacobi(n, alpha, beta, x); }
+
+npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_jacobi(n, alpha, beta, to_complex(x)));
+}
+
+double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x) {
+    return xsf::eval_jacobi(n, alpha, beta, x);
+}
+
+double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
+
+npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_jacobi(n, p, q, to_complex(x)));
+}
+
+double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x) {
+    return xsf::eval_sh_jacobi(n, p, q, x);
 }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }

@@ -6,10 +6,10 @@
 #include "boost_special_functions.h"
 #include "sf_error.h"
 #include <xsf/agm.h>
-#include <xsf/airy.h>
+#include <xsf/cpu/airy.h>
 #include <xsf/alg.h>
-#include <xsf/amos.h>
-#include <xsf/bessel.h>
+#include <xsf/cpu/amos.h>
+#include <xsf/cpu/bessel.h>
 #include <xsf/beta.h>
 #include <xsf/binom.h>
 #include <xsf/boxcox.h>
@@ -26,32 +26,33 @@
 #include <xsf/digammainv.h>
 #include <xsf/ellip.h>
 #include <xsf/erf.h>
-#include <xsf/exp.h>
+#include <xsf/cpu/exp.h>
 #include <xsf/expint.h>
-#include <xsf/fresnel.h>
+#include <xsf/cpu/fresnel.h>
 #include <xsf/gamma.h>
 #include <xsf/gen_harmonic.h>
-#include <xsf/hyp0f1.h>
-#include <xsf/hyperu.h>
+#include <xsf/cpu/hyp0f1.h>
+#include <xsf/cpu/hyperu.h>
 #include <xsf/hyp2f1.h>
 #include <xsf/iv_ratio.h>
-#include <xsf/kelvin.h>
+#include <xsf/cpu/kelvin.h>
 #include <xsf/lambertw.h>
-#include <xsf/legendre.h>
+#include <xsf/cpu/legendre.h>
 #include <xsf/log.h>
 #include <xsf/log_exp.h>
-#include <xsf/mathieu_legacy.h>
+#include <xsf/cpu/mathieu_legacy.h>
 #include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
-#include <xsf/par_cyl.h>
-#include <xsf/specfun.h>
+#include <xsf/orthogonal_eval.h>
+#include <xsf/cpu/par_cyl.h>
+#include <xsf/cpu/specfun.h>
 #include <xsf/spence.h>
-#include <xsf/sph_bessel.h>
-#include <xsf/sph_harm.h>
-#include <xsf/sphd_wave.h>
+#include <xsf/cpu/sph_bessel.h>
+#include <xsf/cpu/sph_harm.h>
+#include <xsf/cpu/sphd_wave.h>
 #include <xsf/stats.h>
 #include <xsf/stirling2.h>
-#include <xsf/struve.h>
+#include <xsf/cpu/struve.h>
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/wright.h>
@@ -192,6 +193,8 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_jacobi_doc;
+extern const char *eval_sh_jacobi_doc;
 extern const char *exp1_doc;
 extern const char *expm1_doc;
 extern const char *exp2_doc;
@@ -766,6 +769,28 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
+
+    PyObject *eval_jacobi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::iddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::lddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::qddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
+        "eval_jacobi", eval_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
+
+    PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::iddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::lddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::qddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
+        "eval_sh_jacobi", eval_sh_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),
