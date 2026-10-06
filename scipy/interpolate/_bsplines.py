@@ -1173,10 +1173,9 @@ class BSpline:
         Notes
         -----
         The coefficient array of the returned instance will be padded with
-        trailing zeros, so that ``len(b.c)`` is greater than
-        ``len(b.t) - b.k - 1``. The trailing coefficients never enter
-        evaluations. If an array with exactly ``len(b.t) - b.k - 1``
-        coefficients is needed, slice it as ``b.c[:len(b.t) - b.k - 1, ...]``.
+        ``b.k + 1`` trailing zeros, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
 
         Examples
         --------
@@ -1189,7 +1188,8 @@ class BSpline:
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
         coefficients, and the degree are related by
-        ``len(t) - len(c) == k + 1``, unless the coefficients are padded:
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
 
         >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
         (15, 11, 3)
@@ -1261,10 +1261,9 @@ class BSpline:
         outside of the initially given x interval is difficult.
 
         The coefficient array of the returned instance will be padded with
-        trailing entries, so that ``len(b.c)`` is greater than ``len(b.t) - b.k - 1``.
-        The trailing coefficients never enter evaluations. If an array with
-        exactly ``len(b.t) - b.k - 1`` coefficients is needed, slice it as
-        ``b.c[:len(b.t) - b.k - 1, ...]``.
+        ``b.k + 1`` trailing entries, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
 
         Examples
         --------
@@ -1277,31 +1276,23 @@ class BSpline:
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
         coefficients, and the degree are related by
-        ``len(t) - len(c) == k + 1``, unless the coefficients are padded:
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
 
         >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
         (15, 11, 3)
-        >>> b = spl.derivative()             # b is a quadratic spline
-        >>> len(b.t), len(b.c), b.k          # knots, coefficients, degree of b
-        (13, 13, 2)
-        >>> a = b.antiderivative()           # a is cubic again, same curve as spl
+        >>> a = spl.antiderivative()         # a is a quartic spline
         >>> len(a.t), len(a.c), a.k          # knots, coefficients, degree of a
-        (15, 15, 3)
+        (17, 17, 4)
         >>> a.c[len(a.t) - a.k - 1:]         # repeat padding, unused in evaluations
-        array([9999.45597889, 9999.45597889, 9999.45597889, 9999.45597889])
-
-        `spl` and `a` evaluate to the same values:
-
-        >>> spl([2.5, 3.5])
-        array([ 39.64717498, 149.63703598])
-        >>> a([2.5, 3.5])
-        array([ 39.64717498, 149.63703598])
+        array([20002.23910041, 20002.23910041, 20002.23910041, 20002.23910041,
+               20002.23910041])
 
         Slice off the padding to get exactly ``len(a.t) - a.k - 1`` coefficients:
 
         >>> c = a.c[:len(a.t) - a.k - 1]
         >>> len(c)
-        11
+        12
 
         The trimmed coefficients define the same spline, since the padding
         never enters evaluations. Evaluating the spline before (``a``) and
