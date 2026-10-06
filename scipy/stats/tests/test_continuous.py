@@ -1716,7 +1716,7 @@ class TestTransforms:
         X = stats.Binomial(n=10, p=0.5)
         # This is applied at the top level TransformedDistribution,
         # so testing one subclass is enough
-        message = "Transformations are currently supported only for continuous, linear RVs."
+        message = "Transformations are currently supported only for continuous..."
         with pytest.raises(NotImplementedError, match=message):
             stats.exp(X)
 
@@ -2602,7 +2602,7 @@ class TestCircular:
         (operator.mul, (1,)), (operator.truediv, (1,)), (stats.truncate, (1, 2))])
     def test_transform(self, op, args):
         X = stats.VonMises(mu=0, kappa=1)
-        message = "Transformations are currently supported only for continuous, linear RVs."
+        message = "Transformations are currently supported only for continuous..."
         with pytest.raises(NotImplementedError, match=message):
             op(X, *args)
 

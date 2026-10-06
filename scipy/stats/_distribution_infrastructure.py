@@ -4659,7 +4659,8 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
-        if isinstance(X, CircularDistribution) or not isinstance(X, ContinuousDistribution):
+        if (isinstance(X, CircularDistribution)
+                or not isinstance(X, ContinuousDistribution)):
             message = ("Transformations are currently supported only for continuous, "
                        "linear RVs.")
             raise NotImplementedError(message)
