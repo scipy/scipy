@@ -997,7 +997,7 @@ def test_inheritance(xp):
         pass
 
     with warns(RuntimeWarning, match="should implement at least"):
-        assert_raises(TypeError, Empty)
+        Empty()
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
@@ -1009,6 +1009,39 @@ def test_inheritance(xp):
     id3 = Identity(3)
     xp_assert_equal(id3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
     assert_raises(NotImplementedError, id3.rmatvec, xp.asarray([4, 5, 6]))
+
+    class IdentityWithProperties(interface.LinearOperator):
+        def __init__(self, n):
+            super().__init__(xp=xp)
+            self.n = n
+
+        @property
+        def dtype(self):
+            return np.dtype(float)
+
+        @property
+        def shape(self):
+            return (self.n, self.n)
+
+        def _matvec(self, x):
+            return x
+
+    id_wp3 = IdentityWithProperties(3)
+    xp_assert_equal(id_wp3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
+    assert_raises(NotImplementedError, id_wp3.rmatvec, xp.asarray([4, 5, 6]))
+
+    class IdentityManualAttibutes(interface.LinearOperator):
+        def __init__(self, n):
+            super().__init__(xp=xp)
+            self.dtype = np.dtype(float)
+            self.shape = (n, n)
+
+        def _matvec(self, x):
+            return x
+
+    id_ma3 = IdentityManualAttibutes(3)
+    xp_assert_equal(id_ma3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
+    assert_raises(NotImplementedError, id_ma3.rmatvec, xp.asarray([4, 5, 6]))
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
