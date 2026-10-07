@@ -32,6 +32,7 @@ from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
+    xp_assert_less,
 )
 
 lazy_xp_modules = [stats]
@@ -248,20 +249,50 @@ class TestShapiro:
         xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
 
+@make_xp_test_case(stats.anderson)
 class TestAnderson:
-    def test_normal(self):
+
+    @pytest.mark.parametrize('dist',
+                             ['gumbel_l', 'gumbel_r', 'logistic', 'weibull_min'])
+    def test_input_validation_dist_batch(self, dist, xp):
+        rng = np.random.default_rng(95432334703)
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = f"`dist='{dist}'` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, dist, axis=-1)
+
+    def test_input_validation_bad_dist(self, xp):
+        x = xp.ones(10)
+        with pytest.raises(ValueError, match='Invalid distribution'):
+            stats.anderson(x, dist='plate_of_shrimp')
+
+    def test_result_attributes(self, xp):
         rs = RandomState(1234567890)
+        x = rs.standard_exponential(size=50)
+        x = xp.asarray(x)
+        res = stats.anderson(x)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_normal(self, xp, dtype):
+        rs = RandomState(1234567890)
+        dtype = getattr(xp, dtype)
 
         x1 = rs.standard_exponential(size=50)
+        x1 = xp.asarray(x1, dtype=dtype)
         res = stats.anderson(x1)
-        assert res.pvalue <= 0.01
+        xp_assert_equal(res.pvalue, xp.asarray(0.01, dtype=dtype))
 
         x2 = rs.standard_normal(size=50)
+        x2 = xp.asarray(x2, dtype=dtype)
         res = stats.anderson(x2)
-        res.pvalue > 0.05
+        xp_assert_less(-res.pvalue, -xp.asarray(0.05, dtype=dtype))
 
-        v = np.ones(10)
-        v[0] = 0
+        v = xp.ones(10, dtype=dtype)
+        v = xpx.at(v)[0].set(0.)
         A, _ = stats.anderson(v)
         # The expected statistic 3.208057 was computed independently of scipy.
         # For example, in R:
@@ -272,17 +303,24 @@ class TestAnderson:
         #   > result$statistic
         #          A
         #   3.208057
-        assert_allclose(A, 3.208057)
+        xp_assert_close(A, xp.asarray(3.208057, dtype=dtype))
 
-    def test_expon(self):
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_expon(self, xp, dtype):
         rs = RandomState(1234567890)
+        dtype = getattr(xp, dtype)
+
         x1 = rs.standard_exponential(size=50)
         x2 = rs.standard_normal(size=50)
+        x1 = xp.asarray(x1, dtype=dtype)
+        x2 = xp.asarray(x2, dtype=dtype)
+
         A, _ = stats.anderson(x1, 'expon')
-        assert_array_less(A, [1.572, 1.936])  # values from SciPy 1.18
-        with np.errstate(all='ignore'):
-            A, _ = stats.anderson(x2, 'expon')
-        assert A > 1.936  # values from SciPy 1.18
+         # reference values from SciPy 1.18
+        xp_assert_less(A, xp.asarray(1.572, dtype=dtype))
+
+        A, _ = stats.anderson(x2, 'expon')
+        xp_assert_less(-A, -xp.asarray(1.936, dtype=dtype))
 
     def test_gumbel(self):
         # Regression test for gh-6306.  Before that issue was fixed,
@@ -299,16 +337,6 @@ class TestAnderson:
         expected_a2 = -n - np.mean((2*i - 1) * (logcdf + logsf[::-1]))
 
         assert_allclose(a2, expected_a2)
-
-    def test_bad_arg(self):
-        assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
-
-    def test_result_attributes(self):
-        rs = RandomState(1234567890)
-        x = rs.standard_exponential(size=50)
-        res = stats.anderson(x)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
 
     def test_gumbel_l(self):
         # gh-2592, gh-6337
@@ -367,12 +395,47 @@ class TestAnderson:
         m = np.inf
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
+    @pytest.mark.parametrize("dist, seed, statistic, pvalue", [
+        ('norm', 45893496961,
+         [0.64732893065, 0.60961089894, 1.18923899825, 0.74493160203, 0.37722093992],
+         [0.09118613775, 0.11191418347, 0.01, 0.05054289312, 0.15]),
+        ('expon', 45893502399,
+         [1.44862480223, 0.80811541086, 0.95432334703, 1.96676416917, 1.92172696793],
+         [0.03737809713, 0.15, 0.1349146277 , 0.01, 0.01104929362]),
+    ])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_batch(self, dist, seed, statistic, pvalue, dtype, xp):
+        # test_axis_nan_policy throws random data at `anderson`, which will almost
+        # always result in p < 0.01. These seeds were chosen such that `anderson`
+        # from SciPy 1.18 would produce one extreme pvalue (on either end) and
+        # three nontrivial pvalues. The pvalues were interpolated using `np.interp`
+        # with the non-rounded critical values.
+        dtype = getattr(xp, dtype)
+        rng = np.random.default_rng(seed)
+        x = getattr(stats, dist).rvs(size=(5, 100), random_state=rng)
 
+        x = xp.asarray(x, dtype=dtype)
+        res = stats.anderson(x, dist=dist, axis=-1, method='interpolate')
+
+        xp_assert_close(res.statistic, xp.asarray(statistic, dtype=dtype), atol=1e-10)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue, dtype=dtype), atol=1e-10)
+
+
+@make_xp_test_case(stats.anderson)
 class TestAndersonMethod:
-    def test_method_input_validation(self):
+    def test_method_input_validation(self, xp):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
-            stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
+            stats.anderson(xp.asarray([1, 2, 3]), 'norm', method='ekki-ekki')
+
+    def test_method_input_validation_method(self, xp):
+        rng = np.random.default_rng(95432334703)
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = "The provided `method` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, method=stats.MonteCarloMethod(rng=rng), axis=-1)
 
     def test_monte_carlo_method(self):
         rng = np.random.default_rng(94982389149239)
