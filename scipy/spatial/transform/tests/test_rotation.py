@@ -1385,6 +1385,8 @@ def test_mean_compare_axis(xp):
     atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 3e-6
     rng = np.random.default_rng(0)
     q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    # bias towards identity for numerical stability. See #25888
+    q = q * 0.2 + xp.asarray([0.0, 0.0, 0.0, 1.0], dtype=xpx.default_dtype(xp))
     r = Rotation.from_quat(q)
 
     mean_0 = r.mean(axis=0)
