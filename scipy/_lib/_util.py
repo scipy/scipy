@@ -1127,7 +1127,6 @@ def validate_from_signature(names, core_shapes, signature):
     for i, input in enumerate(inputs):
         for j, l in enumerate(input.split(",")):
             input_dim_to_letter[(i, j)] = l
-        inputs[i] = ", ".join(input.split(","))
 
     letter_to_length = {'': ()}
     for i, core_shape in enumerate(core_shapes):
@@ -1135,10 +1134,12 @@ def validate_from_signature(names, core_shapes, signature):
             l = input_dim_to_letter[(i, j)]
             if l in letter_to_length:
                 if letter_to_length[l] != length:
-                    shapes = ", ".join([f"{names[k]}: {core_shapes[k]}"
-                                        for k in range(len(names))])
-                    signatures = ", ".join([f"{names[k]}: ({inputs[k]})"
-                                            for k in range(len(names))])
+                    shapes = ", ".join(
+                        [f"{names[k]}: {core_shapes[k]}"
+                         for k in range(len(names))])
+                    signatures = ", ".join(
+                        [f"{names[k]}: ({inputs[k].replace(",", ", ")})"
+                         for k in range(len(names))])
                     message = (
                         "The core shape(s) of the array argument(s): \n"
                         f"{shapes}\n"
@@ -1281,11 +1282,11 @@ def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
 
             if zero_size_batch or (zero_size_core and (zero_size_fill_ is not None)):
                 if signature is not None:
-                # Raise if core shapes are incompatible
+                    # Raise if core shapes are incompatible
                     sig = (signature(*arrays, *other_args, **kwargs)
                            if callable(signature) else signature)
                     letter_to_length = validate_from_signature(names, core_shapes, sig)
-                # Otherwise, produce the appropriate output
+                    # Otherwise, produce the appropriate output
                     return output_from_signature(
                         arrays, sig, batch_shape, letter_to_length,
                         zero_size_fill_, ignore_dtypes)
