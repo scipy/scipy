@@ -213,6 +213,8 @@ special_ufuncs = [
     "erfcx",
     "erfi",
     "erfinv",
+    "eval_hermite",
+    "eval_hermitenorm",
     "eval_jacobi",
     "eval_sh_jacobi",
     "exp1",

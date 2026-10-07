@@ -24,7 +24,7 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport sqrt, exp, floor, fabs, log, sin, isnan, NAN, M_PI as pi
+from libc.math cimport exp, floor, fabs, log, sin, isnan, NAN, M_PI as pi
 
 from numpy cimport npy_cdouble
 from ._complexstuff cimport (
@@ -382,49 +382,3 @@ cdef inline number_t eval_laguerre(double n, number_t x) noexcept nogil:
 
 cdef inline double eval_laguerre_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_genlaguerre_l(n, 0., x)
-
-#-----------------------------------------------------------------------------
-# Hermite (statistician's)
-#-----------------------------------------------------------------------------
-
-cdef inline double eval_hermitenorm(Py_ssize_t n, double x) noexcept nogil:
-    cdef Py_ssize_t k
-    cdef double y1, y2, y3
-
-    if isnan(x):
-        return x
-
-    if n < 0:
-        sf_error.error(
-            "eval_hermitenorm",
-            sf_error.DOMAIN,
-            "polynomial only defined for nonnegative n",
-        )
-        return NAN
-    elif n == 0:
-        return 1.0
-    elif n == 1:
-        return x
-    else:
-        y3 = 0.0
-        y2 = 1.0
-        for k in range(n, 1, -1):
-            y1 = x*y2 - k*y3
-            y3 = y2
-            y2 = y1
-        return x*y2 - y3
-
-#-----------------------------------------------------------------------------
-# Hermite (physicist's)
-#-----------------------------------------------------------------------------
-
-@cython.cdivision(True)
-cdef inline double eval_hermite(Py_ssize_t n, double x) noexcept nogil:
-    if n < 0:
-        sf_error.error(
-            "eval_hermite",
-            sf_error.DOMAIN,
-            "polynomial only defined for nonnegative n",
-        )
-        return NAN
-    return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)

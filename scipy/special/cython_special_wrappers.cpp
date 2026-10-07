@@ -164,6 +164,10 @@ void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
 }
 
+double xsf_eval_hermite(npy_intp n, double x) { return xsf::eval_hermite(n, x); }
+
+double xsf_eval_hermitenorm(npy_intp n, double x) { return xsf::eval_hermitenorm(n, x); }
+
 double xsf_eval_jacobi(double n, double alpha, double beta, double x) { return xsf::eval_jacobi(n, alpha, beta, x); }
 
 npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x) {

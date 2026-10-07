@@ -78,16 +78,6 @@
             "eval_genlaguerre_l": "pdd->d"
         }
     },
-    "eval_hermite": {
-        "orthogonal_eval.pxd": {
-            "eval_hermite": "pd->d"
-        }
-    },
-    "eval_hermitenorm": {
-        "orthogonal_eval.pxd": {
-            "eval_hermitenorm": "pd->d"
-        }
-    },
     "eval_laguerre": {
         "orthogonal_eval.pxd": {
             "eval_laguerre[double complex]": "dD->D",
