@@ -1850,6 +1850,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     # Separate the permutations from the scalings and then convert to int
     scaling = np.ones_like(ps, dtype=float)
     scaling[lo:hi+1] = ps[lo:hi+1]
+    ps[lo:hi+1] = 1  # the scalings can exceed the int range
 
     # gebal uses 1-indexing
     ps = ps.astype(int, copy=False) - 1
