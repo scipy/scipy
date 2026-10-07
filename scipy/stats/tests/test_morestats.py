@@ -656,6 +656,13 @@ class TestAndersonKSamp:
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue)
 
+    def test_invalid_method(self, xp):
+        rng = np.random.default_rng(20182053007)
+        samples = [rng.random(15), rng.random(15)]
+        message = "`method` must be `None` or an instance of `PermutationMethod`."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp(samples, method='coconut')
+
 
 @make_xp_test_case(stats.ansari)
 class TestAnsari:

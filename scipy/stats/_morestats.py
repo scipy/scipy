@@ -2871,10 +2871,13 @@ def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp
     def statistic(*samples, axis=-1):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    if method is not None:
+    if isinstance(method, stats.PermutationMethod):
         vectorized = (variant == 'continuous')
         res = stats.permutation_test(samples, statistic, **method._asdict(), axis=-1,
                                      alternative='greater', vectorized=vectorized)
+    elif method is not None:
+        message = "`method` must be `None` or an instance of `PermutationMethod`."
+        raise ValueError(message)
 
     # for non-masked arrays, all these calculations are independent of batch size
     H = xp.sum(1. / n)
@@ -2925,6 +2928,7 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
+    # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
     # but initially it doesn't seem worth the extra complexity
 
@@ -2933,70 +2937,46 @@ class _ABW:
         self.m = None
         self.n = None
         self.astart = None
-        self.step = None
         self.total = None
         self.freqs = None
-        self._scores = None
 
-    def _recalc(self, n, m, scores=None):
+    def _recalc(self, n, m):
         """When necessary, recalculate exact distribution."""
-        if scores is not None:
-            scores = np.rint(2 * np.asarray(scores)).astype(np.int64)
-            scores.sort()
-            expected = 2 * np.minimum(np.arange(1, n + m + 1),
-                                      np.arange(n + m, 0, -1))
-            expected.sort()
-            scores = None if np.array_equal(scores, expected) else tuple(scores)
-
-        if n != self.n or m != self.m or scores != self._scores:
+        if n != self.n or m != self.m:
             self.n, self.m = n, m
-            self._scores = scores
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            if scores is None:
-                astart, freqs, _ = gscale(n, m)
-                self.astart = astart  # minimum value of statistic
-                self.step = 1
-                self.freqs = freqs.astype(np.float64)
-            else:
-                # Under the null, every selection of n of the pooled observations
-                # is equally likely.  Form the distribution of the corresponding
-                # sums of doubled midranks; doubling makes all scores integral.
-                scores = np.asarray(scores)
-                max_sum = scores[-n:].sum()
-                counts = np.zeros((n + 1, max_sum + 1), dtype=np.float64)
-                counts[0, 0] = 1
-                upper = 0
-                for i, score in enumerate(scores):
-                    upper = min(upper + score, max_sum)
-                    for j in range(min(i + 1, n), 0, -1):
-                        counts[j, score:upper + 1] += counts[j - 1, :upper-score + 1]
-                min_sum = scores[:n].sum()
-                self.astart = min_sum / 2
-                self.step = 0.5
-                self.freqs = counts[n, min_sum:max_sum + 1]
+            astart, a1, _ = gscale(n, m)
+            self.astart = astart  # minimum value of statistic
+            # Exact distribution of test statistic under null hypothesis
+            # expressed as frequencies/counts/integers to maintain precision.
+            # Stored as floats to avoid overflow of sums.
+            self.freqs = a1.astype(np.float64)
             self.total = self.freqs.sum()  # could calculate from m and n
             # probability mass is self.freqs / self.total;
 
-    def pmf(self, k, n, m, scores=None):
+    def pmf(self, k, n, m):
         """Probability mass function."""
-        self._recalc(n, m, scores)
-        index = (k - self.astart) / self.step
-        ind = (np.floor(index) if self.step == 1 else np.rint(index)).astype(int)
+        self._recalc(n, m)
+        # The convention here is that PMF at k = 12.5 is the same as at k = 12,
+        # -> use `floor` in case of ties.
+        ind = np.floor(k - self.astart).astype(int)
         return self.freqs[ind] / self.total
 
-    def cdf(self, k, n, m, scores=None):
+    def cdf(self, k, n, m):
         """Cumulative distribution function."""
-        self._recalc(n, m, scores)
-        index = (k - self.astart) / self.step
-        ind = (np.ceil(index) if self.step == 1 else np.floor(index)).astype(int)
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.ceil(k - self.astart).astype(int)
         return self.freqs[:ind+1].sum() / self.total
 
-    def sf(self, k, n, m, scores=None):
+    def sf(self, k, n, m):
         """Survival function."""
-        self._recalc(n, m, scores)
-        index = (k - self.astart) / self.step
-        ind = (np.floor(index) if self.step == 1 else np.ceil(index)).astype(int)
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.floor(k - self.astart).astype(int)
         return self.freqs[ind:].sum() / self.total
 
 
@@ -3170,25 +3150,22 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
         method = 'exact' if ((m < 55) and (n < 55) and not repeats) else 'asymptotic'
 
     if method == 'exact':
-        def get_ansari_pvalue(AB, scores):
-            AB = np.asarray(AB)
-            scores = np.asarray(scores).reshape((-1, N))
-            pval = np.empty(AB.size)
-            for i, (statistic, score) in enumerate(zip(AB.flat, scores)):
-                cdf = _abw_state.a.cdf(statistic, n, m, score)
-                sf = _abw_state.a.sf(statistic, n, m, score)
-                if alternative == 'two-sided':
-                    pval[i] = 2.0 * min(cdf, sf)
-                elif alternative == 'greater':
-                    # AB statistic is _smaller_ when ratio of scales is larger,
-                    # so this is the opposite of the usual calculation
-                    pval[i] = cdf
-                else:
-                    pval[i] = sf
-            return pval.reshape(AB.shape)
+        # np.vectorize converts to NumPy here, and we convert back to the result
+        # type before returning
+        cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
+        sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
+        def get_ansari_pvalue(AB):
+            if alternative == 'two-sided':
+                pval = 2.0 * np.minimum(cdf(AB, n, m), sf(AB, n, m))
+            elif alternative == 'greater':
+                # AB statistic is _smaller_ when ratio of scales is larger,
+                # so this is the opposite of the usual calculation
+                pval = cdf(AB, n, m)
+            else:
+                pval = sf(AB, n, m)
+            return pval
 
-        pval = xpx.lazy_apply(get_ansari_pvalue, AB, symrank, shape=AB.shape,
-                              as_numpy=True)
+        pval = xpx.lazy_apply(get_ansari_pvalue, AB, shape=AB.shape)
         pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
         AB = AB[()] if AB.ndim == 0 else AB
         pval = pval[()] if pval.ndim == 0 else pval
