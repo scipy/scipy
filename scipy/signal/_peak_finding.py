@@ -1204,21 +1204,19 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     Find peaks in a 1-D array with wavelet transformation.
 
     This approach for peak identification uses wavelet transformation to
-    identify the locations of sharp peaks in noisy, unsmoothed spectra.
+    identify the locations of sharp peaks in noisy signals.
     Many other approaches are very sensitive to noise, requiring smoothing
-    before locating peaks, but many smoothing algorithms can have a distorting
-    effect on spectra. A wavelet transform preserves only peaks which are
-    similar in shape and `width` to the convolving wavelet, and should be used
-    on unsmoothed data.
+    before locating peaks, but smoothing algorithms can distort peak locations.
+    A wavelet transform preserves only peaks which are similar in shape and
+    width to the convolving wavelet, and should be used on unsmoothed data.
 
     This approach generates wavelet functions defined by `widths` and
-    `wavelet`, and convolves `vector` with them. The result is best visualized
-    as a 2-D plot of `vector` index vs. the convolution of `vector` with the
-    `n`th item of `widths`. In this plot, peaks which persist across many width
-    values form ridge lines in the second dimension. The requirements to be
-    counted as a ridge line are controlled by `max_distances`, `gap_thresh`,
-    and `min_length`. The resulting ridges are considered peaks if they have a
-    signal to noise ratio higher than `min_snr`.
+    `wavelet` and convolves `vector` with them, yielding one `row` of convolved
+    data for each width. The result is best visualized as a 2-D plot of
+    `vector` index vs. ``row[n]``. In this plot, peaks which persist across
+    many width values form ridge lines in the `row` dimension. A ridge line is
+    considered a peak if it meets the conditions of `max_distances`,
+    `gap_thresh`, and `min_length`, and `min_snr`.
 
     Parameters
     ----------
