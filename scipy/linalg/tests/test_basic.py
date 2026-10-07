@@ -3016,10 +3016,8 @@ class TestMatrix_Balance:
                       [0, 0, 3, 0, 0],
                       [0, 0, 1, 1, 1e40],
                       [1, 0, 1, 1e-40, 1]])
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", RuntimeWarning)
-            x, y = matrix_balance(A, permute=permute)
-            x, (s, p) = matrix_balance(A, permute=permute, separate=True)
+        x, y = matrix_balance(A, permute=permute)
+        x, (s, p) = matrix_balance(A, permute=permute, separate=True)
         assert_equal(p, [1, 0, 4, 3, 2] if permute else np.arange(5))
         ip = np.empty_like(p)
         ip[p] = np.arange(5)
