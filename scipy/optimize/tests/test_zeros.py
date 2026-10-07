@@ -984,6 +984,255 @@ def test_maxiter_int_check_gh10236(method):
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
+
+class TestMuller:
+    @pytest.mark.parametrize('roots', [(2, 5), (1j, -1j), (2+3j, -1+2j)])
+    @pytest.mark.parametrize('scale', [1, 1e-200, 1e200, 1j])
+    def test_quadratic(self, roots, scale):
+        # Exact interpolation of any quadratic must find a root in one step.
+        r0, r1 = roots
+
+        def f(z):
+            return scale * (z-r0) * (z-r1)
+
+        res = root_scalar(f, x0=-2, x1=0, x2=3, method='muller', maxiter=1,
+                          options={'frtol': 1e-14})
+        assert res.converged
+        assert res.iterations == 1
+        assert res.function_calls == 4
+        assert min(abs(res.root-r0), abs(res.root-r1)) < 1e-13
+
+    @pytest.mark.parametrize('scale', [1e-310, 1e-150, 1, 1e150, 1e308])
+    def test_abscissa_scaling(self, scale):
+        def normalized(z):
+            return z.real/scale + 1j*(z.imag/scale)
+
+        res = root_scalar(lambda z: normalized(z)**2+1, x0=-scale, x1=0,
+                          x2=scale, method='muller', xtol=0, rtol=1e-14)
+        assert res.converged
+        assert_allclose(normalized(res.root)**2, -1, atol=1e-14)
+
+    @pytest.mark.parametrize('method', [None, 'muller', 'MULLER'])
+    @pytest.mark.parametrize('f, expected', [
+        (lambda z: z**3-2, 2**(1/3)),
+        (lambda z: np.exp(z)-2, np.log(2)),
+        (lambda z: np.cos(z)-z, 0.7390851332151607),
+    ])
+    def test_transcendental(self, method, f, expected):
+        res = root_scalar(f, x0=0.25, x1=0.75, x2=1.5,
+                          method=method, xtol=1e-13)
+        assert res.converged
+        assert res.method == 'muller'
+        assert_allclose(res.root, expected, atol=1e-12)
+        assert abs(f(res.root)) < 1e-12
+
+    @pytest.mark.parametrize('root_index', range(3))
+    def test_initial_root(self, root_index):
+        res = root_scalar(lambda z: z-root_index, x0=0, x1=1, x2=2,
+                          method='muller')
+        assert res.root == root_index
+        assert res.converged
+        assert res.iterations == 0
+        assert res.function_calls == 3
+
+    @pytest.mark.parametrize('types, dtype', [
+        ((int, int, int), np.complex128),
+        ((np.float32,)*3, np.complex64),
+        ((np.complex64,)*3, np.complex64),
+        ((np.float32, np.float64, np.complex64), np.complex128),
+        ((np.longdouble,)*3, np.clongdouble),
+    ])
+    def test_dtype_promotion(self, types, dtype):
+        seen = []
+
+        def f(z):
+            seen.append(z.dtype)
+            return z*z+1
+
+        x0, x1, x2 = (t(v) for t, v in zip(types, [-1, 0, 1]))
+        res = root_scalar(f, x0=x0, x1=x1, x2=x2, method='muller')
+        assert res.converged
+        assert res.root.dtype == dtype
+        assert all(d == dtype for d in seen)
+
+    def test_function_scale_does_not_set_position_tolerance(self):
+        roots = []
+        calls = []
+        for scale in [1e-200, 1, 1e200]:
+            res = root_scalar(lambda z: scale*(z**3-2), x0=0, x1=1, x2=2,
+                              method='muller', xtol=1e-12)
+            assert res.converged
+            roots.append(res.root)
+            calls.append(res.function_calls)
+        assert_allclose(roots, 2**(1/3), atol=1e-12)
+        assert max(calls) - min(calls) <= 1
+
+    def test_position_relative_tolerance(self):
+        kw = dict(x0=0, x1=1e6, x2=2e6, method='muller', maxiter=1, xtol=0)
+
+        def f(z):
+            return (z/1e6)**3-2
+
+        tight = root_scalar(f, rtol=1e-14, **kw)
+        # The first step is ~0.78e6, so use rtol=1 for termination.
+        loose = root_scalar(f, rtol=1, **kw)
+        assert loose.converged
+        assert not tight.converged
+        assert loose.root == tight.root
+
+    @pytest.mark.parametrize('option', ['fatol', 'frtol'])
+    def test_function_tolerance(self, option):
+        kw = dict(x0=0, x1=1, x2=2, method='muller', xtol=0, rtol=0,
+                  maxiter=1)
+
+        def f(z):
+            return z**3-2
+
+        loose = root_scalar(f, options={option: 0.5}, **kw)
+        tight = root_scalar(f, options={option: 1e-14}, **kw)
+        assert loose.converged
+        assert not tight.converged
+        assert loose.root == tight.root
+
+    @pytest.mark.parametrize('scale', [1e-200, 1, 1e200])
+    def test_relative_function_tolerance_rescaling(self, scale):
+        res = root_scalar(lambda z: scale*(z**3-2), x0=0, x1=1, x2=2,
+                          method='muller', xtol=0, maxiter=1,
+                          options={'frtol': 0.5})
+        assert res.converged
+        assert res.iterations == 1
+
+    @pytest.mark.parametrize('missing', ['x0', 'x1', 'x2'])
+    def test_missing_guess(self, missing):
+        kw = dict(x0=0, x1=1, x2=2)
+        kw.pop(missing)
+        with pytest.raises(ValueError, match=f'{missing} must not be None'):
+            root_scalar(lambda z: z*z+1, method='muller', **kw)
+
+    @pytest.mark.parametrize('guesses', [(0, 0, 1), (0, 1, 0), (1, 0, 0)])
+    def test_repeated_guesses(self, guesses):
+        with pytest.raises(ValueError, match='must be different'):
+            root_scalar(lambda z: z*z+1, method='muller',
+                        x0=guesses[0], x1=guesses[1], x2=guesses[2])
+
+    @pytest.mark.parametrize('name', ['x0', 'x1', 'x2'])
+    @pytest.mark.parametrize('value, message', [
+        ([1], 'must be scalars'), (np.inf, 'must be finite'),
+        (np.nan, 'must be finite'),
+    ])
+    def test_invalid_guess(self, name, value, message):
+        kw = dict(x0=0, x1=1, x2=2)
+        kw[name] = value
+        with pytest.raises(ValueError, match=message):
+            root_scalar(lambda z: z*z+1, method='muller', **kw)
+
+    @pytest.mark.parametrize('name', ['xtol', 'rtol', 'fatol', 'frtol'])
+    @pytest.mark.parametrize('value', [-1, np.nan, np.inf, [1, 2]])
+    def test_invalid_tolerance(self, name, value):
+        with pytest.raises(ValueError, match=name):
+            root_scalar(lambda z: z*z+1, x0=0, x1=1, x2=2,
+                        method='muller', options={name: value})
+
+    @pytest.mark.parametrize('maxiter, error', [(0, ValueError), (-1, ValueError),
+                                              (1.5, TypeError)])
+    def test_invalid_maxiter(self, maxiter, error):
+        with pytest.raises(error):
+            root_scalar(lambda z: z*z+1, x0=0, x1=1, x2=2,
+                        method='muller', maxiter=maxiter)
+
+    @pytest.mark.parametrize('value', [np.nan, np.inf, complex(0, np.inf)])
+    def test_nonfinite_function(self, value):
+        res = root_scalar(lambda z: value, x0=0, x1=1, x2=2, method='muller')
+        assert not res.converged
+        assert res.flag == 'value error'
+        assert res.function_calls == 3
+
+    def test_nonfinite_iteration(self):
+        values = iter([2., -1., 3., np.nan])
+        res = root_scalar(lambda z: next(values), x0=0, x1=1, x2=2,
+                          method='muller', xtol=100)
+        assert not res.converged
+        assert res.flag == 'value error'
+        assert res.iterations == 1
+        assert res.function_calls == 4
+
+    def test_nonscalar_function(self):
+        with pytest.raises(ValueError, match='f must return a scalar'):
+            root_scalar(lambda z: [z], x0=0, x1=1, x2=2, method='muller')
+
+    def test_flat_function(self):
+        res = root_scalar(lambda z: 1, x0=0, x1=1, x2=2, method='muller')
+        assert not res.converged
+        assert res.flag == 'convergence error'
+        assert res.iterations == 0
+        assert res.function_calls == 3
+        assert np.isfinite(res.root)
+
+    @pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int32, np.int64])
+    def test_minimum_integer_function(self, dtype):
+        res = root_scalar(lambda z: dtype(np.iinfo(dtype).min),
+                          x0=0, x1=1, x2=2, method='muller')
+        assert not res.converged
+        assert res.flag == 'convergence error'
+
+    def test_subnormal_function_scale(self):
+        res = root_scalar(lambda z: 1e-310*(z*z+1),
+                          x0=-1, x1=0, x2=1, method='muller')
+        assert res.converged
+        assert_allclose(res.root**2, -1, atol=1e-13)
+
+    def test_lower_precision_subnormal_function(self):
+        def f(z):
+            return np.complex64(1e-40) * np.complex64(z*z+1)
+
+        res = root_scalar(f, x0=-1., x1=0., x2=1., method='muller')
+        assert res.converged
+        assert_allclose(res.root**2, -1, atol=1e-7)
+
+    def test_linear_interpolation(self):
+        res = root_scalar(lambda z: 2*z-7, x0=0, x1=1, x2=2, method='muller')
+        assert res.converged
+        assert_allclose(res.root, 3.5)
+
+    def test_maxiter_and_call_count(self):
+        calls = []
+
+        def f(z, a):
+            calls.append(z)
+            return z**3-a
+
+        res = root_scalar(f, args=(2,), x0=0, x1=1, x2=2,
+                          method='muller', maxiter=1, xtol=1e-15)
+        assert not res.converged
+        assert res.iterations == 1
+        assert res.function_calls == len(calls) == 4
+        assert res.root == calls[-1]
+
+    def test_memoized_objective(self):
+        calls = []
+
+        def f(z):
+            calls.append(z)
+            return z*z+1, 2*z
+
+        res = root_scalar(f, x0=-1, x1=0, x2=1, method='muller', fprime=True)
+        assert res.converged
+        assert res.function_calls == len(calls)
+
+    def test_old_positional_signature(self):
+        # New x2 must not displace xtol, rtol, maxiter, or options.
+        res = root_scalar(lambda z: z*z-2, (), 'secant', None, None, None,
+                          1, 2, 1e-12, 0, 50, {})
+        assert res.converged
+        assert_allclose(res.root, np.sqrt(2), atol=1e-12)
+
+    def test_show_options(self):
+        doc = optimize.show_options('root_scalar', 'muller', disp=False)
+        assert 'frtol' in doc
+        assert 'x2' in doc
+
+
+
 @pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
                                     zeros.brentq, zeros.brenth])
 def test_bisect_special_parameter(method):
