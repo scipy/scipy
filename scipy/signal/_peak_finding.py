@@ -1203,10 +1203,22 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     """
     Find peaks in a 1-D array with wavelet transformation.
 
-    The general approach is to smooth `vector` by convolving it with
-    `wavelet(width)` for each width in `widths`. Relative maxima which
-    appear at enough length scales, and with sufficiently high SNR, are
-    accepted.
+    This approach for peak identification uses wavelet transformation to
+    identify the locations of sharp peaks in noisy, unsmoothed spectra.
+    Many other approaches are very sensitive to noise, requiring smoothing
+    before locating peaks, but many smoothing algorithms can have a distorting
+    effect on spectra. A wavelet transform preserves only peaks which are
+    similar in shape and `width` to the convolving wavelet, and should be used
+    on unsmoothed data.
+
+    This approach generates wavelet functions defined by `widths` and
+    `wavelet`, and convolves `vector` with them. The result is best visualized
+    as a 2-D plot of `vector` index vs. the convolution of `vector` with the
+    `n`th item of `widths`. In this plot, peaks which persist across many width
+    values form ridge lines in the second dimension. The requirements to be
+    counted as a ridge line are controlled by `max_distances`, `gap_thresh`,
+    and `min_length`. The resulting ridges are considered peaks if they have a
+    signal to noise ratio higher than `min_snr`.
 
     Parameters
     ----------
@@ -1223,9 +1235,10 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         (`width`) of the wavelet. Should be normalized and symmetric.
         Default is the ricker wavelet.
     max_distances : ndarray, optional
-        At each row, a ridge line is only connected if the relative max at
-        ``row[n]`` is within ``max_distances[n]`` from the relative max at
-        ``row[n+1]``.  Default value is ``widths/4``.
+        At each row, a ridge line is only connected if the relative amplitude
+        of the convolved signal at ``row[n]`` is within ``max_distances[n]``
+        of the relative amplitude at ``row[n+1]``.  Default value is
+        ``widths/4``.
     gap_thresh : float, optional
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
