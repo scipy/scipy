@@ -319,8 +319,7 @@ class TestAnderson:
          # reference values from SciPy 1.18
         xp_assert_less(A, xp.asarray(1.572, dtype=dtype))
 
-        with np.errstate(all='ignore'):
-            A, _ = stats.anderson(x2, 'expon')
+        A, _ = stats.anderson(x2, 'expon')
         xp_assert_less(-A, -xp.asarray(1.936, dtype=dtype))
 
     def test_gumbel(self):

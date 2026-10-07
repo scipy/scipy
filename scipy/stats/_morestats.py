@@ -2346,7 +2346,11 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-@xp_capabilities()
+@xp_capabilities(
+    skip_backends=[('dask.array', 'no take_along_axis')],
+    extra_note=("Only `dist='norm'` and `dist='expon'` with `method='interpolate'` "
+                "are implemented for non-NumPy arrays.")
+)
 @_axis_nan_policy_factory(SignificanceResult)
 def anderson(x, dist='norm', *, method="interpolate", axis=0):
     """Anderson-Darling test for data coming from a particular distribution.
@@ -2365,18 +2369,20 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
     dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
-        same distribution.
+        same distribution. Only 'norm' and 'expon' are compatible with batched input
+        (multidimensional `x`).
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
-        If `method` is ``"interpolated"``, the p-value is interpolated from
-        pre-calculated tables (without extrapolating).
+        If `method` is ``"interpolate"``, the p-value is interpolated from
+        pre-calculated tables (without extrapolating). This is the only method
+        implemented for batched input (multidimensional `x`).
         If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
 
     Returns
     -------
-    result : AndersonResult
+    result : SignificanceResult
         If `method` is provided, this is an object with the following attributes:
 
         statistic : float
@@ -2464,20 +2470,21 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
     x = xp.asarray(x)
 
     if dist not in {'norm', 'expon'}:
+        prefix = f"`dist='{dist}'` is not implemented for"
         if not is_numpy(xp):
-            message = f"`dist='{dist}'` is not implemented for the provided array type."
+            message = f"{prefix} the provided array type."
             raise NotImplementedError(message)
         elif x.ndim > 1:
-            message = f"`dist='{dist}'` is not implemented for batched input."
+            message = f"{prefix} batched input."
             raise NotImplementedError(message)
 
     if method != 'interpolate':
+        prefix = "The provided `method` is not implemented for"
         if not is_numpy(xp):
-            message = ("The provided `method` is not "
-                       "implemented for the provided array type.")
+            message = f"{prefix} the provided array type."
             raise NotImplementedError(message)
         elif x.ndim > 1:
-            message = "The provided `method` is not implemented for batched input."
+            message = f"{prefix} batched input."
             raise NotImplementedError(message)
 
     y = xp.sort(x, axis=-1)
