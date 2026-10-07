@@ -191,6 +191,8 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_hermite_doc;
+extern const char *eval_hermitenorm_doc;
 extern const char *eval_jacobi_doc;
 extern const char *eval_sh_jacobi_doc;
 extern const char *exp10_doc;
@@ -769,6 +771,16 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
+
+    PyObject *eval_hermite = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ld_d>(xsf::eval_hermite), static_cast<xsf::numpy::qd_d>(xsf::eval_hermite)},
+        "eval_hermite", eval_hermite_doc);
+    PyModule_AddObjectRef(module, "eval_hermite", eval_hermite);
+
+    PyObject *eval_hermitenorm = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ld_d>(xsf::eval_hermitenorm), static_cast<xsf::numpy::qd_d>(xsf::eval_hermitenorm)},
+        "eval_hermitenorm", eval_hermitenorm_doc);
+    PyModule_AddObjectRef(module, "eval_hermitenorm", eval_hermitenorm);
 
     PyObject *eval_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::iddd_d>(xsf::eval_jacobi),

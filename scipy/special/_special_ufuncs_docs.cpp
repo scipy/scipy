@@ -2089,6 +2089,99 @@ const char *erfinv_doc = R"(
 
     )";
 
+const char *eval_hermite_doc = R"(
+    eval_hermite(n, x, out=None)
+
+    Evaluate physicist's Hermite polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
+    [AS]_ or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    H : scalar or ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    hermite : physicist's Hermite polynomial object
+    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
+
+    )";
+
+const char *eval_hermitenorm_doc = R"(
+    eval_hermitenorm(n, x, out=None)
+
+    Evaluate probabilist's (normalized) Hermite polynomial at a
+    point.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
+    [AS]_ or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    He : scalar or ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    hermitenorm : probabilist's Hermite polynomial object
+    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    eval_hermite : evaluate physicist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
+
+    )";
+
 const char *eval_jacobi_doc = R"(
     eval_jacobi(n, alpha, beta, x, out=None)
 

@@ -1177,6 +1177,8 @@ cdef extern from r"cython_special_wrappers.h":
     void special_airye(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void special_cairye(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
 
+    npy_double xsf_eval_hermite(npy_intp, npy_double) nogil
+    npy_double xsf_eval_hermitenorm(npy_intp, npy_double) nogil
     npy_double xsf_eval_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
     npy_double xsf_eval_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
@@ -1564,14 +1566,6 @@ cdef _proto_eval_genlaguerre_double__t *_proto_eval_genlaguerre_double__t_var = 
 from .orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
 ctypedef double _proto_eval_genlaguerre_l_t(Py_ssize_t, double, double) noexcept nogil
 cdef _proto_eval_genlaguerre_l_t *_proto_eval_genlaguerre_l_t_var = &_func_eval_genlaguerre_l
-
-from .orthogonal_eval cimport eval_hermite as _func_eval_hermite
-ctypedef double _proto_eval_hermite_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_hermite_t *_proto_eval_hermite_t_var = &_func_eval_hermite
-
-from .orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
-ctypedef double _proto_eval_hermitenorm_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
 
 from .orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) noexcept nogil
@@ -2145,11 +2139,11 @@ cpdef Dd_number_t eval_genlaguerre(dlp_number_t x0, double x1, Dd_number_t x2) n
 
 cpdef double eval_hermite(Py_ssize_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.eval_hermite"""
-    return _func_eval_hermite(x0, x1)
+    return xsf_eval_hermite(<npy_intp>x0, x1)
 
 cpdef double eval_hermitenorm(Py_ssize_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.eval_hermitenorm"""
-    return _func_eval_hermitenorm(x0, x1)
+    return xsf_eval_hermitenorm(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_jacobi"""
