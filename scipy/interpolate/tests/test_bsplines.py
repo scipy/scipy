@@ -4008,12 +4008,29 @@ class TestMakeLSQNdBSplineFromGrid:
             _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w[:-1])
 
 
+@pytest.mark.parametrize(
+    "k, degrees",
+    [(1, (1, 1)), (2, (2, 2)), (3, (3, 3)), ((2, 3), (2, 3))],
+)
+@pytest.mark.parametrize("weighted", [False, True])
+@pytest.mark.parametrize(
+    "solver, solver_args",
+    [
+        pytest.param(
+            ssl.lsqr,
+            {"atol": 1e-12, "btol": 1e-12, "iter_lim": 200},
+            id="lsqr",
+        ),
+        pytest.param(
+            ssl.lsmr,
+            {"atol": 1e-12, "btol": 1e-12, "maxiter": 200},
+            id="lsmr",
+        ),
+    ],
+)
 class TestMakeLSQNdBSplinePublicAPI:
-    @pytest.mark.parametrize("data_layout", ["scattered", "grid"])
-    @pytest.mark.parametrize("k", [1, 2, 3, (2, 3)])
-    @pytest.mark.parametrize("weighted", [False, True])
-    @pytest.mark.parametrize("solver", [ssl.lsqr, ssl.lsmr])
-    def test_public_arguments(self, data_layout, k, weighted, solver):
+    @staticmethod
+    def _make_test_data(degrees):
         points = (np.linspace(-1.0, 1.0, 11), np.linspace(-2.0, 2.0, 12))
         x0, x1 = np.meshgrid(*points, indexing="ij")
         values = np.stack(
@@ -4023,7 +4040,6 @@ class TestMakeLSQNdBSplinePublicAPI:
             ),
             axis=-1,
         )
-        degrees = (k, k) if np.isscalar(k) else k
         bounds = ((-1.0, 1.0), (-2.0, 2.0))
         t = tuple(
             np.r_[
@@ -4034,32 +4050,6 @@ class TestMakeLSQNdBSplinePublicAPI:
             for degree, (lo, hi) in zip(degrees, bounds)
         )
         w_grid = 1.0 + 0.1 * (x0 + 1.0) + 0.05 * (x1 + 2.0)
-        w = w_grid if weighted else None
-        solver_args = {"atol": 1e-12, "btol": 1e-12}
-        if solver is ssl.lsqr:
-            solver_args["iter_lim"] = 200
-        else:
-            solver_args["maxiter"] = 200
-
-        if data_layout == "scattered":
-            x = np.column_stack((x0.ravel(), x1.ravel()))
-            y = values.reshape((-1, values.shape[-1]))
-            if w is not None:
-                w = w.ravel()
-            spl = make_lsq_ndbspline(
-                x, y, t, k=k, w=w, solver=solver, **solver_args
-            )
-        else:
-            spl = make_lsq_ndbspline_from_grid(
-                points,
-                values,
-                t,
-                k=k,
-                w=w,
-                solver=solver,
-                **solver_args,
-            )
-
         x_eval = np.array([[-0.75, -1.5], [0.0, 0.25], [0.8, 1.25]])
         expected = np.column_stack(
             (
@@ -4070,10 +4060,45 @@ class TestMakeLSQNdBSplinePublicAPI:
                 -1.0 + 0.5 * x_eval[:, 0] + 0.75 * x_eval[:, 1],
             )
         )
+        return points, x0, x1, values, t, w_grid, x_eval, expected
 
-        assert spl.k == degrees
+    @staticmethod
+    def _assert_fit(spl, degrees, x_eval, expected):
         assert isinstance(spl, NdBSpline)
+        assert spl.k == degrees
         xp_assert_close(spl(x_eval), expected, atol=1e-10)
+
+    def test_scattered_arguments(
+        self, k, degrees, weighted, solver, solver_args
+    ):
+        data = self._make_test_data(degrees)
+        _, x0, x1, values, t, w_grid, x_eval, expected = data
+        x = np.column_stack((x0.ravel(), x1.ravel()))
+        y = values.reshape((-1, values.shape[-1]))
+        w = w_grid.ravel() if weighted else None
+
+        spl = make_lsq_ndbspline(
+            x, y, t, k=k, w=w, solver=solver, **solver_args
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
+
+    def test_grid_arguments(self, k, degrees, weighted, solver, solver_args):
+        data = self._make_test_data(degrees)
+        points, _, _, values, t, w_grid, x_eval, expected = data
+        w = w_grid if weighted else None
+
+        spl = make_lsq_ndbspline_from_grid(
+            points,
+            values,
+            t,
+            k=k,
+            w=w,
+            solver=solver,
+            **solver_args,
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
 
 
 class TestMakeND:
