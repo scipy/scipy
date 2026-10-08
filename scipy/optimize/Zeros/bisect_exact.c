@@ -42,9 +42,17 @@ bisect_exact(callback_type f, double xa, double xb, double xtol, double rtol,
             xa = copysign(0.0, xb);
         }
     }
-    
     memcpy(&xa_int,&xa,sizeof xa_int);
     memcpy(&xb_int,&xb,sizeof xb_int);
+    if(xa_int>xb_int){
+        uint64_t temp=xa_int;
+        xa_int=xb_int;
+        xb_int=temp;
+
+        double f_temp=fa;
+        fa=fb;
+        fb=f_temp;
+    }
     for (i=0; i<iter; i++) {
         solver_stats->iterations++;
         xm_int = (xb_int-xa_int)/2+xa_int;
@@ -60,6 +68,7 @@ bisect_exact(callback_type f, double xa, double xb, double xtol, double rtol,
         memcpy(&xb,&xb_int,sizeof xb);
         double dm = xa-xb;
         if(fm==0 || fabs(dm) < xtol + rtol*fabs(xm) || xb_int-xa_int<=1){
+            solver_stats->error_num = CONVERGED;
             return xm;
         }
     }

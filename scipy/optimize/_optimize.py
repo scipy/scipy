@@ -4093,7 +4093,8 @@ def show_options(solver=None, method=None, disp=True):
         ),
         'root_scalar': (
             ('bisect', 'scipy.optimize._root_scalar._root_scalar_bisect_doc'),
-            ('bisect_exact', 'scipy.optimize._root_scalar._root_scalar_bisect_exact_doc'),
+            ('bisect_exact',
+             'scipy.optimize._root_scalar._root_scalar_bisect_exact_doc'),
             ('brentq', 'scipy.optimize._root_scalar._root_scalar_brentq_doc'),
             ('brenth', 'scipy.optimize._root_scalar._root_scalar_brenth_doc'),
             ('ridder', 'scipy.optimize._root_scalar._root_scalar_ridder_doc'),
