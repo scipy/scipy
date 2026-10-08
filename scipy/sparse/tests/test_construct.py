@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_,
         assert_array_equal, assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._testutils import check_free_memory
+from .test_base import with_64bit_maxval_limit
 
 from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
@@ -19,8 +19,6 @@ from scipy.sparse import (csr_matrix, coo_matrix,
 from scipy.sparse._construct import rand as sprand
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
-
-from .test_base import with_64bit_maxval_limit
 
 #TODO check whether format=XXX is respected
 
