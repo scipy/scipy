@@ -39,5 +39,6 @@ class TestMyNormal(DistributionsTest):
             return super().test_purported_distribution(valid_dist_x)
 
     @pytest.mark.xslow
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case):
         return super().test_lmoment(case, tol_override={'atol': 1e-9})

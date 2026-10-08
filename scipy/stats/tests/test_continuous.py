@@ -392,6 +392,7 @@ class Test_LogUniform(DistributionsTest):
         np.testing.assert_allclose(dist.pdf(x), stats.loguniform(dist.a, dist.b).pdf(x))
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case):
         return super().test_lmoment(case)
 

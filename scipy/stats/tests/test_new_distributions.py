@@ -94,6 +94,7 @@ class TestNormal(DistributionsTest):
     def test_logpdf(self, case):
         return super().test_logpdf(case)
 
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case):
         return super().test_lmoment(case, tol_override={'atol': 1e-8})
 
