@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, log, arange, sort, amin, amax, sqrt, array,
                    exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
@@ -20,6 +20,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_jax,
     is_dask,
+    xp_interp,
     xp_size,
     xp_promote,
     xp_result_type,
@@ -31,8 +32,7 @@ from scipy._lib._array_api import (
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
-from ._fit import FitResult
-from ._stats_py import (_get_pvalue, SignificanceResult,
+from ._stats_py import (_get_pvalue, SignificanceResult, _SimpleExponential,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency  # noqa:F401
 from . import distributions
@@ -2346,24 +2346,13 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-AndersonResult = _make_tuple_bunch('AndersonResult',
-                                   ['statistic', 'critical_values',
-                                    'significance_level'], ['fit_result'])
-
-
-_anderson_warning_message = (
-"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
-`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
-tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
-p-value via Monte Carlo simulation. When `method` is specified, the result object will
-include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
-or `fit_result`. Beginning in 2.0.0, these other attributes will no longer be
-available, and a p-value will always be computed according to one of the available
-`method` options.""".replace('\n', ' '))
-
-
-@xp_capabilities(np_only=True)
-def anderson(x, dist='norm', *, method=None):
+@xp_capabilities(
+    skip_backends=[('dask.array', 'no take_along_axis')],
+    extra_note=("Only `dist='norm'` and `dist='expon'` with `method='interpolate'` "
+                "are implemented for non-NumPy arrays.")
+)
+@_axis_nan_policy_factory(SignificanceResult)
+def anderson(x, dist='norm', *, method="interpolate", axis=0):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2380,27 +2369,20 @@ def anderson(x, dist='norm', *, method=None):
     dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
-        same distribution.
+        same distribution. Only 'norm' and 'expon' are compatible with batched input
+        (multidimensional `x`).
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
-        If `method` is ``"interpolated"``, the p-value is interpolated from
-        pre-calculated tables.
+        If `method` is ``"interpolate"``, the p-value is interpolated from
+        pre-calculated tables (without extrapolating). This is the only method
+        implemented for batched input (multidimensional `x`).
         If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
 
-        .. versionadded:: 1.17.0
-            If `method` is not specified, `anderson` will emit a ``FutureWarning``
-            specifying that the user must opt into a p-value calculation method.
-            When `method` is specified, the object returned will include a ``pvalue``
-            attribute, but no ``critical_value``, ``significance_level``, or
-            ``fit_result`` attributes. Beginning in 2.0.0, these other attributes will
-            no longer be available, and a p-value will always be computed according to
-            one of the available `method` options.
-
     Returns
     -------
-    result : AndersonResult
+    result : SignificanceResult
         If `method` is provided, this is an object with the following attributes:
 
         statistic : float
@@ -2409,51 +2391,12 @@ def anderson(x, dist='norm', *, method=None):
             The p-value corresponding with the test statistic, calculated according to
             the specified `method`.
 
-        If `method` is unspecified, this is an object with the following attributes:
-
-        statistic : float
-            The Anderson-Darling test statistic.
-        critical_values : list
-            The critical values for this distribution.
-        significance_level : list
-            The significance levels for the corresponding critical values
-            in percents.  The function returns critical values for a
-            differing set of significance levels depending on the
-            distribution that is being tested against.
-        fit_result : `~scipy.stats._result_classes.FitResult`
-            An object containing the results of fitting the distribution to
-            the data.
-
-        .. deprecated:: 1.17.0
-            The tuple-unpacking behavior of the return object and attributes
-            ``critical_values``, ``significance_level``, and ``fit_result`` are
-            deprecated. Beginning in SciPy 2.0.0, these features will no longer be
-            available, and the object returned will have attributes ``statistic`` and
-            ``pvalue``.
-
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
 
     Notes
     -----
-    Critical values provided when `method` is unspecified are for the following
-    significance levels:
-
-    normal/exponential
-        15%, 10%, 5%, 2.5%, 1%
-    logistic
-        25%, 10%, 5%, 2.5%, 1%, 0.5%
-    gumbel_l / gumbel_r
-        25%, 10%, 5%, 2.5%, 1%
-    weibull_min
-        50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
-
-    If the returned statistic is larger than these critical values then
-    for the corresponding significance level, the null hypothesis that
-    the data come from the chosen distribution can be rejected.
-    The returned statistic is referred to as 'A2' in the references.
-
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
     conditions for a maximum likelihood estimate have been verified and
@@ -2517,24 +2460,62 @@ def anderson(x, dist='norm', *, method=None):
 
     if dist not in dists:
         raise ValueError(f"Invalid distribution; dist must be in {dists}.")
-    y = sort(x)
-    xbar = np.mean(x, axis=0)
-    N = len(y)
+
+    if not((method == 'interpolate') or isinstance(method, stats.MonteCarloMethod)):
+        message = ("`method` must be either 'interpolate' "
+                   "or an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+
+    if dist not in {'norm', 'expon'}:
+        prefix = f"`dist='{dist}'` is not implemented for"
+        if not is_numpy(xp):
+            message = f"{prefix} the provided array type."
+            raise NotImplementedError(message)
+        elif x.ndim > 1:
+            message = f"{prefix} batched input."
+            raise NotImplementedError(message)
+
+    if method != 'interpolate':
+        prefix = "The provided `method` is not implemented for"
+        if not is_numpy(xp):
+            message = f"{prefix} the provided array type."
+            raise NotImplementedError(message)
+        elif x.ndim > 1:
+            message = f"{prefix} batched input."
+            raise NotImplementedError(message)
+
+    y = xp.sort(x, axis=-1)
+    y = xp_promote(y, force_floating=True, xp=xp)
+    dtype = y.dtype
+    device = xp_device(y)
+    xbar = xp.mean(y, axis=-1, keepdims=True)
+    N_int = y.shape[-1]
+    N = xp.asarray(N_int, dtype=dtype, device=device)
+
+    if N_int == 0:  # only needed for axis_nan_policy testing
+        NaN = xp.squeeze(xp.full_like(xbar, xp.nan), axis=-1)
+        return SignificanceResult(statistic=NaN, pvalue=NaN)
+
     if dist == 'norm':
-        s = np.std(x, ddof=1, axis=0)
+        s = xp.std(x, correction=1, axis=-1, keepdims=True)
         w = (y - xbar) / s
-        fit_params = xbar, s
-        logcdf = distributions.norm.logcdf(w)
-        logsf = distributions.norm.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_norm / (1.0 + 0.75/N + 2.25/N/N), 3)
+        logcdf = _SimpleNormal().logcdf(w)
+        logsf = _SimpleNormal().logsf(w)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
+        Avals_norm = xp.asarray(_Avals_norm, dtype=dtype, device=device)
+        critical = Avals_norm / (1.0 + 0.75/N + 2.25/N/N)
     elif dist == 'expon':
         w = y / xbar
-        fit_params = 0, xbar
-        logcdf = distributions.expon.logcdf(w)
-        logsf = distributions.expon.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
+        logcdf = xp.where(w > 0, _SimpleExponential().logcdf(w), -math.inf)
+        logsf = xp.where(w > 0, _SimpleExponential().logsf(w), 0)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
+        Avals_expon = xp.asarray(_Avals_expon, dtype=dtype, device=device)
+        critical = Avals_expon / (1.0 + 0.6/N)
+
+    # Other distributions are NumPy-only for now
     elif dist == 'logistic':
         def rootfunc(ab, xj, N):
             a, b = ab
@@ -2544,30 +2525,27 @@ def anderson(x, dist='norm', *, method=None):
                    np.sum(tmp*(1.0-tmp2)/(1+tmp2), axis=0) + N]
             return array(val)
 
-        sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
+        sol0 = array([np.squeeze(xbar, axis=-1), np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
-        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
-        critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
+        critical = _Avals_logistic / (1.0 + 0.25/N)
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
-        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = _Avals_gumbel / (1.0 + 0.2/sqrt(N))
     elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
-        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = _Avals_gumbel / (1.0 + 0.2/sqrt(N))
     elif dist == 'weibull_min':
         message = ("Critical values of the test statistic are given for the "
                    "asymptotic distribution. These may not be accurate for "
@@ -2584,33 +2562,19 @@ def anderson(x, dist='norm', *, method=None):
         c = 1 / m  # m and c are as used in [7]
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _get_As_weibull(c)
-        # Goodness-of-fit tests should only be used to provide evidence
-        # _against_ the null hypothesis. Be conservative and round up.
-        critical = np.round(critical + 0.0005, decimals=3)
 
-    i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
-
-    # FitResult initializer expects an optimize result, so let's work with it
-    message = '`anderson` successfully fit the distribution to the data.'
-    res = optimize.OptimizeResult(success=True, message=message)
-    res.x = np.array(fit_params)
-    fit_result = FitResult(getattr(distributions, dist), y,
-                           discrete=False, res=res)
-
-    if method is None:
-        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
-        return AndersonResult(A2, critical, sig, fit_result=fit_result)
+    i = xp.arange(1, N_int + 1, device=device, dtype=dtype)
+    A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + xp.flip(logsf, axis=-1)),
+                     axis=-1, keepdims=False)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
-        pvalue = np.interp(A2, critical, sig)
-    elif isinstance(method, stats.MonteCarloMethod):
-        pvalue = _anderson_simulate_pvalue(x, dist, method)
+        pvalue = xp_interp(xpx.atleast_nd(A2, ndim=1), critical, sig, xp=xp)
+        pvalue = xp.reshape(pvalue, A2.shape)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     else:
-        message = ("`method` must be either 'interpolate' or "
-                   "an instance of `MonteCarloMethod`.")
-        raise ValueError(message)
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+
     return SignificanceResult(statistic=A2, pvalue=pvalue)
 
 
@@ -2777,7 +2741,7 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
         instance of `PermutationMethod`, the p-value is computed using
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
-        from tabulated values.
+        from tabulated values (without extrapolating).
 
     Returns
     -------

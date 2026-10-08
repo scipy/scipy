@@ -10228,6 +10228,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 1:
         return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
+        if np.all(np.isfinite(deltas)):
+            # Scale before taking the norm to avoid squaring tiny CDF gaps.
+            return np.hypot.reduce((u_cdf - v_cdf) * np.sqrt(deltas))
+        # Preserve existing NaN/inf behavior for non-finite support gaps.
         return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
@@ -11235,6 +11239,12 @@ class _SimpleNormal:
     def sf(self, x):
         return special.ndtr(-x)
 
+    def logcdf(self, x):
+        return special.log_ndtr(x)
+
+    def logsf(self, x):
+        return special.log_ndtr(-x)
+
     def isf(self, x):
         return -special.ndtri(x)
 
@@ -11304,3 +11314,36 @@ class _SimpleF:
 
     def sf(self, x):
         return special.fdtrc(self.dfn, self.dfd, x)
+
+
+def _log1mexp(x):
+    r"""Compute the log of the complement of the exponential"""
+    # adapted from gh-19021 (https://github.com/scipy/scipy/issues/19021)
+
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return special._ufuncs._log1mexp(x)
+
+    def f1(x):
+        # good for exp(x) close to 0
+        return xp.log1p(-xp.exp(x))
+
+    def f2(x):
+        # good for exp(x) close to 1
+        return xp.real(xp.log(-xp.expm1(x + 0j)))
+
+    x = xp_promote(x, force_floating=True, xp=xp)
+    res = xpx.apply_where(x < -1, (x,), f1, f2)
+    return res[()] if res.ndim == 0 else res
+
+
+class _SimpleExponential:
+    # A very simple, array-API compatible exponential distribution for use in
+    # `anderson` tests. May be replaced by new infrastructure Exponential
+    # distribution in due time.
+
+    def logcdf(self, x):
+        return _log1mexp(-x)
+
+    def logsf(self, x):
+        return -x

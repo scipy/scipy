@@ -14,6 +14,7 @@ from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy._external import array_api_extra as xpx
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
+from scipy.differentiate import derivative
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize import elementwise
 from scipy.stats._probability_distribution import _ProbabilityDistribution
@@ -156,7 +157,8 @@ class _Domain(ABC):
         Used for generating documentation.
 
     """
-    symbols = {np.inf: r"\infty", -np.inf: r"-\infty", np.pi: r"\pi", -np.pi: r"-\pi"}
+    symbols = {np.inf: r"\infty", -np.inf: r"-\infty",
+               np.pi: r"\pi", -np.pi: r"-\pi", 2*np.pi: r"2\pi"}
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
@@ -887,6 +889,9 @@ def _set_invalid_nan(f):
     # relevant to discrete distributions only
     replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
     cdflike = {'_cdf1', '_logcdf1', '_ccdf1', '_logccdf1'}
+    # relevant to circular distributions only
+    wrap_unit = {'icdf', 'iccdf'}
+    no_unwrap = {'pdf', 'logpdf', 'pmf', 'logpmf'}
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -897,6 +902,7 @@ def _set_invalid_nan(f):
         x = np.asarray(x)
         dtype = self._dtype
         shape = self._shape
+        circular = isinstance(self, CircularDistribution)
         discrete = isinstance(self, DiscreteDistribution)
         discrete_cdflike = discrete and method_name in cdflike
 
@@ -922,6 +928,20 @@ def _set_invalid_nan(f):
                 raise ValueError(message) from e
 
         low, high = endpoints.get(method_name, self.support())
+
+        if circular:
+            x = np.array(x, dtype=dtype, copy=True)  # ideally, avoid multiple copies
+            x[np.isinf(x)] = np.nan
+            a, b = self.support()  # not the same as low, high for inverse methods
+            period = b - a
+            if method_name in wrap_unit:
+                turn = x // 1
+                x = x % 1
+            else:
+                turn = (x - a) // period
+                x = (x - a) % period + a
+            # much of the code below that deals with high/low values could be skipped
+            # leaving it untouched while adding circular distributions; optimize later
 
         # Check for arguments outside of domain. They'll be replaced with NaNs,
         # and the result will be set to the appropriate value.
@@ -1011,11 +1031,15 @@ def _set_invalid_nan(f):
             res[mask_high_endpoint] = replace_high_endpoint
 
         # Clip probabilities to [0, 1]
-        if method_name in clip:
+        if not circular and method_name in clip:
             res = np.clip(res, 0., 1.)
-        elif method_name in clip_log:
+        elif not circular and method_name in clip_log:
             res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
+
+        if circular and method_name not in no_unwrap:
+            turn = -turn if method_name in {'_ccdf1', 'iccdf'} else turn
+            res += turn * period if method_name in wrap_unit else turn
 
         return res[()]
 
@@ -1349,17 +1373,21 @@ def _generate_example(dist_family):
     >>> x = {x}
     >>> X.pdf(x), X.pmf(x)
     {X.pdf(x), X.pmf(x)}
+    """
 
+    if not issubclass(dist_family, CircularDistribution):
+        example += """
     The cumulative distribution function, its complement, and the logarithm
     of these functions are evaluated similarly.
 
     >>> np.allclose(np.exp(X.logccdf(x)), 1 - X.cdf(x))
     True
-    """
+        """
 
-    # When two-arg CDF is implemented for DiscreteDistribution, consider removing
-    # the special-casing here.
-    if issubclass(dist_family, ContinuousDistribution):
+    # When two-arg CDF is implemented for circular and discrete distributions, consider
+    # removing the special-casing here.
+    if (issubclass(dist_family, ContinuousDistribution)
+            and not issubclass(dist_family, CircularDistribution)):
         example_continuous = f"""
     The inverse of these functions with respect to the argument ``x`` is also
     available.
@@ -1391,11 +1419,14 @@ def _generate_example(dist_family):
 
     >>> X.skewness(), X.kurtosis()
     {X.skewness(), X.kurtosis()}
+    """
 
+    if not issubclass(dist_family, CircularDistribution):
+        example += """
     >>> np.allclose(X.moment(order=6, kind='standardized'),
     ...             X.moment(order=6, kind='central') / X.variance()**3)
     True
-    """
+        """
 
     # When logentropy is implemented for DiscreteDistribution, remove special-casing
     if issubclass(dist_family, ContinuousDistribution):
@@ -2001,6 +2032,19 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Algorithms
 
+    def _differentiation(self, f, x, bounds=None, args=None, params=None):
+        a, b = self._support(**params) if bounds is None else bounds
+        x = x.real  # logentropy makes dtype complex
+        step = np.minimum(0.5, (b - a)/2)
+        direction = -(np.sign(x - a - step) + np.sign(x - b + step))
+        args = [] if args is None else args
+        params = {} if params is None else params
+        args = np.broadcast_arrays(*args)
+        rtol = None if _isnull(self.tol) else self.tol
+        res = derivative(f, x, initial_step=step, step_direction=np.sign(direction),
+                         args=args, kwargs=params, tolerances={'rtol': rtol})
+        return res.df
+
     def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
         # Performs numerical integration/summation between limits or over support.
         a, b = self._support(**params) if limits is None else limits
@@ -2021,7 +2065,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
+        p = p.real
+
         xmin, xmax = self._support(**params) if bounds is None else bounds
+        xmin = np.asarray(xmin, dtype=self._dtype)
+        xmax = np.asarray(xmax, dtype=self._dtype)
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p
@@ -2038,6 +2086,30 @@ class UnivariateDistribution(_ProbabilityDistribution):
         tolerances = dict(xrtol=xrtol, xatol=xatol, fatol=0, frtol=0)
         return elementwise.find_root(f2, res.bracket, args=(p,),
                                      kwargs=params, tolerances=tolerances)
+
+    def _optimization(self, f, x0, xatol, params):
+        if not self._size:
+            return np.empty(self._shape, dtype=self._dtype)
+
+        a, b = self._support(**params)
+
+        res_b = elementwise.bracket_minimum(f, x0, xmin=a, xmax=b, kwargs=params)
+        res = elementwise.find_minimum(f, res_b.bracket, kwargs=params,
+                                       tolerances=dict(xatol=xatol))
+        x = np.asarray(res.x)
+
+        # If the optimum is at an endpoint, `_bracket_minimum` cannot produce a valid
+        # bracket; it may terminate with `fl < fm < fr` (and, e.g. `xl < xm < xr` but
+        # all very close to `a`. In this case, we assume the function is unimodal, and
+        # the optimum is at the endpoint.
+        # TODO: see https://github.com/scipy/scipy/pull/25210#discussion_r3295327858
+        x_at_boundary = res.status == -1
+        fl, fm, fr = res_b.f_bracket
+        x_at_left = x_at_boundary & (fl <= fm)
+        x_at_right = x_at_boundary & (fr < fm)
+        x[x_at_left] = a[x_at_left]
+        x[x_at_right] = b[x_at_right]
+        return x[()]
 
     ## Other
 
@@ -2231,6 +2303,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _median_dispatch(self, method=None, **params):
         if self._overrides('_median_formula'):
             method = self._median_formula
+        elif isinstance(self, CircularDistribution):
+            method = self._median_optimization
         else:
             method = self._median_icdf
         return method
@@ -2259,27 +2333,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _mode_optimization(self, xatol=None, **params):
-        a, b = self._support(**params)
         m = self._median_dispatch(**params)
-
-        def f(x, **params):
-            return -self._pxf_dispatch(x, **params)
-
-        res_b = elementwise.bracket_minimum(f, m, xmin=a, xmax=b, kwargs=params)
-        res = elementwise.find_minimum(f, res_b.bracket, kwargs=params,
-                                       tolerances=dict(xatol=xatol))
-        mode = np.asarray(res.x)
-
-        # bracket_minimum fails with status == -1 if the mode is at a boundary.
-        # We have to consider this as a special case; there's no way to include
-        # this logic in find_minimum; it has to treat the bracket as invalid.
-        mode_at_boundary = res.status == -1
-        fl, fm, fr = res_b.f_bracket
-        mode_at_left = mode_at_boundary & (fl <= fm)
-        mode_at_right = mode_at_boundary & (fr < fm)
-        mode[mode_at_left] = a[mode_at_left]
-        mode[mode_at_right] = b[mode_at_right]
-        return mode[()]
+        def f(x, **params): return -self._pxf_dispatch(x, **params)
+        return self._optimization(f, m, xatol, params)
 
     def mean(self, *, method=None):
         return self.moment(1, kind='raw', method=method)
@@ -2293,7 +2349,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def skewness(self, *, method=None):
         return self.moment(3, kind='standardized', method=method)
 
-    def kurtosis(self, *, method=None, convention='non-excess'):
+    def kurtosis(self, *, method=None, convention=None):
+        convention = 'non-excess' if convention is None else convention
         conventions = {'non-excess', 'excess'}
         message = (f'Parameter `convention` of `{self.__class__.__name__}.kurtosis` '
                    f"must be one of {conventions}.")
@@ -2364,12 +2421,38 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _pdf_dispatch(self, x, *, method=None, **params):
         if self._overrides('_pdf_formula'):
             method = self._pdf_formula
-        else:
+        elif self._overrides('_logpdf_formula') or self._overrides('_logpdf_dispatch'):
             method = self._pdf_logexp
+        elif isinstance(self, ContinuousDistribution):
+            if self._overrides('_cdf_formula'):
+                method = self._pdf_differentiation_cdf
+            elif self._overrides('_ccdf_formula'):
+                method = self._pdf_differentiation_ccdf
+            elif self._overrides('_icdf_formula'):
+                method = self._pdf_differentiation_icdf
+            elif self._overrides('_iccdf_formula'):
+                method = self._pdf_differentiation_iccdf
+
         return method
 
     def _pdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
+
+    def _pdf_differentiation_cdf(self, x, **params):
+        return self._differentiation(self._cdf_dispatch, x, params=params)
+
+    def _pdf_differentiation_ccdf(self, x, **params):
+        return -self._differentiation(self._ccdf_dispatch, x, params=params)
+
+    def _pdf_differentiation_icdf(self, x, **params):
+        p = self._cdf_dispatch(x, **params)
+        return 1 / self._differentiation(self._icdf_dispatch, p,
+                                         bounds=(0, 1), params=params)
+
+    def _pdf_differentiation_iccdf(self, x, **params):
+        p = self._ccdf_dispatch(x, **params)
+        return -1 / self._differentiation(self._iccdf_dispatch, p,
+                                          bounds=(0, 1), params=params)
 
     def _pdf_logexp(self, x, **params):
         return np.exp(self._logpdf_dispatch(x, **params))
@@ -2493,6 +2576,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._logcdf_complement
         elif self._overrides('_cdf_formula'):
             method = self._logcdf_logexp_safe
+        elif (self._overrides('_ilogcdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._logcdf_inversion
         else:
             method = self._logcdf_quadrature
         return method
@@ -2515,6 +2601,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._logcdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _logcdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._ilogcdf_dispatch, x,
+                                              bounds=(-np.inf, 0), params=params)
 
     def _logcdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2605,6 +2695,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._cdf_logexp
         elif self._overrides('_ccdf_formula'):
             method = self._cdf_complement_safe
+        elif (self._overrides('_icdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._cdf_inversion
         else:
             method = self._cdf_quadrature
         return method
@@ -2631,6 +2724,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._cdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _cdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._icdf_dispatch, x,
+                                              bounds=(0, 1), params=params)
 
     def _cdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2677,6 +2774,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._logccdf_complement
         elif self._overrides('_ccdf_formula'):
             method = self._logccdf_logexp_safe
+        elif (self._overrides('_ilogccdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._logccdf_inversion
         else:
             method = self._logccdf_quadrature
         return method
@@ -2699,6 +2799,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._logccdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _logccdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._ilogccdf_dispatch, x,
+                                              bounds=(-np.inf, 0), params=params)
 
     def _logccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -2744,6 +2848,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._ccdf_logexp
         elif self._overrides('_cdf_formula'):
             method = self._ccdf_complement_safe
+        elif (self._overrides('_iccdf_formula')
+              and isinstance(self, ContinuousDistribution)):
+            method = self._ccdf_inversion
         else:
             method = self._ccdf_quadrature
         return method
@@ -2770,6 +2877,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
             out = np.asarray(out)
             out[mask] = self._ccdf_quadrature(x[mask], **params_mask)
         return out[()]
+
+    def _ccdf_inversion(self, x, **params):
+        return self._solve_bounded_continuous(self._iccdf_dispatch, x,
+                                              bounds=(0, 1), params=params)
 
     def _ccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -3050,8 +3161,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
     @_set_invalid_nan_property
     def moment(self, order=1, kind='raw', *, method=None):
         kinds = {'raw': self._moment_raw,
-                 'central': self._moment_central,
-                 'standardized': self._moment_standardized}
+                 'central': self._moment_central}
+        if not isinstance(self, CircularDistribution):
+            kinds['standardized'] = self._moment_standardized
         order = self._validate_order(order)
         kind = self._validate_kind(kind, kinds)
         moment_kind = kinds[kind]
@@ -3074,7 +3186,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if moment is None and 'formula' in methods:
             moment = self._moment_raw_formula(order, **params)
 
-        if moment is None and 'transform' in methods and order > 1:
+        if moment is None and 'transform' in methods:
             moment = self._moment_raw_transform(order, **params)
 
         if moment is None and 'general' in methods:
@@ -3144,6 +3256,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if moment is None and 'quadrature' in methods:
             mean = self._moment_raw_dispatch(self._one, **params,
                                              methods=self._moment_methods)
+            if isinstance(self, CircularDistribution):
+                mean = np.angle(mean)
             moment = self._moment_from_pxf(order, center=mean, **params)
 
         if moment is None and 'quadrature_icdf' in methods:
@@ -3581,8 +3695,8 @@ class ContinuousDistribution(UnivariateDistribution):
     def _logpxf_dispatch(self, x, *, method=None, **params):
         return self._logpdf_dispatch(x, method=method, **params)
 
-    def _solve_bounded_continuous(self, func, p, params, xatol=None):
-        return self._solve_bounded(func, p, params=params, xatol=xatol).x
+    def _solve_bounded_continuous(self, func, p, params, bounds=None, xatol=None):
+        return self._solve_bounded(func, p, params=params, bounds=bounds, xatol=xatol).x
 
 
 class DiscreteDistribution(UnivariateDistribution):
@@ -3790,6 +3904,153 @@ class DiscreteDistribution(UnivariateDistribution):
             return self._quadrature(logintegrand, params=params, log=True)
 
 
+class CircularDistribution(UnivariateDistribution):
+
+    @cached_property
+    def _moment_methods(self):
+        return {'cache', 'formula', 'transform', 'general', 'quadrature'}
+
+    def _cdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not "
+                                  "support two-argument `cdf`.")
+
+    def _ccdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not "
+                                  "support two-argument `ccdf`.")
+
+    def _lmoment(self, order, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `lmoment`.")
+
+    def _logcdf1(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logcdf`.")
+
+    def _logcdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logcdf`.")
+
+    def _logccdf1(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logccdf`.")
+
+    def _logccdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logccdf`.")
+
+    def _ilogcdf_dispatch(self, p, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `ilogcdf`.")
+
+    def _ilogccdf_dispatch(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `ilogccdf`.")
+
+    def _mode_optimization(self, xatol=None, **params):
+        # super()._mode_optimization guess is the median, which can be expensive
+        a, b = self._support(**params)
+        m = (a + b) / 2
+        def f(x, **params): return -self._pxf_dispatch(x, **params)
+        return self._optimization(f, m, xatol, params)
+
+    def _median_optimization(self, **params):
+
+        def f(m, **params):
+
+            def integrand1(x, m, **params):
+                a, b = self._support(**params)
+                x_wrapped = (x - a) % (b - a) + a
+                return (x - m) * self._pdf_dispatch(x_wrapped, **params)
+
+            def integrand2(x, m, **params):
+                a, b = self._support(**params)
+                x_wrapped = (x - a) % (b - a) + a
+                return (m - x) * self._pdf_dispatch(x_wrapped, **params)
+
+            a, b = self._support(**params)
+            half_period = (b - a) / 2
+            res1 = self._quadrature(integrand1, limits=(m, m + half_period),
+                                    args=(m,), params=params)
+            res2 = self._quadrature(integrand2, limits=(m - half_period, m),
+                                    args=(m,), params=params)
+            return res1 + res2
+
+        a, b = self._support(**params)
+        m0 = (a + b) / 2
+        return self._optimization(f, m0, None, params)
+
+    def _moment_from_pxf(self, order, center, **params):
+        def integrand(x, order, center, **params):
+            a, b = self._support(**params)
+            period = b - a
+            scale = 2*np.pi / period
+            # All internal moment calculations are in radians with the origin at the
+            # left endpoint of the support, so we are integrating over [0, 2*pi].
+            # Therefore, x needs to be scaled and shifted to the support of the
+            # distribution. But the returned PDF values need to be scaled back
+            # because we are integrating over [0, 2*pi], not the support. This is the
+            # same as evaluation of a PDF under generic shift/scale of a distribution;
+            # It just looks slightly different.
+            pdf = self._pdf_dispatch(x/scale + a, **params) / scale
+            return np.exp(1j * order * (x - center)) * pdf
+        return self._quadrature(integrand, limits=(0, 2*np.pi),
+                                args=(order, center), params=params)
+
+    def mean(self, *, method=None):
+        a, b = self.support()
+        period = b - a
+        scale = 2*np.pi / period
+        phi = self.moment(1, kind='raw', method=method)
+        return np.angle(phi) / scale + a
+
+    def variance(self, *, method=None):
+        rho = self.moment(1, kind='central', method=method).real
+        return 1 - rho
+
+    def standard_deviation(self, *, method=None):
+        rho = self.moment(1, kind='central', method=method).real
+        return np.sqrt(-2*np.log(rho))
+
+    def skewness(self, *, method=None):
+        b2 = self.moment(2, kind='central', method=method).imag
+        rho = self.moment(1, kind='central', method=method).real
+        return b2 / (1 - rho)**1.5
+
+    def kurtosis(self, *, method=None, convention=None):
+        message = (f'`{self.__class__.__name__}.kurtosis` supports only the default '
+                   f"value of `convention`.")
+        if convention is not None:
+            raise ValueError(message)
+
+        # This is the most common definition
+        a2 = self.moment(2, kind='central', method=method).real
+        rho = self.moment(1, kind='central', method=method).real
+        return (a2 - rho**4) / (1 - rho)**2
+
+    def _moment_central_general(self, order, **params):
+        general_central_moments = {0: self._one + 0j}
+        return general_central_moments.get(order, None)
+
+    def _moment_central_transform(self, order, **params):
+        methods = {'cache', 'formula', 'general'}
+        moment = self._moment_raw_dispatch(order=order, methods=methods, **params)
+        phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
+        if moment is None or phi1 is None:
+            return None
+        mu = np.angle(phi1)
+        moment = self._moment_transform_center(order, moment, self._zero, mu)
+        return moment
+
+    def _moment_raw_transform(self, order, **params):
+        methods = {'cache', 'formula', 'general'}
+        moment = self._moment_central_dispatch(order=order, methods=methods, **params)
+        phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
+        if moment is None or phi1 is None:
+            return None
+        mu = np.angle(phi1)
+        moment = self._moment_transform_center(order, moment, mu, self._zero)
+        return moment
+
+    def _moment_transform_center(self, order, moment, a, b):
+        a, b, moment = np.broadcast_arrays(a, b, moment)
+        n = order
+        moment_b = moment * np.exp(1j*n*(a - b))
+        return moment_b
+
+
 # Special case the names of some new-style distributions in `make_distribution`
 _distribution_names = {
     # Continuous
@@ -3891,11 +4152,12 @@ def make_distribution(dist):
     another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass if the input defines a
-    ``pdf`` method or a `DiscreteDistribution` subclass if the input defines a ``pmf``
-    method. Like any subclass of `UnivariateDistribution`, it must be instantiated (i.e.
-    by passing all shape parameters as keyword arguments) before use. Once instantiated,
-    the resulting object will have the same interface as any other instance of
-    `UnivariateDistribution`; e.g., `scipy.stats.Normal`, `scipy.stats.Binomial`.
+    ``pdf`` or ``(i)(c)cdf`` method; it is a `DiscreteDistribution` subclass if
+    the input defines a ``pmf`` method. Like any subclass of `UnivariateDistribution`,
+    it must be instantiated (i.e. by passing all shape parameters as keyword arguments)
+    before use. Once instantiated, the resulting object will have the same interface as
+    any other instance of `UnivariateDistribution`; e.g., `scipy.stats.Normal`,
+    `scipy.stats.Binomial`.
 
     .. note::
 
@@ -3959,17 +4221,23 @@ def make_distribution(dist):
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
             the values of the parameters dict described above. (``domain_type`` is
-            inferred from whether ``pdf`` or ``pmf`` is defined.)
+            inferred which methods are defined.)
 
-        The class **must** also define a ``pdf`` OR ``pmf`` method - not both - and
-        this determines whether the support of the distribution is continuous or
-        discrete (i.e. accepts only integral values). It **may** define methods
+        The class **must** also define at least one of the following methods:
+        ``pdf``, ``pmf``, ``cdf``, ``ccdf``, ``icdf``,  and ``iccdf``.
+
+        It **may not** not define both ``pdf`` and ``pmf``. Subject to that restriction,
+        if the class defines ``pmf``, the support of the distribution is discrete (i.e.
+        accepts only integral values); otherwise, the support is continuous.
+
+        The class **may** also define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``,
         ``logpdf``, ``logpmf``,
-        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
-        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
+        ``logcdf``, ``logccdf``,
+        ``ilogcdf``, ``ilogccdf``,
         ``moment``, ``lmoment``, and ``sample``.
-        If defined, these methods must accept the parameters of the distribution as
+
+        Defined methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
         the corresponding method of `ContinuousDistribution`/`DiscreteDistribution`.
         When multiple parameterizations are defined, these methods must accept
@@ -4147,6 +4415,32 @@ def make_distribution(dist):
     >>> Y = MyBinomial(n=10, p=0.4)
     >>> np.isclose(Y.cdf(8.), X.cdf(8.))
     np.True_
+
+    Create a quantile-defined distribution; i.e., one defined by the inverse-CDF rather
+    then PDF or PMF.
+
+    >>> class MyTukeyLambda:
+    ...     __make_distribution_version__ = "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'lam': {'endpoints': (-np.inf, np.inf),
+    ...                        'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': (lambda *, lam: np.where(lam > 0, -1/lam, -np.inf),
+    ...                               lambda *, lam: np.where(lam > 0, 1/lam, np.inf)),
+    ...                'inclusive': (True, True)}
+    ...
+    ...     def icdf(self, p, lam):
+    ...         return 1/lam * (p**lam - (1 - p)**lam)
+    >>>
+    >>> MyTukeyLambda = stats.make_distribution(MyTukeyLambda())
+    >>> X = stats.tukeylambda(lam=0.14)
+    >>> Y = MyTukeyLambda(lam=0.14)
+    >>> np.isclose(Y.pdf(-0.314), X.pdf(-0.314))
+    True
 
     """
     if dist in {stats.levy_stable, stats.vonmises, stats.hypergeom,
@@ -4332,15 +4626,20 @@ def _make_distribution_custom(dist):
     domain_type, domain_info, typical = _get_domain_info(dist.support)
     _x_support = domain_type(**domain_info)
 
-    if hasattr(dist, 'pdf') and not hasattr(dist, 'pmf'):
+    if not hasattr(dist, 'pmf') and (hasattr(dist, 'pdf') or
+                                     hasattr(dist, 'cdf') or
+                                     hasattr(dist, 'ccdf') or
+                                     hasattr(dist, 'icdf') or
+                                     hasattr(dist, 'iccdf')):
         pxf = 'PDF'
         distribution_subclass = ContinuousDistribution
     elif hasattr(dist, 'pmf') and not hasattr(dist, 'pdf'):
         pxf = 'PMF'
         distribution_subclass = DiscreteDistribution
     else:
-        message = ("The argument of `make_distribution` must implement "
-                   "either `pdf` OR `pmf` (not both).")
+        message = ("The argument of `make_distribution` must implement at least one "
+                   "of `pdf`/`pmf`/`cdf`/`ccdf`/`icdf`/`iccdf`, and may not implement "
+                   "both `pdf` and `pmf`.")
         raise ValueError(message)
 
     _x_param = _RealParameter('x', domain=_x_support, typical=typical)
@@ -4482,8 +4781,10 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
-        if not isinstance(X, ContinuousDistribution):
-            message = "Transformations are currently only supported for continuous RVs."
+        if (isinstance(X, CircularDistribution)
+                or not isinstance(X, ContinuousDistribution)):
+            message = ("Transformations are currently supported only for continuous, "
+                       "linear RVs.")
             raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
@@ -4568,7 +4869,7 @@ class TruncatedDistribution(TransformedDistribution):
         return np.maximum(a, lb), np.minimum(b, ub)
 
     def _overrides(self, method_name):
-        return False
+        return method_name == '_logpdf_dispatch'
 
     def _logpdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
         logpdf = self._dist._logpdf_dispatch(x, *args, **params)
@@ -5273,6 +5574,9 @@ class Mixture(_ProbabilityDistribution):
             if not var._shape == ():
                 message = "All elements of `components` must have scalar shapes."
                 raise ValueError(message)
+            if isinstance(var, CircularDistribution):
+                message = "`Mixture` does not currently support circular components."
+                raise NotImplementedError(message)
             continuous = continuous and isinstance(var, ContinuousDistribution)
 
         if weights is None:

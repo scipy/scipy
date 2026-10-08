@@ -48,6 +48,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_ass
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
 
+pytestmark = pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning")  # noqa: E501
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -8598,6 +8599,16 @@ class TestWassersteinDistance:
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
     """
+
+    def test_underflow_with_small_weight_and_large_distance(self):
+        # Squaring the CDF gap first loses a finite energy distance.
+        distance = 2.0**1023
+        weight = 2.0**-538
+        result = stats.energy_distance([-distance, 0.0], [0.0],
+                                       [weight, 1.0], [1.0])
+        expected = np.sqrt(2.0) * np.sqrt(distance) * weight / (1 + weight)
+        assert_allclose(result, expected, rtol=1e-14)
+
 
     def test_simple(self):
         # For basic distributions, the value of the energy distance is

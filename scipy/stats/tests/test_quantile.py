@@ -20,6 +20,11 @@ from scipy._lib._util import _apply_over_batch
 import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays
 
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:`scipy.stats.mstats` is deprecated:DeprecationWarning"),  # noqa: E501
+]
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 lazy_xp_modules = [stats]

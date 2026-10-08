@@ -16,6 +16,7 @@ from scipy.spatial import \
 
 
 @pytest.mark.skipif(not has_matplotlib, reason="Matplotlib not available")
+@pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
 @pytest.mark.usefixtures("mpl_agg")
 class TestPlotting:
     points = [(0,0), (0,1), (1,0), (1,1)]

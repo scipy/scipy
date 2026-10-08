@@ -81,6 +81,15 @@ def _get_fitpack_packed_column(A_packed, offset, k, j, m):
     col[rows] = A_packed[rows, p[rows]]
     return col
 
+
+def _validate_bc_type(bc_type):
+    if bc_type is not None and bc_type != "periodic":
+        raise ValueError("Only None and 'periodic' boundary conditions "
+                         f"are recognised, found {bc_type}")
+
+    return bc_type
+
+
 def _reduce_packed_for_clamp(A_packed, offset, nc, k, y_w, ci, cf):
     """
     Drop boundary rows and the first/last dense columns from a FITPACK
@@ -306,6 +315,11 @@ def _norm_eq_clamp_preprocess(ab, rhs, n, k, extradim, ci, cf):
 
     return ab_reduced, rhs
 
+def _validate_periodic_knot_vector(t, k):
+    """Check that the knot vector is periodic."""
+    T = t[-k-1] - t[k]
+    if not np.allclose(t[:2*k+1] + T, t[-2*k-1:]):
+        raise ValueError("The knot vector t is not periodic.")
 
 class _BSpline:
     """NumPy Backend for BSpline.
@@ -2194,7 +2208,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr",
-clamp_values=None):
+clamp_values=None, bc_type=None):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
     The result is a linear combination
@@ -2245,6 +2259,17 @@ clamp_values=None):
         ``k + 1`` located exactly at the clamped endpoint(s) and be equal to
         ``x[0]`` and ``x[-1]``.
         Default is None.
+    bc_type : str, optional
+        Boundary conditions.
+        Default is ``None``.
+        The following boundary conditions are recognized:
+
+        * ``None`` (default): No boundary conditions are applied.
+        * ``"periodic"``: The values and the first ``k-1`` derivatives at the
+          ends are equivalent. Currently not supported for method="norm-eq".
+
+        .. versionchanged:: 2.0.0
+            New keyword argument `bc_type`.
 
     Returns
     -------
@@ -2273,6 +2298,10 @@ clamp_values=None):
     holds for the standard clamped knot vector construction as well as
     other constructions with the same boundary multiplicity, such as
     not-a-knot boundary conditions.
+
+    When ``bc_type="periodic"`` is supplied, the knot vector has to be
+    periodic. This means ``t[:2*k+1] + T == t[-2*k-1:]``, where
+    ``T = t[-k-1] - t[k]`` is the period of the spline.
 
     Examples
     --------
@@ -2343,30 +2372,28 @@ clamp_values=None):
         # C routines in _dierckx currently require C contiguity
         y = y.copy(order='C')
 
-    if x.ndim != 1:
-        raise ValueError("Expect x to be a 1-D sequence.")
-    if x.shape[0] < k+1:
-        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
-    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
-    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
     if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1D strictly increasing sequence.")
     if method == "qr" and any(x[1:] - x[:-1] < 0):
         raise ValueError("Expect x to be a 1D non-decreasing sequence.")
+    bc_type = _validate_bc_type(bc_type)
+    fpcheck(x, t, k, periodic=(bc_type == "periodic"))
     if clamp_values is not None:
+        if bc_type == "periodic":
+            raise ValueError("Periodic splines cannot have clamp values.")
         ci, cf = _validate_clamp_values(
             clamp_values, k, t, y, x, xp, check_finite=check_finite,
         )
     else:
         ci, cf = None, None
+    if bc_type == "periodic":
+        _validate_periodic_knot_vector(t, k)
 
     # number of coefficients
     n = t.size - k - 1
@@ -2382,6 +2409,11 @@ clamp_values=None):
     yy = yy.reshape(-1, extradim)
 
     if method == "norm-eq":
+
+        if bc_type == "periodic":
+            raise NotImplementedError("Periodic boundary conditions are not "
+                                      "implemented for method 'norm-eq'.")
+
         # construct A.T @ A and rhs with A the colocation matrix, and
         # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
         lower = True
@@ -2411,8 +2443,11 @@ clamp_values=None):
             c = _lsq_clamp_postprocess(c, ci, cf, nc_full)
 
     elif method == "qr":
+
+        periodic = (bc_type == 'periodic')
+
         _, _, c, _, _ = _lsq_solve_qr(
-            x, yy, t, k, w, ci=ci, cf=cf,
+            x, yy, t, k, w, periodic=periodic, ci=ci, cf=cf,
         )
 
         if was_complex:
@@ -2425,8 +2460,10 @@ clamp_values=None):
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
-    return BSpline.construct_fast(t, c, k, axis=axis)
+    extrap = "periodic" if bc_type=="periodic" else True
+    return BSpline.construct_fast(t, c, k, extrapolate=extrap, axis=axis)
 
 
 ######################
@@ -2573,7 +2610,7 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 
 def _compute_b_inv(A):
     """
-    Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
+    Inverse 4 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
     ``U`` is a unit upper triangular banded matrix using an algorithm
     proposed in [1].
 
@@ -2585,13 +2622,12 @@ def _compute_b_inv(A):
     Returns
     -------
     B : array, shape (4, n)
-        3 unique bands of the symmetric matrix that is an inverse to ``A``.
-        The first row is filled with zeros.
+        4 unique bands of the symmetric matrix that is an inverse to ``A``.
 
     Notes
     -----
-    The algorithm is based on the cholesky decomposition and, therefore,
-    in case matrix ``A`` is close to not positive defined, the function
+    The algorithm is based on the Cholesky decomposition and, therefore,
+    in case matrix ``A`` is close to not positive definite, the function
     raises LinalgError.
 
     Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
@@ -2634,8 +2670,6 @@ def _compute_b_inv(A):
     for i in range(n - 1, -1, -1):
         for j in range(min(3, n - i - 1), -1, -1):
             find_b_inv_elem(i, j, U, D, B)
-    # the first row contains garbage and should be removed
-    B[0] = [0.] * n
     return B
 
 
@@ -2943,7 +2977,7 @@ def _penalty_matrix_banded(t):
        ``t[p:p+3]``: zero at ``t[p]``, one at ``t[p+1]``, zero at
        ``t[p+2]``.
     3. ``Omega = C.T @ R @ C``, returned in LAPACK symmetric
-       lower-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
+       upper-banded storage of shape ``(4, m)``, ``m = len(t) - 4``, as
        accepted by ``scipy.linalg.solveh_banded``.
 
     ``Omega`` depends on ``t`` only (no data enters), is symmetric
@@ -2958,7 +2992,7 @@ def _penalty_matrix_banded(t):
     ``fda::bsplinepen`` and other independent constructions, and a
     conditioning analysis are in the companion report (steps 1-3 above
     are its eqs. (4)-(5), (8)-(9) and (11) respectively):
-    https://github.com/aadya940/scipy-bspline-testing
+    :doi:`10.5281/zenodo.22983807`
     """
     order = 4 # assuming a cubic spline
     m = len(t) - order # number of coefficients
@@ -2975,12 +3009,61 @@ def _penalty_matrix_banded(t):
     omega = C.T @ R @ C
     omega_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        omega_banded[i, : m - i] = omega.diagonal(-i)
+        omega_banded[3 - i, i:] = omega.diagonal(i)
 
     return omega_banded
 
+
+def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
+    """Select lam by minimizing the GCV criterion over the dimensionless
+    s = log10(lam / r), r = tr(X^T W X) / tr(Omega), so the fixed search
+    window is scale-free."""
+    # Implementation decisions detailed in the following companion report:
+    # https://doi.org/10.5281/zenodo.22983807
+    # Eq. (32)
+    n = y.shape[0]
+
+    # `r` is the factor which upon division makes `lam`
+    # dimensionless.
+    r = xtwx_banded[3, :].sum() / omega[3, :].sum()
+
+    def _gcv(lam):
+        # the system is rectangular so we can't apply the t=None path's
+        # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
+        # compute the residual directly
+        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
+        # use it to estimate rcond of the banded system before solving
+        c, tr = _solve_smoothing_spline_coefficients(
+            xtwx_banded, lam, omega, xtwy, compute_trace=True,
+        )
+        rss = np.sum(w * np.square(y - X @ c)) / n
+        return rss / (1 - tr / n) ** 2
+
+    def _gcv_log(s):
+        return _gcv(r * 10 ** s)
+
+    # The bounds of `log(lam/r)` are (eps, 1/eps) where `eps`
+    # is the machine precision 2.2 * 1e-16, hence (-15, 15) is
+    # strictly in the live area for the bounds.
+    res = minimize_scalar(_gcv_log, bounds=(-15, 15), method="bounded")
+    lam_hat = r * 10 ** res.x
+    return lam_hat
+
+def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
+                                         compute_trace=False):
+    _lhs = XtWX_banded + lam * omega
+    c = solveh_banded(_lhs, XtWy, lower=False)
+    if not compute_trace:
+        return c, None
+    # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
+    # 7-banded, so only the central bands of the inverse are needed
+    # (Hutchinson & de Hoog, upper-banded storage).
+    b_banded = _compute_b_inv(_lhs)
+    tr = b_banded * XtWX_banded
+    tr[:-1] *= 2
+    return c, tr.sum()
 
 def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None):
     """`make_smoothing_spline` path for a user-provided knot vector ``t``.
@@ -2994,17 +3077,14 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     symmetric, so the system is solved with a banded Cholesky factorization.
     Assumes ``x``, ``y`` and ``w`` are already validated by the caller.
     """
-    if lam is None:
-        raise NotImplementedError(
-            "automatic GCV selection of `lam` is not supported with user knots, "
-            "pass `lam` explicitly")
-    if np.ndim(lam) != 0:
-        raise NotImplementedError(
-            "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
-            f"got an array of shape {np.shape(lam)}."
-        )
-    if lam < 0.:
-        raise ValueError('Regularization parameter should be non-negative')
+    if lam is not None:
+        if np.ndim(lam) != 0:
+            raise NotImplementedError(
+                "`lam` must be a scalar (or a 0-d array) when `t` is provided; "
+                f"got an array of shape {np.shape(lam)}."
+            )
+        if lam < 0.:
+            raise ValueError('Regularization parameter should be non-negative')
     if np.ndim(y) > 1:
         raise NotImplementedError(
             "batched `y` is not supported with user-provided knots yet; "
@@ -3063,11 +3143,16 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
     XtWy = X.T @ (w * y)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
-        # Convert to LAPACK symmetric lower-banded storage,
+        # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
-        XtWX_banded[i, : m - i] = XtWX.diagonal(-i)
+        XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
+    if lam is None:
+        lam = _make_smoothing_spline_user_knots_gcv(
+            XtWX_banded, X, y, w, XtWy, omega)
     try:
-        c = solveh_banded(XtWX_banded + lam * omega, XtWy, lower=True)
+        c, _ = _solve_smoothing_spline_coefficients(
+            XtWX_banded, lam, omega, XtWy, compute_trace=False,
+        )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
@@ -3131,9 +3216,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         repeated 4 times (clamped), and interior knots may repeat only to
         multiplicity 2 (higher multiplicity would allow kinks or jumps,
         for which the penalty :math:`\int (f'')^2` is not defined).
-        ``t`` can only be passed when ``lam``
-        is given explicitly. Default is None, in which case a clamped knot
-        vector at the data sites is used,
+        If ``lam`` is not given, it is selected automatically by
+        generalized cross-validation. Default is None, in which case a
+        clamped knot vector at the data sites is used,
         ``t = np.r_[[x[0]]*3, x, [x[-1]]*3]``.
     axis : int, optional
         The data axis. Default is zero.
@@ -3267,7 +3352,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
     if t is not None:
         # user-provided knots: penalized least squares in the B-spline
         # basis on ``t``. The construction is described in the companion
-        # report, https://github.com/aadya940/scipy-bspline-testing
+        # report, https://doi.org/10.5281/zenodo.22983807
         return _make_smoothing_spline_user_knots(x, y, w, lam, t, axis,
                                                  xp=xp, device=device)
 
