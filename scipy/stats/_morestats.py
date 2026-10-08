@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, sort, amin, amax, sqrt, array,
                    exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
