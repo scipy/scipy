@@ -175,8 +175,8 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
-def very_random_gen(seed=0):
-    rng = np.random.default_rng(389234982354865)
+def very_random_gen(seed=389234982354865):
+    rng = np.random.default_rng(seed)
     m_eq, m_ub, n = 10, 20, 50
     c = rng.random(n)-0.5
     A_ub = rng.random((m_ub, n))-0.5
@@ -205,7 +205,7 @@ def nontrivial_problem():
     return c, A_ub, b_ub, A_eq, b_eq, x_star, f_star
 
 
-def l1_regression_prob(seed=0, m=8, d=9, n=100):
+def l1_regression_prob(seed=72847583923592458453, m=8, d=9, n=100):
     '''
     Training data is {(x0, y0), (x1, y2), ..., (xn-1, yn-1)}
         x in R^d
@@ -215,7 +215,7 @@ def l1_regression_prob(seed=0, m=8, d=9, n=100):
     phi: feature map R^d -> R^m
     m: dimension of feature space
     '''
-    rng = np.random.default_rng(72847583923592458453)
+    rng = np.random.default_rng(seed)
     phi = rng.normal(0, 1, size=(m, d))  # random feature mapping
     w_true = rng.standard_normal(m)
     x = rng.normal(0, 1, size=(d, n))  # features
@@ -1276,7 +1276,7 @@ class LinprogCommonTests:
 
     def test_optimize_result(self):
         # check all fields in OptimizeResult
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(0)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(389234982354865)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         assert_(res.success)
@@ -1829,7 +1829,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=0)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=389234982354865)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         lb, ub = bounds.T

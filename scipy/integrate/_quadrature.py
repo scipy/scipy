@@ -1250,7 +1250,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> a = np.zeros(dim)
     >>> b = np.ones(dim)
     >>> rng = np.random.default_rng()
-    >>> qrng = stats.qmc.Halton(d=dim, seed=rng)
+    >>> qrng = stats.qmc.Halton(d=dim, rng=rng)
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
@@ -1342,7 +1342,11 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         estimates = xpx.at(estimates)[i].set(sum_product(integrands, dA, log))
 
         # Get a new, independently-scrambled QRNG for next time
-        qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
+        with warnings.catch_warnings():
+            message = "Use of keyword argument `seed` is deprecated"
+            warnings.filterwarnings("ignore", message=message,
+                                    category=DeprecationWarning)
+            qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
     integral = mean(estimates, log)
     standard_error = sem(estimates, m=integral, log=log)

@@ -308,11 +308,12 @@ class Getset(Benchmark):
     def setup(self, sparse_type, N, sparsity_pattern, format):
         if format == 'dok' and N > 500:
             raise NotImplementedError()
-
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(density=1e-5, rng=rng)
         if sparse_type == "sparray":
-            A = self.A = sparse.random_array((1000, 1000), density=1e-5)
+            A = self.A = sparse.random_array((1000, 1000), **kwargs)
         else:
-            A = self.A = sparse.random(1000, 1000, density=1e-5)
+            A = self.A = sparse.random(1000, 1000, **kwargs)
 
         N = int(N)
 
@@ -469,11 +470,12 @@ class Diagonal(Benchmark):
             raise NotImplementedError()
 
         warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
-
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(format=format, density=density, rng=rng)
         if sparse_type == "sparray":
-            self.X = sparse.random_array((n, n), format=format, density=density)
+            self.X = sparse.random_array((n, n), **kwargs)
         else:
-            self.X = sparse.random(n, n, format=format, density=density)
+            self.X = sparse.random(n, n, **kwargs)
 
     def time_diagonal(self, sparse_type, density, format):
         self.X.diagonal()
@@ -496,12 +498,13 @@ class Sum(Benchmark):
         n = 1000
         if format == 'dok' and n * density >= 500:
             raise NotImplementedError()
-
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(format=format, density=density, rng=rng)
         warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
         if sparse_type == "sparray":
-            self.X = sparse.random_array((n, n), format=format, density=density)
+            self.X = sparse.random_array((n, n), **kwargs)
         else:
-            self.X = sparse.random(n, n, format=format, density=density)
+            self.X = sparse.random(n, n, **kwargs)
 
     def time_sum(self, sparse_type, density, format):
         self.X.sum()
@@ -535,10 +538,12 @@ class Iteration(Benchmark):
     def setup(self, sparse_type, density, format):
         n = 500
         k = 1000
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(format=format, density=density, rng=rng)
         if sparse_type == "sparray":
-            self.X = sparse.random_array((n, k), format=format, density=density)
+            self.X = sparse.random_array((n, k), **kwargs)
         else:
-            self.X = sparse.random(n, k, format=format, density=density)
+            self.X = sparse.random(n, k, **kwargs)
 
     def time_iteration(self, sparse_type, density, format):
         for row in self.X:
@@ -555,10 +560,12 @@ class Densify(Benchmark):
 
     def setup(self, sparse_type, format, order):
         warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(format=format, density=0.01, rng=rng)
         if sparse_type == "sparray":
-            self.X = sparse.random_array((1000, 1000), format=format, density=0.01)
+            self.X = sparse.random_array((1000, 1000), **kwargs)
         else:
-            self.X = sparse.random(1000, 1000, format=format, density=0.01)
+            self.X = sparse.random(1000, 1000, **kwargs)
 
     def time_toarray(self, sparse_type, format, order):
         self.X.toarray(order=order)
@@ -581,16 +588,14 @@ class Random(Benchmark):
         self.nrows = 1000
         self.ncols = 1000
         self.format = 'csr'
+        self.rng = np.random.default_rng(13976473)
 
     def time_rand(self, sparse_type, density):
+        kwargs = dict(format=self.format, density=density, rng=self.rng)
         if sparse_type == "sparray":
-            self.X = sparse.random_array(
-                (self.nrows, self.ncols), format=self.format, density=density
-            )
+            self.X = sparse.random_array((self.nrows, self.ncols), **kwargs)
         else:
-            self.X = sparse.random(
-                self.nrows, self.ncols, format=self.format, density=density
-            )
+            self.X = sparse.random(self.nrows, self.ncols, **kwargs)
 
 
 class Argmax(Benchmark):
@@ -606,10 +611,12 @@ class Argmax(Benchmark):
         n = 1000
 
         warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
+        rng = np.random.default_rng(7051479252)
+        kwargs = dict(format=format, density=density, rng=rng)
         if sparse_type == "sparray":
-            self.X = sparse.random_array((n, n), format=format, density=density)
+            self.X = sparse.random_array((n, n), **kwargs)
         else:
-            self.X = sparse.random(n, n, format=format, density=density)
+            self.X = sparse.random(n, n, **kwargs)
 
     def time_argmax(self, sparse_type, density, format, explicit):
         self.X.argmax(explicit=explicit)

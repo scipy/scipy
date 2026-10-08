@@ -139,7 +139,7 @@ _rng_desc = (
 
 
 # SPEC 7
-def _transition_to_rng(old_name, *, position_num=None, end_version=None,
+def _transition_to_rng(old_name, *, position_num=None, end_version="2.4.0",
                        replace_doc=True):
     """Example decorator to transition from old PRNG usage to new `rng` behavior
 

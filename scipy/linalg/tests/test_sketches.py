@@ -1,4 +1,5 @@
 """Tests for _sketches.py."""
+import pytest
 
 import numpy as np
 from numpy.testing import assert_, assert_equal
@@ -43,10 +44,11 @@ class TestClarksonWoodruffTransform:
     def test_sketch_dimensions(self):
         for A in self.test_matrices:
             for seed in self.seeds:
-                # seed to ensure backwards compatibility post SPEC7
-                sketch = clarkson_woodruff_transform(
-                    A, self.n_sketch_rows, seed=seed
-                )
+                # use `seed` to check that DeprecationWarning is emitted
+                with pytest.warns(DeprecationWarning, match='Use of keyword arg...'):
+                    sketch = clarkson_woodruff_transform(
+                        A, self.n_sketch_rows, seed=seed
+                    )
                 assert_(sketch.shape == (self.n_sketch_rows, self.n_cols))
 
     def test_seed_returns_identical_transform_matrix(self):

@@ -685,7 +685,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> rng = np.random.default_rng()
     >>> xi = rng.random(6) * np.pi/2
     >>> f, f_d1, f_d2, f_d3, f_d4 = np.sin, np.cos, lambda x: -np.sin(x), lambda x: -np.cos(x), np.sin
-    >>> P = BarycentricInterpolator(xi, f(xi), random_state=rng)
+    >>> P = BarycentricInterpolator(xi, f(xi), rng=rng)
     >>> fig, axs = plt.subplots(5, 1, sharex=True, layout='constrained', figsize=(7,10))
     >>> x = np.linspace(0, np.pi, 100)
     >>> axs[0].plot(x, P(x), 'r:', x, f(x), 'k--', xi, f(xi), 'xk')
@@ -713,9 +713,9 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> x_cheb = np.cos(i*np.pi/(n - 1))  # Chebyshev points on [-1, 1]
     >>> w_i_cheb = (-1.)**i  # Explicit formula for weights of Chebyshev points
     >>> w_i_cheb[[0, -1]] /= 2
-    >>> p_cheb = BarycentricInterpolator(x_cheb, f(x_cheb), wi=w_i_cheb)
+    >>> p_cheb = BarycentricInterpolator(x_cheb, f(x_cheb), wi=w_i_cheb, rng=rng)
     >>> x_equi = np.linspace(-1, 1, n)
-    >>> p_equi = BarycentricInterpolator(x_equi, f(x_equi))
+    >>> p_equi = BarycentricInterpolator(x_equi, f(x_equi), rng=rng)
     >>> xx = np.linspace(-1, 1, 1000)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(xx, f(xx), label="Original Function")
@@ -956,7 +956,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # to avoid unnecessary re-computation
             self._diff_baryint = BarycentricInterpolator(xi=self.xi,
                                                          yi=self._diff_cij @ self.yi,
-                                                         wi=self.wi)
+                                                         wi=self.wi,
+                                                         rng=np.random.default_rng())
             self._diff_baryint._diff_cij = self._diff_cij
 
         if all_lower:

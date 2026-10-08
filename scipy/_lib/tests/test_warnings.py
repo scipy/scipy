@@ -110,15 +110,21 @@ def test_warning_calls_filters(warning_calls):
     allowed_filters = (
         os.path.join('datasets', '_fetchers.py'),
         os.path.join('datasets', '__init__.py'),
+        os.path.join('integrate', '_quadrature.py'),  # SPEC 7 transition
         os.path.join('optimize', '_optimize.py'),
         os.path.join('optimize', '_constraints.py'),
         os.path.join('optimize', '_nnls.py'),
+        os.path.join('optimize', '_differentialevolution.py'),  # SPEC 7 transition
+        os.path.join('optimize', '_shgo.py'),  # SPEC 7 transition
         os.path.join('signal', '_ltisys.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
+        os.path.join('sparse', '_construct.py'),  # SPEC 7 transition
+        os.path.join('spatial', 'transform', '_rotation.py'),  # SPEC 7 transition
         os.path.join('special', '_basic.py'),  # gh-21801
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
         os.path.join('stats', '_continuous_distns.py'),
         os.path.join('stats', '_binned_statistic.py'),  # gh-19345
+        os.path.join('stats', '_sensitivity_analysis.py'),  # SPEC 7 transition
         os.path.join('stats', '_stats_py.py'),  # gh-20743
         os.path.join('stats', '_variation.py'),  # gh-22827
         os.path.join('stats', 'tests', 'test_axis_nan_policy.py'),  # gh-20694

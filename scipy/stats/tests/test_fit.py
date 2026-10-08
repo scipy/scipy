@@ -853,8 +853,9 @@ class TestGoodnessOfFit:
     def test_against_lilliefors(self):
         rng = np.random.default_rng(2291803665717442724)
         x = examgrades
-        # preserve use of old random_state during SPEC 7 transition
-        res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
+        # use `random_state` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
         known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
         ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
         assert_allclose(res.statistic, ref.statistic)  # ~0.0848

@@ -401,7 +401,7 @@ def _validate_qmc_input(qmc_engine, d, seed):
         d = qmc_engine.d if d is None else d
     elif qmc_engine is None:
         d = 1 if d is None else d
-        qmc_engine = Halton(d, seed=seed)
+        qmc_engine = Halton(d, rng=seed)
     else:
         message = (
             "`qmc_engine` must be an instance of "
