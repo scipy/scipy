@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy import stats
+from scipy import stats, special
 from scipy.stats.tests.test_continuous import DistributionsTest
 from scipy.stats._new_distributions import StandardNormal
 
@@ -135,3 +135,18 @@ class TestUniform(DistributionsTest):
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case):
         return super().test_moment(case, tol_override={'atol': 1e-9})
+
+
+class TestVonMises(DistributionsTest):
+    seed = 6954568351
+    family = stats.VonMises
+
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        ref = (np.exp(dist.kappa * np.cos(x - dist.mu))
+               / (2 * np.pi * special.i0(dist.kappa)))
+        np.testing.assert_allclose(dist.pdf(x), ref)
+
+    def test_median(self, case):
+        # can only expect about half precision with optimization
+        return super().test_median(case, tol_override={'atol': 1e-6})

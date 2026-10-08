@@ -651,7 +651,8 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
 
     def _logpdf_formula(self, x, **kwargs):
         assert not np.any(np.abs(x) > 1)
-        return np.log(0.75) + np.log(1 - x**2)
+        with np.errstate(divide='ignore'):
+            return np.log(0.75) + np.log1p(-x**2)
 
     def _pdf_formula(self, x, **kwargs):
         assert not np.any(np.abs(x) > 1)

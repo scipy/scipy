@@ -2411,7 +2411,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logpdf_logexp(self, x, **params):
-        return np.log(self._pdf_dispatch(x, **params))
+        with np.errstate(divide='ignore'):
+            return np.log(self._pdf_dispatch(x, **params))
 
     @_set_invalid_nan
     def pdf(self, x, /, *, method=None):
