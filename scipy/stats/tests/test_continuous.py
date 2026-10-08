@@ -192,7 +192,7 @@ def draw_distribution_from_family(family, rng, shape_options,
 class DistributionsTest:
     _options = [
         (dict(min_dims=0, max_dims=0), [1, 0, 0, 0]), # all valid scalar
-        (dict(min_dims=0, max_dims=0), [1, 0, 0, 1]), # all nan scalar
+        (dict(min_dims=0, max_dims=0), [0, 0, 0, 1]), # all nan scalar
         (dict(min_dims=1, max_dims=1,
             min_side=5, max_side=6), [1, 0, 0, 0]), # all valid array
         (dict(min_dims=1, max_dims=1,
@@ -209,7 +209,7 @@ class DistributionsTest:
     def case(self, options):
         i, _options = options
         shape_options, proportions = _options
-        rng = np.random.default_rng(abs(hash((i, self.seed))))
+        rng = np.random.default_rng([i, self.seed])
         tmp = draw_distribution_from_family(self.family, rng,
                                             shape_options, proportions)
         return _RichResult(family=self.family, rng=rng, **tmp)

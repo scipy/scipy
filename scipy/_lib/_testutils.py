@@ -411,10 +411,11 @@ def mutually_broadcastable_shapes(num_shapes, *, base_shape=(), min_dims=0,
         # resolve any non-broadcastabilities
         for i, shape in enumerate(shapes):
             j = min(ndim, len(base_shape))
-            cond1 = shape[ndim - j:] == base_shape[len(base_shape) - j:]
-            cond2 = shape[ndim - j:] == 1
-            mask = ~(cond1 | cond2)
             replacements = np.asarray(base_shape[len(base_shape) - j:])
+            cond1 = shape[ndim - j:] == replacements
+            cond2 = shape[ndim - j:] == 1
+            cond3 = replacements == 1
+            mask = ~(cond1 | cond2 | cond3)
             replacements[rng.random(len(replacements)) > 0.5] = 1
             shapes[i][ndim - j:][mask] = replacements[mask]
     # potentially trim preceding 1s from a shape

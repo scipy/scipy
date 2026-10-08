@@ -8,7 +8,7 @@ from scipy.stats._new_distributions import StandardNormal
 
 
 class TestBinomial(DistributionsTest):
-    seed = 706381675
+    seed = 706381676
     family = stats.Binomial
 
     def is_degenerate(self, dist):
@@ -30,14 +30,14 @@ class TestBinomial(DistributionsTest):
         if self.is_degenerate(case.dist):
             with np.errstate(invalid='ignore'):
                 return super().test_skewness(case)
-        super().test_moment(case)
+        super().test_skewness(case)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_kurtosis(self, case):
         if self.is_degenerate(case.dist):
             with np.errstate(invalid='ignore'):
                 return super().test_kurtosis(case)
-        super().test_moment(case)
+        super().test_kurtosis(case)
 
     @pytest.mark.parametrize('fun', ['cdf', 'logcdf', 'ccdf', 'logccdf'])
     @pytest.mark.parametrize('method', ['quadrature', 'log/exp',

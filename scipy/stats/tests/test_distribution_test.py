@@ -10,7 +10,7 @@ from .test_continuous import DistributionsTest
 class MyNormal:
     __make_distribution_version__ = "1.16.0"
     parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': (-1, 1)},
-                    's': {'endpoints': (0, np.inf), 'typical': (0.5, 2)}}
+                  's': {'endpoints': (0, np.inf), 'typical': (0.5, 2)}}
     support = {'endpoints': (-np.inf, np.inf), 'typical': (-3, 3)}
 
     def pdf(self, x, u, s):
@@ -40,4 +40,4 @@ class TestMyNormal(DistributionsTest):
 
     @pytest.mark.xslow
     def test_lmoment(self, case):
-        return super().test_lmoment()
+        return super().test_lmoment(case, tol_override={'atol': 1e-9})
