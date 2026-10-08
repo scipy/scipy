@@ -13,7 +13,7 @@ from ._numdiff import approx_derivative
 
 __all__ = ['root_scalar']
 
-ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
+ROOT_SCALAR_METHODS = ['bisect','bisect_exact', 'brentq', 'brenth', 'ridder', 'toms748',
                        'newton', 'secant', 'halley']
 
 
@@ -276,7 +276,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     except AttributeError as e:
         raise ValueError(f'Unknown solver {meth}') from e
 
-    if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
+    if meth in ['bisect','bisect_exact', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, list | tuple | np.ndarray):
             raise ValueError(f'Bracket needed for {method}')
 
@@ -516,6 +516,26 @@ def _root_scalar_ridder_doc():
 
 
 def _root_scalar_bisect_doc():
+    r"""
+    Options
+    -------
+    args : tuple, optional
+        Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  ``f(x, *args)`` must have different
+        signs at the two endpoints.
+    xtol : float, optional
+        Tolerance (absolute) for termination.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    maxiter : int, optional
+        Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above.
+
+    """
+    pass
+def _root_scalar_bisect_exact_doc():
     r"""
     Options
     -------

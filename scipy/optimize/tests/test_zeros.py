@@ -24,8 +24,8 @@ TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
 
-bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
-                   zeros.toms748]
+bracket_methods = [zeros.bisect, zeros.bisect_exact, zeros.ridder,
+                   zeros.brentq, zeros.brenth, zeros.toms748]
 gradient_methods = [zeros.newton]
 all_methods = bracket_methods + gradient_methods
 
@@ -210,8 +210,8 @@ class TestBracketMethods(TestScalarRootFinders):
     def test_aps_collection(self, method):
         self.run_collection('aps', method, method.__name__, smoothness=1)
 
-    @pytest.mark.parametrize('method', [zeros.bisect, zeros.ridder,
-                                        zeros.toms748])
+    @pytest.mark.parametrize('method', [zeros.bisect, zeros.bisect_exact,
+                                        zeros.ridder, zeros.toms748])
     def test_chandrupatla_collection(self, method):
         self.run_collection('chandrupatla', method, method.__name__)
 
@@ -529,7 +529,7 @@ def test_gh_5555():
     def f(x):
         return x - root
 
-    methods = [zeros.bisect, zeros.ridder]
+    methods = [zeros.bisect, zeros.bisect_exact, zeros.ridder]
     xtol = rtol = TOL
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
@@ -834,7 +834,8 @@ def test_gh9551_raise_error_if_disp_true():
 
 
 @pytest.mark.parametrize('solver_name',
-                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+                         ['brentq', 'brenth', 'bisect', 'bisect_exact', 'ridder',
+                          'toms748'])
 def test_gh3089_8394(solver_name):
     # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
     # results when they encountered NaNs. Check that this is resolved.
@@ -847,7 +848,8 @@ def test_gh3089_8394(solver_name):
 
 
 @pytest.mark.parametrize('method',
-                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+                         ['brentq', 'brenth', 'bisect', 'bisect_exact', 'ridder',
+                          'toms748'])
 def test_gh18171(method):
     # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
     # results when they encountered NaNs. Check that `root_scalar` returns
@@ -865,7 +867,8 @@ def test_gh18171(method):
 
 
 @pytest.mark.parametrize('solver_name',
-                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+                         ['brentq', 'brenth', 'bisect', 'bisect_exact', 'ridder',
+                          'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
 def test_function_calls(solver_name, rs_interface):
     # There do not appear to be checks that the bracketing solvers report the
@@ -912,7 +915,8 @@ def test_gh_14486_converged_false():
 
 
 @pytest.mark.parametrize('solver_name',
-                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+                         ['brentq', 'brenth', 'bisect', 'bisect_exact', 'ridder',
+                          'toms748'])
 @pytest.mark.parametrize('rs_interface', [True, False])
 def test_gh5584(solver_name, rs_interface):
     # gh-5584 reported that an underflow can cause sign checks in the algorithm
@@ -984,8 +988,8 @@ def test_maxiter_int_check_gh10236(method):
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
-@pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
-                                    zeros.brentq, zeros.brenth])
+@pytest.mark.parametrize("method", [zeros.bisect, zeros.bisect_exact,
+                                    zeros.ridder, zeros.brentq, zeros.brenth])
 def test_bisect_special_parameter(method):
     # give some zeros method strange parameters
     # and check whether an exception appears
