@@ -911,6 +911,8 @@ def check_moment_funcs(dist, result_shape, tol_override=None):
     for i in range(6):
         check(i, 'central', 'cache', success=False)
         ref = dist.moment(i, 'central', method='quadrature')
+        if i == 0:  # taking central moment of any order with quadrature requires mean
+            dist._moment_central_cache.pop(1, None)
         assert ref.shape == result_shape
         check(i, 'central', 'cache', ref, success=True)
         check(i, 'central', 'formula', ref, success=has_formula(i, 'central'))

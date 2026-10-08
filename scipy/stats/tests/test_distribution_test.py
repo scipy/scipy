@@ -31,7 +31,7 @@ class MyNormal:
 
 class TestMyNormal(DistributionsTest):
     family = stats.make_distribution(MyNormal())
-    seed =7694871135
+    seed =7694871136
 
     def test_purported_distribution(self, valid_dist_x):
         message = "This method must be overridden..."
