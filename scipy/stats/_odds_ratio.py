@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
 from scipy.special import ndtri
 from scipy.optimize import brentq
 from ._discrete_distns import nchypergeom_fisher
@@ -321,6 +322,7 @@ class OddsRatioResult:
         return ConfidenceInterval(low=ci[0], high=ci[1])
 
 
+@xp_capabilities(np_only=True)
 def odds_ratio(table, *, kind='conditional'):
     r"""
     Compute the odds ratio for a 2x2 contingency table.
