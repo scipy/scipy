@@ -1,7 +1,5 @@
-import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
-from scipy._lib._testutils import check_free_memory
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
