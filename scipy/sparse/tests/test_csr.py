@@ -116,6 +116,7 @@ def test_fancy_indexing_broadcasts_without_making_dense_2d(cls):
     assert S[I, J.reshape(1, -1)].nnz == 0  # 2D row array as index for columns
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:.*_matrix is being replaced:DeprecationWarning")
 def test_csr_hstack_int64():
     """
