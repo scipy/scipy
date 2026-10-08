@@ -1,62 +1,3 @@
-#include <xsf/numpy.h>
-
-#include <cmath>
-#include <complex>
-
-#include "boost_special_functions.h"
-#include "sf_error.h"
-#include <xsf/agm.h>
-#include <xsf/airy.h>
-#include <xsf/alg.h>
-#include <xsf/amos.h>
-#include <xsf/bessel.h>
-#include <xsf/beta.h>
-#include <xsf/binom.h>
-#include <xsf/boxcox.h>
-#include <xsf/cdflib.h>
-#include <xsf/cephes/erfinv.h>
-#include <xsf/cephes/poch.h>
-#include <xsf/cephes/round.h>
-#include <xsf/cephes/unity.h>
-#include <xsf/cosine.h>
-#include <xsf/convex_analysis.h>
-#include <xsf/cpu/stats.h>
-#include <xsf/digamma.h>
-#include <xsf/digammainv.h>
-#include <xsf/ellip.h>
-#include <xsf/erf.h>
-#include <xsf/exp.h>
-#include <xsf/expint.h>
-#include <xsf/fresnel.h>
-#include <xsf/gamma.h>
-#include <xsf/gen_harmonic.h>
-#include <xsf/hyp0f1.h>
-#include <xsf/hyperu.h>
-#include <xsf/hyp2f1.h>
-#include <xsf/iv_ratio.h>
-#include <xsf/kelvin.h>
-#include <xsf/lambertw.h>
-#include <xsf/legendre.h>
-#include <xsf/log.h>
-#include <xsf/log_exp.h>
-#include <xsf/mathieu_legacy.h>
-#include <xsf/ndtri_exp.h>
-#include <xsf/par_cyl.h>
-#include <xsf/specfun.h>
-#include <xsf/spence.h>
-#include <xsf/sph_bessel.h>
-#include <xsf/sph_harm.h>
-#include <xsf/sphd_wave.h>
-#include <xsf/stats.h>
-#include <xsf/stirling2.h>
-#include <xsf/struve.h>
-#include <xsf/trig.h>
-#include <xsf/wright_bessel.h>
-#include <xsf/wright.h>
-#include <xsf/zeta.h>
-#include "mathieu.h"
-
-
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
 // many examples in the code below. The documentation of each ufunc is kept in a companion file called
@@ -65,23 +6,80 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+#include <xsf/numpy.h>
+
+#include <cmath>
+#include <complex>
+
+#include <xsf/agm.h>
+#include <xsf/alg.h>
+#include <xsf/beta.h>
+#include <xsf/binom.h>
+#include <xsf/boxcox.h>
+#include <xsf/cdflib.h>
+#include <xsf/cephes/erfinv.h>
+#include <xsf/cephes/poch.h>
+#include <xsf/cephes/round.h>
+#include <xsf/cephes/unity.h>
+#include <xsf/convex_analysis.h>
+#include <xsf/cosine.h>
+#include <xsf/cpu/airy.h>
+#include <xsf/cpu/amos.h>
+#include <xsf/cpu/bessel.h>
+#include <xsf/cpu/ellint_carlson.h>
+#include <xsf/cpu/exp.h>
+#include <xsf/cpu/fresnel.h>
+#include <xsf/cpu/hyp0f1.h>
+#include <xsf/cpu/hyperu.h>
+#include <xsf/cpu/kelvin.h>
+#include <xsf/cpu/legendre.h>
+#include <xsf/cpu/mathieu_legacy.h>
+#include <xsf/cpu/par_cyl.h>
+#include <xsf/cpu/specfun.h>
+#include <xsf/cpu/sph_bessel.h>
+#include <xsf/cpu/sph_harm.h>
+#include <xsf/cpu/sphd_wave.h>
+#include <xsf/cpu/stats.h>
+#include <xsf/cpu/struve.h>
+#include <xsf/digamma.h>
+#include <xsf/digammainv.h>
+#include <xsf/ellip.h>
+#include <xsf/erf.h>
+#include <xsf/expint.h>
+#include <xsf/gamma.h>
+#include <xsf/gen_harmonic.h>
+#include <xsf/hyp2f1.h>
+#include <xsf/iv_ratio.h>
+#include <xsf/lambertw.h>
+#include <xsf/log.h>
+#include <xsf/log_exp.h>
+#include <xsf/multivariate_normal.h>
+#include <xsf/ndtri_exp.h>
+#include <xsf/orthogonal_eval.h>
+#include <xsf/spence.h>
+#include <xsf/stats.h>
+#include <xsf/stirling2.h>
+#include <xsf/trig.h>
+#include <xsf/wright.h>
+#include <xsf/wright_bessel.h>
+#include <xsf/zeta.h>
+
+#include "boost_special_functions.h"
+#include "mathieu.h"
+#include "sf_error.h"
+
 extern const char *_beta_pdf_doc;
-extern const char *_beta_ppf_doc;
 extern const char *_binom_cdf_doc;
 extern const char *_binom_isf_doc;
 extern const char *_binom_pmf_doc;
 extern const char *_binom_ppf_doc;
 extern const char *_binom_sf_doc;
-extern const char *_cospi_doc;
-extern const char *_bivariate_normal_sf_doc;
+extern const char *_bivariate_normal_cdf_doc;
 extern const char *_cauchy_isf_doc;
 extern const char *_cauchy_ppf_doc;
 extern const char *_cosine_cdf_doc;
 extern const char *_cosine_invcdf_doc;
-extern const char *_sinpi_doc;
-extern const char *_skewnorm_cdf_doc;
-extern const char *_skewnorm_isf_doc;
-extern const char *_skewnorm_ppf_doc;
+extern const char *_cospi_doc;
 extern const char *_gen_harmonic_doc;
 extern const char *_hypergeom_cdf_doc;
 extern const char *_hypergeom_mean_doc;
@@ -132,14 +130,15 @@ extern const char *_ncx2_isf_doc;
 extern const char *_ncx2_pdf_doc;
 extern const char *_ncx2_sf_doc;
 extern const char *_normalized_gen_harmonic_doc;
+extern const char *_riemann_zeta_doc;
+extern const char *_sinpi_doc;
+extern const char *_skewnorm_cdf_doc;
+extern const char *_skewnorm_isf_doc;
+extern const char *_skewnorm_ppf_doc;
 extern const char *_stirling2_inexact_doc;
 extern const char *_von_mises_cdf_doc;
+extern const char *_zeta_doc;
 extern const char *agm_doc;
-extern const char *entr_doc;
-extern const char *huber_doc;
-extern const char *kl_div_doc;
-extern const char *pseudo_huber_doc;
-extern const char *rel_entr_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bdtrik_doc;
@@ -156,8 +155,8 @@ extern const char *betainccinv_doc;
 extern const char *betaincinv_doc;
 extern const char *betaln_doc;
 extern const char *binom_doc;
-extern const char *boxcox_doc;
 extern const char *boxcox1p_doc;
+extern const char *boxcox_doc;
 extern const char *btdtria_doc;
 extern const char *btdtrib_doc;
 extern const char *cbrt_doc;
@@ -178,20 +177,30 @@ extern const char *ellipe_doc;
 extern const char *ellipeinc_doc;
 extern const char *ellipj_doc;
 extern const char *ellipk_doc;
-extern const char *ellipkm1_doc;
 extern const char *ellipkinc_doc;
+extern const char *ellipkm1_doc;
+extern const char *elliprc_doc;
+extern const char *elliprd_doc;
+extern const char *elliprf_doc;
+extern const char *elliprg_doc;
+extern const char *elliprj_doc;
+extern const char *entr_doc;
 extern const char *erf_doc;
 extern const char *erfc_doc;
 extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
-extern const char *exp1_doc;
-extern const char *expm1_doc;
-extern const char *exp2_doc;
+extern const char *eval_hermite_doc;
+extern const char *eval_hermitenorm_doc;
+extern const char *eval_jacobi_doc;
+extern const char *eval_sh_jacobi_doc;
 extern const char *exp10_doc;
+extern const char *exp1_doc;
+extern const char *exp2_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
+extern const char *expm1_doc;
 extern const char *exprel_doc;
 extern const char *fdtr_doc;
 extern const char *fdtrc_doc;
@@ -199,9 +208,9 @@ extern const char *fdtri_doc;
 extern const char *fresnel_doc;
 extern const char *gamma_doc;
 extern const char *gammainc_doc;
-extern const char *gammaincinv_doc;
 extern const char *gammaincc_doc;
 extern const char *gammainccinv_doc;
+extern const char *gammaincinv_doc;
 extern const char *gammaln_doc;
 extern const char *gammasgn_doc;
 extern const char *gdtr_doc;
@@ -209,18 +218,11 @@ extern const char *gdtrc_doc;
 extern const char *gdtria_doc;
 extern const char *gdtrib_doc;
 extern const char *gdtrix_doc;
-extern const char *it2i0k0_doc;
-extern const char *it2j0y0_doc;
-extern const char *it2struve0_doc;
-extern const char *itairy_doc;
-extern const char *iti0k0_doc;
-extern const char *itj0y0_doc;
-extern const char *itmodstruve0_doc;
-extern const char *itstruve0_doc;
 extern const char *hankel1_doc;
 extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
+extern const char *huber_doc;
 extern const char *hyp0f1_doc;
 extern const char *hyp1f1_doc;
 extern const char *hyp2f1_doc;
@@ -229,38 +231,48 @@ extern const char *i0_doc;
 extern const char *i0e_doc;
 extern const char *i1_doc;
 extern const char *i1e_doc;
-extern const char *inv_boxcox_doc;
 extern const char *inv_boxcox1p_doc;
+extern const char *inv_boxcox_doc;
+extern const char *it2i0k0_doc;
+extern const char *it2j0y0_doc;
+extern const char *it2struve0_doc;
+extern const char *itairy_doc;
+extern const char *iti0k0_doc;
+extern const char *itj0y0_doc;
+extern const char *itmodstruve0_doc;
+extern const char *itstruve0_doc;
 extern const char *iv_doc;
-extern const char *iv_ratio_doc;
 extern const char *iv_ratio_c_doc;
+extern const char *iv_ratio_doc;
+extern const char *iv_ratioinv_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
+extern const char *k0_doc;
+extern const char *k0e_doc;
+extern const char *k1_doc;
+extern const char *k1e_doc;
 extern const char *kei_doc;
 extern const char *keip_doc;
 extern const char *kelvin_doc;
 extern const char *ker_doc;
 extern const char *kerp_doc;
-extern const char *k0_doc;
-extern const char *k0e_doc;
-extern const char *k1_doc;
-extern const char *k1e_doc;
-extern const char *kv_doc;
-extern const char *kve_doc;
+extern const char *kl_div_doc;
 extern const char *kolmogi_doc;
 extern const char *kolmogorov_doc;
+extern const char *kv_doc;
+extern const char *kve_doc;
 extern const char *lambertw_doc;
 extern const char *log1p_doc;
-extern const char *logit_doc;
-extern const char *loggamma_doc;
 extern const char *log_expit_doc;
 extern const char *log_gammainc_doc;
 extern const char *log_gammaincc_doc;
 extern const char *log_ndtr_doc;
 extern const char *log_wright_bessel_doc;
+extern const char *loggamma_doc;
+extern const char *logit_doc;
 extern const char *lpmv_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
@@ -284,47 +296,48 @@ extern const char *ndtri_doc;
 extern const char *ndtri_exp_doc;
 extern const char *nrdtrimn_doc;
 extern const char *nrdtrisd_doc;
-extern const char *obl_ang1_doc;
 extern const char *obl_ang1_cv_doc;
+extern const char *obl_ang1_doc;
 extern const char *obl_cv_doc;
-extern const char *obl_rad1_doc;
 extern const char *obl_rad1_cv_doc;
-extern const char *obl_rad2_doc;
+extern const char *obl_rad1_doc;
 extern const char *obl_rad2_cv_doc;
+extern const char *obl_rad2_doc;
 extern const char *owens_t_doc;
+extern const char *pbdv_doc;
+extern const char *pbvv_doc;
+extern const char *pbwa_doc;
 extern const char *pdtr_doc;
 extern const char *pdtrc_doc;
 extern const char *pdtrik_doc;
 extern const char *poch_doc;
 extern const char *powm1_doc;
-extern const char *_zeta_doc;
-extern const char *pbdv_doc;
-extern const char *pbvv_doc;
-extern const char *pbwa_doc;
-extern const char *pro_ang1_doc;
 extern const char *pro_ang1_cv_doc;
+extern const char *pro_ang1_doc;
 extern const char *pro_cv_doc;
-extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
-extern const char *pro_rad2_doc;
+extern const char *pro_rad1_doc;
 extern const char *pro_rad2_cv_doc;
+extern const char *pro_rad2_doc;
+extern const char *pseudo_huber_doc;
 extern const char *psi_doc;
 extern const char *radian_doc;
+extern const char *rel_entr_doc;
 extern const char *rgamma_doc;
-extern const char *_riemann_zeta_doc;
 extern const char *round_doc;
 extern const char *scaled_exp1_doc;
 extern const char *sindg_doc;
 extern const char *spence_doc;
-extern const char *spherical_jn_doc;
-extern const char *spherical_jn_d_doc;
-extern const char *spherical_yn_doc;
-extern const char *spherical_yn_d_doc;
-extern const char *spherical_in_doc;
 extern const char *spherical_in_d_doc;
-extern const char *spherical_kn_doc;
+extern const char *spherical_in_doc;
+extern const char *spherical_jn_d_doc;
+extern const char *spherical_jn_doc;
 extern const char *spherical_kn_d_doc;
+extern const char *spherical_kn_doc;
+extern const char *spherical_yn_d_doc;
+extern const char *spherical_yn_doc;
 extern const char *stdtr_doc;
+extern const char *stdtridf_doc;
 extern const char *stdtrit_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
@@ -334,8 +347,8 @@ extern const char *voigt_profile_doc;
 extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
 extern const char *wrightomega_doc;
-extern const char *xlogy_doc;
 extern const char *xlog1py_doc;
+extern const char *xlogy_doc;
 extern const char *y0_doc;
 extern const char *y1_doc;
 extern const char *yv_doc;
@@ -370,12 +383,6 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_beta_pdf", _beta_pdf_doc);
     PyModule_AddObjectRef(module, "_beta_pdf", _beta_pdf);
 
-    PyObject *_beta_ppf =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(beta_ppf_float),
-                           static_cast<xsf::numpy::ddd_d>(beta_ppf_double)},
-                          "_beta_ppf", _beta_ppf_doc);
-    PyModule_AddObjectRef(module, "_beta_ppf", _beta_ppf);
-
     PyObject *_binom_cdf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(binom_cdf_float),
                            static_cast<xsf::numpy::ddd_d>(binom_cdf_double)},
@@ -406,11 +413,11 @@ _special_ufuncs_module_exec(PyObject *module)
                           "_binom_sf", _binom_sf_doc);
     PyModule_AddObjectRef(module, "_binom_sf", _binom_sf);
 
-    PyObject *_bivariate_normal_sf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_sf),
-         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_sf)},
-        "_bivariate_normal_sf", _bivariate_normal_sf_doc);
-    PyModule_AddObjectRef(module, "_bivariate_normal_sf", _bivariate_normal_sf);
+    PyObject *_bivariate_normal_cdf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::bivariate_normal_cdf),
+         static_cast<xsf::numpy::ddd_d>(xsf::bivariate_normal_cdf)},
+        "_bivariate_normal_cdf", _bivariate_normal_cdf_doc);
+    PyModule_AddObjectRef(module, "_bivariate_normal_cdf", _bivariate_normal_cdf);
 
     PyObject *_cauchy_isf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(cauchy_isf_float),
@@ -765,6 +772,38 @@ _special_ufuncs_module_exec(PyObject *module)
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
 
+    PyObject *eval_hermite = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ld_d>(xsf::eval_hermite), static_cast<xsf::numpy::qd_d>(xsf::eval_hermite)},
+        "eval_hermite", eval_hermite_doc);
+    PyModule_AddObjectRef(module, "eval_hermite", eval_hermite);
+
+    PyObject *eval_hermitenorm = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ld_d>(xsf::eval_hermitenorm), static_cast<xsf::numpy::qd_d>(xsf::eval_hermitenorm)},
+        "eval_hermitenorm", eval_hermitenorm_doc);
+    PyModule_AddObjectRef(module, "eval_hermitenorm", eval_hermitenorm);
+
+    PyObject *eval_jacobi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::iddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::lddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::qddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
+        "eval_jacobi", eval_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
+
+    PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::iddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::lddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::qddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::ffff_f>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::fffF_F>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddd_d>(xsf::eval_sh_jacobi),
+         static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
+        "eval_sh_jacobi", eval_sh_jacobi_doc);
+    PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
+
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),
                            static_cast<xsf::numpy::F_F>(xsf::sinpi), static_cast<xsf::numpy::D_D>(xsf::sinpi)},
@@ -1019,6 +1058,52 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::ellipkm1), static_cast<xsf::numpy::d_d>(xsf::ellipkm1)},
                           "ellipkm1", ellipkm1_doc);
     PyModule_AddObjectRef(module, "ellipkm1", ellipkm1);
+
+    PyObject *elliprc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::cpu::elliprc), static_cast<xsf::numpy::dd_d>(xsf::cpu::elliprc),
+         static_cast<xsf::numpy::FF_F>(xsf::cpu::elliprc), static_cast<xsf::numpy::DD_D>(xsf::cpu::elliprc)},
+        "elliprc", elliprc_doc);
+    PyModule_AddObjectRef(module, "elliprc", elliprc);
+
+    PyObject *elliprd = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprd), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprd),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprd(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprd(x, y, z);
+         }},
+        "elliprd", elliprd_doc);
+    PyModule_AddObjectRef(module, "elliprd", elliprd);
+
+    PyObject *elliprf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprf), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprf),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprf(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprf(x, y, z);
+         }},
+        "elliprf", elliprf_doc);
+    PyModule_AddObjectRef(module, "elliprf", elliprf);
+
+    PyObject *elliprg = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::fff_f>(xsf::cpu::elliprg), static_cast<xsf::numpy::ddd_d>(xsf::cpu::elliprg),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z) {
+             return xsf::cpu::elliprg(x, y, z);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z) {
+             return xsf::cpu::elliprg(x, y, z);
+         }},
+        "elliprg", elliprg_doc);
+    PyModule_AddObjectRef(module, "elliprg", elliprg);
+
+    PyObject *elliprj = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ffff_f>(xsf::cpu::elliprj), static_cast<xsf::numpy::dddd_d>(xsf::cpu::elliprj),
+         [](std::complex<float> x, std::complex<float> y, std::complex<float> z, std::complex<float> p) {
+             return xsf::cpu::elliprj(x, y, z, p);
+         }, [](std::complex<double> x, std::complex<double> y, std::complex<double> z, std::complex<double> p) {
+             return xsf::cpu::elliprj(x, y, z, p);
+         }},
+        "elliprj", elliprj_doc);
+    PyModule_AddObjectRef(module, "elliprj", elliprj);
 
     PyObject *erfcinv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::cephes::erfcinv),
@@ -1419,6 +1504,11 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c), static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c)}, "_iv_ratio_c",
         iv_ratio_c_doc);
     PyModule_AddObjectRef(module, "_iv_ratio_c", iv_ratio_c);
+
+    PyObject *iv_ratioinv = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::iv_ratioinv), static_cast<xsf::numpy::dd_d>(xsf::iv_ratioinv)},
+        "_iv_ratioinv", iv_ratioinv_doc);
+    PyModule_AddObjectRef(module, "_iv_ratioinv", iv_ratioinv);
 
     PyObject *ive = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_ie), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_ie),
@@ -1952,6 +2042,12 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(t_cdf_double)},
                           "stdtr", stdtr_doc);
     PyModule_AddObjectRef(module, "stdtr", stdtr);
+
+    PyObject *stdtridf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(stdtridf_float),
+                           static_cast<xsf::numpy::dd_d>(stdtridf_double)},
+                          "stdtridf", stdtridf_doc);
+    PyModule_AddObjectRef(module, "stdtridf", stdtridf);
 
     PyObject *stdtrit =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(t_ppf_float),

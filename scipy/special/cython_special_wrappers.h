@@ -141,6 +141,17 @@ npy_cdouble special_crgamma(npy_cdouble z);
 
 double special_ellipk(double m);
 
+double xsf_elliprc(double x, double y);
+npy_cdouble xsf_celliprc(npy_cdouble x, npy_cdouble y);
+double xsf_elliprd(double x, double y, double z);
+npy_cdouble xsf_celliprd(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprf(double x, double y, double z);
+npy_cdouble xsf_celliprf(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprg(double x, double y, double z);
+npy_cdouble xsf_celliprg(npy_cdouble x, npy_cdouble y, npy_cdouble z);
+double xsf_elliprj(double x, double y, double z, double p);
+npy_cdouble xsf_celliprj(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p);
+
 double cephes_expn_wrap(Py_ssize_t n, double x);
 double xsf_iv(double v, double x);
 double cephes_jv_wrap(double v, double x);
@@ -212,6 +223,17 @@ npy_cdouble xsf_cspence(npy_cdouble z);
 double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
+
+// Orthogonal Polynomial
+
+double xsf_eval_hermite(npy_intp n, double x);
+double xsf_eval_hermitenorm(npy_intp n, double x);
+double xsf_eval_jacobi(double n, double alpha, double beta, double x);
+npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x);
+double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x);
+double xsf_eval_sh_jacobi(double n, double p, double q, double x);
+npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x);
+double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x);
 
 double special_mathieu_a(double m, double q);
 double special_mathieu_b(double m, double q);
@@ -455,6 +477,7 @@ float boost_powm1_float(float x, float y);
 double boost_powm1_double(double x, double y);
 float boost_stdtr_float(float df, float t);
 double boost_stdtr_double(double df, double t);
+double boost_stdtridf_double(double p, double t);
 float boost_stdtrit_float(float df, float p);
 double boost_stdtrit_double(double df, double p);
 

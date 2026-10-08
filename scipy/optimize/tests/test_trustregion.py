@@ -107,3 +107,23 @@ class TestTrustRegionSolvers:
         r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
                      tol=1e-8, method='trust-exact')
         assert_allclose(self.x_opt, r['x'])
+
+    def test_trust_exact_rejects_nan_trial_point(self):
+        def fun(x):
+            return x[0] - np.log(x[0]) if x[0] > 0 else np.nan
+
+        def jac(x):
+            return np.array([1 - 1/x[0]])
+
+        def hess(x):
+            if x[0] <= 0:
+                raise ValueError("Hessian evaluated outside domain")
+            return np.array([[1/x[0]**2]])
+
+        result = minimize(
+            fun, [2.1], jac=jac, hess=hess, method='trust-exact', tol=1e-8,
+            options={'initial_trust_radius': 10, 'maxiter': 10}
+        )
+
+        assert result.success
+        assert_allclose(result.x, [1], atol=1e-8)

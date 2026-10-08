@@ -41,7 +41,7 @@ reported by users.)
    sure to use the correct commands to :ref:`skip CI checks <skip-ci>` on
    documentation changes.
 
-Some functions/objects defined in C or Fortran extension modules have their
+Some functions/objects defined in compiled extension modules have their
 docstrings defined separately from the actual code. Make sure to do a search for
 the function docstring you are looking for using either `grep` or other similar
 tools.
@@ -61,7 +61,7 @@ with Sphinx`_ \ *.*
 
 To render the documentation on your own machine:
 
-0. Ensure that you have a working SciPy build (see :ref:`building-from-source`).
+0. Ensure that you have a working SciPy build (see :ref:`building-contributor`).
 #. Then run ``spin docs`` to build the documentation.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.

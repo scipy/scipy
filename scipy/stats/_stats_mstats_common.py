@@ -1,6 +1,7 @@
 import numpy as np
 from .._lib._bunch import _make_tuple_bunch
 
+
 __all__ = ['_find_repeats']
 
 # This is not a namedtuple for backwards compatibility. See PR #12983

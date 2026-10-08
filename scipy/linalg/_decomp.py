@@ -645,7 +645,7 @@ def _check_select(select, select_range, max_ev, max_len):
 def _eig_banded_signature(a_band, lower=False, eigvals_only=False,
                           overwrite_a_band=False, select='a', select_range=None,
                           max_ev=0, check_finite=True):
-    return "(i,j)->(j,)" if eigvals_only else "(i,j)->(j,),(j,j)"
+    return "(i,j)->float(j,)" if eigvals_only else "(i,j)->float(j,),(j,j)"
 
 
 @_apply_over_batch(('a_band', 2), signature=_eig_banded_signature)
@@ -1051,7 +1051,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
                 driver=driver)
 
 
-@_apply_over_batch(('a_band', 2), signature='(i,j)->(j,)')
+@_apply_over_batch(('a_band', 2), signature='(i,j)->float(j,)')
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
@@ -1146,7 +1146,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
-@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)')
+@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)', zero_size_fill=None)
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1234,7 +1234,8 @@ def eigh_tridiagonal_signature(d, e, eigvals_only=False, select='a',
     return "(i,),(j,)->(i,)" if eigvals_only else "(i,),(j,)->(i,),(i,i)"
 
 
-@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature)
+@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature,
+                   zero_size_fill=None)
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """

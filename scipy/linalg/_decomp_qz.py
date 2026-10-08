@@ -341,7 +341,7 @@ def qz(A, B, output='real', lwork=_NoValue, sort=None, overwrite_a=False,
 
 
 @_apply_over_batch(('A', 2), ('B', 2),
-                   signature="(i,i),(i,i)->(i,i),(i,i),(i),(i),(i,i),(i,i)")
+                   signature="(i,i),(i,i)->(i,i),(i,i),complex(i),(i),(i,i),(i,i)")
 def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """QZ decomposition for a pair of matrices with reordering.

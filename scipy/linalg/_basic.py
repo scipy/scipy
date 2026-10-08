@@ -278,7 +278,12 @@ def _to_banded(n_below, n_above, a):
     return ab
 
 
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+def _solve_triangular_signature(ab, b, overwrite_ab=False, overwrite_b=False,
+                                lower=False, check_finite=True):
+    return ("(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i,j)->(i,j)")
+
+
+@_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solve_triangular_signature)
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
@@ -474,7 +479,14 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                          overwrite_b=overwrite_b, check_finite=check_finite)
 
 
-@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'))
+def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
+                            overwrite_b, check_finite):
+    return (f"(i),(j),({nlower + nupper + 1}, m),(m)->(m)" if np.ndim(b) <= 1 else
+            f"(i),(j),({nlower + nupper + 1}, m),(m,n)->(m,n)")
+
+
+@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'),
+                   signature=_solve_banded_signature, ignore_dtypes=2)
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -525,7 +537,12 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
     raise ValueError(f'illegal value in {-info}-th argument of internal gbsv/gtsv')
 
 
-@_apply_over_batch(('a', 2), ('b', '1|2'))
+def _solveh_banded_signature(ab, b, overwrite_ab=False, overwrite_b=False,
+                             lower=False, check_finite=True):
+    return ("(i, j),(j)->(j)" if np.ndim(b) <= 1 else "(i, j),(j,k)->(j,k)")
+
+
+@_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solveh_banded_signature)
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
@@ -747,7 +764,12 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     return _solve_toeplitz(c, r, b, check_finite)
 
 
-@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+def _solve_toeplitz_signature(c, r, b, check_finite):
+    return "(i),(i),(i)->(i)" if np.ndim(b) <= 1 else "(i),(i),(i,j)->(i,j)"
+
+
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'),
+                   signature=_solve_toeplitz_signature)
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
@@ -1390,7 +1412,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         raise ValueError(f'LAPACK driver "{driver}" is not found')
 
     if len(a.shape) < 2:
-        raise ValueError('Input array a should be at least 2D, got {a.shape = }')
+        raise ValueError(f'Input array a should be at least 2D, got {a.shape = }')
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
@@ -1468,11 +1490,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'  # pyrefly:ignore[missing-attribute]
 
 
-def _pinv_signature(*args, **kwargs):
-    return "(i,j)->(i,j),()" if kwargs.get('return_rank') else "(i,j)->(i,j)"
-
-
-@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1611,7 +1628,6 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1623,7 +1639,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     Parameters
     ----------
-    a : (N, N) array_like
+    a : (..., N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
 
     atol : float, optional
@@ -1649,7 +1665,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     Returns
     -------
-    B : (N, N) ndarray
+    B : (..., N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix.  Returned if `return_rank` is True.
@@ -1683,10 +1699,10 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = _decomp.eigh(a, lower=lower, check_finite=False, driver='ev')
     t = u.dtype.char.lower()
-    maxS = np.max(np.abs(s), initial=0.)
+    maxS = np.max(np.abs(s), initial=0., axis=-1, keepdims=True)
 
     atol = 0. if atol is None else atol
-    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+    rtol = max(a.shape[-2:]) * np.finfo(t).eps if (rtol is None) else rtol
 
     if (atol < 0.) or (rtol < 0.):
         raise ValueError("atol and rtol values must be positive.")
@@ -1694,19 +1710,19 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     val = atol + maxS * rtol
     above_cutoff = (abs(s) > val)
 
-    psigma_diag = 1.0 / s[above_cutoff]
-    u = u[:, above_cutoff]
-
-    B = (u * psigma_diag) @ u.conj().T
+    psigma_diag = np.zeros_like(s)
+    np.divide(1.0, s, where=above_cutoff, out=psigma_diag)
+    B = (u * psigma_diag[..., None, :]) @ u.conj().mT
 
     if return_rank:
-        return B, len(psigma_diag)
+        return B, np.count_nonzero(above_cutoff, axis=-1)
     else:
         return B
 
 
 def _matrix_balance_signature(*args, **kwargs):
-    return "(i,i)->(i,i),(2,i)" if kwargs.get('separate') else "(i,i)->(i,i)"
+    return ("(i,i)->(i,i),(2,i)" if kwargs.get('separate')
+            else "(i,i)->(i,i),(i,i)")
 
 
 @_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
@@ -1769,10 +1785,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     LAPACK routines.
 
     The algorithm is based on the well-known technique of [1]_ and has
-    been modified to account for special cases. See [2]_ for details
-    which have been implemented since LAPACK v3.5.0. Before this version
-    there are corner cases where balancing can actually worsen the
-    conditioning. See [3]_ for such examples.
+    been modified to account for special cases. See [2]_ and [3]_
+    for details.
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.
@@ -2068,11 +2082,16 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     from ..fft import fft, ifft, rfft, irfft
     c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
 
-    return _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
+    return _matmul_toeplitz(c, r, x, workers, check_finite, fft, ifft, rfft, irfft)
 
 
-@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'))
-def _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+def _matmul_toeplitz_signature(c, r, x, workers, check_finite, fft, ifft, rfft, irfft):
+    return "(i),(j),(j)->(i)" if np.ndim(x) <= 1 else "(i),(j),(j,k)->(i,k)"
+
+
+@_apply_over_batch(('c', 1), ('r', 1), ('x', '1|2'),
+                   signature=_matmul_toeplitz_signature)
+def _matmul_toeplitz(c, r, x, workers, check_finite, fft, ifft, rfft, irfft):
     r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
                                                               keep_b_shape=False,
                                                               enforce_square=False)

@@ -2,8 +2,11 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+import gc
 from functools import reduce
+import importlib.util
 import sysconfig
+import weakref
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -16,7 +19,8 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
 from scipy.linalg import (
-    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz
+    lapack, inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, qz,
+    cholesky_banded,
 )
 from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
@@ -26,14 +30,67 @@ from scipy.sparse import diags_array
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
-from scipy.__config__ import CONFIG
-blas_provider = blas_version = None
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
-
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+@pytest.mark.parametrize('module_name, routine', [
+    ('_fblas', 'daxpy'),
+    ('_fblas_64', 'daxpy'),
+    ('_flapack', 'dgesv'),
+    ('_flapack_64', 'dgesv'),
+])
+def test_wrapper_module_collected(module_name, routine):
+    spec = importlib.util.find_spec(f'scipy.linalg.{module_name}')
+    if spec is None:
+        pytest.skip(f'{module_name} not available')
+
+    def load_module():
+        # Load a fresh module without putting it in sys.modules. Only the
+        # module -> wrapper -> heap type -> module cycle should keep it alive.
+        fresh_spec = importlib.util.spec_from_file_location(module_name, spec.origin)
+        module = importlib.util.module_from_spec(fresh_spec)
+        fresh_spec.loader.exec_module(module)
+        return weakref.ref(module), weakref.ref(type(getattr(module, routine)))
+
+    module_ref, type_ref = load_module()
+    gc.collect()
+    assert module_ref() is None
+    assert type_ref() is None
+
+
+def test_wrapper_traverses_its_type():
+    # The wrappers are instances of a heap type and own a reference to it, so
+    # they have to report it to the GC.  Without that the type -> module ->
+    # wrapper cycle is never collected and the extension module cannot unload.
+    # `get_referents` only calls the wrapper's own `tp_traverse`; `get_referrers`
+    # would walk every tracked object and trip over unrelated extension types.
+    func = get_lapack_funcs('gesv', dtype=np.float64)
+    assert any(ref is type(func) for ref in gc.get_referents(func))
+
+
+def test_ilaver():
+    # `ilaver` is the only routine taking no arguments at all.  The tables are
+    # dispatched through a single function-pointer type that never consults
+    # ml_flags, so its empty kwlist -- not METH_NOARGS -- is what rejects
+    # anything it is passed.
+    version = lapack.ilaver()
+    assert len(version) == 3
+    assert all(isinstance(v, int) for v in version)
+    assert version[0] >= 3, version
+
+    for args, kwargs in [((1,), {}), ((1, 2, 3), {}), ((), {'spam': 'eggs'})]:
+        with assert_raises(TypeError):
+            lapack.ilaver(*args, **kwargs)
+
+
+def test_wrapper_type_cannot_be_instantiated():
+    # The module builds every wrapper itself and fills in fields no constructor could
+    # supply, so `object.__new__` must not hand out a blank one; every method would
+    # dereference its null `meth` and `name`.
+    with assert_raises(TypeError):
+        type(get_lapack_funcs('gesv', dtype=np.float64))()
 
 
 def generate_random_dtype_array(shape, dtype, rng):
@@ -1785,12 +1842,12 @@ def test_syequb():
 
 
 @pytest.mark.skipif(True,
-                    reason="Failing on some OpenBLAS version, see gh-12276")
+                    reason="Failing on Intel MKL, see gh-12276")
 def test_heequb():
-    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # zheequb had a bug for versions between 3.7.x and 3.9.x
     # See Reference-LAPACK gh-61 and gh-408
-    # Hence the zheequb test is customized accordingly to avoid
-    # work scaling.
+    # However it seems like MKL did not pick up the fix and
+    # carried the bug to newer versions.
     A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
     s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
@@ -3525,6 +3582,34 @@ def test_lantr(norm, uplo, m, n, diag, dtype):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_pbcon(dtype, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is Hermitian positive definite of shape n x n, bandwidth kd
+    n, kd = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, kd + 1)] = 0
+    A[np.tril_indices(n, -kd - 1)] = 0
+    A = A + A.conj().T + 2 * n * np.eye(n, dtype=dtype)
+
+    # banded storage of the triangle pbcon will look at
+    ab = _to_banded(0, kd, A) if uplo == 'U' else _to_banded(kd, 0, A)
+
+    anorm = np.linalg.norm(A, 1)
+    c_band = cholesky_banded(ab, lower=(uplo == 'L'))
+    pbcon, = get_lapack_funcs(("pbcon",), (ab,))
+    res, info = pbcon(kd, c_band, anorm, uplo=uplo)
+
+    assert info == 0
+    ref = 1 / np.linalg.cond(A, 1)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('norm', ['1', 'I', 'O'])
 def test_gbcon(dtype, norm):
     rng = np.random.default_rng(17273783424)
@@ -3557,9 +3642,7 @@ def test_gbcon(dtype, norm):
     gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
     lu = getrf(A)[0]
     ref = gecon(lu, anorm, norm=norm)[0]
-    # This is an estimate of reciprocal condition number; we just need order of
-    # magnitude.
-    assert_allclose(res, ref, rtol=1)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
 
 
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
@@ -3583,6 +3666,30 @@ def test_langb(dtype, norm):
     assert_allclose(res, ref, rtol=2e-6)
 
 
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['M', '1', 'I', 'F'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+def test_lansb(dtype, norm, uplo):
+    rng = np.random.default_rng(17273783424)
+
+    # A is a symmetric band matrix of shape n x n with k super/sub-diagonals
+    n, k = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, k + 1)] = 0
+    A[np.tril_indices(n, -k - 1)] = 0
+    A = np.triu(A) + np.triu(A, 1).T   # symmetric, not conjugated
+
+    ab = _to_banded(0, k, A) if uplo == 'U' else _to_banded(k, 0, A)
+
+    lansb, lange = get_lapack_funcs(('lansb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = lansb(k, ab, norm=norm, uplo=uplo)
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
+
+
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
 @pytest.mark.parametrize('compute_v', (0, 1))
 def test_stevd(dtype, compute_v):
@@ -3601,3 +3708,183 @@ def test_stevd(dtype, compute_v):
         eps = np.finfo(dtype).eps
         assert_allclose(V @ np.diag(U) @ V.T, A, atol=eps**0.8)
 
+
+
+def _gesvdx_example(dtype):
+    """A 3x2 matrix with singular values 5 and 3, and its leading rank-one term."""
+    rng = np.random.default_rng(1638083107694713882823079058616272161)
+    if np.issubdtype(dtype, np.complexfloating):
+        U = unitary_group.rvs(3, random_state=rng)[:, :2]
+        V = unitary_group.rvs(2, random_state=rng)
+    else:
+        U = ortho_group.rvs(3, random_state=rng)[:, :2]
+        V = ortho_group.rvs(2, random_state=rng)
+    a = (U @ np.diag([5.0, 3.0]) @ V.conj().T).astype(dtype)
+    top = 5.0 * np.outer(U[:, 0], V[:, 0].conj())
+    return a, top
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_subset_by_index(dtype):
+    a, top = _gesvdx_example(dtype)
+    tol = 100 * np.finfo(dtype).eps
+    direct = getattr(lapack, f'{"sdcz"[DTYPES.index(dtype)]}gesvdx')
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    for func in (direct, gesvdx):
+        u, s, vt, ns, info = func(a, range='I', il=1, iu=1)
+        assert info == 0
+        assert ns == 1
+        assert_allclose(s[:ns], [5.0], rtol=tol)
+        assert_allclose(u[:, :ns] @ np.diag(s[:ns]) @ vt[:ns, :], top, atol=5 * tol)
+
+        # il counts from the largest singular value
+        u, s, vt, ns, info = func(a, range='I', il=2, iu=2)
+        assert info == 0
+        assert ns == 1
+        assert_allclose(s[:ns], [3.0], rtol=tol)
+
+
+# (3, 2)/(20, 5) take the QR-first path in reference LAPACK, (10, 9) the direct
+# bidiagonalization, and the transposes the LQ variants. Each path has its own
+# minimum lwork, and the default must satisfy all of them.
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5), (5, 20)])
+def test_gesvdx_all(dtype, shape):
+    rng = np.random.default_rng(78235023470)
+    a = rng.standard_normal(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        a = a + 1j * rng.standard_normal(shape)
+    a = a.astype(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+    k = min(shape)
+
+    u, s, vt, ns, info = gesvdx(a)
+    assert info == 0
+    assert ns == k
+    assert u.shape == (shape[0], k)
+    assert vt.shape == (k, shape[1])
+    tol = 100 * np.finfo(dtype).eps
+    assert_allclose(s, np.linalg.svd(a, compute_uv=False), rtol=tol)
+    assert_allclose(u @ np.diag(s) @ vt, a, atol=tol * np.linalg.norm(a))
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_subset_by_value(dtype):
+    a, top = _gesvdx_example(dtype)
+    tol = 100 * np.finfo(dtype).eps
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, range='V', vl=4.0, vu=6.0)
+    assert info == 0
+    assert ns == 1
+    assert_allclose(s[:ns], [5.0], rtol=tol)
+    assert_allclose(u[:, :ns] @ np.diag(s[:ns]) @ vt[:ns, :], top, atol=5 * tol)
+
+    # an interval holding no singular value
+    *_, ns, info = gesvdx(a, range='V', vl=6.0, vu=7.0)
+    assert info == 0
+    assert ns == 0
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gesvdx_no_vectors(dtype):
+    a, _ = _gesvdx_example(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, compute_u=0, compute_vh=0)
+    assert info == 0
+    assert ns == 2
+    assert u.shape == (1, 1)
+    assert vt.shape == (1, 1)
+    assert_allclose(s, [5.0, 3.0], rtol=100 * np.finfo(dtype).eps)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(0, 3), (3, 0), (0, 0)])
+@pytest.mark.parametrize('range_', ['A', 'I', 'V'])
+def test_gesvdx_empty(dtype, shape, range_):
+    a = np.zeros(shape, dtype=dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+
+    u, s, vt, ns, info = gesvdx(a, range=range_)
+    assert info == 0
+    assert ns == 0
+    assert s.shape == (0,)
+    assert u.shape == (shape[0], 0)
+    assert vt.shape == (0, shape[1])
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('kwargs', [
+    dict(range='X'),
+    dict(range='I', il=0, iu=1),
+    dict(range='I', il=2, iu=1),
+    dict(range='I', il=1, iu=3),
+    dict(range='V', vl=-1.0, vu=1.0),
+    dict(range='V', vl=2.0, vu=1.0),
+    dict(compute_u=2),
+    dict(compute_vh=-1),
+    dict(lwork=0),
+    dict(lwork=-1),
+])
+def test_gesvdx_invalid_arguments(dtype, kwargs):
+    # Caught by the wrapper before LAPACK sees them.
+    a, _ = _gesvdx_example(dtype)
+    gesvdx, = get_lapack_funcs(('gesvdx',), (a,))
+    with assert_raises(ValueError):
+        gesvdx(a, **kwargs)
+
+
+# (50, 50), (40, 30) and (64, 64) take the direct path, where the optimal size
+# LAPACK reports is below the default `gesvdx` uses (complex only from about
+# 62 x 62 on); `gesvdx` must still accept it.
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 2), (2, 3), (10, 9), (9, 10), (20, 5),
+                                   (5, 20), (50, 50), (40, 30), (64, 64)])
+@pytest.mark.parametrize('compute_uv', [0, 1])
+def test_gesvdx_lwork_is_accepted_by_gesvdx(dtype, shape, compute_uv):
+    rng = np.random.default_rng(1985412312)
+    a = rng.standard_normal(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        a = a + 1j * rng.standard_normal(shape)
+    a = a.astype(dtype)
+    gesvdx, gesvdx_lwork = get_lapack_funcs(('gesvdx', 'gesvdx_lwork'), (a,))
+
+    lwork = _compute_lwork(gesvdx_lwork, *shape,
+                           compute_u=compute_uv, compute_vh=compute_uv)
+    u, s, vt, ns, info = gesvdx(a, compute_u=compute_uv,
+                                compute_vh=compute_uv, lwork=lwork)
+    assert info == 0
+    assert ns == min(shape)
+    tol = 100 * np.finfo(dtype).eps
+    assert_allclose(s, np.linalg.svd(a, compute_uv=False),
+                    rtol=tol, atol=tol * s[0])
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(0, 3), (3, 0), (0, 0)])
+def test_gesvdx_lwork_empty(dtype, shape):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    work, info = gesvdx_lwork(*shape)
+    assert info == 0
+    assert work.real >= 1
+
+    a = np.zeros(shape, dtype=dtype)
+    gesvdx = get_lapack_funcs('gesvdx', dtype=dtype)
+    *_, ns, info = gesvdx(a, lwork=int(work.real))
+    assert info == 0
+    assert ns == 0
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('kwargs', [
+    dict(m=-1, n=2),
+    dict(m=2, n=-1),
+    dict(m=3, n=2, compute_u=2),
+    dict(m=3, n=2, compute_vh=-1),
+])
+def test_gesvdx_lwork_invalid_arguments(dtype, kwargs):
+    gesvdx_lwork = get_lapack_funcs('gesvdx_lwork', dtype=dtype)
+    with assert_raises(ValueError):
+        gesvdx_lwork(**kwargs)

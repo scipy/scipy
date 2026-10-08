@@ -8,8 +8,9 @@ A Dual Annealing global optimization algorithm
 """
 
 import numpy as np
-from scipy.optimize import OptimizeResult
-from scipy.optimize import minimize, Bounds
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
+from scipy.optimize._constraints import Bounds
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state, _transition_to_rng
 from scipy.optimize._constraints import new_bounds_to_old
@@ -660,6 +661,13 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # Checking that bounds are the same length
     if not len(lower) == len(upper):
         raise ValueError('Bounds do not have the same dimensions')
+    # Checking that maxiter allows at least one iteration. With maxiter < 1 the
+    # search loop would spin forever, since its stopping condition is only ever
+    # set from inside the per-iteration loop.
+    if maxiter < 1:
+        raise ValueError(
+            'maxiter must be a positive integer greater than or equal to one.'
+        )
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)

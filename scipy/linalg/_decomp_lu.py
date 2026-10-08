@@ -19,7 +19,7 @@ __all__ = ['lu', 'lu_solve', 'lu_factor']
 def _luf_signature(a, *args, **kwargs):
     m, n = a.shape[-2:]
     k = min(m, n)
-    return f"(i,j)->(i,j),({k})"
+    return f"(i,j)->(i,j),int({k})"
 
 
 @_apply_over_batch(('a', 2), signature=_luf_signature)
@@ -192,12 +192,17 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     """
     (lu, piv) = lu_and_piv
-    return _lu_solve(lu, piv, b, trans=trans, overwrite_b=overwrite_b,
+    return _lu_solve(piv, lu, b, trans=trans, overwrite_b=overwrite_b,
                      check_finite=check_finite)
 
 
-@_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'))
-def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
+def _lu_solve_signature(piv, lu, b, trans, overwrite_b, check_finite):
+    return "(i),(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i),(i, i),(i,j)->(i,j)"
+
+
+@_apply_over_batch(('piv', 1), ('lu', 2), ('b', '1|2'), signature=_lu_solve_signature,
+                   ignore_dtypes=1)
+def _lu_solve(piv, lu, b, trans, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
     else:

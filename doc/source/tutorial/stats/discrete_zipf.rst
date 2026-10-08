@@ -5,7 +5,7 @@ Zipf (Zeta) Distribution
 ========================
 
 A random variable has the zeta distribution (also called the zipf
-distribution) with parameter :math:`\alpha>1` if it's probability mass function is given by
+distribution) with parameter :math:`\alpha>1` if its probability mass function is given by
 
 .. math::
    :nowrap:

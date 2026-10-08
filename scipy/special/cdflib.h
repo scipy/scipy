@@ -93,14 +93,6 @@ struct TupleDID
     double d2;
 };
 
-struct TupleDDID
-{
-    double d1;
-    double d2;
-    int i1;
-    double d3;
-};
-
 
 typedef struct DinvrState DinvrState;
 typedef struct DzrorState DzrorState;
@@ -108,7 +100,6 @@ typedef struct DzrorState DzrorState;
 struct TupleDID cdff_which4(double, double, double, double);
 struct TupleDID cdffnc_which3(double, double, double, double, double);
 struct TupleDID cdffnc_which4(double, double, double, double, double);
-struct TupleDID cdft_which3(double, double, double);
 
 #ifdef __cplusplus
 }      /* extern "C" */

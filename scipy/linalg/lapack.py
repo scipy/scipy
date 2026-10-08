@@ -216,10 +216,20 @@ All functions
    cgesvd
    zgesvd
 
+   sgesvdx
+   dgesvdx
+   cgesvdx
+   zgesvdx
+
    sgesvd_lwork
    dgesvd_lwork
    cgesvd_lwork
    zgesvd_lwork
+
+   sgesvdx_lwork
+   dgesvdx_lwork
+   cgesvdx_lwork
+   zgesvdx_lwork
 
    sgesvx
    dgesvx
@@ -386,6 +396,11 @@ All functions
    clange
    zlange
 
+   slansb
+   dlansb
+   clansb
+   zlansb
+
    slantr
    dlantr
    clantr
@@ -443,6 +458,11 @@ All functions
 
    sormrz_lwork
    dormrz_lwork
+
+   spbcon
+   dpbcon
+   cpbcon
+   zpbcon
 
    spbsv
    dpbsv
@@ -886,7 +906,6 @@ from .blas import (
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
 
-from re import compile as regex_compile
 from scipy.__config__ import CONFIG
 
 # If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
@@ -924,30 +943,6 @@ _lapack_alias = {
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
 }
-
-
-# Place guards against docstring rendering issues with special characters
-p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
-p2 = regex_compile(r'Default: (?P<d>.*?)\n')
-
-
-def backtickrepl(m):
-    if m.group('s'):
-        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
-    else:
-        return f"with bounds ``{m.group('b')}``\n"
-
-
-for routine in [ssyevr, dsyevr, cheevr, zheevr,  # pyrefly:ignore[unknown-name]
-                ssyevx, dsyevx, cheevx, zheevx,  # pyrefly:ignore[unknown-name]
-                ssygvd, dsygvd, chegvd, zhegvd]:  # pyrefly:ignore[unknown-name]
-    if routine.__doc__:
-        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
-        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
-    else:
-        continue
-
-del regex_compile, p1, p2, backtickrepl
 
 
 @_memoize_get_funcs
@@ -1019,7 +1014,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     use the ``dtype=`` argument:
 
     >>> LA.get_lapack_funcs('lange', dtype=np.float32)
-    <fortran function slange>
+    <flapack function slange>
 
     The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
     and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):

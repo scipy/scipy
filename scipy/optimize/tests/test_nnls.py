@@ -436,6 +436,23 @@ class TestNNLS:
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
 
+    @pytest.mark.parametrize('b1, b2', [(2.0, -1.0), (11.0, -10.0)])
+    def test_nnls_rejected_candidate_unchanged(self, b1, b2):
+        # Column 1 is 0.5 * column 0 up to a 5e-15 perturbation, so it gets
+        # picked with a round-off sized dual and rejected as dependent. It used
+        # to keep the Householder vector from that attempt, enter the solution
+        # later and give a wrong x and rnorm.
+        eps = 5e-15
+        A = np.array([[1.0, 0.5, 0.0],
+                      [0.0, eps, 0.0],
+                      [0.0, eps, 0.0],
+                      [0.0, 0.0, 1.0]])
+        b = np.array([1.0, b1, b2, eps / 2])
+        x, rnorm = nnls(A, b)
+        assert_allclose(x, [1.0, 0.0, 0.0], atol=1e-12)
+        assert_allclose(rnorm, np.hypot(b1, b2))
+        assert_allclose(rnorm, np.linalg.norm(A @ x - b))
+
     def test_2D_singleton_RHS_input(self):
         # Test that a 2D singleton RHS input is accepted
         A = np.array([[1.0, 0.5, -1.],

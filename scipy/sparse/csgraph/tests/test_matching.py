@@ -149,6 +149,46 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
     assert_equal(any(C2.diagonal() == 0), False)
 
 
+@pytest.mark.timeout(2)  # only slow when broken
+def test_maximum_bipartite_matching_dead_end_explored_once():
+    # Regression test for gh-26147: the depth-first search must explore every
+    # vertex at most once per phase. The graph consists of a chain of `depth`
+    # rows that leads to a free column, and a ladder of `depth` layers of two
+    # rows each, in which both rows of a layer are adjacent to the columns
+    # matched to both rows of the next layer. The ladder contains no free
+    # column, so the search from the row that enters it fails. Without
+    # marking the rows it has explored, the search then walks all 2**depth
+    # paths through the ladder, whatever the order in which it visits them,
+    # and with depth = 30 this takes seconds.
+    depth = 30
+    rows, cols = [], []
+    # Chain: row k is adjacent to columns k and k + 1.
+    for k in range(depth):
+        rows += [k, k]
+        cols += [k, k + 1]
+    # Ladder: layer k consists of rows r0 + 2k and r0 + 2k + 1, which are
+    # both adjacent to columns c0 + 2k, ..., c0 + 2k + 3.
+    r0, c0 = depth, depth + 1
+    for k in range(depth):
+        for r in (r0 + 2 * k, r0 + 2 * k + 1):
+            for c in range(c0 + 2 * k, min(c0 + 2 * k + 4, c0 + 2 * depth)):
+                rows.append(r)
+                cols.append(c)
+    # One more row enters the chain, and one more row enters the ladder.
+    s = r0 + 2 * depth
+    t = s + 1
+    rows += [s, t, t]
+    cols += [0, c0, c0 + 1]
+    graph = csr_array((np.ones(len(rows)), (rows, cols)),
+                      shape=(t + 1, c0 + 2 * depth))
+    x = maximum_bipartite_matching(graph, perm_type='column')
+    y = maximum_bipartite_matching(graph, perm_type='row')
+    # The graph has one more row than it has columns, and every column can be
+    # matched.
+    assert (x != -1).sum() == graph.shape[1]
+    assert (y != -1).sum() == graph.shape[1]
+
+
 @pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
 def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
     biadjacency = csr_array((num_cols, num_rows))

@@ -21,6 +21,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
     solver_stats->error_num = INPROGRESS;
+    solver_stats->iterations = 0;
     solver_stats->funcalls = 0;
 
     tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
@@ -42,7 +43,6 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         return 0.;
     }
 
-    solver_stats->iterations=0;
     for (i=0; i<iter; i++) {
         solver_stats->iterations++;
         

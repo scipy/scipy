@@ -7,8 +7,8 @@ import numpy as np
 
 from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
-from scipy.stats._resampling import BootstrapResult
-from scipy.stats import qmc, bootstrap
+from scipy.stats._resampling import BootstrapResult, bootstrap
+from scipy.stats import qmc
 from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _transition_to_rng
 
@@ -332,9 +332,7 @@ def sobol_indices(
 
         And method:
 
-        bootstrap(confidence_level: float, n_resamples: int)
-        -> BootstrapSobolResult
-
+        bootstrap(confidence_level: float, n_resamples: int) -> BootstrapSobolResult
             A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 

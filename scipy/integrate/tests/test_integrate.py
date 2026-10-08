@@ -117,7 +117,7 @@ class TestOde(TestODEClass):
             problem = problem_cls()
             if problem.cmplx:
                 continue
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -129,7 +129,7 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -141,7 +141,17 @@ class TestOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
+
+    @pytest.mark.parametrize('integrator', ['dopri5', 'dop853', 'vode', 'lsoda'])
+    def test_ode_tuple_return(self, integrator):
+        # Functions returning a tuple work properly across integrators
+        # without triggering legacy f2py SystemError (gh-5134).
+        r = ode(lambda t, y: (y[0],)).set_integrator(integrator)
+        r.set_initial_value([1.0], 0.0)
+        res = r.integrate(1.0)
+        assert_(r.successful())
+        assert_allclose(res, [np.e], rtol=1e-5)
 
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
@@ -220,7 +230,7 @@ class TestComplexOde(TestODEClass):
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            self._do_problem(problem, 'lsoda')
+            self._do_problem(problem, 'lsoda', method=None)
 
     def test_dopri5(self):
         # Check the dopri5 solver
@@ -230,7 +240,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dopri5')
+            self._do_problem(problem, 'dopri5', method=None)
 
     def test_dop853(self):
         # Check the dop853 solver
@@ -240,7 +250,7 @@ class TestComplexOde(TestODEClass):
                 continue
             if hasattr(problem, 'jac'):
                 continue
-            self._do_problem(problem, 'dop853')
+            self._do_problem(problem, 'dop853', method=None)
 
 
 class TestSolout:

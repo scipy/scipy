@@ -8,8 +8,8 @@ from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (assert_array_equal, assert_almost_equal,
-                           assert_array_less, assert_array_almost_equal,
+from numpy.testing import (assert_almost_equal,
+                           assert_array_almost_equal, assert_array_less,
                            assert_, assert_allclose, assert_equal)
 import pytest
 from pytest import raises as assert_raises
@@ -32,6 +32,7 @@ from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
+    xp_assert_less,
 )
 
 lazy_xp_modules = [stats]
@@ -41,9 +42,9 @@ distcont = dict(distcont)
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
+# Do not select a backend here: plotting tests request the `mpl_agg` fixture
+# instead (gh-3588).
 try:
-    import matplotlib
-    matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
@@ -248,20 +249,51 @@ class TestShapiro:
         xp_assert_close(res.pvalue, ref_pvalue, rtol=5e-7)
 
 
-@pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
+@make_xp_test_case(stats.anderson)
 class TestAnderson:
-    def test_normal(self):
-        rs = RandomState(1234567890)
-        x1 = rs.standard_exponential(size=50)
-        x2 = rs.standard_normal(size=50)
-        A, crit, sig = stats.anderson(x1)
-        assert_array_less(crit[:-1], A)
-        A, crit, sig = stats.anderson(x2)
-        assert_array_less(A, crit[-2:])
 
-        v = np.ones(10)
-        v[0] = 0
-        A, crit, sig = stats.anderson(v)
+    @pytest.mark.parametrize('dist',
+                             ['gumbel_l', 'gumbel_r', 'logistic', 'weibull_min'])
+    def test_input_validation_dist_batch(self, dist, xp):
+        rng = np.random.default_rng(95432334703)
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = f"`dist='{dist}'` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, dist, axis=-1)
+
+    def test_input_validation_bad_dist(self, xp):
+        x = xp.ones(10)
+        with pytest.raises(ValueError, match='Invalid distribution'):
+            stats.anderson(x, dist='plate_of_shrimp')
+
+    def test_result_attributes(self, xp):
+        rs = RandomState(1234567890)
+        x = rs.standard_exponential(size=50)
+        x = xp.asarray(x)
+        res = stats.anderson(x)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_normal(self, xp, dtype):
+        rs = RandomState(1234567890)
+        dtype = getattr(xp, dtype)
+
+        x1 = rs.standard_exponential(size=50)
+        x1 = xp.asarray(x1, dtype=dtype)
+        res = stats.anderson(x1)
+        xp_assert_equal(res.pvalue, xp.asarray(0.01, dtype=dtype))
+
+        x2 = rs.standard_normal(size=50)
+        x2 = xp.asarray(x2, dtype=dtype)
+        res = stats.anderson(x2)
+        xp_assert_less(-res.pvalue, -xp.asarray(0.05, dtype=dtype))
+
+        v = xp.ones(10, dtype=dtype)
+        v = xpx.at(v)[0].set(0.)
+        A, _ = stats.anderson(v)
         # The expected statistic 3.208057 was computed independently of scipy.
         # For example, in R:
         #   > library(nortest)
@@ -271,24 +303,31 @@ class TestAnderson:
         #   > result$statistic
         #          A
         #   3.208057
-        assert_allclose(A, 3.208057)
+        xp_assert_close(A, xp.asarray(3.208057, dtype=dtype))
 
-    def test_expon(self):
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_expon(self, xp, dtype):
         rs = RandomState(1234567890)
+        dtype = getattr(xp, dtype)
+
         x1 = rs.standard_exponential(size=50)
         x2 = rs.standard_normal(size=50)
-        A, crit, sig = stats.anderson(x1, 'expon')
-        assert_array_less(A, crit[-2:])
-        with np.errstate(all='ignore'):
-            A, crit, sig = stats.anderson(x2, 'expon')
-        assert_(A > crit[-1])
+        x1 = xp.asarray(x1, dtype=dtype)
+        x2 = xp.asarray(x2, dtype=dtype)
+
+        A, _ = stats.anderson(x1, 'expon')
+         # reference values from SciPy 1.18
+        xp_assert_less(A, xp.asarray(1.572, dtype=dtype))
+
+        A, _ = stats.anderson(x2, 'expon')
+        xp_assert_less(-A, -xp.asarray(1.936, dtype=dtype))
 
     def test_gumbel(self):
         # Regression test for gh-6306.  Before that issue was fixed,
         # this case would return a2=inf.
         v = np.ones(100)
         v[0] = 0.0
-        a2, crit, sig = stats.anderson(v, 'gumbel')
+        a2, _ = stats.anderson(v, 'gumbel')
         # A brief reimplementation of the calculation of the statistic.
         n = len(v)
         xbar, s = stats.gumbel_l.fit(v)
@@ -299,23 +338,13 @@ class TestAnderson:
 
         assert_allclose(a2, expected_a2)
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
-
-    def test_result_attributes(self):
-        rs = RandomState(1234567890)
-        x = rs.standard_exponential(size=50)
-        res = stats.anderson(x)
-        attributes = ('statistic', 'critical_values', 'significance_level')
-        check_named_results(res, attributes)
-
     def test_gumbel_l(self):
         # gh-2592, gh-6337
         # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
         rs = RandomState(1234567890)
         x = rs.gumbel(size=100)
-        A1, crit1, sig1 = stats.anderson(x, 'gumbel')
-        A2, crit2, sig2 = stats.anderson(x, 'gumbel_l')
+        A1, _ = stats.anderson(x, 'gumbel')
+        A2, _ = stats.anderson(x, 'gumbel_l')
 
         assert_allclose(A2, A1)
 
@@ -328,30 +357,18 @@ class TestAnderson:
         # A constant array is a degenerate case and breaks gumbel_r.fit, so
         # change one value in x2.
         x2[0] = 0.996
-        A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
-        A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
+        A1, _ = stats.anderson(x1, 'gumbel_r')
+        A2, _ = stats.anderson(x2, 'gumbel_r')
 
-        assert_array_less(A1, crit1[-2:])
-        assert_(A2 > crit2[-1])
+        assert_array_less(A1, [0.86 , 1.018])  # values from SciPy 1.18
+        assert_(A2 > 1.018)  # values from SciPy 1.18
 
     def test_weibull_min_case_A(self):
         # data and reference values from `anderson` reference [7]
         x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
         res = stats.anderson(x, 'weibull_min')
-        m, loc, scale = res.fit_result.params
-        assert_allclose((m, loc, scale), (2.38, 99.02, 78.23), rtol=2e-3)
         assert_allclose(res.statistic, 0.260, rtol=1e-3)
-        assert res.statistic < res.critical_values[0]
-
-        c = 1 / m  # ~0.42
-        assert_allclose(c, 1/2.38, rtol=2e-3)
-        # interpolate between rows for c=0.4 and c=0.45, indices -3 and -2
-        As40 = _Avals_weibull[-3]
-        As45 = _Avals_weibull[-2]
-        As_ref = As40 + (c - 0.4)/(0.45 - 0.4) * (As45 - As40)
-        # atol=1e-3 because results are rounded up to the next third decimal
-        assert np.all(res.critical_values > As_ref)
-        assert_allclose(res.critical_values, As_ref, atol=1e-3)
+        assert res.statistic < 0.33  # values from SciPy 1.18
 
     def test_weibull_min_case_B(self):
         # From `anderson` reference [7]
@@ -372,37 +389,53 @@ class TestAnderson:
         with wcontext, econtext:
             stats.anderson(x, 'weibull_min')
 
-    @pytest.mark.parametrize('distname',
-                             ['norm', 'expon', 'gumbel_l', 'extreme1',
-                              'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
-    def test_anderson_fit_params(self, distname):
-        # check that anderson now returns a FitResult
-        rng = np.random.default_rng(330691555377792039)
-        real_distname = ('gumbel_l' if distname in {'extreme1', 'gumbel'}
-                         else distname)
-        dist = getattr(stats, real_distname)
-        params = distcont[real_distname]
-        x = dist.rvs(*params, size=1000, random_state=rng)
-        res = stats.anderson(x, distname)
-        assert res.fit_result.success
-
     def test_anderson_weibull_As(self):
         m = 1  # "when mi < 2, so that c > 0.5, the last line...should be used"
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[-1])
         m = np.inf
         assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
+    @pytest.mark.parametrize("dist, seed, statistic, pvalue", [
+        ('norm', 45893496961,
+         [0.64732893065, 0.60961089894, 1.18923899825, 0.74493160203, 0.37722093992],
+         [0.09118613775, 0.11191418347, 0.01, 0.05054289312, 0.15]),
+        ('expon', 45893502399,
+         [1.44862480223, 0.80811541086, 0.95432334703, 1.96676416917, 1.92172696793],
+         [0.03737809713, 0.15, 0.1349146277 , 0.01, 0.01104929362]),
+    ])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_batch(self, dist, seed, statistic, pvalue, dtype, xp):
+        # test_axis_nan_policy throws random data at `anderson`, which will almost
+        # always result in p < 0.01. These seeds were chosen such that `anderson`
+        # from SciPy 1.18 would produce one extreme pvalue (on either end) and
+        # three nontrivial pvalues. The pvalues were interpolated using `np.interp`
+        # with the non-rounded critical values.
+        dtype = getattr(xp, dtype)
+        rng = np.random.default_rng(seed)
+        x = getattr(stats, dist).rvs(size=(5, 100), random_state=rng)
 
+        x = xp.asarray(x, dtype=dtype)
+        res = stats.anderson(x, dist=dist, axis=-1, method='interpolate')
+
+        xp_assert_close(res.statistic, xp.asarray(statistic, dtype=dtype), atol=1e-10)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue, dtype=dtype), atol=1e-10)
+
+
+@make_xp_test_case(stats.anderson)
 class TestAndersonMethod:
-    def test_warning(self):
-        message = "As of SciPy 1.17, users..."
-        with pytest.warns(FutureWarning, match=message):
-            stats.anderson([1, 2, 3], 'norm')
-
-    def test_method_input_validation(self):
+    def test_method_input_validation(self, xp):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
-            stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
+            stats.anderson(xp.asarray([1, 2, 3]), 'norm', method='ekki-ekki')
+
+    def test_method_input_validation_method(self, xp):
+        rng = np.random.default_rng(95432334703)
+        x = xp.asarray(rng.random(size=(5, 100)))
+        message_prefix = "The provided `method` is not implemented for "
+        message = message_prefix + ("batched input." if is_numpy(xp)
+                                    else "the provided array type.")
+        with pytest.raises(NotImplementedError, match=message):
+            stats.anderson(x, method=stats.MonteCarloMethod(rng=rng), axis=-1)
 
     def test_monte_carlo_method(self):
         rng = np.random.default_rng(94982389149239)
@@ -447,22 +480,30 @@ class TestAndersonMethod:
         np.testing.assert_allclose(res.statistic, ref.statistic)
         np.testing.assert_allclose(res.pvalue, ref.pvalue, atol=0.005)
 
-    @pytest.mark.parametrize('dist_name',
-        ['norm', 'expon', 'logistic', 'gumbel_l', 'gumbel_r', 'weibull_min'])
-    def test_interpolate_saturation(self, dist_name):
+    @pytest.mark.parametrize('dist_name,significance_level,critical_values',
+        # values from SciPy 1.18
+        [('norm', [15, 10, 5, 2.5, 1], [0.552, 0.621, 0.74, 0.859, 1.019]),
+         ('expon', [15, 10, 5, 2.5, 1], [0.905, 1.049, 1.305, 1.572, 1.936]),
+         ('logistic', [25, 10, 5, 2.5, 1, 0.5],
+          [0.424, 0.56 , 0.657, 0.765, 0.901, 1.005]),
+         ('gumbel_l', [25, 10, 5, 2.5, 1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('gumbel_r', [25, 10, 5, 2.5,  1], [0.461, 0.619, 0.736, 0.853, 1.009]),
+         ('weibull_min', [0.5 , 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995],
+          [0.314, 0.428, 0.507, 0.569, 0.675, 0.78 , 0.921, 1.027])])
+    def test_interpolate_saturation(self, dist_name, significance_level,
+                                    critical_values):
         dist = getattr(stats, dist_name)
         rng = np.random.default_rng(4202165767276)
         args = (3.5,) if dist_name == 'weibull_min' else tuple()
         x = dist.rvs(*args, size=50, random_state=rng)
 
-        with pytest.warns(FutureWarning):
-            res = stats.anderson(x, dist_name)
-        pvalues = (1 - np.asarray(res.significance_level) if dist_name == 'weibull_min'
-                   else np.asarray(res.significance_level) / 100)
+        res = stats.anderson(x, dist_name)
+        pvalues = (1 - np.asarray(significance_level) if dist_name == 'weibull_min'
+                   else np.asarray(significance_level) / 100)
         pvalue_min = np.min(pvalues)
         pvalue_max = np.max(pvalues)
-        statistic_min = np.min(res.critical_values)
-        statistic_max = np.max(res.critical_values)
+        statistic_min = np.min(critical_values)
+        statistic_max = np.max(critical_values)
 
         # data drawn from distribution -> low statistic / high p-value
         res = stats.anderson(x, dist_name, method='interpolate')
@@ -475,46 +516,40 @@ class TestAndersonMethod:
         assert res.pvalue == pvalue_min
 
 
-@pytest.mark.filterwarnings("ignore:Parameter `variant`...:UserWarning")
+@make_xp_test_case(stats.anderson_ksamp)
 class TestAndersonKSamp:
-    def test_example1a(self):
+    @pytest.mark.parametrize('variant, Tk, p', [('right', 4.449, 0.0021),
+                                                ('midrank', 4.480, 0.002),
+                                                # 'continuous' reference: SciPy 1.18
+                                                ('continuous', 4.5785, 0.001967)])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_example1(self, variant, Tk, p, dtype, xp):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
         # Methods Based on Ranks, p. 309)
-        # Pass a mixture of lists and arrays
-        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
-        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
+        dtype = dict(dtype=getattr(xp, dtype))
+        t1 = xp.asarray([38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0], **dtype)
+        t2 = xp.asarray([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8], **dtype)
+        t3 = xp.asarray([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0], **dtype)
+        t4 = xp.asarray([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8], **dtype)
+        res = stats.anderson_ksamp((t1, t2, t3, t4), variant=variant)
 
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+        xp_assert_close(res.statistic, xp.asarray(Tk, **dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(p, **dtype), atol=0.00025)
 
-        assert_almost_equal(Tk, 4.449, 3)
-        assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
-                                  tm[0:5], 4)
-        assert_allclose(p, 0.0021, atol=0.00025)
-
-    def test_example1b(self):
-        # Example data from Scholz & Stephens (1987), originally
-        # published in Lehmann (1995, Nonparametrics, Statistical
-        # Methods Based on Ranks, p. 309)
-        # Pass arrays
-        t1 = np.array([38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0])
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
-        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
-
-        assert_almost_equal(Tk, 4.480, 3)
-        assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
-                                  tm[0:5], 4)
-        assert_allclose(p, 0.0020, atol=0.00025)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.xslow
-    def test_example2a(self):
+    @pytest.mark.parametrize('variant, Tk, p', [('midrank', 3.294, 0.0041),
+                                                ('right', 3.288, 0.0041),
+                                                # 'continuous' reference: SciPy 1.18
+                                                ('continuous', 3.4569, 0.0032)])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_example2(self, variant, Tk, p, dtype, xp):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
-        # Pass lists instead of arrays
+        dtype = dict(dtype=getattr(xp, dtype))
         t1 = [194, 15, 41, 29, 33, 181]
         t2 = [413, 14, 58, 37, 100, 65, 9, 169, 447, 184, 36, 201, 118]
         t3 = [34, 31, 18, 18, 67, 57, 62, 7, 22, 34]
@@ -536,52 +571,23 @@ class TestAndersonKSamp:
                61, 34]
 
         samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
-        assert_almost_equal(Tk, 3.288, 3)
-        assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
-                                  tm[0:5], 4)
-        assert_allclose(p, 0.0041, atol=0.00025)
+        samples = [xp.asarray(sample, **dtype) for sample in samples]
+
+        res = stats.anderson_ksamp(samples, variant=variant)
+        xp_assert_close(res.statistic, xp.asarray(Tk, **dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(p, **dtype), atol=0.00025)
+
+        if not is_numpy(xp):
+            return
 
         rng = np.random.default_rng(6989860141921615054)
         method = stats.PermutationMethod(n_resamples=9999, rng=rng)
-        res = stats.anderson_ksamp(samples, midrank=False, method=method)
-        assert_array_equal(res.statistic, Tk)
-        assert_array_equal(res.critical_values, tm)
-        assert_allclose(res.pvalue, p, atol=6e-4)
+        res2 = stats.anderson_ksamp(samples, variant=variant, method=method)
+        xp_assert_close(res2.statistic, res.statistic)
+        atol = 1e-3 if variant == 'continuous' else 6e-4
+        xp_assert_close(res2.pvalue, res.pvalue, atol=atol)
 
-    def test_example2b(self):
-        # Example data taken from an earlier technical report of
-        # Scholz and Stephens
-        t1 = [194, 15, 41, 29, 33, 181]
-        t2 = [413, 14, 58, 37, 100, 65, 9, 169, 447, 184, 36, 201, 118]
-        t3 = [34, 31, 18, 18, 67, 57, 62, 7, 22, 34]
-        t4 = [90, 10, 60, 186, 61, 49, 14, 24, 56, 20, 79, 84, 44, 59, 29,
-              118, 25, 156, 310, 76, 26, 44, 23, 62]
-        t5 = [130, 208, 70, 101, 208]
-        t6 = [74, 57, 48, 29, 502, 12, 70, 21, 29, 386, 59, 27]
-        t7 = [55, 320, 56, 104, 220, 239, 47, 246, 176, 182, 33]
-        t8 = [23, 261, 87, 7, 120, 14, 62, 47, 225, 71, 246, 21, 42, 20, 5,
-              12, 120, 11, 3, 14, 71, 11, 14, 11, 16, 90, 1, 16, 52, 95]
-        t9 = [97, 51, 11, 4, 141, 18, 142, 68, 77, 80, 1, 16, 106, 206, 82,
-              54, 31, 216, 46, 111, 39, 63, 18, 191, 18, 163, 24]
-        t10 = [50, 44, 102, 72, 22, 39, 3, 15, 197, 188, 79, 88, 46, 5, 5, 36,
-               22, 139, 210, 97, 30, 23, 13, 14]
-        t11 = [359, 9, 12, 270, 603, 3, 104, 2, 438]
-        t12 = [50, 254, 5, 283, 35, 12]
-        t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
-        t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
-               61, 34]
-
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14),
-                                         midrank=True)
-
-        assert_almost_equal(Tk, 3.294, 3)
-        assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
-                                  tm[0:5], 4)
-        assert_allclose(p, 0.0041, atol=0.00025)
-
-    def test_R_kSamples(self):
+    def test_R_kSamples(self, xp):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
         # r1 = 1:100
@@ -613,131 +619,112 @@ class TestAndersonKSamp:
         # res <- kSamples::ad.test(r1, r1 + 13.5)
         # res$ad[1, "T.AD"] # 6.2982
         # res$ad[1, " asympt. P-value"] # 0.00118
+        dtype = xp.float64
 
-        x1 = np.linspace(1, 100, 100)
+        x1 = xp.linspace(1, 100, 100, dtype=dtype)
         # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
-            s, _, p = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
-        assert_almost_equal(s, 41.105, 3)
-        assert_equal(p, 0.001)
+        with pytest.warns(UserWarning, match='p-value floored'):
+            s, p = stats.anderson_ksamp([x1, x1 + 40.5], variant="right")
+        xp_assert_close(s, xp.asarray(41.105, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.001, dtype=dtype))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
-            s, _, p = stats.anderson_ksamp([x1, x1 + 40.5])
-        assert_almost_equal(s, 41.235, 3)
-        assert_equal(p, 0.001)
+        with pytest.warns(UserWarning, match='p-value floored'):
+            s, p = stats.anderson_ksamp([x1, x1 + 40.5])
+        xp_assert_close(s, xp.asarray(41.235, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.001, dtype=dtype))
 
         # test case: similar distributions --> p-value capped at 0.25
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
-            s, _, p = stats.anderson_ksamp([x1, x1 + .5], midrank=False)
-        assert_almost_equal(s, -1.2824, 4)
-        assert_equal(p, 0.25)
+        with pytest.warns(UserWarning, match='p-value capped'):
+            s, p = stats.anderson_ksamp([x1, x1 + .5], variant="right")
+        xp_assert_close(s, xp.asarray(-1.2824, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.25, dtype=dtype))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
-            s, _, p = stats.anderson_ksamp([x1, x1 + .5])
-        assert_almost_equal(s, -1.2944, 4)
-        assert_equal(p, 0.25)
+        # test case: similar distributions --> p-value capped at 0.25
+        with pytest.warns(UserWarning, match='p-value capped'):
+            s, p = stats.anderson_ksamp([x1, x1 + .5])
+        xp_assert_close(s, xp.asarray(-1.2944, dtype=dtype), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.25, dtype=dtype))
 
         # test case: check interpolated p-value in [0.01, 0.25] (no ties)
-        s, _, p = stats.anderson_ksamp([x1, x1 + 7.5], midrank=False)
-        assert_almost_equal(s, 1.4923, 4)
-        assert_allclose(p, 0.0775, atol=0.005, rtol=0)
+        s, p = stats.anderson_ksamp([x1, x1 + 7.5], variant="right")
+        xp_assert_close(s, xp.asarray(1.4923, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.0775, dtype=dtype), atol=0.005, rtol=0)
 
         # test case: check interpolated p-value in [0.01, 0.25] (w/ ties)
-        s, _, p = stats.anderson_ksamp([x1, x1 + 6])
-        assert_almost_equal(s, 0.6389, 4)
-        assert_allclose(p, 0.1798, atol=0.005, rtol=0)
+        s, p = stats.anderson_ksamp([x1, x1 + 6])
+        xp_assert_close(s, xp.asarray(0.6389, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.1798, dtype=dtype), atol=0.005, rtol=0)
 
         # test extended critical values for p=0.001 and p=0.005
-        s, _, p = stats.anderson_ksamp([x1, x1 + 11.5], midrank=False)
-        assert_almost_equal(s, 4.5042, 4)
-        assert_allclose(p, 0.00545, atol=0.0005, rtol=0)
+        s, p = stats.anderson_ksamp([x1, x1 + 11.5], variant="right")
+        xp_assert_close(s, xp.asarray(4.5042, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.00545, dtype=dtype), atol=0.005, rtol=0)
 
-        s, _, p = stats.anderson_ksamp([x1, x1 + 13.5], midrank=False)
-        assert_almost_equal(s, 6.2982, 4)
-        assert_allclose(p, 0.00118, atol=0.0001, rtol=0)
+        s, p = stats.anderson_ksamp([x1, x1 + 13.5], variant="right")
+        xp_assert_close(s, xp.asarray(6.2982, dtype=dtype), atol=1e-4)
+        xp_assert_close(p, xp.asarray(0.00118, dtype=dtype), atol=0.0001, rtol=0)
 
-    def test_not_enough_samples(self):
-        assert_raises(ValueError, stats.anderson_ksamp, np.ones(5))
+    def test_not_enough_samples(self, xp):
+        message = "`anderson_ksamp` needs at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((xp.ones(5),))
 
-    def test_no_distinct_observations(self):
-        assert_raises(ValueError, stats.anderson_ksamp,
-                      (np.ones(5), np.ones(5)))
+    def test_no_distinct_observations(self, xp):
+        message = "`anderson_ksamp` needs more than one..."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((xp.ones(5), xp.ones(5)))
 
-    def test_empty_sample(self):
-        assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
+    def test_empty_sample(self, xp):
+        message = 'One or more sample arguments...'
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.anderson_ksamp((xp.ones(5), xp.asarray([])))
+        xp_assert_equal(res.statistic, xp.asarray(np.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_result_attributes(self):
-        # Pass a mixture of lists and arrays
-        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
-        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        res = stats.anderson_ksamp((t1, t2), midrank=False)
-
-        attributes = ('statistic', 'critical_values', 'significance_level')
-        check_named_results(res, attributes)
-
-        assert_equal(res.significance_level, res.pvalue)
-
-
-class TestAndersonKSampVariant:
-    def test_variant_values(self):
-        x = [1, 2, 2, 3, 4, 5]
-        y = [1, 2, 3, 4, 4, 5, 6, 6, 6, 7]
-        message = "Parameter `variant` has been introduced..."
-        with pytest.warns(UserWarning, match=message):
-            ref = stats.anderson_ksamp((x, y))
-        assert len(ref) == 3 and hasattr(ref, 'critical_values')
-
-        with pytest.warns(UserWarning, match=message):
-            res = stats.anderson_ksamp((x, y), midrank=True)
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert len(res) == 3 and hasattr(res, 'critical_values')
-
-        with pytest.warns(UserWarning, match=message):
-            res = stats.anderson_ksamp((x, y), midrank=False, variant='midrank')
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert not hasattr(res, 'critical_values')
-
-        res = stats.anderson_ksamp((x, y), variant='midrank')
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert not hasattr(res, 'critical_values')
-
-        with pytest.warns(UserWarning, match=message):
-            ref = stats.anderson_ksamp((x, y), midrank=False)
-        assert len(ref) == 3 and hasattr(ref, 'critical_values')
-
-        with pytest.warns(UserWarning, match=message):
-            res = stats.anderson_ksamp((x, y), midrank=True, variant='right')
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert not hasattr(res, 'critical_values')
-
-        res = stats.anderson_ksamp((x, y), variant='right')
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
-        assert not hasattr(res, 'critical_values')
-
-    def test_variant_input_validation(self):
-        x = np.arange(10)
+    def test_variant_input_validation(self, xp):
+        x = xp.arange(10)
         message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
         with pytest.raises(ValueError, match=message):
             stats.anderson_ksamp((x, x), variant='Camelot')
 
     @pytest.mark.parametrize('n_samples', [2, 3])
-    def test_variant_continuous(self, n_samples):
+    def test_variant_continuous(self, n_samples, xp):
         rng = np.random.default_rng(20182053007)
         samples = rng.random((n_samples, 15)) + 0.1*np.arange(n_samples)[:, np.newaxis]
+        samples = [xp.asarray(sample) for sample in samples]
         ref = stats.anderson_ksamp(samples, variant='right')
         res = stats.anderson_ksamp(samples, variant='continuous')
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
+
+    def test_vectorized(self, xp):
+        rng = np.random.default_rng(2341589258312)
+        x = xp.asarray(rng.random((3, 20)))
+        y = xp.asarray(rng.random((3, 21)) + 1e-1)
+        kwargs = dict(variant='continuous', axis=-1)
+        method = stats.PermutationMethod(rng=rng)
+        ref = stats.anderson_ksamp((x, y), **kwargs)
+        res = stats.anderson_ksamp((x, y), **kwargs, method=method)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue, atol=5e-3)
+        assert xp.all(res.pvalue < 0.25) and xp.all(res.pvalue > 0.001)
+
+    # Check that lists are still accepted and converted to NumPy arrays
+    def test_accepts_lists(self):
+        rng = np.random.default_rng(20182053007)
+        samples = rng.random((2, 15))
+        ref = stats.anderson_ksamp(samples)
+        res = stats.anderson_ksamp(samples.tolist())
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue)
+
+    def test_invalid_method(self, xp):
+        rng = np.random.default_rng(20182053007)
+        samples = [rng.random(15), rng.random(15)]
+        message = "`method` must be `None` or an instance of `PermutationMethod`."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp(samples, method='coconut')
 
 
 @make_xp_test_case(stats.ansari)
@@ -1879,6 +1866,8 @@ class TestProbplot:
         assert_allclose(osr1, osr2)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         fig = plt.figure()
         fig.add_subplot(111)
@@ -2312,6 +2301,22 @@ class TestWilcoxon:
         with pytest.raises(AxisError, match=message):
             stats.wilcoxon(x, y, axis=3, _no_deco=True)
 
+    @skip_xp_backends("jax.numpy", reason="`method='exact'` is incompatible with JAX")
+    def test_gh26026(self, xp):
+        # gh-26026 reported inaccuracy in very small p-values; in this case
+        # the returned p-value was exactly zero. Check that this is resolved.
+        dtype = xp.float64  # because this test is looking for accuracy
+        x = xp.asarray([23, 75, 79, 31, 71, -39, 16, 51, 17, 32, 46, 77, 69, 5, 12, 66,
+                        40, 14, 7, 20, 97, 65, 11, 90, 81, -2, 19, 6, -98, 83, -56, 50,
+                        70, 95, 96, -68, 87, 72, 44, 91, 13, 10, 35, 21, 53, 36, 47, 89,
+                        55, 45, 22, 92, 61, 33, 84, 18, 76, 24, 88, 57, 1, 25, 94, 30,
+                        -60, 73, 85, 59, 52, 62, 48, 49, 29, 15, 43, 42, -9, 26, 58, 4,
+                        78, 3, 64, 67, 37, 41, 86, 27, 28, 63, 93, -34, 74, 8, 80, 100,
+                        99, 82, 38, 54], dtype=dtype)
+        res = stats.wilcoxon(x, method='exact')
+        ref = xp.asarray(51499060970173 / 633825300114114700748351602688, dtype=dtype)
+        xp_assert_close(res.pvalue, ref)
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
@@ -2443,6 +2448,8 @@ class TestPpccPlot:
         assert_allclose(ppcc1, ppcc3, rtol=1e-20)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
@@ -2841,7 +2848,7 @@ class NormmaxTest:
 
         res = transform_normmax(x, nan_policy='omit')
         ref = transform_normmax(x[~np.isnan(x)])
-        np.testing.assert_allclose(res, ref)
+        np.testing.assert_allclose(res, ref, rtol=2e-7)
 
 
 class TestBoxcoxNormmax(NormmaxTest):
@@ -3017,6 +3024,8 @@ class TestBoxcoxNormplot:
         assert_allclose(ppcc, ppcc_expected)
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()

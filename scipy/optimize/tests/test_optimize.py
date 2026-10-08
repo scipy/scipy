@@ -1722,9 +1722,13 @@ class TestOptimizeSimple(CheckOptimize):
             # call to the callback
             assert res.fun == ref.fun
             assert_equal(res.x, ref.x)
-        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
-        if method != 'cobyqa':
-            assert not res.success
+        if method == 'trust-constr':
+            assert res.status == 3
+        elif method == 'cobyqa':
+            assert res.status == 4
+        else:
+            assert res.status == 99
+        assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -2572,6 +2576,13 @@ class TestOptimizeResultAttributes:
         self.hess = optimize.rosen_hess
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
+
+    def test_repr_with_empty_dict_value(self):
+        # gh-25893
+        res = optimize.OptimizeResult(x=1, options={})
+        assert 'options' in repr(res)
+        res = optimize.OptimizeResult(options={}, info={'a': 1})
+        assert 'a: 1' in repr(res)
 
     @pytest.mark.fail_slow(2)
     def test_attributes_present(self):

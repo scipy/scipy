@@ -10,6 +10,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
                           hessenberg, rq, eig_banded, eigvals_banded, eigh,
@@ -32,7 +33,6 @@ from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
-from scipy.__config__ import CONFIG
 
 from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
@@ -1807,11 +1807,14 @@ class TestSVDVals:
         svdvals(a)
 
 
+@make_xp_test_case(diagsvd)
 class TestDiagSVD:
-
-    def test_simple(self):
-        assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
-                                  [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+    @pytest.mark.parametrize('dtype', ["float32", "float64", "complex64", "complex128"])
+    def test_simple(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        res = diagsvd(xp.asarray([1, 0, 0], dtype=dtype), 3, 3)
+        ref = xp.asarray([[1, 0, 0], [0, 0, 0], [0, 0, 0]], dtype=dtype)
+        xp_assert_close(res, ref)
 
 
 class TestQR:
@@ -3039,11 +3042,6 @@ class TestHessenberg:
         assert q.dtype == q3.dtype
 
 
-blas_provider = blas_version = None
-blas_provider = CONFIG['Build Dependencies']['blas']['name']
-blas_version = CONFIG['Build Dependencies']['blas']['version']
-
-
 class TestQZ:
     def test_qz_single(self):
         rng = np.random.RandomState(12345)
@@ -3835,7 +3833,7 @@ def test_subspace_angles():
     assert_allclose(subspace_angles(a, b), np.empty((0,)))
     a = np.empty((0, 2))
     b = np.empty((0, 3))
-    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    assert_equal(subspace_angles(a, b), np.asarray([np.nan, np.nan]))
 
 
 class TestCDF2RDF:

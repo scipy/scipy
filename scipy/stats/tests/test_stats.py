@@ -48,6 +48,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_ass
 import scipy._external.array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
 
+pytestmark = pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning")  # noqa: E501
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -4647,7 +4648,7 @@ class TestKSTest:
     """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
     def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
-        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        result = stats.kstest(x, special.ndtr, alternative=alternative, mode=mode)
         result_1samp = stats.ks_1samp(x, special.ndtr,
                                       alternative=alternative, mode=mode)
         xp_assert_close(result.statistic, result_1samp.statistic)
@@ -4707,7 +4708,19 @@ class TestKSTest:
         xp_assert_equal(res.statistic_location, ref.statistic_location)
         xp_assert_equal(res.statistic_sign, ref.statistic_sign)
 
-    # missing: no test that uses *args
+    def test_gh25448(self):  # string `cdf` incompatible with other xp
+        # gh-25448 reported a failure with with `cdf='norm'` + use of `args`
+        rng = np.random.default_rng(254482544825448)
+        x = rng.normal(size=100)
+        loc, scale = stats.norm.fit(x)
+        ref = stats.kstest(x, lambda x: special.ndtr((x-loc)/scale))
+
+        res = stats.kstest(x, "norm", args=(loc, scale))
+        xp_assert_close(res.statistic, ref.statistic)
+
+        res = stats.kstest(x, lambda x, u, s: special.ndtr((x-u)/s),
+                           args=(loc, scale))
+        xp_assert_close(res.statistic, ref.statistic)
 
 
 @make_xp_test_case(stats.ks_1samp)
@@ -4837,16 +4850,6 @@ class TestKSOneSample:
 class TestKSTwoSamples:
     """Tests 2-samples with K-S various sizes, alternatives, modes."""
 
-    def _check_warnings(self, warn_list, expected_type, expected_len):
-        """
-        Checks that all of the warnings from a list returned by
-        `warnings.catch_all(record=True)` are of the required type and that the list
-        contains expected number of warnings.
-        """
-        assert_equal(len(warn_list), expected_len, "number of warnings")
-        for warn_ in warn_list:
-            assert_(warn_.category is expected_type)
-
     def _testOne(self, x1, x2, alternative, ref_statistic, ref_pvalue,
                  mode='auto', *, xp):
         x1, x2 = xp.asarray(x1), xp.asarray(x2)
@@ -4963,18 +4966,13 @@ class TestKSTwoSamples:
                       mode='asymp', xp=xp)
         self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021,
                       mode='asymp', xp=xp)
-        with warnings.catch_warnings():
-            message = "ks_2samp: Exact calculation unsuccessful."
-            warnings.filterwarnings("ignore", message, RuntimeWarning)
+        message = "ks_2samp: Exact calculation unsuccessful."
+        with pytest.warns(RuntimeWarning, match=message):
             self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929,
                           mode='exact', xp=xp)
+        with pytest.warns(RuntimeWarning, match=message):
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021,
                           mode='exact', xp=xp)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021,
-                          mode='exact', xp=xp)
-            self._check_warnings(w, RuntimeWarning, 1)
 
     @pytest.mark.slow
     def testMediumBoth(self, xp):
@@ -4992,18 +4990,13 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984,
                       mode='asymp', xp=xp)
 
-        with warnings.catch_warnings():
-            message = "ks_2samp: Exact calculation unsuccessful."
-            warnings.filterwarnings("ignore", message, RuntimeWarning)
+        message = "ks_2samp: Exact calculation unsuccessful."
+        with pytest.warns(RuntimeWarning, match=message):
             self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622,
                           mode='exact', xp=xp)
+        with pytest.warns(RuntimeWarning, match=message):
             self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984,
                           mode='exact', xp=xp)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984,
-                          mode='exact', xp=xp)
-            self._check_warnings(w, RuntimeWarning, 1)
 
     def testLarge(self, xp):
         # 10000, 110
@@ -8606,6 +8599,16 @@ class TestWassersteinDistance:
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
     """
+
+    def test_underflow_with_small_weight_and_large_distance(self):
+        # Squaring the CDF gap first loses a finite energy distance.
+        distance = 2.0**1023
+        weight = 2.0**-538
+        result = stats.energy_distance([-distance, 0.0], [0.0],
+                                       [weight, 1.0], [1.0])
+        expected = np.sqrt(2.0) * np.sqrt(distance) * weight / (1 + weight)
+        assert_allclose(result, expected, rtol=1e-14)
+
 
     def test_simple(self):
         # For basic distributions, the value of the energy distance is

@@ -4,15 +4,15 @@ import math
 import numpy as np
 import warnings
 from itertools import combinations
-import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
+from ._crosstab import crosstab
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array, _count_nonmasked, is_marray,
-                                   _masked_apply, xp_device)
+                                   _masked_apply, xp_device, xp_result_device)
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -130,7 +130,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # x and y are converted to arrays by the decorator
     # and `axis` is guaranteed to be -1.
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
-    t = xp.asarray(t, dtype=x.dtype)
+    t = xp.asarray(t, dtype=x.dtype, device=xp_result_device(t, x))
     # check if x and y are valid inputs
     nx, ny = x.shape[-1], y.shape[-1]
     if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
@@ -541,7 +541,8 @@ def _cdf_cvm(x, n=None, *, xp=None):
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
         y = xp.zeros_like(x, dtype=x.dtype)
-        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype), y.shape)
+        n = xp.broadcast_to(xp.asarray(n, dtype=y.dtype, device=xp_device(y)),
+                            y.shape)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
@@ -965,7 +966,7 @@ def somersd(x, y=None, alternative='two-sided'):
     if x.ndim == 1:
         if x.size != y.size:
             raise ValueError("Rankings must be of equal length.")
-        table = scipy.stats.contingency.crosstab(x, y)[1]
+        table = crosstab(x, y)[1]
     elif x.ndim == 2:
         if np.any(x < 0):
             raise ValueError("All elements of the contingency table must be "
@@ -1821,7 +1822,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     # get ranks of x and y in the pooled sample
     z = xp.concat([xa, ya], axis=-1)
     # in case of ties, use midrank (see [1])
-    r = scipy.stats.rankdata(z, method='average', axis=-1)
+    r = _stats_py.rankdata(z, method='average', axis=-1)
     dtype = xp_result_type(x, y, force_floating=True, xp=xp)
     rx = r[..., :length_x]
     ry = r[..., length_x:]

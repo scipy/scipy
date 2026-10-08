@@ -14,6 +14,7 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import fractions
 import functools
 import itertools
 import operator
@@ -1381,6 +1382,13 @@ class TestAiry:
             [-2.2944396826, -4.0731550891, -5.5123957297,
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
+    def test_gh26034(self):
+        z = np.asarray(-10 - 0j)
+        res = special.airy(z)
+        ref = special.airy(z.real)
+        for r, e in zip(res, ref):
+            assert_allclose(r, e)
+
 
 class TestAssocLaguerre:
     def test_assoc_laguerre(self):
@@ -1569,17 +1577,31 @@ class TestKelvin:
                                      20.53068]),
                         atol=1.5e-4, rtol=0)
 
+def _fraction_to_float(fraction):
+    """
+    Convert a Fraction to a float, returning +/-inf on overflow.
+    """
+    try:
+        return float(fraction)
+    except OverflowError:
+        return math.inf if fraction > 0 else -math.inf
 
 class TestBernoulli:
     def test_bernoulli(self):
-        brn = special.bernoulli(5)
-        assert_allclose(brn, array([1.0000,
-                                    -0.5000,
-                                    0.1667,
-                                    0.0000,
-                                    -0.0333,
-                                    0.0000]),
-                        atol=1.5e-4, rtol=0)
+        brn = special.bernoulli(10)
+        assert_equal(brn, array([1, -1/2, 1/6, 0, -1/30, 0, 1/42, 0, -1/30, 0, 5/66]))
+
+    def test_triangle_algorithm(self):
+        N = 269
+        refb_triangle_algorithm = [fractions.Fraction(1, i+1) for i in range(N + 1)]
+        for m in reversed(range(N)):
+            for n in range(N - m):
+                refb_triangle_algorithm[n+1+m] = (m+1)*(refb_triangle_algorithm[n+m] -
+                                                        refb_triangle_algorithm[n+m+1])
+        refb_triangle_algorithm[1] *= -1  # change from B^+ to B^-
+        ref = [_fraction_to_float(b) for b in refb_triangle_algorithm]
+        res = special.bernoulli(N)
+        assert_equal(res, ref)
 
 
 class TestBeta:
@@ -1809,6 +1831,18 @@ class TestBetaInc:
         x = np.array(x, dtype=dtype)
         res = special.betainc(a, b, x)
         assert_allclose(res, reference, rtol=rtol)
+
+    def test_gh24566(self):
+        # test that betainc does not return NaN for these specific inputs
+        # As neither Mathematica nor mpmath are able to compute the result,
+        # we simply test that the result is not NaN
+        # Boost contains a more elaborate test that checks the monotonicity
+        # in this region, see
+        # https://github.com/boostorg/math/blob/64a8d75df2d570ab5eddde4bc383c66675d68611/test/test_ibeta.hpp#L492
+        value = 0.010000000000005001
+        a = 3.1622776601699636e16
+        b = 3.130654883566682e18
+        assert not np.isnan(special.betainc(a, b, value))
 
 
 class TestCombinatorics:

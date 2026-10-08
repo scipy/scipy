@@ -22,11 +22,11 @@ from scipy._lib._sparse import issparse
 
 from numpy.exceptions import AxisError
 
+_config = np.show_config('dicts')
+USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
-
-copy_if_needed: bool | None = None
 
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
@@ -416,7 +416,7 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-def _validate_int(k, name, minimum=None):
+def _validate_int(k, name, minimum=None, maximum=None):
     """
     Validate a scalar integer.
 
@@ -433,6 +433,8 @@ def _validate_int(k, name, minimum=None):
         The name of the parameter.
     minimum : int, optional
         An optional lower bound.
+    maximum : int, optional
+        An optional upper bound.
     """
     try:
         k = operator.index(k)
@@ -441,6 +443,9 @@ def _validate_int(k, name, minimum=None):
     if minimum is not None and k < minimum:
         raise ValueError(f'{name} must be an integer not less '
                          f'than {minimum}') from None
+    if maximum is not None and k > maximum:
+        raise ValueError(f'{name} must be an integer not greater '
+                         f'than {maximum}') from None
     return k
 
 
@@ -1063,7 +1068,8 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     `mplus` is additional left padding applied to keys
     """
     if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        # `default=0` guards against an empty dict,
+        m = max(map(len, list(d.keys())), default=0) + mplus
         s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
                        _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
                        for k, v in sorter(d)])  # +2 for ': '
@@ -1112,9 +1118,10 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 """
 
 
-def output_from_signature(arrays, batch_shape, core_shapes, signature):
+def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill,
+                          ignore_dtypes):
     xp = array_namespace(*arrays)
-    dtype = xp.result_type(*arrays)
+    dtype = xp.result_type(*arrays[ignore_dtypes:], xp.float32)
     device = xp_device(arrays[0]) if len(arrays) else None
 
     # ENH: parse more efficiently with regex.
@@ -1130,22 +1137,50 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     for i, core_shape in enumerate(core_shapes):
         for j, length in enumerate(core_shape):
             l = input_dim_to_letter[(i, j)]
-            if hasattr(letter_to_length, l):
-                assert letter_to_length[l] == length
+            if letter_to_length.get(l, None):
+                if letter_to_length[l] != length:
+                    message = (
+                        f"The core shape(s) of the array argument(s), {core_shapes}, "
+                        f"is/are incompatible with the function signature, {signature}."
+                    )
+                    raise ValueError(message)
             else:
                 letter_to_length[l] = length
 
     results = []
+    # This is a hack to avoid having to rethink the parsing strategy, e.g.
+    # (i, i)->(i, i),bool(i) becomes (i, i)->(i, i),(booli).
+    # But then we can still separate the two outputs by splitting at ),(.
+    # TODO: use regular expression for more efficient, elegant parsing.
+    signature_dtypes = ['bool', 'int', 'float', 'complex']
+    for signature_dtype in signature_dtypes:
+        outputs = outputs.replace(f"{signature_dtype}(", f"({signature_dtype}")
     outputs = outputs.lstrip("(").rstrip(")").split("),(")
     for output in outputs:
+        output_dtype = dtype
+        for signature_dtype in signature_dtypes:
+            if signature_dtype in output:
+                output_dtypes = {'bool': xp.bool,
+                                 'int': xp.result_type(1),
+                                 'float': xp.real(xp.asarray(1, dtype=dtype,
+                                                  device=device)).dtype,
+                                 'complex': xp.result_type(complex(1), dtype)}
+                output_dtype = output_dtypes[signature_dtype]
+                output = output.replace(signature_dtype, "")
         out_core_shape = tuple([eval(l, letter_to_length)
                                 for l in output.split(',') if l])
-        results.append(xp.empty(batch_shape + out_core_shape,
-                                dtype=dtype, device=device))
+        fill_value = (0 if (zero_size_fill is not None
+                            and math.isnan(zero_size_fill)
+                            and xp.isdtype(output_dtype, ('integral', 'bool')))
+                      else zero_size_fill)
+        results.append(xp.full(batch_shape + out_core_shape, fill_value=fill_value,
+                               dtype=output_dtype, device=device))
+
     return results[0] if len(results) == 1 else tuple(results)
 
 
-def _apply_over_batch(*argdefs, signature=None):
+def _apply_over_batch(*argdefs, signature=None, zero_size_fill=math.nan,
+                      ignore_dtypes=0):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1162,6 +1197,16 @@ def _apply_over_batch(*argdefs, signature=None):
     *argdefs : tuple of (str, int)
         Definitions of array arguments: the keyword name of the argument, and
         the number of core dimensions.
+    signature : str or callable
+        NEP 5 signature of function, or callable that accepts all function arguments
+        and returns the NEP 5 signature.
+    zero_size_fill : float or None
+        Fill value of any non-zero size output array(s) when at least one
+        core dimension has zero length and output dtype is floating point.
+        If None, do not override the behavior of the function.
+    ignore_dtypes : int
+        The number of consecutive array arguments (from the left) that are to be
+        ignored when computing the output dtype (e.g. for zero-size batches).
 
     Example:
     --------
@@ -1210,21 +1255,26 @@ def _apply_over_batch(*argdefs, signature=None):
             if is_numpy(xp):
                 _deprecate_dtypes(f.__name__, *arrays)
 
-            # Early exit if call is not batched
-            if not any(batch_shapes):
-                return f(*arrays, *other_args, **kwargs)
-
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
-            # Handle zero-size batches
-            if math.prod(batch_shape) == 0:
+            # Handle zero-size input
+            zero_size_batch = (math.prod(batch_shape) == 0)
+            zero_size_fill_ = 0 if zero_size_batch else zero_size_fill
+            zero_size_core = any(math.prod(shape) == 0 for shape in core_shapes)
+            if zero_size_batch or (zero_size_core and (zero_size_fill_ is not None)):
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
-                    return output_from_signature(arrays, batch_shape, core_shapes, sig)
-                f_name = f.__name__.lstrip('_')
-                message = f'`{f_name}` does not support zero-size batches.'
-                raise ValueError(message)
+                    return output_from_signature(arrays, batch_shape, core_shapes,
+                                                 sig, zero_size_fill_, ignore_dtypes)
+                elif zero_size_batch:
+                    f_name = f.__name__.lstrip('_')
+                    message = f'`{f_name}` does not support zero-size batches.'
+                    raise ValueError(message)
+
+            # Early exit if call is not batched
+            elif not any(batch_shapes):
+                return f(*arrays, *other_args, **kwargs)
 
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):

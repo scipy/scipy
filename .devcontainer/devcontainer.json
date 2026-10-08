@@ -3,10 +3,15 @@
 	"hostRequirements": {
 		"memory": "8gb" // Added this because compilation fails on scipy.sparse if we have less than 8gb of RAM
 	},
-	"image": "mcr.microsoft.com/devcontainers/universal:2",
-	"features": {},
-
-	"onCreateCommand": ".devcontainer/setup.sh",
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	"features": {
+		"ghcr.io/devcontainers/features/sshd:1": {
+          "version": "latest"
+        },
+		"ghcr.io/devcontainers/features/conda:1": {}
+	},
+    
+	"onCreateCommand": "bash .devcontainer/setup.sh",
 	"postCreateCommand": "",
 
 	"customizations": {

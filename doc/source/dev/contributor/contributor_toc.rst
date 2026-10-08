@@ -13,7 +13,7 @@ fixing a bug and submitting a pull request (*note: this video is from 2018, so
 the build steps are different by now - the overall workflow is still the same
 though*).
 
-- :ref:`building-from-source` - how to set up a development environment,
+- :ref:`building-contributor` - how to set up a development environment,
   including installing compilers and SciPy dependencies, cloning the SciPy
   repository on GitHub and updating git submodules, and using the ``spin``
   interface for building and running tests.
@@ -76,7 +76,7 @@ Benchmarks
 Compiled code
 -------------
 - :ref:`adding-cython` extending and compiling Python code with `Cython`_ can significantly improve its performance; this document helps you get started
-- :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy
+- :ref:`other-languages` discusses the use of C and C++ code in SciPy
 - :ref:`public-cython-api` on guidelines on exposing public Cython APIs
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY

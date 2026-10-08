@@ -16,14 +16,15 @@ from scipy._lib._array_api import (
     xp_result_type,
     xp_size,
     xp_device,
+    xp_result_device,
     xp_swapaxes,
     is_lazy_array,
 )
 from scipy._external import array_api_extra as xpx
 from scipy.special import ndtr, ndtri
-from scipy import stats
 
 from ._common import ConfidenceInterval
+from ._quantile import quantile
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
 
@@ -660,7 +661,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
-    ci = stats.quantile(theta_hat_b, interval, axis=-1)
+    ci = quantile(theta_hat_b, interval, axis=-1)
     if not is_lazy_array(ci) and xp.any(xp.isnan(ci)):
         msg = (
             "The BCa confidence interval cannot be calculated. "
@@ -1072,7 +1073,8 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
 
     xp = array_namespace(*n_observations, significance, *vals)
 
-    significance = xp.asarray(significance)
+    device = xp_result_device(significance, *n_observations, *vals)
+    significance = xp.asarray(significance, device=device)
     if not xp.isdtype(significance.dtype, "real floating"):
         raise ValueError("`significance` must be of floating point dtype.")
 
