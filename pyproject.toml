@@ -278,8 +278,8 @@ build-frontend = { name = "pyodide-build" }
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 before-test = ""
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-requires = ["pytest", "pytest-split", "hypothesis", "threadpoolctl", "pooch"]
-test-command = "bash {project}/tools/wheels/cibw_test_command_pyodide.sh"
+test-requires = ["pytest", "hypothesis", "threadpoolctl", "pooch"]
+test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack", "-Dconfig-output=portable"]
 build-dir = "build/pyodide"

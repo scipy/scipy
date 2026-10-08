@@ -41,7 +41,7 @@ reported by users.)
    sure to use the correct commands to :ref:`skip CI checks <skip-ci>` on
    documentation changes.
 
-Some functions/objects defined in C or Fortran extension modules have their
+Some functions/objects defined in compiled extension modules have their
 docstrings defined separately from the actual code. Make sure to do a search for
 the function docstring you are looking for using either `grep` or other similar
 tools.

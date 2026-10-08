@@ -18,7 +18,6 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  'ellint_carlson_wrap.cxx',
   'sf_error.cc',
 ]
 
@@ -108,23 +107,6 @@ py3.extension_module('_ufuncs',
   subdir: 'scipy/special',
 )
 
-ellint_files = [
-  'ellint_carlson_wrap.hh',
-  'ellint_carlson_cpp_lite/_rc.hh',
-  'ellint_carlson_cpp_lite/_rd.hh',
-  'ellint_carlson_cpp_lite/_rf.hh',
-  'ellint_carlson_cpp_lite/_rg.hh',
-  'ellint_carlson_cpp_lite/_rj.hh',
-  'ellint_carlson_cpp_lite/ellint_argcheck.hh',
-  'ellint_carlson_cpp_lite/ellint_arith_aux.hh',
-  'ellint_carlson_cpp_lite/ellint_arithmetic.hh',
-  'ellint_carlson_cpp_lite/ellint_carlson.hh',
-  'ellint_carlson_cpp_lite/ellint_common.hh',
-  'ellint_carlson_cpp_lite/ellint_typing.hh',
-]
-
-ellint_dep = declare_dependency(sources: ellint_files)
-
 ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
@@ -139,7 +121,7 @@ py3.extension_module('_ufuncs_cxx',
   cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
 )

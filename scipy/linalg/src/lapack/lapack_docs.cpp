@@ -581,6 +581,85 @@ namespace lapack {
             { return doc_gesxd_family(name, "by divide-and-conquer", "gesdd_lwork"); }
         static std::string doc_gesvd(const char *name, const Dtype &)  { return doc_gesxd_family(name, "by QR iteration", "gesvd_lwork"); }
 
+        static std::string
+        doc_gesvdx(const char *name, const Dtype &t)
+        {
+            std::string s;
+            s += std::string(name) + "(a, compute_u=1, compute_vh=1, range='A', vl=0.0, vu=0.0, il=1,\n";
+            s += std::string(std::strlen(name) + 1, ' ') + "iu=min(m, n), lwork=..., overwrite_a=0)\n\n";
+            s += "Compute all or a selected subset of the singular values and, optionally, the\n"
+                 "singular vectors of a general matrix, ``a = u @ diag(s) @ vt`` (LAPACK ``"
+               + std::string(name) + "``).\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_A_GENERAL;
+            s += "compute_u : {0, 1}, optional\n    If 1, left singular vectors are computed; if 0, they are not. Default is 1.\n";
+            s += "compute_vh : {0, 1}, optional\n    If 1, right singular vectors are computed; if 0, they are not. Default is 1.\n";
+            s += "range : str, optional\n"
+                 "    ``'A'`` for all singular values, ``'V'`` for those in the half-open interval\n"
+                 "    ``(vl, vu]``, ``'I'`` for the `il`-th through `iu`-th largest. Default is ``'A'``.\n";
+            s += "vl : float, optional\n"
+                 "    Lower bound of the interval, at least 0; used only when `range` is ``'V'``.\n"
+                 "    Default is 0.0.\n";
+            s += "vu : float, optional\n"
+                 "    Upper bound of the interval, greater than `vl`; used only when `range` is\n"
+                 "    ``'V'``. Default is 0.0, so it must be given with ``range='V'``.\n";
+            s += "il : int, optional\n"
+                 "    Index of the first singular value to return, 1-based in descending order, so\n"
+                 "    1 is the largest; used only when `range` is ``'I'``. Default is 1.\n";
+            s += "iu : int, optional\n"
+                 "    Index of the last singular value to return, 1-based in descending order;\n"
+                 "    used only when `range` is ``'I'``. Default is ``min(m, n)``.\n";
+            s += std::string("lwork : int, optional\n"
+                 "    Size of the workspace, passed to LAPACK as given. Default is ")
+               + (t.is_complex ? "``max(k * (k + 5), 3 * k + max(m, n))``"
+                               : "``max(k * (3 * k + 20), 4 * k + max(m, n))``")
+               + "\n    with ``k = min(m, n)``, or 1 when `a` is empty. Use ``"
+               + std::string(1, name[0]) + "gesvdx_lwork`` for the optimal value. A size\n"
+                 "    below what LAPACK needs gives ``info = -19``.\n";
+            s += P_OVERWRITE_A;
+
+            s += "\nReturns\n-------\n";
+            s += "u : ndarray\n"
+                 "    Left singular vectors as columns, shape ``(m, min(m, n))``; only the first\n"
+                 "    `ns` columns are meaningful. A ``(1, 1)`` placeholder when `compute_u` is 0.\n";
+            s += "s : ndarray\n"
+                 "    Singular values in descending order, length ``min(m, n)``; only the first\n"
+                 "    `ns` entries are meaningful.\n";
+            s += "vt : ndarray\n"
+                 "    Right singular vectors as rows, shape ``(min(m, n), n)``; only the first\n"
+                 "    `ns` rows are meaningful. A ``(1, 1)`` placeholder when `compute_vh` is 0.\n";
+            s += "ns : int\n"
+                 "    Number of singular values found: ``min(m, n)`` for ``range='A'``,\n"
+                 "    ``iu - il + 1`` for ``range='I'``.\n";
+            s += "info : int\n"
+                 "    0 on success; if negative, the ``-info``-th argument had an illegal value;\n"
+                 "    if positive, that many singular vectors failed to converge, or\n"
+                 "    ``2 * min(m, n) + 1`` for an internal error in ``?bdsvdx``.\n";
+            return s;
+        }
+
+        static std::string
+        doc_gesvdx_lwork(const char *name, const Dtype &t)
+        {
+            std::string s;
+            s += std::string(name) + "(m, n, compute_u=1, compute_vh=1)\n\n";
+            s += "Query the optimal `lwork` for ``" + std::string(1, name[0]) + "gesvdx``.\n\n";
+
+            s += "Parameters\n----------\n";
+            s += P_M;
+            s += P_N;
+            s += "compute_u : {0, 1}, optional\n    If 1, left singular vectors are computed; if 0, they are not. Default is 1.\n";
+            s += "compute_vh : {0, 1}, optional\n    If 1, right singular vectors are computed; if 0, they are not. Default is 1.\n";
+
+            s += "\nReturns\n-------\n";
+            s += "work : " + std::string(t.scalar) + "\n"
+                 "    Optimal size of the `work` array, as a scalar of the routine's dtype.\n"
+                 "    The same for every `range`.\n";
+            s += R_INFO;
+            return s;
+        }
+
         /** @brief `gesdd_lwork` and `gesvd_lwork` take the same arguments. */
         static std::string
         doc_gesdd_family_lwork(const char *name, const Dtype &t, const char *base)
@@ -4561,6 +4640,8 @@ namespace lapack {
             DOC_FAMILY(gesdd),
             DOC_FAMILY(gesdd_lwork),
             DOC_FAMILY(gesvd),
+            DOC_FAMILY(gesvdx),
+            DOC_FAMILY(gesvdx_lwork),
             DOC_FAMILY(gesvd_lwork),
             DOC_FAMILY(gels),
             DOC_FAMILY(gels_lwork),

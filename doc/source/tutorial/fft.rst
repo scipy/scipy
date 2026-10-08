@@ -41,7 +41,7 @@ X[l]\in\IC`, with :math:`k, l \in\{0, \ldots, N-1\}`, are defined by
 .. math::
     :label: eq_FFT_DFT
 
-    X[l] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[n] \e^{-\jj 2 \pi l k / N}\,,\qquad
+    X[l] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[k] \e^{-\jj 2 \pi l k / N}\,,\qquad
     x[k] = \frac{\gamma}{N}\sum_{l=0}^{N-1} X[l] \e^{\jj 2 \pi k l / N}\,,
 
 which are implemented by the :func:`~scipy.fft.fft` / :func:`~scipy.fft.ifft`
@@ -136,7 +136,7 @@ component, i.e.,
 
 .. math::
 
-    X[0] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[n]\,,\qquad
+    X[0] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[k]\,,\qquad
     x[0] = \frac{\gamma}{N}\sum_{l=0}^{N-1} X[l]\,.
 
 The circular convolution of two sequences of length :math:`N`, i.e.,
@@ -152,7 +152,7 @@ can be expressed as a multiplication of their DFTs and vice versa, i.e.,
        z[k] &= x[k] \ast y[k] & \Leftrightarrow &&
        Z[l] &= \gamma\, X[l]\, Y[l] \,,\\
        Z[l] &= X[l] \ast Y[l]  & \Leftrightarrow &&
-       z[l] &= \frac{N}{\gamma} x[k] \,y[k] \,.
+       z[k] &= \frac{N}{\gamma} x[k] \,y[k] \,.
     \end{align}
 
 Here, the circular convolution is defined over finite length sequences, whereas in
