@@ -19,7 +19,7 @@ build-backend = 'mesonpy'
 # NOTE: when updating this table, also update `dependency-groups.build`
 requires = [
     "meson-python>=0.15.0",
-    "Cython>=3.2.0",        # when updating version, also update check in meson.build
+    "Cython>=3.3.0",        # when updating version, also update check in meson.build
     "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.18.1",      # when updating version, also update check in meson.build
     "numpy>=2.0.0",
@@ -95,7 +95,7 @@ optional-runtime-deps = [
 
 build = [
     "meson-python>=0.15.0",
-    "Cython>=3.2.0",
+    "Cython>=3.3.0",
     "pybind11>=2.13.2",
     "pythran>=0.18.1",
     "numpy>=2.0.0",
