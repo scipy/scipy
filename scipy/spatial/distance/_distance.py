@@ -1455,19 +1455,19 @@ def russellrao(u, v, w=None):
     0.3333333333333333
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u = np.asarray(u)
+    v = np.asarray(v)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        n = float(len(u))
+        ntt = (u & v).sum(axis=-1)
+        n = u.shape[-1]
     elif w is None:
-        ntt = (u * v).sum()
-        n = float(len(u))
+        ntt = (u * v).sum(axis=-1)
+        n = u.shape[-1]
     else:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
-        n = w.sum()
-    return float(n - ntt) / n
+        ntt = (u * v * w).sum(axis=-1)
+        n = w.sum(axis=-1)
+    return (n - ntt) / n
 
 
 def sokalsneath(u, v, w=None):

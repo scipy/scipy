@@ -2374,6 +2374,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
         (sqeuclidean, None),
+        (russellrao, None),
         (sokalsneath, None),
     ],
 )
