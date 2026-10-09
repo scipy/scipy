@@ -2611,7 +2611,7 @@ def bei_zeros(nt):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     Examples
-    ----------
+    --------
     Compute the first 5 zeros of the Kelvin function bei.
 
     >>> from scipy.special._basic import bei_zeros
