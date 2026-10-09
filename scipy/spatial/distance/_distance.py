@@ -1489,11 +1489,11 @@ def sokalsneath(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1515,8 +1515,7 @@ def sokalsneath(u, v, w=None):
     -2.0
 
     """
-    u = np.asarray(u)
-    v = np.asarray(v)
+    u, v = xp_promote(u, v, broadcast=True, xp=np)
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum(axis=-1)
     elif w is None:
