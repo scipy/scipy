@@ -1098,16 +1098,17 @@ class ShortTimeFFT:
             'odd': dict(mode='reflect', reflect_type='odd'),
         }  # typing of pad_kws is needed to make pyrefly happy
 
-        n, n1 = x.shape[-1], (p1 - p0) * self.hop
+        n = x.shape[-1]
+        slice_count = p1 - p0
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample
-        k1 = k0 + (p1 - p0 - 1) * self.hop + self.m_num  # stop sample
+        k1 = k0 + (slice_count - 1) * self.hop + self.m_num  # stop sample
 
         i0, i1 = max(k0, 0), min(k1, n)  # indexes to shorten x
         # dimensions for padding x:
         pad_width = [(0, 0)] * (x.ndim-1) + [(-min(k0, 0), max(k1 - n, 0))]
 
         x1 = np.pad(x[..., i0:i1], pad_width, **pad_kws[padding])
-        for k_ in range(0, n1, self.hop):
+        for k_ in range(0, slice_count * self.hop, self.hop):
             yield x1[..., k_:k_ + self.m_num]
 
     def stft(self, x: np.ndarray, p0: int | None = None,
