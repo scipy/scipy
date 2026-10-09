@@ -1515,8 +1515,8 @@ def sokalsneath(u, v, w=None):
     -2.0
 
     """
-    u = _promote(u, xp=np)
-    v = _promote(v, xp=np)
+    u = np.asarray(u)
+    v = np.asarray(v)
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum(axis=-1)
     elif w is None:
