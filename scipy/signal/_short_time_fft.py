@@ -1100,7 +1100,7 @@ class ShortTimeFFT:
 
         n, n1 = x.shape[-1], (p1 - p0) * self.hop
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample
-        k1 = k0 + n1 + self.m_num  # end sample
+        k1 = k0 + (p1 - p0 - 1) * self.hop + self.m_num  # stop sample
 
         i0, i1 = max(k0, 0), min(k1, n)  # indexes to shorten x
         # dimensions for padding x:
