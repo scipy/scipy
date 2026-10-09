@@ -2614,8 +2614,8 @@ def bei_zeros(nt):
     --------
     Compute the first 5 zeros of the Kelvin function bei.
 
-    >>> from scipy.special._basic import bei_zeros
-    >>> ndarray = bei_zeros(5)
+    >>> from scipy import special
+    >>> ndarray = special.bei_zeros(5)
     >>> ndarray
     array([ 5.02622395,  9.4554063 , 13.89348785, 18.33398346, 22.77543929])
     """
