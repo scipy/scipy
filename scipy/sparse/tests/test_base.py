@@ -3422,6 +3422,26 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
+    def test_fancy_indexing_boolean_like_no_nonzero(self):
+        B = self.asdense(arange(50).reshape(5, 10))
+        A = self.spcreator(B)
+
+        class BoolLikeNoNonzero:
+            def __init__(self, data):
+                self._data = np.asarray(data, dtype=bool)
+                self.dtype = self._data.dtype
+                self.shape = self._data.shape
+                self.ndim = self._data.ndim
+
+            def __array__(self, dtype=None):
+                return np.asarray(self._data, dtype=dtype)
+
+        row_mask = BoolLikeNoNonzero([True, False, True, False, True])
+        col_mask = BoolLikeNoNonzero([True, False, True, False, True] * 2)
+
+        assert_equal(toarray(A[row_mask]), B[row_mask])
+        assert_equal(toarray(A[:, col_mask]), B[:, col_mask])
+
     def test_fancy_indexing_sparse_boolean(self):
         np.random.seed(1234)  # make runs repeatable
 
