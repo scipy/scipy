@@ -2280,6 +2280,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         (euclidean, None),
         (sqeuclidean, None),
+        (sokalsneath, None),
     ],
 )
 @pytest.mark.parametrize("weights", [True, False])
