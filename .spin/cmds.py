@@ -842,6 +842,7 @@ def _dirty_git_working_dir():
 @click.option(
     '--dry-run/--no-dry-run', '-n', default=True,
     help="Run benchmarks without saving results to disk. "
+         "Ignored with --compare, which needs the results of both commits."
 )
 @click.option(
     '--mem-limit/--no-mem-limit', default=True,
@@ -892,9 +893,6 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
-    if dry_run:
-        bench_args = ['--dry-run'] + bench_args
-
     # asv 0.6.6 changed its default launch method to spawn, which starts a
     # fresh interpreter and re-imports SciPy for every benchmark and parameter
     # set. forkserver imports once and was asv's Linux default up to 0.6.5.
@@ -935,7 +933,10 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
+        run_args = ['--dry-run'] if dry_run else []
+        cmd = [
+            'asv', 'run', '--show-stderr', '--python=same'
+        ] + run_args + bench_args
         _run_asv(cmd, mem_limit=mem_limit)
     else:
         # Ensure that we don't have uncommitted changes
@@ -948,6 +949,8 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
                 fg="red"
             )
 
+        # `asv continuous` has no --dry-run: it always saves the results of
+        # both commits, since that is what it compares
         cmd_compare = [
             'asv', 'continuous', '--factor', '1.05'
         ] + bench_args + [commit_a, commit_b]
