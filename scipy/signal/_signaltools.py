@@ -452,20 +452,23 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
         The second input, possible swapped with the first input.
     axes : list of ints
         Axes over which to compute the FFTs.
+    all_axes : list of ints
+        All axes over which the convolution is computed, before
+        removing axes with a size of 1 in either input.
 
     """
     s1 = in1.shape
     s2 = in2.shape
     noaxes = axes is None
 
-    _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
+    _, all_axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
 
-    if not noaxes and not len(axes):
+    if not noaxes and not len(all_axes):
         raise ValueError("when provided, axes cannot be empty")
 
     # Axes of length 1 can rely on broadcasting rules for multiply,
     # no fft needed.
-    axes = [a for a in axes if s1[a] != 1 and s2[a] != 1]
+    axes = [a for a in all_axes if s1[a] != 1 and s2[a] != 1]
 
     if sorted_axes:
         axes.sort()
@@ -480,7 +483,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
         # Convolution is commutative; order doesn't have any effect on output.
         in1, in2 = in2, in1
 
-    return in1, in2, axes
+    return in1, in2, axes, all_axes
 
 
 def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
@@ -549,7 +552,7 @@ def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
     return ret
 
 
-def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
+def _apply_conv_mode(ret, s1, s2, mode, axes, xp, all_axes):
     """Calculate the convolution result shape based on the `mode` argument.
 
     Returns the result sliced to the correct size for the given mode.
@@ -567,6 +570,9 @@ def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
         See the documentation `fftconvolve` for more information.
     axes : list of ints
         Axes over which to compute the convolution.
+    all_axes : list of ints
+        All axes over which the convolution is computed, before
+        removing axes with a size of 1 in either input.
 
     Returns
     -------
@@ -577,7 +583,9 @@ def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
     if mode == "full":
         return xp_copy(ret, xp=xp)
     elif mode == "same":
-        return xp_copy(_centered(ret, s1), xp=xp)
+        shape = [s1[a] if a in all_axes else ret.shape[a]
+                 for a in range(ret.ndim)]
+        return xp_copy(_centered(ret, shape), xp=xp)
     elif mode == "valid":
         shape_valid = [ret.shape[a] if a not in axes else s1[a] - s2[a] + 1
                        for a in range(ret.ndim)]
@@ -701,8 +709,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
         return xp.asarray([], device=xp_device(in1))
 
-    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
-                                          sorted_axes=False)
+    in1, in2, axes, all_axes = _init_freq_conv_axes(in1, in2, mode, axes,
+                                                    sorted_axes=False)
 
     s1 = in1.shape
     s2 = in2.shape
@@ -712,7 +720,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
     ret = _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=True)
 
-    return _apply_conv_mode(ret, s1, s2, mode, axes, xp=xp)
+    return _apply_conv_mode(ret, s1, s2, mode, axes, xp=xp, all_axes=all_axes)
 
 
 def _calc_oa_lens(s1, s2):
@@ -950,15 +958,15 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
-    in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
-                                          sorted_axes=True)
+    in1, in2, axes, all_axes = _init_freq_conv_axes(in1, in2, mode, axes,
+                                                    sorted_axes=True)
 
     s1 = in1.shape
     s2 = in2.shape
 
     if not axes:
         ret = in1 * in2
-        return _apply_conv_mode(ret, s1, s2, mode, axes, xp)
+        return _apply_conv_mode(ret, s1, s2, mode, axes, xp, all_axes)
 
     # Calculate this now since in1 is changed later
     shape_final = [None if i not in axes else
@@ -974,7 +982,9 @@ def oaconvolve(in1, in2, mode="full", axes=None):
 
     # Fall back to fftconvolve if there is only one block in every dimension.
     if in1_step == s1 and in2_step == s2:
-        return fftconvolve(in1, in2, mode=mode, axes=axes)
+        # pass the unfiltered axes so 'same' mode keeps the size of the
+        # first input along convolved axes of size 1
+        return fftconvolve(in1, in2, mode=mode, axes=all_axes)
 
     # Figure out the number of steps and padding.
     # This would get too complicated in a list comprehension.
@@ -1064,7 +1074,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     slice_final = tuple([slice(islice) for islice in shape_final])
     ret = ret[slice_final]
 
-    return _apply_conv_mode(ret, s1, s2, mode, axes, xp)
+    return _apply_conv_mode(ret, s1, s2, mode, axes, xp, all_axes)
 
 
 def _numeric_arrays(arrays, kinds='buifc', xp=None):
