@@ -64,8 +64,11 @@ def _promote(*args, xp):
     """
     if is_numpy(xp):
         args = args + (np.asarray(1.0, dtype=np.float64),)
-        return xp_promote(*args, force_floating=True,
-                          broadcast=True, xp=xp, order='C')[:-1]
+        res = xp_promote(*args, force_floating=True,
+                         broadcast=True, xp=xp, order='C')[:-1]
+        if len(res) == 1:
+            return res[0]
+        return res
     return xp_promote(*args, force_floating=True, broadcast=True, xp=xp)
 
 
@@ -90,7 +93,7 @@ def _validate_weights(w, xp=None):
     """
     xp = array_namespace(w) if xp is None else xp
     # TODO: Remove the following line once all functions call _promote at start
-    (w,) = _promote(w, xp=xp)
+    w = _promote(w, xp=xp)
     invalid = w < 0
     if is_lazy_array(w):
         any_invalid = xp.any(invalid, axis=-1, keepdims=True)
