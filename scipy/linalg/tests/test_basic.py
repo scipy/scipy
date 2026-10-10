@@ -3007,6 +3007,23 @@ class TestMatrix_Balance:
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
 
+    @pytest.mark.parametrize('permute', [False, True])
+    def test_scaling_beyond_int_range(self, permute):
+        # The scaling factors here exceed the int range; casting them to int
+        # with the permutation indices raised a RuntimeWarning.
+        A = np.array([[1, 0, 1, 0, 1],
+                      [1, 2, 1, 1, 1],
+                      [0, 0, 3, 0, 0],
+                      [0, 0, 1, 1, 1e40],
+                      [1, 0, 1, 1e-40, 1]])
+        x, y = matrix_balance(A, permute=permute)
+        x, (s, p) = matrix_balance(A, permute=permute, separate=True)
+        assert_equal(p, [1, 0, 4, 3, 2] if permute else np.arange(5))
+        ip = np.empty_like(p)
+        ip[p] = np.arange(5)
+        assert_allclose(y, np.diag(s)[ip, :])
+        assert_allclose(x, A[np.ix_(p, p)] * s / s[:, None])
+
     @pytest.mark.skip("second output does not respect input dtype")
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):

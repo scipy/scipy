@@ -1851,20 +1851,22 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     scaling = np.ones_like(ps, dtype=float)
     scaling[lo:hi+1] = ps[lo:hi+1]
 
-    # gebal uses 1-indexing
-    ps = ps.astype(int, copy=False) - 1
+    # gebal uses 1-indexing; the scalings are not cast, as they can exceed
+    # the int range
+    ps_lo = ps[:lo].astype(np.int64) - 1
+    ps_hi = ps[hi+1:].astype(np.int64) - 1
     n = A.shape[0]
     perm = np.arange(n)
 
     # LAPACK permutes with the ordering n --> hi, then 0--> lo
     if hi < n:
-        for ind, x in enumerate(ps[hi+1:][::-1], 1):
+        for ind, x in enumerate(ps_hi[::-1], 1):
             if n-ind == x:
                 continue
             perm[[x, n-ind]] = perm[[n-ind, x]]
 
     if lo > 0:
-        for ind, x in enumerate(ps[:lo]):
+        for ind, x in enumerate(ps_lo):
             if ind == x:
                 continue
             perm[[x, ind]] = perm[[ind, x]]
