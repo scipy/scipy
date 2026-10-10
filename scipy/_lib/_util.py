@@ -19,11 +19,18 @@ from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_num
                                    xp_capabilities, xp_isscalar, xp_device)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
+from scipy.__config__ import CONFIG
 
 from numpy.exceptions import AxisError
 
 _config = np.show_config('dicts')
 USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
+
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not CONFIG['Build Dependencies']['blas']['cython blas ilp64']
+HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
+del CONFIG
 
 type IntNumber = int | np.integer
 type DecimalNumber = float | np.floating | np.integer
@@ -1161,7 +1168,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size
         for signature_dtype in signature_dtypes:
             if signature_dtype in output:
                 output_dtypes = {'bool': xp.bool,
-                                 'int': xp.result_type(1),
+                                 'int': xp.result_type(
+                                        np.int64(1) if HAS_ILP64 else np.int32(1)),
                                  'float': xp.real(xp.asarray(1, dtype=dtype,
                                                   device=device)).dtype,
                                  'complex': xp.result_type(complex(1), dtype)}
