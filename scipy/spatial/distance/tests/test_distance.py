@@ -286,7 +286,8 @@ def xp_assert_ones_weight(
     xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
 
 
-def xp_assert_scaling_weight(
+# TODO: drop once we use the function in the file and it no longer throws a lint error
+def xp_assert_scaling_weight(  # skip name check
     fn: Callable[..., Array],
     *arrays: Array,
     rest: tuple[Any, ...] = (),
