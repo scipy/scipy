@@ -1,12 +1,15 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#define NB_DOMAIN highspy
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/map.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 
 #include <map>
 #include <mutex>
 
 #include "lp_data/HighsOptions.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 class HighsOptionsManager {
 public:
@@ -66,9 +69,9 @@ private:
   }
 };
 
-PYBIND11_MODULE(_highs_options, m, py::mod_gil_not_used()) {
-  py::class_<HighsOptionsManager>(m, "HighsOptionsManager")
-      .def(py::init<>())
+NB_MODULE(_highs_options, m) {
+  nb::class_<HighsOptionsManager>(m, "HighsOptionsManager")
+      .def(nb::init<>())
       .def("get_option_type",
            [](const HighsOptionsManager &manager, const std::string &name) {
              const auto &lookup = manager.get_record_type_lookup().find(name);
@@ -91,7 +94,7 @@ PYBIND11_MODULE(_highs_options, m, py::mod_gil_not_used()) {
              try {
                return self.check_option<OptionRecordInt, int>(name, value);
              } catch (const std::exception &e) {
-               py::print("Exception caught in check_int_option:", e.what());
+               nb::print(("Exception caught in check_int_option: " + std::string(e.what())).c_str());
                return false;
              }
            })
@@ -101,7 +104,7 @@ PYBIND11_MODULE(_highs_options, m, py::mod_gil_not_used()) {
             try {
               return self.check_option<OptionRecordDouble, double>(name, value);
             } catch (const std::exception &e) {
-              py::print("Exception caught in check_double_option:", e.what());
+              nb::print(("Exception caught in check_double_option: " + std::string(e.what())).c_str());
               return false;
             }
           })
@@ -112,7 +115,7 @@ PYBIND11_MODULE(_highs_options, m, py::mod_gil_not_used()) {
                return self.check_option<OptionRecordString, std::string>(name,
                                                                          value);
              } catch (const std::exception &e) {
-               py::print("Exception caught in check_string_option:", e.what());
+               nb::print(("Exception caught in check_string_option: " + std::string(e.what())).c_str());
                return false;
              }
            });
