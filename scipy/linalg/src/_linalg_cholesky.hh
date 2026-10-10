@@ -91,7 +91,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
         // `ndim > 2` this should be updated accordingly.
 
         init_status(slice_status, idx, slice_structure);
-        call_potrf(&uplo_f, &intn, data_a, &intn, &info);
+        potrf(uplo_f, intn, data_a, intn, &info);
 
         if (info != 0) {
             slice_status.lapack_info = (Py_ssize_t)info;

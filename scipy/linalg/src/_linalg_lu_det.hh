@@ -10,40 +10,6 @@ constexpr int LU_MAX_NDIM = 64;
 
 
 // ========================================================================
-// LAPACK dispatch
-// ========================================================================
-
-/**
- * @brief Dispatch to the appropriate LAPACK ?getrf routine based on type.
- *
- * This header does not declare its own extern "C" getrf symbols — it reuses
- * the declarations from _common_array_utils.hh (which must be included first).
- * Those declarations use npy_complex types, so std::complex pointers are
- * reinterpret_cast'd here; the types are ABI-compatible.
- *
- * We provide our own template wrapper (rather than using call_getrf from
- * _common_array_utils.hh) because call_getrf's overloads take npy_complex
- * parameters, and this header works exclusively with std::complex types
- * to keep NumPy dependencies out of the C++ logic.
- *
- * @param[in]     m     Number of rows.
- * @param[in]     n     Number of columns.
- * @param[in,out] a     Column-major m-by-n matrix; overwritten with L and U on exit.
- * @param[in]     lda   Leading dimension of @p a (>= m).
- * @param[out]    ipiv  Pivot indices, length min(m, n). Row i was interchanged with row ipiv[i].
- * @param[out]    info  0 on success, < 0 for illegal argument, > 0 if U(info,info) is zero.
- */
-template<typename T>
-inline void getrf(CBLAS_INT *m, CBLAS_INT *n, T *a, CBLAS_INT *lda, CBLAS_INT *ipiv, CBLAS_INT *info)
-{
-    if      constexpr (std::is_same_v<T, float>)                BLAS_FUNC(sgetrf)(m, n, a, lda, ipiv, info);
-    else if constexpr (std::is_same_v<T, double>)               BLAS_FUNC(dgetrf)(m, n, a, lda, ipiv, info);
-    else if constexpr (std::is_same_v<T, std::complex<float>>)  BLAS_FUNC(cgetrf)(m, n, reinterpret_cast<npy_complex64*>(a), lda, ipiv, info);
-    else if constexpr (std::is_same_v<T, std::complex<double>>) BLAS_FUNC(zgetrf)(m, n, reinterpret_cast<npy_complex128*>(a), lda, ipiv, info);
-}
-
-
-// ========================================================================
 // Context struct
 // ========================================================================
 
@@ -170,7 +136,7 @@ CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT 
     CBLAS_INT mn = m < n ? m : n;
     CBLAS_INT info = 0;
 
-    getrf(&m, &n, f_buf, &m, ipiv, &info);
+    getrf(m, n, f_buf, m, ipiv, &info);
 
     if (info < 0) { return info; }
 
@@ -294,7 +260,7 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
 template<typename T>
 T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
 {
-    getrf(&n, &n, f_buf, &n, ipiv, info);
+    getrf(n, n, f_buf, n, ipiv, info);
 
     if (*info < 0) { return T(0); }
     if (*info > 0) { return T(0); }
@@ -302,11 +268,11 @@ T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
     // Accumulate in promoted precision to avoid overflow/underflow
     // for single-precision types (float32 -> float64, complex64 -> complex128).
     using acc_type = std::conditional_t<
-        std::is_same_v<T, float>,
-        double,
+        std::is_same_v<T, f32>,
+        f64,
         std::conditional_t<
-            std::is_same_v<T,std::complex<float>>,
-            std::complex<double>,
+            std::is_same_v<T,c64>,
+            c128,
             T
         >
     >;
