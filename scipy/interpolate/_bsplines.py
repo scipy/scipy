@@ -1,13 +1,15 @@
 import functools
 import operator
+import os
+import warnings
 from math import prod
 from types import GenericAlias
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
-from scipy.linalg import (get_lapack_funcs, LinAlgError,
+from scipy.linalg import (get_lapack_funcs, LinAlgError, LinAlgWarning,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded, solveh_banded)
+                          solve, solve_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
@@ -2608,7 +2610,7 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 #  Smoothing spline helpers #
 #############################
 
-def _compute_b_inv(A):
+def _compute_b_inv(A, factor=None):
     """
     Inverse 4 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
     ``U`` is a unit upper triangular banded matrix using an algorithm
@@ -2618,6 +2620,11 @@ def _compute_b_inv(A):
     ----------
     A : array, shape (4, n)
         Matrix to inverse, stored in LAPACK banded storage.
+    factor : array, shape (4, n), optional
+        A precomputed Cholesky factor of ``A``, as returned by
+        `scipy.linalg.cholesky_banded`. If given, ``A`` is not factorized
+        again. The factor is scaled in place and must not be reused after
+        this call.
 
     Returns
     -------
@@ -2658,7 +2665,8 @@ def _compute_b_inv(A):
                 rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
             B[-j - 1, i + j] = rng_sum
 
-    U = cholesky_banded(A)
+    # a passed-in factor is scaled in place and must not be reused after
+    U = cholesky_banded(A) if factor is None else factor
     for i in range(2, 5):
         U[-i, i-1:] /= U[-1, :-i+1]
     D = 1. / (U[-1])**2
@@ -3033,10 +3041,11 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
         # the system is rectangular so we can't apply the t=None path's
         # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
         # compute the residual directly
-        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
-        # use it to estimate rcond of the banded system before solving
+        # skip the rcond estimate during the search, the final solve
+        # at the selected lam checks it and warns
         c, tr = _solve_smoothing_spline_coefficients(
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
+            check_conditioning=False,
         )
         rss = np.sum(w * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
@@ -3052,15 +3061,35 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         compute_trace=False):
+                                         compute_trace=False,
+                                         check_conditioning=True):
     _lhs = XtWX_banded + lam * omega
-    c = solveh_banded(_lhs, XtWy, lower=False)
+    factor = cholesky_banded(_lhs, lower=False)
+    if check_conditioning:
+        lansb, pbcon = get_lapack_funcs(('lansb', 'pbcon'), (_lhs,))
+        kd = _lhs.shape[0] - 1
+        # pbcon needs the 1-norm of the unfactored matrix
+        anorm = lansb(kd, _lhs, norm='1', uplo='U')
+        rcond, info = pbcon(kd, factor, anorm, uplo='U')
+        if info < 0:
+            raise ValueError(
+                f"illegal value in argument {-info} of internal pbcon")
+        if rcond < np.finfo(_lhs.dtype).eps:
+            # show the warning at the user's call site
+            _warn_skips = (os.path.dirname(os.path.dirname(__file__)),)
+            warnings.warn(
+                "The system (X^T W X + lam * Omega) is ill-conditioned "
+                f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
+                "not be accurate.",
+                LinAlgWarning, skip_file_prefixes=_warn_skips,
+            )
+    c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:
         return c, None
     # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
     # 7-banded, so only the central bands of the inverse are needed
     # (Hutchinson & de Hoog, upper-banded storage).
-    b_banded = _compute_b_inv(_lhs)
+    b_banded = _compute_b_inv(_lhs, factor)
     tr = b_banded * XtWX_banded
     tr[:-1] *= 2
     return c, tr.sum()
