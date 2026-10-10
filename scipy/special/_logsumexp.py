@@ -220,6 +220,11 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     # Shift, exponentiate, scale, and sum
     exp = b * xp.exp(a - a_max) if b is not None else xp.exp(a - a_max)
     s = xp.sum(exp, axis=axis, keepdims=True, dtype=exp.dtype)
+    # If the largest terms cancel, use the remaining scaled sum as the
+    # leading term instead, avoiding division by zero in the precision formula.
+    cancelled = m == 0
+    m = xp.where(cancelled, s, m)
+    s = xp.where(cancelled, 0., s)
     s = xp.where(s == 0, s, s/m)
 
     # Separate sign/magnitude information
