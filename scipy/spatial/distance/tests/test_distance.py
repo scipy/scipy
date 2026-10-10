@@ -32,9 +32,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from collections.abc import Callable
 from functools import wraps, partial
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 import os.path
 import sys
 import platform
@@ -1583,7 +1584,6 @@ class TestEuclidean:
         xp_assert_duplication_weight(euclidean, x, y)
         xp_assert_split_weight(euclidean, x, y)
         # euclidean is not invariant to rescaling of weights
-
 
 
 class TestSomeDistanceFunctions:
