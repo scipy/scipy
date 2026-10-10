@@ -1097,6 +1097,8 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
     Py_DECREF(jac_extra_args);
     Py_DECREF(ap_rtol);
     Py_DECREF(ap_atol);
+    Py_DECREF(ap_rwork);
+    Py_DECREF(ap_iwork);
     Py_XDECREF(ap_state_doubles);
     Py_XDECREF(ap_state_ints);
 

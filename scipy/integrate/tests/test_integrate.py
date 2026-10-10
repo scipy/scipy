@@ -2,6 +2,8 @@
 """
 Tests for numerical integration.
 """
+import sys
+
 import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
@@ -12,6 +14,29 @@ from numpy.testing import (
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
+
+
+def test_lsoda_does_not_leak_work_arrays():
+    if not hasattr(sys, 'getrefcount'):
+        pytest.skip('reference counts are unavailable')
+
+    def f(t, y):
+        return -y
+
+    solver = ode(f).set_integrator('lsoda')
+    solver.set_initial_value([1.0], 0.0)
+    solver.integrate(1.0)
+
+    rwork = solver._integrator.rwork
+    iwork = solver._integrator.iwork
+    rwork_refcount = sys.getrefcount(rwork)
+    iwork_refcount = sys.getrefcount(iwork)
+
+    for _ in range(3):
+        solver.integrate(solver.t + 1.0)
+
+    assert sys.getrefcount(rwork) == rwork_refcount
+    assert sys.getrefcount(iwork) == iwork_refcount
 
 #------------------------------------------------------------------------------
 # Test ODE integrators
