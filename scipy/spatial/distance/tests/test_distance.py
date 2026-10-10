@@ -2292,10 +2292,20 @@ def test_distance_nd(func, p, weights):
 
     u = rng.random((5, 2, 4))
     v = rng.random((2, 4))
-    w = rng.random(4) if weights else None
+    w = rng.random((3, 1, 1, 4)) if weights else None
     kwargs = {'w': w} if p is None else {'p': p, 'w': w}
 
     res = func(u, v, **kwargs)
     ref = ref_func(u, v, **kwargs)
 
     xp_assert_close(res, ref)
+
+    # check error is raised for non-broadcastable inputs
+    if weights:
+        w = rng.random((3, 4))
+    else:
+        v = rng.random((3, 4))
+
+    with pytest.raises(ValueError,
+                       match="Array shapes are incompatible for broadcasting."):
+        func(u, v, w=w)

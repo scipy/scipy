@@ -54,7 +54,7 @@ def _copy_array_if_base_present(a):
     return a
 
 
-def _promote(x, xp):
+def _promote(*args, xp):
     """Promote array to float64 for numpy, else according to the Array API spec.
 
     The return array dtype follows the following rules:
@@ -63,8 +63,10 @@ def _promote(x, xp):
       of the input array dtype.
     """
     if is_numpy(xp):
-        return _asarray(x, order="C", xp=xp, dtype=xp.float64)
-    return xp_promote(x, force_floating=True, xp=xp)
+        args = args + (np.asarray(1.0, dtype=np.float64),)
+        return xp_promote(*args, force_floating=True,
+                          broadcast=True, xp=xp, order='C')[:-1]
+    return xp_promote(*args, force_floating=True, broadcast=True, xp=xp)
 
 
 def _validate_vector(u, dtype=None):
@@ -87,7 +89,8 @@ def _validate_weights(w, xp=None):
         weights with NaN.
     """
     xp = array_namespace(w) if xp is None else xp
-    w = _promote(w, xp=xp)
+    # TODO: Remove the following line once all functions call _promote at start
+    (w,) = _promote(w, xp=xp)
     invalid = w < 0
     if is_lazy_array(w):
         any_invalid = xp.any(invalid, axis=-1, keepdims=True)
@@ -441,9 +444,8 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    xp = array_namespace(u, v)
-    u = _promote(u, xp=xp)
-    v = _promote(v, xp=xp)
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp)
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -534,16 +536,7 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    # Preserve float dtypes, but convert everything else to np.float64
-    # for stability.
-    utype, vtype = None, None
-    if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
-        utype = np.float64
-    if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
-        vtype = np.float64
-
-    u = _asarray(u, dtype=utype, order='C')
-    v = _asarray(v, dtype=vtype, order='C')
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
