@@ -68,6 +68,9 @@ New features
 
 ``scipy.stats`` improvements
 ============================
+- `scipy.stats.hypoexpon`, the hypoexponential (generalized Erlang) distribution,
+  i.e. the distribution of a sum of independent exponential random variables with
+  arbitrary, possibly repeated, scale parameters, has been added.
 
 
 
