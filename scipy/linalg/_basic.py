@@ -278,9 +278,9 @@ def _to_banded(n_below, n_above, a):
     return ab
 
 
-def _solve_triangular_signature(ab, b, overwrite_ab=False, overwrite_b=False,
-                                lower=False, check_finite=True):
-    return ("(i, i),(i)->(i)" if np.ndim(b) <= 1 else "(i, i),(i,j)->(i,j)")
+def _solve_triangular_signature(a, b, trans=0, lower=False, unit_diagonal=False,
+                                overwrite_b=False, check_finite=True):
+    return ("(i,i),(i)->(i)" if np.ndim(b) <= 1 else "(i,i),(i,j)->(i,j)")
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solve_triangular_signature)
@@ -481,8 +481,8 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
 def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
                             overwrite_b, check_finite):
-    return (f"(i),(j),({nlower + nupper + 1}, m),(m)->(m)" if np.ndim(b) <= 1 else
-            f"(i),(j),({nlower + nupper + 1}, m),(m,n)->(m,n)")
+    return (f"(i),(j),({nlower + nupper + 1},m),(m)->(m)" if np.ndim(b) <= 1 else
+            f"(i),(j),({nlower + nupper + 1},m),(m,n)->(m,n)")
 
 
 @_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'),
@@ -539,7 +539,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 
 def _solveh_banded_signature(ab, b, overwrite_ab=False, overwrite_b=False,
                              lower=False, check_finite=True):
-    return ("(i, j),(j)->(j)" if np.ndim(b) <= 1 else "(i, j),(j,k)->(j,k)")
+    return ("(i,j),(j)->(j)" if np.ndim(b) <= 1 else "(i,j),(j,k)->(j,k)")
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'), signature=_solveh_banded_signature)
