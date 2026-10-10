@@ -144,6 +144,7 @@ class TestSparseUtils:
         for axis, canonical_axis in axis_4d.items():
             sputils.validateaxis(axis, ndim=4) == canonical_axis
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("container", [csr_array, bsr_array])
     def test_safely_cast_index_compressed(self, container):
         # This is slow to test completely as nnz > imax is big
@@ -193,6 +194,7 @@ class TestSparseUtils:
         assert indices is C64.indices
         assert indptr is C64.indptr
 
+    @pytest.mark.thread_unsafe
     def test_safely_cast_index_coo(self):
         # This is slow to test completely as nnz > imax is big
         # So we don't test large nnz
@@ -235,6 +237,7 @@ class TestSparseUtils:
         coords = sputils.safely_cast_index_arrays(C64, np.int64)
         assert coords[0] is C64.coords[0]
 
+    @pytest.mark.thread_unsafe
     def test_safely_cast_index_dia(self):
         # This is slow to test completely as nnz > imax is big
         # So we don't test large nnz
@@ -277,6 +280,7 @@ class TestSparseUtils:
         offsets = sputils.safely_cast_index_arrays(C64, np.int64)
         assert offsets is C64.offsets
 
+    @pytest.mark.thread_unsafe
     def test_get_index_dtype(self):
         imax = np.int64(np.iinfo(np.int32).max)
         too_big = imax + 1

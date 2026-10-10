@@ -4455,6 +4455,54 @@ class _CompressedMixin:
         with pytest.raises(ValueError, match=r'must have the same dtype'):
             A.check_format()
 
+    @with_64bit_maxval_limit(300)
+    def test_large_assignments(self):
+        # When nnz grows bigger than int32 can hold, shift to int64 index arrays
+        def check(A, index, rhs):
+            # check that we start small
+            assert A.indices.dtype == np.int32
+            assert A.nnz < maxval_limit
+            # do the assignment
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", warn_msg,
+                                        sparse.SparseEfficiencyWarning)
+                A[index[:, None], index] = rhs
+            # check that we end large
+            assert A.indices.dtype == np.int64
+            assert A.nnz > maxval_limit
+
+        # Here maxval_limit is our proxy for switching int32 to int64
+        maxval_limit = 300
+        # select N, NN with N**2 < maxval_limit <= (N*2)**2, d>N*2+NN
+        N = 9
+        d = 69
+        NN = 30
+        Nb = 2 * N  # Nb >= 2*N for noncanonical tests which duplicate entries
+        warn_msg = "Changing the sparsity structure"
+
+        big_data = np.ones((N, N), dtype=np.float32)
+        big_coords = tuple(co.astype(np.int32) for co in big_data.nonzero())
+        big_data = big_data.reshape(-1)
+        big_info = (big_data, big_coords)
+
+        index_N = np.arange(Nb, dtype=np.int32)
+        index_NN = np.arange(Nb, Nb + NN, dtype=np.int32)
+
+        rhs_NN_dense = np.arange(NN * NN, dtype=np.float32).reshape((NN, NN))
+        rhs_NN_sparse = csr_array(rhs_NN_dense)
+
+        # 1: see gh-24915: From empty array, assign 1 to N2xN2 region
+        check(self.spcreator((d, d), dtype=np.int8), index_N, 1)
+
+        # 2: From NxN region filled, assign 1 to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, 1)
+
+        # 3: From NxN region filled, assign np.array to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, rhs_NN_dense)
+
+        # 4: From NxN region filled, assign sparse to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, rhs_NN_sparse)
+
 
 class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
