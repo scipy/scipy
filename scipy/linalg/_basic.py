@@ -6,10 +6,10 @@
 
 import warnings
 import numpy as np
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz, HAS_ILP64
+    _ensure_aligned_and_native, _ensure_dtype_cdsz
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated

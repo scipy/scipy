@@ -26,6 +26,9 @@ from numpy.exceptions import AxisError
 _config = np.show_config('dicts')
 USING_ACCELERATE = _config['Build Dependencies']['blas']['name'].lower() == 'accelerate'
 
+# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
+# keeping `linalg.blas` as LP64.
+HAS_LP64 = not CONFIG['Build Dependencies']['blas']['cython blas ilp64']
 HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
 del CONFIG
 

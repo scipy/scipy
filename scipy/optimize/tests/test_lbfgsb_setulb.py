@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.linalg.lapack import HAS_ILP64
 from scipy.optimize import _lbfgsb, minimize
+from scipy._lib._util import HAS_ILP64
 
 
 def objfun(x):

@@ -40,12 +40,12 @@ import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye_array, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.linalg.lapack import HAS_ILP64
 from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg._isolve.iterative import gmres
 from scipy.sparse.linalg._dsolve.linsolve import splu
+from scipy._lib._util import HAS_ILP64
 
 from . import _arpacklib
 

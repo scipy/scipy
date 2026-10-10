@@ -5,9 +5,9 @@ from numpy import (atleast_2d, arange, zeros_like, imag, diag,
                    iscomplexobj, tril, triu, argsort)
 from numpy.exceptions import ComplexWarning
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, HAS_ILP64
 from ._decomp import _asarray_validated
-from .lapack import get_lapack_funcs, _compute_lwork, HAS_ILP64
+from .lapack import get_lapack_funcs, _compute_lwork
 
 __all__ = ['ldl']
 
