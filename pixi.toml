@@ -512,7 +512,8 @@ description = "Launch JupyterLab with the local SciPy build"
 ### Benchmarking ###
 
 [feature.bench-common.dependencies]
-asv = "==0.6.5"
+asv = "==0.6.6"
+asv_runner = ">=0.3.1"
 cffi = "*"
 pyfftw = "*"
 pytest = "*"

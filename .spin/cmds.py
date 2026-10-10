@@ -895,6 +895,14 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if dry_run:
         bench_args = ['--dry-run'] + bench_args
 
+    # asv 0.6.6 changed its default launch method to spawn, which starts a
+    # fresh interpreter and re-imports SciPy for every benchmark and parameter
+    # set. forkserver imports once and was asv's Linux default up to 0.6.5.
+    # macOS keeps the asv default because many Apple libraries are not
+    # fork-safe.
+    if sys.platform.startswith('linux'):
+        bench_args = ['--launch-method', 'forkserver'] + bench_args
+
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 

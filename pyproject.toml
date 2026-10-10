@@ -163,9 +163,9 @@ openblas64 = [
     'pkgconf==2.5.1.post1; sys_platform == "win32"',
 ]
 bench = [
-    # 0.6.6 regressed per-benchmark overhead ~7x, which pushes the CircleCI
-    # benchmark job past its time limit; revisit when that is fixed upstream
-    "asv==0.6.5",
+    "asv==0.6.6",
+    # 0.2.2-0.3.0 run a class's setup() before its setup_cache()
+    "asv_runner>=0.3.1",
     "pyfftw",
     "cffi", 
 ]
