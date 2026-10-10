@@ -174,18 +174,6 @@
             "cephes_pdtri_wrap": "pd->d"
         }
     },
-    "shichi": {
-        "cython_special_wrappers.h": {
-            "xsf_cshichi": "D*DD->*i",
-            "xsf_shichi": "d*dd->*i"
-        }
-    },
-    "sici": {
-        "cython_special_wrappers.h": {
-            "xsf_csici": "D*DD->*i",
-            "xsf_sici": "d*dd->*i"
-        }
-    },
     "smirnov": {
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
