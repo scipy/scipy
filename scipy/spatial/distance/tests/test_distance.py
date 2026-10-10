@@ -33,6 +33,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from functools import wraps, partial
+from types import ModuleType
+from typing import Any, Callable
 import os.path
 import sys
 import platform
@@ -62,8 +64,13 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (make_xp_test_case, is_lazy_array, array_namespace,
-                                   make_xp_pytest_param)
+from scipy._lib._array_api import (
+    Array,
+    make_xp_test_case,
+    is_lazy_array,
+    array_namespace,
+    make_xp_pytest_param,
+)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 
@@ -261,6 +268,99 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
 assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5, check_dtype=False)
 
 
+def _take(xp: ModuleType, a: Array, index: list[int], axis: int) -> Array:
+    return xp.take(a, xp.asarray(index), axis=axis)
+
+
+def xp_assert_ones_weight(
+    fn: Callable[..., Array],
+    *arrays: Array,
+    rest: tuple[Any, ...] = (),
+    axis: int = 0,
+    **kwargs: Any,
+):
+    """Test invariance to weighting by ones."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis])
+    xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
+
+
+def xp_assert_scaling_weight(
+    fn: Callable[..., Array],
+    *arrays: Array,
+    rest: tuple[Any, ...] = (),
+    axis: int = 0,
+    **kwargs: Any,
+):
+    """Test invariance to weight scaling."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis])
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    for scale in (101.0, 0.101):
+        xp_assert_close(fn(*arrays, *rest, w=w * scale, **kwargs), expected)
+
+
+def xp_assert_zero_weight(
+    fn: Callable[..., Array],
+    *arrays: Array,
+    rest: tuple[Any, ...] = (),
+    axis: int = 0,
+    seed: int = 0,
+    **kwargs: Any,
+):
+    """Test invariance to additional zero-weighted elements."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis])
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    rng = np.random.default_rng(seed)
+    n = w.shape[0]
+    index = [int(i) for i in rng.integers(n, size=n)]
+    padded = xp.concat([w, xp.zeros(n)])
+    for scale in (1.0, 101.0):
+        arrays_padded = [
+            xp.concat([a, _take(xp, a, index, axis) * scale], axis=axis) for a in arrays
+        ]
+        xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
+
+
+def xp_assert_duplication_weight(
+    fn: Callable[..., Array],
+    *arrays: Array,
+    rest: tuple[Any, ...] = (),
+    axis: int = 0,
+    **kwargs: Any,
+):
+    """Test invariance to duplication of the input at half weight."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis])
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    doubled = [xp.concat([a, a], axis=axis) for a in arrays]
+    xp_assert_close(fn(*doubled, *rest, w=xp.concat([w, w]) / 2.0, **kwargs), expected)
+
+
+def xp_assert_split_weight(
+    fn: Callable[..., Array],
+    *arrays: Array,
+    rest: tuple[Any, ...] = (),
+    axis: int = 0,
+    seed: int = 0,
+    **kwargs: Any,
+) -> None:
+    """Test invariance to splitting weights across repeated elements."""
+    xp = array_namespace(*arrays)
+    n = arrays[0].shape[axis]
+    w = xp.ones(n)
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    rng = np.random.default_rng(seed)
+    # Draw index from a geometric distribution to get longer tails
+    index = np.repeat(np.arange(n), rng.geometric(0.45, size=n))
+    raw = rng.exponential(1.0, index.size)
+    shares = xp.asarray(raw / np.bincount(index, weights=raw)[index], dtype=w.dtype)
+    split = [_take(xp, a, index, axis) for a in arrays]
+    weights = _take(xp, w, index, 0) * shares
+    xp_assert_close(fn(*split, *rest, w=weights, **kwargs), expected)
+
+
 def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
                   key=lambda x: x, w=None):
     check_a = key(a)
@@ -394,7 +494,6 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wjaccard = _weight_checked(jaccard)
-weuclidean = _weight_checked(euclidean, const_test=False)
 wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
@@ -1467,6 +1566,26 @@ class TestMinkowski:
             minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
 
 
+@make_xp_test_case(euclidean)
+class TestEuclidean:
+    def test_euclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(euclidean(x, y), xp.asarray(math.sqrt(5.0)), atol=1.5e-7)
+
+    def test_euclidean_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(euclidean(x, y), np.asarray(math.sqrt(5.0)), atol=1.5e-7)
+
+    def test_weight_invariance(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_ones_weight(euclidean, x, y)
+        xp_assert_zero_weight(euclidean, x, y)
+        xp_assert_duplication_weight(euclidean, x, y)
+        xp_assert_split_weight(euclidean, x, y)
+        # euclidean is not invariant to rescaling of weights
+
+
+
 class TestSomeDistanceFunctions:
 
     def setup_method(self):
@@ -1475,11 +1594,6 @@ class TestSomeDistanceFunctions:
         y = np.array([1.0, 1.0, 5.0])
 
         self.cases = [(x, y)]
-
-    def test_euclidean(self):
-        for x, y in self.cases:
-            dist = weuclidean(x, y)
-            assert math.isclose(dist, math.sqrt(5.0), abs_tol=1.5e-7)
 
     def test_sqeuclidean(self):
         for x, y in self.cases:
@@ -1853,13 +1967,13 @@ def test_euclideans():
 
     # Basic test of the calculation.
     assert math.isclose(wsqeuclidean(x1, x2), 3.0, abs_tol=1e-14)
-    assert math.isclose(weuclidean(x1, x2), math.sqrt(3), abs_tol=1e-14)
+    assert math.isclose(euclidean(x1, x2), math.sqrt(3), abs_tol=1e-14)
 
     # Another check, with random data.
     rs = np.random.RandomState(1234567890)
     x = rs.rand(10)
     y = rs.rand(10)
-    d1 = weuclidean(x, y)
+    d1 = euclidean(x, y)
     d2 = wsqeuclidean(x, y)
     assert math.isclose(d1**2, d2, abs_tol=1e-14)
 
@@ -2278,7 +2392,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, 2),
         make_xp_pytest_param(minkowski, 3.5),
         make_xp_pytest_param(minkowski, np.inf),
-        (euclidean, None),
+        make_xp_pytest_param(euclidean, None),
         (sqeuclidean, None),
     ],
 )
