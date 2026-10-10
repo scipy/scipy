@@ -139,7 +139,7 @@ def correlate(in1, in2, mode='full', method='auto'):
            be much faster than ``fft`` when one input is much larger than the
            other.
 
-           .. versionadded:: 1.19.0
+           .. versionadded:: 2.0.0
         ``auto``
            Automatically chooses direct or Fourier method based on an estimate
            of which is faster (default).  See `convolve` Notes for more detail.
