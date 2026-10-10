@@ -290,6 +290,39 @@ class TestConvolve:
         assert_raises(ValueError, convolve, [3], 2)
 
 
+class TestConvolveMethodOA:
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_convolve_method_oa_matches_fft(self, mode, dtype):
+        rng = np.random.default_rng(0)
+        a = rng.standard_normal(5000).astype(dtype)
+        b = rng.standard_normal(65).astype(dtype)
+        got = convolve(a, b, mode=mode, method='oa')
+        ref = convolve(a, b, mode=mode, method='fft')
+        np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    def test_correlate_method_oa_matches_fft(self, mode):
+        rng = np.random.default_rng(1)
+        a = rng.standard_normal(5000)
+        b = rng.standard_normal(65)
+        got = correlate(a, b, mode=mode, method='oa')
+        ref = correlate(a, b, mode=mode, method='fft')
+        np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-9)
+
+    def test_convolve_invalid_method_mentions_oa(self):
+        a = np.arange(5.0)
+        b = np.arange(3.0)
+        with pytest.raises(ValueError, match="oa"):
+            convolve(a, b, method='nonsense')
+
+    def test_correlate_invalid_method_mentions_oa(self):
+        a = np.arange(5.0)
+        b = np.arange(3.0)
+        with pytest.raises(ValueError, match="oa"):
+            correlate(a, b, method='nonsense')
+
+
 @make_xp_test_case(convolve2d)
 class TestConvolve2d:
 
@@ -934,7 +967,7 @@ class TestFFTConvolve:
             sig_nan[100] = val
             coeffs = xp.asarray(signal.firwin(200, 0.2))
 
-            msg = "Use of fft convolution.*|invalid value encountered.*"
+            msg = "Use of FFT convolution.*|invalid value encountered.*"
             with pytest.warns(RuntimeWarning, match=msg):
                 signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
@@ -968,6 +1001,98 @@ def gen_oa_shapes_eq(sizes):
 
 @make_xp_test_case(oaconvolve)
 class TestOAConvolve:
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.float64, np.float32])
+    @pytest.mark.parametrize("shapes", [(5000, 65), (100000, 512), (2000, 500)])
+    def test_cpp_path_matches_python_fallback(self, mode, dtype, shapes, xp):
+        # numpy-only fast path vs the reference fftconvolve
+        n, m = shapes
+        rng = np.random.default_rng(1)
+        a = xp.asarray(rng.standard_normal(n).astype(dtype))
+        b = xp.asarray(rng.standard_normal(m).astype(dtype))
+        got = oaconvolve(a, b, mode=mode)
+        ref = fftconvolve(a, b, mode=mode)
+        rtol = 1e-4 if dtype == np.float32 else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_noncontiguous_input(self, xp):
+        # Non-contiguous 1-D real input exercises the C++ copy path
+        # through the public API.
+        rng = np.random.default_rng(2)
+        a = xp.asarray(rng.standard_normal(10000)[::2])
+        b = xp.asarray(rng.standard_normal(37))
+        got = oaconvolve(a, b, mode="full")
+        ref = fftconvolve(a, b, mode="full")
+        xp_assert_close(got, ref, rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype", [np.complex128, np.complex64])
+    @pytest.mark.parametrize("shapes", [(5000, 65), (100000, 512), (2000, 500)])
+    def test_cpp_path_complex_matches_fftconvolve(self, mode, dtype, shapes, xp):
+        n, m = shapes
+        rng = np.random.default_rng(2)
+        a = xp.asarray(
+            (rng.standard_normal(n) + 1j*rng.standard_normal(n)).astype(dtype))
+        b = xp.asarray(
+            (rng.standard_normal(m) + 1j*rng.standard_normal(m)).astype(dtype))
+        got = oaconvolve(a, b, mode=mode)
+        ref = fftconvolve(a, b, mode=mode)
+        rtol = 1e-4 if dtype == np.complex64 else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_complex_noncontiguous(self, xp):
+        rng = np.random.default_rng(3)
+        a = xp.asarray(rng.standard_normal(10000)
+                       + 1j*rng.standard_normal(10000))[::2]
+        b = xp.asarray(rng.standard_normal(65) + 1j*rng.standard_normal(65))
+        xp_assert_close(oaconvolve(a, b, mode="full"),
+                        fftconvolve(a, b, mode="full"), rtol=1e-9, atol=1e-9)
+
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    @pytest.mark.parametrize("dtype",
+                             [np.float64, np.complex128, np.float32, np.complex64])
+    @pytest.mark.parametrize("shape_axis",
+                             [((8, 2000), 1), ((2000, 8), 0), ((4, 2000, 3), 1)])
+    def test_cpp_path_nd_single_axis(self, mode, dtype, shape_axis, xp):
+        shape, axis = shape_axis
+        rng = np.random.default_rng(4)
+
+        def mk(shp):
+            r = rng.standard_normal(shp)
+            if np.issubdtype(dtype, np.complexfloating):
+                r = r + 1j*rng.standard_normal(shp)
+            return r.astype(dtype)
+
+        kshape = list(shape)
+        kshape[axis] = 65
+        a = xp.asarray(mk(shape))
+        b = xp.asarray(mk(tuple(kshape)))
+        got = oaconvolve(a, b, mode=mode, axes=(axis,))
+        ref = fftconvolve(a, b, mode=mode, axes=(axis,))
+        rtol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-9
+        xp_assert_close(got, ref, rtol=rtol, atol=rtol)
+
+    def test_cpp_path_nd_noncontiguous(self, xp):
+        rng = np.random.default_rng(5)
+        a = xp.asarray(rng.standard_normal((8, 4000)))[:, ::2]   # non-contiguous
+        b = xp.asarray(rng.standard_normal((8, 65)))
+        xp_assert_close(oaconvolve(a, b, mode="full", axes=(1,)),
+                        fftconvolve(a, b, mode="full", axes=(1,)), rtol=1e-9, atol=1e-9)
+
+    def test_cpp_path_multiaxis_falls_back(self, xp):
+        # 2-D with both axes convolved (axes=None) must still be correct (Python path).
+        rng = np.random.default_rng(6)
+        a = xp.asarray(rng.standard_normal((200, 200)))
+        b = xp.asarray(rng.standard_normal((30, 30)))
+        xp_assert_close(oaconvolve(a, b, mode="full"),
+                        fftconvolve(a, b, mode="full"), rtol=1e-9, atol=1e-9)
+        if is_numpy(xp):
+            # Defense against future mis-routing: the C++ layer itself must
+            # decline multi-axis convolution directly (axes=None -> both axes).
+            from scipy.signal import _fftconv
+            res = _fftconv.oaconvolve(np.asarray(a), np.asarray(b), "full", None)
+            assert res is None
+
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
                              gen_oa_shapes_eq(list(range(1, 100, 1)) +
@@ -3081,9 +3206,9 @@ def test_choose_conv_method(xp):
             assert method == true_method
 
             method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
-            assert method_try in {'fft', 'direct'}
+            assert method_try in {'fft', 'direct', 'oa'}
             assert isinstance(times, dict)
-            assert 'fft' in times.keys() and 'direct' in times.keys()
+            assert {'fft', 'direct', 'oa'} <= times.keys()
 
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
@@ -3106,6 +3231,44 @@ def test_choose_conv_method_2(xp):
                 x = np.ones(n, dtype=not_fft_conv_supp)
                 h = x.copy()
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
+
+
+class TestChooseConvMethodOA:
+    def test_1d_equal_size_not_oa(self):
+        a = np.random.default_rng(0).standard_normal(2000)
+        b = np.random.default_rng(1).standard_normal(2000)
+        assert choose_conv_method(a, b, mode='full') != 'oa'
+
+    def test_2d_never_oa(self):
+        a = np.random.default_rng(0).standard_normal((300, 300))
+        b = np.random.default_rng(1).standard_normal((8, 8))
+        assert choose_conv_method(a, b, mode='full') != 'oa'
+
+    def test_integer_input_direct_not_oa(self):
+        a = np.arange(100000, dtype=np.int64) % 7
+        b = np.arange(65, dtype=np.int64) % 3
+        assert choose_conv_method(a, b, mode='full') == 'direct'
+
+    def test_measure_includes_oa(self):
+        a = np.random.default_rng(0).standard_normal(100000)
+        b = np.random.default_rng(1).standard_normal(65)
+        method, times = choose_conv_method(a, b, mode='full', measure=True)
+        assert 'oa' in times
+        assert method in ('oa', 'fft', 'direct')
+        assert method == min(times, key=times.get)
+
+    def test_measure_selects_min_including_oa(self, monkeypatch):
+        # Deterministically verify the measure path times fft/direct/oa and
+        # returns the fastest, without depending on real hardware timing.
+        from scipy.signal import _signaltools
+        # choose_conv_method times methods in the order ['fft', 'direct', 'oa'].
+        fake = iter([0.3, 0.2, 0.1])
+        monkeypatch.setattr(_signaltools, '_timeit_fast', lambda f: next(fake))
+        a = np.random.default_rng(0).standard_normal(1000)
+        b = np.random.default_rng(1).standard_normal(65)
+        method, times = choose_conv_method(a, b, mode='full', measure=True)
+        assert times == {'fft': 0.3, 'direct': 0.2, 'oa': 0.1}
+        assert method == 'oa'
 
 
 @pytest.mark.fail_slow(10)
