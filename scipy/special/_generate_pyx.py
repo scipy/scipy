@@ -344,6 +344,8 @@ special_ufuncs = [
     "rel_entr",
     "rgamma",
     "round",
+    "shichi",
+    "sici",
     "sindg",
     "spence",
     "stdtr",

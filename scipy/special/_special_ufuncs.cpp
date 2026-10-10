@@ -56,6 +56,7 @@
 #include <xsf/multivariate_normal.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/orthogonal_eval.h>
+#include <xsf/sici.h>
 #include <xsf/spence.h>
 #include <xsf/stats.h>
 #include <xsf/stirling2.h>
@@ -326,6 +327,8 @@ extern const char *rel_entr_doc;
 extern const char *rgamma_doc;
 extern const char *round_doc;
 extern const char *scaled_exp1_doc;
+extern const char *shichi_doc;
+extern const char *sici_doc;
 extern const char *sindg_doc;
 extern const char *spence_doc;
 extern const char *spherical_in_d_doc;
@@ -1942,6 +1945,18 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::F_F>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta)},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(module, "_riemann_zeta", _riemann_zeta);
+
+    PyObject *shichi = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_ff>(xsf::shichi), static_cast<xsf::numpy::d_dd>(xsf::shichi),
+         static_cast<xsf::numpy::F_FF>(xsf::shichi), static_cast<xsf::numpy::D_DD>(xsf::shichi)},
+        2, "shichi", shichi_doc);
+    PyModule_AddObjectRef(module, "shichi", shichi);
+
+    PyObject *sici = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::f_ff>(xsf::sici), static_cast<xsf::numpy::d_dd>(xsf::sici),
+         static_cast<xsf::numpy::F_FF>(xsf::sici), static_cast<xsf::numpy::D_DD>(xsf::sici)},
+        2, "sici", sici_doc);
+    PyModule_AddObjectRef(module, "sici", sici);
 
     PyObject *sindg = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::f_f>(xsf::sindg), static_cast<xsf::numpy::d_d>(xsf::sindg)}, "sindg", sindg_doc);

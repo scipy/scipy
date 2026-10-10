@@ -173,10 +173,10 @@ double xsf_gamma(double x);
 double xsf_gammasgn(double x);
 double xsf_gammaln(double x);
 
-int xsf_sici(double x, double *si, double *ci);
-int xsf_shichi(double x, double *shi, double *chi);
-int xsf_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
-int xsf_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
+void xsf_sici(double x, double *si, double *ci);
+void xsf_shichi(double x, double *shi, double *chi);
+void xsf_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
+void xsf_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
 
 double xsf_hyp2f1(double a, double b, double c, double x);
 npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z);
