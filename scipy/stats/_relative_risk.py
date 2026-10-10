@@ -1,6 +1,7 @@
 import operator
 from dataclasses import dataclass
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy.special import ndtri
 from ._common import ConfidenceInterval
 
@@ -122,6 +123,7 @@ class RelativeRiskResult:
         return ConfidenceInterval(low=katz_lo, high=katz_hi)
 
 
+@xp_capabilities(np_only=True)
 def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     """
     Compute the relative risk (also known as the risk ratio).
