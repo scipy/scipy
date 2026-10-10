@@ -4005,6 +4005,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
         dfn, dfd = dfbn, dfwn
 
     else:
+        # A large common offset can degrade both the means and variances in
+        # low precision. Center before computing either statistic, using the
+        # same offset for every group to retain the differences between means.
+        # A masked reference would mask otherwise valid observations.
+        if not is_marray(xp):
+            offset = samples[0][..., :1]
+            samples = [sample - offset for sample in samples]
+
         # calculate basic statistics for each sample
         # Beginning of second paragraph [4] page 1:
         # "As a particular case $y_t$ may be the means ... of samples
@@ -4024,23 +4032,26 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
         s_t2 = xp.stack([xp.var(sample, axis=-1, correction=1) for sample in samples])
 
-        # calculate weight by number of data and variance
-        # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
-        w_t = n_t / s_t2
-        # sum of w_t
-        s_w_t = xp.sum(w_t, axis=0)
+        # Scale the inverse-variance weights before summing to avoid overflow.
+        # The common factor cancels when normalizing the weights.
+        w_t = n_t * (xp.min(s_t2, axis=0) / s_t2)
+        w_t = w_t / xp.sum(w_t, axis=0)
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
+        # Center the means to avoid cancellation with a large common offset.
+        y_t = y_t - y_t[0, ...]
         axis_zero = -w_t.ndim
-        y_hat = xp.vecdot(w_t, y_t, axis=axis_zero) / xp.sum(w_t, axis=0)
+        y_hat = xp.vecdot(w_t, y_t, axis=axis_zero)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator =  xp.vecdot(w_t, (y_t - y_hat)**2, axis=axis_zero) / (k - 1)
+        # Standardize before squaring to avoid variance-scale under/overflow.
+        numerator = xp.vecdot(n_t, ((y_t - y_hat) / xp.sqrt(s_t2))**2,
+                              axis=axis_zero) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero)
+                xp.vecdot(1 / (n_t - 1), (1 - w_t)**2, axis=axis_zero)
         )
         f = numerator / denominator
 
@@ -4052,7 +4063,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # ref.[4] p.334 eq.30
         hat_f2 = (
                 (k**2 - 1) /
-                (3 * xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero))
+                (3 * xp.vecdot(1 / (n_t - 1), (1 - w_t)**2, axis=axis_zero))
         )
 
         dfn, dfd = hat_f1, hat_f2
@@ -6400,10 +6411,14 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     vn1 = v1 / n1
     vn2 = v2 / n2
     with np.errstate(divide='ignore', invalid='ignore'):
-        df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
+        # The common scale cancels in df; normalize before squaring to avoid
+        # underflow or overflow even when both variances are finite and nonzero.
+        scale = xp.maximum(vn1, vn2)
+        vn1n, vn2n = vn1 / scale, vn2 / scale
+        df = (vn1n + vn2n)**2 / (vn1n**2 / (n1 - 1) + vn2n**2 / (n2 - 1))
 
-    # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
-    # Hence it doesn't matter what df is as long as it's not NaN.
+    # Retain the arbitrary df for zero variances, for which the statistic
+    # is infinite or NaN regardless of df.
     df = xp.where(xp.isnan(df), 1., df)
     denom = xp.sqrt(vn1 + vn2)
     return df, denom
