@@ -191,6 +191,8 @@ def xp_copy_to_numpy(x: Array) -> np.ndarray:
         return np.asarray(
             xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
         )
+    if is_mparray(xp):
+        return np.asarray(x._data, dtype=x.dtype)
     # Fall back to np.asarray. This works for dask.array. It
     # currently works for jax.numpy, but hopefully JAX will make
     # the transfer guard workable enough for use in scipy tests, in
@@ -384,6 +386,9 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
         return jax.scipy
 
     if is_torch(xp):
+        return xp
+
+    if is_mparray(xp):
         return xp
 
     return None
@@ -745,6 +750,8 @@ def _make_sphinx_capabilities(
     warnings = (),
     # Whether the function supports MArrays that wrap one of the supported backends
     marray=None,
+    # Whether the function support mparrays
+    mparray=None,
     # unused in documentation
     reason=None,
     method_capabilities=None,
@@ -769,6 +776,11 @@ def _make_sphinx_capabilities(
 
     # documentation doesn't display the reason
     for module, _ in list(skip_backends) + list(xfail_backends):
+        # Don't display mparray in tables for now. If desired in the future, add
+        # to `capabilities` table above, _make_capabilities_note below, and
+        # _process_capabilities_table_entry in _array_api_docs_tables.py
+        if module == "mparray":
+             continue
         backend = capabilities[module]
         if backend.cpu is not None:
             backend.cpu = False
@@ -789,9 +801,10 @@ def _make_sphinx_capabilities(
         backend.warnings.append(warning)
 
     # MArrays are either supported or not. If supported, they work with all combinations
-    # of device + backend that are supported by the function and MArray itself. This is
-    # indicated with an extra note after the backend table.
-    capabilities.update({'marray': marray})
+    # of device + backend that are supported by the function and MArray itself.
+    # Support for MArray and MPArray are indicated with an extra note after the backend
+    # table.
+    capabilities.update({'marray': marray, 'mparray': mparray})
 
     return capabilities
 
@@ -816,6 +829,11 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         "backed by the backends indicated above; masked values will be treated as "
         "though they were not present." if capabilities.get("marray", False) else "")
 
+    mparray_note = (f"In addition, `{fun_name}` accepts "
+        "`MPArrays <https://github.com/mdhaber/mparray>`__; "
+        "calculations will be performed with the precision set by ``mpmath.mp.dps``. "
+        if capabilities.get("mparray", False) else "")
+
     # Note: deliberately not documenting array-api-strict
     note = f"""
 
@@ -837,6 +855,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
         ====================  ====================  ====================
 
     {textwrap.indent(marray_note or "", ' '*4)}
+    {textwrap.indent(mparray_note or "", ' '*4)}
     {textwrap.indent(extra_note or "",  ' '*4)}
 
         See :ref:`dev-arrayapi` for more information.
@@ -854,7 +873,7 @@ def xp_capabilities(
     # Generate pytest.mark.skip/xfail_xp_backends.
     # See documentation in conftest.py.
     # lists of tuples [(module name, reason), ...]
-    skip_backends=(), xfail_backends=(),
+    skip_backends=None, xfail_backends=None,
     cpu_only=False, np_only=False, reason=None,
     out_of_scope=False, exceptions=(),
     # lists of tuples [(module name, reason), ...]
@@ -870,6 +889,8 @@ def xp_capabilities(
     method_capabilities=None,
     # Whether the function supports MArrays that wrap one of the supported backends
     marray=False,
+    # Whether the function supports arbitrary precision via mparray.
+    mparray=False
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -888,6 +909,9 @@ def xp_capabilities(
     make_xp_pytest_param
     array_api_extra.testing.lazy_xp_function
     """
+    skip_backends = [] if skip_backends is None else skip_backends
+    xfail_backends = [] if xfail_backends is None else xfail_backends
+
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
@@ -900,8 +924,8 @@ def xp_capabilities(
         # Fill in missing entries of method capabilities with
         # defaults if any entries are missing.
         method_capabilities[method] = dict(
-            skip_backends=(),
-            xfail_backends=(),
+            skip_backends=[],
+            xfail_backends=[],
             cpu_only=False,
             np_only=False,
             out_of_scope=False,
@@ -911,8 +935,14 @@ def xp_capabilities(
             allow_dask_compute=False,
             jax_jit=True,
             marray=False,
+            mparray=False,
         ) | capabilities
+        if not method_capabilities[method]["mparray"]:
+            method_capabilities[method]["skip_backends"] += (
+                [("mparray", "mparray not supported for this method")])
 
+    if not mparray:
+        skip_backends += [("mparray", "mparray not supported for this function")]
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
@@ -926,6 +956,7 @@ def xp_capabilities(
         warnings=warnings,
         method_capabilities=method_capabilities,
         marray=marray,
+        mparray=mparray,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
@@ -1193,3 +1224,48 @@ def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
 
 def xp_isscalar(x):
     return np.isscalar(x) or (is_array_api_obj(x) and x.ndim == 0)
+
+
+def is_mparray(xp):
+    return "mparray" in str(xp)
+
+
+def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
+    # vectorized, array API interpolation along last axis
+    xp = array_namespace(x1, x, y) if xp is None else xp
+    x1, x, y = xp_promote(x1, x, y, force_floating=True, xp=xp)
+    out_shape = x1.shape
+
+    if is_numpy(xp) and x.ndim <= 1 and y.ndim <= 1:
+        res = np.interp(x1, x, y, left=left, right=right)
+        return res.astype(x1.dtype)
+
+    ndim = max(x1.ndim, x.ndim, y.ndim)
+    x1 = xpx.atleast_nd(x1, ndim=ndim)
+    x = xpx.atleast_nd(x, ndim=ndim)
+    y = xpx.atleast_nd(y, ndim=ndim)
+
+    # sort x in ascending order for efficient binary search
+    j = xp.argsort(x, axis=-1)
+    x = xp.take_along_axis(x, j, axis=-1)
+    y = xp.take_along_axis(y, j, axis=-1)
+
+    # binary search for adjacent elements of `x` that bound elements of `x1`
+    i = xp.clip(xpx.searchsorted(x, x1) - 1, 0, x.shape[-1]-2)
+
+    # interpolation
+    xi = xp.take_along_axis(x, i, axis=-1)
+    xip1 = xp.take_along_axis(x, i+1, axis=-1)
+    yi = xp.take_along_axis(y, i, axis=-1)
+    yip1 = xp.take_along_axis(y, i+1, axis=-1)
+    res = yi + (x1 - xi) * (yip1 - yi) / (xip1 - xi)
+
+    # clip to bounds, don't extrapolate
+    xl = x[..., 0:1]
+    xr = x[..., -1:]
+    left = y[..., 0:1] if left is None else left
+    right = y[..., -1:] if right is None else right
+    res, left, right = xp.broadcast_arrays(res, left, right)
+    res = xp.where(x1 < xl, left, res)
+    res = xp.where(x1 > xr, right, res)
+    return xp.reshape(res, out_shape)

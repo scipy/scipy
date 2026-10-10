@@ -22,6 +22,12 @@ from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy._lib._array_api import make_xp_test_case
 from scipy.conftest import skip_xp_invalid_arg
 
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:`scipy.stats.mstats` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:Support for NumPy masked arrays is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore: p-value capped:UserWarning")
+]
 
 SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 RTOL = 1e-6 if USING_ACCELERATE else 1e-15
@@ -93,6 +99,17 @@ def kendalltau(*args, _no_deco=False, **kwargs):
     if _no_deco:
         return stats._stats_py._kendalltau(*args, _no_deco=_no_deco, **kwargs)
     return stats.kendalltau(*args, **kwargs)
+
+
+def anderson_ksamp(*args, _no_deco=False, **kwargs):
+    # The tests need to be able to call the function w/out decorator behavior
+    # Typically that is done using the `_no_deco` kwarg that is added
+    # by the decorator. But the public function doesn't have the decorator because
+    # how we want the decorator to behave depends on the method. So we have
+    # to handle `_no_deco` manually.
+    if _no_deco:
+        return stats._morestats._anderson_ksamp(*args, k=len(args), **kwargs)
+    return stats.anderson_ksamp(args, **kwargs)
 
 
 axis_nan_policy_cases = [
@@ -215,6 +232,10 @@ axis_nan_policy_cases = [
     (stats.circmedian, tuple(), dict(convention='geometric'),
      1, 1, False, lambda x: (x,)),
     (stats.expectile, (0.4,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.anderson, tuple(), dict(), 1, 2, False, tuple),
+    (stats.anderson, ('expon',), dict(), 1, 2, False, tuple),
+    (anderson_ksamp, tuple(), dict(), 3, 2, False, None),
+    (anderson_ksamp, tuple(), dict(variant='continuous'), 3, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -250,6 +271,8 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "`x` and `y` must have length at least 2.",
                       "Inputs must not be empty.",
                       "All `x` coordinates are identical.",
+                      "`anderson_ksamp` encountered a sample without observations",
+                      "`anderson_ksamp` needs more than one distinct observation",
 }
 
 # If the message is one of these, results of the function may be inaccurate,

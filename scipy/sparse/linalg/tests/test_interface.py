@@ -24,6 +24,7 @@ import scipy.sparse.linalg._interface as interface
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._testutils import mutually_broadcastable_shapes
 
 pytestmark = make_xp_pytest_marks(
     (LinearOperator, "__init__"),
@@ -35,29 +36,6 @@ pytestmark = make_xp_pytest_marks(
     (LinearOperator, "rmatmat"),
     aslinearoperator
 )
-
-def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
-    rng = np.random.default_rng(rng)
-    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like
-    max = np.broadcast_to(max, ndim)
-    batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
-    shapes = np.repeat([batch_shape], nshapes, axis=0)
-
-    # make some elements of some shapes 1 (while preserving overall batch shape)
-    for column in shapes.T:
-        column[rng.integers(1, nshapes):] = 1
-    # permute elements between shapes (while preserving overall batch shape)
-    shapes = list(rng.permuted(shapes, axis=0))
-    # potentially trim preceding 1s from a shape
-    for i in range(len(shapes)):
-        shape = shapes[i]
-        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
-        if rng.random() < 0.25:
-            shapes[i] = shape[rng.integers(j+1):]
-            break
-
-    assert np.broadcast_shapes(*shapes) == batch_shape
-    return [tuple(int(el) for el in shape) for shape in shapes]
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "
@@ -408,8 +386,8 @@ class TestDotTests:
         dtype = np.dtype(data_dtype)
         *batch_shape, M, N = op.shape
 
-        u_broadcast, v_broadcast = generate_broadcastable_shapes(
-            2, ndim=3, min=0, max=5, rng=63
+        u_broadcast, v_broadcast = mutually_broadcastable_shapes(
+            2, min_dims=3, max_dims=3, min_side=0, max_side=5, rng=63
         )
 
         for u_shape, v_shape in (
@@ -923,15 +901,6 @@ def test_attributes(xp):
         assert hasattr(op, "shape")
         assert hasattr(op, "_matvec")
 
-@pytest.mark.xfail_xp_backends('dask.array', reason=(
-    "dask does not support broadcast_shapes(). "
-    "See: https://github.com/data-apis/array-api-compat/issues/439"
-))
-def matvec_for_pickle(x):
-    """ Needed for test_pickle as local functions are not pickleable """
-    return x
-
-
 @pytest.mark.skip_xp_backends(
     "array_api_strict",
     reason="pickle-ability is not guaranteed by the standard"
@@ -940,17 +909,62 @@ def matvec_for_pickle(x):
     "dask does not support broadcast_shapes(). "
     "See: https://github.com/data-apis/array-api-compat/issues/439"
 ))
-def test_pickle(xp):
-    import pickle
+class TestPickle:
+    class _SlottedOperator(interface.LinearOperator):
+        """LinearOperator subclass storing state in __slots__, for gh-25871."""
 
-    protocol_min = 0 if is_numpy(xp) else 2
-    for protocol in range(protocol_min, pickle.HIGHEST_PROTOCOL + 1):
-        A = interface.LinearOperator((3, 3), matvec_for_pickle, xp=xp)
-        s = pickle.dumps(A, protocol=protocol)
-        B = pickle.loads(s)
+        __slots__ = ["_diagonal"]
 
-        for k in A.__dict__:
-            assert getattr(A, k) == getattr(B, k)
+        def __init__(self, diagonal, xp):
+            self._diagonal = diagonal
+            super().__init__(
+                dtype=diagonal.dtype, shape=(diagonal.shape[0],) * 2, xp=xp
+            )
+
+        def _matvec(self, x):
+            return self._diagonal * x
+
+    @staticmethod
+    def _matvec_for_pickle(x):
+        """ Needed for test_pickle as local functions are not pickleable """
+        return x
+
+    def test_pickle(self, xp):
+        import pickle
+
+        protocol_min = 0 if is_numpy(xp) else 2
+        for protocol in range(protocol_min, pickle.HIGHEST_PROTOCOL + 1):
+            A = interface.LinearOperator((3, 3), self._matvec_for_pickle, xp=xp)
+            s = pickle.dumps(A, protocol=protocol)
+            B = pickle.loads(s)
+
+            for k in A.__dict__:
+                assert getattr(A, k) == getattr(B, k)
+
+    def test_pickle_slots(self, xp):
+        # gh-25871: __slots__-stored state must survive a pickle round-trip.
+        import pickle
+
+        diagonal = xp.asarray([1.0, 2.0, 3.0])
+        A = self._SlottedOperator(diagonal, xp)
+        B = pickle.loads(pickle.dumps(A))
+
+        xp_assert_equal(B._diagonal, diagonal)
+        xp_assert_equal(B.matvec(xp.ones(3)), diagonal)
+
+    def test_setstate_legacy_pickle(self):
+        # gh-25871: scipy 1.18.{0,1} pickled state as a flat dict with no __slots__
+        # support; __setstate__ must still load those without crashing
+        # (even though any lost slot data is unrecoverable).
+        op = self._SlottedOperator.__new__(self._SlottedOperator)
+        legacy_state = {
+            "dtype": np.dtype(np.float64), "shape": (3, 3), "ndim": 2,
+            "_xp": np.empty(0),
+        }
+        op.__setstate__(legacy_state)
+        assert op.dtype == np.dtype(np.float64)
+        assert not hasattr(op, "_diagonal")
+
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "

@@ -418,7 +418,7 @@ def _rq_signature(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=Fa
         return "(i,j)->(i,j)"
 
 
-@_apply_over_batch(('a', 2), signature=_rq_signature)
+@_apply_over_batch(('a', 2), signature=_rq_signature, zero_size_fill=None)
 def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.

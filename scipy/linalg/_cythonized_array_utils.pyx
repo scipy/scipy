@@ -22,11 +22,11 @@ cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noe
     Swap+copy the memory layout of same sized buffers mainly
     for Cython LAPACK interfaces.
     """
-    cdef int row, col, ith_row
+    cdef int row, _col, ith_row
     cdef lapack_t *bb = b
     cdef lapack_t *aa = a
 
-    for col in range(c):
+    for _col in range(c):
         ith_row = 0
         for row in range(r):
             bb[row] = aa[ith_row]
@@ -36,7 +36,7 @@ cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noe
 # ============================================================================
 
 
-@_apply_over_batch(('a', 2), signature="(i,i)->bool()")
+@_apply_over_batch(('a', 2), signature="(i,i)->bool()", zero_size_fill=True)
 @cython.embedsignature(True)
 def issymmetric(a, atol=None, rtol=None):
     """Check if a square 2D array is symmetric.
@@ -167,7 +167,7 @@ cdef inline bint is_sym_her_real_noncontig_internal(const np_numeric_t[:, :]A) n
     return True
 
 
-@_apply_over_batch(('a', 2), signature="(i,i)->bool()")
+@_apply_over_batch(('a', 2), signature="(i,i)->bool()", zero_size_fill=True)
 @cython.embedsignature(True)
 def ishermitian(a, atol=None, rtol=None):
     """Check if a square 2D array is Hermitian.

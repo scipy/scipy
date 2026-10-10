@@ -26,7 +26,7 @@ from scipy.interpolate import (
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
 
-from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
+from scipy.interpolate._bsplines import (_not_a_knot, _augknt, _compute_b_inv,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr,
                                          _penalty_matrix_banded)
@@ -2086,6 +2086,62 @@ class TestLSQ:
 
         make_lsq_spline(x, y, t, k, method=method, clamp_values=(5, 8))
 
+    def test_periodic_and_clamp_values_raises(self):
+        # Periodic boundary conditions raise when clamp values are specified
+        x, y = self.x, self.y
+        k = self.k
+        t = np.copy(self.t)
+
+        t[:k+1] = float(x[0])
+        t[-(k+1):] = float(x[-1])
+
+        with assert_raises(ValueError, match="[Pp]eriodic"):
+            make_lsq_spline(x, y, t, k, method="qr", clamp_values=(5, 8),
+            bc_type="periodic")
+
+    def test_periodic_not_implemented_for_method_norm_eq(self):
+        x = self.x
+        y = np.copy(self.y)
+        k = self.k
+
+        t = _periodic_knots(x, k)
+
+        with assert_raises(NotImplementedError):
+            make_lsq_spline(x, y, t, k, method="norm-eq", bc_type="periodic")
+
+    def test_periodic_bc_type_invalid_knot_vector(self):
+        x, y = self.x, self.y
+        k = self.k
+
+        t = _periodic_knots(x, k)
+        t[k + 1] += 0.1
+
+        with assert_raises(ValueError):
+            make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
+
+    def test_periodic_bc_type(self, xp):
+        # Compare to fitpack splprep
+        x, y = map(xp.asarray, (self.x, self.y))
+        k = self.k
+
+        t = _periodic_knots(xp_copy_to_numpy(x), k)
+        t = xp.asarray(t)
+
+        spl = make_lsq_spline(x, y, t, k, method="qr", bc_type="periodic")
+
+        # Check that the resulting spline is periodic
+        xp_assert_close(spl(x[0]), spl(x[-1]), atol=1e-14)
+        assert spl.extrapolate == "periodic"
+        xp_assert_close(spl(x[0] + 0.1), spl(x[-1] + 0.1), atol=1e-14)
+
+        # task=-1 means fitting a least square spline
+        tck, _ = splprep(xp_copy_to_numpy(y).reshape((1, y.shape[0])), k=k,
+                         u=xp_copy_to_numpy(x), t=xp_copy_to_numpy(t), task=-1,
+                         per=1)
+
+        xp_assert_close(spl.t, xp.asarray(tck[0]), atol=1e-14)
+        xp_assert_close(spl.c, xp.asarray(tck[1][0]), atol=1e-14)
+
     def test_weights_same(self, xp):
         # both methods treat weights
         x, y, t = map(xp.asarray, (self.x, self.y, self.t))
@@ -2484,7 +2540,7 @@ _t_mult5b = np.r_[[-2.0]*5, [0.0], [2.0]*4]               # boundary multiplicit
 _t_unclamped = np.r_[[-4., -3.5, -3., -2.], [0.], [2., 3., 3.5, 4.]]  # not clamped
 
 def _dense_omega(ab, m):
-    """Reconstruct a dense symmetric matrix from (4, m) lower-banded storage.
+    """Reconstruct a dense symmetric matrix from (4, m) upper-banded storage.
 
     Used for the penalty matrix Omega of the smoothing spline,
     ``Omega[i, j] = integral(B_i'' * B_j'')``, which
@@ -2492,9 +2548,9 @@ def _dense_omega(ab, m):
     """
     omega = np.zeros((m, m))
     for i in range(4):
-        omega += np.diag(ab[i, :m - i], -i)
+        omega += np.diag(ab[3 - i, i:], -i)
         if i > 0:
-            omega += np.diag(ab[i, :m - i], i)
+            omega += np.diag(ab[3 - i, i:], i)
     return omega
 
 @make_xp_test_case(make_smoothing_spline)
@@ -2874,7 +2930,7 @@ class TestSmoothingSpline:
 
         x = np.linspace(0, 4, 25)
         y = np.sin(2 * x) + 0.25 * np.cos(11 * x)
-        t = np.r_[[0.0]*4, [0.8, 1.6, 2.4, 3.2], [4.0]*4]
+        t = _augknt(np.r_[0.0, 0.8, 1.6, 2.4, 3.2, 4.0], 3)
         lam = 2.5e-4 * 4.0**3                  # lambda_R * range^3
         spl = make_smoothing_spline(x, y, lam=lam, t=t)
         xp_assert_close(spl(x), ss_vals, atol=5e-4)
@@ -2926,8 +2982,6 @@ class TestSmoothingSpline:
         xp_assert_close(spl(x), oc_vals, atol=1e-10)
 
     @pytest.mark.parametrize("y, kwargs, err, match", [
-        pytest.param(_y_err, dict(t=_t_good), NotImplementedError,
-                     "pass `lam` explicitly", id="no-lam"),
         pytest.param(_y_err, dict(t=_t_good, lam=np.ones(5)),
                      NotImplementedError, "must be a scalar", id="array-lam"),
         pytest.param(_y_err, dict(t=_t_good, lam=-1.0),
@@ -2963,6 +3017,131 @@ class TestSmoothingSpline:
         # invalid inputs on the user-knots path raise with a clear message
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
+
+    @pytest.mark.parametrize("scale", [
+        pytest.param(4.0, id="normal"),
+        pytest.param(3e-6, id="tiny"),
+        pytest.param(1e6, id="huge"),
+    ])
+    def test_gcv_user_knots_scale_free(self, scale):
+        """Auto lam selection works at any data scale: the search window is
+        the dimensionless log10(lam / r), so it needs no absolute bounds."""
+        rng = np.random.default_rng(11)
+        x = np.sort(rng.uniform(0, scale, 50))
+        y = np.sin(2 * np.pi * 3 * x / scale) + 0.3 * rng.normal(size=50)
+        tk = np.linspace(x[0], x[-1], 15)
+        t = _augknt(tk, 3)
+        f = make_smoothing_spline(x, y, t=t)
+        assert np.all(np.isfinite(f(x)))
+        # the fit should be reasonable.
+        assert np.sqrt(np.mean((f(x) - y)**2)) < 0.75 * np.std(y)
+
+    def test_gcv_user_knots_matches_grid_argmin(self):
+        """GCV-selected fit agrees with the fit at the argmin of a log-lam grid."""
+        rng = np.random.default_rng(42)
+        x = np.sort(rng.uniform(0, 4, 40))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=40)
+        tk = np.linspace(x[0], x[-1], 12)
+        t = _augknt(tk, 3)
+        n = len(x)
+        lams = np.logspace(-6, 3, 12)
+        eye = np.eye(n)
+        V = np.empty(len(lams))
+        for i, lam in enumerate(lams):
+            yhat = make_smoothing_spline(x, y, lam=lam, t=t)(x)
+            trA = sum(make_smoothing_spline(x, eye[:, k], lam=lam, t=t)(x)[k]
+                      for k in range(n))
+            V[i] = np.mean((y - yhat)**2) / (1 - trA / n)**2
+        i_star = np.argmin(V)
+        lam_star = lams[i_star]
+        f_auto = make_smoothing_spline(x, y, t=t)(x)
+        f_star = make_smoothing_spline(x, y, lam=lam_star, t=t)(x)
+        # The fits at the neighboring grid points bound how much the fit
+        # can move over one grid step. Use that bound as the tolerance, so
+        # the test checks "within one grid step" exactly.
+        f_lo = make_smoothing_spline(x, y, lam=lams[i_star - 1], t=t)(x)
+        f_hi = make_smoothing_spline(x, y, lam=lams[i_star + 1], t=t)(x)
+        atol = max(np.max(np.abs(f_star - f_lo)), np.max(np.abs(f_hi - f_star)))
+        xp_assert_close(f_auto, f_star, atol=atol)
+
+    @pytest.mark.parametrize("n_breaks", [5, 13, 21, 29, 34, 42])
+    def test_gcv_user_knots_stays_bounded(self, n_breaks):
+        """Regression: the GCV fit must not blow up between the data sites."""
+        rng = np.random.default_rng(8)
+        x = np.sort(rng.uniform(0, 4, 40))
+        y = np.sin(2 * x) + 0.2 * rng.normal(size=40)
+        t = _augknt(np.linspace(x[0], x[-1], n_breaks), 3)
+        f = make_smoothing_spline(x, y, lam=None, t=t)
+        x_dense = np.linspace(x[0], x[-1], 2000)
+        assert np.max(np.abs(f(x_dense))) < 2.0
+
+    def test_compute_b_inv_all_four_bands(self):
+        """All four bands of the inverse are computed, none is zeroed out."""
+        rng = np.random.default_rng(3)
+        n = 12
+        A = np.zeros((n, n))
+        for d in range(4):
+            v = rng.random(n - d) * (0.3 if d else 1.0)
+            A += np.diag(v, d) + (np.diag(v, -d) if d else 0)
+        A += 4 * np.eye(n)
+        ab = np.zeros((4, n))
+        for d in range(4):
+            ab[3 - d, d:] = np.diagonal(A, d)
+
+        B = _compute_b_inv(ab)
+        inv = np.linalg.inv(A)
+        for d in range(4):
+            xp_assert_close(B[3 - d, d:], np.diagonal(inv, d), atol=1e-14)
+
+    def test_gcv_user_knots_master(self):
+        """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
+        rng = np.random.default_rng(7)
+        x = np.sort(rng.uniform(0, 4, 50))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
+        t = _augknt(x, 3)
+        f_old = make_smoothing_spline(x, y)(x)          # existing GCV path
+        f_new = make_smoothing_spline(x, y, t=t)(x)     # user-knots GCV path
+        # The two searches find essentially the same lam. Across seeds the
+        # measured difference between the fits is 1e-7 to 3e-5, since the
+        # optimizers stop at slightly different points on the flat GCV
+        # valley. A tolerance of 1e-4 keeps a comfortable margin.
+        xp_assert_close(f_new, f_old, atol=1e-4)
+
+    def test_gcv_user_knots_weights(self):
+        """Unit weights reproduce the unweighted GCV fit; nonuniform weights run."""
+        rng = np.random.default_rng(3)
+        x = np.sort(rng.uniform(0, 4, 50))
+        y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
+        tk = np.linspace(x[0], x[-1], 12)
+        t = _augknt(tk, 3)
+        f_now = make_smoothing_spline(x, y, w=np.ones_like(x), t=t)(x)
+        f_no_w = make_smoothing_spline(x, y, t=t)(x)
+        xp_assert_close(f_now, f_no_w, atol=1e-12)
+        w = np.where(x < 2, 2.0, 0.5)
+        f_w = make_smoothing_spline(x, y, w=w, t=t)(x)
+        assert np.all(np.isfinite(f_w))
+
+    def test_gcv_user_knots_vs_R(self):
+        """GCV selection on fixed knots agrees with R's smooth.spline GCV."""
+        # Reproduction session (R 4.5.2):
+        #   x <- seq(0, 4, length.out = 25)
+        #   y <- sin(2 * x) + 0.25 * cos(11 * x)
+        #   fit <- smooth.spline(x, y, cv = FALSE,
+        #                        all.knots = c(0, c(0.8, 1.6, 2.4, 3.2)/4, 1))
+        #   predict(fit, x)$y    # fit$lambda = 2.463429220330e-04
+        x = np.linspace(0, 4, 25)
+        y = np.sin(2 * x) + 0.25 * np.cos(11 * x)
+        t = _augknt(np.r_[0.0, 0.8, 1.6, 2.4, 3.2, 4.0], 3)
+        r_yhat = np.array([
+            0.186393846962, 0.398457768892, 0.615308455998, 0.802461275320,
+            0.925431593898, 0.949816825933, 0.858608383717, 0.673605986607,
+            0.421860372253, 0.130422278305, -0.173654841629, -0.463211951010,
+            -0.710952857343, -0.889572201770, -0.971764625430, -0.932419617350,
+            -0.779268094191, -0.545322368638, -0.264245078675, 0.030301137713,
+            0.307835131483, 0.561388945297, 0.794533303938, 1.010888642951,
+            1.214075397881])
+        f = make_smoothing_spline(x, y, t=t)(x)
+        xp_assert_close(f, r_yhat, atol=5e-4)
 
     def test_user_defined_knots_axis(self):
         # batched (n-D) `y` is not supported on the user-knots path yet,

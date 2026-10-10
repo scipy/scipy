@@ -11,10 +11,12 @@ from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
 from scipy.sparse._sputils import matrix
 from scipy.conftest import skip_xp_invalid_arg
+from scipy.linalg.lapack import _ensure_dtype_cdsz
 
 
 # dtypes for testing size-0 case following precedent set in gh-20295
-dtypes = [int, float, np.float32, complex, np.complex64]
+dtypes = [int, np.float32, np.float64, np.complex64, np.complex128]
+_low_prec_dtypes = [np.float32, np.complex64]
 
 
 def _load_data(name):
@@ -109,6 +111,43 @@ class TestSolveLyapunov:
         x = solve_discrete_lyapunov(a, q, method=method)
         assert_array_almost_equal(
                       np.dot(np.dot(a, x), a.conj().transpose()) - x, -1.0*q)
+
+    @pytest.mark.parametrize("dtype_a", dtypes)
+    @pytest.mark.parametrize("dtype_q", dtypes)
+    @pytest.mark.parametrize("method", ["direct", "bilinear"])
+    def test_discrete_mixed_dtypes(self, dtype_a, dtype_q, method):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+        if all(dtype in _low_prec_dtypes for dtype in [dtype_a, dtype_q]):
+            atol = 1e-4
+        else:
+            atol = 1e-12
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        dtype = list(_ensure_dtype_cdsz(a, q))[0].dtype
+        x = solve_discrete_lyapunov(a, q, method=method)
+        assert_allclose(a @ x @ a.conj().T - x, -q, atol=atol)
+        assert x.dtype == dtype
+
+    @pytest.mark.parametrize("dtype_a", dtypes)
+    @pytest.mark.parametrize("dtype_q", dtypes)
+    def test_continuous_mixed_dtypes(self, dtype_a, dtype_q):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+        if all(dtype in _low_prec_dtypes for dtype in [dtype_a, dtype_q]):
+            atol = 3e-4
+        else:
+            atol = 1e-12
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        dtype = list(_ensure_dtype_cdsz(a, q))[0].dtype
+        x = solve_continuous_lyapunov(a, q)
+        assert_allclose(a @ x  + x @ a.conj().T, q, atol=atol)
+        assert x.dtype == dtype
 
     @skip_xp_invalid_arg
     def test_cases(self):
@@ -860,3 +899,23 @@ class TestSolveSylvester:
 
         assert res.shape == (m, n)
         assert res.dtype == ref.dtype
+
+    @pytest.mark.parametrize("dtype_a", dtypes)
+    @pytest.mark.parametrize("dtype_b", dtypes)
+    @pytest.mark.parametrize("dtype_q", dtypes)
+    def test_mixed_dtypes(self, dtype_a, dtype_b, dtype_q):
+        """Test residuals are small for mixed dtype inputs."""
+        rng = np.random.default_rng(20260917)
+        dim = 5
+        if all(dtype in _low_prec_dtypes for dtype in [dtype_a, dtype_b, dtype_q]):
+            atol = 2e-4
+        else:
+            atol = 1e-12
+
+        a = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_a)
+        b = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_b)
+        q = rng.normal(loc=0.0, scale=10.0, size=(dim, dim)).astype(dtype_q)
+        dtype = list(_ensure_dtype_cdsz(a, b, q))[0].dtype
+        x = solve_sylvester(a, b, q)
+        assert_allclose(a @ x + x @ b, q, atol=atol)
+        assert x.dtype == dtype
