@@ -1,6 +1,15 @@
-#!/bin/bash
+# /// conda-script
+# channels = ["https://prefix.dev/conda-forge"]
+# entrypoint = "brush -x ${SCRIPT}"
+#
+# [dependencies]
+# brush = "*"
+# uutils-coreutils = "*"
+# /// end-conda-script
 
 # Vendors duccfft from https://gitlab.mpcdf.mpg.de/mtr/ducc.git
+# Can be run via `pixi run --script tools/vendoring/vendor_duccfft.sh`
+# Must be run from the repo root
 
 set -o nounset
 set -o errexit
@@ -8,7 +17,6 @@ set -o errexit
 REPO_URL="https://gitlab.mpcdf.mpg.de/mtr/ducc.git"
 COMMIT_HASH="64f42ba531f609ba7029c82207a063b17f9d5275"
 
-# XXX: run this from the repo top level like `./tools/vendoring/vendor_duccfft.sh`
 ROOT_DIR="subprojects/duccfft/ducc0"
 
 # start from a fresh dir
