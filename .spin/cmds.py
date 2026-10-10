@@ -933,7 +933,18 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        run_args = ['--dry-run'] if dry_run else []
+        if dry_run:
+            run_args = ['--dry-run']
+        else:
+            # asv does not save results from an existing environment
+            # (--python=same) unless it is told which commit they belong to
+            if _dirty_git_working_dir():
+                click.secho(
+                    "WARNING: you have uncommitted changes --- "
+                    "the results are recorded against HEAD!",
+                    fg="red"
+                )
+            run_args = ['--set-commit-hash', _commit_to_sha('HEAD')]
         cmd = [
             'asv', 'run', '--show-stderr', '--python=same'
         ] + run_args + bench_args
