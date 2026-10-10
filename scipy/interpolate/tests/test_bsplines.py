@@ -22,6 +22,7 @@ from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
         CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
+        make_lsq_ndbspline, make_lsq_ndbspline_from_grid,
 )
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
@@ -4184,6 +4185,99 @@ class TestMakeLSQNdBSplineFromGrid:
 
         with assert_raises(ValueError, match="`w` must have shape"):
             _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w[:-1])
+
+
+@pytest.mark.parametrize(
+    "k, degrees",
+    [(1, (1, 1)), (2, (2, 2)), (3, (3, 3)), ((2, 3), (2, 3))],
+)
+@pytest.mark.parametrize("weighted", [False, True])
+@pytest.mark.parametrize(
+    "solver, solver_args",
+    [
+        pytest.param(
+            ssl.lsqr,
+            {"atol": 1e-12, "btol": 1e-12, "iter_lim": 200},
+            id="lsqr",
+        ),
+        pytest.param(
+            ssl.lsmr,
+            {"atol": 1e-12, "btol": 1e-12, "maxiter": 200},
+            id="lsmr",
+        ),
+    ],
+)
+class TestMakeLSQNdBSplinePublicAPI:
+    @staticmethod
+    def _make_test_data(degrees):
+        points = (np.linspace(-1.0, 1.0, 11), np.linspace(-2.0, 2.0, 12))
+        x0, x1 = np.meshgrid(*points, indexing="ij")
+        values = np.stack(
+            (
+                1.0 + 2.0 * x0 - 0.5 * x1 + 0.25 * x0 * x1,
+                -1.0 + 0.5 * x0 + 0.75 * x1,
+            ),
+            axis=-1,
+        )
+        bounds = ((-1.0, 1.0), (-2.0, 2.0))
+        t = tuple(
+            np.r_[
+                [lo] * (degree + 1),
+                0.5 * (lo + hi),
+                [hi] * (degree + 1),
+            ]
+            for degree, (lo, hi) in zip(degrees, bounds)
+        )
+        w_grid = 1.0 + 0.1 * (x0 + 1.0) + 0.05 * (x1 + 2.0)
+        x_eval = np.array([[-0.75, -1.5], [0.0, 0.25], [0.8, 1.25]])
+        expected = np.column_stack(
+            (
+                1.0
+                + 2.0 * x_eval[:, 0]
+                - 0.5 * x_eval[:, 1]
+                + 0.25 * x_eval[:, 0] * x_eval[:, 1],
+                -1.0 + 0.5 * x_eval[:, 0] + 0.75 * x_eval[:, 1],
+            )
+        )
+        return points, x0, x1, values, t, w_grid, x_eval, expected
+
+    @staticmethod
+    def _assert_fit(spl, degrees, x_eval, expected):
+        assert isinstance(spl, NdBSpline)
+        assert spl.k == degrees
+        xp_assert_close(spl(x_eval), expected, atol=1e-10)
+
+    def test_scattered_arguments(
+        self, k, degrees, weighted, solver, solver_args
+    ):
+        data = self._make_test_data(degrees)
+        _, x0, x1, values, t, w_grid, x_eval, expected = data
+        x = np.column_stack((x0.ravel(), x1.ravel()))
+        y = values.reshape((-1, values.shape[-1]))
+        w = w_grid.ravel() if weighted else None
+
+        spl = make_lsq_ndbspline(
+            x, y, t, k=k, w=w, solver=solver, **solver_args
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
+
+    def test_grid_arguments(self, k, degrees, weighted, solver, solver_args):
+        data = self._make_test_data(degrees)
+        points, _, _, values, t, w_grid, x_eval, expected = data
+        w = w_grid if weighted else None
+
+        spl = make_lsq_ndbspline_from_grid(
+            points,
+            values,
+            t,
+            k=k,
+            w=w,
+            solver=solver,
+            **solver_args,
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
 
 
 class TestMakeND:
