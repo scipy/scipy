@@ -1242,22 +1242,6 @@ class TestPdist:
         xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
         xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
 
-    def test_pdist_sokalsneath_mtica1(self):
-        m = sokalsneath(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = sokalsneath(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
-
-    def test_pdist_sokalsneath_mtica2(self):
-        m = wsokalsneath(np.array([1, 0, 1]),
-                         np.array([1, 1, 0]))
-        m2 = wsokalsneath(np.array([1, 0, 1], dtype=bool),
-                          np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
-
     def test_pdist_rogerstanimoto_mtica1(self):
         m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
                             np.array([1, 1, 0, 1, 1]))
@@ -1829,10 +1813,27 @@ class TestIsValidY:
         return y
 
 
-def test_sokalsneath_all_false():
-    # Regression test for ticket #876
-    with pytest.raises(ValueError):
-        sokalsneath([False, False, False], [False, False, False])
+class TestSokalsneath:
+    def test_sokalsneath_all_false(self):
+        # Regression test for ticket #876
+        with pytest.raises(ValueError):
+            sokalsneath([False, False, False], [False, False, False])
+
+    def test_pdist_sokalsneath_mtica1(self):
+        m = sokalsneath(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = sokalsneath(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
+
+    def test_pdist_sokalsneath_mtica2(self):
+        m = wsokalsneath(np.array([1, 0, 1]),
+                         np.array([1, 1, 0]))
+        m2 = wsokalsneath(np.array([1, 0, 1], dtype=bool),
+                          np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
 
 
 def test_canberra():
@@ -2280,6 +2281,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         (euclidean, None),
         (sqeuclidean, None),
+        (sokalsneath, None),
     ],
 )
 @pytest.mark.parametrize("weights", [True, False])
