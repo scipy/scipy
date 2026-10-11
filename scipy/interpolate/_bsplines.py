@@ -3262,6 +3262,12 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         the GCV criteria [1] in case ``lam`` is None, otherwise using the
         given parameter ``lam``.
 
+    Warns
+    -----
+    LinAlgWarning
+        If ``t`` is provided and the linear system is ill-conditioned for
+        the given ``lam``, in which case the result may not be accurate.
+
     Notes
     -----
     This algorithm is a clean room reimplementation of the algorithm
