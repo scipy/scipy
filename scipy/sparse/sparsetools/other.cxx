@@ -6,6 +6,4 @@
 #include "csgraph.h"
 #include "coo.h"
 
-extern "C" {
 #include "other_impl.h"
-}
