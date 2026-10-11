@@ -958,18 +958,20 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1e-10)
 
     @skip_xp_backends(np_only=True)
-    def test_fft_nan(self, xp):
+    @pytest.mark.parametrize('method', ['fft', 'oa'])
+    def test_fft_nan(self, method, xp):
         n = 1000
         rng = np.random.default_rng(43876432987)
         sig_nan = xp.asarray(rng.standard_normal(n))
 
         for val in [np.nan, np.inf]:
-            sig_nan[100] = val
+            sig_nan_copy = sig_nan.copy()
+            sig_nan_copy[-1] = val
             coeffs = xp.asarray(signal.firwin(200, 0.2))
 
             msg = "Use of FFT convolution.*|invalid value encountered.*"
             with pytest.warns(RuntimeWarning, match=msg):
-                signal.convolve(sig_nan, coeffs, mode='same', method='fft')
+                signal.convolve(sig_nan_copy, coeffs, mode='same', method=method)
 
 
 def fftconvolve_err(*args, **kwargs):

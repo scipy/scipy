@@ -1423,7 +1423,7 @@ def _finalize_freq_conv(out, volume, kernel, xp):
     result_type = xp.result_type(volume, kernel)
     if xp.isdtype(result_type, 'integral'):
         out = xp.round(out)
-    if xp.isnan(xp.reshape(out, (-1,))[0]) or xp.isinf(xp.reshape(out, (-1,))[0]):
+    if xp.any(~xp.isfinite(volume)) or xp.any(~xp.isfinite(kernel)):
         warnings.warn("Use of FFT convolution on input with NAN or inf"
                       " results in NAN or inf output. Consider using"
                       " method='direct' instead.",
