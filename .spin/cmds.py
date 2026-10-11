@@ -793,10 +793,12 @@ def _commit_to_sha(commit):
 
 def _dirty_git_working_dir():
     # Changes to the working directory
-    p0 = util.run(['git', 'diff-files', '--quiet'])
+    p0 = util.run(['git', 'diff-files', '--quiet'],
+                  sys_exit=False, output=False, echo=False)
 
     # Staged changes
-    p1 = util.run(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+    p1 = util.run(['git', 'diff-index', '--quiet', '--cached', 'HEAD'],
+                  sys_exit=False, output=False, echo=False)
 
     return (p0.returncode != 0 or p1.returncode != 0)
 
