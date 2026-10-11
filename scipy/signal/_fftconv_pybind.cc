@@ -52,12 +52,8 @@ static py::object run_nd(py::array_t<T, py::array::c_style | py::array::forcecas
     bool ok;
     {
         py::gil_scoped_release rel;
-        if (outer == 1 && inner == 1)
-            ok = fftconv::oaconvolve_1d<T>(a.data(), n, b.data(), m,
-                                           out.mutable_data(), mode, 1);
-        else
-            ok = fftconv::oaconvolve_axis<T>(a.data(), outer, n, inner, b.data(), m,
-                                             out.mutable_data(), mode, 1);
+        ok = fftconv::oaconvolve_axis<T>(a.data(), outer, n, inner, b.data(), m,
+                                         out.mutable_data(), mode, 1);
     }
     if (!ok) return py::none();  // decline -> Python fallback
     return out;
@@ -78,8 +74,8 @@ static py::object oaconvolve(py::object in1, py::object in2,
     // Decline the block-size fallback here, before run_nd's forcecast
     // conversion (which contiguous-copies non-contiguous inputs) and output
     // allocation can do speculative work that a decline would throw away.
-    // The same check inside oaconvolve_1d/oaconvolve_axis is then unreachable
-    // from Python but kept so the C++ core stands on its own.
+    // The same check inside oaconvolve_axis is then unreachable from Python
+    // but kept so the C++ core stands on its own.
     if (fftconv::calc_oa_lens(static_cast<size_t>(a.shape(axis)),
                               static_cast<size_t>(b.shape(axis))).fallback)
         return py::none();
