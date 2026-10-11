@@ -284,7 +284,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     normA2 = alpha * alpha
     maxrbar = 0
-    minrbar = 1e+100
+    minrbar = inf
     normA = sqrt(normA2)
     condA = 1
     normx = 0
