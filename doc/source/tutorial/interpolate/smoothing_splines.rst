@@ -294,6 +294,55 @@ and :math:`m + \sqrt{2m}`, where :math:`m` is the number of data points.
 If all weights equal unity, a reasonable choice might be around :math:`s \sim m\,\sigma^2`,
 where :math:`\sigma` is an estimate for the standard deviation of the data. 
 
+.. _tutorial-make-splrep-scaling:
+
+Effect of scaling the data
+``````````````````````````
+
+The smoothing condition is based on squared weighted residuals. Scaling
+``y`` while keeping the same weights and ``s`` changes the effective
+smoothing strength. For example, multiplying ``y`` by 10 multiplies the
+residual sum of squares by 100 for a proportionally scaled fitted curve.
+As a result, the automatically selected knots and the shape of the fit
+need not be the same after rescaling.
+
+The following comparison uses a fixed ``s`` and shows fitted curves after
+converting them back to the original data scale. In the right-hand plot,
+the weights are divided by the same positive scale factor as ``y``.
+This preserves the weighted-residual constraint and makes the fits
+comparable across scales:
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy.interpolate import make_splrep
+   >>> x = np.linspace(0, 2 * np.pi, 24)
+   >>> rng = np.random.default_rng(12345)
+   >>> y = np.sin(x) + 0.15 * rng.standard_normal(x.size)
+   >>> xnew = np.linspace(x[0], x[-1], 200)
+   >>> s = 0.35
+   >>> fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+   >>> for scale in (0.1, 1, 10):
+   ...     unweighted = make_splrep(x, scale * y, s=s)
+   ...     weighted = make_splrep(x, scale * y,
+   ...                            w=np.ones_like(x) / scale, s=s)
+   ...     axes[0].plot(xnew, unweighted(xnew) / scale, label=f'scale={scale}')
+   ...     axes[1].plot(xnew, weighted(xnew) / scale, label=f'scale={scale}')
+   >>> for ax in axes:
+   ...     ax.plot(x, y, 'k.', alpha=0.45)
+   ...     ax.legend()
+   >>> axes[0].set_title('Fixed weights and s')
+   >>> axes[1].set_title('Weights adjusted for scale')
+   >>> plt.tight_layout()
+   >>> plt.show()
+
+For a positive scale factor :math:`a`, using ``w / a`` together with
+``a * y`` keeps the squared weighted residuals unchanged when the fit is
+scaled by :math:`a`. This is one way to retain comparable smoothing when
+changing units. Alternatively, with fixed weights, scale ``s`` by
+:math:`a^2`. These transformations do not determine an optimal ``s`` for
+a new dataset; use weights reflecting measurement uncertainty when known.
 .. note::
 
     The number of knots is very strongly dependent on ``s``. It is possible that
