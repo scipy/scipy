@@ -608,16 +608,18 @@ def bisect(f, a, b, args=(),
     return results_c(full_output, r, "bisect")
 
 def bisect_exact(f, a, b, args=(),
-           xtol=_xtol, rtol=_rtol, maxiter=64,
+           xtol=5e-324, rtol=_rtol, maxiter=64,
            full_output=False, disp=True):
     """
-    The following is copied from bisect(). Change before merging
+    Find root of a function within an interval using bisection
+    over numbers representable by IEEE 754-1985.
 
-    Find root of a function within an interval using bisection.
-
-    Basic bisection routine to find a root of the function `f` between the
-    arguments `a` and `b`. ``f(a)`` and ``f(b)`` cannot have the same signs.
-    Slow but sure.
+    Bisection routine to find a root of the function `f` between the
+    arguments `a` and `b` that insetead of halfing the interval over real numbers,
+    this method halfs the interval over numbers representable by IEEE 754-1985.
+    ``f(a)`` and ``f(b)`` cannot have the same signs.
+    Improves the beasic bisect() on extrame cases when the
+    required precision is close to machine precision.
 
     Parameters
     ----------
@@ -674,14 +676,13 @@ def bisect_exact(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x0)``.
 
-    The default value ``xtol=2e-12`` may lead to surprising behavior if one
-    expects `bisect` to always compute roots with relative error near machine
-    precision. Care should be taken to select `xtol` for the use case at hand.
-    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
-    highest level of accuracy. Larger values of `xtol` may be useful for saving
-    function evaluations when a root is at or near zero in applications where
+    This is a modified version of bisect() function. Insetead of dividing the
+    bracketing interval in half, bisect_exact() divides the set of numbers
+    representable by IEEE 754-1985 in half. This approach limits the number of
+    iterations by 64 and performes better than bisect() when the bracketing
+    interval is very large or when a root is at or near zero in applications where
     the tiny absolute differences available between floating point numbers near
-    zero are not meaningful.
+    zero are meaningful.
 
     Examples
     --------
@@ -691,11 +692,11 @@ def bisect_exact(f, a, b, args=(),
 
     >>> from scipy import optimize
 
-    >>> root = optimize.bisect(f, 0, 2)
+    >>> root = optimize.bisect_exact(f, 0, 2)
     >>> root
     1.0
 
-    >>> root = optimize.bisect(f, -2, 0)
+    >>> root = optimize.bisect_exact(f, -2, 0)
     >>> root
     -1.0
     """

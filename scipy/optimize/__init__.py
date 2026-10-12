@@ -160,6 +160,7 @@ Scalar functions
    brenth - Brent method, modified by Harris with hyperbolic extrapolation.
    ridder - Ridder's method.
    bisect - Bisection method.
+   bisect_exact() - Modified bisection method.
    newton - Newton's method (also Secant and Halley's methods).
    toms748 - Alefeld, Potra & Shi Algorithm 748.
    RootResults - The root finding result returned by some root finders.
