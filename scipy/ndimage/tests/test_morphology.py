@@ -3038,6 +3038,34 @@ def test_binary_closing_noninteger_iterations(xp):
     assert_raises(TypeError, ndimage.binary_closing, data, iterations=1.5)
 
 
+@pytest.mark.parametrize('origin', [-2, 1, (0, -2), (1, 0)])
+@pytest.mark.parametrize('func', [
+    make_xp_pytest_param(ndimage.binary_erosion),
+    make_xp_pytest_param(ndimage.binary_dilation),
+    make_xp_pytest_param(ndimage.binary_opening),
+    make_xp_pytest_param(ndimage.binary_closing),
+    make_xp_pytest_param(ndimage.binary_propagation),
+])
+def test_binary_invalid_origin(func, origin, xp):
+    # regression test for gh-22533: an origin outside the structure used to
+    # read past the offsets in the C code and segfault
+    data = xp.ones((6, 6))
+    structure = xp.ones((2, 2), dtype=xp.bool)
+    with pytest.raises(ValueError, match='invalid origin'):
+        func(data, structure, origin=origin)
+
+
+@make_xp_test_case(ndimage.binary_hit_or_miss)
+def test_binary_hit_or_miss_invalid_origin(xp):
+    data = xp.ones((6, 6))
+    structure1 = xp.ones((2, 2), dtype=xp.bool)
+    structure2 = xp.zeros((2, 2), dtype=xp.bool)
+    with pytest.raises(ValueError, match='invalid origin'):
+        ndimage.binary_hit_or_miss(data, structure1, origin1=-2)
+    with pytest.raises(ValueError, match='invalid origin'):
+        ndimage.binary_hit_or_miss(data, structure1, structure2, origin2=1)
+
+
 @xfail_xp_backends(
     "cupy", reason="CuPy: NotImplementedError: only brute_force iteration"
 )
