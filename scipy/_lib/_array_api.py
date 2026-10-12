@@ -1269,3 +1269,12 @@ def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
     res = xp.where(x1 < xl, left, res)
     res = xp.where(x1 > xr, right, res)
     return xp.reshape(res, out_shape)
+
+
+def xp_spacing(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+
+    if is_numpy(xp) or is_jax(xp):
+        return xp.spacing(x)
+
+    return xp.abs(x - xp.nextafter(x, xp.inf))

@@ -11316,11 +11316,11 @@ class _SimpleF:
         return special.fdtrc(self.dfn, self.dfd, x)
 
 
-def _log1mexp(x):
+def _log1mexp(x, xp=None):
     r"""Compute the log of the complement of the exponential"""
     # adapted from gh-19021 (https://github.com/scipy/scipy/issues/19021)
 
-    xp = array_namespace(x)
+    xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):
         return special._ufuncs._log1mexp(x)
 
