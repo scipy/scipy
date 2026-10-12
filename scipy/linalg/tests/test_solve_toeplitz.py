@@ -138,9 +138,15 @@ def test_empty(dt_c, dt_b):
     assert x1.shape == (0, 0)
     assert x1.dtype == x.dtype
 
-@pytest.mark.parametrize("dt_c", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
-@pytest.mark.parametrize("dt_r", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
-@pytest.mark.parametrize("dt_b", [np.int64, np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("dt_c", [
+    np.int64, np.float32, np.float64, np.complex64, np.complex128
+])
+@pytest.mark.parametrize("dt_r", [
+    np.int64, np.float32, np.float64, np.complex64, np.complex128
+])
+@pytest.mark.parametrize("dt_b", [
+    np.int64, np.float32, np.float64, np.complex64, np.complex128
+])
 @pytest.mark.parametrize("n", [0, 5])
 @pytest.mark.parametrize("nrhs", [0, 1, 2])
 def test_shape_dtype(dt_c, dt_r, dt_b, n, nrhs):
