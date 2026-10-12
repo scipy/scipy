@@ -32,9 +32,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from collections.abc import Callable
 from functools import wraps, partial
-from types import ModuleType
 from typing import Any
 import os.path
 import sys
@@ -66,11 +64,11 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (
-    Array,
     make_xp_test_case,
     is_lazy_array,
     array_namespace,
     make_xp_pytest_param,
+    xp_device,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
@@ -269,30 +267,24 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
 assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5, check_dtype=False)
 
 
-def _take(xp: ModuleType, a: Array, index: list[int], axis: int) -> Array:
-    return xp.take(a, xp.asarray(index), axis=axis)
+def _take(xp, a, index, axis):
+    return xp.take(a, xp.asarray(index, device=xp_device(a)), axis=axis)
 
 
-def xp_assert_ones_weight(
-    fn: Callable[..., Array],
-    *arrays: Array,
-    rest: tuple[Any, ...] = (),
-    axis: int = 0,
-    **kwargs: Any,
-):
+def xp_assert_ones_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to weighting by ones."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis])
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
     xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
 
 
 # TODO: drop once we use the function in the file and it no longer throws a lint error
 def xp_assert_scaling_weight(  # skip name check
-    fn: Callable[..., Array],
-    *arrays: Array,
-    rest: tuple[Any, ...] = (),
-    axis: int = 0,
-    **kwargs: Any,
+    fn,
+    *arrays,
+    rest = (),
+    axis = 0,
+    **kwargs
 ):
     """Test invariance to weight scaling."""
     xp = array_namespace(*arrays)
@@ -302,22 +294,15 @@ def xp_assert_scaling_weight(  # skip name check
         xp_assert_close(fn(*arrays, *rest, w=w * scale, **kwargs), expected)
 
 
-def xp_assert_zero_weight(
-    fn: Callable[..., Array],
-    *arrays: Array,
-    rest: tuple[Any, ...] = (),
-    axis: int = 0,
-    seed: int = 0,
-    **kwargs: Any,
-):
+def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     """Test invariance to additional zero-weighted elements."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis])
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, w=w, **kwargs)
     rng = np.random.default_rng(seed)
     n = w.shape[0]
     index = [int(i) for i in rng.integers(n, size=n)]
-    padded = xp.concat([w, xp.zeros(n)])
+    padded = xp.concat([w, xp.zeros_like(w)])
     for scale in (1.0, 101.0):
         arrays_padded = [
             xp.concat([a, _take(xp, a, index, axis) * scale], axis=axis) for a in arrays
@@ -325,39 +310,28 @@ def xp_assert_zero_weight(
         xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
 
 
-def xp_assert_duplication_weight(
-    fn: Callable[..., Array],
-    *arrays: Array,
-    rest: tuple[Any, ...] = (),
-    axis: int = 0,
-    **kwargs: Any,
-):
+def xp_assert_duplication_weight(fn, *arrays, rest = (), axis = 0, **kwargs: Any):
     """Test invariance to duplication of the input at half weight."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis])
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, w=w, **kwargs)
     doubled = [xp.concat([a, a], axis=axis) for a in arrays]
     xp_assert_close(fn(*doubled, *rest, w=xp.concat([w, w]) / 2.0, **kwargs), expected)
 
 
-def xp_assert_split_weight(
-    fn: Callable[..., Array],
-    *arrays: Array,
-    rest: tuple[Any, ...] = (),
-    axis: int = 0,
-    seed: int = 0,
-    **kwargs: Any,
-) -> None:
+def xp_assert_split_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     """Test invariance to splitting weights across repeated elements."""
     xp = array_namespace(*arrays)
+    device = xp_device(arrays[0])
     n = arrays[0].shape[axis]
-    w = xp.ones(n)
+    w = xp.ones(n, device=device)
     expected = fn(*arrays, *rest, w=w, **kwargs)
     rng = np.random.default_rng(seed)
     # Draw index from a geometric distribution to get longer tails
-    index = np.repeat(np.arange(n), rng.geometric(0.45, size=n))
+    index = np.repeat(np.arange(n), rng.geometric(0.45, size=n).astype(np.intp))
     raw = rng.exponential(1.0, index.size)
-    shares = xp.asarray(raw / np.bincount(index, weights=raw)[index], dtype=w.dtype)
+    shares = xp.asarray(raw / np.bincount(index, weights=raw)[index],
+                        dtype=w.dtype, device=device)
     split = [_take(xp, a, index, axis) for a in arrays]
     weights = _take(xp, w, index, 0) * shares
     xp_assert_close(fn(*split, *rest, w=weights, **kwargs), expected)
