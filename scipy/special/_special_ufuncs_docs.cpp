@@ -2720,9 +2720,6 @@ const char *rel_entr_doc = R"(
     >>> import numpy as np
     >>> from scipy.special import rel_entr
 
-    Calculate individual relative-entropy terms, defined as :math:`x \ln(x/y)`
-    for positive inputs :math:`x` and :math:`y`.
-
     When both inputs are equal and positive, the relative entropy is 0 because
     :math:`\ln(1) = 0`:
 
@@ -2752,16 +2749,12 @@ const char *rel_entr_doc = R"(
     np.float64(inf)
 
     Like most SciPy functions, ``rel_entr`` accepts NumPy arrays to perform
-    element-wise calculations. This returns the individual terms. To compute
-    the complete Kullback-Leibler divergence between two discrete probability
-    distributions, sum the results:
+    element-wise calculations. This returns the individual terms.
 
     >>> p = np.array([0.2, 0.5, 0.3])
     >>> q = np.array([0.1, 0.4, 0.5])
     >>> rel_entr(p, q)
     array([ 0.13862944,  0.11157178, -0.15324769])
-    >>> np.sum(rel_entr(p, q))
-    np.float64(0.09695352463929671)
 
     )";
 
