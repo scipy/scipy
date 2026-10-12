@@ -1148,7 +1148,8 @@ zvnlsd(
         // When RC differs from 1 by more than CCMAX, IPUP is set to MITER
         // to force ZVJAC to be called, if a Jacobian is involved.
         // In any case, ZVJAC is called at least every MSBP steps.
-        if ((fabs(S->rc - 1.0) > 0.3) || (S->nst >= S->nslp + msbp)) { S->ipup = S->miter; }
+        S->drc = fabs(S->rc - 1.0);
+        if ((S->drc > 0.3) || (S->nst >= S->nslp + msbp)) { S->ipup = S->miter; }
     } else {
         S->crate = 1.0;
     }
@@ -1188,7 +1189,7 @@ zvnlsd(
             // If matrix is singular, give up immediately
             if (ierpj != 0) {
                 *nflag = -1;
-                S->icf = 1;
+                S->icf = 2;
                 S->ipup = S->miter;
                 return;
             }
