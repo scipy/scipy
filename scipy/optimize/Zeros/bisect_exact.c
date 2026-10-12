@@ -15,7 +15,6 @@ bisect_exact(callback_type f, double xa, double xb, double xtol, double rtol,
 
     fa = (*f)(xa, func_data_param);
     fb = (*f)(xb, func_data_param);
-    
     solver_stats->funcalls = 2;
     if (fa == 0) {
         solver_stats->error_num = CONVERGED;

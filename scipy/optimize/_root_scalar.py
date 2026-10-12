@@ -13,7 +13,7 @@ from ._numdiff import approx_derivative
 
 __all__ = ['root_scalar']
 
-ROOT_SCALAR_METHODS = ['bisect','bisect_exact', 'brentq', 'brenth', 'ridder', 'toms748',
+ROOT_SCALAR_METHODS = ['bisect', 'bisect_exact', 'brentq', 'brenth', 'ridder', 'toms748',
                        'newton', 'secant', 'halley']
 
 
@@ -276,7 +276,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     except AttributeError as e:
         raise ValueError(f'Unknown solver {meth}') from e
 
-    if meth in ['bisect','bisect_exact', 'ridder', 'brentq', 'brenth', 'toms748']:
+    if meth in ['bisect', 'bisect_exact', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, list | tuple | np.ndarray):
             raise ValueError(f'Bracket needed for {method}')
 
@@ -535,6 +535,8 @@ def _root_scalar_bisect_doc():
 
     """
     pass
+
+
 def _root_scalar_bisect_exact_doc():
     r"""
     Options

@@ -229,6 +229,22 @@ class TestBracketMethods(TestScalarRootFinders):
             zeros.brentq(lambda x: x**2 - 1, -2, 0, maxiter=-1)
 
 
+class TestBisectExact:
+    @pytest.mark.parametrize("root, a, b", [
+        (-1e-100, -1e100, 1e100),
+        (1e-100, -1e100, 1e100),
+        (-1e-100, -1e100, -1e-200),
+        (1e-100, 1e-200, 1e100),
+    ])
+    def test_big_bracket(self, root, a, b):
+        def f(x):
+            return x-root
+        x,r = zeros.bisect_exact(f,a,b,full_output=True)
+        assert_allclose(x,root,rtol=TOL, atol=5e-324)
+        assert r.iterations <= 63
+        assert r.converged
+
+
 class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):
         known_fail = ['aps.13.00']

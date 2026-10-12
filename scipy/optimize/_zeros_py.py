@@ -607,20 +607,18 @@ def bisect(f, a, b, args=(),
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r, "bisect")
 
+
 def bisect_exact(f, a, b, args=(),
            xtol=5e-324, rtol=_rtol, maxiter=64,
            full_output=False, disp=True):
     """
-    Find root of a function within an interval using bisection
-    over numbers representable by IEEE 754-1985.
+    Find root of a function using bisection over representable floats.
 
     Bisection routine to find a root of the function `f` between the
-    arguments `a` and `b` that insetead of halfing the interval over real numbers,
-    this method halfs the interval over numbers representable by IEEE 754-1985.
+    arguments `a` and `b`. Unlike `bisect`, which splits the interval
+    in half over real numbers, this method halves the interval over numbers
+    representable by IEEE 754 double precision format.
     ``f(a)`` and ``f(b)`` cannot have the same signs.
-    Improves the beasic bisect() on extrame cases when the
-    required precision is close to machine precision.
-
     Parameters
     ----------
     f : function
@@ -676,13 +674,13 @@ def bisect_exact(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x0)``.
 
-    This is a modified version of bisect() function. Insetead of dividing the
-    bracketing interval in half, bisect_exact() divides the set of numbers
-    representable by IEEE 754-1985 in half. This approach limits the number of
-    iterations by 64 and performes better than bisect() when the bracketing
-    interval is very large or when a root is at or near zero in applications where
-    the tiny absolute differences available between floating point numbers near
-    zero are meaningful.
+    This is a modified version of the `bisect` function. Instead of dividing the
+    bracketing interval in half, `bisect_exact` divides the set of numbers that are
+    representable by IEEE 754 double precision in half. This approach converges
+    in at most 67 function calls for any finite bracket and performs better than
+    `bisect` when the bracketing interval is very large or when a root is at or near
+    zero in applications where the tiny absolute differences available between
+    floating point numbers near zero are meaningful.
 
     Examples
     --------
