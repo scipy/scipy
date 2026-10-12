@@ -4020,6 +4020,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`newton  <optimize.root_scalar-newton>`
     - :ref:`secant  <optimize.root_scalar-secant>`
     - :ref:`halley  <optimize.root_scalar-halley>`
+    - :ref:`muller  <optimize.root_scalar-muller>`
 
     `scipy.optimize.linprog`
 
@@ -4100,6 +4101,7 @@ def show_options(solver=None, method=None, disp=True):
             ('secant', 'scipy.optimize._root_scalar._root_scalar_secant_doc'),
             ('newton', 'scipy.optimize._root_scalar._root_scalar_newton_doc'),
             ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
+            ('muller', 'scipy.optimize._root_scalar._root_scalar_muller_doc'),
         ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex_doc'),

@@ -37,7 +37,7 @@ class RootResults(OptimizeResult):
 
     Parameters
     ----------
-    root : float
+    root : float or complex
         Estimated root location.
     iterations : int
         Number of iterations needed to find the root.
@@ -50,7 +50,7 @@ class RootResults(OptimizeResult):
 
     Attributes
     ----------
-    root : float
+    root : float or complex
         Estimated root location.
     iterations : int
         Number of iterations needed to find the root.
@@ -1485,3 +1485,114 @@ def toms748(f, a, b, args=(), k=1,
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag),
                            "toms748")
+
+
+def _muller(f, x0, x1, x2, args=(), xtol=None, rtol=0.0, maxiter=50,
+            fatol=0.0, frtol=0.0):
+    """Scalar Muller's method; public documentation is in `root_scalar`."""
+    xs = [np.asarray(x) for x in (x0, x1, x2)]
+    if any(x.ndim != 0 for x in xs):
+        raise ValueError("x0, x1, and x2 must be scalars")
+    dtype = np.result_type(x0, x1, x2, 1j)
+    if not np.issubdtype(dtype, np.complexfloating):
+        raise ValueError("x0, x1, and x2 must be numeric scalars")
+    p0, p1, p2 = (np.asarray(x, dtype=dtype)[()] for x in xs)
+    if not all(np.isfinite(p) for p in (p0, p1, p2)):
+        raise ValueError("x0, x1, and x2 must be finite")
+    if p0 == p1 or p1 == p2 or p0 == p2:
+        raise ValueError("x0, x1, and x2 must be different")
+
+    if xtol is None:
+        xtol = np.sqrt(np.finfo(dtype).eps)
+    for name, tol in [('xtol', xtol), ('rtol', rtol),
+                      ('fatol', fatol), ('frtol', frtol)]:
+        if np.ndim(tol) != 0 or not np.isrealobj(tol) or not np.isfinite(tol):
+            raise ValueError(f"{name} must be a finite nonnegative scalar")
+        if tol < 0:
+            raise ValueError(f"{name} must be nonnegative")
+    maxiter = operator.index(maxiter)
+    if maxiter < 1:
+        raise ValueError("maxiter must be greater than 0")
+
+    funcalls = 0
+    tiny = np.finfo(dtype).tiny
+
+    def evaluate(p):
+        nonlocal funcalls
+        value = np.asarray(f(p, *args))
+        funcalls += 1
+        if value.ndim != 0:
+            raise ValueError("f must return a scalar")
+        # In particular, abs(minimum_signed_integer) must not wrap negative.
+        if value.dtype.kind in 'biu':
+            value = value.astype(np.result_type(dtype, value.dtype))
+        return value[()]
+
+    def normalize(value, scale):
+        # Complex division can overflow its reciprocal for subnormal scale,
+        # even when the quotient is of order one.
+        return value.real / scale + 1j * (value.imag / scale)
+
+    def result(p, iterations, flag):
+        return RootResults(p, iterations, funcalls, flag, 'muller')
+
+    f0, f1, f2 = evaluate(p0), evaluate(p1), evaluate(p2)
+    for p, value in zip((p0, p1, p2), (f0, f1, f2)):
+        if not np.isfinite(value):
+            return result(p, 0, _EVALUEERR)
+    ftol = fatol + frtol * min(abs(f0), abs(f1), abs(f2))
+    for p, value in zip((p0, p1, p2), (f0, f1, f2)):
+        if abs(value) <= ftol:
+            return result(p, 0, _ECONVERGED)
+
+    for itr in range(1, maxiter + 1):
+        if p0 == p1 or p1 == p2 or p0 == p2:
+            return result(p2, itr - 1, _ECONVERR)
+
+        # Interpolate in coordinates centred at p2. Scaling both axes avoids
+        # overflow/underflow in the discriminant when f or x is rescaled.
+        with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+            scale = max(abs(p1 - p0), abs(p2 - p1), abs(p2 - p0))
+            if np.isfinite(scale) and scale >= tiny:
+                h0 = (p1 - p0) / scale
+                h1 = (p2 - p1) / scale
+                h2 = (p2 - p0) / scale
+            elif np.isfinite(scale):
+                h0 = normalize(p1 - p0, scale)
+                h1 = normalize(p2 - p1, scale)
+                h2 = normalize(p2 - p0, scale)
+            else:
+                # Opposite guesses near the dtype's limit may have an
+                # unrepresentable difference; scale before subtracting.
+                scale = max(abs(p0), abs(p1), abs(p2))
+                u0, u1, u2 = (normalize(p, scale) for p in (p0, p1, p2))
+                h0, h1, h2 = u1-u0, u2-u1, u2-u0
+            fscale = max(abs(f0), abs(f1), abs(f2))
+            if fscale >= np.finfo(fscale.dtype).tiny:
+                q0, q1, q2 = f0 / fscale, f1 / fscale, f2 / fscale
+            else:
+                q0, q1, q2 = (normalize(v, fscale) for v in (f0, f1, f2))
+            d0, d1 = (q1 - q0) / h0, (q2 - q1) / h1
+            a = (d1 - d0) / h2
+            b = d1 + h1 * a
+            c = q2
+            cscale = max(abs(a), abs(b), abs(c))
+            a, b, c = a / cscale, b / cscale, c / cscale
+            disc = np.sqrt(b*b - 4*a*c)
+            plus, minus = b + disc, b - disc
+            denominator = plus if abs(plus) > abs(minus) else minus
+            if denominator == 0 or not np.isfinite(denominator):
+                return result(p2, itr - 1, _ECONVERR)
+            step = (-2*c / denominator) * scale
+            p = p2 + step
+        if not np.isfinite(p):
+            return result(p2, itr - 1, _ECONVERR)
+        value = evaluate(p)
+        if not np.isfinite(value):
+            return result(p, itr, _EVALUEERR)
+        if abs(value) <= ftol or abs(step) <= xtol + rtol * abs(p):
+            return result(p, itr, _ECONVERGED)
+        p0, p1, p2 = p1, p2, p
+        f0, f1, f2 = f1, f2, value
+
+    return result(p2, maxiter, _ECONVERR)
