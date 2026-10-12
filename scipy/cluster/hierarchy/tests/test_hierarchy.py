@@ -1220,6 +1220,14 @@ def test_cut_tree(xp):
     xp_assert_close(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]), rtol=1e-15)
     xp_assert_close(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]), rtol=1e-15)
 
+    # gh-9818: n_clusters == nobs must be placed in the column matching its
+    # position in `n_clusters`, not unconditionally in the first column.
+    xp_assert_close(cutree[:, [-nobs]], cut_tree(Z, n_clusters=nobs), rtol=1e-15)
+    xp_assert_close(cutree[:, [-nobs, -5]],
+                    cut_tree(Z, n_clusters=[nobs, 5]), rtol=1e-15)
+    xp_assert_close(cutree[:, [-5, -nobs]],
+                    cut_tree(Z, n_clusters=[5, nobs]), rtol=1e-15)
+
     nodes = _order_cluster_tree(Z)
     heights = xp.asarray([node.dist for node in nodes])
 
