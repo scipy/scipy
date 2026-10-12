@@ -213,4 +213,4 @@ def test_low_precision_dtypes(dtype):
     A = rng.standard_normal((20, 5)).astype(dtype)
     xtrue = rng.standard_normal(5).astype(dtype)
     x = lsmr(A, A @ xtrue)[0]
-    assert norm(x - xtrue) == pytest.approx(0, abs=1e-4)
+    assert_allclose(x, xtrue, atol=1e-4)
