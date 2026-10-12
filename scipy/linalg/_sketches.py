@@ -11,7 +11,7 @@ from scipy._lib._util import (check_random_state, rng_integers,
 __all__ = ['clarkson_woodruff_transform']
 
 
-def _cwt_matrix(n_rows, n_columns, rng=None, dtype=int):
+def _cwt_matrix(n_rows, n_columns, dtype, rng=None):
     r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
@@ -26,13 +26,13 @@ def _cwt_matrix(n_rows, n_columns, rng=None, dtype=int):
         Number of rows of S
     n_columns : int
         Number of columns of S
+    dtype : dtype
+        The dtype of the array.
     rng : `numpy.random.Generator`, optional
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
-    dtype : dtype, optional
-        The dtype of the array, default is `int`.
 
     Returns
     -------
@@ -188,7 +188,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
         raise NotImplementedError(message)
 
     S = _cwt_matrix(
-        sketch_size, input_matrix.shape[-2], rng=rng, dtype=input_matrix.dtype
+        sketch_size, input_matrix.shape[-2], input_matrix.dtype, rng=rng
     )
     if input_matrix.ndim <= 2:
         # transposes are cheap and ensure output class matches input_matrix

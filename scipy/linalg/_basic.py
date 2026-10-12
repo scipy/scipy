@@ -1734,6 +1734,11 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     triangular parts of the matrix and, again if scaling is also enabled,
     only the remaining subblocks are subjected to scaling.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     A : (n, n) array_like
@@ -1828,6 +1833,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 @_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
 def _matrix_balance(A, permute, scale, separate, overwrite_a):
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
+    dtype_int = np.int64 if HAS_ILP64 else np.int32
 
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
@@ -1838,7 +1844,7 @@ def _matrix_balance(A, permute, scale, separate, overwrite_a):
         B = np.empty_like(A, dtype=b_n.dtype)
         if separate:
             scaling = np.ones_like(A, shape=len(A))
-            perm = np.arange(len(A), dtype=np.int64 if HAS_ILP64 else np.int32)
+            perm = np.arange(len(A), dtype=dtype_int)
             return B, (scaling, perm)
         return B, np.empty_like(A, dtype=t_n.dtype)
 
@@ -1856,9 +1862,9 @@ def _matrix_balance(A, permute, scale, separate, overwrite_a):
     scaling[lo:hi+1] = ps[lo:hi+1]
 
     # gebal uses 1-indexing
-    ps = ps.astype(np.int64 if HAS_ILP64 else np.int32, copy=False) - 1
+    ps = ps.astype(dtype_int, copy=False) - 1
     n = A.shape[0]
-    perm = np.arange(n, dtype=np.int64 if HAS_ILP64 else np.int32)
+    perm = np.arange(n, dtype=dtype_int)
 
     # LAPACK permutes with the ordering n --> hi, then 0--> lo
     if hi < n:

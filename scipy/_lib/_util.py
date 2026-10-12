@@ -1168,8 +1168,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size
         for signature_dtype in signature_dtypes:
             if signature_dtype in output:
                 output_dtypes = {'bool': xp.bool,
-                                 'int': xp.result_type(
-                                        np.int64(1) if HAS_ILP64 else np.int32(1)),
+                                 'int': xp.int64 if HAS_ILP64 else xp.int32,
                                  'float': xp.real(xp.asarray(1, dtype=dtype,
                                                   device=device)).dtype,
                                  'complex': xp.result_type(complex(1), dtype)}
