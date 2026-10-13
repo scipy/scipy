@@ -1357,10 +1357,10 @@ cdef extern from r"cython_special_wrappers.h":
     double cephes_erfcinv(double y) nogil
     double xsf_exp10(double x) nogil
     double xsf_exp2(double x) nogil
-    npy_int xsf_csici(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
-    npy_int xsf_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
-    npy_int xsf_sici(npy_double, npy_double *, npy_double *) nogil
-    npy_int xsf_shichi(npy_double, npy_double *, npy_double *) nogil
+    void xsf_csici(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+    void xsf_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+    void xsf_sici(npy_double, npy_double *, npy_double *) nogil
+    void xsf_shichi(npy_double, npy_double *, npy_double *) nogil
 
     double cephes_round(double x) nogil
     double xsf_spence(double x) nogil
