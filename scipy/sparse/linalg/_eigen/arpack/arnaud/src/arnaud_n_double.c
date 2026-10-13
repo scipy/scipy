@@ -19,7 +19,7 @@ static void dnconv(ARNAUD_INT n, double* ritzr, double* ritzi, double* bounds, c
 static void dneigh(double*,ARNAUD_INT,double*,ARNAUD_INT,double*,double*,double*,double*,ARNAUD_INT,double*,ARNAUD_INT*);
 static void dnaitr(struct ARNAUD_state_d*,ARNAUD_INT,ARNAUD_INT,double*,double*,double*,ARNAUD_INT,double*,ARNAUD_INT,ARNAUD_INT*,double*);
 static void dnapps(ARNAUD_INT,ARNAUD_INT*,ARNAUD_INT,double*,double*,double*,ARNAUD_INT,double*,ARNAUD_INT,double*,double*,ARNAUD_INT,double*,double*);
-static void dngets(struct ARNAUD_state_d*,ARNAUD_INT*,ARNAUD_INT*,double*,double*,double*);
+static void dngets(struct ARNAUD_state_d*,ARNAUD_INT,ARNAUD_INT*,ARNAUD_INT*,double*,double*,double*);
 static void dsortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, double* xreal, double* ximag, double* y);
 static void dgetv0(struct ARNAUD_state_d *V, ARNAUD_INT initv, ARNAUD_INT n, ARNAUD_INT j, double* v, ARNAUD_INT ldv, double* resid, double* rnorm, ARNAUD_INT* ipntr, double* workd);
 
@@ -156,7 +156,7 @@ ARNAUD_dneupd(struct ARNAUD_state_d *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         //  accordingly.
 
         np = V->ncv - V->nev;
-        dngets(V, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
+        dngets(V, 0, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -520,7 +520,7 @@ ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v,
             V->info = -1;
         } else if (V->nev <= 0) {
             V->info = -2;
-        } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
+        } else if ((V->ncv <= V->nev + 1) || (V->ncv > V->n)) {
             V->info = -3;
         } else if (V->maxiter <= 0) {
             V->info = -4;
@@ -777,7 +777,7 @@ LINE20:
     V->np = V->aup2_np0;
     V->aup2_numcnv = V->aup2_nev;
 
-    dngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
+    dngets(V, V->shift, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
 
     if (V->aup2_nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
 
@@ -930,7 +930,7 @@ LINE20:
         V->np = V->aup2_kplusp - V->aup2_nev;
 
         if (nevbef < V->aup2_nev) {
-            dngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
+            dngets(V, V->shift, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
         }
 
     }
@@ -1597,6 +1597,7 @@ dnapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shiftr, double* shi
                 }
                 if (fabs(h[iend+1 + (iend * ldh)]) <= fmax(smlnum, ulp * tst1))
                 {
+                    h[iend+1 + (iend * ldh)] = 0.0;
                     break;
                 }
             }
@@ -1607,8 +1608,6 @@ dnapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shiftr, double* shi
             } else if  ((istart + 1 == iend) && fabs(sigmai) > 0.0) {
                 istart += 2;
                 continue;
-            } else {
-                h[iend+1 + (iend * ldh)] = 0.0;
             }
 
             // We have a block [istart, iend] inclusive.
@@ -1771,7 +1770,7 @@ dnapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shiftr, double* shi
 
 
 void
-dngets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np,
+dngets(struct ARNAUD_state_d *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np,
        double* ritzr, double* ritzi, double* bounds)
 {
 
@@ -1820,7 +1819,7 @@ dngets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np,
         *kev += 1;
     }
 
-    if (V->shift == 1)
+    if (ishift == 1)
     {
 
         //  Sort the unwanted Ritz values used as shifts so that
@@ -1977,7 +1976,7 @@ LINE40:
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 5)
+    if (V->getv0_iter <= 5)
     {
 
         //  Perform iterative refinement step

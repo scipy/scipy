@@ -16,7 +16,7 @@ static void dsconv(ARNAUD_INT, double*, double*, double, ARNAUD_INT*);
 static void dseigt(double, ARNAUD_INT, double*, ARNAUD_INT, double*, double*, double*, ARNAUD_INT*);
 static void dsaitr(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT, double*, double*, double*, ARNAUD_INT, double*, ARNAUD_INT, ARNAUD_INT*, double*);
 static void dsapps(ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT, double*, double*, ARNAUD_INT, double*, ARNAUD_INT, double*, double* , ARNAUD_INT, double*);
-static void dsgets(struct ARNAUD_state_d*, ARNAUD_INT*, ARNAUD_INT*, double*, double*, double*);
+static void dsgets(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT*, double*, double*, double*);
 static void dgetv0(struct ARNAUD_state_d *, ARNAUD_INT, ARNAUD_INT, ARNAUD_INT, double*, ARNAUD_INT, double*, double*, ARNAUD_INT*, double*);
 static void dsortr(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, double* x1, double* x2);
 static void dsesrt(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, double* x, ARNAUD_INT na, double* a, const ARNAUD_INT lda);
@@ -186,8 +186,7 @@ ARNAUD_dseupd(struct ARNAUD_state_d *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         // accordingly.
 
         np = V->ncv - V->nev;
-        V->shift = 0;
-        dsgets(V, &V->nev, &np, &workl[irz], &workl[bounds], workl);
+        dsgets(V, 0, &V->nev, &np, &workl[irz], &workl[bounds], workl);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -734,7 +733,7 @@ LINE20:
     V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
-    dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+    dsgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
 
     // Convergence test
 
@@ -905,7 +904,7 @@ LINE20:
 
         if (nevbef < V->aup2_nev)
         {
-            dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+            dsgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
         }
     }
 
@@ -1591,7 +1590,7 @@ dsapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shift, double* v, A
 
 
 void
-dsgets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
+dsgets(struct ARNAUD_state_d *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
        double* bounds, double* shifts)
 {
     ARNAUD_INT kevd2, tmp1, tmp2, int1 = 1;
@@ -1624,7 +1623,7 @@ dsgets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
         dsortr(V->which, 1, *kev + *np, ritz, bounds);
     }
 
-    if ((V->shift == 1) && (*np > 0))
+    if ((ishift == 1) && (*np > 0))
     {
 
         // Sort the unwanted Ritz values used as shifts so that
@@ -1780,7 +1779,7 @@ LINE40:
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 5)
+    if (V->getv0_iter <= 5)
     {
 
         //  Perform iterative refinement step

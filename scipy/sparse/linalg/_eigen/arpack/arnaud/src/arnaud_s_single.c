@@ -16,7 +16,7 @@ static void ssconv(ARNAUD_INT, float*, float*, float, ARNAUD_INT*);
 static void sseigt(float, ARNAUD_INT, float*, ARNAUD_INT, float*, float*, float*, ARNAUD_INT*);
 static void ssaitr(struct ARNAUD_state_s*, ARNAUD_INT, ARNAUD_INT, float*, float*, float*, ARNAUD_INT, float*, ARNAUD_INT, ARNAUD_INT*, float*);
 static void ssapps(ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT, float*, float*, ARNAUD_INT, float*, ARNAUD_INT, float*, float* , ARNAUD_INT, float*);
-static void ssgets(struct ARNAUD_state_s*, ARNAUD_INT*, ARNAUD_INT*, float*, float*, float*);
+static void ssgets(struct ARNAUD_state_s*, ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT*, float*, float*, float*);
 static void sgetv0(struct ARNAUD_state_s *, ARNAUD_INT, ARNAUD_INT, ARNAUD_INT, float*, ARNAUD_INT, float*, float*, ARNAUD_INT*, float*);
 static void ssortr(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, float* x1, float* x2);
 static void ssesrt(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, float* x, ARNAUD_INT na, float* a, const ARNAUD_INT lda);
@@ -186,8 +186,7 @@ ARNAUD_sseupd(struct ARNAUD_state_s *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         // accordingly.
 
         np = V->ncv - V->nev;
-        V->shift = 0;
-        ssgets(V, &V->nev, &np, &workl[irz], &workl[bounds], workl);
+        ssgets(V, 0, &V->nev, &np, &workl[irz], &workl[bounds], workl);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -734,7 +733,7 @@ LINE20:
     V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
-    ssgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+    ssgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
 
     // Convergence test
 
@@ -905,7 +904,7 @@ LINE20:
 
         if (nevbef < V->aup2_nev)
         {
-            ssgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+            ssgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
         }
     }
 
@@ -1591,7 +1590,7 @@ ssapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shift, float* v, ARN
 
 
 void
-ssgets(struct ARNAUD_state_s *V, ARNAUD_INT* kev, ARNAUD_INT* np, float* ritz,
+ssgets(struct ARNAUD_state_s *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np, float* ritz,
        float* bounds, float* shifts)
 {
     ARNAUD_INT kevd2, tmp1, tmp2, int1 = 1;
@@ -1624,7 +1623,7 @@ ssgets(struct ARNAUD_state_s *V, ARNAUD_INT* kev, ARNAUD_INT* np, float* ritz,
         ssortr(V->which, 1, *kev + *np, ritz, bounds);
     }
 
-    if ((V->shift == 1) && (*np > 0))
+    if ((ishift == 1) && (*np > 0))
     {
 
         // Sort the unwanted Ritz values used as shifts so that
@@ -1780,7 +1779,7 @@ LINE40:
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 5)
+    if (V->getv0_iter <= 5)
     {
 
         //  Perform iterative refinement step
