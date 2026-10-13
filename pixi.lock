@@ -11902,7 +11902,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/python-3.12.12-h18782d2_1_cpython.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/qhull-2020.2-h420ef59_5.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/readline-8.2-h1d1bf99_2.conda
-      - conda: https://prefix.dev/conda-forge/osx-arm64/scikit-sparse-0.4.16-py312h9e4b555_2.conda
+      - conda: https://prefix.dev/conda-forge/osx-arm64/scikit-sparse-0.5.0-py312h508a8d0_2.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/scipy-1.16.3-py312ha6bbf71_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/sigtool-0.1.3-h44b9a77_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/osx-arm64/suitesparse-7.10.1-h3071b36_7100102.conda
@@ -45621,9 +45621,9 @@ packages:
   license_family: MIT
   size: 10302078
   timestamp: 1764866315123
-- conda: https://prefix.dev/conda-forge/osx-arm64/scikit-sparse-0.4.16-py312h9e4b555_2.conda
-  sha256: ea25b50793aafe9836a5ca5063e932b41e5ae27f02f21514ff060bf4525f0683
-  md5: 31741895b6d600b3e84131d6b25d42a6
+- conda: https://prefix.dev/conda-forge/osx-arm64/scikit-sparse-0.5.0-py312h508a8d0_2.conda
+  sha256: 598365e33e86adf5dc6575d97313db0576e673573a02bbd0037b33f45b0a0f02
+  md5: ca75bc737c7f4074b1523a80fce53a6d
   depends:
   - __osx >=11.0
   - libamd >=3.3.3,<4.0a0
@@ -45633,6 +45633,7 @@ packages:
   - libcholmod >=5.3.1,<6.0a0
   - libcolamd >=3.3.4,<4.0a0
   - libcxsparse >=4.4.1,<5.0a0
+  - libcxx >=21
   - libklu >=2.3.5,<3.0a0
   - libldl >=3.3.2,<4.0a0
   - libparu >=1.0.0,<2.0a0
@@ -45641,16 +45642,17 @@ packages:
   - libspqr >=4.3.4,<5.0a0
   - libsuitesparseconfig >=7.10.1,<8.0a0
   - libumfpack >=6.3.5,<7.0a0
-  - numpy >=1.23,<3
+  - numpy >=1.25,<3
+  - packaging
   - python >=3.12,<3.13.0a0
-  - python >=3.12,<3.13.0a0 *_cpython
   - python_abi 3.12.* *_cp312
-  - scipy
+  - scipy >=1.14
   - suitesparse >=7.10.1,<8.0a0
   license: BSD-2-Clause
   license_family: BSD
-  size: 280758
-  timestamp: 1760363473110
+  run_exports: {}
+  size: 752561
+  timestamp: 1790441258850
 - conda: https://prefix.dev/conda-forge/osx-arm64/scipy-1.16.3-py312ha6bbf71_1.conda
   sha256: 39586c1ebc804d481e1062551f7c39a2cfe6f3e3a2c18a9e460388fb8bbd5302
   md5: d196eb3cfffef4a8ea51fbb55dbe8188
