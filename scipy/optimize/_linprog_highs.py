@@ -412,6 +412,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'crossover_nit': res.get('crossover_nit'),
            }
 
+    if '_constraint_tolerance' in res:
+        sol['_constraint_tolerance'] = res['_constraint_tolerance']
+
     if np.any(x) and integrality is not None:
         sol.update({
             'mip_node_count': res.get('mip_node_count', 0),
