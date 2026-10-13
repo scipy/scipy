@@ -477,6 +477,9 @@ class GroupSampling(Benchmark):
     def time_special_ortho_group(self, dim):
         stats.special_ortho_group.rvs(dim, random_state=self.rng)
 
+    def time_symplectic_group(self, dim):
+        stats.symplectic_group.rvs(dim, random_state=self.rng)
+
 
 class MatrixSampling(Benchmark):
     param_names = ['size']
