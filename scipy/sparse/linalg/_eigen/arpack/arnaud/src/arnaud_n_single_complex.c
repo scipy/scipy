@@ -1040,15 +1040,15 @@ LINE40:
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
 
-    ARNAUD_BLAS(ccopy)(&n, resid, &int1, &v[ldv*V->aitr_j], &int1);
+    ARNAUD_BLAS(ccopy)(&n, resid, &int1, &v[(int64_t)ldv*V->aitr_j], &int1);
 
     if (*rnorm >= unfl)
     {
         temp1 = 1.0f / *rnorm;
-        ARNAUD_BLAS(csscal)(&n, &temp1, &v[ldv*V->aitr_j], &int1);
+        ARNAUD_BLAS(csscal)(&n, &temp1, &v[(int64_t)ldv*V->aitr_j], &int1);
         ARNAUD_BLAS(csscal)(&n, &temp1, &workd[ipj], &int1);
     } else {
-        ARNAUD_BLAS(clascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*V->aitr_j], &n, &infol);
+        ARNAUD_BLAS(clascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[(int64_t)ldv*V->aitr_j], &n, &infol);
         ARNAUD_BLAS(clascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
@@ -1056,7 +1056,7 @@ LINE40:
     //  Note that this is not quite yet r_{j}. See STEP 4
 
     V->aitr_step3 = 1;
-    ARNAUD_BLAS(ccopy)(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
+    ARNAUD_BLAS(ccopy)(&n, &v[(int64_t)ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
@@ -1475,17 +1475,17 @@ cnapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLXF_TYPE* shift, A
     {
         tmp_int = kplusp - i;
         ARNAUD_BLAS(cgemv)("N", &n, &tmp_int, &cdbl1, v, &ldv, &q[(*kev-i-1)*ldq], &int1, &cdbl0, workd, &int1);
-        ARNAUD_BLAS(ccopy)(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
+        ARNAUD_BLAS(ccopy)(&n, workd, &int1, &v[(int64_t)ldv*(kplusp-i-1)], &int1);
     }
 
     //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
 
-    ARNAUD_BLAS(clacpy)("A", &n, kev, &v[ldv*(kplusp - *kev)], &ldv, v, &ldv);
+    ARNAUD_BLAS(clacpy)("A", &n, kev, &v[(int64_t)ldv*(kplusp - *kev)], &ldv, v, &ldv);
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
     if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0f) {
-        ARNAUD_BLAS(ccopy)(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
+        ARNAUD_BLAS(ccopy)(&n, &workd[n], &int1, &v[(int64_t)ldv*(*kev)], &int1);
     }
 
     //  Update the residual vector:
@@ -1498,7 +1498,7 @@ cnapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLXF_TYPE* shift, A
 
     if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0f)
     {
-        ARNAUD_BLAS(caxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
+        ARNAUD_BLAS(caxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[(int64_t)ldv*(*kev)], &int1, resid, &int1);
     }
 
     return;

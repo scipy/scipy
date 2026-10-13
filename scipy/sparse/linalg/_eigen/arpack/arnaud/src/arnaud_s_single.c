@@ -1121,14 +1121,14 @@ LINE40:
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
 
-    ARNAUD_BLAS(scopy)(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
+    ARNAUD_BLAS(scopy)(&n, resid, &int1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
         temp1 = 1.0f / *rnorm;
-        ARNAUD_BLAS(sscal)(&n, &temp1, &v[ldv*(V->aitr_j)], &int1);
+        ARNAUD_BLAS(sscal)(&n, &temp1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
         ARNAUD_BLAS(sscal)(&n, &temp1, &workd[ipj], &int1);
     } else {
-        ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*(V->aitr_j)], &n, &infol);
+        ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[(int64_t)ldv*(V->aitr_j)], &n, &infol);
         ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
@@ -1136,7 +1136,7 @@ LINE40:
     //  Note that this is not quite yet r_{j}. See STEP 4
 
     V->aitr_step3 = 1;
-    ARNAUD_BLAS(scopy)(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
+    ARNAUD_BLAS(scopy)(&n, &v[(int64_t)ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
@@ -1388,7 +1388,7 @@ LINE100:
         h[V->aitr_j] = -h[V->aitr_j];
         if (V->aitr_j < k + np - 1)
         {
-            ARNAUD_BLAS(sscal)(&n, &dblm1, &v[V->aitr_j + 1], &int1);
+            ARNAUD_BLAS(sscal)(&n, &dblm1, &v[(int64_t)ldv*(V->aitr_j + 1)], &int1);
         } else {
             ARNAUD_BLAS(sscal)(&n, &dblm1, resid, &int1);
         }
@@ -1557,7 +1557,7 @@ ssapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shift, float* v, ARN
     {
         tmp_int = kplusp - i;
         ARNAUD_BLAS(sgemv)("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i-1)], &int1, &dbl0, workd, &int1);
-        ARNAUD_BLAS(scopy)(&n, workd, &int1, &v[ldv*(kplusp-i-1)], &int1);
+        ARNAUD_BLAS(scopy)(&n, workd, &int1, &v[(int64_t)ldv*(kplusp-i-1)], &int1);
     }
     // 130
 
@@ -1565,13 +1565,13 @@ ssapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shift, float* v, ARN
 
     for (i = 0; i < *kev; i++)
     {
-        ARNAUD_BLAS(scopy)(&n, &v[ldv*(np+i)], &int1, &v[ldv*i], &int1);
+        ARNAUD_BLAS(scopy)(&n, &v[(int64_t)ldv*(np+i)], &int1, &v[(int64_t)ldv*i], &int1);
     }
     // 140
 
     if (h[*kev] > 0.0f)
     {
-        ARNAUD_BLAS(scopy)(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
+        ARNAUD_BLAS(scopy)(&n, &workd[n], &int1, &v[(int64_t)ldv*(*kev)], &int1);
     }
 
     // Update the residual vector:
@@ -1583,7 +1583,7 @@ ssapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shift, float* v, ARN
     ARNAUD_BLAS(sscal)(&n, &q[kplusp-1 + (*kev-1)*ldq], resid, &int1);
     if (h[*kev] > 0.0f)
     {
-        ARNAUD_BLAS(saxpy)(&n, &h[*kev], &v[ldv*(*kev)], &int1, resid, &int1);
+        ARNAUD_BLAS(saxpy)(&n, &h[*kev], &v[(int64_t)ldv*(*kev)], &int1, resid, &int1);
     }
 
     return;
