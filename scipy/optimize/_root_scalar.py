@@ -308,6 +308,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
             raise ValueError(f'x0 must not be None for {method}')
         if not fprime:
             # approximate fprime with finite differences
+            def f_newton(x, *args):
+                # record f0 for use in fprime
+                f_newton.x = x
+                f_newton.f0 = f(x, *args)
+                return f_newton.f0
+
+            # initialize attributes before fprime reads them
+            f_newton.x = None
+            f_newton.f0 = None
 
             def fprime(x, *args):
                 # `root_scalar` doesn't actually seem to support vectorized
@@ -319,11 +328,18 @@ def root_scalar(f, args=(), method=None, bracket=None,
                 # scalar input.
                 def f_wrapped(x, *args):
                     return f(x[0], *args)
-                return approx_derivative(f_wrapped, x, method='2-point', args=args)[0]
+                # if current x is same as last x, use the cached f0
+                # this saves one evaluation per iteration (gh-21165)
+                f0 = f_newton.f0 if x == f_newton.x else None
+                return approx_derivative(f_wrapped, x, method='2-point',
+                                         args=args, f0=f0)[0]
+        else:
+            # use the user-supplied f
+            f_newton = f
 
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
-        r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,
+        r, sol = methodc(f_newton, x0, args=args, fprime=fprime, fprime2=None,
                          **kwargs)
     elif meth in ['halley']:
         if x0 is None:
