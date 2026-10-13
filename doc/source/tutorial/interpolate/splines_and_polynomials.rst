@@ -355,7 +355,7 @@ surface locally, on the rectangle where :math:`B_i(x) B_j(y)` is non-zero.
     (7, 6)
 
     To check that ``c[i, j]`` is the coefficient of :math:`B_i(x) B_j(y)`,
-    evaluate the sum above using the design matrices of the 1D b-spline bases,
+    evaluate the sum above using the design matrix of the 1D B-spline bases,
     ``Bx[p, i] = B_i(xx[p])`` and ``By[q, j] = B_j(yy[q])``:
 
     >>> xx = np.linspace(0, 4, 41)
