@@ -33,6 +33,7 @@
 #include <xsf/cpu/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/orthogonal_eval.h>
+#include <xsf/cpu/orthogonal_eval.h>
 #include <xsf/cpu/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/cpu/specfun.h>
@@ -164,6 +165,14 @@ void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
 }
 
+double xsf_eval_genlaguerre(double n, double alpha, double x) { return xsf::eval_genlaguerre(n, alpha, x); }
+
+npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_genlaguerre(n, alpha, to_complex(x)));
+}
+
+double xsf_eval_genlaguerre_l(npy_intp n, double alpha, double x) { return xsf::eval_genlaguerre(n, alpha, x); }
+
 double xsf_eval_hermite(npy_intp n, double x) { return xsf::eval_hermite(n, x); }
 
 double xsf_eval_hermitenorm(npy_intp n, double x) { return xsf::eval_hermitenorm(n, x); }
@@ -177,6 +186,14 @@ npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x)
 double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x) {
     return xsf::eval_jacobi(n, alpha, beta, x);
 }
+
+double xsf_eval_laguerre(double n, double x) { return xsf::eval_laguerre(n, x); }
+
+npy_cdouble xsf_ceval_laguerre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_laguerre(n, to_complex(x)));
+}
+
+double xsf_eval_laguerre_l(npy_intp n, double x) { return xsf::eval_laguerre(n, x); }
 
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
 

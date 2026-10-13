@@ -33,17 +33,12 @@ from ._complexstuff cimport (
     double_complex_from_npy_cdouble
 )
 
-from . cimport sf_error
-
-
 cdef extern from "cython_special_wrappers.h" nogil:
     npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
     double xsf_binom(double n, double k)
     double xsf_hyp2f1(double a, double b, double c, double x)
     double xsf_gamma(double x)
     double xsf_beta(double a, double b)
-    double hyp1f1_wrap(double a, double b, double x) nogil
-    npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
 
 
 # Fused type wrappers
@@ -55,15 +50,6 @@ cdef inline number_t hyp2f1(double a, double b, double c, number_t z) noexcept n
     else:
         r = xsf_chyp2f1(a, b, c, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
-
-cdef inline number_t hyp1f1(double a, double b, number_t z) noexcept nogil:
-    cdef npy_cdouble r
-    if number_t is double:
-        return hyp1f1_wrap(a, b, z)
-    else:
-        r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
-        return double_complex_from_npy_cdouble(r)
-
 
 #-----------------------------------------------------------------------------
 # Gegenbauer (Ultraspherical)
@@ -324,61 +310,3 @@ cdef inline number_t eval_sh_legendre(double n, number_t x) noexcept nogil:
 
 cdef inline double eval_sh_legendre_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_legendre_l(n, 2*x-1)
-
-#-----------------------------------------------------------------------------
-# Generalized Laguerre
-#-----------------------------------------------------------------------------
-
-cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) noexcept nogil:
-    cdef double a, b, d
-    cdef number_t g
-
-    if alpha <= -1:
-        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
-                       "polynomial defined only for alpha > -1")
-        return NAN
-
-    d = xsf_binom(n+alpha, n)
-    a = -n
-    b = alpha + 1
-    g = x
-    return d * hyp1f1(a, b, g)
-
-@cython.cdivision(True)
-cdef inline double eval_genlaguerre_l(Py_ssize_t n, double alpha, double x) noexcept nogil:
-    cdef Py_ssize_t kk
-    cdef double p, d
-    cdef double k
-
-    if alpha <= -1:
-        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
-                       "polynomial defined only for alpha > -1")
-        return NAN
-
-    if isnan(alpha) or isnan(x):
-        return NAN
-
-    if n < 0:
-        return 0.0
-    elif n == 0:
-        return 1.0
-    elif n == 1:
-        return -x+alpha+1
-    else:
-        d = -x/(alpha+1)
-        p = d + 1
-        for kk in range(n-1):
-            k = kk+1.0
-            d = -x/(k+alpha+1)*p + (k/(k+alpha+1)) * d
-            p = d + p
-        return xsf_binom(n+alpha, n)*p
-
-#-----------------------------------------------------------------------------
-# Laguerre
-#-----------------------------------------------------------------------------
-
-cdef inline number_t eval_laguerre(double n, number_t x) noexcept nogil:
-    return eval_genlaguerre(n, 0., x)
-
-cdef inline double eval_laguerre_l(Py_ssize_t n, double x) noexcept nogil:
-    return eval_genlaguerre_l(n, 0., x)
