@@ -48,6 +48,11 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
         HighsModelStatus.kOptimal: (0, "Optimization terminated successfully. "),
         HighsModelStatus.kTimeLimit: (1, "Time limit reached. "),
         HighsModelStatus.kIterationLimit: (1, "Iteration limit reached. "),
+        HighsModelStatus.kSolutionLimit: (1, "Node or solution limit reached. "),
+        HighsModelStatus.kUnknown: (4, ""),
+        HighsModelStatus.kInterrupt: (4, ""),
+        HighsModelStatus.kMemoryLimit: (4, ""),
+        HighsModelStatus.kHighsInterrupt: (4, ""),
         HighsModelStatus.kInfeasible: (2, "The problem is infeasible. "),
         HighsModelStatus.kUnbounded: (3, "The problem is unbounded. "),
         HighsModelStatus.kUnboundedOrInfeasible: (4, "The problem is unbounded "
