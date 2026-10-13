@@ -71,20 +71,6 @@
             "eval_gegenbauer_l": "pdd->d"
         }
     },
-    "eval_genlaguerre": {
-        "orthogonal_eval.pxd": {
-            "eval_genlaguerre[double complex]": "ddD->D",
-            "eval_genlaguerre[double]": "ddd->d",
-            "eval_genlaguerre_l": "pdd->d"
-        }
-    },
-    "eval_laguerre": {
-        "orthogonal_eval.pxd": {
-            "eval_laguerre[double complex]": "dD->D",
-            "eval_laguerre[double]": "dd->d",
-            "eval_laguerre_l": "pd->d"
-        }
-    },
     "eval_legendre": {
         "orthogonal_eval.pxd": {
             "eval_legendre[double complex]": "dD->D",

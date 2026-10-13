@@ -34,6 +34,7 @@
 #include <xsf/cpu/kelvin.h>
 #include <xsf/cpu/legendre.h>
 #include <xsf/cpu/mathieu_legacy.h>
+#include <xsf/cpu/orthogonal_eval.h>
 #include <xsf/cpu/par_cyl.h>
 #include <xsf/cpu/specfun.h>
 #include <xsf/cpu/sph_bessel.h>
@@ -192,9 +193,11 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_genlaguerre_doc;
 extern const char *eval_hermite_doc;
 extern const char *eval_hermitenorm_doc;
 extern const char *eval_jacobi_doc;
+extern const char *eval_laguerre_doc;
 extern const char *eval_sh_jacobi_doc;
 extern const char *exp10_doc;
 extern const char *exp1_doc;
@@ -775,6 +778,17 @@ _special_ufuncs_module_exec(PyObject *module)
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
 
+    PyObject *eval_genlaguerre = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::idd_d>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::ldd_d>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::qdd_d>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::fff_f>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::ffF_F>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::ddd_d>(xsf::eval_genlaguerre),
+         static_cast<xsf::numpy::ddD_D>(xsf::eval_genlaguerre)},
+        "eval_genlaguerre", eval_genlaguerre_doc);
+    PyModule_AddObjectRef(module, "eval_genlaguerre", eval_genlaguerre);
+
     PyObject *eval_hermite = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ld_d>(xsf::eval_hermite), static_cast<xsf::numpy::qd_d>(xsf::eval_hermite)},
         "eval_hermite", eval_hermite_doc);
@@ -795,6 +809,17 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::dddD_D>(xsf::eval_jacobi)},
         "eval_jacobi", eval_jacobi_doc);
     PyModule_AddObjectRef(module, "eval_jacobi", eval_jacobi);
+
+    PyObject *eval_laguerre = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_laguerre),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_laguerre)},
+        "eval_laguerre", eval_laguerre_doc);
+    PyModule_AddObjectRef(module, "eval_laguerre", eval_laguerre);
 
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::iddd_d>(xsf::eval_sh_jacobi),
