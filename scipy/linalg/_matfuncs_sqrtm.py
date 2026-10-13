@@ -45,8 +45,8 @@ def _sqrtm_triu(T, blocksize=64):
     """
     T_diag = np.diag(T)
     keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
-    r_dtype = np.float32 if T.dtype in [np.float32, np.complex64] else np.float64
-    c_dtype = np.complex64 if r_dtype == np.float32 else np.complex128
+    r_dtype = np.real(T).dtype
+    c_dtype = np.result_type(T, 0+0j)
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
