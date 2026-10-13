@@ -283,6 +283,46 @@ points is closest to this one", and define the regions that way:
 This plot can also be created using `scipy.spatial.voronoi_plot_2d`.
 
 
+Degenerate inputs
+^^^^^^^^^^^^^^^^^
+
+Qhull, like most computational-geometry algorithms, assumes the input
+points are in *general position*. When they are not -- for example
+points on a regular grid or on a common circle or sphere -- the diagram
+is ambiguous, and `ridge_points` and `ridge_vertices` may be incomplete.
+For a regular grid, the diagonal neighbors of each point are missing:
+
+.. plot::
+   :alt: "Two Voronoi diagrams of the same 3x3 grid of points. The left diagram, labeled 'default', shows only horizontal and vertical ridges between neighbors. The right diagram, labeled 'QJ', additionally shows short diagonal ridges near the grid points."
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy.spatial import Voronoi, voronoi_plot_2d
+   >>> points = np.array([[x, y] for x in range(3) for y in range(3)],
+   ...                   dtype=float)
+   >>> vor = Voronoi(points)
+   >>> len(vor.ridge_points)
+   12
+
+   Passing the Qhull option ``"QJ"`` joggles the points by a tiny random
+   amount to restore general position, which recovers the missing
+   ridges at the cost of a slightly perturbed diagram:
+
+   >>> vor_jiggled = Voronoi(points, qhull_options="QJ")
+   >>> len(vor_jiggled.ridge_points) > len(vor.ridge_points)
+   True
+
+   >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+   >>> _ = voronoi_plot_2d(vor, ax=ax1)
+   >>> _ = ax1.set_title("default")
+   >>> _ = voronoi_plot_2d(vor_jiggled, ax=ax2)
+   >>> _ = ax2.set_title("QJ")
+   >>> plt.show()
+
+See the `Qhull documentation <http://www.qhull.org/html/qh-optf.htm#Fv2>`__
+for details on degeneracies and the available options.
+
+
 Voronoi diagrams can be used to create interesting generative art.  Try playing
 with the settings of this ``mandala`` function to create your own!
 

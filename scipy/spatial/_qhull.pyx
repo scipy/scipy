@@ -2624,21 +2624,15 @@ class Voronoi(_QhullUser):
 
     .. note::
 
-       Ridge points are computed using the ``Fv`` option, which
-       does not list ridges that require more than one midpoint. For
-       example, the Voronoi diagram of cospherical points lists zero
-       ridges (e.g., ``rbox 10 s | qvoronoi Fv Qz``). Other
-       examples are the Voronoi diagrams of a rectangular mesh (e.g.,
-       ``rbox 27 M1,0 | qvoronoi Fv``) or a point set with a rectangular
-       corner (e.g.,
-       ``rbox P4,4,4 P4,2,4 P2,4,4 P4,4,2 10 | qvoronoi Fv``). Both
-       cases miss unbounded rays at the corners. To determine these
-       ridges, surround the points with a large cube (e.g.,
-       ``rbox 10 s c G2.0 | qvoronoi Fv Qz``). The cube needs to be
-       large enough to bound all Voronoi regions of the original point
-       set.
-
-       See `Qhull option Fv <http://www.qhull.org/html/qh-optf.htm#Fv2>`__.
+       `ridge_points` and `ridge_vertices` can be incomplete when the
+       input points are not in *general position*, for example points
+       on a regular grid or on a common sphere. Such degenerate inputs
+       cause many computational-geometry algorithms to drop or
+       miscompute parts of the result. Passing ``qhull_options="QJ"``
+       joggles the points to restore general position and resolve the
+       degeneracy, at the cost of a slightly perturbed diagram. See the
+       `Qhull documentation
+       <http://www.qhull.org/html/qh-optf.htm#Fv2>`__ for details.
 
     Examples
     --------
