@@ -4598,6 +4598,29 @@ class TestSkewNorm:
         # N[InverseCDF[SkewNormalDistribution[0, 1, 500], 1/100], 14] in Wolfram Alpha.
         assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
 
+    # Triples are [x, a, cdf(x, a)] in the left tail with a > 0.  Reference
+    # values were computed with mpmath at 600 digits as
+    # ncdf(x) - 2*T(x, a), with Owen's T(x, a) from mp.quad of its defining
+    # integral, and agree with the same computation at 400 digits.
+    left_tail = [
+        [-0.01, 500, 8.530787374687659763626812e-11],
+        [-0.5, 50, 1.715700613097014802927285e-141],
+        [-1, 20, 3.306802782005020867439662e-92],
+        [-2, 4, 1.921534832988964711163019e-18],
+        [-5, 4, 9.587828149948532614467905e-97],
+        [-20, 0.5, 3.352275963808826632721382e-112],
+    ]
+
+    @pytest.mark.parametrize('x, a, p', left_tail)
+    def test_cdf_sf_left_tail(self, x, a, p):
+        assert_allclose(stats.skewnorm.cdf(x, a), p, rtol=1e-12)
+        assert_allclose(stats.skewnorm.sf(-x, -a), p, rtol=1e-12)
+
+    @pytest.mark.parametrize('x, a, p', left_tail)
+    def test_ppf_isf_left_tail(self, x, a, p):
+        assert_allclose(stats.skewnorm.ppf(p, a), x, rtol=1e-12)
+        assert_allclose(stats.skewnorm.isf(p, -a), -x, rtol=1e-12)
+
 
 class TestExpon:
     def test_zero(self):

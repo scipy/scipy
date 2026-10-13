@@ -9777,6 +9777,27 @@ class skewcauchy_gen(rv_continuous):
 skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
+def _skewnorm_cdf_left_single(x, a):
+    # For x < 0, the CDF is the positive integral
+    #   1/pi * int_a^inf exp(-x**2 * (1 + u**2) / 2) / (1 + u**2) du.
+    # The integrand is divided by its value at u = a and the variable
+    # is scaled to its decay length, so quad sees a function of order one.
+    c = x * x / 2
+    b = 1 + a * a
+    h = 1 / (2 * a * c + np.sqrt(c) + 1)
+
+    def g(t):
+        s = h * t
+        d = s * (2 * a + s)
+        return np.exp(-c * d) / (1 + d / b)
+
+    J = integrate.quad(g, 0, np.inf, epsabs=0, epsrel=1e-13)[0]
+    return np.exp(-c * b + np.log(h * J / (np.pi * b)))
+
+
+_skewnorm_cdf_left = np.vectorize(_skewnorm_cdf_left_single, otypes=[np.float64])
+
+
 class skewnorm_gen(rv_continuous):
     r"""A skew-normal random variable.
 
@@ -9832,11 +9853,21 @@ class skewnorm_gen(rv_continuous):
         a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
         i_small_cdf = (cdf < 1e-6) & (a > 0)
-        cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
+        i_left = i_small_cdf & (x < 0)
+        cdf[i_left] = _skewnorm_cdf_left(x[i_left], a[i_left])
+        i_rest = i_small_cdf & ~i_left
+        cdf[i_rest] = super()._cdf(x[i_rest], a[i_rest])
         return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
-        return scu._skewnorm_ppf(x, 0.0, 1.0, a)
+        ppf = scu._skewnorm_ppf(x, 0.0, 1.0, a)
+        # Boost inverts its own CDF, so it shares the left tail error above
+        i = (x < 1e-6) & (a > 0)
+        if np.any(i):
+            x, a, ppf = np.broadcast_arrays(x, a, ppf)
+            ppf = ppf.copy()
+            ppf[i] = super()._ppf(x[i], a[i])
+        return ppf
 
     def _sf(self, x, a):
         # Boost's SF is implemented this way. Use whatever customizations
@@ -9844,7 +9875,13 @@ class skewnorm_gen(rv_continuous):
         return self._cdf(-x, -a)
 
     def _isf(self, x, a):
-        return scu._skewnorm_isf(x, 0.0, 1.0, a)
+        isf = scu._skewnorm_isf(x, 0.0, 1.0, a)
+        i = (x < 1e-6) & (a < 0)
+        if np.any(i):
+            x, a, isf = np.broadcast_arrays(x, a, isf)
+            isf = isf.copy()
+            isf[i] = -self._ppf(x[i], -a[i])
+        return isf
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
