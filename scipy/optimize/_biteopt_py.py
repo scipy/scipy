@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterable
 from typing import Concatenate
 
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._biteopt import minimize as _minimize  # type: ignore[import-not-found]
 from scipy._lib._util import _validate_int

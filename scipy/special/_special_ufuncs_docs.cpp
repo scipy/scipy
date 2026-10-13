@@ -121,7 +121,7 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
-const char *_bivariate_normal_sf_doc = R"(
+const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
@@ -1148,6 +1148,535 @@ const char *agm_doc = R"(
            [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
     )";
 
+const char *elliprc_doc = R"(
+    elliprc(x, y, out=None)
+
+    Degenerate symmetric elliptic integral.
+
+    The function RC is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{C}}(x, y) =
+           \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt
+           = R_{\mathrm{F}}(x, y, y)
+
+    Parameters
+    ----------
+    x, y : array_like
+        Real or complex input parameters. `x` can be any number in the
+        complex plane cut along the negative real axis. `y` must be non-zero.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    R : scalar or ndarray
+        Value of the integral. If `y` is real and negative, the Cauchy
+        principal value is returned. If both of `x` and `y` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+    See Also
+    --------
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    Notes
+    -----
+    RC is a degenerate case of the symmetric integral RF: ``elliprc(x, y) ==
+    elliprf(x, y, y)``. It is an elementary function rather than an elliptic
+    integral.
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]_
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E6
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> import numpy as np
+    >>> from scipy.special import elliprc
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprc(scale*x, scale*y)
+    (0.5484493976710874-0.4169557678995833j)
+
+    >>> elliprc(x, y)/np.sqrt(scale)
+    (0.5484493976710874-0.41695576789958333j)
+
+    When the two arguments coincide, the integral is particularly
+    simple:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprc(x, x)
+    (0.4299173120614631-0.3041729818745595j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    Another simple case: the first argument vanishes:
+
+    >>> y = 1.2 + 3.4j
+    >>> elliprc(0, y)
+    (0.6753125346116815-0.47779380263880866j)
+
+    >>> np.pi/2/np.sqrt(y)
+    (0.6753125346116815-0.4777938026388088j)
+
+    When `x` and `y` are both positive, we can express
+    :math:`R_C(x,y)` in terms of more elementary functions.  For the
+    case :math:`0 \le x < y`,
+
+    >>> x = 3.2
+    >>> y = 6.
+    >>> elliprc(x, y)
+    0.44942991498453444
+
+    >>> np.arctan(np.sqrt((y-x)/x))/np.sqrt(y-x)
+    0.44942991498453433
+
+    And for the case :math:`0 \le y < x`,
+
+    >>> x = 6.
+    >>> y = 3.2
+    >>> elliprc(x,y)
+    0.4989837501576147
+
+    >>> np.log((np.sqrt(x)+np.sqrt(x-y))/np.sqrt(y))/np.sqrt(x-y)
+    0.49898375015761476
+
+    )";
+
+const char *elliprd_doc = R"(
+    elliprd(x, y, z, out=None)
+
+    Symmetric elliptic integral of the second kind.
+
+    The function RD is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{D}}(x, y, z) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2}
+           dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x` or `y` can be any number in the
+        complex plane cut along the negative real axis, but at most one of them
+        can be zero, while `z` must be non-zero.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    R : scalar or ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric elliptic integral.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    Notes
+    -----
+    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) ==
+    elliprj(x, y, z, z)``.
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]_
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E5
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> import numpy as np
+    >>> from scipy.special import elliprd
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprd(scale*x, scale*y, scale*z)
+    (-0.03703043835680379-0.24500934665683802j)
+
+    >>> elliprd(x, y, z)*np.power(scale, -1.5)
+    (-0.0370304383568038-0.24500934665683805j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprd(x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
+    The so-called "second lemniscate constant":
+
+    >>> elliprd(0, 2, 1)/3
+    0.5990701173677961
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.75)**2/np.sqrt(2*np.pi)
+    0.5990701173677959
+
+    )";
+
+const char *elliprf_doc = R"(
+    elliprf(x, y, z, out=None)
+
+    Completely-symmetric elliptic integral of the first kind.
+
+    The function RF is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{F}}(x, y, z) =
+           \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis, but at most one of
+        them can be zero.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    R : scalar or ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order (cf.:
+    https://dlmf.nist.gov/19.36.i) and the AGM algorithm for the complete
+    integral. [2]_
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> import numpy as np
+    >>> from scipy.special import elliprf
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprf(scale*x, scale*y, scale*z)
+    (0.5328051227278146-0.4008623567957094j)
+
+    >>> elliprf(x, y, z)/np.sqrt(scale)
+    (0.5328051227278147-0.4008623567957095j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprf(x, x, x)
+    (0.42991731206146316-0.30417298187455954j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    The so-called "first lemniscate constant":
+
+    >>> elliprf(0, 1, 2)
+    1.3110287771460598
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.25)**2/(4*np.sqrt(2*np.pi))
+    1.3110287771460598
+
+    )";
+
+const char *elliprg_doc = R"(
+    elliprg(x, y, z, out=None)
+
+    Completely-symmetric elliptic integral of the second kind.
+
+    The function RG is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{G}}(x, y, z) =
+           \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t
+           dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    R : scalar or ndarray
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    Notes
+    -----
+    The implementation uses the relation [1]_
+
+    .. math::
+
+        2 R_{\mathrm{G}}(x, y, z) =
+           z R_{\mathrm{F}}(x, y, z) -
+           \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) +
+           \sqrt{\frac{x y}{z}}
+
+    and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
+    be chosen as the pivot. When one of the arguments is close to zero, the AGM
+    method is applied instead. Other special cases are computed following Ref.
+    [2]_
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+           https://dlmf.nist.gov/19.20.ii
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> import numpy as np
+    >>> from scipy.special import elliprg
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprg(scale*x, scale*y, scale*z)
+    (1.195936862005246+0.8470988320464167j)
+
+    >>> elliprg(x, y, z)*np.sqrt(scale)
+    (1.195936862005246+0.8470988320464165j)
+
+    Simplifications:
+
+    >>> elliprg(0, y, y)
+    1.756203682760182
+
+    >>> 0.25*np.pi*np.sqrt(y)
+    1.7562036827601817
+
+    >>> elliprg(0, 0, z)
+    1.224744871391589
+
+    >>> 0.5*np.sqrt(z)
+    1.224744871391589
+
+    The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
+    ``c`` is given by
+
+    .. math::
+
+        S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
+
+    >>> def ellipsoid_area(a, b, c):
+    ...     r = 4.0 * np.pi * a * b * c
+    ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
+    >>> print(ellipsoid_area(1, 3, 5))
+    108.62688289491807
+    )";
+
+const char *elliprj_doc = R"(
+    elliprj(x, y, z, p, out=None)
+
+    Symmetric elliptic integral of the third kind.
+
+    The function RJ is defined as [1]_
+
+    .. math::
+
+        R_{\mathrm{J}}(x, y, z, p) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           (t + p)^{-1} dt
+
+    .. warning::
+        This function should be considered experimental when the inputs are
+        unbalanced.  Check correctness with another independent implementation.
+
+    Parameters
+    ----------
+    x, y, z, p : array_like
+        Real or complex input parameters. `x`, `y`, or `z` are numbers in
+        the complex plane cut along the negative real axis (subject to further
+        constraints, see Notes), and at most one of them can be zero. `p` must
+        be non-zero.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    R : scalar or ndarray
+        Value of the integral. If all of `x`, `y`, `z`, and `p` are real, the
+        return value is real. Otherwise, the return value is complex.
+
+        If `p` is real and negative, while `x`, `y`, and `z` are real,
+        non-negative, and at most one of them is zero, the Cauchy principal
+        value is returned. [1]_ [2]_
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [3]_ The algorithm is slightly
+    different from its earlier incarnation as it appears in [1]_, in that the
+    call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
+    the inner loop. Asymptotic approximations are used where arguments differ
+    widely in the order of magnitude. [5]_
+
+    The input values are subject to certain sufficient but not necessary
+    constraints when input arguments are complex. Notably, ``x``, ``y``, and
+    ``z`` must have non-negative real parts, unless two of them are
+    non-negative and complex-conjugates to each other while the other is a real
+    non-negative number. [1]_ If the inputs do not satisfy the sufficient
+    condition described in Ref. [1]_ they are rejected outright with the output
+    set to NaN.
+
+    In the case where one of ``x``, ``y``, and ``z`` is equal to ``p``, the
+    function ``elliprd`` should be preferred because of its less restrictive
+    domain.
+
+    .. versionadded:: 1.8.0
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.20.iii
+    .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
+           Integrands with the Square Root of Two Quadratic Factors," J.
+           Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
+           :doi:`10.1016/S0377-0427(00)00282-X`.
+    .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
+           Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
+           Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
+           Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
+           Switzerland: Springer Nature Switzerland).
+           :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
+    .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
+           Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
+           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
+           https://arxiv.org/abs/math/9310223
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> import numpy as np
+    >>> from scipy.special import elliprj
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> p = 7.
+    >>> scale = 0.3 - 0.4j
+    >>> elliprj(scale*x, scale*y, scale*z, scale*p)
+    (0.10834905565679157+0.19694950747103812j)
+
+    >>> elliprj(x, y, z, p)*np.power(scale, -1.5)
+    (0.10834905565679556+0.19694950747103854j)
+
+    Reduction to simpler elliptic integral:
+
+    >>> elliprj(x, y, z, z)
+    (0.08288462362195129-0.028376809745123258j)
+
+    >>> from scipy.special import elliprd
+    >>> elliprd(x, y, z)
+    (0.08288462362195136-0.028376809745123296j)
+
+    All arguments coincide:
+
+    >>> elliprj(x, x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
+    )";
+
 const char *entr_doc = R"(
     entr(x, out=None)
 
@@ -1557,6 +2086,205 @@ const char *erfinv_doc = R"(
     >>> ax.set_xlabel('y')
     >>> ax.set_title('erfinv(y)')
     >>> plt.show()
+
+    )";
+
+const char *eval_hermite_doc = R"(
+    eval_hermite(n, x, out=None)
+
+    Evaluate physicist's Hermite polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
+    [AS]_ or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    H : scalar or ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    hermite : physicist's Hermite polynomial object
+    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
+
+    )";
+
+const char *eval_hermitenorm_doc = R"(
+    eval_hermitenorm(n, x, out=None)
+
+    Evaluate probabilist's (normalized) Hermite polynomial at a
+    point.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
+    [AS]_ or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    He : scalar or ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    hermitenorm : probabilist's Hermite polynomial object
+    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    eval_hermite : evaluate physicist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
+
+    )";
+
+const char *eval_jacobi_doc = R"(
+    eval_jacobi(n, alpha, beta, x, out=None)
+
+    Evaluate Jacobi polynomial at a point.
+
+    The Jacobi polynomials can be defined via the Gauss hypergeometric
+    function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - x)/2)
+
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.42 in [AS]_ or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter.
+    beta : array_like
+        Parameter.
+    x : array_like
+        Points at which to evaluate the polynomial.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    P : scalar or ndarray
+        Values of the Jacobi polynomial.
+
+    See Also
+    --------
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+    jacobi : Jacobi polynomial object
+    hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E7
+
+    )";
+
+const char *eval_sh_jacobi_doc = R"(
+    eval_sh_jacobi(n, p, q, x, out=None)
+
+    Evaluate shifted Jacobi polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \frac{\Gamma(n+1)\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
+
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
+    polynomial. See 22.5.2 in [AS]_ (or equivalently [DLMF]_) for details.
+    Note that here, in contrast to `eval_sh_legendre`, `eval_sh_chebyt`,
+    and `eval_sh_chebyu`, more than just the argument is shifted.
+
+    Parameters
+    ----------
+    n : float
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `binom` and `eval_jacobi`.
+    p : float
+        Parameter, must satisfy :math:`p - q > -1`.
+    q : float
+        Parameter, must be greater than 0.
+    x : array_like
+        Points at which to evaluate the polynomial.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    G : scalar or ndarray
+        Values of the shifted Jacobi polynomial.
+
+    See Also
+    --------
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+    sh_jacobi : shifted Jacobi polynomial object
+    eval_jacobi : evaluate Jacobi polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E2
 
     )";
 
@@ -3933,7 +4661,7 @@ const char *chndtrix_doc = R"(
     See Also
     --------
     chndtr : Noncentral chi-squared distribution CDF
-    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtridf : inverse of `chndtr` with respect to `df`
     chndtrinc : inverse of `chndtr` with respect to `nc`
     scipy.stats.ncx2 : Non-central chi-squared distribution
 
@@ -5108,7 +5836,7 @@ const char *ellipeinc_doc = R"(
     -----
     Wrapper for the Cephes [1]_ routine `ellie`.
 
-    Computation uses arithmetic-geometric means algorithm.
+    Computation uses arithmetic-geometric mean algorithm.
 
     The parameterization in terms of :math:`m` follows that of section
     17.2 in [2]_. Other parameterizations in terms of the
@@ -6289,16 +7017,18 @@ const char *dawsn_doc = R"(
 
     Dawson's integral.
 
-    Computes::
+    Computes
 
-        exp(-x**2) * integral(exp(t**2), t=0..x).
+    .. math::
+
+        F(x) = e^{-x^2} \int_0^x e^{t^2} \, dt.
 
     Parameters
     ----------
     x : array_like
-        Function parameter.
+        Real or complex-valued argument.
     out : ndarray, optional
-        Optional output array for the function values
+        Optional output array for the function values.
 
     Returns
     -------
@@ -6309,20 +7039,59 @@ const char *dawsn_doc = R"(
     --------
     wofz, erf, erfc, erfcx, erfi
 
+    Notes
+    -----
+    Dawson's integral is related to the imaginary error function by
+
+    .. math::
+
+        F(x) = \frac{\sqrt{\pi}}{2} e^{-x^2} \operatorname{erfi}(x).
+
+    It satisfies the ordinary differential equation
+
+    .. math::
+
+        F'(x) + 2xF(x) = 1, \qquad F(0) = 0.
+
+    For more details, see [1]_ and [2]_.
+
     References
     ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
+    .. [1] NIST Digital Library of Mathematical Functions, "Dawson's
+           Integral". https://dlmf.nist.gov/7.2
+    .. [2] Wikipedia, "Dawson function".
+           https://en.wikipedia.org/wiki/Dawson_function
+    .. [3] Steven G. Johnson, Faddeeva W function implementation.
+           http://ab-initio.mit.edu/Faddeeva
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy import special
+    >>> from scipy.special import dawsn, erfi
+
+    Verify the relation between Dawson's integral and `erfi`:
+
+    >>> x = np.linspace(-1, 1, 21)
+    >>> y = dawsn(x)
+    >>> y_erfi = np.sqrt(np.pi) * np.exp(-x**2) * erfi(x) / 2
+    >>> np.allclose(y, y_erfi)
+    True
+
+    The differential equation can also be checked numerically using a centered
+    finite difference:
+
+    >>> eps = 1e-8
+    >>> dy = (dawsn(x + eps) - dawsn(x - eps)) / (2*eps)
+    >>> np.allclose(dy + 2*x*y, 1, rtol=0, atol=2e-8)
+    True
+
+    Plot the function over a wider interval:
+
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
-    >>> plt.plot(x, special.dawsn(x))
+    >>> plt.plot(x, dawsn(x))
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$dawsn(x)$')
+    >>> plt.ylabel('$F(x)$')
     >>> plt.show()
     )";
 
@@ -7402,7 +8171,7 @@ const char *hankel2e_doc = R"(
     computation using the relation,
 
     .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi}
-              \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
+              \exp(\frac{\imath \pi v}{2}) K_v(z \exp(\frac{\imath\pi}{2}))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -8424,10 +9193,10 @@ const char *iv_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
-    (valid when the real part of `z` is positive).  For negative `v`, the
-    formula
+    (valid when the real part of `z` is positive; see [3]_).  For negative
+    `v`, the formula
 
     .. math:: I_{-v}(z) = I_v(z) + \frac{2}{\pi} \sin(\pi v) K_v(z)
 
@@ -8440,6 +9209,8 @@ const char *iv_doc = R"(
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+    .. [3] NIST Digital Library of Mathematical Functions,
+           Eq. 10.34.1. https://dlmf.nist.gov/10.34.E1
 
     Examples
     --------
@@ -8659,7 +9430,7 @@ const char *ive_doc = R"(
     The calculations above are done in the right half plane and continued
     into the left half plane by the formula,
 
-    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\imath\pi v) I_v(z)
 
     (valid when the real part of `z` is positive).  For negative `v`, the
     formula
@@ -12716,7 +13487,7 @@ const char *struve_l_doc = R"(
     v : array_like
         Order of the modified Struve function (float).
     x : array_like
-        Argument of the Struve function (float; must be positive unless `v` is
+        Argument of the modified Struve function (float; must be positive unless `v` is
         an integer).
     out : ndarray, optional
         Optional output array for the function results
@@ -12832,7 +13603,7 @@ const char *voigt_profile_doc = R"(
     -----
     It can be expressed in terms of Faddeeva function
 
-    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: V(x; \sigma, \gamma) = \frac{\Re[w(z)]}{\sigma\sqrt{2\pi}},
     .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
 
     where :math:`w(z)` is the Faddeeva function.
@@ -13106,7 +13877,7 @@ const char *y0_doc = R"(
     See Also
     --------
     j0: Bessel function of the first kind of order 0
-    yv: Bessel function of the first kind
+    yv: Bessel function of the second kind
 
     Notes
     -----

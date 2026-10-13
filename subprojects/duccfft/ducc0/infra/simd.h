@@ -96,8 +96,11 @@ template<typename T, int N> constexpr bool simd_exists_h()
   {
   if constexpr (N>1)
     if constexpr (vectorizable<T>)
-      if constexpr (!std::is_same_v<stdx::simd<T, stdx::simd_abi::deduce_t<T, N>>, stdx::fixed_size_simd<T, N>>)
-        return true;
+      {
+      using type = stdx::simd<T, stdx::simd_abi::deduce_t<T, N>>;
+      if constexpr (!std::is_same_v<type, stdx::fixed_size_simd<T, N>>)
+        return sizeof(type)==N*sizeof(T);
+      }
   return false;
   }
 template<typename T, int N> constexpr inline bool simd_exists = simd_exists_h<T,N>();

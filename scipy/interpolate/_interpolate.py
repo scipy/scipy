@@ -1,4 +1,4 @@
-__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
+__all__ = ['interp1d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 import functools
 import os
 from math import prod
@@ -9,7 +9,6 @@ import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
 
 import scipy.special as spec
-from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from scipy._lib._array_api import (
@@ -123,47 +122,6 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-err_mesg = """\
-`interp2d` has been removed in SciPy 1.14.0.
-
-For legacy code, nearly bug-for-bug compatible replacements are
-`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-scattered 2D data.
-
-In new code, for regular grids use `RegularGridInterpolator` instead.
-For scattered data, prefer `LinearNDInterpolator` or
-`CloughTocher2DInterpolator`.
-
-For more details see
-https://scipy.github.io/devdocs/tutorial/interpolate/interp_transition_guide.html
-"""
-
-class interp2d:
-    """
-    interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
-             fill_value=None)
-
-    Class for 2D interpolation (deprecated and removed).
-
-    .. versionremoved:: 1.14.0
-
-        `interp2d` has been removed in SciPy 1.14.0.
-
-        For legacy code, nearly bug-for-bug compatible replacements are
-        `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
-        scattered 2D data.
-
-        In new code, for regular grids use `RegularGridInterpolator` instead.
-        For scattered data, prefer `LinearNDInterpolator` or
-        `CloughTocher2DInterpolator`.
-
-        For more details see :ref:`interp-transition-guide`.
-    """
-    def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
-                 fill_value=None):
-        raise NotImplementedError(err_mesg)
-
-
 def _check_broadcast_up_to(arr_from, shape_to, name):
     """Helper to check that arr_from broadcasts up to shape_to"""
     shape_from = arr_from.shape
@@ -266,7 +224,6 @@ class interp1d(_Interpolator1D):
     splrep, splev
         Spline interpolation/smoothing based on FITPACK.
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
-    interp2d : 2-D interpolation
 
     Notes
     -----
@@ -304,11 +261,9 @@ class interp1d(_Interpolator1D):
 
         self.bounds_error = bounds_error  # used by fill_value setter
 
-        # `copy` keyword semantics changed in NumPy 2.0, once that is
-        # the minimum version this can use `copy=None`.
         self.copy = copy
         if not copy:
-            self.copy = copy_if_needed
+            self.copy = None
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,
@@ -939,10 +894,7 @@ class _PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
-            # in NumPy 1.6.0
-            for ii, root in enumerate(r):
-                r2[ii] = root
+            r2[...] = r
 
             return r2.reshape(self.c.shape[2:])
 
@@ -2270,7 +2222,7 @@ class BPoly:
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # yi is documented as accepting arrays or lists of
             # arrays.  The following line with star unpacking will not
             # work for array ``yi`` for some backends because some are
@@ -2282,7 +2234,7 @@ class BPoly:
         yi_seq = yi if isinstance(yi, (list, tuple)) else (yi,)
         device = xp_result_device(xi, *yi_seq)
         xi = xp_internal.asarray(xi)
-        if isinstance(yi, (list, tuple)):
+        if isinstance(yi, list | tuple):
             # If yi is a ragged list or tuple of arrays, then need to apply
             # xp_internal.asarray separately over each element.
             yi = list(map(xp_internal.asarray, yi))

@@ -2,7 +2,8 @@ from collections.abc import Iterable
 import numpy as np
 
 from scipy._lib._util import _asarray_validated, _apply_over_batch
-from scipy.linalg import block_diag, LinAlgError
+from scipy.linalg._special_matrices import block_diag
+from scipy.linalg._misc import LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
 
 __all__ = ['cossin']
@@ -140,7 +141,7 @@ def cossin(X, p=None, q=None, separate=False,
                    compute_u=compute_u, compute_vh=compute_vh)
 
 
-@_apply_over_batch(('x11', 2), ('x12', 2), ('x21', 2), ('x22', 2))
+@_apply_over_batch(('x11', 2), ('x12', 2), ('x21', 2), ('x22', 2), zero_size_fill=None)
 def _cossin(x11, x12, x21, x22, separate, swap_sign, compute_u, compute_vh):
 
     for name, block in zip(["x11", "x12", "x21", "x22"],

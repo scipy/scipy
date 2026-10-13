@@ -216,10 +216,20 @@ All functions
    cgesvd
    zgesvd
 
+   sgesvdx
+   dgesvdx
+   cgesvdx
+   zgesvdx
+
    sgesvd_lwork
    dgesvd_lwork
    cgesvd_lwork
    zgesvd_lwork
+
+   sgesvdx_lwork
+   dgesvdx_lwork
+   cgesvdx_lwork
+   zgesvdx_lwork
 
    sgesvx
    dgesvx
@@ -386,6 +396,11 @@ All functions
    clange
    zlange
 
+   slansb
+   dlansb
+   clansb
+   zlansb
+
    slantr
    dlantr
    clantr
@@ -443,6 +458,11 @@ All functions
 
    sormrz_lwork
    dormrz_lwork
+
+   spbcon
+   dpbcon
+   cpbcon
+   zpbcon
 
    spbsv
    dpbsv

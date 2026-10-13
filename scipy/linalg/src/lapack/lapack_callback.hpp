@@ -5,8 +5,11 @@
  *
  * A wrapper installs a `CallbackFrame` for the duration of the Fortran call. The trampoline
  * finds it in thread-local storage, which the callback ABI forces since it carries no user-data
- * slot, and calls the Python callable with Python scalars. A failing callback aborts the Fortran
- * routine through `setjmp`/`longjmp` rather than letting it run to completion.
+ * slot, and calls the Python callable with Python scalars. A failing callback leaves its
+ * exception set and marks the frame; every later callback in that call then returns "do not
+ * select" without re-entering Python, and the wrapper raises once the routine has finished.
+ * Leaving early is not an option: jumping out of Fortran with `longjmp` is what f2py did, but it
+ * is not portable -- Windows unwinds the abandoned frames and wasm cannot do it at all.
  *
  * The file holds the mechanism, then the trampolines, then the per-routine traits selecting one,
  * then the `CALLABLE_*` macros wrappers write.
@@ -16,8 +19,6 @@
  *       that same OS thread.
  */
 #pragma once
-
-#include <csetjmp>
 
 #include "wrapper_helpers.hpp"   /* Python.h, CBLAS_INT, to_pyobj and the flavor aliases */
 
@@ -44,9 +45,9 @@ namespace lapack {
         Py_ssize_t argcount;            /**< Positional parameters the callable declares, or -1
                                              when it cannot be introspected (a builtin). */
         Py_ssize_t ndefaults;           /**< How many of those have defaults. */
-        /* Zeroed here so CALLABLE_SELECT can brace-initialize the frame from the two members
-         * it actually knows; `setjmp` fills this in immediately afterwards. */
-        std::jmp_buf jmpbuf{};          /**< Set by setjmp in the wrapper; target of the abort jump. */
+        /* Initialized here so CALLABLE_SELECT can brace-initialize the frame from the members
+         * it actually knows. */
+        bool failed = false;            /**< Set by a failing callback; read by CALLABLE_CALL. */
     };
 
     namespace detail { inline thread_local CallbackFrame *active_frame = nullptr; }
@@ -95,8 +96,8 @@ namespace lapack {
      *
      * f2py validated at call setup, so an unusable callback was refused even when the routine
      * would never have invoked it -- `sort_t=0` for `gees`.  Checking here rather than in the
-     * trampoline keeps that, and keeps the failure on the calling thread with a plain `return`
-     * instead of inside a callback that would have to `longjmp` out of Fortran.
+     * trampoline keeps that, and reports it before the Fortran call starts rather than after a
+     * whole factorization whose result is then thrown away.
      *
      * @return false with a TypeError set when the callable requires more positional arguments
      *         than are on offer.
@@ -120,9 +121,6 @@ namespace lapack {
     /**
      * @brief RAII guard installing @p frame as this thread's active frame, restoring the previous
      *        one on scope exit.
-     *
-     * Must be constructed before the matching `setjmp`, so that the jump lands in a frame where
-     * this object is already alive and is destroyed by the ordinary `return`.
      */
     class ScopedFrame {
     public:
@@ -135,18 +133,20 @@ namespace lapack {
     };
 
     /**
-     * @brief Release callback arguments and jump back to the `setjmp` for @p f.
+     * @brief Release callback arguments, record the failure on @p f and answer "do not select".
      *
      * @param argv Arguments to release; may be nullptr with @p argc 0 if already released.
+     * @return The LOGICAL Fortran expects, always false.
      *
-     * The Python error indicator must already be set, and is left set across the jump so the
-     * wrapper can return nullptr directly. Keeping the exception out of an automatic object also
-     * avoids reading a value modified after `setjmp`.
+     * The Python error indicator must already be set. It stays set for the remainder of the
+     * Fortran call -- no later callback touches Python, see `invoke_or_fail` -- and CALLABLE_CALL
+     * turns it into the wrapper's raised exception once the routine returns.
      */
-    [[noreturn]] inline void discard_and_abort(CallbackFrame *f, PyObject *const *argv, Py_ssize_t argc) noexcept
+    inline CBLAS_INT discard_and_fail(CallbackFrame *f, PyObject *const *argv, Py_ssize_t argc) noexcept
     {
         for (Py_ssize_t i = 0; i < argc; i++) { Py_XDECREF(argv[i]); }
-        std::longjmp(f->jmpbuf, 1);
+        f->failed = true;
+        return 0;
     }
 
     /**
@@ -158,33 +158,29 @@ namespace lapack {
      *             decref them.
      *
      * Any failure -- a null scalar, a raising callable, a result whose `__bool__` raises, or the
-     * recursion guard tripping -- leaves the exception set and jumps back to the wrapper, so LAPACK
-     * stops instead of continuing with a synthetic "do not select".
+     * recursion guard tripping -- leaves the exception set, marks the frame and answers "do not
+     * select". LAPACK runs on to its own end, every further callback returning here at once, and
+     * the wrapper discards the result and raises.
      *
-     * @warning The failure path leaves this function by `longjmp`.  C++ only defines that when
-     *          replacing the `setjmp`/`longjmp` pair with `catch`/`throw` would run no
-     *          non-trivial destructor ([csetjmp.syn]), so no C++ frame that the jump abandons -
-     *          `discard_and_abort`, this one, or the trampoline - may hold an automatic object
-     *          with one: no `std::string`, no `py_ref`, no container.  Raw pointers are fine,
-     *          which is also why `combined_argv` has to be freed by hand before every jump:
-     *          nothing else will.
+     * @note The first failure is the one reported: once the frame is marked, this returns before
+     *       reaching Python, so nothing can overwrite the exception that is already set.
      */
-    inline CBLAS_INT invoke_or_abort(PyObject *const *argv, Py_ssize_t argc) noexcept
+    inline CBLAS_INT invoke_or_fail(PyObject *const *argv, Py_ssize_t argc) noexcept
     {
         CallbackFrame *f = detail::active_frame;
-        if (f == nullptr) {
+        if (f == nullptr || f->failed) {
             for (Py_ssize_t i = 0; i < argc; i++) { Py_XDECREF(argv[i]); }
             return 0;
         }
 
         for (Py_ssize_t i = 0; i < argc; i++) {
-            if (argv[i] == nullptr) { discard_and_abort(f, argv, argc); }
+            if (argv[i] == nullptr) { return discard_and_fail(f, argv, argc); }
         }
 
         Py_ssize_t nextra = f->extra_args == nullptr ? 0 : PyTuple_GET_SIZE(f->extra_args);
         if (nextra > PY_SSIZE_T_MAX - argc) {
             PyErr_NoMemory();
-            discard_and_abort(f, argv, argc);
+            return discard_and_fail(f, argv, argc);
         }
 
         /* Pass only as many LAPACK scalars as the callable declares, f2py's rule: it offers
@@ -202,7 +198,7 @@ namespace lapack {
             combined_argv = static_cast<PyObject **>(PyMem_Malloc((argc + nextra) * sizeof(*combined_argv)));
             if (combined_argv == nullptr) {
                 PyErr_NoMemory();
-                discard_and_abort(f, argv, argc);
+                return discard_and_fail(f, argv, argc);
             }
             for (Py_ssize_t i = 0; i < argc; i++) { combined_argv[i] = argv[i]; }
             for (Py_ssize_t i = 0; i < nextra; i++) {
@@ -215,19 +211,19 @@ namespace lapack {
          * that recursively enters another callback-bearing LAPACK wrapper. */
         if (Py_EnterRecursiveCall(" while evaluating a LAPACK eigenvalue-sort callback")) {
             PyMem_Free(combined_argv);
-            discard_and_abort(f, argv, argc);   /* RecursionError already set */
+            return discard_and_fail(f, argv, argc);   /* RecursionError already set */
         }
         PyObject *result = PyObject_Vectorcall(f->callable, call_argv, (size_t)(argc + nextra), nullptr);
         Py_LeaveRecursiveCall();
         PyMem_Free(combined_argv);
         for (Py_ssize_t i = 0; i < argc; i++) { Py_DECREF(argv[i]); }   /* done with argv either way */
         if (result == nullptr) {
-            discard_and_abort(f, nullptr, 0);
+            return discard_and_fail(f, nullptr, 0);
         }
         int truth = PyObject_IsTrue(result);   /* -1 if __bool__ raises */
         Py_DECREF(result);
         if (truth < 0) {
-            discard_and_abort(f, nullptr, 0);
+            return discard_and_fail(f, nullptr, 0);
         }
         return truth;
     }
@@ -245,19 +241,19 @@ namespace lapack {
 #define LAPACK_SELECT_TRAMPOLINE_1(fname, T) \
     extern "C" inline CBLAS_INT fname(T *a0) noexcept { \
         PyObject *argv[1] = { wrapper::to_pyobj(*a0) }; \
-        return lapack::invoke_or_abort(argv, 1); \
+        return lapack::invoke_or_fail(argv, 1); \
     }
 
 #define LAPACK_SELECT_TRAMPOLINE_2(fname, T) \
     extern "C" inline CBLAS_INT fname(T *a0, T *a1) noexcept { \
         PyObject *argv[2] = { wrapper::to_pyobj(*a0), wrapper::to_pyobj(*a1) }; \
-        return lapack::invoke_or_abort(argv, 2); \
+        return lapack::invoke_or_fail(argv, 2); \
     }
 
 #define LAPACK_SELECT_TRAMPOLINE_3(fname, T) \
     extern "C" inline CBLAS_INT fname(T *a0, T *a1, T *a2) noexcept { \
         PyObject *argv[3] = { wrapper::to_pyobj(*a0), wrapper::to_pyobj(*a1), wrapper::to_pyobj(*a2) }; \
-        return lapack::invoke_or_abort(argv, 3); \
+        return lapack::invoke_or_fail(argv, 3); \
     }
 
 
@@ -374,15 +370,13 @@ namespace lapack {
 /**
  * @brief Run one Fortran call with the callback declared by CALLABLE_SELECT installed.
  *
- * Place it where the call belongs, after all setup: a callback failure returns nullptr with its
- * exception already set. The call expression may contain ordinary commas.
- *
- * @note Anything the Fortran call writes to a local (`sdim`, `info`) is indeterminate on the
- *       failure path, per the usual `setjmp` rule; nothing may read those before checking.
+ * Place it where the call belongs, after all setup: a callback failure returns nullptr after the
+ * Fortran call finishes, with its exception still set. The call expression may contain ordinary
+ * commas.
  */
 #define CALLABLE_CALL(name, call) \
     do { \
         lapack::ScopedFrame name##_scope(&name##_frame); \
-        if (setjmp(name##_frame.jmpbuf) == 0) { call; } \
-        else { return nullptr; } \
+        call; \
+        if (name##_frame.failed) { return nullptr; } \
     } while (0)

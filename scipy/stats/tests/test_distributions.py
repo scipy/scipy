@@ -1424,6 +1424,29 @@ class TestGennorm:
         assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
 
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 1000
+    #
+    # def mp_gennorm_logcdf(x, beta):
+    #     q = mp.gammainc(mp.one / beta, abs(x)**beta, mp.inf, regularized=True)
+    #     return mp.log1p(-q / 2) if x > 0 else (mp.log(q) - mp.log(2))
+    @pytest.mark.parametrize('x, beta, ref', [
+        (-1000, 0.5, -28.83091306906317),
+        (-1000, 1, -1000.6931471805599),
+        (-1000, 1.5, -31627.226787319527),
+        (-1000, 2, -1000008.1732679025),
+        (-1000, 3, -1000000015.4940784),
+        (40, 0.5, -0.006583557130600504),
+        (40, 1, -2.1241771276457944e-18),
+        (40, 1.5, -7.887417946755972e-112),
+        (20, 2, -2.6979328058039506e-176),
+        (5, 3, -3.836763028961752e-57),
+        (5, 4, -4.056091233666129e-275),
+    ])
+    def test_logcdf(self, x, beta, ref):
+        assert_allclose(stats.gennorm.logcdf(x, beta), ref, rtol=1e-13)
+
 
 class TestGibrat:
 

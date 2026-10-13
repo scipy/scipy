@@ -1616,7 +1616,7 @@ void lsoda(
     const int mxhnl0 = 10;        // Default maximum nil step warnings
 
     int iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
-    double hmx = 0.0, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
+    double hmx = 0.0, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
     int len1n, len1s = 0, lenwm = 0, len1c, len1, len2, leniw, leniwc, lenrw, lenrwc, lf0;
     double rtoli, atoli;
 
@@ -1694,15 +1694,15 @@ void lsoda(
             if (hmax < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
             S->hmxi = 0.0;
             if (hmax > 0.0) { S->hmxi = 1.0/hmax; }
-            hmin = rwork[6];
-            if (hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            S->hmin = rwork[6];
+            if (S->hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
         } else {
             // Default optional inputs
             S->ixpr = 0;
             S->mxstep = mxstp0;
             S->mxhnil = mxhnl0;
             S->hmxi = 0.0;
-            hmin = 0.0;
+            S->hmin = 0.0;
             h0 = 0.0;
             S->mxordn = mord[0];
             S->mxords = mord[1];
@@ -1912,15 +1912,15 @@ void lsoda(
             if (hmax < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
             S->hmxi = 0.0;
             if (hmax > 0.0) { S->hmxi = 1.0/hmax; }
-            hmin = rwork[6];
-            if (hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            S->hmin = rwork[6];
+            if (S->hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
         } else {
             // Default optional inputs
             S->ixpr = 0;
             S->mxstep = mxstp0;
             S->mxhnil = mxhnl0;
             S->hmxi = 0.0;
-            hmin = 0.0;
+            S->hmin = 0.0;
         }
         // 60
 

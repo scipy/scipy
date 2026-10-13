@@ -20,17 +20,19 @@ scipy.linalg vs numpy.linalg
 
 .. TODO: replace numpy.linalg HTML link with `numpy.linalg` once NumPy updates doc
 
-:mod:`scipy.linalg` contains all the functions in
+:mod:`scipy.linalg` contains most of the functions in
 `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__,
-plus some other more advanced ones not contained in ``numpy.linalg``.
+but is not a drop-in replacement for it.
 
-Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
-it is always compiled with BLAS/LAPACK support, while for NumPy this is
-optional. Therefore, the SciPy version might be faster depending on how
-NumPy was installed.
+When a function is present in both modules, the version provided by
+SciPy is generally the more featureful one, with among others options
+for input validation. Some functions also expose different algorithms or
+detect structure in the input to dispatch to a faster routine. This
+extra care can make the NumPy version faster, so
+performance-sensitive code may want to benchmark both.
 
-Therefore, unless you don't want to add ``scipy`` as a dependency to
-your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
+In addition, :mod:`scipy.linalg` contains additional functions that are
+generally more specialized.
 
 
 numpy.matrix vs 2-D numpy.ndarray
