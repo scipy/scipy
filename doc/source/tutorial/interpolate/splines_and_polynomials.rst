@@ -199,17 +199,21 @@ of :math:`1, x, \cdots, x^k`.
 Coefficients and control points
 -------------------------------
 
-The b-spline coefficients have a simple geometric interpretation: they are
-the *control points* of the spline. The polyline connecting the control
-points --- the *control polygon* --- follows the shape of the spline, and the
-spline lies within the convex hull of its control points. How exactly the
-coefficients map onto the control points depends on whether the spline
-represents a function or a curve.
+The B-Spline coefficients have a simple geometric interpretation: they
+determine the *control points* of the spline. The polyline connecting the
+control points --- the *control polygon* --- follows the shape of the spline,
+and the spline lies within the convex hull of its control points. How the
+coefficients determine the control points depends on whether the spline
+represents a function or a curve: for a curve, the coefficients *are* the
+control points; for a function, they are only the :math:`y`-coordinates, and
+the :math:`x`-coordinates come from the knots (see the references in the
+`BSpline` docstring).
 
 **Spline functions.** For a function, :math:`y = f(x)`, the coefficients are
 scalars, and they only give the :math:`y`-coordinates of the control points.
-The matching :math:`x`-coordinates are the so-called *Greville abscissae*,
-which are averages of ``k`` consecutive knots,
+The matching :math:`x`-coordinates are the so-called *Greville abscissae*
+(see the references in the `BSpline` docstring), which are averages of ``k``
+consecutive knots,
 
 .. math::
 
@@ -242,7 +246,8 @@ where ``n = len(t) - k - 1`` is the number of coefficients.
 
 **Parametric curves.** For a curve in :math:`d` dimensions, e.g. constructed
 by `make_splprep`, each coefficient is itself a point: the coefficient array
-has shape ``(n, d)``, and its rows are the control points.
+has shape ``(n, d)``, and its rows are the control points (see the
+references in the `make_splprep` docstring).
 
 .. plot::
 
@@ -292,18 +297,22 @@ spline with ``axis=1``, while ``spl_moved``, constructed directly from the
 
 **Spline surfaces.** A tensor product spline surface, :math:`z = f(x, y)`, e.g.
 constructed by `RectBivariateSpline`, is a linear combination of products of
-B-Spline basis elements in the two directions,
+B-Spline basis elements in the two directions (`RectBivariateSpline` is
+based on FITPACK, see the references in the `UnivariateSpline` docstring),
 
 .. math::
 
     f(x, y) = \sum_{i=0}^{n_x-1} \sum_{j=0}^{n_y-1} c_{ij} B_i(x) B_j(y) ,
 
-where ``tx`` and ``ty`` are the knot vectors, and ``kx`` and ``ky`` are the
-degrees in the :math:`x` and :math:`y` directions. Just like in the 1D case,
-each direction has its own b-spline basis, with ``nx = len(tx) - kx - 1``
-elements :math:`B_i(x)` and ``ny = len(ty) - ky - 1`` elements :math:`B_j(y)`.
-The coefficients therefore form a 2D array, :math:`c_{ij}`, of shape
-``(nx, ny)``: there is one coefficient for each pair of basis elements.
+where :math:`B_i(x)` and :math:`B_j(y)` are the 1D B-Spline basis elements in
+the :math:`x` and :math:`y` directions. Just like in the 1D case, each
+direction has its own knot vector and degree, ``tx, kx`` and ``ty, ky``, which
+define the basis elements: :math:`B_i(x)` are the
+:math:`n_x` = ``len(tx) - kx - 1`` basis elements of degree ``kx`` on the knots
+``tx``, and :math:`B_j(y)` are the :math:`n_y` = ``len(ty) - ky - 1`` basis
+elements of degree ``ky`` on the knots ``ty``. The coefficients therefore form
+a 2D array, :math:`c_{ij}`, of shape :math:`(n_x, n_y)`: there is one
+coefficient for each pair of basis elements.
 
 The surface is the graph of a function of two variables, so the geometric
 picture is a direct generalization of the 1D spline functions above. Each
