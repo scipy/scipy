@@ -415,6 +415,19 @@ class CramerVonMisesResult:
                 f"pvalue={self.pvalue})")
 
 
+# Provenance of the Cramér-von Mises cdf implementation below, that is, of
+# `_psi1_mod`, `_cdf_cvm_inf` and `_cdf_cvm` (see gh-11119 and gh-26397):
+# the implementation is a translation of the MAPLE program accompanying
+# Csörgő, S. and Faraway, J. (1996), which was published at
+# https://people.bath.ac.uk/jjf23/papers/cvm.maple. That page is no longer
+# online; an archived copy is available at
+# https://web.archive.org/web/20221201063720/https://people.bath.ac.uk/jjf23/papers/cvm.maple  # noqa: E501
+# The R code of the function pCvM in the package goftest (v1.1.1) was
+# consulted only after that translation had been written, while investigating
+# a discrepancy between the two implementations, with the permission of the
+# goftest maintainer Adrian Baddeley.
+
+
 def _psi1_mod(x, *, xp=None):
     """
     psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
@@ -422,10 +435,10 @@ def _psi1_mod(x, *, xp=None):
     (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
     twice in _cdf_cvm.
 
-    Implementation based on MAPLE code of Julian Faraway and R code of the
-    function pCvM in the package goftest (v1.1.1), permission granted
-    by Adrian Baddeley. Main difference in the implementation: the code
-    here keeps adding terms of the series until the terms are small enough.
+    Implementation based on the MAPLE code of Julian Faraway; see the
+    provenance note preceding `_psi1_mod`. Main difference in the
+    implementation: the code here keeps adding terms of the series until
+    the terms are small enough.
     """
     xp = array_namespace(x) if xp is None else xp
 
@@ -483,10 +496,10 @@ def _cdf_cvm_inf(x, *, xp=None):
 
     See equation 1.2 in Csörgő, S. and Faraway, J. (1996).
 
-    Implementation based on MAPLE code of Julian Faraway and R code of the
-    function pCvM in the package goftest (v1.1.1), permission granted
-    by Adrian Baddeley. Main difference in the implementation: the code
-    here keeps adding terms of the series until the terms are small enough.
+    Implementation based on the MAPLE code of Julian Faraway; see the
+    provenance note preceding `_psi1_mod`. Main difference in the
+    implementation: the code here keeps adding terms of the series until
+    the terms are small enough.
 
     The function is not expected to be accurate for large values of x, say
     x > 4, when the cdf is very close to 1.
