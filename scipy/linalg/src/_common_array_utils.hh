@@ -1380,22 +1380,23 @@ void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n
 
 template<typename T>
 typename detail::type_traits<T>::real_type
-norm1_(T* A, T* work, const npy_intp n)
+norm1_(T* A, const npy_intp n)
 {
     using real_type = typename detail::type_traits<T>::real_type;
     using value_type = typename detail::type_traits<T>::value_type;
     value_type *pA = reinterpret_cast<value_type *>(A);
 
-    Py_ssize_t i, j;
-    real_type temp = 0.0;
-    real_type *rwork = (real_type *)work;
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { rwork[i] = std::abs(pA[i]); }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) { for (j = 0; j < n; j++) { rwork[j] += std::abs(pA[i*n + j]); } }
-    temp = 0.0;
-    for (i = 0; i < n; i++) { if (rwork[i] > temp) { temp = rwork[i]; } }
-    return temp;
+    real_type norm = 0.0;
+    for (CBLAS_INT i = 0; i < n; i++) {
+        real_type tmp = 0.0;
+        for (CBLAS_INT j = 0; j < n; j++) {
+            tmp += std::abs(pA[i * n + j]);
+        }
+
+        if (tmp > norm) { norm = tmp; }
+    }
+
+    return norm;
 }
 
 

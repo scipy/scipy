@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state, _transition_to_rng
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, acos, hypot, isnan, NAN, pi
+from libc.math cimport sqrt, sin, cos, atan2, hypot, isnan, NAN, pi
 
 np.import_array()
 

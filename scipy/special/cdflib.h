@@ -93,14 +93,6 @@ struct TupleDID
     double d2;
 };
 
-struct TupleDDID
-{
-    double d1;
-    double d2;
-    int i1;
-    double d3;
-};
-
 
 typedef struct DinvrState DinvrState;
 typedef struct DzrorState DzrorState;

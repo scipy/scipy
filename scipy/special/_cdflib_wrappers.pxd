@@ -1,23 +1,12 @@
 from . cimport sf_error
 
-from libc.math cimport NAN, isnan, isinf, isfinite
+from libc.math cimport NAN, isnan
 
 cdef extern from "cdflib.h" nogil:
-    cdef struct TupleDDI:
-        double d1
-        double d2
-        int i1
-
     cdef struct TupleDID:
         double d1
         int i1
         double d2
-
-    cdef struct TupleDDID:
-        double d1
-        double d2
-        int i1
-        double d3
 
     TupleDID cdff_which4(double, double, double, double);
     TupleDID cdffnc_which3(double, double, double, double, double);

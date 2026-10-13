@@ -44,16 +44,16 @@ def find_branch_point(branch):
     https://stackoverflow.com/questions/1527234/finding-a-branch-point-with-git#4991675
 
     """
-    branch_commits = rev_list('HEAD', 1000)
-    main_commits = set(rev_list(branch, 1000))
+    branch_commits = rev_list('HEAD', 30000)
+    main_commits = set(rev_list(branch, 30000))
     for branch_commit in branch_commits:
         if branch_commit in main_commits:
             return branch_commit
 
-    # If a branch split off over 1000 commits ago we will fail to find
+    # If a branch split off over 30000 commits ago we will fail to find
     # the ancestor.
     raise RuntimeError(
-        'Failed to find a common ancestor in the last 1000 commits'
+        'Failed to find a common ancestor in the last 30000 commits'
     )
 
 

@@ -743,6 +743,22 @@ class TestDPSS:
         lam = windows.dpss(31, 8, 4, return_ratios=True, xp=xp)[1]
         xp_assert_close(lam, xp.ones_like(lam))
 
+    def test_ratios_kmax_none(self, xp):
+        # With Kmax=None a single window is returned, and `return_ratios`
+        # then gives a scalar ratio rather than a length-1 vector.
+        win, ratio = windows.dpss(31, 3, return_ratios=True, xp=xp)
+        assert win.shape == (31,)
+        assert ratio.shape == ()
+        # Same window and ratio as the explicit Kmax=1 case, which keeps the
+        # leading axis. Kmax=None defaults to norm='approximate', so the
+        # comparison has to ask for that norm explicitly.
+        win_1, ratio_1 = windows.dpss(31, 3, Kmax=1, norm='approximate',
+                                      return_ratios=True, xp=xp)
+        assert win_1.shape == (1, 31)
+        assert ratio_1.shape == (1,)
+        xp_assert_close(win, win_1[0, ...])
+        xp_assert_close(ratio, ratio_1[0, ...])
+
     def test_degenerate(self, xp):
         # Test failures
         assert_raises(ValueError, windows.dpss, 4, 1.5, -1)  # Bad Kmax
@@ -752,6 +768,8 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, 3, -1, 3)  # NW must be pos
         assert_raises(ValueError, windows.dpss, 3, 0, 3)
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
+        assert_raises(ValueError, windows.dpss, 4, 1.5, norm='foo')  # unknown norm
+        assert_raises(ValueError, windows.dpss, 4, 1.5, norm=3)  # unknown norm
 
     @skip_xp_backends(np_only=True)
     def test_degenerate_single_samples(self, xp):

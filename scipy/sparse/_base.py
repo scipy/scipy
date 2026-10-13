@@ -1481,8 +1481,10 @@ class _spbase(SparseABC):
             # Before casting to the requested dtype, canonicalize duplicates and zeros.
             if hasattr(self, 'sum_duplicates'):
                 self.sum_duplicates()
-            temp = self.astype(dtype, copy=False).sum(axis=axis, dtype=None, out=out)
-            return temp.astype(dtype, copy=False)
+            temp = self.astype(dtype, copy=False)
+            if out is not None:
+                return temp.sum(axis=axis, dtype=None, out=out)
+            return temp.sum(axis=axis).astype(dtype, copy=False)
 
         # Note: all valid 1D axis values are canonically `None`.
         if axis is None:

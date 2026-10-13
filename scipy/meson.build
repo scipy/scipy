@@ -383,33 +383,32 @@ py3.install_sources(
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [fs.copyfile('__init__.py')]
 
-cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
-if cy.version().version_compare('>=3.1.0')
-  cython_args += ['-Xfreethreading_compatible=True']
-
-  cython_shared_src = custom_target(
-    install: false,
-    output: '_cyutility.c',
-    command: [
-      cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
-      '--generate-shared=' + meson.current_build_dir()/'_cyutility.c'
-    ],
-  )
-
-  cython_shared_module = py3.extension_module('_cyutility',
-    cython_shared_src,
-    subdir: 'scipy',
-    cython_args: cython_args,
-    link_args: version_link_args,
-    install: true,
-    install_tag: 'python-runtime',
-  )
-
-  cython_args += ['--shared=scipy._cyutility']
-else
-  cython_shared_module = []
-endif
+cython_args = [
+  '-3', '--fast-fail',
+  '-Xfreethreading_compatible=True',
+  '--shared=scipy._cyutility',
+  '--output-file', '@OUTPUT@',
+  '--include-dir', '@BUILD_ROOT@', '@INPUT@'
+]
 cython_cplus_args = ['--cplus'] + cython_args
+
+cython_shared_src = custom_target(
+  install: false,
+  output: '_cyutility.c',
+  command: [
+    cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
+    '--working', '@OUTDIR@', '--generate-shared=_cyutility.c'
+  ],
+)
+
+cython_shared_module = py3.extension_module('_cyutility',
+  cython_shared_src,
+  subdir: 'scipy',
+  cython_args: cython_args,
+  link_args: version_link_args,
+  install: true,
+  install_tag: 'python-runtime',
+)
 
 cython_gen = generator(cython,
   arguments : cython_args,
@@ -542,26 +541,40 @@ machines = {
 }
 
 conf_data = configuration_data()
+portable_config_output = get_option('config-output') == 'portable'
+if get_option('config-output') == 'auto'
+  portable_config_output = run_command(
+    py3, '-c', 'import os; print("SOURCE_DATE_EPOCH" in os.environ)',
+    check: true
+  ).stdout().strip() == 'True'
+endif
 
 # Set compiler information
 foreach name, compiler : compilers
   conf_data.set(name + '_COMP', compiler.get_id())
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
-  conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
-  conf_data.set(name + '_COMP_ARGS', ', '.join(
-      get_option(name.to_lower() + '_args')
+  if portable_config_output
+    # Commands and flags can embed build paths in compiler-specific syntax.
+    conf_data.set(name + '_COMP_CMD_ARRAY', 'unknown')
+    conf_data.set(name + '_COMP_ARGS', 'unknown')
+    conf_data.set(name + '_COMP_LINK_ARGS', 'unknown')
+  else
+    conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+    conf_data.set(name + '_COMP_ARGS', ', '.join(
+        get_option(name.to_lower() + '_args')
+      )
     )
-  )
-  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
-      get_option(name.to_lower() + '_link_args')
+    conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+        get_option(name.to_lower() + '_link_args')
+      )
     )
-  )
+  endif
 endforeach
 # Add `pythran` information if present
 if use_pythran
   conf_data.set('PYTHRAN_VERSION', pythran.version())
-  conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
+  conf_data.set('PYTHRAN_INCDIR', portable_config_output ? 'unknown' : incdir_pythran)
 endif
 
 # Machines CPU and system information
@@ -575,7 +588,7 @@ endforeach
 conf_data.set('CROSS_COMPILED', meson.is_cross_build().to_string())
 
 # Python information
-conf_data.set('PYTHON_PATH', py3.full_path().replace('\\', '/'))
+conf_data.set('PYTHON_PATH', portable_config_output ? 'unknown' : py3.full_path().replace('\\', '/'))
 conf_data.set('PYTHON_VERSION', py3.language_version())
 
 # Information on dependencies, to store in `scipy/__config__.py`
@@ -591,10 +604,17 @@ foreach name, dep : dependency_map
   if dep.found()
     conf_data.set(name + '_VERSION', dep.version())
     conf_data.set(name + '_TYPE_NAME', dep.type_name())
-    conf_data.set(name + '_INCLUDEDIR', dep.get_variable('includedir', default_value: 'unknown'))
-    conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
-    conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
-    conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown').replace('\\', '/'))
+    if portable_config_output
+      conf_data.set(name + '_INCLUDEDIR', 'unknown')
+      conf_data.set(name + '_LIBDIR', 'unknown')
+      conf_data.set(name + '_OPENBLAS_CONFIG', 'unknown')
+      conf_data.set(name + '_PCFILEDIR', 'unknown')
+    else
+      conf_data.set(name + '_INCLUDEDIR', dep.get_variable('includedir', default_value: 'unknown'))
+      conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
+      conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
+      conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown').replace('\\', '/'))
+    endif
     conf_data.set(name + '_HAS_ILP64', use_ilp64.to_string())
   endif
 endforeach

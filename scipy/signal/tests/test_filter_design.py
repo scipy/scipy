@@ -942,6 +942,7 @@ class TestFreqz:
                     assert_array_almost_equal(w, expected_w)
                     assert_array_almost_equal(h, expected_h, decimal=4)
 
+    @pytest.mark.skip_xp_backends('dask.array', reason="gh-25317")
     def test_broadcasting1(self, xp):
         # Test broadcasting with worN an integer or a 1-D array,
         # b and a are n-dimensional arrays.
@@ -994,6 +995,7 @@ class TestFreqz:
                     xp_assert_close(ww, xp.asarray(w[k])[None])
                     xp_assert_close(hh, xp.asarray(h[k])[None])
 
+    @pytest.mark.skip_xp_backends('dask.array', reason="gh-25317")
     def test_broadcasting4(self, xp):
         # Test broadcasting with worN a 2-D array.
         np.random.seed(123)

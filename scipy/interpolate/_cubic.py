@@ -12,7 +12,7 @@ from scipy._lib._array_api import (
 from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
 
-from . import PPoly
+from ._interpolate import PPoly
 from ._polyint import _isscalar
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",

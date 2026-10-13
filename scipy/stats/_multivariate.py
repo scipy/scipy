@@ -869,7 +869,7 @@ class multivariate_normal_gen(multi_rv_generic):
             determines the dimensionality of the fitted distribution.
         fix_mean : ndarray(n, )
             Fixed mean vector. Must have length `n`.
-        fix_cov: ndarray (n, n)
+        fix_cov : ndarray (n, n)
             Fixed covariance matrix. Must have shape ``(n, n)``.
 
         Returns
@@ -1086,7 +1086,7 @@ The dimensions of this matrix are inferred from the shape of `rowcov` and
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
@@ -1557,7 +1557,7 @@ The dimensions of this matrix are inferred from the shape of `row_spread` and
 
 `row_spread` and `col_spread` can be two-dimensional array_likes specifying the
 spread matrices directly. Alternatively, a one-dimensional array will
-be be interpreted as the entries of a diagonal matrix, and a scalar or
+be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
@@ -4228,7 +4228,7 @@ class multinomial_frozen(multi_rv_frozen):
     ----------
     n : int
         number of trials
-    p: array_like
+    p : array_like
         probability of a trial falling into each category; should sum to 1
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
@@ -6891,7 +6891,7 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x: ndarray
+        x : ndarray
             Category counts (non-negative integers). Must be broadcastable
             with shape parameter ``alpha``. If multidimensional, the last axis
             must correspond with the categories.
@@ -6916,7 +6916,7 @@ class dirichlet_multinomial_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x: ndarray
+        x : ndarray
             Category counts (non-negative integers). Must be broadcastable
             with shape parameter ``alpha``. If multidimensional, the last axis
             must correspond with the categories.
