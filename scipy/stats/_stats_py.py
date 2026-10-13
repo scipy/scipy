@@ -51,7 +51,8 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats import _kendall_dis, _toint64, _weightedrankedtau
+from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
+                     _wasserstein_distance_finite)
 
 from dataclasses import dataclass, field
 from ._stats_pythran import _compute_outer_prob_inside_method
@@ -10192,6 +10193,12 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
+
+    if p == 1:
+        result = _wasserstein_distance_finite(
+            u_values, v_values, u_weights, v_weights)
+        if result is not None:
+            return result
 
     u_sorter = np.argsort(u_values)
     v_sorter = np.argsort(v_values)

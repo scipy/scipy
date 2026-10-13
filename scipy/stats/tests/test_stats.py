@@ -14,6 +14,7 @@ from itertools import product
 import hypothesis.extra.numpy as npst
 import hypothesis
 import contextlib
+from fractions import Fraction
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -8576,6 +8577,107 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([1, 2, 100000], [1, 1],
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    @pytest.mark.parametrize("exponent", [53, 60, 300, 1023])
+    def test_small_mass_survives_on_either_tail(self, exponent):
+        p = 2.0**-exponent
+        distance = 2.0**exponent
+        expected = float(Fraction(p) * Fraction(distance) /
+                         (1 + Fraction(p)))
+        for sign in [1, -1]:
+            result = stats.wasserstein_distance(
+                [0., sign * distance], [0.], [1., p], [1.])
+            assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exponent", [53, 60, 300])
+    def test_small_mass_between_common_endpoints(self, exponent):
+        p = 2.0**-exponent
+        distance = 2.0**exponent
+        expected = float(Fraction(p) * Fraction(distance) /
+                         (2 + Fraction(p)))
+        result = stats.wasserstein_distance(
+            [0., distance, 3 * distance],
+            [0., 2 * distance, 3 * distance],
+            [1., p, 1.], [1., p, 1.])
+        assert_equal(result, expected)
+
+    def test_adjacent_weights_near_cdf_rounding_boundary(self):
+        distance = 2.0**53
+        p = 2.0**-53
+        for weight in [np.nextafter(p, 0), p, np.nextafter(p, 1)]:
+            expected = float(Fraction(weight) * Fraction(distance) /
+                             (1 + Fraction(weight)))
+            result = stats.wasserstein_distance(
+                [0., distance], [0.], [1., weight], [1.])
+            assert_equal(result, expected)
+
+    def test_cdf_difference_from_nearly_equal_weights(self):
+        distance = 2.0**60
+        weight = np.nextafter(1., 2.)
+        expected = float(abs(Fraction(1, 2) - Fraction(weight) /
+                             (1 + Fraction(weight))) * Fraction(distance))
+        result = stats.wasserstein_distance(
+            [0., distance], [0., distance],
+            [1., 1.], [weight, 1.])
+        assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exponent", [60, 300])
+    def test_rounded_zero_gap_inside_nonzero_distance(self, exponent):
+        distance = 2.0**exponent
+        weight = np.nextafter(1., 2.)
+        delta = Fraction(weight) - 1
+        expected = float(Fraction(1, 2) +
+                         delta * (Fraction(distance) - 1) /
+                         (2 * (2 + delta)))
+        result = stats.wasserstein_distance(
+            [0., distance], [1., distance],
+            [1., 1.], [1., weight])
+        assert_equal(result, expected)
+
+    @pytest.mark.parametrize("weighted", [False, True])
+    @pytest.mark.parametrize("lower, expected", [
+        (1., 1.),
+        (np.nextafter(1., np.inf), np.nextafter(np.nextafter(1., np.inf), np.inf)),
+        (0., 0.),
+        (np.nextafter(0., 1.), 2 * np.nextafter(0., 1.)),
+        (np.nextafter(np.finfo(float).tiny, 0), np.finfo(float).tiny),
+    ])
+    def test_rounding_halfway(self, weighted, lower, expected):
+        upper = np.nextafter(lower, np.inf)
+        weights = [1., 1.] if weighted else None
+        result = stats.wasserstein_distance([lower, upper], [0.], weights)
+        assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exponent", [
+        0, 1, 31, 32, 33, 52, 53, 63, 64, 65, 95, 96, 127, 128,
+        129, 191, 192, 193, 255, 256, 257, 500, 1074,
+    ])
+    def test_exact_integer_range_transitions(self, exponent):
+        weight = 2.0**-exponent
+        expected = float(Fraction(weight) * 2**60 / (1 + Fraction(weight)))
+        result = stats.wasserstein_distance(
+            [0., 2.0**60], [0.], [1., weight], [1.])
+        assert_equal(result, expected)
+
+    def test_finite_support_interval_overflow(self):
+        largest = np.finfo(float).max
+        assert_equal(stats.wasserstein_distance([-largest], [largest]), np.inf)
+        assert_equal(stats.wasserstein_distance(
+            [-largest, largest], [-largest, largest]), 0.)
+        assert_equal(stats.wasserstein_distance(
+            [-largest, largest], [0.], [1., 0.]), largest)
+
+    def test_exact_singleton_formula(self):
+        rng = np.random.default_rng(20260930)
+        for exponent in [0, 60, 200, 500, 1000]:
+            u = np.ldexp(rng.uniform(-1, 1, 6), exponent)
+            w = np.ldexp(rng.uniform(.5, 1, 6), np.arange(6) * -200)
+            target = 1.
+            numerator = sum(Fraction(float(weight)) *
+                            abs(Fraction(float(value)) - Fraction(target))
+                            for value, weight in zip(u, w))
+            expected = float(numerator / sum(map(Fraction, w)))
+            assert_equal(stats.wasserstein_distance(u, [target], w), expected)
 
     @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_inf_values(self):
