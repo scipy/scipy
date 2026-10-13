@@ -934,6 +934,18 @@ def estimate_rank(A, eps, rng=None):
     -------
     int
         Estimated matrix rank.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg.interpolative import estimate_rank
+    >>> rng = np.random.default_rng()
+    >>> # Create a rank-250 matrix
+    >>> A = rng.standard_normal((500, 250)) @ rng.standard_normal((250, 200))
+    >>> rank = estimate_rank(A, eps=1e-5, rng=rng)
+    >>> 200 <= rank <= 300
+    True
+
     """
     from scipy.sparse.linalg import LinearOperator
 
