@@ -26,7 +26,15 @@ rv_capabilities = xp_capabilities(
 )
 
 
-@rv_capabilities
+
+@xp_capabilities(
+    skip_backends=[('array_api_strict', "fancy indexing in EIM"),
+                   ("jax.numpy", 'mutation'),
+                   ('dask.array', 'no attempt')],
+    method_capabilities={  # no effect unless I apply to superclass?
+            "plot": dict(np_only=True),
+    }
+)
 class Normal(ContinuousDistribution):
     r"""Normal distribution with prescribed mean and standard deviation.
 
@@ -104,7 +112,7 @@ class Normal(ContinuousDistribution):
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         xp = self._xp
-        lH0 = StandardNormal._logentropy_formula(self)
+        lH0 = xp.asarray(StandardNormal._logentropy_formula(self))
         with np.errstate(divide='ignore', invalid='ignore'):
             # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf -> divide
             # sigma = NaN -> invalid
@@ -141,7 +149,7 @@ class Normal(ContinuousDistribution):
     def _lmoment_formula(self, order, *, mu, sigma, **kwargs):
         xp = self._xp
         lscale = sigma / xp.pi**0.5
-        lkurtosis = 30*xp.atan(2**0.5)/xp.pi - 9
+        lkurtosis = 30*math.atan(2**0.5)/xp.pi - 9
         lmoments = {1: mu, 2: lscale, 3: 0, 4: lkurtosis * lscale}
         return lmoments.get(order, None)
 
@@ -210,11 +218,11 @@ class StandardNormal(Normal):
 
     def _entropy_formula(self, **kwargs):
         xp = self._xp
-        return (1 + xp.log(2*xp.pi))/2
+        return (1 + math.log(2*xp.pi))/2
 
     def _logentropy_formula(self, **kwargs):
         xp = self._xp
-        return xp.log1p(xp.log(2*xp.pi)) - xp.log(2)
+        return math.log1p(math.log(2*math.pi)) - math.log(2)
 
     def _median_formula(self, **kwargs):
         return 0
@@ -801,5 +809,5 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
 # summary portion of the class documentation. All other documentation, including
 # examples, is generated automatically.
 _module = sys.modules[__name__].__dict__
-for dist_name in __all__:
-    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+# for dist_name in __all__:
+#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])

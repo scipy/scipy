@@ -585,6 +585,14 @@ _special_funcs = (
         int_only=(False, True, False), torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.beta, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("beta", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.betainc, ["a", "b", "x"], _needs_betainc("betainc"), torch_native=False
     ),
     _FuncInfo(

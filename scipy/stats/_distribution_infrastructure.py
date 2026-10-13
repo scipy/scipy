@@ -10,7 +10,7 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy,
+    is_numpy, is_cupy, xp_device,
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -369,11 +369,11 @@ class _Interval(_Domain):
             is_integer = isinstance(self, _IntegerInterval)
             offset = 1 if is_integer else 0
             raw = a + (b - a + offset) * xp.asarray(rng.random(size=size))
-            return np.floor(raw) if is_integer else raw
+            return xp.floor(raw) if is_integer else raw
 
         # get copies of min and max with no nans so that uniform doesn't fail
-        min_nn, max_nn = min.copy(), max.copy()
-        i = np.isnan(min_nn) | np.isnan(max_nn)
+        min_nn, max_nn = xp_copy(min), xp_copy(max)
+        i = xp.isnan(min_nn) | xp.isnan(max_nn)
         min_nn[i] = 0
         max_nn[i] = 1
 
@@ -611,7 +611,7 @@ class _Parameter(ABC):
         a, b = xp.broadcast_arrays(a, b)
 
         # work with shapes in NumPy
-        base_shape = a.shape
+        base_shape = tuple(a.shape)
         extended_shape = np.broadcast_shapes(size, base_shape)
         n_extended = np.prod(extended_shape)
         n_base = np.prod(base_shape)
@@ -677,7 +677,7 @@ class _Parameter(ABC):
         # z = xp.asarray(rng.permuted(z, axis=0))  # TODO: fix permutation
 
         z = xp.reshape(z, tuple(shape_expansion) + squeezed_base_shape)
-        z = xp.moveaxis(z, new_base_singletons, base_singletons)
+        z = xp.moveaxis(z, new_base_singletons, tuple(base_singletons))
         return z
 
     @abstractmethod
@@ -1204,7 +1204,8 @@ def _cdf2_input_validation(f):
         if func_name in {'_cdf2', '_ccdf2'}:
             res = xp.clip(res, 0., 1.)
         else:
-            res = xp.clip(res, None, 0.)  # exp(res) < 1
+            # res = xp.clip(res, None, 0.)  # exp(res) < 1
+            res = xp.where(xp.real(res) > 0, 0., res)
 
         # Transform the result to account for swapped argument order
         res = xp.asarray(res)
@@ -1219,7 +1220,8 @@ def _cdf2_input_validation(f):
         else:
             # res[i_swap] is always positive and less than 1, so it's
             # safe to ensure that the result is real
-            res[i_swap] = xp.real(_logexpxmexpy(xp.log(2), res[i_swap], xp=xp))
+            two = xp.asarray(2, dtype=res.dtype, device=xp_device(res))
+            res[i_swap] = xp.real(_logexpxmexpy(xp.log(two), res[i_swap], xp=xp))
         return res[()]
 
     return wrapped
@@ -1275,7 +1277,7 @@ def _log_real_standardize(x, *, xp):
     real = xp.astype(xp.real(x), x.dtype)
     complex = xp.imag(x)
     y = real
-    negative = xp.exp(complex*1j) < 0.5
+    negative = xp.abs(xp.exp(complex*1j)) < 0.5
     y[negative] = y[negative] + xp.pi * 1j
     return xp.reshape(y, shape)[()]
 
@@ -2647,7 +2649,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         with np.errstate(invalid='ignore'):
             # np.logaddexp warns with NaN argument
             log_tail = xp.logaddexp(logcdf_x, logccdf_y)[case_central]
-        log_mass[case_central] = _log1mexp(log_tail, xp=xp)
+        log_mass[case_central] = xp.astype(_log1mexp(log_tail, xp=xp), log_mass.dtype)
         log_mass[flip_sign] += xp.pi * 1j
         return log_mass[()] if xp.any(flip_sign) else xp.real(log_mass)[()]
 
@@ -3195,7 +3197,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if isinstance(rng, qmc.QMCEngine):
             uniform = self._qmc_uniform(full_shape, qrng=rng, **params)
         else:
-            uniform = rng.random(size=full_shape, dtype=self._dtype)
+            dtype = np.float32 if '32' in str(self._dtype) else np.float64
+            uniform = rng.random(size=full_shape, dtype=dtype)
         return self._icdf_dispatch(xp.asarray(uniform), **params)
 
     def _qmc_uniform(self, full_shape, *, qrng, **params):
@@ -3506,7 +3509,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
         with np.errstate(invalid='ignore'):  # can happen with infinite moment
-            moment_as = self._preserve_type(moment_as)  # TODO: tuple? investigate
+            moment_as = self._preserve_type(xp.stack(moment_as))  # TODO: tuple? investigate
             moment_b = xp.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
@@ -3568,7 +3571,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _lmoment_from_order_statistics(self, order, **params):
         xp = self._xp
         k = xp.arange(order, device=self._device)
-        k = xpx.atleast_nd(k, ndim=self._ndim + 1).T
+        k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
         E = order_statistic(self, r=order-k, n=order).mean()
         bc = special.binom(order-1, k)
         return xp.sum((-1)**k * bc * E, axis=0) / order

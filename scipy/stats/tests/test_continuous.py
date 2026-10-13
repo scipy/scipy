@@ -54,6 +54,7 @@ class Test_RealInterval:
            data=strategies.data())
     def test_contains(self, shapes, inclusive_a, inclusive_b, data):
         # Test `contains` when endpoints are defined by parameters
+        shapes = [tuple(shape) for shape in shapes]
         input_shapes, result_shape = shapes
         shape_a, shape_b, shape_x = input_shapes
 
@@ -162,7 +163,7 @@ def draw_distribution_from_family(family, rng, shape_options, proportions=None, 
         n_parameters = family._num_parameters(i)
         shapes = mutually_broadcastable_shapes(num_shapes=n_parameters,
                                                rng=rng, **shape_options)
-        result_shape = xp.broadcast_shapes(*shapes)
+        result_shape = tuple(xp.broadcast_shapes(*shapes))
         dist = family._draw(shapes, rng=rng, proportions=proportions,
                             i_parameterization=i, xp=xp)
     else:
@@ -961,7 +962,7 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
 
     # If we have standard moment formulas, or if there are
     # values in their cache, we can use method='normalize'.
-    if not np.any(variance == 0):  # ...unless the variance is zero.
+    if not xp.any(variance == 0):  # ...unless the variance is zero.
         # (In that case the standardized moment is NaN; we can't recover the central
         #  moment from that.)
         dist.moment(0, 'standardized')  # build up the cache
@@ -985,7 +986,7 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not np.any(variance == 0):
+        if not xp.any(variance == 0):
             # `method='general'` results just aren't correct for degenerate
             # distributions or when moments are not defined. That's OK.
             check(i, 'standardized', 'general', ref, success=i <= 2)
