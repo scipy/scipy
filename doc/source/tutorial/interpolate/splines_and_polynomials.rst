@@ -15,7 +15,7 @@ the second derivatives for cubic splines, the first derivatives for monotone
 interpolants and so on.
 
 A polynomial of degree :math:`k` can be thought of as a linear combination of
-:math:`k+1` monomial basis elements, :math:`1, x, x^2, \cdots, x^k`. 
+:math:`k+1` monomial basis elements, :math:`1, x, x^2, \cdots, x^k`.
 In some applications, it is useful to consider alternative (if formally
 equivalent) bases. Two popular bases, implemented in `scipy.interpolate` are
 B-splines (`BSpline`) and Bernstein polynomials (`BPoly`).
@@ -24,14 +24,14 @@ and Bernstein polynomials are used for constructing Bezier curves.
 
 `PPoly` objects represent piecewise polynomials in the 'usual' power basis.
 This is the case for `CubicSpline` instances and monotone interpolants.
-In general, `PPoly` objects can represent polynomials of 
+In general, `PPoly` objects can represent polynomials of
 arbitrary orders, not only cubics. For the data array ``x``, breakpoints are at
 the data points, and the array of coefficients, ``c`` , define polynomials of
 degree :math:`k`, such that ``c[i, j]`` is a coefficient for
 ``(x - x[j])**(k-i)`` on the segment between ``x[j]`` and ``x[j+1]`` .
 
 `BSpline` objects represent B-spline functions --- linear combinations of
-:ref:`b-spline basis elements <tutorial-interpolate_bspl_basis>`. 
+:ref:`b-spline basis elements <tutorial-interpolate_bspl_basis>`.
 These objects can be instantiated directly or constructed from data with the
 `make_interp_spline` factory function.
 
@@ -154,7 +154,7 @@ B-splines: knots and coefficients
 A b-spline function --- for instance, constructed from data via a
 `make_interp_spline` call --- is defined by the so-called *knots* and coefficients.
 
-As an illustration, let us again construct the interpolation of a sine function. 
+As an illustration, let us again construct the interpolation of a sine function.
 The knots are available as the ``t`` attribute of a `BSpline` instance:
 
     >>> x = np.linspace(0, 3/2, 7)
@@ -170,7 +170,7 @@ We see that the knot vector by default is constructed from the input
 array ``x``: first, it is made :math:`(k+1)` -regular (it has ``k``
 repeated knots appended and prepended); then, the second and
 second-to-last points of the input array are removed---this is the so-called
-*not-a-knot* boundary condition. 
+*not-a-knot* boundary condition.
 
 In general, an interpolating spline of degree ``k`` needs
 ``len(t) - len(x) - k - 1`` boundary conditions. For cubic splines with
@@ -206,13 +206,12 @@ and the spline lies within the convex hull of its control points. How the
 coefficients determine the control points depends on whether the spline
 represents a function or a curve: for a curve, the coefficients *are* the
 control points; for a function, they are only the :math:`y`-coordinates, and
-the :math:`x`-coordinates come from the knots (see the references in the
-`BSpline` docstring).
+the :math:`x`-coordinates come from the knots [Floater]_, [deBoor]_.
 
 **Spline functions.** For a function, :math:`y = f(x)`, the coefficients are
 scalars, and they only give the :math:`y`-coordinates of the control points.
 The matching :math:`x`-coordinates are the so-called *Greville abscissae*
-(see the references in the `BSpline` docstring), which are averages of ``k``
+[Floater]_, [deBoor]_, which are averages of ``k``
 consecutive knots,
 
 .. math::
@@ -246,8 +245,7 @@ where ``n = len(t) - k - 1`` is the number of coefficients.
 
 **Parametric curves.** For a curve in :math:`d` dimensions, e.g. constructed
 by `make_splprep`, each coefficient is itself a point: the coefficient array
-has shape ``(n, d)``, and its rows are the control points (see the
-references in the `make_splprep` docstring).
+has shape ``(n, d)``, and its rows are the control points [Floater]_.
 
 .. plot::
 
@@ -297,8 +295,7 @@ spline with ``axis=1``, while ``spl_moved``, constructed directly from the
 
 **Spline surfaces.** A tensor product spline surface, :math:`z = f(x, y)`, e.g.
 constructed by `RectBivariateSpline`, is a linear combination of products of
-B-Spline basis elements in the two directions (`RectBivariateSpline` is
-based on FITPACK, see the references in the `UnivariateSpline` docstring),
+B-Spline basis elements in the two directions [Dierckx]_,
 
 .. math::
 
@@ -438,6 +435,15 @@ surface locally, on the rectangle where :math:`B_i(x) B_j(y)` is non-zero.
     >>> ax.set_title("surface: c[i, j] are heights over the Greville grid")
     >>> ax.legend()
     >>> plt.show()
+
+References
+~~~~~~~~~~
+
+.. [Floater] M. Floater, An introduction to spline theory, 2025,
+   https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
+.. [deBoor] C. de Boor, A practical guide to splines, Springer, 2001.
+.. [Dierckx] P. Dierckx, Curve and surface fitting with splines, Monographs on
+   Numerical Analysis, Oxford University Press, 1993.
 
 
 .. _tutorial-interpolate_bspl_basis:
