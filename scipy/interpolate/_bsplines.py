@@ -1170,6 +1170,50 @@ class BSpline:
         --------
         splder, splantider
 
+        Notes
+        -----
+        The coefficient array of the returned instance will be padded with
+        ``b.k + 1`` trailing zeros, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> b = spl.derivative()             # b is a quadratic spline
+        >>> len(b.t), len(b.c), b.k          # knots, coefficients, degree of b
+        (13, 13, 2)
+        >>> b.c[len(b.t) - b.k - 1:]         # zero padding, unused in evaluations
+        array([0., 0., 0.])
+
+        Slice off the padding to get exactly ``len(b.t) - b.k - 1`` coefficients:
+
+        >>> c = b.c[:len(b.t) - b.k - 1]
+        >>> len(c)
+        10
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``b``) and
+        after (``BSpline(b.t, c, b.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(b.t, c, b.k)(xx), b(xx))
+        True
+
         """
         if hasattr(self._delegate_to, "derivative"):
             # NumPy backend class lacks derivative method because it relies on
@@ -1215,6 +1259,49 @@ class BSpline:
         it will be set to False for the returned instance. This is done because
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
+
+        The coefficient array of the returned instance will be padded with
+        ``b.k + 1`` trailing entries, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> a = spl.antiderivative()         # a is a quartic spline
+        >>> len(a.t), len(a.c), a.k          # knots, coefficients, degree of a
+        (17, 17, 4)
+        >>> a.c[len(a.t) - a.k - 1:]         # repeat padding, unused in evaluations
+        array([20002.23910041, 20002.23910041, 20002.23910041, 20002.23910041,
+               20002.23910041])
+
+        Slice off the padding to get exactly ``len(a.t) - a.k - 1`` coefficients:
+
+        >>> c = a.c[:len(a.t) - a.k - 1]
+        >>> len(c)
+        12
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``a``) and
+        after (``BSpline(a.t, c, a.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(a.t, c, a.k)(xx), a(xx))
+        True
 
         """
         if hasattr(self._delegate_to, "antiderivative"):
