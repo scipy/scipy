@@ -145,8 +145,17 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 
     solver, solver_lwork = get_lapack_funcs((s, sl), (a,))
     lwork = _compute_lwork(solver_lwork, n, lower=lower)
+    original = a.copy() if overwrite_a else a
     ldu, piv, info = solver(a, lwork=lwork, lower=lower,
                             overwrite_a=overwrite_a)
+    if info > 0:
+        # Older blocked SYTRF/HETRF routines can leave stale entries at zero
+        # pivots (Reference-LAPACK/lapack#1432). Recompute on the unblocked
+        # path, reusing the factor buffer and preserving the caller's input
+        # when overwrite_a=False. INFO identifies only the first zero pivot,
+        # so repairing that entry alone would miss other singular columns.
+        ldu[...] = original
+        ldu, piv, info = solver(ldu, lwork=n, lower=lower, overwrite_a=True)
     if info < 0:
         raise ValueError(f'{s.upper()} exited with the internal error "illegal value '
                          f'in argument number {-info}". See LAPACK documentation '
