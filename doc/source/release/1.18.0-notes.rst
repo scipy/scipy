@@ -157,6 +157,9 @@ New features
 ==============================
 - The accuracy of the following functions was improved: `scipy.special.bdtrik`,
   `scipy.special.bdtrin`, `scipy.special.nbdtrik`, `scipy.special.nbdtrin`.
+- `scipy.special.log_softmax` keeps the mass of terms that sit just below
+  the maximum. The previous ``log(sum(exp(x - max(x))))`` added those terms
+  to 1 and flushed them to zero.
 - The numerical behavior for `scipy.special.eval_jacobi` has been improved
   for several parameter combinations.
 - The Bessel functions `scipy.special.j0` and `scipy.special.y0`
