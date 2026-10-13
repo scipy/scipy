@@ -292,7 +292,7 @@ spline with ``axis=1``, while ``spl_moved``, constructed directly from the
 
 **Spline surfaces.** A tensor product spline surface, :math:`z = f(x, y)`, e.g.
 constructed by `RectBivariateSpline`, is a linear combination of products of
-b-spline basis elements in the two directions,
+B-Spline basis elements in the two directions,
 
 .. math::
 
