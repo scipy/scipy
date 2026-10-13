@@ -216,10 +216,20 @@ All functions
    cgesvd
    zgesvd
 
+   sgesvdx
+   dgesvdx
+   cgesvdx
+   zgesvdx
+
    sgesvd_lwork
    dgesvd_lwork
    cgesvd_lwork
    zgesvd_lwork
+
+   sgesvdx_lwork
+   dgesvdx_lwork
+   cgesvdx_lwork
+   zgesvdx_lwork
 
    sgesvx
    dgesvx

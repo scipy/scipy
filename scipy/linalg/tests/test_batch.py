@@ -391,8 +391,7 @@ class TestBatch:
         args = (A, B) if include_B else (A,)
         kwargs = dict(left=left, right=right, homogeneous_eigvals=homogeneous_eigvals)
         n_out = 1 + left + right
-        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs,
-                        test_zero_size_dtype=False)
+        self.batch_test(linalg.eig, args, n_out=n_out, kwargs=kwargs)
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
@@ -450,9 +449,7 @@ class TestBatch:
         fun, n_out = fun_n_out
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
-        test_zero_size_dtype = fun != linalg.solve_discrete_lyapunov
-        self.batch_test(fun, (A, B), n_out=n_out,
-                        test_zero_size_dtype=test_zero_size_dtype)
+        self.batch_test(fun, (A, B), n_out=n_out)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_cossin(self, dtype):

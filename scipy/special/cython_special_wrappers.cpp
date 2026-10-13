@@ -364,17 +364,18 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
     return xsf::cephes::ellpj(u, m, sn, cn, dn, ph);
 }
 
-int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, *si, *ci); }
+void xsf_sici(double x, double *si, double *ci) { xsf::sici(x, *si, *ci); }
 
-int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, *si, *ci); }
+void xsf_shichi(double x, double *si, double *ci) { xsf::shichi(x, *si, *ci); }
 
-int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
-    return xsf::sici(to_complex(x), *reinterpret_cast<complex<double> *>(si), *reinterpret_cast<complex<double> *>(ci));
+void xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
+    xsf::sici(to_complex(x), *reinterpret_cast<complex<double> *>(si),
+              *reinterpret_cast<complex<double> *>(ci));
 }
 
-int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
-    return xsf::shichi(to_complex(x), *reinterpret_cast<complex<double> *>(shi),
-                       *reinterpret_cast<complex<double> *>(chi));
+void xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
+    xsf::shichi(to_complex(x), *reinterpret_cast<complex<double> *>(shi),
+                *reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes_yn_wrap(Py_ssize_t n, double x) { return xsf::cephes::yn(static_cast<int>(n), x); }

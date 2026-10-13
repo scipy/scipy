@@ -71,7 +71,7 @@ def find_root(f, init, /, *, args=(), kwargs=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
+        Called as ``callback(res)``, where ``res`` is an object
         similar to that returned by `find_root` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -97,7 +97,7 @@ def find_root(f, init, /, *, args=(), kwargs=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -324,7 +324,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
+        Called as ``callback(res)``, where ``res`` is an object
         similar to that returned by `find_minimum` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -350,7 +350,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -577,7 +577,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -769,7 +769,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be

@@ -1234,6 +1234,7 @@ def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
     # vectorized, array API interpolation along last axis
     xp = array_namespace(x1, x, y) if xp is None else xp
     x1, x, y = xp_promote(x1, x, y, force_floating=True, xp=xp)
+    out_shape = x1.shape
 
     if is_numpy(xp) and x.ndim <= 1 and y.ndim <= 1:
         res = np.interp(x1, x, y, left=left, right=right)
@@ -1267,4 +1268,4 @@ def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
     res, left, right = xp.broadcast_arrays(res, left, right)
     res = xp.where(x1 < xl, left, res)
     res = xp.where(x1 > xr, right, res)
-    return res
+    return xp.reshape(res, out_shape)
