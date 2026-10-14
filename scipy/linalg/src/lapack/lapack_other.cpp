@@ -325,7 +325,11 @@ namespace lapack {
             ARRAY_INOUT(T, c, 1, overwrite_c != 0);
             CHECKARRAY(len(c) == 1LL * n * (n + 1) / 2, c);
 
-            lapack::sfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            if constexpr (!is_complex_v<T>) {
+                lapack::sfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            } else {
+                lapack::hfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            }
             return make_result(c);
         }
 
@@ -989,8 +993,13 @@ namespace lapack {
             CHECK(lwork >= hi - lo, lwork);
 
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(lwork, 1));
-            lapack::orghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
-                          lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
+                              lwork, &info);
+            } else {
+                lapack::unghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
+                              lwork, &info);
+            }
             return make_result(a, static_cast<long long>(info));
         }
 
@@ -1009,7 +1018,11 @@ namespace lapack {
 
             T work{}, a{}, tau{};
             CBLAS_INT info = 0;
-            lapack::orghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            } else {
+                lapack::unghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            }
             return make_result(work, static_cast<long long>(info));
         }
 
@@ -1032,7 +1045,11 @@ namespace lapack {
             CHECK(lwork >= n || lwork == -1, lwork);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::orgqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orgqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            } else {
+                lapack::ungqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            }
             return make_result(a, work, static_cast<long long>(info));
         }
 
@@ -1055,7 +1072,11 @@ namespace lapack {
             CHECK(lwork >= m || lwork == -1, lwork);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::orgrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orgrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            } else {
+                lapack::ungrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            }
             return make_result(a, work, static_cast<long long>(info));
         }
 
@@ -1084,8 +1105,13 @@ namespace lapack {
             CHECKARRAY(len(tau) == k, tau);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::ormqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
-                          ldc, work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            } else {
+                lapack::unmqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            }
             return make_result(c, work, static_cast<long long>(info));
         }
 
@@ -1123,8 +1149,13 @@ namespace lapack {
             CHECK(lwork >= order || lwork == -1, lwork);
 
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(lwork, 1));
-            lapack::ormrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
-                          ldc, work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            } else {
+                lapack::unmrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            }
             return make_result(c, static_cast<long long>(info));
         }
 
@@ -1146,7 +1177,11 @@ namespace lapack {
 
             CBLAS_INT k = side == 'L' ? m : n, l = 0, info = 0;
             T work{}, a{}, tau{}, c{};
-            lapack::ormrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            } else {
+                lapack::unmrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            }
             return make_result(work, static_cast<long long>(info));
         }
 
@@ -1676,7 +1711,7 @@ namespace lapack {
                 CHECK(lrwork >= lrwork_deflt, lrwork);
                 ARRAY_HIDDEN(T, work, lwork);
                 ARRAY_HIDDEN(R, rwork, lrwork);
-                lapack::sbevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, kd, ab.data<T>(), ldab,
+                lapack::hbevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, kd, ab.data<T>(), ldab,
                               w.data<R>(), z.data<T>(), ldz, work.data<T>(), lwork,
                               rwork.data<R>(), lrwork, iwork.data<CBLAS_INT>(), liwork, &info);
             }
@@ -1749,7 +1784,7 @@ namespace lapack {
             if constexpr (is_complex_v<T>) {
                 ARRAY_HIDDEN(T, work, n);
                 ARRAY_HIDDEN(R, rwork, 7LL * n);
-                lapack::sbevx(jobz, rangec, uplo, n, kd, ab.data<T>(), ldab, q.data<T>(), ldq,
+                lapack::hbevx(jobz, rangec, uplo, n, kd, ab.data<T>(), ldab, q.data<T>(), ldq,
                               vl, vu, il, iu, abstol, &m, w.data<R>(), zdata, ldz,
                               work.data<T>(), rwork.data<R>(), iwork.data<CBLAS_INT>(),
                               ifail.data<CBLAS_INT>(), &info);

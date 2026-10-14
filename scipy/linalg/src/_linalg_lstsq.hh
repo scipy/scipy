@@ -61,9 +61,9 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     // query LWORK
     T tmp = 0.0;
     if constexpr (!is_complex_v<T>) {
-        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+        lapack::gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
     } else {
-        gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+        lapack::gelss(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
     }
     if(info != 0) { return -100; }
 
@@ -135,9 +135,9 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
         // perform the least squares
         if constexpr (!is_complex_v<T>) {
-            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, &info);
+            lapack::gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, &info);
         } else {
-            gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, &info);
+            lapack::gelss(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, &info);
         }
 
         if(info != 0) {
@@ -223,9 +223,9 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
     real_type tmp_lrwork = 0;
     CBLAS_INT liwork = 0, lrwork = 0;
     if constexpr (!is_complex_v<T>) {
-        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &liwork, &info);
+        lapack::gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &liwork, &info);
     } else {
-        gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &tmp_lrwork, &liwork, &info);
+        lapack::gelsd(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &tmp_lrwork, &liwork, &info);
     }
 
     if(info != 0) { return -100; }
@@ -307,9 +307,9 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
 
         // perform the least squares
         if constexpr (!is_complex_v<T>) {
-            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, iwork, &info);
+            lapack::gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, iwork, &info);
         } else {
-            gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, iwork, &info);
+            lapack::gelsd(intm, intn, int_nrhs, data_a, lda, data_b, ldb, ptr_S, r_rcond, &rank, work, lwork, rwork, iwork, &info);
         }
 
         if(info != 0) {
@@ -389,9 +389,9 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
     // query LWORK
     T tmp = 0.0;
     if constexpr (!is_complex_v<T>) {
-        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
+        lapack::gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, &info);
     } else {
-        gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
+        lapack::gelsy(intm, intn, int_nrhs, NULL, lda, NULL, ldb, NULL, r_rcond, &rank, &tmp, lwork, NULL, &info);
     }
     if(info != 0) { return -100; }
 
@@ -473,9 +473,9 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
 
         // perform the least squares
         if constexpr (!is_complex_v<T>) {
-            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, &info);
+            lapack::gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, &info);
         } else {
-            gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, rwork, &info);
+            lapack::gelsy(intm, intn, int_nrhs, data_a, lda, data_b, ldb, jpvt, r_rcond, &rank, work, lwork, rwork, &info);
         }
 
         if(info != 0) {
