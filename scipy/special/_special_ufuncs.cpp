@@ -133,6 +133,7 @@ extern const char *_ncx2_pdf_doc;
 extern const char *_ncx2_sf_doc;
 extern const char *_normalized_gen_harmonic_doc;
 extern const char *_riemann_zeta_doc;
+extern const char *_sf_error_test_function_doc;
 extern const char *_sinpi_doc;
 extern const char *_skewnorm_cdf_doc;
 extern const char *_skewnorm_isf_doc;
@@ -361,6 +362,20 @@ extern const char *yv_doc;
 extern const char *yve_doc;
 extern const char *zetac_doc;
 
+
+static long long sf_error_test_function(long long code)
+{
+    // Function that can raise every sf_error category for testing purposes.
+    sf_error_t sf_error_code;
+
+    if (code < 0 || code >= SF_ERROR__LAST) {
+        sf_error_code = SF_ERROR_OTHER;
+    } else {
+        sf_error_code = static_cast<sf_error_t>(code);
+    }
+    sf_error("_err_test_function", sf_error_code, nullptr);
+    return 0;
+}
 
 // Control error handling policy state
 static PyObject* _set_action(PyObject* self, PyObject* args) {
@@ -762,6 +777,10 @@ _special_ufuncs_module_exec(PyObject *module)
 	{static_cast<xsf::numpy::f_f>(xsf::scaled_exp1), static_cast<xsf::numpy::d_d>(xsf::scaled_exp1)},
         "_scaled_exp1", scaled_exp1_doc);
     PyModule_AddObjectRef(module, "_scaled_exp1", _scaled_exp1);
+
+    PyObject *_sf_error_test_function = xsf::numpy::ufunc(
+        {sf_error_test_function}, "_sf_error_test_function", _sf_error_test_function_doc);
+    PyModule_AddObjectRef(module, "_sf_error_test_function", _sf_error_test_function);
 
     PyObject *_von_mises_cdf = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::von_mises_cdf), static_cast<xsf::numpy::dd_d>(xsf::von_mises_cdf)},

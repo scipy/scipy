@@ -145,6 +145,7 @@ special_ufuncs = [
     "_normalized_gen_harmonic",
     "_riemann_zeta",
     "_scaled_exp1",
+    "_sf_error_test_function",
     "_sinpi",
     "_skewnorm_cdf",
     "_skewnorm_isf",
