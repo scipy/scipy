@@ -90,9 +90,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
+        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
     } else {
-        gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, NULL, &info);
+        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, NULL, &info);
     }
     if (info != 0) { info = -100; return (int)info; }
 
@@ -179,9 +179,9 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
         // SVD the slice
         if constexpr (!is_complex_v<T>) {
-            gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, iwork, &info);
+            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, iwork, &info);
         } else {
-            gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, iwork, &info);
+            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, iwork, &info);
         }
 
         if(info != 0) {
@@ -261,9 +261,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, &info);
+        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, &info);
     } else {
-        gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
+        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
     }
     if (info != 0) { info = -100; return (int)info; }
 
@@ -334,9 +334,9 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
         // SVD the slice
         if constexpr (!is_complex_v<T>) {
-            gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, &info);
+            lapack::gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, &info);
         } else {
-            gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, &info);
+            lapack::gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, &info);
         }
 
         if(info != 0) {

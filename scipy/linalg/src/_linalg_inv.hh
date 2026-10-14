@@ -18,15 +18,15 @@ void invert_slice_general(
     real_type rcond;
     real_type anorm = norm1_(data, (npy_intp)N);
 
-    getrf(N, N, data, N, ipiv, &info);
+    lapack::getrf(N, N, data, N, ipiv, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
         if constexpr(!is_complex_v<T>) {
-            gecon(norm, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
         } else {
-            gecon(norm, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
+            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
         }
 
         status.rcond = (double)rcond;
@@ -34,7 +34,7 @@ void invert_slice_general(
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
             // finally, invert
-            getri(N, data, N, ipiv, work, lwork, &info);
+            lapack::getri(N, data, N, ipiv, work, lwork, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -60,15 +60,15 @@ void invert_slice_cholesky(
 
     real_type rcond;
 
-    potrf(uplo, N, data, N, &info);
+    lapack::potrf(uplo, N, data, N, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
         if constexpr (!is_complex_v<T>) {
-            pocon(uplo, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
         } else {
-            pocon(uplo, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
+            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
         }
 
         if (info >= 0) {
@@ -76,7 +76,7 @@ void invert_slice_cholesky(
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
             // finally, invert
-            potri(uplo, N, data, N, &info);
+            lapack::potri(uplo, N, data, N, &info);
             status.is_singular = (info > 0);
         }
     }
@@ -100,12 +100,12 @@ void invert_slice_sym_herm(
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     if constexpr (!is_complex_v<T>) {
-       sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
+       lapack::sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
     } else {
         if(is_symm_not_herm) {
-            sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
+            lapack::sytrf(uplo, N, data, N, ipiv, work, lwork, &info);
         } else {
-            hetrf(uplo, N, data, N, ipiv, work, lwork, &info);
+            lapack::hetrf(uplo, N, data, N, ipiv, work, lwork, &info);
         }
     }
 
@@ -113,12 +113,12 @@ void invert_slice_sym_herm(
     if (info == 0) {
         // {sy,he}trf success
         if constexpr (!is_complex_v<T>) {
-            sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
         } else {
             if (is_symm_not_herm) {
-                sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
+                lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
             } else {
-                hecon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
+                lapack::hecon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
             }
         }
 
@@ -128,12 +128,12 @@ void invert_slice_sym_herm(
 
             // finally, invert
             if constexpr (!is_complex_v<T>) {
-                sytri(uplo, N, data, N, ipiv, work, &info);
+                lapack::sytri(uplo, N, data, N, ipiv, work, &info);
             } else {
                 if (is_symm_not_herm) {
-                    sytri(uplo, N, data, N, ipiv, work, &info);
+                    lapack::sytri(uplo, N, data, N, ipiv, work, &info);
                 } else {
-                    hetri(uplo, N, data, N, ipiv, work, &info);
+                    lapack::hetri(uplo, N, data, N, ipiv, work, &info);
                 }
             }
 
@@ -159,16 +159,16 @@ void invert_slice_triangular(
     char norm = '1';
     real_type rcond;
 
-    trtri(uplo, diag, N, data, N, &info);
+    lapack::trtri(uplo, diag, N, data, N, &info);
     status.is_singular  = (info > 0);
 
     status.lapack_info = (Py_ssize_t)info;
     if(info >= 0) {
 
         if constexpr(!is_complex_v<T>) {
-            trcon(norm, uplo, diag, N, data, N, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (CBLAS_INT *)irwork, &info);
         } else {
-            trcon(norm, uplo, diag, N, data, N, &rcond, work, (real_type *)irwork, &info);
+            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (real_type *)irwork, &info);
         }
 
         if (info >= 0) {
@@ -249,7 +249,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     T tmp1 = 0.0;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
-    getri(intn, NULL, intn, NULL, &tmp, lwork, &info);
+    lapack::getri(intn, NULL, intn, NULL, &tmp, lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_1 = _calc_lwork(tmp, 1.01);
@@ -259,7 +259,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // also query sytrf
-    sytrf(uplo, intn, NULL, intn, NULL, &tmp1, lwork,  &info);
+    lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp1, lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_2 = _calc_lwork(tmp);

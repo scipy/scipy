@@ -88,9 +88,9 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
+        lapack::geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
     } else {
-        geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
+        lapack::geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
     }
     if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
@@ -162,9 +162,9 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
 
         // compute eigenvalues for the slice
         if constexpr (!is_complex_v<T>) {
-            geev(jobvl, jobvr, intn, data, lda, wr, wi, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
+            lapack::geev(jobvl, jobvr, intn, data, lda, wr, wi, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
         } else {
-            geev(jobvl, jobvr, intn, data, lda, wr, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
+            lapack::geev(jobvl, jobvr, intn, data, lda, wr, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
         }
 
         if(info != 0) {
@@ -275,9 +275,9 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
+        lapack::ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
     } else {
-        ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
+        lapack::ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
     }
     if (info != 0) { PyMem_RawFree(rwork);  return -101; }
 
@@ -367,9 +367,9 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
 
         // compute eigenvalues for the slice
         if constexpr (!is_complex_v<T>) {
-            ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, alphai, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
+            lapack::ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, alphai, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
         } else {
-            ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
+            lapack::ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
         }
 
         if(info != 0) {
@@ -513,63 +513,63 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
     switch (lapack_driver) {
         case Eigh_driver::EV : {
             if constexpr (!is_complex_v<T>) {
-                syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
+                lapack::syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
             } else {
-                syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
+                lapack::heev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
             }
             break;
         }
 
         case Eigh_driver::EVD : {
             if constexpr (!is_complex_v<T>) {
-                syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+                lapack::syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
             } else {
-                syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+                lapack::heevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
             }
             break;
         }
 
         case Eigh_driver::EVR : {
             if constexpr (!is_complex_v<T>) {
-                syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+                lapack::syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
             } else {
-                syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+                lapack::heevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
             }
             break;
         }
 
         case Eigh_driver::EVX : {
             if constexpr (!is_complex_v<T>) {
-                syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
+                lapack::syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
             } else {
-                syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+                lapack::heevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
             }
             break;
         }
 
         case Eigh_driver::GV : {
             if constexpr (!is_complex_v<T>) {
-                sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
+                lapack::sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
             } else {
-                sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
+                lapack::hegv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
             }
             break;
         }
 
         case Eigh_driver::GVD : {
             if constexpr (!is_complex_v<T>) {
-                sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
+                lapack::sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
             } else {
-                sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
+                lapack::hegvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
             }
             break;
         }
 
         case Eigh_driver::GVX : {
             if constexpr (!is_complex_v<T>) {
-                sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
+                lapack::sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
             } else {
-                sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
+                lapack::hegvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
             }
             break;
         }
@@ -756,63 +756,63 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
         switch (lapack_driver) {
             case Eigh_driver::EV : {
                 if constexpr (!is_complex_v<T>) {
-                    syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, &info);
+                    lapack::syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, &info);
                 } else {
-                    syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, &info);
+                    lapack::heev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, &info);
                 }
                 break;
             }
 
             case Eigh_driver::EVD : {
                 if constexpr (!is_complex_v<T>) {
-                    syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, iwork, liwork, &info);
+                    lapack::syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, iwork, liwork, &info);
                 } else {
-                    syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                    lapack::heevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
                 }
                 break;
             }
 
             case Eigh_driver::EVR : {
                 if constexpr (!is_complex_v<T>) {
-                    syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, iwork, liwork, &info);
+                    lapack::syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, iwork, liwork, &info);
                 } else {
-                    syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                    lapack::heevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, rwork, lrwork, iwork, liwork, &info);
                 }
                 break;
             }
 
             case Eigh_driver::EVX : {
                 if constexpr (!is_complex_v<T>) {
-                    syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
+                    lapack::syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
                 } else {
-                    syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
+                    lapack::heevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
                 }
                 break;
             }
 
             case Eigh_driver::GV : {
                 if constexpr (!is_complex_v<T>) {
-                    sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, &info);
+                    lapack::sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, &info);
                 } else {
-                    sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, &info);
+                    lapack::hegv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, &info);
                 }
                 break;
             }
 
             case Eigh_driver::GVD : {
                 if constexpr (!is_complex_v<T>) {
-                    sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, iwork, liwork, &info);
+                    lapack::sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, iwork, liwork, &info);
                 } else {
-                    sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
+                    lapack::hegvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
                 }
                 break;
             }
 
             case Eigh_driver::GVX : {
                 if constexpr (!is_complex_v<T>) {
-                    sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
+                    lapack::sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
                 } else {
-                    sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
+                    lapack::hegvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
                 }
                 break;
             }

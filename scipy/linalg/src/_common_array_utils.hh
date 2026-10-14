@@ -5,7 +5,6 @@
 
 namespace sp_linalg {
 
-using namespace lapack;
 using wrapper::f32;
 using wrapper::f64;
 using wrapper::c64;
