@@ -33,7 +33,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from functools import wraps, partial
-from typing import Any
 import os.path
 import sys
 import platform
@@ -61,6 +60,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
+from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (
@@ -303,14 +303,14 @@ def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     n = w.shape[0]
     index = [int(i) for i in rng.integers(n, size=n)]
     padded = xp.concat([w, xp.zeros_like(w)])
-    for scale in (1.0, 101.0):
+    for scale in (1, 101):
         arrays_padded = [
             xp.concat([a, _take(xp, a, index, axis) * scale], axis=axis) for a in arrays
         ]
         xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
 
 
-def xp_assert_duplication_weight(fn, *arrays, rest = (), axis = 0, **kwargs: Any):
+def xp_assert_duplication_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to duplication of the input at half weight."""
     xp = array_namespace(*arrays)
     w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
@@ -1552,8 +1552,12 @@ class TestEuclidean:
         x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
         xp_assert_close(euclidean(x, y), np.asarray(math.sqrt(5.0)), atol=1.5e-7)
 
-    def test_weight_invariance(self, xp):
-        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
         xp_assert_ones_weight(euclidean, x, y)
         xp_assert_zero_weight(euclidean, x, y)
         xp_assert_duplication_weight(euclidean, x, y)
