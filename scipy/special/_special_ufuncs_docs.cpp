@@ -4869,6 +4869,10 @@ const char *cosm1_doc = R"(
     -5.0000000000000005e-61
     )";
 
+const char *_sf_error_test_function_doc = R"(
+    Private function; do not use.
+    )";
+
 const char *_sinpi_doc = R"(
     Internal function, do not use.
     )";

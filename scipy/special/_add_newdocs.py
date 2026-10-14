@@ -18,12 +18,6 @@ def add_newdoc(name, doc):
     docdict[name] = doc
 
 
-add_newdoc("_sf_error_test_function",
-    """
-    Private function; do not use.
-    """)
-
-
 add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
