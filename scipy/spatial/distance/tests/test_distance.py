@@ -288,7 +288,7 @@ def xp_assert_scaling_weight(  # skip name check
 ):
     """Test invariance to weight scaling."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis])
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, w=w, **kwargs)
     for scale in (101.0, 0.101):
         xp_assert_close(fn(*arrays, *rest, w=w * scale, **kwargs), expected)
@@ -298,10 +298,10 @@ def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     """Test invariance to additional zero-weighted elements."""
     xp = array_namespace(*arrays)
     w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
-    expected = fn(*arrays, *rest, w=w, **kwargs)
+    expected = fn(*arrays, *rest, **kwargs)
     rng = np.random.default_rng(seed)
     n = w.shape[0]
-    index = [int(i) for i in rng.integers(n, size=n)]
+    index = rng.integers(n, size=n).tolist()
     padded = xp.concat([w, xp.zeros_like(w)])
     for scale in (1, 101):
         arrays_padded = [
