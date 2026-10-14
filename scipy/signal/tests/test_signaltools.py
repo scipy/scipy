@@ -2389,6 +2389,32 @@ def test_lfilter_empty_input(xp):
     assert y_no_zi.shape == (0,)
 
 
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10199")
+@make_xp_test_case(sosfilt)
+def test_sosfilt_empty_input(xp):
+    """Verify that unchanged `zi` is returned for an empty input `x` (gh-26406)"""
+    sos = xp.asarray([[1.0, 0.5, 0.0, 1.0, -0.5, 0.0]])
+    x = xp.asarray([])
+    zi = xp.asarray([[0.25, 0.5]])
+
+    y, zf = sosfilt(sos, x, zi=zi)
+    assert y.shape == (0,)
+    xp_assert_equal(zf, zi)
+
+    y_no_zi = sosfilt(sos, x)
+    assert y_no_zi.shape == (0,)
+
+    # Multi-dimensional empty input
+    x_2d = xp.zeros((2, 0, 3))
+    zi_2d = xp.ones((1, 2, 2, 3))
+    y_2d, zf_2d = sosfilt(sos, x_2d, axis=1, zi=zi_2d)
+    assert y_2d.shape == (2, 0, 3)
+    xp_assert_equal(zf_2d, zi_2d)
+
+    y_2d_no_zi = sosfilt(sos, x_2d, axis=1)
+    assert y_2d_no_zi.shape == (2, 0, 3)
+
+
 @pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
                                 "uint32", "int32",
                                 "uint64", "int64",

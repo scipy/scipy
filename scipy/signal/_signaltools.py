@@ -5245,6 +5245,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)
         return_zi = False
+
+    if x.shape[axis] == 0:
+        x = np.asarray(x, dtype=dtype)
+        if return_zi:
+            return xp.asarray(x, device=device), xp.asarray(zi, device=device)
+        return xp.asarray(x, device=device)
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
     zi = np.moveaxis(zi, (0, axis + 1), (-2, -1))
