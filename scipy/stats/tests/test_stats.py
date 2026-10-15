@@ -14,6 +14,7 @@ from itertools import product
 import hypothesis.extra.numpy as npst
 import hypothesis
 import contextlib
+from fractions import Fraction
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -8576,6 +8577,62 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([1, 2, 100000], [1, 1],
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    @pytest.mark.parametrize("exponent", [53, 60, 300, 1023])
+    def test_small_mass_survives_on_either_tail(self, exponent):
+        p = 2.0**-exponent
+        distance = 2.0**exponent
+        expected = float(Fraction(p) * Fraction(distance) /
+                         (1 + Fraction(p)))
+        for sign in [1, -1]:
+            result = stats.wasserstein_distance(
+                [0., sign * distance], [0.], [1., p], [1.])
+            assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exponent", [53, 60, 300])
+    def test_small_mass_between_common_endpoints(self, exponent):
+        p = 2.0**-exponent
+        distance = 2.0**exponent
+        expected = float(Fraction(p) * Fraction(distance) /
+                         (2 + Fraction(p)))
+        result = stats.wasserstein_distance(
+            [0., distance, 3 * distance],
+            [0., 2 * distance, 3 * distance],
+            [1., p, 1.], [1., p, 1.])
+        assert_equal(result, expected)
+
+    def test_adjacent_weights_near_cdf_rounding_boundary(self):
+        distance = 2.0**53
+        p = 2.0**-53
+        for weight in [np.nextafter(p, 0), p, np.nextafter(p, 1)]:
+            expected = float(Fraction(weight) * Fraction(distance) /
+                             (1 + Fraction(weight)))
+            result = stats.wasserstein_distance(
+                [0., distance], [0.], [1., weight], [1.])
+            assert_equal(result, expected)
+
+    def test_cdf_difference_from_nearly_equal_weights(self):
+        distance = 2.0**60
+        weight = np.nextafter(1., 2.)
+        expected = float(abs(Fraction(1, 2) - Fraction(weight) /
+                             (1 + Fraction(weight))) * Fraction(distance))
+        result = stats.wasserstein_distance(
+            [0., distance], [0., distance],
+            [1., 1.], [weight, 1.])
+        assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exponent", [60, 300])
+    def test_rounded_zero_gap_inside_nonzero_distance(self, exponent):
+        distance = 2.0**exponent
+        weight = np.nextafter(1., 2.)
+        delta = Fraction(weight) - 1
+        expected = float(Fraction(1, 2) +
+                         delta * (Fraction(distance) - 1) /
+                         (2 * (2 + delta)))
+        result = stats.wasserstein_distance(
+            [0., distance], [1., distance],
+            [1., 1.], [1., weight])
+        assert_equal(result, expected)
 
     @pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
     def test_inf_values(self):

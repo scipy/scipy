@@ -30,6 +30,7 @@ import math
 import itertools
 import operator
 import warnings
+from fractions import Fraction
 from collections import namedtuple
 from collections.abc import Sequence
 import os
@@ -10211,22 +10212,67 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if u_weights is None:
         u_cdf = u_cdf_indices / u_values.size
     else:
+        u_sorted_weights = u_weights[u_sorter]
         u_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(u_weights[u_sorter])))
+                                              np.cumsum(u_sorted_weights)))
         u_cdf = u_sorted_cumweights[u_cdf_indices] / u_sorted_cumweights[-1]
 
     if v_weights is None:
         v_cdf = v_cdf_indices / v_values.size
     else:
+        v_sorted_weights = v_weights[v_sorter]
         v_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(v_weights[v_sorter])))
+                                              np.cumsum(v_sorted_weights)))
         v_cdf = v_sorted_cumweights[v_cdf_indices] / v_sorted_cumweights[-1]
 
     # Compute the value of the integral based on the CDFs.
     # If p = 1 or p = 2, we avoid using np.power, which introduces an overhead
     # of about 15%.
     if p == 1:
-        return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
+        cdf_gap = u_cdf - v_cdf
+        result = np.vecdot(np.abs(cdf_gap), deltas)
+        if u_weights is not None or v_weights is not None:
+            if result == 0:
+                if all_values[0] == all_values[-1]:
+                    return result
+                if (u_weights is not None and v_weights is not None and
+                    np.array_equal(u_values[u_sorter], v_values[v_sorter]) and
+                    np.array_equal(u_weights[u_sorter], v_weights[v_sorter])):
+                    return result
+            # Rounded CDFs can discard a small mass or exaggerate a tiny
+            # difference. Allow for O(n * eps) error from the two cumulative
+            # sums and normalizations, only on the weighted path.
+            threshold = 8 * np.finfo(float).eps
+            at_risk = result == 0 or np.any(
+                (cdf_gap != 0) &
+                (np.abs(cdf_gap) <= threshold *
+                 max(len(u_values), len(v_values)))
+            )
+            if not at_risk:
+                # Equal rounded CDFs can hide a real difference even when
+                # another interval makes the overall distance nonzero.
+                zero_gap = (cdf_gap == 0) & (u_cdf > 0) & (u_cdf < 1)
+                if np.any(zero_gap):
+                    same_weights = (
+                        u_weights is not None and v_weights is not None and
+                        np.array_equal(u_sorted_weights, v_sorted_weights)
+                    )
+                    at_risk = not same_weights or np.any(
+                        zero_gap & (u_cdf_indices != v_cdf_indices))
+            if not at_risk:
+                at_risk = any(
+                    np.any((weights > 0) & (cumweights[1:] == cumweights[:-1]))
+                    for weights, cumweights in (
+                        (u_sorted_weights, u_sorted_cumweights)
+                        if u_weights is not None else (None, None),
+                        (v_sorted_weights, v_sorted_cumweights)
+                        if v_weights is not None else (None, None))
+                    if weights is not None
+                )
+            if at_risk and np.all(np.isfinite(all_values)):
+                return _wasserstein_distance_exact(
+                    u_values, v_values, u_weights, v_weights)
+        return result
     if p == 2:
         if np.all(np.isfinite(deltas)):
             # Scale before taking the norm to avoid squaring tiny CDF gaps.
@@ -10234,6 +10280,48 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
         # Preserve existing NaN/inf behavior for non-finite support gaps.
         return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
+
+
+def _wasserstein_distance_exact(u_values, v_values, u_weights, v_weights):
+    """Evaluate an ill-conditioned weighted distance using dyadic integers.
+
+    Inputs have already been validated and converted to binary64. Every weight
+    and support value is therefore an exact rational with power-of-two
+    denominator. Cross-multiplication retains CDF differences smaller than a
+    float ULP; only the final distance is rounded to binary64.
+    """
+    u_weights = np.ones(len(u_values)) if u_weights is None else u_weights
+    v_weights = np.ones(len(v_values)) if v_weights is None else v_weights
+    u_ratios = [weight.as_integer_ratio() for weight in u_weights]
+    v_ratios = [weight.as_integer_ratio() for weight in v_weights]
+    scale = max(denominator for _, denominator in u_ratios + v_ratios)
+    u_mass = [numerator * (scale // denominator)
+              for numerator, denominator in u_ratios]
+    v_mass = [numerator * (scale // denominator)
+              for numerator, denominator in v_ratios]
+    u_total = sum(u_mass)
+    v_total = sum(v_mass)
+    changes = {}
+    for value, mass in zip(u_values, u_mass):
+        changes[value] = changes.get(value, 0) + mass * v_total
+    for value, mass in zip(v_values, v_mass):
+        changes[value] = changes.get(value, 0) - mass * u_total
+    positions = sorted(changes)
+    coordinate_scale = max(value.as_integer_ratio()[1] for value in positions)
+    positions_int = []
+    for value in positions:
+        numerator, denominator = value.as_integer_ratio()
+        positions_int.append(numerator * (coordinate_scale // denominator))
+    imbalance = 0
+    cost = 0
+    for i, left in enumerate(positions[:-1]):
+        imbalance += changes[left]
+        if imbalance:
+            cost += abs(imbalance) * (positions_int[i+1] - positions_int[i])
+    try:
+        return float(Fraction(cost, u_total * v_total * coordinate_scale))
+    except OverflowError:
+        return np.inf
 
 
 def _validate_distribution(values, weights):
