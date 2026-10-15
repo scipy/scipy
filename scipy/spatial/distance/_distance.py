@@ -461,6 +461,7 @@ def minkowski(u, v, p=2, w=None):
     return xp.linalg.vector_norm(u_v, ord=p, axis=-1)
 
 
+@xp_capabilities()
 def euclidean(u, v, w=None):
     """
     Computes the Euclidean distance between two arrays.
