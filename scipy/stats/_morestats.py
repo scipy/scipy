@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, sort, amin, amax, sqrt, array,
                    exp, ravel)
 
 from scipy import optimize, special, interpolate, stats
@@ -20,6 +20,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_jax,
     is_dask,
+    is_torch,
     xp_size,
     xp_promote,
     xp_result_type,
@@ -27,11 +28,12 @@ from scipy._lib._array_api import (
     xp_ravel,
     _count_nonmasked,
     is_lazy_array,
+    xp_interp,
 )
 
 from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
-from ._stats_py import (_get_pvalue, SignificanceResult,
+from ._stats_py import (_get_pvalue, SignificanceResult, _SimpleExponential,
                         _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency  # noqa:F401
 from . import distributions
@@ -2345,8 +2347,13 @@ def _weibull_fit_check(params, x):
     return m, u, s
 
 
-@xp_capabilities(np_only=True)
-def anderson(x, dist='norm', *, method="interpolate"):
+@xp_capabilities(
+    skip_backends=[('dask.array', 'no take_along_axis')],
+    extra_note=("Only `dist='norm'` and `dist='expon'` with `method='interpolate'` "
+                "are implemented for non-NumPy arrays.")
+)
+@_axis_nan_policy_factory(SignificanceResult)
+def anderson(x, dist='norm', *, method="interpolate", axis=0):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2363,18 +2370,20 @@ def anderson(x, dist='norm', *, method="interpolate"):
     dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
-        same distribution.
+        same distribution. Only 'norm' and 'expon' are compatible with batched input
+        (multidimensional `x`).
     method : str or instance of `MonteCarloMethod`
         Defines the method used to compute the p-value.
-        If `method` is ``"interpolated"``, the p-value is interpolated from
-        pre-calculated tables (without extrapolating).
+        If `method` is ``"interpolate"``, the p-value is interpolated from
+        pre-calculated tables (without extrapolating). This is the only method
+        implemented for batched input (multidimensional `x`).
         If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
 
     Returns
     -------
-    result : AndersonResult
+    result : SignificanceResult
         If `method` is provided, this is an object with the following attributes:
 
         statistic : float
@@ -2452,24 +2461,62 @@ def anderson(x, dist='norm', *, method="interpolate"):
 
     if dist not in dists:
         raise ValueError(f"Invalid distribution; dist must be in {dists}.")
-    y = sort(x)
-    xbar = np.mean(x, axis=0)
-    N = len(y)
+
+    if not((method == 'interpolate') or isinstance(method, stats.MonteCarloMethod)):
+        message = ("`method` must be either 'interpolate' "
+                   "or an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+
+    if dist not in {'norm', 'expon'}:
+        prefix = f"`dist='{dist}'` is not implemented for"
+        if not is_numpy(xp):
+            message = f"{prefix} the provided array type."
+            raise NotImplementedError(message)
+        elif x.ndim > 1:
+            message = f"{prefix} batched input."
+            raise NotImplementedError(message)
+
+    if method != 'interpolate':
+        prefix = "The provided `method` is not implemented for"
+        if not is_numpy(xp):
+            message = f"{prefix} the provided array type."
+            raise NotImplementedError(message)
+        elif x.ndim > 1:
+            message = f"{prefix} batched input."
+            raise NotImplementedError(message)
+
+    y = xp.sort(x, axis=-1)
+    y = xp_promote(y, force_floating=True, xp=xp)
+    dtype = y.dtype
+    device = xp_device(y)
+    xbar = xp.mean(y, axis=-1, keepdims=True)
+    N_int = y.shape[-1]
+    N = xp.asarray(N_int, dtype=dtype, device=device)
+
+    if N_int == 0:  # only needed for axis_nan_policy testing
+        NaN = xp.squeeze(xp.full_like(xbar, xp.nan), axis=-1)
+        return SignificanceResult(statistic=NaN, pvalue=NaN)
+
     if dist == 'norm':
-        s = np.std(x, ddof=1, axis=0)
+        s = xp.std(x, correction=1, axis=-1, keepdims=True)
         w = (y - xbar) / s
-        fit_params = xbar, s
-        logcdf = distributions.norm.logcdf(w)
-        logsf = distributions.norm.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_norm / (1.0 + 0.75/N + 2.25/N/N), 3)
+        logcdf = _SimpleNormal().logcdf(w)
+        logsf = _SimpleNormal().logsf(w)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
+        Avals_norm = xp.asarray(_Avals_norm, dtype=dtype, device=device)
+        critical = Avals_norm / (1.0 + 0.75/N + 2.25/N/N)
     elif dist == 'expon':
         w = y / xbar
-        fit_params = 0, xbar
-        logcdf = distributions.expon.logcdf(w)
-        logsf = distributions.expon.logsf(w)
-        sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
+        logcdf = xp.where(w > 0, _SimpleExponential().logcdf(w), -math.inf)
+        logsf = xp.where(w > 0, _SimpleExponential().logsf(w), 0)
+        sig = xp.asarray([15, 10, 5, 2.5, 1], dtype=dtype, device=device)
+        Avals_expon = xp.asarray(_Avals_expon, dtype=dtype, device=device)
+        critical = Avals_expon / (1.0 + 0.6/N)
+
+    # Other distributions are NumPy-only for now
     elif dist == 'logistic':
         def rootfunc(ab, xj, N):
             a, b = ab
@@ -2479,30 +2526,27 @@ def anderson(x, dist='norm', *, method="interpolate"):
                    np.sum(tmp*(1.0-tmp2)/(1+tmp2), axis=0) + N]
             return array(val)
 
-        sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
+        sol0 = array([np.squeeze(xbar, axis=-1), np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
-        fit_params = sol
         logcdf = distributions.logistic.logcdf(w)
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
-        critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
+        critical = _Avals_logistic / (1.0 + 0.25/N)
     elif dist == 'gumbel_r':
         xbar, s = distributions.gumbel_r.fit(x)
         w = (y - xbar) / s
-        fit_params = xbar, s
         logcdf = distributions.gumbel_r.logcdf(w)
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = _Avals_gumbel / (1.0 + 0.2/sqrt(N))
     elif dist == 'gumbel_l':
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
-        fit_params = xbar, s
         logcdf = distributions.gumbel_l.logcdf(w)
         logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
-        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+        critical = _Avals_gumbel / (1.0 + 0.2/sqrt(N))
     elif dist == 'weibull_min':
         message = ("Critical values of the test statistic are given for the "
                    "asymptotic distribution. These may not be accurate for "
@@ -2519,22 +2563,19 @@ def anderson(x, dist='norm', *, method="interpolate"):
         c = 1 / m  # m and c are as used in [7]
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _get_As_weibull(c)
-        # Goodness-of-fit tests should only be used to provide evidence
-        # _against_ the null hypothesis. Be conservative and round up.
-        critical = np.round(critical + 0.0005, decimals=3)
 
-    i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
+    i = xp.arange(1, N_int + 1, device=device, dtype=dtype)
+    A2 = -N - xp.sum((2*i - 1.0) / N * (logcdf + xp.flip(logsf, axis=-1)),
+                     axis=-1, keepdims=False)
 
     if method == 'interpolate':
         sig = 1 - sig if dist == 'weibull_min' else sig / 100
-        pvalue = np.interp(A2, critical, sig)
-    elif isinstance(method, stats.MonteCarloMethod):
-        pvalue = _anderson_simulate_pvalue(x, dist, method)
+        pvalue = xp_interp(xpx.atleast_nd(A2, ndim=1), critical, sig, xp=xp)
+        pvalue = xp.reshape(pvalue, A2.shape)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     else:
-        message = ("`method` must be either 'interpolate' or "
-                   "an instance of `MonteCarloMethod`.")
-        raise ValueError(message)
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+
     return SignificanceResult(statistic=A2, pvalue=pvalue)
 
 
@@ -2579,14 +2620,24 @@ def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
         The A2KN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
     A2kN = 0.
 
-    j = np.arange(1, N)
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        Mij = s.searchsorted(Z[:-1], side='right')
+    # this is something `xpx.searchsorted` should do
+    batch_shape = xp.broadcast_shapes(Z.shape[:-1],
+                                      *(sample.shape[:-1] for sample in samples))
+    Z = xp.broadcast_to(Z, batch_shape + Z.shape[-1:])
+
+    j = xp.arange(1, N, dtype=Z.dtype, device=Z.device)
+    for i in range(0, k):
+        s = xp.sort(samples[i], axis=-1)
+        Z_1 = Z[..., :-1]
+        # without this, "boundary tensor is non-contiguous"
+        s, Z_1 = (s.contiguous(), Z_1.contiguous()) if is_torch(xp) else (s, Z_1)
+        Mij = xpx.searchsorted(s, Z_1, side='right')  # requires axis=-1
+        Mij = xp.astype(Mij, Z.dtype)
         inner = (N*Mij - j*n[i])**2 / (j * (N - j))
-        A2kN += inner.sum() / n[i]
+        A2kN += xp.sum(inner, axis=-1) / n[i]
     return A2kN / N
 
 
@@ -2614,21 +2665,26 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
         The A2aKN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
     A2akN = 0.
-    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    Z_ssorted_left = xp.astype(xp.searchsorted(Z, Zstar, side='left'), Z.dtype)
     if N == Zstar.size:
         lj = 1.
     else:
-        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
+        Z_ssorted_right = xp.astype(xp.searchsorted(Z, Zstar, side='right'), Z.dtype)
+        lj = Z_ssorted_right - Z_ssorted_left
+    # probably should work with integers until the end
+    # but I'm just going to translate what's here.
     Bj = Z_ssorted_left + lj / 2.
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        s_ssorted_right = s.searchsorted(Zstar, side='right')
-        Mij = s_ssorted_right.astype(float)
-        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
+    for i in range(0, k):
+        s = xp.sort(samples[i])
+        s_ssorted_right = xp.astype(xp.searchsorted(s, Zstar, side='right'), Z.dtype)
+        s_ssorted_left =  xp.astype(xp.searchsorted(s, Zstar, side='left'), Z.dtype)
+        Mij = s_ssorted_right
+        fij = s_ssorted_right - s_ssorted_left
         Mij -= fij / 2.
         inner = lj / float(N) * (N*Mij - Bj*n[i])**2 / (Bj*(N - Bj) - N*lj/4.)
-        A2akN += inner.sum() / n[i]
+        A2akN += xp.sum(inner) / n[i]
     A2akN *= (N - 1.) / N
     return A2akN
 
@@ -2657,26 +2713,26 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
         The A2KN statistics of Scholz and Stephens 1987.
 
     """
+    xp = array_namespace(*samples)
+
     A2kN = 0.
-    lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
-                                                              'left')
-    Bj = lj.cumsum()
-    for i in arange(0, k):
-        s = np.sort(samples[i])
-        Mij = s.searchsorted(Zstar[:-1], side='right')
+    lj = xp.astype(xp.searchsorted(Z, Zstar[:-1], side='right')
+                   - xp.searchsorted(Z, Zstar[:-1], side='left'), Z.dtype)
+    Bj = xp.cumulative_sum(lj, axis=-1)
+    for i in range(0, k):
+        s = xp.sort(samples[i])
+        Mij = xp.astype(xp.searchsorted(s, Zstar[:-1], side='right'), Z.dtype)
         inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
-        A2kN += inner.sum() / n[i]
+        A2kN += xp.sum(inner) / n[i]
     return A2kN
 
 
-Anderson_ksampResult = _make_tuple_bunch(
-    'Anderson_ksampResult',
-    ['statistic', 'critical_values', 'pvalue'], []
-)
-
-
-@xp_capabilities(np_only=True)
-def anderson_ksamp(samples, *, variant="midrank", method=None):
+@xp_capabilities(
+    skip_backends=[('jax.numpy', 'no attempt'), ('dask.array', 'no attempt')],
+    extra_note=("For non-NumPy arrays, only ``variant='continuous'`` is compatible "
+                "with batch input and permutation `method`."))
+def anderson_ksamp(samples, *, variant="midrank", method=None,
+                   axis=0, nan_policy='propagate', keepdims=False):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2702,10 +2758,30 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
         `scipy.stats.permutation_test` with the provided configuration options
         and other appropriate settings. Otherwise, the p-value is interpolated
         from tabulated values (without extrapolating).
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'}
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
-    res : Anderson_ksampResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
@@ -2788,20 +2864,36 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
     """
     k = len(samples)
     if (k < 2):
-        raise ValueError("anderson_ksamp needs at least two samples")
+        raise ValueError("`anderson_ksamp` needs at least two samples.")
 
-    samples = list(map(np.asarray, samples))
-    Z = np.sort(np.hstack(samples))
-    N = Z.size
-    Zstar = np.unique(Z)
-    if Zstar.size < 2:
-        raise ValueError("anderson_ksamp needs more than one distinct "
-                         "observation")
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    override = {} if variant == 'continuous' else dict(vectorization=True)
+    anp = _axis_nan_policy_factory(SignificanceResult, n_samples=None,
+                                   override=override)
+    return anp(_anderson_ksamp)(*samples, variant=variant, method=method,
+                                axis=axis, nan_policy=nan_policy, keepdims=keepdims,
+                                k=k, xp=xp)
 
-    n = np.array([sample.size for sample in samples])
-    if np.any(n == 0):
-        raise ValueError("anderson_ksamp encountered sample without "
-                         "observations")
+
+def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp=None):
+    xp = array_namespace(*samples) if xp is None else xp
+
+    Z = xp.sort(xp.concat(samples, axis=-1), axis=-1)
+    dtype_device = dict(dtype=Z.dtype, device=xp_device(Z))
+
+    N = Z.shape[-1]
+
+    Zstar = None   # midrank/right will always be one-dimensional
+    if Z.ndim == 1:
+        Zstar = xp.unique_values(Z)
+        if xp_size(Zstar) < 2:
+            message = "`anderson_ksamp` needs more than one distinct observation."
+            raise ValueError(message)
+
+    n = xp.asarray([sample.shape[-1] for sample in samples], **dtype_device)
+    if xp.any(n == 0):
+        raise ValueError("`anderson_ksamp` encountered a sample without observations.")
 
     if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
@@ -2815,56 +2907,59 @@ def anderson_ksamp(samples, *, variant="midrank", method=None):
 
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    def statistic(*samples):
+    def statistic(*samples, axis=-1):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    if method is not None:
-        res = stats.permutation_test(samples, statistic, **method._asdict(),
-                                     alternative='greater')
+    if isinstance(method, stats.PermutationMethod):
+        vectorized = (variant == 'continuous')
+        res = stats.permutation_test(samples, statistic, **method._asdict(), axis=-1,
+                                     alternative='greater', vectorized=vectorized)
+    elif method is not None:
+        message = "`method` must be `None` or an instance of `PermutationMethod`."
+        raise ValueError(message)
 
-    H = (1. / n).sum()
-    hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
+    # for non-masked arrays, all these calculations are independent of batch size
+    H = xp.sum(1. / n)
+    hs_cs = xp.cumulative_sum(1. / xp.arange(N - 1, 1, -1, **dtype_device))
     h = hs_cs[-1] + 1
-    g = (hs_cs / arange(2, N)).sum()
-
+    g = xp.sum(hs_cs / xp.arange(2, N, **dtype_device))
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
     b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
     c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
     d = (2*h + 6)*k**2 - 4*h*k
     sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
     m = k - 1
-    A2 = (A2kN - m) / math.sqrt(sigmasq)
+
+    # A2 is the (scalar) statistic; it has the shape of the batch
+    A2 = (A2kN - m) / sigmasq**0.5
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
-    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085])
-    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615])
-    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396, -0.345, -0.154])
-    critical = b0 + b1 / math.sqrt(m) + b2 / m
+    b0 = xp.asarray([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085], **dtype_device)
+    b1 = xp.asarray([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615], **dtype_device)
+    b2 = xp.asarray([0.105, 0.305, 0.362, 0.391, 0.396, 0.345, 0.154], **dtype_device)
+    critical = b0 + b1 / math.sqrt(m) - b2 / m
 
-    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
+    sig = xp.asarray([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001], **dtype_device)
 
-    if A2 < critical.min() and method is None:
-        p = sig.max()
-        msg = (f"p-value capped: true value larger than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    if xp.any(A2 < xp.min(critical)) and method is None:
+        msg = (f"p-value capped: true value larger than {sig[0]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif A2 > critical.max() and method is None:
-        p = sig.min()
-        msg = (f"p-value floored: true value smaller than {p}. Consider "
-               "specifying `method` "
-               "(e.g. `method=stats.PermutationMethod()`.)")
+    elif xp.any(A2 > xp.max(critical)) and method is None:
+        msg = (f"p-value floored: true value smaller than {sig[-1]}. Consider "
+               "specifying `method` (e.g. `method=stats.PermutationMethod()`.)")
         warnings.warn(msg, stacklevel=2)
-    elif method is None:
+
+    if method is None:
         # interpolation of probit of significance level
-        pf = np.polyfit(critical, log(sig), 2)
-        p = math.exp(np.polyval(pf, A2))
+        p = xp.exp(xp_interp(A2, critical, xp.log(sig)))
     else:
         p = res.pvalue if method is not None else p
 
+    A2 = A2[()] if A2.ndim == 0 else A2
+    p = p[()] if p.ndim == 0 else p
     return SignificanceResult(statistic=A2, pvalue=p)
-
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -2967,7 +3062,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
           against the normal distribution, correcting for ties.
         * ``'exact'``: computes the exact *p*-value by comparing the observed
           statistic against the exact distribution of the statistic under the
-          null hypothesis. No correction is made for ties.
+          null hypothesis, accounting for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of both
           samples is less than or equal to 55 and there are no ties;
           chooses ``'asymptotic'`` otherwise.

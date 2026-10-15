@@ -1,6 +1,6 @@
 #include <xsf/numpy.h>
-#include <xsf/bessel.h>
-#include <xsf/sph_harm.h>
+#include <xsf/cpu/bessel.h>
+#include <xsf/cpu/sph_harm.h>
 #include <xsf/stats.h>
 
 #include "mdspan_helpers.h"
