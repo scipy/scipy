@@ -1084,30 +1084,38 @@ class ShortTimeFFT:
 
     def _x_slices(self, x: np.ndarray, k_off: int, p0: int, p1: int,
                   padding: PAD_TYPE) -> Generator[np.ndarray, None, None]:
-        """Generate signal slices along last axis of `x`.
+        """Generate signal slices along last axis of `x` with appropriate padding.
 
         This method is only used by `stft_detrend`. The parameters are
         described in `~ShortTimeFFT.stft`.
         """
         if padding not in (padding_types := get_args(PAD_TYPE)):
             raise ValueError(f"Parameter {padding=} not in {padding_types}!")
-        pad_kws: dict[str, dict] = {  # possible keywords to pass to np.pad:
-            'zeros': dict(mode='constant', constant_values=(0, 0)),
-            'edge': dict(mode='edge'),
-            'even': dict(mode='reflect', reflect_type='even'),
-            'odd': dict(mode='reflect', reflect_type='odd'),
-        }  # typing of pad_kws is needed to make pyrefly happy
+        kw_pad: dict = { # possible keywords to pass to np.pad:
+                         'zeros': dict(mode='constant', constant_values=(0, 0)),
+                         'edge': dict(mode='edge'),
+                         'even': dict(mode='reflect', reflect_type='even'),
+                         'odd': dict(mode='reflect', reflect_type='odd'),
+                  }[padding]  # type specifier `dict` makes pyrefly happy.
+        pad_z = [(0, 0)] * (x.ndim - 1)  # leading dimensions for pad_width parameter.
 
-        n, n1 = x.shape[-1], (p1 - p0) * self.hop
-        k0 = p0 * self.hop - self.m_num_mid + k_off  # start sample
-        k1 = k0 + n1 + self.m_num  # end sample
+        n = x.shape[-1]  # number of samples in signal
+        k0 = p0 * self.hop - self.m_num_mid + k_off  # start index of x
+        k1 = k0 + (p1-p0-1) * self.hop + self.m_num  # stop index of x
+        pad0, pad1 = -min(0, k0), max(0, k1 - n)  # left/right padding amount
 
-        i0, i1 = max(k0, 0), min(k1, n)  # indexes to shorten x
-        # dimensions for padding x:
-        pad_width = [(0, 0)] * (x.ndim-1) + [(-min(k0, 0), max(k1 - n, 0))]
+        if pad0 > 0 and pad1 > 0:  # both left and right padding needed:
+            x1 = np.pad(x, pad_z + [(pad0, pad1)], **kw_pad)
+        elif pad0 > 0:  # only left padding needed:
+            x1 = np.pad(x[..., :max(pad0 + 1, k1)], pad_z + [(pad0, 0)], **kw_pad)
+            x1 = x1[..., :pad0+k1]
+        elif pad1 > 0:  # only right padding needed:
+            x1 = np.pad(x[..., -max(n - k0, pad1 + 1):], pad_z + [(0, pad1)], **kw_pad)
+            x1 = x1[..., k0:]
+        else:  # no padding needed:
+            x1 = x[..., k0:k1]
 
-        x1 = np.pad(x[..., i0:i1], pad_width, **pad_kws[padding])
-        for k_ in range(0, n1, self.hop):
+        for k_ in range(0, x1.shape[-1] - self.m_num + 1, self.hop):
             yield x1[..., k_:k_ + self.m_num]
 
     def stft(self, x: np.ndarray, p0: int | None = None,
