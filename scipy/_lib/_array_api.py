@@ -490,7 +490,7 @@ def xp_result_type(*args, force_floating=False, xp):
         return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 
-def xp_promote(*args, broadcast=False, force_floating=False, xp):
+def xp_promote(*args, broadcast=False, force_floating=False, order=None, xp):
     """
     Promotes elements of *args to result dtype, ignoring `None`s.
     Includes options for forcing promotion to floating point and
@@ -521,13 +521,13 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
     # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
-    args = [(_asarray(arg, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, subok=True, xp=xp, device=d, order=order)
              if is_torch_array(arg) or np.iterable(arg)
              else arg) for arg, d in zip(args, devices)]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d, order=order)
              if arg is not None else arg)
             for arg, d in zip(args, devices)]
 
