@@ -94,6 +94,47 @@ class TestLogSumExp:
         b = xp.asarray([1., -1.], dtype=dtype)
         xp_assert_equal(logsumexp(a, b=b), xp.asarray(xp.nan, dtype=dtype))
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_cancelled_terms_second_level(self, xp, dtype):
+        # gh-26340: the next-largest terms cancel too; the third level remains.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([1000., 1000., 999., 999., 998.], dtype=dtype)
+        b = xp.asarray([1., -1., 1., -1., 1.], dtype=dtype)
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_close(result, xp.asarray(998., dtype=dtype))
+        xp_assert_equal(sign, xp.asarray(1., dtype=dtype))
+
+    @pytest.mark.parametrize('a, dtype, expected', [
+        ([0., 0., -740.], 'float64', -740.),
+        ([100., 100., 0.], 'float32', 0.),
+    ])
+    def test_cancelled_leading_terms_subnormal_remainder(self, xp, a, dtype,
+                                                         expected):
+        # gh-26340: shifted by the cancelled max, the remaining term would be
+        # subnormal and lose precision (float64) or vanish (float32).
+        dtype = getattr(xp, dtype)
+        a = xp.asarray(a, dtype=dtype)
+        b = xp.asarray([1., -1., 1.], dtype=dtype)
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(expected, dtype=dtype))
+
+    def test_cancelled_leading_terms_nan_with_zero_weight(self, xp):
+        # A NaN with zero weight is ignored; the cancelling terms must not
+        # hide the remaining one.
+        a = xp.asarray([xp.nan, 2., 2., 1.])
+        b = xp.asarray([0., 1., -1., 1.])
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_close(result, xp.asarray(1.))
+        xp_assert_equal(sign, xp.asarray(1.))
+
+    @pytest.mark.xfail(reason="all terms cancel across two levels; "
+                              "out of scope for gh-26340")
+    def test_all_terms_cancel_two_levels(self, xp):
+        a = xp.asarray([1000., 1000., 999., 999.])
+        b = xp.asarray([1., -1., 1., -1.])
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_equal(result, xp.asarray(-xp.inf))
+        xp_assert_equal(sign, xp.asarray(0.))
+
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
