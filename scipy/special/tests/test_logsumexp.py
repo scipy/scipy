@@ -61,6 +61,39 @@ class TestLogSumExp:
         xp_assert_equal(a, a_before)
         xp_assert_equal(b, b_before)
 
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    @pytest.mark.parametrize('weight', [1., -1.])
+    def test_cancelled_leading_terms_small_remainder(self, xp, dtype, weight):
+        # gh-26340: the remaining terms are far below the cancelled max, so they
+        # underflow if shifted by it.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1000., 1000., 0.], [1., 1., -800.], [1., 1., -120.]],
+                       dtype=dtype)
+        b = xp.asarray([1., -1., weight], dtype=dtype)
+        expected = xp.asarray([0., -800., -120.], dtype=dtype)
+        result, sign = logsumexp(a, b=b, axis=-1, return_sign=True)
+        xp_assert_close(result, expected)
+        xp_assert_equal(sign, xp.full_like(expected, weight))
+        if weight > 0:
+            xp_assert_close(logsumexp(a, b=b, axis=-1), expected)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_all_terms_cancel(self, xp, dtype):
+        # gh-26340: the sum is exactly zero, even when `exp(a)` overflows.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1000., 1000.], [1., 1.]], dtype=dtype)
+        b = xp.asarray([1., -1.], dtype=dtype)
+        expected = xp.full((2,), -xp.inf, dtype=dtype)
+        result, sign = logsumexp(a, b=b, axis=-1, return_sign=True)
+        xp_assert_equal(result, expected)
+        xp_assert_equal(sign, xp.zeros_like(expected))
+        xp_assert_equal(logsumexp(a, b=b, axis=-1), expected)
+
+        # Infinite terms that cancel are still NaN
+        a = xp.asarray([xp.inf, xp.inf], dtype=dtype)
+        b = xp.asarray([1., -1.], dtype=dtype)
+        xp_assert_equal(logsumexp(a, b=b), xp.asarray(xp.nan, dtype=dtype))
+
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])

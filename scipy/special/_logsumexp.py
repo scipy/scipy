@@ -125,12 +125,15 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             out_inf = xp.log(sum_)
 
         with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
-            out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
+            out, sgn, zero = _logsumexp(a, b, axis=axis, return_sign=return_sign,
+                                        xp=xp)
 
         # Replace infinite results. This probably could be done with an
         # `apply_where`-like strategy to avoid redundant calculation, but currently
-        # `apply_where` itself is only for elementwise functions.
-        out_finite = xp.isfinite(out)
+        # `apply_where` itself is only for elementwise functions. Keep results
+        # where the terms cancel exactly; the direct calculation can give
+        # `inf - inf = nan` there.
+        out_finite = xp.isfinite(out) | zero
         out = xp.where(out_finite, out, out_inf)
         sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
     else:
@@ -217,6 +220,22 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     b_i_max = i_max_dt if b is None else b * i_max_dt
     m = xp.sum(b_i_max, axis=axis, keepdims=True, dtype=a.dtype)
 
+    # gh-26340: if the largest terms cancel exactly, the sum is determined by the
+    # remaining terms, which may underflow when shifted by `a_max`. Re-take the
+    # max over the remaining terms. If nothing remains, the sum is exactly zero.
+    zero = xp.zeros_like(m, dtype=xp.bool)
+    if b is not None:
+        cancelled = (m == 0) & xp.isfinite(a_max)
+        a_max2, i_max2 = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
+        zero = cancelled & ~xp.isfinite(a_max2)
+        cancelled = cancelled & ~zero
+        i_max2 = i_max2 & cancelled
+        a = xp.where(i_max2, -xp.inf, a)
+        a_max = xp.where(cancelled, a_max2, a_max)
+        m2 = xp.sum(b * xp.astype(i_max2, a.dtype), axis=axis, keepdims=True,
+                    dtype=a.dtype)
+        m = xp.where(cancelled, m2, m)
+
     # Shift, exponentiate, scale, and sum
     exp = b * xp.exp(a - a_max) if b is not None else xp.exp(a - a_max)
     s = xp.sum(exp, axis=axis, keepdims=True, dtype=exp.dtype)
@@ -250,7 +269,9 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     elif xp.isdtype(out.dtype, 'real floating'):
         out = xpx.at(out)[sgn < 0].set(xp.nan)
 
-    return out, sgn
+    out = xp.where(zero, -xp.inf, out)
+    sgn = xp.where(zero, 0., sgn)
+    return out, sgn, zero
 
 
 @xp_capabilities()
