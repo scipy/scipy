@@ -65,7 +65,7 @@ def _promote(*args, xp, order=None):
     if is_numpy(xp):
         args = args + (np.asarray(1.0, dtype=np.float64),)
         res = xp_promote(*args, force_floating=True,
-                         broadcast=True, xp=xp, order=None)[:-1]
+                         broadcast=True, xp=xp, order=order)[:-1]
         if len(res) == 1:
             return res[0]
         return res
