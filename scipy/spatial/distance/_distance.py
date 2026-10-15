@@ -54,7 +54,7 @@ def _copy_array_if_base_present(a):
     return a
 
 
-def _promote(*args, xp):
+def _promote(*args, xp, order=None):
     """Promote array to float64 for numpy, else according to the Array API spec.
 
     The return array dtype follows the following rules:
@@ -65,7 +65,7 @@ def _promote(*args, xp):
     if is_numpy(xp):
         args = args + (np.asarray(1.0, dtype=np.float64),)
         res = xp_promote(*args, force_floating=True,
-                         broadcast=True, xp=xp, order='C')[:-1]
+                         broadcast=True, xp=xp, order=None)[:-1]
         if len(res) == 1:
             return res[0]
         return res
@@ -448,7 +448,7 @@ def minkowski(u, v, p=2, w=None):
 
     """
     xp = array_namespace(u, v, w)
-    u, v, w = _promote(u, v, w, xp=xp)
+    u, v, w = _promote(u, v, w, xp=xp, order='C')
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
@@ -539,7 +539,8 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np,
+                         order='C')
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
