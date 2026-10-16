@@ -1,14 +1,15 @@
 project(
   'scipy',
-  'c', 'cpp', 'cython',
+  'c', 'cpp', 'cython', 'rust',
   version: run_command(['tools/building/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3',
-  meson_version: '>= 1.5.0',
+  meson_version: '>= 1.12.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
     'c_std=c17',
     'cpp_std=c++17',
+    'rust_std=2024',
     'blas=openblas',
     'lapack=openblas'
   ],

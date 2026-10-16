@@ -4,16 +4,16 @@ py3.install_sources([
   subdir: 'scipy/stats/_levy_stable'
 )
 
-_levyst = static_library('_levyst',
-  ['c_src/levyst.c', 'c_src/levyst.h'],
-  gnu_symbol_visibility: 'hidden',
-)
+rustmod = import('rust')
+
+cargo_ws = rustmod.workspace()
+pkg = cargo_ws.package()
 
 py3.extension_module('levyst',
-  cython_gen.process('levyst.pyx'),
-  dependencies: np_dep,
-  link_args: version_link_args,
-  link_with: _levyst,
+  'src/levyst.rs',
+  rust_dependency_map : pkg.rust_dependency_map(),
+  rust_args: pkg.rust_args(),
+  dependencies : pkg.dependencies(),
   install: true,
-  subdir: 'scipy/stats/_levy_stable'
+  subdir: 'scipy/stats/_levy_stable',
 )

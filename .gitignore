@@ -145,7 +145,7 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
-.github/workflows/.pixi
+.pixi
 .openblas
 scipy-openblas.pc
 scipy/_distributor_init_local.py
@@ -285,3 +285,6 @@ scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
+
+subprojects/*
+target/
