@@ -211,8 +211,7 @@ the :math:`x`-coordinates come from the knots [Floater]_, [deBoor]_.
 **Spline functions.** For a function, :math:`y = f(x)`, the coefficients are
 scalars, and they only give the :math:`y`-coordinates of the control points.
 The matching :math:`x`-coordinates are the so-called *Greville abscissae*
-[Floater]_, [deBoor]_, which are averages of ``k``
-consecutive knots,
+(also called *knot averages*), which are averages of ``k`` consecutive knots,
 
 .. math::
 
@@ -220,6 +219,12 @@ consecutive knots,
     \qquad j = 0, 1, \dots, n-1 ,
 
 where ``n = len(t) - k - 1`` is the number of coefficients.
+This is the definition of the control polygon of a spline function in [Floater]_,
+Sec. 3.8.1, p. 42, where they are denoted by :math:`t_i^*` (the formula directly
+follows Eq. (3.20)).
+The reason for this choice is that the points :math:`\xi_j` are
+the coefficients of the linear function, :math:`x = \sum_j \xi_j B_{j,k}(x)`;
+this is Eq. (4.7) in [Floater]_, Sec. 4.2.1, p. 52, with :math:`r = 1`.
 
 .. plot::
 
