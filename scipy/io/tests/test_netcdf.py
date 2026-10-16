@@ -1,4 +1,5 @@
 ''' Tests for netcdf '''
+import gc
 import os
 from os.path import join as pjoin, dirname
 import shutil
@@ -15,6 +16,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
+from scipy.io import _netcdf
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -560,3 +562,48 @@ def test_read_withMaskAndScaleFalse():
         vardata = f.variables['var3_fillvalAndMissingValue'][:]
         assert_mask_matches(vardata, [False, False, False])
         assert_equal(vardata, [1, 2, 3])
+
+
+def test_failed_open_append_does_not_modify_file():
+    # Opening a file that is not NetCDF 3 in append mode should raise without
+    # writing a NetCDF header into the file.
+    contents = b'This is not a NetCDF 3 file.\n' * 4
+    with in_tempdir():
+        filename = 'not_netcdf.nc'
+        with open(filename, 'wb') as f:
+            f.write(contents)
+
+        with pytest.raises(TypeError, match='not a valid NetCDF 3 file'):
+            netcdf_file(filename, 'a')
+        gc.collect()
+
+        with open(filename, 'rb') as f:
+            assert f.read() == contents
+
+
+@pytest.mark.parametrize('mmap', [False, True])
+def test_failed_open_closes_file(mmap, monkeypatch):
+    # The file opened by netcdf_file should be closed as soon as reading it
+    # fails, not when the half-initialized object is garbage collected.
+    opened = []
+
+    def tracking_open(*args, **kwargs):
+        fp = open(*args, **kwargs)
+        opened.append(fp)
+        return fp
+
+    monkeypatch.setattr(_netcdf, 'open', tracking_open, raising=False)
+    with in_tempdir():
+        filename = 'not_netcdf.nc'
+        with open(filename, 'wb') as f:
+            f.write(b'This is not a NetCDF 3 file.\n')
+
+        with pytest.raises(TypeError, match='not a valid NetCDF 3 file') as excinfo:
+            netcdf_file(filename, 'r', mmap=mmap)
+
+        assert len(opened) == 1
+        assert opened[0].closed
+        # excinfo holds the traceback, which references the half-initialized
+        # object. Keep it alive until after the check above, so that the test
+        # does not pass just because the object was garbage collected.
+        del excinfo
