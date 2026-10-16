@@ -1431,11 +1431,11 @@ def russellrao(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
