@@ -86,6 +86,7 @@ import warnings
 
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
+from scipy._lib._array_api import xp_capabilities
 
 from scipy.linalg.blas import HAS_ILP64
 
@@ -100,6 +101,7 @@ _iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 # ------------------------------------------------------------------------------
 
 
+@xp_capabilities(out_of_scope=True)
 class ode:
     """
     A generic interface class to numeric integrators.
@@ -416,15 +418,9 @@ class ode:
         else:
             mth = self._integrator.run
 
-        try:
-            self._y, self.t = mth(self.f, self.jac or (lambda: None),
-                                  self._y, self.t, t,
-                                  self.f_params, self.jac_params)
-        except SystemError as e:
-            # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError(
-                'Function to integrate must not return a tuple.'
-            ) from e
+        self._y, self.t = mth(self.f, self.jac or (lambda: None),
+                              self._y, self.t, t,
+                              self.f_params, self.jac_params)
 
         return self._y
 
@@ -579,6 +575,7 @@ def _transform_banded_jac(bjac):
     return newjac
 
 
+@xp_capabilities(out_of_scope=True)
 class complex_ode(ode):
     """
     A wrapper of ode for complex systems.

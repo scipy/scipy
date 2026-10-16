@@ -1,5 +1,6 @@
 from types import GenericAlias
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 
 
 def check_arguments(fun, y0, support_complex):
@@ -26,6 +27,7 @@ def check_arguments(fun, y0, support_complex):
     return fun_wrapped, y0
 
 
+@xp_capabilities(np_only=True)
 class OdeSolver:
     """Base class for ODE solvers.
 
@@ -234,6 +236,7 @@ class OdeSolver:
         raise NotImplementedError
 
 
+@xp_capabilities(np_only=True)
 class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 

@@ -173,10 +173,10 @@ double xsf_gamma(double x);
 double xsf_gammasgn(double x);
 double xsf_gammaln(double x);
 
-int xsf_sici(double x, double *si, double *ci);
-int xsf_shichi(double x, double *shi, double *chi);
-int xsf_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
-int xsf_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
+void xsf_sici(double x, double *si, double *ci);
+void xsf_shichi(double x, double *shi, double *chi);
+void xsf_csici(npy_cdouble z, npy_cdouble *si, npy_cdouble *ci);
+void xsf_cshichi(npy_cdouble z, npy_cdouble *shi, npy_cdouble *chi);
 
 double xsf_hyp2f1(double a, double b, double c, double x);
 npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble z);
@@ -223,6 +223,23 @@ npy_cdouble xsf_cspence(npy_cdouble z);
 double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
+
+// Orthogonal Polynomial
+
+double xsf_eval_genlaguerre(double n, double alpha, double x);
+npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x);
+double xsf_eval_genlaguerre_l(npy_intp n, double alpha, double x);
+double xsf_eval_hermite(npy_intp n, double x);
+double xsf_eval_hermitenorm(npy_intp n, double x);
+double xsf_eval_jacobi(double n, double alpha, double beta, double x);
+npy_cdouble xsf_ceval_jacobi(double n, double alpha, double beta, npy_cdouble x);
+double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x);
+double xsf_eval_laguerre(double n, double x);
+npy_cdouble xsf_ceval_laguerre(double n, npy_cdouble x);
+double xsf_eval_laguerre_l(npy_intp n, double x);
+double xsf_eval_sh_jacobi(double n, double p, double q, double x);
+npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x);
+double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x);
 
 double special_mathieu_a(double m, double q);
 double special_mathieu_b(double m, double q);
