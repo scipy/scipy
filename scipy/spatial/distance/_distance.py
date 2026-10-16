@@ -122,10 +122,10 @@ def _nbool_correspond_all(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
         not_v = ~v
-        nff = (not_u & not_v).sum()
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
-        ntt = (u & v).sum()
+        nff = (not_u & not_v).sum(axis=-1)
+        nft = (not_u & v).sum(axis=-1)
+        ntf = (u & not_v).sum(axis=-1)
+        ntt = (u & v).sum(axis=-1)
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
@@ -135,10 +135,10 @@ def _nbool_correspond_all(u, v, w=None):
         if w is not None:
             not_u = w * not_u
             u = w * u
-        nff = (not_u * not_v).sum()
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
-        ntt = (u * v).sum()
+        nff = (not_u * not_v).sum(axis=-1)
+        nft = (not_u * v).sum(axis=-1)
+        ntf = (u * not_v).sum(axis=-1)
+        ntt = (u * v).sum(axis=-1)
     return (nff, nft, ntf, ntt)
 
 
@@ -1380,11 +1380,11 @@ def rogerstanimoto(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1405,12 +1405,11 @@ def rogerstanimoto(u, v, w=None):
     -1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
+    return (2.0 * (ntf + nft))/(ntt + nff + (2.0 * (ntf + nft)))
 
 
 def russellrao(u, v, w=None):
