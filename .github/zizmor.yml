@@ -12,3 +12,7 @@ rules:
     ignore:
       # We need to use CMD for intel oneAPI batch scripts
       - windows_intel_oneAPI.yml
+  self-repository:
+    # The `$/` self-repository syntax is not yet understood by actionlint,
+    # so keep using `./` for local actions and reusable workflows.
+    disable: true
