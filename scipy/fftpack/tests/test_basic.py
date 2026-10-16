@@ -5,6 +5,7 @@ from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 from scipy.fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
+from scipy.fftpack import convolve
 
 from numpy import (arange, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)
@@ -875,3 +876,11 @@ def test_shape_axes_ndarray(func):
     expect = func(a, shape=(4, 7), axes=(1, 0))
     actual = func(a, shape=np.array([4, 7]), axes=np.array([1, 0]))
     assert_equal(expect, actual)
+
+
+def test_gh_25849():
+    actual = convolve.convolve_z(np.zeros(0), np.zeros(0), np.zeros(0))
+    assert_equal(actual, np.asarray([]))
+
+    actual = convolve.convolve(np.zeros(0), np.zeros(0), swap_real_imag=True)
+    assert_equal(actual, np.asarray([]))
