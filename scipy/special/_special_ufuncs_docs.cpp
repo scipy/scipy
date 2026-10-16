@@ -5757,7 +5757,7 @@ const char *berp_doc = R"(
 
     )";
 
-const char *bdtrin_doc = R"(
+const char *bdtrin_doc = R"doc(
     bdtrin(k, y, p, out=None)
 
     Inverse function to `bdtr` with respect to `n`.
@@ -5798,25 +5798,28 @@ const char *bdtrin_doc = R"(
 
     Examples
     --------
-    How often do we have to flip a fair coin to have at least a 90% chance
-    of getting 10 heads? `bdtrin` answers this question:
+    What is the largest number of times we can flip a fair coin and still
+    have at least a 90% chance of getting 10 or fewer heads? `bdtrin`
+    answers this question:
 
     >>> import scipy.special as sc
-    >>> k = 10  # number of times we want heads
+    >>> k = 10  # maximum number of heads
     >>> p = 0.5  # probability of flipping heads
     >>> y = 0.9  # cumulative probability
     >>> result = sc.bdtrin(k, y, p)
     >>> result
-    15.90442928275109
+    np.float64(15.90442928275109)
 
     To verify, compute the cumulative probability of getting 10 or fewer
-    successes in 16 trials with probability 0.5 using the binomial
-    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
-    number of trials, we round up to the next integer:
+    successes in 15 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since the cumulative probability
+    decreases as the number of trials increases, we round down to the
+    nearest integer:
 
     >>> from scipy.stats import Binomial
-    >>> Binomial(n=16, p=p).cdf(k)
-    0.8949432373046875)";
+    >>> Binomial(n=15, p=p).cdf(k)
+    np.float64(0.940765380859375)
+    )doc";
 
 const char *bdtrik_doc = R"doc(
     bdtrik(y, n, p, out=None)
