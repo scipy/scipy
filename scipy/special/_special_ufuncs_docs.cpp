@@ -4952,13 +4952,13 @@ const char *shichi_doc = R"(
 
     .. math::
 
-      \int_0^x \frac{\sinh{t}}{t}dt
+      \operatorname{Shi}(x) = \int_0^x \frac{\sinh{t}}{t} dt
 
     and the hyperbolic cosine integral is
 
     .. math::
 
-      \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
+      \operatorname{Chi}(x) = \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
     principal branch of the logarithm [1]_ (see also [2]_).
@@ -4969,14 +4969,14 @@ const char *shichi_doc = R"(
         Real or complex points at which to compute the hyperbolic sine
         and cosine integrals.
     out : tuple of ndarray, optional
-        Optional output arrays for the function results
+        Optional output arrays for the function results.
 
     Returns
     -------
-    si : scalar or ndarray
-        Hyperbolic sine integral at ``x``
-    ci : scalar or ndarray
-        Hyperbolic cosine integral at ``x``
+    shi : scalar or ndarray
+        Hyperbolic sine integral at ``x``.
+    chi : scalar or ndarray
+        Hyperbolic cosine integral at ``x``.
 
     See Also
     --------
@@ -4987,12 +4987,12 @@ const char *shichi_doc = R"(
     Notes
     -----
     For real arguments with ``x < 0``, ``chi`` is the real part of the
-    hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x
-    + 0j)`` differ by a factor of ``1j*pi``.
+    hyperbolic cosine integral. For such points, ``chi(x)`` and
+    ``chi(x + 0j)`` differ by ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
     [3]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [4]_ *shi* and *chi* routines.
+    on mpmath's [4]_ *shi* and *chi* routines.
 
     References
     ----------
@@ -5022,11 +5022,16 @@ const char *shichi_doc = R"(
     ((0.11772029666668238+1.831091777729851j),
      (0.29912435887648825+1.7395351121166562j))
 
-    The hyperbolic sine and cosine integrals Shi(z) and Chi(z) are
-    related to the sine and cosine integrals Si(z) and Ci(z) by
+    The hyperbolic sine and cosine integrals :math:`\operatorname{Shi}(z)` and
+    :math:`\operatorname{Chi}(z)` are related to the sine and cosine integrals
+    :math:`\operatorname{Si}(z)` and :math:`\operatorname{Ci}(z)` by
 
-    * Shi(z) = -i*Si(i*z)
-    * Chi(z) = Ci(-i*z) + i*pi/2
+    .. math::
+
+      \operatorname{Shi}(z) &= -i \operatorname{Si}(iz), \\
+      \operatorname{Chi}(z) &= \operatorname{Ci}(-iz) + \frac{i\pi}{2},
+
+    where the second relation holds for :math:`-\pi/2 < \arg z \le \pi`.
 
     >>> z = 0.25 + 5j
     >>> shi, chi = shichi(z)
@@ -5063,13 +5068,13 @@ const char *sici_doc = R"(
 
     .. math::
 
-      \int_0^x \frac{\sin{t}}{t}dt
+      \operatorname{Si}(x) = \int_0^x \frac{\sin{t}}{t} dt
 
     and the cosine integral is
 
     .. math::
 
-      \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
+      \operatorname{Ci}(x) = \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
     principal branch of the logarithm [1]_ (see also [2]_).
@@ -5080,14 +5085,14 @@ const char *sici_doc = R"(
         Real or complex points at which to compute the sine and cosine
         integrals.
     out : tuple of ndarray, optional
-        Optional output arrays for the function results
+        Optional output arrays for the function results.
 
     Returns
     -------
     si : scalar or ndarray
-        Sine integral at ``x``
+        Sine integral at ``x``.
     ci : scalar or ndarray
-        Cosine integral at ``x``
+        Cosine integral at ``x``.
 
     See Also
     --------
@@ -5098,12 +5103,12 @@ const char *sici_doc = R"(
     Notes
     -----
     For real arguments with ``x < 0``, ``ci`` is the real part of the
-    cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``
-    differ by a factor of ``1j*pi``.
+    cosine integral. For such points, ``ci(x)`` and ``ci(x + 0j)``
+    differ by ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
     [3]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [4]_ *si* and *ci* routines.
+    on mpmath's [4]_ *si* and *ci* routines.
 
     References
     ----------
@@ -5134,12 +5139,14 @@ const char *sici_doc = R"(
     ((4.505735874563953+0.06863305018999577j),
     (0.0793644206906966-2.935510262937543j))
 
-    For z in the right half plane, the sine and cosine integrals are
-    related to the exponential integral E1 (implemented in SciPy as
+    For :math:`z` in the right half plane, the sine and cosine integrals are
+    related to the exponential integral :math:`E_1` (implemented in SciPy as
     `scipy.special.exp1`) by
 
-    * Si(z) = (E1(i*z) - E1(-i*z))/2i + pi/2
-    * Ci(z) = -(E1(i*z) + E1(-i*z))/2
+    .. math::
+
+      \operatorname{Si}(z) &= \frac{E_1(iz) - E_1(-iz)}{2i} + \frac{\pi}{2}, \\
+      \operatorname{Ci}(z) &= -\frac{E_1(iz) + E_1(-iz)}{2}.
 
     See [1]_ (equations 5.2.21 and 5.2.23).
 
@@ -5157,7 +5164,7 @@ const char *sici_doc = R"(
     (1.408292501520851+2.9836177420296055j)
 
     Plot the functions evaluated on the real axis; the dotted horizontal
-    lines are at pi/2 and -pi/2:
+    lines are at :math:`\pi/2` and :math:`-\pi/2`:
 
     >>> x = np.linspace(-16, 16, 150)
     >>> si, ci = sici(x)
