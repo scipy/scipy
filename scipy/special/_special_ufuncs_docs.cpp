@@ -2162,11 +2162,11 @@ const char *eval_genlaguerre_doc = R"(
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_genlaguerre(n, alpha, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Generalized Laguerre Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel(r'$L_n^{(\alpha)}(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel(r"$L_n^{(\alpha)}(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -2233,11 +2233,11 @@ const char *eval_hermite_doc = R"(
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_hermite(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Physicist's Hermite Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel('$H_n(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$H_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -2305,11 +2305,11 @@ const char *eval_hermitenorm_doc = R"(
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_hermitenorm(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Probabilist's Hermite Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel('$He_n(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$He_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -2388,11 +2388,11 @@ const char *eval_jacobi_doc = R"(
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_jacobi(n, alpha, beta, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Jacobi Polynomials")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel(r'$P_n^{(\alpha, \beta)}(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel(r"$P_n^{(\alpha, \beta)}(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -2465,11 +2465,11 @@ const char *eval_laguerre_doc = R"(
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_laguerre(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Laguerre Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel('$L_n(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$L_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -2534,12 +2534,12 @@ const char *eval_sh_jacobi_doc = R"(
 
     These are the parameter values that we'll use in this example.
 
-    >>> p1 = 0.5
-    >>> q1 = 0.125
+    >>> p = 0.5
+    >>> q = 0.125
 
     Evaluate the order 3 polynomial at a few values of x.
 
-    >>> eval_sh_jacobi(3, p1, q1, [0, 0.25, 0.5])
+    >>> eval_sh_jacobi(3, p, q, [0, 0.25, 0.5])
     array([-0.00344968,  0.01217532, -0.02333604])
 
     Plot the polynomials of order 0 through 4.
@@ -2547,12 +2547,12 @@ const char *eval_sh_jacobi_doc = R"(
     >>> x = np.linspace(0, 1, 800)
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
-    ...     y = eval_sh_jacobi(n, p1, q1, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     y = eval_sh_jacobi(n, p, q, x)
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Shifted Jacobi Polynomials")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$G_n^{(p, q)}(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$G_n^{(p, q)}(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 

@@ -321,11 +321,11 @@ add_newdoc("eval_gegenbauer",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_gegenbauer(n, alpha, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Gegenbauer Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel(r'$C_n^{(\alpha)}(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel(r"$C_n^{(\alpha)}(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
@@ -404,8 +404,8 @@ add_newdoc("eval_chebyt",
     ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Chebyshev Polynomials of the First Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$T_n(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
@@ -478,8 +478,8 @@ add_newdoc("eval_chebyu",
     ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$U_n(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
@@ -547,11 +547,11 @@ add_newdoc("eval_chebys",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_chebys(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
-    >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$S_n(x)$')
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$S_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -629,11 +629,11 @@ add_newdoc("eval_chebyc",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_chebyc(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
-    >>> ax.set_title("Chebyshev Polynomials of the First Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$C_n(x)$')
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$C_n(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
@@ -711,11 +711,11 @@ add_newdoc("eval_sh_chebyt",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_sh_chebyt(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Shifted Chebyshev Polynomials of the First Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$T_n^*(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n^*(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
@@ -783,11 +783,11 @@ add_newdoc("eval_sh_chebyu",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_sh_chebyu(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Shifted Chebyshev Polynomials of the Second Kind")
-    >>> ax.set_xlabel('x')
-    >>> ax.set_ylabel('$U_n^*(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n^*(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
@@ -859,22 +859,21 @@ add_newdoc("eval_legendre",
 
     Evaluate Legendre polynomials of order 0 through 4 at x = 0
 
-    >>> n = range(0, 5)
-    >>> eval_legendre(n, 0)
+    >>> eval_legendre(range(5), 0)
     array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
 
     Plot Legendre polynomials of order 0 through 4
 
+    >>> x = np.linspace(-1, 1, 800)
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
-    >>> x = np.linspace(-1, 1)
-    >>> for n in range(0, 5):
+    >>> for n in range(5):
     ...     y = eval_legendre(n, x)
-    ...     ax.plot(x, y, label=r'$P_{}(x)$'.format(n))
-    >>> ax.set_title("Legendre Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel(r'$P_n(x)$')
-    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
+    >>> ax.set_title("Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
 
@@ -926,7 +925,6 @@ add_newdoc("eval_sh_legendre",
 
     Examples
     --------
-
     >>> import numpy as np
     >>> from scipy.special import eval_sh_legendre
     >>> import matplotlib.pyplot as plt
@@ -942,11 +940,11 @@ add_newdoc("eval_sh_legendre",
     >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
     >>> for n in range(5):
     ...     y = eval_sh_legendre(n, x)
-    ...     ax.plot(x, y, label=f'{n =}')
+    ...     ax.plot(x, y, label=f'{n = }')
     >>> ax.grid()
     >>> ax.set_title("Shifted Legendre Polynomials")
-    >>> ax.set_xlabel("x")
-    >>> ax.set_ylabel('$P_n^*(x)$')
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n^*(x)$")
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
     """)
