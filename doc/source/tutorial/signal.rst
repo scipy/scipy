@@ -1,5 +1,6 @@
+**********************************
 Signal Processing (`scipy.signal`)
-==================================
+**********************************
 
 .. sectionauthor:: Travis E. Oliphant
 
@@ -7,20 +8,38 @@ Signal Processing (`scipy.signal`)
 
 .. currentmodule:: scipy.signal
 
-The signal processing toolbox currently contains some filtering
-functions, a limited set of filter design tools, and a few B-spline
-interpolation algorithms for 1- and 2-D data. While the
-B-spline algorithms could technically be placed under the
-interpolation category, they are included here because they only work
-with equally-spaced data and make heavy use of filter-theory and
-transfer-function formalism to provide a fast B-spline transform. To
-understand this section, you will need to understand that a signal in
-SciPy is an array of real or complex numbers.
+The signal module provides essential tools for signal processing. It includes tools for
+filtering, filter design, analyzing digital signals and simulating state-space systems.
+Consult the `~scipy.signal` page for details. Here, the following topics are covered:
 
-.. _tutorial-signal-bsplines:
+.. contents:: Table of contents
+    :local:
+    :depth: 1
+
+.. math::
+    % LaTeX Macros to make the LaTeX formulas more readable:
+    \newcommand{\IC}{{\mathbb{C}}}  % set of complex numbers
+    \newcommand{\IN}{{\mathbb{N}}}  % set of natural numbers
+    \newcommand{\IR}{{\mathbb{R}}}  % set of real numbers
+    \newcommand{\IZ}{{\mathbb{Z}}}  % set of integers
+    \newcommand{\jj}{{\mathbb{j}}}  % imaginary unit
+    \newcommand{\e}{\operatorname{e}}  % Euler's number
+    \newcommand{\dd}{\operatorname{d}} % infinitesimal operator
+    \newcommand{\abs}[1]{\left|#1\right|} % absolute value
+    \newcommand{\conj}[1]{\overline{#1}} % complex conjugate
+    \newcommand{\conjT}[1]{\overline{#1^T}} % transposed complex conjugate
+    \newcommand{\inv}[1]{\left(#1\right)^{\!-1}} % inverse
+    % Since the physics package is not loaded, we define the macros ourselves:
+    \newcommand{\vb}[1]{\mathbf{#1}} % vectors and matrices are bold
+    % new macros:
+    \newcommand{\rect}{\operatorname{rect}}  % rect or boxcar function
+    \newcommand{\sinc}{\operatorname{sinc}}  % sinc(t) := sin(pi*t) / (pi*t)
+
+
+.. _tutorial_signal-BSplines:
 
 B-splines
----------
+=========
 
 A B-spline is an approximation of a continuous function over a finite-
 domain in terms of B-spline coefficients and knot points. If the knot-
@@ -120,35 +139,272 @@ conditions.
    >>> import numpy as np
    >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> image = datasets.face(gray=True).astype(np.float32)
    >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
    >>> ck = signal.cspline2d(image, 8.0)
    >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
    ...          signal.sepfir2d(ck, [1], derfilt))
-
-   Alternatively, we could have done::
-
-       laplacian = np.array([[0,1,0], [1,-4,1], [0,1,0]], dtype=np.float32)
-       deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
-
-   >>> plt.figure()
-   >>> plt.imshow(image)
-   >>> plt.gray()
-   >>> plt.title('Original image')
+   ...
+   >>> _, (ax0, ax1) = plt.subplots(1, 2, figsize=(7, 3), constrained_layout=True)
+   >>> ax0.set_title('Original image')
+   >>> ax0.imshow(image, cmap='gray')
+   >>> ax1.set_title('Output of spline edge filter')
+   >>> ax1.imshow(deriv, cmap='gray')
    >>> plt.show()
 
-   >>> plt.figure()
-   >>> plt.imshow(deriv)
-   >>> plt.gray()
-   >>> plt.title('Output of spline edge filter')
-   >>> plt.show()
+An alternative to using `sepfir2d` is::
+
+    laplacian = np.array([[0,1,0], [1,-4,1], [0,1,0]], dtype=np.float32)
+    deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
+
 
 ..   :caption: Example of using smoothing splines to filter images.
 
+.. _tutorial_signal-LTI-Systems:
+
+LTI Systems
+===========
+Linear time invariant (LTI) systems are used extensively in this module: For
+single-input single-output (SISO) systems, they are used in the form of transfer
+functions to model :ref:`filters <tutorial_signal-Filtering>`. The state-space system
+representation allows to model systems with multiple inputs and outputs (MIMO). LTI
+systems can be either discrete-time (often called "digital") or continuous-time (called
+"analog"). In the following, the notations of the various utilized LTI representations
+are presented. Consult the :ref:`scipy-api-LTI_Conversions` section in the
+:ref:`scipy-api` for conversion functions.
+
+
+.. _tutorial_signal-TransferFunctionRepresentation:
+
+Transfer function representation
+--------------------------------
+
+The ``ba`` or ``tf`` format is a 2-tuple ``(b, a)`` representing a transfer
+function, where `b` is a length ``M+1`` array of coefficients of the `M`-order
+numerator polynomial, and `a` is a length ``N+1`` array of coefficients of the
+`N`-order denominator, as positive, descending powers of the transfer function
+variable. So the tuple of :math:`b = [b_0, b_1, ..., b_M]` and
+:math:`a =[a_0, a_1, ..., a_N]` can represent an analog filter of the form:
+
+.. math::
+
+    H(s) = \frac
+    {b_0 s^M + b_1 s^{(M-1)} + \cdots + b_M}
+    {a_0 s^N + a_1 s^{(N-1)} + \cdots + a_N}
+    = \frac
+    {\sum_{i=0}^M b_i s^{(M-i)}}
+    {\sum_{i=0}^N a_i s^{(N-i)}}
+
+or a discrete-time filter of the form:
+
+.. math::
+
+    H(z) = \frac
+    {b_0 z^M + b_1 z^{(M-1)} + \cdots + b_M}
+    {a_0 z^N + a_1 z^{(N-1)} + \cdots + a_N}
+    = \frac
+    {\sum_{i=0}^M b_i z^{(M-i)}}
+    {\sum_{i=0}^N a_i z^{(N-i)}}.
+
+This "positive powers" form is found more commonly in controls
+engineering.  If `M` and `N` are equal (which is true for all filters
+generated by the bilinear transform), then this happens to be equivalent
+to the "negative powers" discrete-time form preferred in DSP:
+
+.. math::
+
+    H(z) = \frac
+    {b_0 + b_1 z^{-1} + \cdots + b_M z^{-M}}
+    {a_0 + a_1 z^{-1} + \cdots + a_N z^{-N}}
+    = \frac
+    {\sum_{i=0}^M b_i z^{-i}}
+    {\sum_{i=0}^N a_i z^{-i}}.
+
+Although this is true for common filters, remember that this is not true
+in the general case. If `M` and `N` are not equal, the discrete-time
+transfer function coefficients must first be converted to the "positive
+powers" form before finding the poles and zeros.
+
+This representation suffers from numerical error at higher orders, so other
+formats are preferred when possible.
+
+
+Zeros and poles representation
+------------------------------
+
+The ``zpk`` format is a 3-tuple ``(z, p, k)``, where `z` is an `M`-length
+array of the complex zeros of the transfer function
+:math:`z = [z_0, z_1, ..., z_{M-1}]`, `p` is an `N`-length array of the
+complex poles of the transfer function :math:`p = [p_0, p_1, ..., p_{N-1}]`,
+and `k` is a scalar gain.  These represent the digital transfer function:
+
+.. math::
+    H(z) = k \cdot \frac
+    {(z - z_0) (z - z_1) \cdots (z - z_{(M-1)})}
+    {(z - p_0) (z - p_1) \cdots (z - p_{(N-1)})}
+    = k \frac
+    {\prod_{i=0}^{M-1} (z - z_i)}
+    {\prod_{i=0}^{N-1} (z - p_i)}
+
+or the analog transfer function:
+
+.. math::
+    H(s) = k \cdot \frac
+    {(s - z_0) (s - z_1) \cdots (s - z_{(M-1)})}
+    {(s - p_0) (s - p_1) \cdots (s - p_{(N-1)})}
+    = k \frac
+    {\prod_{i=0}^{M-1} (s - z_i)}
+    {\prod_{i=0}^{N-1} (s - p_i)}.
+
+Although the sets of roots are stored as ordered NumPy arrays, their ordering
+does not matter: ``([-1, -2], [-3, -4], 1)`` is the same filter as
+``([-2, -1], [-4, -3], 1)``.
+
+Second-order sections representation
+------------------------------------
+
+The ``sos`` format is a single 2-D array of shape ``(S, 6)``,
+representing a sequence of :math:`S` second-order transfer functions which, when
+cascaded in series, realize a higher-order filter with minimal numerical
+error. It can be expressed as
+
+.. math::
+
+    H(z) = \prod_{s=0}^{S-1} \frac{b_{s,0} + b_{s,1} z^{-1} + b_{s,2} z^{-2}}{
+                               a_{s,0} + a_{s,1} z^{-1} + a_{s,2} z^{-2}}
+
+where :math:`[b_{s,0}, b_{s,1}, b_{s,2}, a_{s,0}, a_{s,1}, a_{s,2}]` represents the
+:math:`s`-th row of the array.
+
+The coefficients are typically normalized, such that :math:`a_{s,0}` is always 1.
+The section order is usually not important with floating-point computation;
+the filter output will be the same, regardless of the order.
+
+
+.. _tutorial_signal-StateSpaceRepresentation:
+
+State-space system representation
+---------------------------------
+
+The ``ss`` format is a 4-tuple of arrays ``(A, B, C, D)`` representing the
+state-space of an `n`-order digital/discrete-time system of the form
+
+.. math::
+    :label: eq_StateSpaceDiscr
+
+    \vb{x}[k+1] = \vb{A}\, \vb{x}[k] + \vb{B}\, \vb{u}[k] \,,\\
+    \vb{y}[k]   = \vb{C}\, \vb{x}[k] + \vb{D}\, \vb{u}[k]
+
+or a continuous/analog system of the form
+
+.. math::
+    :label: eq_StateSpaceCont
+
+    \dot{\vb{x}}(t) = \vb{A}\, \vb{x}(t) + \vb{B}\, \vb{u}(t) \,,\\
+         \vb{y}(t)  = \vb{C}\, \vb{x}(t) + \vb{D}\, \vb{u}(t),
+
+with :math:`p` inputs, :math:`q` outputs and :math:`n` state variables, where:
+
+- :math:`\vb{x}` is the state vector of length :math:`n`
+- :math:`\vb{y}` is the output vector of length :math:`q`
+- :math:`\vb{u}` is the input vector of length :math:`p`
+- :math:`\vb{A}` is the state matrix, with shape :math:`(n, n)`
+- :math:`\vb{B}` is the input matrix with shape :math:`(n, p)`
+- :math:`\vb{C}` is the output matrix with shape :math:`(q, n)`
+- :math:`\vb{D}` is the feedthrough or feedforward matrix with shape :math:`(q, p)`. (In
+  cases where the system does not have a direct feedthrough, all values in
+  :math:`\vb{D}` are zero.)
+
+The function `abcd_normalize` can be utilized to check the matrices' compatibility and
+ensure that they are 2d arrays.
+
+State-space is the most general representation and the only one that allows
+for multiple-input, multiple-output (MIMO) systems. There are multiple
+state-space representations for a given transfer function. Specifically, the
+"controllable canonical form" and "observable canonical form" have the same
+coefficients as the ``tf`` representation, and, therefore, suffer from the same
+numerical errors.
+
+.. _tutorial_signal-UsingStateSpaceSystems:
+
+Using State-space Systems
+=========================
+State-space systems model linear time invariant (LTI) systems with multiple inputs and
+outputs. Discrete-time systems, as defined in Eq. :math:numref:`eq_StateSpaceDiscr`,
+can be simulated by iterating over their governing equations. The evolution
+from step :math:`k=0` to the :math:`k`-th step (:math:`k>0`) can be expressed as
+
+.. math::
+
+       x[k] = \vb{A}^{k}\, \vb{x}[0] +
+                             \sum_{i=0}^{k-1}\vb{A}^{k-i-1}\vb{B}\, \vb{u}[i]  \,,\qquad
+       \vb{y}[k]   = \vb{C}\, \vb{x}[k] + \vb{D}\, \vb{u}[k] \,.
+
+The `dlsim` function can be used for such simulations. For the special inputs of an
+impulse and a step function, the wrappers `dimpulse` and `dstep` are provided. Note
+that single-input single-output state-space systems can alternatively be
+:ref:`converted <scipy-api-LTI_Conversions>` into a transfer function (aka a
+:ref:`filter <tutorial_signal-Filtering>`) to use the `lfilter` or `sosfilt`
+functions instead.
+
+For a continuous-time system, as defined in Eq. :math:numref:`eq_StateSpaceCont`, the
+general solution for :math:`t > t_0` can be expressed as
+
+.. math::
+    :label: eq_StateSpaceContSolution
+    
+    \vb{x}(t) = \vb{e}^{\vb{A}(t-t_0)} \vb{x}(t_0) + \int_{t_0}^t
+                        \vb{e}^{\vb{A}(t-\tau)} \vb{B}\, \vb{u}(\tau) \dd\tau  \,,\qquad
+    \vb{y}(t) =  \vb{C}\, \vb{x}(t) + \vb{D}\, \vb{u}(t) \,,
+
+by utilizing the matrix exponential (i.e., the `~scipy.linalg.expm` function)
+
+.. math::
+
+    \vb{e}^{\vb{A} t} := \sum_{i=0}^\infty \frac{(\vb{A}\, t)^i}{(i!)}
+                       = \vb{I} + \vb{A}\,t + \frac{1}{2}(\vb{A}\,t)^2 + \ldots \ .
+
+The function `lsim` calculates a solution by approximating the integral of Eq.
+:math:numref:`eq_StateSpaceContSolution` by a sum. For the special inputs of an impulse
+and a step function, the wrappers `impulse` and `step` are provided. Alternatively, the
+continuous-time system can be converted into a discrete-time system by using
+`cont2discrete` and be simulated it with `dlsim`.
+
+As a simple example, consider the following 2\ :sup:`nd` order state-space system with
+one input and two outputs:
+
+.. math::
+
+    \begin{bmatrix} \dot{x}_0(t)\\ \dot{x}_1(t) \end{bmatrix} &=
+    \begin{bmatrix} -10\sqrt{2} & -100\\ 1 & 0 \end{bmatrix}
+    \begin{bmatrix} x_0(t)\\ x_1(t) \end{bmatrix} +
+    \begin{bmatrix} 1\\ 0 \end{bmatrix} u(t) \,,\\
+    \begin{bmatrix} y_0(t)\\ y_1(t) \end{bmatrix} &=
+    \begin{bmatrix} -10\sqrt{2} & -100\\ 0 & \phantom{-}100 \end{bmatrix}
+    \begin{bmatrix} x_0(t)\\ x_1(t) \end{bmatrix} +
+    \begin{bmatrix} 1\\ 0 \end{bmatrix} u(t) \,.
+
+The following code snippet simulates the impulse and step response for each output
+channel. Also the frequency response of each output channel is calculated converting
+the state-space matrices into transfer functions with `ss2tf`:
+
+.. plot:: tutorial/examples/signal_StateSpace_FreqSplitter.py
+    :alt: Example of simulating a basic 10 Hz frequency splitter.
+
+Currently, the only control algorithm in this module is `place_poles`, which provides
+pole assignment by state feedback. Consider using the `Python Control Systems Library`_
+or `harold`_, if you need more functionality.
+
+.. _`Python Control Systems Library`: https://python-control.readthedocs.io
+.. _harold: https://harold.readthedocs.io
+
+
+
+.. _tutorial_signal-Filtering:
 
 Filtering
----------
+=========
 
 Filtering is a generic name for any system that modifies an input
 signal in some way. In SciPy, a signal can be thought of as a NumPy
@@ -169,7 +425,7 @@ for computing the output of the filter is employed.
 
 
 Convolution/Correlation
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 Many linear filters also have the property of shift-invariance. This
 means that the filtering operation is the same at different locations
@@ -312,23 +568,18 @@ enhancing, and edge-detection for an image.
    >>> import numpy as np
    >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> image = datasets.face(gray=True)
    >>> w = np.zeros((50, 50))
-   >>> w[0][0] = 1.0
-   >>> w[49][25] = 1.0
+   >>> w[0, 0] = 1.0
+   >>> w[49, 25] = 1.0
    >>> image_new = signal.fftconvolve(image, w)
-
-   >>> plt.figure()
-   >>> plt.imshow(image)
-   >>> plt.gray()
-   >>> plt.title('Original image')
-   >>> plt.show()
-
-   >>> plt.figure()
-   >>> plt.imshow(image_new)
-   >>> plt.gray()
-   >>> plt.title('Filtered image')
+   ...
+   >>> _, (ax0, ax1) = plt.subplots(1, 2, figsize=(7, 3), constrained_layout=True)
+   >>> ax0.set_title('Original image')
+   >>> ax0.imshow(image, cmap='gray')
+   >>> ax1.set_title('Filtered image')
+   >>> ax1.imshow(image_new, cmap='gray')
    >>> plt.show()
 
 
@@ -359,27 +610,22 @@ which is often used for blurring.
    >>> import numpy as np
    >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> image = np.asarray(datasets.ascent(), np.float64)
    >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
-
-   >>> plt.figure()
-   >>> plt.imshow(image)
-   >>> plt.gray()
-   >>> plt.title('Original image')
-   >>> plt.show()
-
-   >>> plt.figure()
-   >>> plt.imshow(image_new)
-   >>> plt.gray()
-   >>> plt.title('Filtered image')
+   ...
+   >>> _, (ax0, ax1) = plt.subplots(1, 2, figsize=(7, 3), constrained_layout=True)
+   >>> ax0.set_title('Original image')
+   >>> ax0.imshow(image, cmap='gray')
+   >>> ax1.set_title('Filtered image')
+   >>> ax1.imshow(image_new, cmap='gray')
    >>> plt.show()
 
 
 
 Difference-equation filtering
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 
 A general class of linear 1-D filters (that includes convolution
 filters) are filters described by the difference equation
@@ -464,7 +710,7 @@ first for initial conditions :math:`y[-1] = 0` (default case), then for
 
 >>> import numpy as np
 >>> from scipy import signal
-
+...
 >>> x = np.array([1., 0., 0., 0.])
 >>> b = np.array([1.0/2, 1.0/4])
 >>> a = np.array([1.0, -1.0/3])
@@ -479,7 +725,7 @@ the input signal :math:`x[n]`.
 
 
 Analysis of Linear Systems
-""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Linear system described a linear-difference equation can be fully described by
 the coefficient vectors :math:`a` and :math:`b` as was done above; an alternative
@@ -508,8 +754,10 @@ of a system described by the coefficients :math:`a_k` and :math:`b_k`. See the
 help of the :func:`freqz` function for a comprehensive example.
 
 
+.. _tutorial_signal-FilterDesign:
+
 Filter Design
-^^^^^^^^^^^^^
+=============
 
 Time-discrete filters can be classified into finite response (FIR) filters and
 infinite response (IIR) filters. FIR filters can provide a linear phase
@@ -517,7 +765,7 @@ response, whereas IIR filters cannot. SciPy provides functions
 for designing both types of filters.
 
 FIR Filter
-""""""""""
+----------
 
 The function :func:`firwin` designs filters according to the window method. Depending
 on the provided arguments, the function returns different filter types (e.g., low-pass,
@@ -532,8 +780,8 @@ Nyquist frequency of 1 Hz is plotted.
 
 The function :func:`firwin2` allows design of almost arbitrary frequency responses by
 specifying an array of corner frequencies and corresponding gains, respectively. The
-example below designs a filter with such an arbitrary amplitude response and plots the
-its frequency response on a linear magnitude scale. The four specified gains corner are
+example below designs a filter with such an arbitrary amplitude response and plots
+its frequency response on a linear magnitude scale. The four specified corner gains are
 denoted by gray dots connected by a dashed line, whereas the response of the filter is
 depicted by a continuous blue line.
 
@@ -548,7 +796,7 @@ default sampling frequencies.
 
 
 IIR Filter
-""""""""""
+----------
 
 SciPy provides two functions to directly design IIR :func:`iirdesign` and
 :func:`iirfilter`, where the filter type (e.g., elliptic) is passed as an
@@ -572,7 +820,6 @@ stop-band attenuation of :math:`\approx 60` dB.
    ...
    >>> plt.title('Digital filter frequency response')
    >>> plt.plot(w, 20*np.log10(np.abs(h)))
-   >>> plt.title('Digital filter frequency response')
    >>> plt.ylabel('Amplitude Response [dB]')
    >>> plt.xlabel('Frequency (rad/sample)')
    >>> plt.grid()
@@ -608,159 +855,10 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> ax.set(xlabel="Frequency (Hz)", ylabel="Amplitude Response [dB]")
         >>> ax.legend()
 
-Filter Coefficients
-"""""""""""""""""""
 
-Filter coefficients can be stored in several different formats:
-
-* 'ba' or 'tf' = transfer function coefficients
-* 'zpk' = zeros, poles, and overall gain
-* 'ss' = state-space system representation
-* 'sos' = transfer function coefficients of second-order sections
-
-Functions, such as :func:`tf2zpk` and :func:`zpk2ss`, can convert between them.
-
-.. _tutorial_signal_TransferFunctionRepresentation:
-
-Transfer function representation
-********************************
-
-The ``ba`` or ``tf`` format is a 2-tuple ``(b, a)`` representing a transfer
-function, where `b` is a length ``M+1`` array of coefficients of the `M`-order
-numerator polynomial, and `a` is a length ``N+1`` array of coefficients of the
-`N`-order denominator, as positive, descending powers of the transfer function
-variable. So the tuple of :math:`b = [b_0, b_1, ..., b_M]` and
-:math:`a =[a_0, a_1, ..., a_N]` can represent an analog filter of the form:
-
-.. math::
-
-    H(s) = \frac
-    {b_0 s^M + b_1 s^{(M-1)} + \cdots + b_M}
-    {a_0 s^N + a_1 s^{(N-1)} + \cdots + a_N}
-    = \frac
-    {\sum_{i=0}^M b_i s^{(M-i)}}
-    {\sum_{i=0}^N a_i s^{(N-i)}}
-
-or a discrete-time filter of the form:
-
-.. math::
-
-    H(z) = \frac
-    {b_0 z^M + b_1 z^{(M-1)} + \cdots + b_M}
-    {a_0 z^N + a_1 z^{(N-1)} + \cdots + a_N}
-    = \frac
-    {\sum_{i=0}^M b_i z^{(M-i)}}
-    {\sum_{i=0}^N a_i z^{(N-i)}}.
-
-This "positive powers" form is found more commonly in controls
-engineering.  If `M` and `N` are equal (which is true for all filters
-generated by the bilinear transform), then this happens to be equivalent
-to the "negative powers" discrete-time form preferred in DSP:
-
-.. math::
-
-    H(z) = \frac
-    {b_0 + b_1 z^{-1} + \cdots + b_M z^{-M}}
-    {a_0 + a_1 z^{-1} + \cdots + a_N z^{-N}}
-    = \frac
-    {\sum_{i=0}^M b_i z^{-i}}
-    {\sum_{i=0}^N a_i z^{-i}}.
-
-Although this is true for common filters, remember that this is not true
-in the general case. If `M` and `N` are not equal, the discrete-time
-transfer function coefficients must first be converted to the "positive
-powers" form before finding the poles and zeros.
-
-This representation suffers from numerical error at higher orders, so other
-formats are preferred when possible.
-
-Zeros and poles representation
-******************************
-
-The ``zpk`` format is a 3-tuple ``(z, p, k)``, where `z` is an `M`-length
-array of the complex zeros of the transfer function
-:math:`z = [z_0, z_1, ..., z_{M-1}]`, `p` is an `N`-length array of the
-complex poles of the transfer function :math:`p = [p_0, p_1, ..., p_{N-1}]`,
-and `k` is a scalar gain.  These represent the digital transfer function:
-
-.. math::
-    H(z) = k \cdot \frac
-    {(z - z_0) (z - z_1) \cdots (z - z_{(M-1)})}
-    {(z - p_0) (z - p_1) \cdots (z - p_{(N-1)})}
-    = k \frac
-    {\prod_{i=0}^{M-1} (z - z_i)}
-    {\prod_{i=0}^{N-1} (z - p_i)}
-
-or the analog transfer function:
-
-.. math::
-    H(s) = k \cdot \frac
-    {(s - z_0) (s - z_1) \cdots (s - z_{(M-1)})}
-    {(s - p_0) (s - p_1) \cdots (s - p_{(N-1)})}
-    = k \frac
-    {\prod_{i=0}^{M-1} (s - z_i)}
-    {\prod_{i=0}^{N-1} (s - p_i)}.
-
-Although the sets of roots are stored as ordered NumPy arrays, their ordering
-does not matter: ``([-1, -2], [-3, -4], 1)`` is the same filter as
-``([-2, -1], [-4, -3], 1)``.
-
-.. _tutorial_signal_state_space_representation:
-
-State-space system representation
-*********************************
-
-The ``ss`` format is a 4-tuple of arrays ``(A, B, C, D)`` representing the
-state-space of an `N`-order digital/discrete-time system of the form:
-
-.. math::
-    \mathbf{x}[k+1] = A \mathbf{x}[k] + B \mathbf{u}[k]\\
-    \mathbf{y}[k] = C \mathbf{x}[k] + D \mathbf{u}[k]
-
-or a continuous/analog system of the form:
-
-.. math::
-    \dot{\mathbf{x}}(t) = A \mathbf{x}(t) + B \mathbf{u}(t)\\
-    \mathbf{y}(t) = C \mathbf{x}(t) + D \mathbf{u}(t),
-
-with `P` inputs, `Q` outputs and `N` state variables, where:
-
-- `x` is the state vector
-- `y` is the output vector of length `Q`
-- `u` is the input vector of length `P`
-- `A` is the state matrix, with shape ``(N, N)``
-- `B` is the input matrix with shape ``(N, P)``
-- `C` is the output matrix with shape ``(Q, N)``
-- `D` is the feedthrough or feedforward matrix with shape ``(Q, P)``.  (In
-  cases where the system does not have a direct feedthrough, all values in
-  `D` are zero.)
-
-State-space is the most general representation and the only one that allows
-for multiple-input, multiple-output (MIMO) systems. There are multiple
-state-space representations for a given transfer function. Specifically, the
-"controllable canonical form" and "observable canonical form" have the same
-coefficients as the ``tf`` representation, and, therefore, suffer from the same
-numerical errors.
-
-Second-order sections representation
-************************************
-
-The ``sos`` format is a single 2-D array of shape ``(n_sections, 6)``,
-representing a sequence of second-order transfer functions which, when
-cascaded in series, realize a higher-order filter with minimal numerical
-error. Each row corresponds to a second-order ``tf`` representation, with
-the first three columns providing the numerator coefficients and the last
-three providing the denominator coefficients:
-
-.. math::
-    [b_0, b_1, b_2, a_0, a_1, a_2]
-
-The coefficients are typically normalized, such that :math:`a_0` is always 1.
-The section order is usually not important with floating-point computation;
-the filter output will be the same, regardless of the order.
 
 Filter transformations
-""""""""""""""""""""""
+----------------------
 
 The IIR filter design functions first generate a prototype analog low-pass filter
 with a normalized cutoff frequency of 1 rad/sec. This is then transformed into
@@ -788,13 +886,13 @@ To convert the transformed analog filter into a digital filter, the
 where T is the sampling time (the inverse of the sampling frequency).
 
 Other filters
-^^^^^^^^^^^^^
+-------------
 
 The signal processing package provides many more filters as well.
 
 
 Median Filter
-"""""""""""""
+^^^^^^^^^^^^^
 
 A median filter is commonly applied when noise is markedly non-Gaussian or
 when it is desired to preserve edges. The median filter works by sorting all
@@ -809,7 +907,7 @@ only for 2-D arrays is available as :func:`medfilt2d`.
 
 
 Order Filter
-""""""""""""
+^^^^^^^^^^^^
 
 A median filter is a specific example of a more general class of filters
 called order filters. To compute the output at a particular pixel, all order
@@ -826,7 +924,7 @@ used as the output. The command to perform an order filter is
 
 
 Wiener filter
-"""""""""""""
+^^^^^^^^^^^^^
 
 The Wiener filter is a simple deblurring filter for denoising images. This is
 not the Wiener filter commonly described in image-reconstruction problems but,
@@ -846,7 +944,7 @@ variances.
 
 
 Hilbert filter
-""""""""""""""
+^^^^^^^^^^^^^^
 
 The Hilbert transform constructs the complex-valued analytic signal
 from a real signal. For example, if :math:`x=\cos\omega n`, then
@@ -863,7 +961,7 @@ frequencies, and :math:`1` for zero-frequencies.
 
 
 Analog Filter Design
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 The functions :func:`iirdesign`, :func:`iirfilter`, and the filter design
 functions for specific filter types (e.g., :func:`ellip`) all have a flag
@@ -881,10 +979,10 @@ in the amplitude response.
    >>> import numpy as np
    >>> import scipy.signal as signal
    >>> import matplotlib.pyplot as plt
-
+   ...
    >>> b, a = signal.iirdesign(wp=100, ws=200, gpass=2.0, gstop=40., analog=True)
    >>> w, h = signal.freqs(b, a)
-
+   ...
    >>> plt.title('Analog filter frequency response')
    >>> plt.plot(w, 20*np.log10(np.abs(h)))
    >>> plt.ylabel('Amplitude Response [dB]')
@@ -894,11 +992,11 @@ in the amplitude response.
 
 
    >>> z, p, k = signal.tf2zpk(b, a)
-
+   ...
    >>> plt.plot(np.real(z), np.imag(z), 'ob', markerfacecolor='none')
    >>> plt.plot(np.real(p), np.imag(p), 'xr')
    >>> plt.legend(['Zeros', 'Poles'], loc=2)
-
+   ...
    >>> plt.title('Pole / Zero Plot')
    >>> plt.xlabel('Real')
    >>> plt.ylabel('Imaginary')
@@ -906,31 +1004,10 @@ in the amplitude response.
    >>> plt.show()
 
 
-
-.. math::
-    % LaTeX Macros to make the LaTeX formulas more readable:
-    \newcommand{\IC}{{\mathbb{C}}}  % set of complex numbers
-    \newcommand{\IN}{{\mathbb{N}}}  % set of natural numbers
-    \newcommand{\IR}{{\mathbb{R}}}  % set of real numbers
-    \newcommand{\IZ}{{\mathbb{Z}}}  % set of integers
-    \newcommand{\jj}{{\mathbb{j}}}  % imaginary unit
-    \newcommand{\e}{\operatorname{e}}  % Euler's number
-    \newcommand{\dd}{\operatorname{d}} % infinitesimal operator
-    \newcommand{\abs}[1]{\left|#1\right|} % absolute value
-    \newcommand{\conj}[1]{\overline{#1}} % complex conjugate
-    \newcommand{\conjT}[1]{\overline{#1^T}} % transposed complex conjugate
-    \newcommand{\inv}[1]{\left(#1\right)^{\!-1}} % inverse
-    % Since the physics package is not loaded, we define the macros ourselves:
-    \newcommand{\vb}[1]{\mathbf{#1}} % vectors and matrices are bold
-    % new macros:
-    \newcommand{\rect}{\operatorname{rect}}  % rect or boxcar function
-    \newcommand{\sinc}{\operatorname{sinc}}  % sinc(t) := sin(pi*t) / (pi*t)
-
-
-.. _tutorial_SpectralAnalysis:
+.. _tutorial_signal-SpectralAnalysis:
 
 Spectral Analysis
-------------------
+=================
 Spectral analysis refers to investigating the Fourier transform [#Wiki_FT]_ of a
 signal. Depending on the context, various names, like spectrum, spectral density or
 periodogram exist for the various spectral representations of the Fourier transform.
@@ -949,7 +1026,7 @@ this section the spectra are continuous in frequency.
 
 
 Continuous-time Sine Signal
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 Consider a sine signal with amplitude :math:`a`, frequency :math:`f_x` and duration
 :math:`\tau`, i.e.,
 
@@ -1104,7 +1181,7 @@ information about the signal's amplitude.
 
 
 Sampled Sine Signal
-^^^^^^^^^^^^^^^^^^^
+-------------------
 In practice sampled signals are widely used. I.e., the signal is represented by :math:`n`
 samples :math:`x_k := x(kT)`, :math:`k=0, \ldots, n-1`, where :math:`T` is the sampling
 interval, :math:`\tau:=nT` the signal's duration and :math:`f_S := 1/T` the sampling
@@ -1290,7 +1367,7 @@ used in filter design than in spectral analysis.
 
 
 Phase of Spectrum
-^^^^^^^^^^^^^^^^^
+-----------------
 The phase (i.e., :func:`~numpy.angle()`) of the Fourier transform is typically utilized
 for investigating the time delay of the spectral components of a signal passing through
 a system like a filter. In the following example the standard test signal, an impulse
@@ -1320,7 +1397,7 @@ response of a filter directly.
 
 
 Spectra with Averaging
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 The :func:`~scipy.signal.periodogram` function calculates a power spectral density
 (``scaling='density'``) or a squared magnitude spectrum (``scaling='spectrum'``). To
 obtain a smoothed periodogram, the :func:`~scipy.signal.welch` function can be used. It
@@ -1351,7 +1428,7 @@ reducing the number of segments by increasing the segment length (setting parame
 
 
 Lomb-Scargle Periodograms (:func:`lombscargle`)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------------
 
 Least-squares spectral analysis (LSSA) [#Lomb1976]_ [#Scargle1982]_ is a method of
 estimating a frequency spectrum, based on a least-squares fit of sinusoids to data
@@ -1396,10 +1473,10 @@ allows for the weighting of individual samples and calculating an unknown offset
 .. |old_istft| replace:: `istft <scipy.signal.istft>`
 .. |old_spectrogram| replace:: `spectrogram <scipy.signal.spectrogram>`
 
-.. _tutorial_stft:
+.. _tutorial_signal-STFT:
 
 Short-Time Fourier Transform
-----------------------------
+============================
 This section gives some background information on using the |ShortTimeFFT|
 class: The short-time Fourier transform (STFT) can be utilized to analyze the
 spectral properties of signals over time. It divides a signal into overlapping
@@ -1452,7 +1529,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
    where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e., it is
    the mid point of the window (`m_num_mid`). For notational convenience,
    :math:`x[k]:=0` for :math:`k\not\in\{0, 1, \ldots, N-1\}` is assumed. In the
-   subsection :ref:`tutorial_stft_sliding_win` the indexing of the slices is
+   subsection :ref:`tutorial_signal-STFT_sliding_win` the indexing of the slices is
    discussed in more detail.
 #. Then perform a discrete Fourier transform (i.e., an
    :ref:`FFT <tutorial_FFT>`) of :math:`x_p[m]`.
@@ -1480,7 +1557,7 @@ these two steps:
 
    .. math::
 
-      x_p[m] = \frac{1}{M}\sum_{q=0}^M S[q, p]\, \exp\!\big\{
+      x_p[m] = \frac{1}{M}\sum_{q=0}^{M-1} S[q, p]\, \exp\!\big\{
                                           2\jj\pi (q + \phi_m)\, m / M\big\}\ .
 
 #. Sum the shifted slices weighted by :math:`w_d[m]` to reconstruct the
@@ -1499,12 +1576,12 @@ a given window :math:`w[m]` the hop size :math:`h` must be small enough to ensur
 every sample of :math:`x[k]` is touched by a non-zero value of at least one
 window slice. This is sometimes referred as the "non-zero overlap condition"
 (see :func:`~scipy.signal.check_NOLA`). Some more details are
-given in the subsection :ref:`tutorial_stft_dual_win`.
+given in the subsection :ref:`tutorial_signal-STFT_dual_win`.
 
-.. _tutorial_stft_sliding_win:
+.. _tutorial_signal-STFT_sliding_win:
 
 Sliding Windows
-^^^^^^^^^^^^^^^
+---------------
 This subsection discusses how the sliding window is indexed in the
 |ShortTimeFFT| by means of an example: Consider a window of length 6 with a
 `hop` interval of two and a sampling interval `T` of one, e.g., ``ShortTimeFFT
@@ -1552,10 +1629,10 @@ first slice not touching the signal. The corresponding sample index is
    that the shown indexes are correct.
 
 
-.. _tutorial_stft_dual_win:
+.. _tutorial_signal-STFT_dual_win:
 
 Inverse STFT and Dual Windows
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 The term dual window stems from frame theory [#Christensen2016]_ where a frame is a
 series expansion which can represent any function in a given Hilbert space. There the
 expansions :math:`\{g_k\}` and :math:`\{h_k\}` are dual frames if for all
@@ -1876,15 +1953,15 @@ mapping, which is implemented in `~scipy.signal.ShortTimeFFT.from_win_equals_dua
 
 
 
-.. _tutorial_stft_legacy_stft:
+.. _tutorial_signal-STFT_legacy_stft:
 
 Comparison with Legacy Implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
 |ShortTimeFFT| implementation. This section discusses the key differences
 between the older "legacy" and the newer |ShortTimeFFT| implementations. The
 main motivation for a rewrite was the insight that integrating :ref:`dual
-windows <tutorial_stft_dual_win>` could not be done in a sane way without
+windows <tutorial_signal-STFT_dual_win>` could not be done in a sane way without
 breaking compatibility. This opened the opportunity for rethinking the code
 structure and the parametrization, thus making some implicit behavior more
 explicit.
@@ -1943,7 +2020,7 @@ with a negative slope:
 
 
 That the |ShortTimeFFT| produces 3 more time slices than the legacy version is
-the main difference. As laid out in the :ref:`tutorial_stft_sliding_win`
+the main difference. As laid out in the :ref:`tutorial_signal-STFT_sliding_win`
 section, all slices which touch the signal are incorporated in the new version.
 This has the advantage that the STFT can be sliced and reassembled as shown in
 the |ShortTimeFFT| code example. Furthermore, using all touching slices makes
@@ -2082,9 +2159,9 @@ table shows those correspondences:
 When using ``onesided`` output on complex-valued input signals, the old
 |old_spectrogram| switches to ``two-sided`` mode. The |ShortTimeFFT| raises
 a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
-real-valued inputs. Consult the :ref:`tutorial_SpectralAnalysis` section above for a
-discussion on the various spectral representations which are induced by the various
-parameterizations.
+real-valued inputs. Consult the :ref:`tutorial_signal-SpectralAnalysis` section above
+for a discussion on the various spectral representations which are induced by the
+various parameterizations.
 
 
 
