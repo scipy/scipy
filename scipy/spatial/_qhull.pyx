@@ -2622,6 +2622,18 @@ class Voronoi(_QhullUser):
     The Voronoi diagram is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
+    .. note::
+
+       `ridge_points` and `ridge_vertices` can be incomplete when the
+       input points are not in *general position*, for example points
+       on a regular grid or on a common sphere. Such degenerate inputs
+       cause many computational-geometry algorithms to drop or
+       miscompute parts of the result. Passing ``qhull_options="QJ"``
+       joggles the points to restore general position and resolve the
+       degeneracy, at the cost of a slightly perturbed diagram. See the
+       `Qhull documentation
+       <http://www.qhull.org/html/qh-optf.htm#Fv2>`__ for details.
+
     Examples
     --------
     Voronoi diagram for a set of point:
