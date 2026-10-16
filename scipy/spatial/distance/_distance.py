@@ -1455,8 +1455,7 @@ def russellrao(u, v, w=None):
     0.3333333333333333
 
     """
-    u = np.asarray(u)
-    v = np.asarray(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum(axis=-1)
         n = u.shape[-1]
