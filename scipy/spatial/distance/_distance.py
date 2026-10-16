@@ -2195,6 +2195,9 @@ def squareform(X, force="no", checks=True):
            6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
     """
     X = np.ascontiguousarray(X)
+    if X.dtype.hasobject:
+        # the C code copies raw bytes, which breaks the refcounts of objects
+        raise TypeError("squareform does not support object arrays")
 
     s = X.shape
 

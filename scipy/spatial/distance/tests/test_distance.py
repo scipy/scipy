@@ -1657,6 +1657,16 @@ class TestSquareForm:
         assert rv.dtype == dtype
         xp_assert_equal(rv, np.array([[0, 8.3], [8.3, 0]], dtype=dtype))
 
+    @pytest.mark.parametrize('X', [
+        np.array([[0, 1.0], [1.0, 0]], dtype=object),
+        np.array([1.0], dtype=object),
+        np.zeros((2, 2), dtype=[('d', object)]),
+    ])
+    def test_squareform_object_dtype(self, X):
+        # gh-22929: copying objects as raw bytes corrupted their refcounts
+        with pytest.raises(TypeError, match="object arrays"):
+            squareform(X)
+
     def test_squareform_multi_matrix(self):
         for n in range(2, 5):
             self.check_squareform_multi_matrix(n)
