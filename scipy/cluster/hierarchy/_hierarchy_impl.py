@@ -1286,7 +1286,7 @@ def cut_tree(Z, n_clusters=None, height=None):
     groups = xp.zeros((n_cols, nobs), dtype=xp.int64, device=xp_device(Z))
     last_group = xp.arange(nobs, device=xp_device(Z))
     if 0 in cols_idx:
-        groups[0] = last_group
+        groups[np.nonzero(0 == cols_idx)[0]] = last_group
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
