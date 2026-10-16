@@ -211,7 +211,7 @@ the :math:`x`-coordinates come from the knots [Floater]_, [deBoor]_.
 **Spline functions.** For a function, :math:`y = f(x)`, the coefficients are
 scalars, and they only give the :math:`y`-coordinates of the control points.
 The matching :math:`x`-coordinates are the *knot averages* [Floater]_, also
-known as *Greville abscissae* [BNO]_, which are averages of ``k`` consecutive
+known as *Greville abscissae* [PBP]_, which are averages of ``k`` consecutive
 knots,
 
 .. math::
@@ -448,9 +448,8 @@ References
 .. [Floater] M. Floater, An introduction to spline theory, 2025,
    https://www.uio.no/studier/emner/matnat/math/MAT4170/v25/undervisningsmateriale/spline_notes.pdf
 .. [deBoor] C. de Boor, A practical guide to splines, Springer, 2001.
-.. [BNO] R. Romagnoli and S. Kar, B-Spline Neural Operators for Nonlinear
-   Dynamical Systems: Representation and Analysis, arXiv:2512.19291v2, 2026,
-   Sec. II-B, Eq. (10), https://arxiv.org/abs/2512.19291v2
+.. [PBP] H. Prautzsch, W. Boehm, and M. Paluszny, Bézier and B-spline
+   techniques, Springer, 2002.
 .. [Dierckx] P. Dierckx, Curve and surface fitting with splines, Monographs on
    Numerical Analysis, Oxford University Press, 1993.
 
