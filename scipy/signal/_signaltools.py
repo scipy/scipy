@@ -3360,6 +3360,40 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     --------
     invres, residuez, numpy.poly, unique_roots
 
+    Examples
+    --------
+    Compute the partial-fraction expansion of b(s) / a(s):
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> b = np.array([1, 0.3])
+    >>> a = np.array([1, 3, 2])  # (s + 1) * (s + 2)
+    >>> r, p, k = signal.residue(b, a)
+    >>> r
+    array([-0.7,  1.7])
+    >>> p
+    array([-1., -2.])
+
+    There is no direct term here, so `k` is empty:
+
+    >>> k
+    array([], dtype=float64)
+
+    Get `b` and `a` back with `invres`:
+
+    >>> signal.invres(r, p, k)
+    (array([1. , 0.3]), array([1., 3., 2.]))
+
+    An example where `k` is not empty:
+
+    >>> b = np.array([2, -1, 0.1])
+    >>> a = np.array([1, 0.5])
+    >>> r, p, k = signal.residue(b, a)
+    >>> r, p
+    (array([1.1]), array([-0.5]))
+    >>> k
+    array([ 2., -2.])
+
     Notes
     -----
     The "deflation through subtraction" algorithm is used for
