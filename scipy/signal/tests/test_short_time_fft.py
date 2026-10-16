@@ -520,6 +520,22 @@ def test_padding_short_slices():
     xp_assert_equal(Sx1, Sx_full[:, -1:], err_msg="Invalid STFT slice for p0=5, p1=6")
 
 
+@pytest.mark.parametrize('padding', get_args(PAD_TYPE))
+@pytest.mark.parametrize('n, m_num, hop', [(3, 4, 1), (8, 4, 2)])
+def test_stft_partial_slices(padding, n, m_num, hop):
+    """Every slice ``stft(x, p0, p1)`` must equal the matching columns of the
+    full STFT, i.e., cropping x before padding must not change the result. """
+    x = np.arange(n)
+    SFT = ShortTimeFFT(np.ones(m_num), hop=hop, fs=1, phase_shift=None)
+    Sx_full = SFT.stft(x, padding=padding)
+    p_min, p_max = SFT.p_min, SFT.p_max(n)
+    for p0 in range(SFT.p_min, p_max):
+        for p1 in range(p0 + 1, p_max + 1):
+            Sx = SFT.stft(x, p0, p1, padding=padding)
+            Sx_ref = Sx_full[:, p0 - p_min:p1 - p_min]
+            xp_assert_close(Sx, Sx_ref, err_msg=f"{p0=}, {p1=}")
+
+
 def test_invertible():
     """Verify `invertible` property. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)

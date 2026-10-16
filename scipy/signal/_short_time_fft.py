@@ -1101,17 +1101,20 @@ class ShortTimeFFT:
 
         n = x.shape[-1]  # number of samples in signal
         k0 = p0 * self.hop - self.m_num_mid + k_off  # start index of x
-        k1 = k0 + (p1-p0-1) * self.hop + self.m_num  # stop index of x
+        k1 = k0 + (p1 - p0 - 1) * self.hop + self.m_num  # stop index of x
         pad0, pad1 = -min(0, k0), max(0, k1 - n)  # left/right padding amount
+        # Note that for mode='reflect', np.pad() uses `j+1` adjacent signal samples
+        # to determine `j` padding samples.
 
         if pad0 > 0 and pad1 > 0:  # both left and right padding needed:
             x1 = np.pad(x, pad_z + [(pad0, pad1)], **kw_pad)
         elif pad0 > 0:  # only left padding needed:
             x1 = np.pad(x[..., :max(pad0 + 1, k1)], pad_z + [(pad0, 0)], **kw_pad)
-            x1 = x1[..., :pad0+k1]
+            x1 = x1[..., :pad0 + k1]
         elif pad1 > 0:  # only right padding needed:
-            x1 = np.pad(x[..., -max(n - k0, pad1 + 1):], pad_z + [(0, pad1)], **kw_pad)
-            x1 = x1[..., k0:]
+            j = n - k0  # length of un-padded x1
+            x1 = np.pad(x[..., -max(j, pad1 + 1):], pad_z + [(0, pad1)], **kw_pad)
+            x1 = x1[..., -(j + pad1):]
         else:  # no padding needed:
             x1 = x[..., k0:k1]
 
