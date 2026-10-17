@@ -1,8 +1,10 @@
+import math
+from math import inf
 import sys
 
 import numpy as np
-from numpy import inf
 
+from scipy._lib._array_api import xp_capabilities, is_cupy
 from scipy._external import array_api_extra as xpx
 from scipy import special
 from scipy.special import _ufuncs as scu
@@ -13,6 +15,18 @@ from scipy.stats._distribution_infrastructure import (
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 
+rv_capabilities = xp_capabilities(
+    skip_backends=[('array_api_strict', "fancy indexing in EIM"),
+                   ('torch', 'no attempt'),
+                   ("jax.numpy", 'mutation'),
+                   ('dask.array', 'no attempt')],
+    method_capabilities={  # no effect unless I apply to superclass?
+            "plot": dict(np_only=True),
+    }
+)
+
+
+@rv_capabilities
 class Normal(ContinuousDistribution):
     r"""Normal distribution with prescribed mean and standard deviation.
 
@@ -40,8 +54,8 @@ class Normal(ContinuousDistribution):
     _parameterizations = [_Parameterization(_mu_param, _sigma_param)]
 
     _variable = _x_param
-    _normalization = 1/np.sqrt(2*np.pi)
-    _log_normalization = np.log(2*np.pi)/2
+    _normalization = 1/math.sqrt(2*math.pi)
+    _log_normalization = math.log(2*math.pi)/2
 
     def __new__(cls, mu=None, sigma=None, **kwargs):
         if mu is None and sigma is None:
@@ -52,7 +66,8 @@ class Normal(ContinuousDistribution):
         super().__init__(mu=mu, sigma=sigma, **kwargs)
 
     def _logpdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._logpdf_formula(self, (x - mu)/sigma) - np.log(sigma)
+        xp = self._xp
+        return StandardNormal._logpdf_formula(self, (x - mu)/sigma) - xp.log(sigma)
 
     def _pdf_formula(self, x, *, mu, sigma, **kwargs):
         return StandardNormal._pdf_formula(self, (x - mu)/sigma) / sigma
@@ -82,18 +97,20 @@ class Normal(ContinuousDistribution):
         return StandardNormal._ilogccdf_formula(self, x) * sigma + mu
 
     def _entropy_formula(self, *, mu, sigma, **kwargs):
+        xp = self._xp
         with np.errstate(invalid='ignore'):
-            log_abs_sigma = np.log(abs(sigma))
+            log_abs_sigma = xp.log(abs(sigma))
         return StandardNormal._entropy_formula(self) + log_abs_sigma
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
+        xp = self._xp
         lH0 = StandardNormal._logentropy_formula(self)
         with np.errstate(divide='ignore', invalid='ignore'):
             # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf -> divide
             # sigma = NaN -> invalid
             # Silence the unnecessary runtime warnings
-            lls = np.log(np.log(abs(sigma))+0j)
-        return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
+            lls = xp.log(xp.log(abs(sigma))+0j)
+        return special.logsumexp(xp.stack(xp.broadcast_arrays(lH0, lls)), axis=0)
 
     def _median_formula(self, *, mu, sigma, **kwargs):
         return mu
@@ -102,8 +119,9 @@ class Normal(ContinuousDistribution):
         return mu
 
     def _moment_raw_formula(self, order, *, mu, sigma, **kwargs):
+        xp = self._xp
         if order == 0:
-            return np.ones_like(mu)
+            return xp.ones_like(mu)
         elif order == 1:
             return mu
         else:
@@ -111,28 +129,32 @@ class Normal(ContinuousDistribution):
     _moment_raw_formula.orders = [0, 1]  # pyrefly: ignore[missing-attribute]
 
     def _moment_central_formula(self, order, *, mu, sigma, **kwargs):
+        xp = self._xp
         if order == 0:
-            return np.ones_like(mu)
+            return xp.ones_like(mu)
         elif order % 2:
-            return np.zeros_like(mu)
+            return xp.zeros_like(mu)
         else:
             # exact is faster (and obviously more accurate) for reasonable orders
             return sigma**order * special.factorial2(int(order) - 1, exact=True)
 
     def _lmoment_formula(self, order, *, mu, sigma, **kwargs):
-        lscale = sigma / np.sqrt(np.pi)
-        lkurtosis = 30*np.arctan(np.sqrt(2))/np.pi - 9
+        xp = self._xp
+        lscale = sigma / xp.pi**0.5
+        lkurtosis = 30*xp.atan(2**0.5)/xp.pi - 9
         lmoments = {1: mu, 2: lscale, 3: 0, 4: lkurtosis * lscale}
         return lmoments.get(order, None)
 
     def _sample_formula(self, full_shape, rng, *, mu, sigma, **kwargs):
-        return rng.normal(loc=mu, scale=sigma, size=full_shape)[()]
+        xp = self._xp
+        return xp.asarray(rng.normal(loc=mu, scale=sigma, size=full_shape))[()]
 
 
-def _log_diff(log_p, log_q):
-    return special.logsumexp([log_p, log_q+np.pi*1j], axis=0)
+def _log_diff(log_p, log_q, xp):
+    return special.logsumexp(xp.stack([log_p, log_q+xp.pi*1j]), axis=0)
 
 
+@rv_capabilities
 class StandardNormal(Normal):
     r"""Standard normal distribution.
 
@@ -147,19 +169,20 @@ class StandardNormal(Normal):
     _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
     _variable = _x_param
     _parameterizations = []
-    _normalization = 1/np.sqrt(2*np.pi)
-    _log_normalization = np.log(2*np.pi)/2
-    mu = np.float64(0.)
-    sigma = np.float64(1.)
+    _normalization = 1/math.sqrt(2*math.pi)
+    _log_normalization = math.log(2*math.pi)/2
+    mu = 0.
+    sigma = 1.
 
-    def __init__(self, **kwargs):
-        ContinuousDistribution.__init__(self, **kwargs)
+    def __init__(self, xp=np, **kwargs):
+        ContinuousDistribution.__init__(self, xp=xp, **kwargs)
 
     def _logpdf_formula(self, x, **kwargs):
         return -(self._log_normalization + x**2/2)
 
     def _pdf_formula(self, x, **kwargs):
-        return self._normalization * np.exp(-x**2/2)
+        xp = self._xp
+        return self._normalization * xp.exp(-x**2/2)
 
     def _logcdf_formula(self, x, **kwargs):
         return special.log_ndtr(x)
@@ -186,10 +209,12 @@ class StandardNormal(Normal):
         return -special.ndtri_exp(x)
 
     def _entropy_formula(self, **kwargs):
-        return (1 + np.log(2*np.pi))/2
+        xp = self._xp
+        return (1 + xp.log(2*xp.pi))/2
 
     def _logentropy_formula(self, **kwargs):
-        return np.log1p(np.log(2*np.pi)) - np.log(2)
+        xp = self._xp
+        return xp.log1p(xp.log(2*xp.pi)) - xp.log(2)
 
     def _median_formula(self, **kwargs):
         return 0
@@ -211,9 +236,34 @@ class StandardNormal(Normal):
         return super()._lmoment_formula(order, mu=0., sigma=1., **kwargs)
 
     def _sample_formula(self, full_shape, rng, **kwargs):
-        return rng.normal(size=full_shape)[()]
+        xp = self._xp
+        return xp.asarray(rng.normal(size=full_shape))[()]
 
 
+class _StandardCauchy(ContinuousDistribution):
+    r"""Standard Cauchy distribution."""
+    _x_support = _RealInterval(endpoints=(-inf, inf))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
+    _variable = _x_param
+    _parameterizations = []
+
+    def __init__(self, xp=np, **kwargs):
+        ContinuousDistribution.__init__(self, xp=xp, **kwargs)
+
+    def _pdf_formula(self, x, **kwargs):
+        xp = self._xp
+        return 1 / (xp.pi*(1 + x**2))
+
+    def _cdf_formula(self, x, **kwargs):
+        xp = self._xp
+        return 1/xp.pi*xp.atan2(1, -x)
+
+    def _moment_raw_formula(self, order, **kwargs):
+        xp = self._xp
+        return xp.full(self._shape, xp.nan, dtype=self._dtype, device=self._device)
+
+
+@rv_capabilities
 class Logistic(ContinuousDistribution):
     r"""Standard logistic distribution.
 
@@ -228,15 +278,17 @@ class Logistic(ContinuousDistribution):
     _variable = _x_param = _RealParameter('x', domain=_x_support, typical=(-9, 9))
     _parameterizations = ()   # type:ignore[assignment]
 
-    _scale = np.pi / np.sqrt(3)
+    _scale = math.pi / math.sqrt(3)
 
     def _logpdf_formula(self, x, **kwargs):
-        y = -np.abs(x)
-        return y - 2 * special.log1p(np.exp(y))
+        xp = self._xp
+        y = -xp.abs(x)
+        return y - 2 * special.log1p(xp.exp(y))
 
     def _pdf_formula(self, x, **kwargs):
         # f(x) = sech(x / 2)**2 / 4
-        return (.5 / np.cosh(x / 2))**2
+        xp = self._xp
+        return (.5 / xp.cosh(x / 2))**2
 
     def _logcdf_formula(self, x, **kwargs):
         return special.log_expit(x)
@@ -260,7 +312,7 @@ class Logistic(ContinuousDistribution):
         return 2.0
 
     def _logentropy_formula(self, **kwargs):
-        return np.log(2)
+        return math.log(2.)
 
     def _median_formula(self, **kwargs):
         return 0
@@ -269,10 +321,11 @@ class Logistic(ContinuousDistribution):
         return 0
 
     def _moment_raw_formula(self, order, **kwargs):
+        xp = self._xp
         n = int(order)
         if n % 2:
             return 0.0
-        return np.pi**n * abs((2**n - 2) * float(special.bernoulli(n)[-1]))
+        return xp.pi**n * abs((2**n - 2) * float(special.bernoulli(n)[-1]))
 
     def _moment_central_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs)
@@ -285,10 +338,12 @@ class Logistic(ContinuousDistribution):
         return lmoments.get(order, None)
 
     def _sample_formula(self, full_shape, rng, **kwargs):
-        return rng.logistic(size=full_shape)[()]
+        xp = self._xp
+        return xp.asarray(rng.logistic(size=full_shape))[()]
 
 
 # currently for testing only
+@rv_capabilities
 class _LogUniform(ContinuousDistribution):
     r"""Log-uniform distribution.
 
@@ -331,10 +386,11 @@ class _LogUniform(ContinuousDistribution):
         super().__init__(a=a, b=b, log_a=log_a, log_b=log_b, **kwargs)
 
     def _process_parameters(self, a=None, b=None, log_a=None, log_b=None, **kwargs):
-        a = np.exp(log_a) if a is None else a
-        b = np.exp(log_b) if b is None else b
-        log_a = np.log(a) if log_a is None else log_a
-        log_b = np.log(b) if log_b is None else log_b
+        xp = self._xp
+        a = xp.exp(log_a) if a is None else a
+        b = xp.exp(log_b) if b is None else b
+        log_a = xp.log(a) if log_a is None else log_a
+        log_b = xp.log(b) if log_b is None else log_b
         kwargs.update(dict(a=a, b=b, log_a=log_a, log_b=log_b))
         return kwargs
 
@@ -342,13 +398,15 @@ class _LogUniform(ContinuousDistribution):
         return ((log_b - log_a)*x)**-1
 
     def _moment_raw_formula(self, order, log_a, log_b, **kwargs):
+        xp = self._xp
         if order == 0:
             return self._one
         t1 = self._one / (log_b - log_a) / order
-        t2 = np.real(np.exp(_log_diff(order * log_b, order * log_a)))
+        t2 = xp.real(xp.exp(_log_diff(order * log_b, order * log_a, xp=xp)))
         return t1 * t2
 
 
+@rv_capabilities
 class Uniform(ContinuousDistribution):
     r"""Uniform distribution.
 
@@ -384,21 +442,25 @@ class Uniform(ContinuousDistribution):
         return kwargs
 
     def _logpdf_formula(self, x, *, ab, **kwargs):
-        return np.where(np.isnan(x), np.nan, -np.log(ab))
+        xp = self._xp
+        return xp.where(xp.isnan(x), xp.nan, -xp.log(ab))
 
     def _pdf_formula(self, x, *, ab, **kwargs):
-        return np.where(np.isnan(x), np.nan, 1/ab)
+        xp = self._xp
+        return xp.where(xp.isnan(x), xp.nan, 1/ab)
 
     def _logcdf_formula(self, x, *, a, ab, **kwargs):
+        xp = self._xp
         with np.errstate(divide='ignore'):
-            return np.log(x - a) - np.log(ab)
+            return xp.log(x - a) - xp.log(ab)
 
     def _cdf_formula(self, x, *, a, ab, **kwargs):
         return (x - a) / ab
 
     def _logccdf_formula(self, x, *, b, ab, **kwargs):
+        xp = self._xp
         with np.errstate(divide='ignore'):
-            return np.log(b - x) - np.log(ab)
+            return xp.log(b - x) - xp.log(ab)
 
     def _ccdf_formula(self, x, *, b, ab, **kwargs):
         return (b - x) / ab
@@ -410,7 +472,8 @@ class Uniform(ContinuousDistribution):
         return b - ab*p
 
     def _entropy_formula(self, *, ab, **kwargs):
-        return np.log(ab)
+        xp = self._xp
+        return xp.log(ab)
 
     def _mode_formula(self, *, a, b, ab, **kwargs):
         return a + 0.5*ab
@@ -428,14 +491,13 @@ class Uniform(ContinuousDistribution):
     _moment_central_formula.orders = [2]  # pyrefly: ignore[missing-attribute]
 
     def _lmoment_formula(self, order, *, a, b, ab, **kwargs):
+        xp = self._xp
         lmoments = {1: 0.5*(a + b), 2: ab / 6}
-        return lmoments.get(order, np.zeros_like(ab))
+        return lmoments.get(order, xp.zeros_like(ab))
 
     def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
-        try:
-            return rng.uniform(a, b, size=full_shape)[()]
-        except OverflowError:  # happens when there are NaNs
-            return rng.uniform(0, 1, size=full_shape)*ab + a
+        xp = self._xp
+        return xp.asarray(rng.uniform(0, 1, size=full_shape))*ab + a
 
 
 class _Gamma(ContinuousDistribution):
@@ -450,9 +512,11 @@ class _Gamma(ContinuousDistribution):
     _variable = _x_param
 
     def _pdf_formula(self, x, *, a, **kwargs):
-        return x ** (a - 1) * np.exp(-x) / special.gamma(a)
+        xp = self._xp
+        return x ** (a - 1) * xp.exp(-x) / special.gamma(a)
 
 
+@xp_capabilities(np_only=True)
 class Binomial(DiscreteDistribution):
     r"""Binomial distribution with prescribed success probability and number of trials
 
@@ -478,8 +542,9 @@ class Binomial(DiscreteDistribution):
         super().__init__(n=n, p=p, **kwargs)
 
     def _support(self, *, n, p, **kwargs):
+        xp = self._xp
         a, b = super()._support(n=n, p=p, **kwargs)
-        return np.where(p == 1, b, a), np.where(p == 0, a, b)
+        return xp.where(p == 1, b, a), xp.where(p == 0, a, b)
 
     def _pmf_formula(self, x, *, n, p, **kwargs):
         return scu._binom_pmf(x, n, p)
@@ -499,20 +564,22 @@ class Binomial(DiscreteDistribution):
     def _logcdf_formula(self, x, *, n, p, **kwargs):
         # todo: add this strategy to infrastructure more generally, but allow dist
         #   author to specify threshold other than median in case median is expensive
+        xp = self._xp
         median = self._icdf_formula(0.5, n=n, p=p)
         return xpx.apply_where(x < median, (x, n, p),
-            lambda *args: np.log(scu._binom_cdf(*args)),
-            lambda *args: np.log1p(-scu._binom_sf(*args))
+            lambda *args: xp.log(scu._binom_cdf(*args)),
+            lambda *args: xp.log1p(-scu._binom_sf(*args))
         )
 
     def _ccdf_formula(self, x, *, n, p, **kwargs):
         return scu._binom_sf(x, n, p)
 
     def _logccdf_formula(self, x, *, n, p, **kwargs):
+        xp = self._xp
         median = self._icdf_formula(0.5, n=n, p=p)
         return xpx.apply_where(x < median, (x, n, p),
-            lambda *args: np.log1p(-scu._binom_cdf(*args)),
-            lambda *args: np.log(scu._binom_sf(*args))
+            lambda *args: xp.log1p(-scu._binom_cdf(*args)),
+            lambda *args: xp.log(scu._binom_sf(*args))
         )
 
     def _icdf_formula(self, x, *, n, p, **kwargs):
@@ -523,8 +590,9 @@ class Binomial(DiscreteDistribution):
 
     def _mode_formula(self, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Mode
-        mode = np.floor((n+1)*p)
-        mode = np.where(p == 1, mode - 1, mode)
+        xp = self._xp
+        mode = xp.floor((n+1)*p)
+        mode = xp.where(p == 1, mode - 1, mode)
         return mode[()]
 
     def _moment_raw_formula(self, order, *, n, p, **kwargs):
@@ -538,8 +606,9 @@ class Binomial(DiscreteDistribution):
 
     def _moment_central_formula(self, order, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
+        xp = self._xp
         if order == 1:
-            return np.zeros_like(n)
+            return xp.zeros_like(n)
         if order == 2:
             return n*p*(1 - p)
         if order == 3:
@@ -550,6 +619,7 @@ class Binomial(DiscreteDistribution):
     _moment_central_formula.orders = [1, 2, 3, 4]  # pyrefly: ignore[missing-attribute]
 
 
+@rv_capabilities
 class VonMises(ContinuousDistribution, CircularDistribution):
     r"""von Mises distribution.
 
@@ -571,15 +641,15 @@ class VonMises(ContinuousDistribution, CircularDistribution):
     See method docstrings for details.
     """
 
-    _mu_domain = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
+    _mu_domain = _RealInterval(endpoints=(0, 2*math.pi), inclusive=(True, True))
     _kappa_domain = _RealInterval(endpoints=(0, inf))
-    _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
+    _x_support = _RealInterval(endpoints=(0, 2*math.pi), inclusive=(True, True))
 
     _mu_param = _RealParameter('mu', domain=_mu_domain, symbol=r'\mu',
-                               typical=(0, 2*np.pi))
+                               typical=(0, 2*math.pi))
     _kappa_param = _RealParameter('kappa', domain=_kappa_domain, symbol=r'\kappa',
                                   typical=(0.5, 5))
-    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 2*np.pi))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 2*math.pi))
 
     _x_support.define_parameters(_mu_param, _kappa_param)
 
@@ -593,23 +663,30 @@ class VonMises(ContinuousDistribution, CircularDistribution):
     # that to future optimizations
 
     def _pdf_formula(self, x, *, mu, kappa, **kwargs):
-        return np.exp(kappa * np.cos(x - mu)) / (2 * np.pi * special.i0(kappa))
+        xp = self._xp
+        return xp.exp(kappa * xp.cos(x - mu)) / (2 * xp.pi * special.i0(kappa))
 
     def _cdf_formula(self, x, *, mu, kappa, **kwargs):
         # compensate for von_mises_cdf defined on [-pi, pi) and =0 at x = mu
         # x0 = x.copy()
         # x = (x + np.pi) % (2*np.pi) - np.pi
-        x = np.where(x < 0, x + 2*np.pi, x)
-        res = np.asarray(scu._von_mises_cdf(kappa, x - mu)
+        xp = self._xp
+
+        if is_cupy(xp):  # would be good to get this added to CuPy from xsf
+            return self._cdf_quadrature(x, mu=mu, kappa=kappa, **kwargs)
+
+        x = xp.where(x < 0, x + 2*xp.pi, x)
+        res = xp.asarray(scu._von_mises_cdf(kappa, x - mu)
                          - scu._von_mises_cdf(kappa, -mu))
         # return res % 1  # doesn't work because 1 % 1 = 0
         res[res < 0] += 1
         return res
 
     def _entropy_formula(self, *, mu, kappa, **kwargs):
+        xp = self._xp
         i0k = special.i0(kappa)
         i1k = special.i1(kappa)
-        return -kappa * i1k/i0k + np.log(np.abs(2*np.pi*i0k))
+        return -kappa * i1k/i0k + xp.log(xp.abs(2*xp.pi*i0k))
 
     def _median_formula(self, *, mu, kappa, **kwargs):
         return mu
@@ -618,25 +695,35 @@ class VonMises(ContinuousDistribution, CircularDistribution):
         return mu
 
     def _moment_raw_formula(self, order, *, mu, kappa, **kwargs):
+        xp = self._xp
         if order == 0:
-            return np.ones_like(mu)
-        else:
-            i0k = special.i0(kappa)
-            ink = special.iv(order, kappa)
-            return ink/i0k * np.exp(1j*order*mu)
+            return xp.ones_like(mu) + 0j
+
+        if is_cupy(xp):
+            return None
+
+        i0k = special.i0(kappa)
+        ink = special.iv(order, kappa)
+        return ink/i0k * xp.exp(1j*order*mu)
 
     def _moment_central_formula(self, order, *, mu, kappa, **kwargs):
+        xp = self._xp
         if order == 0:
-            return np.ones_like(mu)
-        else:
-            i0k = special.i0(kappa)
-            ink = special.iv(order, kappa)
-            return ink/i0k
+            return xp.ones_like(mu) + 0j
+
+        if is_cupy(xp):
+            return None
+
+        i0k = special.i0(kappa)
+        ink = special.iv(order, kappa)
+        return ink/i0k + 0j
 
     def _sample_formula(self, full_shape, rng, *, mu, kappa, **kwargs):
-        return rng.vonmises(mu=mu, kappa=kappa, size=full_shape)[()]
+        xp = self._xp
+        return xp.asarray(rng.vonmises(mu=mu, kappa=kappa, size=full_shape))[()]
 
 
+@rv_capabilities
 class _TestCircular(ContinuousDistribution, CircularDistribution):
     r"""Distribution with very simple formulas for testing.
     """
@@ -650,44 +737,54 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         super().__init__(**kwargs)
 
     def _logpdf_formula(self, x, **kwargs):
-        assert not np.any(np.abs(x) > 1)
+        xp = self._xp
+        assert not xp.any(xp.abs(x) > 1)
         with np.errstate(divide='ignore'):
-            return np.log(0.75) + np.log1p(-x**2)
+            return xp.log(0.75) + xp.log1p(-x**2)
 
     def _pdf_formula(self, x, **kwargs):
-        assert not np.any(np.abs(x) > 1)
+        xp = self._xp
+        assert not xp.any(xp.abs(x) > 1)
         return 0.75 * (1 - x**2)
 
     def _cdf_formula(self, x, **kwargs):
-        assert not np.any(np.abs(x) > 1)
+        xp = self._xp
+        assert not xp.any(xp.abs(x) > 1)
         return 0.5 + 0.75*x - 0.25*x**3
 
     def _ccdf_formula(self, x, **kwargs):
-        assert not np.any(np.abs(x) > 1)
+        xp = self._xp
+        assert not xp.any(xp.abs(x) > 1)
         return 0.5 - 0.75*x + 0.25*x**3
 
     def _icdf_formula(self, p, **kwargs):
-        return 2*np.cos(1/3 * np.arccos(1 - 2*p) + 4*np.pi/3)
+        xp = self._xp
+        return 2*xp.cos(1/3 * xp.acos(1 - 2*p) + 4*xp.pi/3)
 
     def _iccdf_formula(self, p, **kwargs):
-        return 2*np.cos(1/3 * np.arccos(2*p - 1) + 4*np.pi/3)
+        xp = self._xp
+        return 2*xp.cos(1/3 * xp.acos(2*p - 1) + 4*xp.pi/3)
 
     def _moment_raw_formula(self, order, **kwargs):
+        xp = self._xp
         res = self._moment_central_formula(order, **kwargs)
         # infrastructure considers the origin to be the left endpoint
         # of the support.
-        return res * np.exp(1j*order*np.pi)
+        return res * xp.exp(1j*order*xp.pi)
 
     def _moment_central_formula(self, order, **kwargs):
+        xp = self._xp
         if order == 0:
             return 1.0 + 0.0j
-        return 3*(-1)**(order + 1) / (np.pi * order)**2 + 0j
+        return 3*(-1)**(order + 1) / (xp.pi * order)**2 + 0j
 
     def _entropy_formula(self):
-        return 5/3 - np.log(3)
+        xp = self._xp
+        return 5/3 - xp.log(3)
 
     def _logentropy_formula(self, **kwargs):
-        return np.log(5/3 - np.log(3))
+        xp = self._xp
+        return xp.log(5/3 - xp.log(3))
 
     def _median_formula(self, **kwargs):
         return 0.0
@@ -696,7 +793,8 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return 0.0
 
     def _sample_formula(self, full_shape, rng, **kwargs):
-        return self._icdf_formula(rng.random(size=full_shape), **kwargs)
+        xp = self._xp
+        return xp.asarray(self._icdf_formula(rng.random(size=full_shape), **kwargs))[()]
 
 
 # Distribution classes need only define the summary and beginning of the extended
