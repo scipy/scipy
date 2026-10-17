@@ -243,6 +243,7 @@ class RobustSlopesTest:
 
     @skip_xp_invalid_arg
     @pytest.mark.parametrize("method", ['separate', 'other'])
+    @pytest.mark.filterwarnings("ignore:Support for NumPy masked:DeprecationWarning")
     def test_mask(self, method):
         pfun = getattr(stats, self.pfun)
         if method == 'other':

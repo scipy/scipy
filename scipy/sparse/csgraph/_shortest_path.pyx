@@ -1033,7 +1033,7 @@ cdef int _bellman_ford_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, j_source, count
+        unsigned int i, j, j_source, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
@@ -1042,7 +1042,7 @@ cdef int _bellman_ford_directed(
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count in range(N - 1):
+        for _count in range(N - 1):
             for j in range(N):
                 d1 = dist_matrix[i, j]
                 for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1075,7 +1075,7 @@ cdef int _bellman_ford_undirected(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, j_source, ind_k, count
+        unsigned int i, j, j_source, ind_k, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
@@ -1084,7 +1084,7 @@ cdef int _bellman_ford_undirected(
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count in range(N - 1):
+        for _count in range(N - 1):
             for j in range(N):
                 d1 = dist_matrix[i, j]
                 for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1328,12 +1328,12 @@ cdef int _johnson_directed(
     # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, count
+        unsigned int j, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count in range(N):
+    for _count in range(N):
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1362,12 +1362,12 @@ cdef int _johnson_undirected(
     # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, ind_k, count
+        unsigned int j, ind_k, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count in range(N):
+    for _count in range(N):
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):

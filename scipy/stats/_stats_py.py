@@ -223,7 +223,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -316,7 +316,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -2915,7 +2915,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # working.
 
     like_zscore = (scores is compare)
-    xp = array_namespace(scores, compare)
+    xp = array_namespace(scores, compare, masked_ok=True)
     scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
@@ -3933,11 +3933,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
@@ -7252,7 +7253,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs, f_exp, ddof)
+    xp = array_namespace(f_obs, f_exp, ddof, masked_ok=True)
     f_obs, f_exp, ddof = xp_promote(f_obs, f_exp, ddof,
                                     force_floating=True, xp=xp)
 
@@ -8686,11 +8687,12 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     lengths = [sample.shape[-1] for sample in samples]
     if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
@@ -10228,6 +10230,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 1:
         return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
+        if np.all(np.isfinite(deltas)):
+            # Scale before taking the norm to avoid squaring tiny CDF gaps.
+            return np.hypot.reduce((u_cdf - v_cdf) * np.sqrt(deltas))
+        # Preserve existing NaN/inf behavior for non-finite support gaps.
         return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
@@ -11235,6 +11241,12 @@ class _SimpleNormal:
     def sf(self, x):
         return special.ndtr(-x)
 
+    def logcdf(self, x):
+        return special.log_ndtr(x)
+
+    def logsf(self, x):
+        return special.log_ndtr(-x)
+
     def isf(self, x):
         return -special.ndtri(x)
 
@@ -11304,3 +11316,36 @@ class _SimpleF:
 
     def sf(self, x):
         return special.fdtrc(self.dfn, self.dfd, x)
+
+
+def _log1mexp(x):
+    r"""Compute the log of the complement of the exponential"""
+    # adapted from gh-19021 (https://github.com/scipy/scipy/issues/19021)
+
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return special._ufuncs._log1mexp(x)
+
+    def f1(x):
+        # good for exp(x) close to 0
+        return xp.log1p(-xp.exp(x))
+
+    def f2(x):
+        # good for exp(x) close to 1
+        return xp.real(xp.log(-xp.expm1(x + 0j)))
+
+    x = xp_promote(x, force_floating=True, xp=xp)
+    res = xpx.apply_where(x < -1, (x,), f1, f2)
+    return res[()] if res.ndim == 0 else res
+
+
+class _SimpleExponential:
+    # A very simple, array-API compatible exponential distribution for use in
+    # `anderson` tests. May be replaced by new infrastructure Exponential
+    # distribution in due time.
+
+    def logcdf(self, x):
+        return _log1mexp(-x)
+
+    def logsf(self, x):
+        return -x

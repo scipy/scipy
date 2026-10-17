@@ -116,11 +116,11 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     w : (..., N,) or (..., 2, N) complex ndarray
         The eigenvalues, each repeated according to its
         multiplicity. The shape is ``(..., N)`` unless ``homogeneous_eigvals=True``.
-    vl : (..., N, N) double or complex ndarray
+    vl : (..., N, N) complex ndarray
         The left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vl[:, i]``. Only returned if ``left=True``.
         The left eigenvector is not normalized.
-    vr : (..., N, N) double or complex ndarray
+    vr : (..., N, N) complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:, i]``.  Only returned if ``right=True`` (default).
 
@@ -290,14 +290,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             vl /= np.linalg.vector_norm(vl, axis=-2, keepdims=True)
 
     w = _make_eigvals(w, beta, homogeneous_eigvals)
-
-    # backwards compat: make eigvecs real if all eigenvalues have zero imaginary parts
-    a_is_real = a1.dtype in (np.float32, np.float64)
-    if a_is_real and (w.imag == 0).all():
-        if left:
-            vl = vl.real
-        if right:
-            vr = vr.real
 
     if not (left or right):
         return w
@@ -1146,7 +1138,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
-@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)')
+@_apply_over_batch(('d', 1), ('e', 1), signature='(i),(j)->(i)', zero_size_fill=None)
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1234,7 +1226,8 @@ def eigh_tridiagonal_signature(d, e, eigvals_only=False, select='a',
     return "(i,),(j,)->(i,)" if eigvals_only else "(i,),(j,)->(i,),(i,i)"
 
 
-@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature)
+@_apply_over_batch(('d', 1), ('e', 1), signature=eigh_tridiagonal_signature,
+                   zero_size_fill=None)
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """

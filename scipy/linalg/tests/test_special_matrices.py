@@ -516,21 +516,24 @@ def test_dft():
 
 
 @make_xp_test_case(fiedler)
-def test_fiedler(xp):
-    f = fiedler(xp.asarray([]))
+@pytest.mark.parametrize('dtype', ["float32", "float64"])
+def test_fiedler(xp, dtype):
+    dtype = getattr(xp, dtype)
+    f = fiedler(xp.asarray([], dtype=dtype))
     assert xp_size(f) == 0
     assert f.shape == (0, 0)
+    assert f.dtype == dtype
 
-    f = fiedler(xp.asarray([123.]))
-    xp_assert_equal(f, xp.asarray([[0.]]))
+    f = fiedler(xp.asarray([123.], dtype=dtype))
+    xp_assert_equal(f, xp.asarray([[0.]], dtype=dtype))
 
-    f = fiedler(xp.arange(1, 7))
+    f = fiedler(xp.arange(1, 7, dtype=dtype))
     des = xp.asarray([[0, 1, 2, 3, 4, 5],
                       [1, 0, 1, 2, 3, 4],
                       [2, 1, 0, 1, 2, 3],
                       [3, 2, 1, 0, 1, 2],
                       [4, 3, 2, 1, 0, 1],
-                      [5, 4, 3, 2, 1, 0]])
+                      [5, 4, 3, 2, 1, 0]], dtype=dtype)
     xp_assert_equal(f, des)
 
 
