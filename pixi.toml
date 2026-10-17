@@ -568,12 +568,23 @@ description = "Debug with gdb"
 ### Linting ###
 
 [feature.lint.dependencies]
+lefthook = "*"
 actionlint-with-all = "*"
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
 tach = "*"
 zizmor = "*"
+
+[feature.lint.tasks]
+pre-commit = {
+  cmd = "lefthook run pre-commit --all-files --force",
+  description = "Run all linters and formatters",
+}
+pre-commit-install = {
+  cmd = "lefthook install",
+  description = "Install pre-commit git hooks",
+}
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
