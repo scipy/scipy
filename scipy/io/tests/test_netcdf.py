@@ -437,7 +437,9 @@ def test_append_recordDimension():
         for i in range(2):
             # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
-                f.variables['time'].data = np.append(f.variables["time"].data, i)
+                f.variables['time'].data = np.concatenate(
+                    (f.variables["time"].data, i), axis=None
+                )
                 f.variables['testData'][i, :, :] = np.full((dataSize, dataSize), i)
                 f.flush()
 
