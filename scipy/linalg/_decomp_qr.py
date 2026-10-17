@@ -9,7 +9,10 @@ import warnings
 
 # Local imports
 from .lapack import (
-    _normalize_lapack_dtype, _ensure_aligned_and_native, get_lapack_funcs
+    _normalize_lapack_dtype,
+    _ensure_aligned_and_native,
+    _ensure_dtype_cdsz,
+    get_lapack_funcs
 )
 from ._misc import _datacopied
 from ._basic import _format_emit_errors_warnings
@@ -333,6 +336,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         raise ValueError("Mode argument can only be 'left' or 'right' but "
                          f"not '{mode}'")
     c = np.asarray_chkfinite(c)
+    a, c = _ensure_dtype_cdsz(a, c)
+
     if c.ndim < 2:
         onedim = True
         c = np.atleast_2d(c)
