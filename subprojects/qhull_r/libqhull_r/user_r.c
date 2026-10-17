@@ -526,7 +526,7 @@ the points by randomly rotating the input with 'QR0'.\n");
   qh_fprintf(qh, fp, 9385, "\nThe min and max coordinates for each dimension are:\n");
   for (k=0; k < qh->hull_dim; k++) {
     min= REALmax;
-    max= -REALmin;
+    max= -REALmax;
     for (i=qh->num_points, coord= qh->first_point+k; i--; coord += qh->hull_dim) {
       maximize_(max, *coord);
       minimize_(min, *coord);
