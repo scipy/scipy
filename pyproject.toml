@@ -156,11 +156,11 @@ coverage = [
 ]
 openblas32 = [
     "scipy-openblas32==0.3.34.237.0",
-    'pkgconf==2.5.1.post1; sys_platform == "win32"',
+    'pkgconf==3.0.7.post0; sys_platform == "win32"',
 ]
 openblas64 = [
     "scipy-openblas64==0.3.34.237.0",
-    'pkgconf==2.5.1.post1; sys_platform == "win32"',
+    'pkgconf==3.0.7.post0; sys_platform == "win32"',
 ]
 bench = [
     "asv==0.6.6",
