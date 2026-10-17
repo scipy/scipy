@@ -187,6 +187,16 @@ unpack_state_d_to_dict(const struct ARNAUD_state_d* vars, PyObject* dict, const 
     return 0;
 }
 
+static int module_exec(PyObject *module) {
+    arpack_error_obj = PyErr_NewException("_arpacklib.error", NULL, NULL);
+    if (arpack_error_obj == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", arpack_error_obj) < 0) {
+        Py_DECREF(arpack_error_obj);
+        return -1;
+    }
+    return 0;
+}
 
 static PyObject*
 snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
@@ -1062,6 +1072,7 @@ PyMethodDef arpacklib_module_methods[] = {
 
 
 static struct PyModuleDef_Slot arpacklib_module_slots[] = {
+    {Py_mod_exec, module_exec},
     // signal that this module can be imported in isolated subinterpreters
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
 #if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
