@@ -67,6 +67,7 @@ from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, issha
 
 __all__ = ["LinearOperator", "aslinearoperator"]
 
+_UNDEFINED = object()
 
 @xp_capabilities()
 class LinearOperator:
@@ -85,10 +86,11 @@ class LinearOperator:
     A subclass must implement either one of the methods ``_matvec``
     and ``_matmat``, and the attributes/properties ``shape`` (pair of
     integers, optionally with additional batch dimensions at the front)
-    and ``dtype`` (may be None). It may call the ``__init__``
-    on this class to have these attributes validated. Implementing
-    ``_matvec`` automatically implements ``_matmat`` (using a naive
-    algorithm) and vice-versa.
+    and ``dtype`` (may be None). It must call the ``__init__`` method
+    of this class. When passing the ``shape`` or the ``dtype`` argument to the
+    ``__init__`` method, the arguments are validated and the corresponding
+    attributes are set. Implementing ``_matvec`` automatically implements
+    ``_matmat`` (using a naive algorithm) and vice-versa.
 
     Optionally, a subclass may implement ``_rmatvec`` or ``_adjoint``
     to implement the Hermitian adjoint (conjugate transpose). As with
@@ -218,7 +220,9 @@ class LinearOperator:
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
-    ndim: int
+    @property
+    def ndim(self):
+        return len(self.shape)
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
@@ -240,26 +244,29 @@ class LinearOperator:
 
             return obj
 
-    def __init__(self, dtype, shape, xp=None):
+    def __init__(self, dtype=_UNDEFINED, shape=None, xp=None):
         """Initialize this LinearOperator.
 
         To be called by subclasses. ``dtype`` may be None; ``shape`` should
         be convertible to a length >=2 tuple.
         """
         xp = np_compat if xp is None else xp
-        if dtype is not None:
+        if dtype is not None and dtype is not _UNDEFINED:
             # throwaway 0-size array to canonicalize `dtype`; no array in scope
             dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
-        shape = tuple(shape)
-        if len(shape) < 2:
-            raise ValueError(f"invalid shape {shape!r} (must be at least 2-d)")
-        if not isshape(shape, check_nd=False):
-            raise ValueError(f"invalid shape {shape!r}")
+        if shape is not None:
+            shape = tuple(shape)
+            if len(shape) < 2:
+                raise ValueError(f"invalid shape {shape!r} (must be at least 2-d)")
+            if not isshape(shape, check_nd=False):
+                raise ValueError(f"invalid shape {shape!r}")
 
-        self.dtype = dtype
-        self.shape = shape
-        self.ndim = len(shape)
+        if dtype is not _UNDEFINED:
+            self.dtype = dtype
+
+        if shape is not None:
+            self.shape = shape
         self._xp = xp
 
     def __getstate__(self):
