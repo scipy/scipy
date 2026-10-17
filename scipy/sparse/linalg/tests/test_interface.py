@@ -965,6 +965,29 @@ class TestPickle:
         assert op.dtype == np.dtype(np.float64)
         assert not hasattr(op, "_diagonal")
 
+    def test_setstate_scipy_1_17_pickle(self):
+        # scipy 1.17 pickled a flat `__dict__` with no `_xp` or `ndim`, and
+        # `_AdjointMatrixOperator.dtype` was a property.
+        A = np.arange(9.0).reshape(3, 3)
+        x = np.arange(3.0)
+
+        op = interface.MatrixLinearOperator.__new__(interface.MatrixLinearOperator)
+        op.__setstate__({
+            "A": A, "_MatrixLinearOperator__adj": None, "args": (A,),
+            "dtype": A.dtype, "shape": (3, 3),
+        })
+        assert op.ndim == 2
+        xp_assert_equal(op.matvec(x), A @ x)
+        xp_assert_equal(op.rmatvec(x), A.T @ x)
+
+        cls = interface._AdjointMatrixOperator
+        op = cls.__new__(cls)
+        op.__setstate__({"A": A.T.conj(), "args": (A,), "shape": (3, 3)})
+        assert op.dtype == A.dtype
+        assert op.ndim == 2
+        xp_assert_equal(op.matvec(x), A.T @ x)
+        xp_assert_equal(op.H.matvec(x), A @ x)
+
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "
