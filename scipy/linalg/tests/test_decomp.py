@@ -3931,3 +3931,27 @@ class TestCDF2RDF:
         ])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, w, v)
+
+    @pytest.mark.parametrize("n", [0, 4])
+    @pytest.mark.parametrize("dtype_w", COMPLEX_DTYPES)
+    @pytest.mark.parametrize("dtype_v", COMPLEX_DTYPES)
+    def test_shape_dtype(self, n, dtype_w, dtype_v):
+        rng = np.random.default_rng(seed=123456)
+        res_dtype = np.finfo(np.result_type(dtype_w, dtype_v)).dtype
+        atol = 1e-6 if res_dtype == np.float32 else 1e-12
+
+        a = np.zeros((n, n), dtype=np.complex128)
+        imag_roots = rng.normal(size=(n // 2,))
+        for i in range(n // 2):
+            a[2 * i + 1, 2 * i] = imag_roots[i]
+            a[2 * i, 2 * i + 1] = -imag_roots[i]
+
+        w_c, v_c = eig(a)
+        w_c = np.astype(w_c, dtype_w)
+        v_c = np.astype(v_c, dtype_v)
+
+        w_r, v_r = cdf2rdf(w_c, v_c)
+
+        assert w_r.dtype == res_dtype
+        assert v_r.dtype == res_dtype
+        assert_allclose(v_r @ w_r @ linalg.inv(v_r), a, atol=atol)
