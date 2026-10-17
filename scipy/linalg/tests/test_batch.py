@@ -177,10 +177,18 @@ class TestBatch:
         # One test failed absolute tolerance with default random seed
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A)
-        # test that `disp` can be passed by position
-        res2 = linalg.logm(A)
+        A = A + 6*np.eye(4, dtype=dtype)  # avoid complex output for real input
+
+        # logm tolerances are only tuned for double precision
+        if dtype in [np.float32, np.complex64]:
+            with pytest.warns(RuntimeWarning, match="logm result may be"):
+                res1 = self.batch_test(linalg.logm, A)
+            with pytest.warns(RuntimeWarning, match="logm result may be"):
+                res2 = linalg.logm(A)
+        else:
+            res1 = self.batch_test(linalg.logm, A)
+            res2 = linalg.logm(A)
+
         for res1i, res2i in zip(res1, res2):
             np.testing.assert_equal(res1i, res2i)
 
