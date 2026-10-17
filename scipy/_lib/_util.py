@@ -1128,7 +1128,8 @@ as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 def output_from_signature(arrays, batch_shape, core_shapes, signature, zero_size_fill,
                           ignore_dtypes):
     xp = array_namespace(*arrays)
-    dtype = xp.result_type(*arrays[ignore_dtypes:], xp.float32)
+    masked_arrays = [x for x in arrays[ignore_dtypes:] if x is not None]
+    dtype = xp.result_type(*masked_arrays, xp.float32) # `None` upcasts to double
     device = xp_device(arrays[0]) if len(arrays) else None
 
     # ENH: parse more efficiently with regex.

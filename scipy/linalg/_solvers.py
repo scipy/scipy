@@ -472,10 +472,10 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
                    signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
-    a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
+    a, b, q, r, e, s, m, n, res_dt, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'care')
 
-    H = np.empty((2*m+n, 2*m+n), dtype=r_or_c)
+    H = np.empty((2*m+n, 2*m+n), dtype=res_dt)
     H[:m, :m] = a
     H[:m, m:2*m] = 0.
     H[:m, 2*m:] = b
@@ -487,9 +487,9 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
     H[2*m:, 2*m:] = r
 
     if gen_are and e is not None:
-        J = block_diag(e, e.conj().T, np.zeros_like(r, dtype=r_or_c))
+        J = block_diag(e, e.conj().T, np.zeros_like(r, dtype=res_dt))
     else:
-        J = block_diag(np.eye(2*m), np.zeros_like(r, dtype=r_or_c))
+        J = block_diag(np.eye(2*m, dtype=res_dt), np.zeros_like(r, dtype=res_dt))
 
     if balanced:
         # xGEBAL does not remove the diagonals before scaling. Also
@@ -516,7 +516,7 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
     J = q[:2*m, n:].conj().T.dot(J[:2*m, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c is float else 'complex'
+    out_str = 'complex' if np.isdtype(res_dt, "complex floating") else 'real'
 
     _, _, _, _, _, u = ordqz(H, J, sort='lhp', overwrite_a=True,
                              overwrite_b=True, check_finite=False,
@@ -690,11 +690,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
                    signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
-    a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
+    a, b, q, r, e, s, m, n, res_dt, _ = _are_validate_args(
                                                      a, b, q, r, e, s, 'dare')
 
     # Form the matrix pencil
-    H = np.zeros((2*m+n, 2*m+n), dtype=r_or_c)
+    H = np.zeros((2*m+n, 2*m+n), dtype=res_dt)
     H[:m, :m] = a
     H[:m, 2*m:] = b
     H[m:2*m, :m] = -q
@@ -703,7 +703,7 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
     H[2*m:, :m] = 0. if s is None else s.conj().T
     H[2*m:, 2*m:] = r
 
-    J = np.zeros_like(H, dtype=r_or_c)
+    J = np.zeros_like(H, dtype=res_dt)
     J[:m, :m] = np.eye(m) if e is None else e
     J[m:2*m, m:2*m] = a.conj().T
     J[2*m:, m:2*m] = -b.conj().T
@@ -733,7 +733,7 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c is float else 'complex'
+    out_str = 'complex' if np.isdtype(res_dt, 'complex floating') else 'real'
 
     _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
@@ -827,12 +827,9 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     # Get the correct data types otherwise NumPy complains
     # about pushing complex numbers into real arrays.
-    r_or_c = complex if np.iscomplexobj(b) else float
+    res_dt = np.result_type(a, b, q, r, np.float32)
 
     for ind, mat in enumerate((a, q, r)):
-        if np.iscomplexobj(mat):
-            r_or_c = complex
-
         if not np.equal(*mat.shape):
             raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
@@ -872,13 +869,11 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             min_sv = svd(e, compute_uv=False)[-1]
             if min_sv == 0. or min_sv < np.spacing(1.) * norm(e, 1):
                 raise ValueError('Matrix e is numerically singular.')
-            if np.iscomplexobj(e):
-                r_or_c = complex
+            res_dt = np.result_type(res_dt, e)
         if s is not None:
             s = np.atleast_2d(_asarray_validated(s, check_finite=True))
             if s.shape != b.shape:
                 raise ValueError("Matrix b and s should have the same shape.")
-            if np.iscomplexobj(s):
-                r_or_c = complex
+            res_dt = np.result_type(res_dt, s)
 
-    return a, b, q, r, e, s, m, n, r_or_c, generalized_case
+    return a, b, q, r, e, s, m, n, res_dt, generalized_case
