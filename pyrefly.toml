@@ -46,6 +46,7 @@ ignore-missing-imports = [
     "scipy.ndimage._nd_image",
     "scipy.ndimage._ni_label",
     "scipy.ndimage._rank_filter_1d",
+    "scipy.signal._fftconv",
     "scipy.signal._sigtools",
     "scipy.sparse._sparsetools",
     "scipy.sparse.linalg._dsolve._superlu",
