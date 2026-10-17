@@ -2,10 +2,8 @@
 
 """
 
-import platform
 import os
 import random
-import sys
 import zlib
 
 from io import BytesIO
@@ -14,15 +12,26 @@ from io import BytesIO
 from tempfile import mkstemp
 from contextlib import contextmanager
 
-import numpy as np
-
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
-import pytest
 
 from scipy.io.matlab._streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
+
+
+class _ChecksumSplitStream(BytesIO):
+    # Split the checksum across reads to exercise gh-6999 without depending
+    # on the compressor producing a particular output size (gh-23185).
+    def __init__(self, data):
+        super().__init__(data)
+        self._split = len(data) - 2
+
+    def read(self, size=-1):
+        remaining = self._split - self.tell()
+        if remaining > 0:
+            size = remaining if size < 0 else min(size, remaining)
+        return super().read(size)
 
 
 @contextmanager
@@ -197,45 +206,34 @@ class TestZlibInputStream:
         stream.seek(1024)
         assert_(stream.all_data_read())
 
-    @pytest.mark.skipif(
-            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
-            reason='gh-23185')
     def test_all_data_read_overlap(self):
-        COMPRESSION_LEVEL = 6
-
-        data = np.arange(33707000, dtype=np.uint8)
-        compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
+        data = b'checksum boundary test' * 10
+        compressed_data = zlib.compress(data)
         compressed_data_len = len(compressed_data)
 
-        # check that part of the checksum overlaps
-        assert_(compressed_data_len == BLOCK_SIZE + 2)
-
-        compressed_stream = BytesIO(compressed_data)
+        compressed_stream = _ChecksumSplitStream(compressed_data)
         stream = ZlibInputStream(compressed_stream, compressed_data_len)
         assert_(not stream.all_data_read())
         stream.seek(len(data))
+        assert_equal(stream.tell(), len(data))
+        assert_equal(compressed_stream.tell(), compressed_data_len - 2)
         assert_(stream.all_data_read())
+        assert_equal(compressed_stream.tell(), compressed_data_len)
 
-    @pytest.mark.skipif(
-            (platform.system() == 'Windows' and sys.version_info >= (3, 14)),
-            reason='gh-23185')
     def test_all_data_read_bad_checksum(self):
-        COMPRESSION_LEVEL = 6
-
-        data = np.arange(33707000, dtype=np.uint8)
-        compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
+        data = b'checksum boundary test' * 10
+        compressed_data = zlib.compress(data)
         compressed_data_len = len(compressed_data)
-
-        # check that part of the checksum overlaps
-        assert_(compressed_data_len == BLOCK_SIZE + 2)
 
         # break checksum
         compressed_data = (compressed_data[:-1]
-                           + bytes([(compressed_data[-1] + 1) & 255]))
+                           + bytes([compressed_data[-1] ^ 1]))
 
-        compressed_stream = BytesIO(compressed_data)
+        compressed_stream = _ChecksumSplitStream(compressed_data)
         stream = ZlibInputStream(compressed_stream, compressed_data_len)
         assert_(not stream.all_data_read())
         stream.seek(len(data))
+        assert_equal(stream.tell(), len(data))
+        assert_equal(compressed_stream.tell(), compressed_data_len - 2)
 
         assert_raises(zlib.error, stream.all_data_read)
