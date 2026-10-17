@@ -4,9 +4,10 @@ import numpy as np
 
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
-    CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
-    minimize_quadratic_1d, evaluate_quadratic, reflective_transformation,
-    left_multiplied_operator, right_multiplied_operator)
+    CL_scaling_vector, intersect_trust_region, solve_lsq_trust_region,
+    build_quadratic_1d, minimize_quadratic_1d, evaluate_quadratic,
+    reflective_transformation, left_multiplied_operator,
+    right_multiplied_operator)
 
 
 class TestBounds:
@@ -240,6 +241,62 @@ class TestTrustRegion:
         x = np.zeros(3)
         s = np.zeros(3)
         assert_raises(ValueError, intersect_trust_region, x, s, Delta)
+
+    def test_solve_lsq_trust_region_rank_deficient(self):
+        # Linear problem with rank-deficient Jacobian.
+        # Gauss-Newton step lies inside the trust region.
+        p, alpha, it = solve_lsq_trust_region(
+            2, 2, np.array([-1e-3, 0.0]), np.array([1.0, 0.0]), np.eye(2), 1.0)
+        assert_allclose(p, [1e-3, 0.0])
+        assert_equal(alpha, 0.0)
+        assert_equal(it, 0)
+
+        # Gauss-Newton step lies outside the trust region.
+        p, alpha, it = solve_lsq_trust_region(
+            2, 2, np.array([-10.0, 0.0]), np.array([1.0, 0.0]), np.eye(2), 1.0)
+        assert_allclose(p, [1.0, 0.0])
+        assert_allclose(alpha, 9.0)
+        assert_allclose(np.linalg.norm(p), 1.0)
+        assert alpha > 0
+
+    def test_solve_lsq_trust_region_tested_alpha(self):
+        # Solution lies just outside the initial trust region.
+        # alpha must be strictly positive and tested (not negative).
+        Delta = np.sqrt(2) * (1 - 1e-8)
+        p, alpha, it = solve_lsq_trust_region(
+            2, 2, np.array([100.0, 1.0]), np.array([100.0, 1.0]), np.eye(2),
+            Delta)
+        assert alpha > 0
+        assert_allclose(alpha, 2.0e-8, rtol=1e-3)
+        assert_allclose(np.linalg.norm(p), Delta)
+
+    def test_solve_lsq_trust_region_underdetermined(self):
+        # Underdetermined system: m < n
+        V = np.array([[0.5, 0.0],
+                      [0.5, 0.0],
+                      [0.5, 0.5],
+                      [0.5, -0.5]])
+        s = np.array([2.0, 1.0])
+        uf = np.array([-2.0, -1.0])
+        # GN step: -V.dot(uf / s) = -V.dot([-1, -1]) = [0.5, 0.5, 1.0, 0.0]
+        # norm is sqrt(0.25 + 0.25 + 1.0) = sqrt(1.5) ≈ 1.2247
+        # Inside trust region
+        p, alpha, it = solve_lsq_trust_region(4, 2, uf, s, V, 2.0)
+        assert_allclose(p, [0.5, 0.5, 1.0, 0.0])
+        assert_equal(alpha, 0.0)
+        assert_equal(it, 0)
+
+        # Outside trust region
+        p, alpha, it = solve_lsq_trust_region(4, 2, uf, s, V, 0.5)
+        assert alpha > 0
+        assert_allclose(np.linalg.norm(p), 0.5)
+
+    def test_solve_lsq_trust_region_zero_jacobian(self):
+        p, alpha, it = solve_lsq_trust_region(
+            2, 2, np.zeros(2), np.zeros(2), np.eye(2), 1.0)
+        assert_allclose(p, np.zeros(2))
+        assert_equal(alpha, 0.0)
+        assert_equal(it, 0)
 
 
 def test_reflective_transformation():

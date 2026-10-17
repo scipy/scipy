@@ -117,17 +117,20 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
 
     suf = s * uf
 
-    # Check if J has full rank and try Gauss-Newton step.
-    if m >= n:
-        threshold = EPS * m * s[0]
-        full_rank = s[-1] > threshold
-    else:
-        full_rank = False
+    if s.size == 0 or s[0] == 0:
+        return np.zeros(n), 0.0, 0
+
+    threshold = EPS * max(m, n) * s[0]
+    full_rank = m >= n and s[-1] > threshold
 
     if full_rank:
         p = -V.dot(uf / s)
-        if norm(p) <= Delta:
-            return p, 0.0, 0
+    else:
+        mask = s > threshold
+        p = -V[:, mask].dot(uf[mask] / s[mask])
+
+    if norm(p) <= Delta:
+        return p, 0.0, 0
 
     alpha_upper = norm(suf) / Delta
 
@@ -137,26 +140,30 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
     else:
         alpha_lower = 0.0
 
-    if initial_alpha is None or not full_rank and initial_alpha == 0:
+    if (initial_alpha is None or
+            initial_alpha < alpha_lower or
+            initial_alpha > alpha_upper or
+            initial_alpha == 0):
         alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper)**0.5)
     else:
         alpha = initial_alpha
 
+    it = -1
     for it in range(max_iter):
-        if alpha < alpha_lower or alpha > alpha_upper:
+        if alpha < alpha_lower or alpha > alpha_upper or alpha == 0:
             alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper)**0.5)
 
         phi, phi_prime = phi_and_derivative(alpha, suf, s, Delta)
+
+        if np.abs(phi) <= rtol * Delta or it == max_iter - 1:
+            break
 
         if phi < 0:
             alpha_upper = alpha
 
         ratio = phi / phi_prime
         alpha_lower = max(alpha_lower, alpha - ratio)
-        alpha -= (phi + Delta) * ratio / Delta
-
-        if np.abs(phi) < rtol * Delta:
-            break
+        alpha = max(alpha_lower, alpha - (phi + Delta) * ratio / Delta)
 
     p = -V.dot(suf / (s**2 + alpha))
 

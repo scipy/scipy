@@ -1000,3 +1000,27 @@ def test_gh_19103():
     bounds = ((0.01, 0, 0), (np.inf, 10, 20.9))
     res = least_squares(exponential_wrapped, x0, method='trf', bounds=bounds)
     assert res.success
+
+
+def test_trf_exact_rank_deficient_and_boundary():
+    # Rank-deficient Jacobian with solution inside initial trust region
+    J = np.diag([1.0, 0.0])
+    target = np.array([1e-3, 0.0])
+    res = least_squares(lambda x: J @ (x - target), np.zeros(2),
+                        jac=lambda x: J, method='trf', tr_solver='exact',
+                        x_scale=1.0, max_nfev=10)
+    assert res.status == 1
+    assert res.nfev == 2
+    assert_allclose(res.x, target, atol=1e-15)
+    assert_allclose(res.cost, 0.0, atol=1e-25)
+
+    # Full-rank problem with solution just outside initial trust region
+    J = np.diag([100.0, 1.0])
+    target = np.full(2, (1 + 1e-10) / np.sqrt(2))
+    res = least_squares(lambda x: J @ (x - target), np.zeros(2),
+                        jac=lambda x: J, method='trf', tr_solver='exact',
+                        x_scale=1.0, max_nfev=2)
+    assert res.status == 1
+    assert res.nfev == 2
+    assert res.cost < 1e-18
+    assert res.optimality < 1e-8
