@@ -1,9 +1,11 @@
 import numpy as np
+import pytest
 from numpy.testing import (assert_array_equal, assert_array_almost_equal_nulp,
                            assert_allclose)
 from pytest import raises as assert_raises
 
 from scipy.special import gammaln, multigammaln  # type:ignore[attr-defined]
+from scipy.special._spfun_stats import _poisson_binom_sf
 
 
 class TestMultiGammaLn:
@@ -58,4 +60,22 @@ def test_multigammaln_array_arg():
 
     for a, d in cases:
         _check_multigammaln_array_result(a, d)
+
+
+class TestPoissonBinomialSF:
+    @pytest.mark.parametrize('int_dtype', [np.int32, np.int64])
+    @pytest.mark.parametrize('float_dtype', [np.float32, np.float64])
+    def test_dtypes(self, int_dtype, float_dtype):
+        p = np.array([0.25, 0.5, 0.75], dtype=float_dtype)
+        k = np.arange(-1, 5, dtype=int_dtype)
+        expected = [1, 0.90625, 0.5, 0.09375, 0, 0]
+        res = _poisson_binom_sf(k, p)
+        assert_array_equal(res, expected)
+        assert res.dtype == float_dtype
+
+    @pytest.mark.parametrize('float_dtype', [np.float32, np.float64])
+    def test_empty(self, float_dtype):
+        # An empty sum is a point mass at zero.
+        p = np.array([], dtype=float_dtype)
+        assert_array_equal(_poisson_binom_sf([-1, 0, 1], p), [1, 0, 0])
 

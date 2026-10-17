@@ -117,6 +117,36 @@ struct _poisson_binom_cdf_kernel {
     }
 };
 
+template <typename Int, typename T_1d>
+struct _poisson_binom_sf_kernel {
+    using T = typename T_1d::value_type;
+
+    std::vector<T> dist;
+    T* last_p_ptr = nullptr;
+    T operator()(Int k, T_1d p) {
+        if (!last_p_ptr) {
+            dist.resize(p.extent(0) + 1);
+        }
+        if (p.data_handle() != last_p_ptr) {
+            xsf::poisson_binom_pmf_all(p, special::as_mdspan(dist));
+            // Sum the upper tail directly, retaining the same per-call cache
+            // as the PMF and CDF kernels for repeated thresholds.
+            T tail = T(0);
+            for (auto j = dist.size(); j > 0; --j) {
+                T mass = dist[j - 1];
+                dist[j - 1] = tail;
+                tail = std::min(tail + mass, T(1));
+            }
+            last_p_ptr = p.data_handle();
+        }
+
+        if (k < 0) {
+            return T(1);
+        }
+        return xsf::take_from_pmf(special::as_mdspan(dist), k);
+    }
+};
+
 
 static int
 _gufuncs_module_exec(PyObject *module)
@@ -321,6 +351,20 @@ _gufuncs_module_exec(PyObject *module)
         _poisson_binom_map_dims
     );
     PyModule_AddObjectRef(module, "_poisson_binom_cdf", _poisson_binom_cdf);
+
+    PyObject *_poisson_binom_sf = xsf::numpy::gufunc(
+        {
+            _poisson_binom_sf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_sf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_sf_kernel<std::int64_t, xsf::numpy::double_1d>{}
+        },
+        1,
+        "_poisson_binom_sf",
+        "Internal function",
+        "(),(i)->()",
+        _poisson_binom_map_dims
+    );
+    PyModule_AddObjectRef(module, "_poisson_binom_sf", _poisson_binom_sf);
 
     return 0;
 }

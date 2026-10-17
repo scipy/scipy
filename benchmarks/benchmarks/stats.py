@@ -856,3 +856,6 @@ class PoissonBinom(Benchmark):
 
     def time_poisson_binom_cdf(self, size_p, batch_shape):
         stats.poisson_binom.cdf(self.k, self.p)
+
+    def time_poisson_binom_sf(self, size_p, batch_shape):
+        stats.poisson_binom.sf(self.k, self.p)

@@ -139,6 +139,14 @@ _poisson_binom_pmf = _with_cache_optimization(
     cache_arg_indices=[1],
 )
 
+_poisson_binom_sf = _with_cache_optimization(
+    name="_poisson_binom_sf",
+    arg_names=["k", "p"],
+    docstring="Returns P(S > k) for independent Bernoulli success probabilities p.",
+    ufunc=_gufuncs._poisson_binom_sf,
+    cache_arg_indices=[1],
+)
+
 
 _poisson_binom_cdf_doc = (
     r"""Poisson binomial cumulative distribution function.

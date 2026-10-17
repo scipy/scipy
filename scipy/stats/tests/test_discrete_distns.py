@@ -734,6 +734,50 @@ class TestPoissonBinomial:
                0.0277036647503902354, 0.0007425936892786034]
         assert_allclose(res, ref)
 
+    @pytest.mark.parametrize('p, k, expected', [
+        ([(1 + i % 9) / 128 for i in range(32)], 23,
+         1.1963531710514960e-29),
+        ([1 / 128] * 256, 249, 0.0),
+        ([1e-20] * 16, 0, 1.6e-19),
+        ([np.nextafter(0.0, 1.0)] * 4, 0, 4 * np.nextafter(0.0, 1.0)),
+    ])
+    def test_sf_small_probabilities(self, p, k, expected):
+        # Regression cases from gh-26409, plus a subnormal-probability case.
+        # References use exact rational convolution of the binary64 inputs.
+        # For the first case, sum coefficients of z**24 through z**32 in
+        # prod((128 - a) + a*z) / 128**32, where a cycles through 1, ..., 9.
+        # The 256-trial probability is about 5.54e-516 and rounds to zero.
+        # Neither CDF subtraction nor reflection preserves all these tails.
+        assert_allclose(poisson_binom.sf(k, p), expected, rtol=5e-15, atol=0)
+
+    @pytest.mark.parametrize('p', [0.0, np.nextafter(0.0, 1.0), 1e-20,
+                                 0.25, np.nextafter(1.0, 0.0), 1.0])
+    @pytest.mark.parametrize('loc', [0, 4])
+    def test_sf_bernoulli(self, p, loc):
+        k = np.array([-np.inf, -1.0, -0.5, 0.0, 0.5, 1.0, np.inf]) + loc
+        expected = [1, 1, 1, p, p, 0, 0]
+        assert_equal(poisson_binom.sf(k, [p], loc=loc), expected)
+
+    @pytest.mark.parametrize('p, point', [([0, 0, 0, 0], 0),
+                                         ([1, 1, 1, 1], 4),
+                                         ([0, 1, 0, 1], 2)])
+    def test_sf_deterministic(self, p, point):
+        k = np.arange(-1, 6, 0.5)
+        assert_equal(poisson_binom.sf(k, p), (k < point).astype(float))
+
+    @pytest.mark.parametrize('reverse', [False, True])
+    def test_sf_broadcasting(self, reverse):
+        p = np.array([[0.25, 0.5, 0.75], [0.5, 0.5, 0.5],
+                      [0, 0, 0], [1, 1, 1]])
+        if reverse:
+            p = p[:, ::-1]
+        k = np.arange(-1, 4)[:, None]
+        # Exact dyadic probabilities, including deterministic distributions.
+        expected = [[1, 1, 1, 1], [0.90625, 0.875, 0, 1],
+                    [0.5, 0.5, 0, 1], [0.09375, 0.125, 0, 1], [0, 0, 0, 0]]
+        assert_equal(poisson_binom.sf(k, p), expected)
+        assert_equal(poisson_binom(p).sf(k), expected)
+
 
 class TestRandInt:
     def test_gh19759(self):
