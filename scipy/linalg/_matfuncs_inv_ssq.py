@@ -14,6 +14,8 @@ from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
 
+from .lapack import _normalize_lapack_dtype
+
 
 class LogmRankWarning(UserWarning):
     pass
@@ -675,6 +677,7 @@ def _fractional_matrix_power(A, p):
 
     """
     A = np.asarray(A)
+    A, _ = _normalize_lapack_dtype(A, False)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
     if p == int(p):
