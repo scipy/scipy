@@ -8320,8 +8320,27 @@ class TestBurr:
                124573093.96155174]
         assert_allclose(stats.burr.isf(q, c, d), ref, rtol=1e-14)
 
+    def test_tails(self):
+        # Reference values were computed with mpmath (mp.dps = 50) from
+        #   L = d * log1p(x**-c); cdf = exp(-L); sf = -expm1(-L)
+        assert_allclose(stats.burr.sf(100, 10, 0.1), 1e-21, rtol=1e-14)
+        assert_allclose(stats.burr.sf(1e8, 2, 3), 2.9999999999999994e-16,
+                        rtol=1e-14)
+        assert_allclose(stats.burr.logsf(1e8, 2, 3), -35.742749199236621,
+                        rtol=1e-14)
+        assert_allclose(stats.burr.cdf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
+        assert_allclose(stats.burr.ppf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
+
 
 class TestBurr12:
+
+    def test_tails(self):
+        # Reference values were computed with mpmath (mp.dps = 50) from
+        #   L = d * log1p(x**c); cdf = -expm1(-L); sf = exp(-L)
+        assert_allclose(stats.burr12.sf(1e31, 10, 0.1), 1e-31, rtol=1e-14)
+        assert_allclose(stats.burr12.isf(1e-31, 10, 0.1), 1e31, rtol=1e-14)
+        assert_allclose(stats.burr12.logcdf(1e-100, 2, 3), -459.41840631014103,
+                        rtol=1e-14)
 
     @pytest.mark.parametrize('scale, expected',
                              [(1.0, 2.3283064359965952e-170),
