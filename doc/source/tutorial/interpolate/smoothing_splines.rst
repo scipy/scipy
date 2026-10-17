@@ -294,6 +294,19 @@ and :math:`m + \sqrt{2m}`, where :math:`m` is the number of data points.
 If all weights equal unity, a reasonable choice might be around :math:`s \sim m\,\sigma^2`,
 where :math:`\sigma` is an estimate for the standard deviation of the data. 
 
+.. note::
+
+    The number of knots is very strongly dependent on ``s``. It is possible that
+    small variations of ``s`` lead to drastic changes in the knot number.
+
+.. note::
+
+    Both `make_smoothing_spline` and `make_splrep` allow for weighted fits,
+    where the user provides an array of weights, ``w``. Note that the definition
+    differs somewhat: `make_smoothing_spline` squares the weights to be consistent
+    with ``gcvspl``, while `make_splrep` does not---to be consistent with ``FITPACK``.
+
+
 .. _tutorial-make-splrep-scaling:
 
 Effect of scaling the data
@@ -343,18 +356,6 @@ scaled by :math:`a`. This is one way to retain comparable smoothing when
 changing units. Alternatively, with fixed weights, scale ``s`` by
 :math:`a^2`. These transformations do not determine an optimal ``s`` for
 a new dataset; use weights reflecting measurement uncertainty when known.
-.. note::
-
-    The number of knots is very strongly dependent on ``s``. It is possible that
-    small variations of ``s`` lead to drastic changes in the knot number.
-
-.. note::
-
-    Both `make_smoothing_spline` and `make_splrep` allow for weighted fits,
-    where the user provides an array of weights, ``w``. Note that the definition
-    differs somewhat: `make_smoothing_spline` squares the weights to be consistent
-    with ``gcvspl``, while `make_splrep` does not---to be consistent with ``FITPACK``.
-
 
 
 Smoothing spline curves in :math:`d>1`
