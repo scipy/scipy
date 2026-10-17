@@ -483,19 +483,22 @@ class TestBatch:
 
     @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
                                      linalg.solve_discrete_are])
-    @pytest.mark.parametrize('dtype', floating)
-    def test_are(self, fun, dtype):
+    @pytest.mark.parametrize('dtype_1', floating)
+    @pytest.mark.parametrize('dtype_2', floating)
+    def test_are(self, fun, dtype_1, dtype_2):
         rng = np.random.default_rng(8342310302941288912051)
-        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
-        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
-        a = a + 5*np.eye(5)  # making these positive definite seems to help
-        b = b + 5*np.eye(5)
-        q = q + 5*np.eye(5)
-        r = r + 5*np.eye(5)
-        e = np.eye(5)
-        s = np.zeros((5, 5))
+        a = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
+
+        # making these positive definite seems to help
+        a = a + 5*np.eye(5, dtype=dtype_1)
+        b = b + 5*np.eye(5, dtype=dtype_1)
+        q = q + 5*np.eye(5, dtype=dtype_2)
+        r = r + 5*np.eye(5, dtype=dtype_2)
+        e = np.eye(5, dtype=dtype_2)
+        s = np.zeros((5, 5), dtype=dtype_2)
         self.batch_test(fun, (a, b, q, r))
         self.batch_test(fun, (a, b, q, r, e))
         self.batch_test(fun, (a, b, q, r, e, s))
