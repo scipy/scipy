@@ -1317,38 +1317,6 @@ class TestPdist:
         xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
         xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
 
-    def test_pdist_rogerstanimoto_mtica1(self):
-        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
-                            np.array([1, 1, 0, 1, 1]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
-                             np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
-
-    def test_pdist_rogerstanimoto_mtica2(self):
-        m = wrogerstanimoto(np.array([1, 0, 1]),
-                            np.array([1, 1, 0]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
-                             np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
-
     @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1524,6 +1492,40 @@ class TestMinkowski:
             minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p)
         with pytest.raises(ValueError):
             minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
+
+
+class TestRogersTanimoto:
+    def test_pdist_rogerstanimoto_mtica1(self):
+        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
+                            np.array([1, 1, 0, 1, 1]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
+                             np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
+
+    def test_pdist_rogerstanimoto_mtica2(self):
+        m = wrogerstanimoto(np.array([1, 0, 1]),
+                            np.array([1, 1, 0]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
+                             np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
 
 
 @make_xp_test_case(euclidean)
@@ -2383,6 +2385,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, 3.5),
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
+        (rogerstanimoto, None),
         (sqeuclidean, None),
         (sokalsneath, None),
     ],
