@@ -111,6 +111,30 @@ class TestRoot:
         assert_equal(res2.x, ref.x)
         assert res1.success is res2.success is ref.success is True
 
+    @pytest.mark.parametrize("method", ["hybr", "broyden1", "broyden2",
+                                        "anderson", "linearmixing",
+                                        "diagbroyden", "excitingmixing",
+                                        "krylov", "df-sane"])
+    def test_gh_10294(self, method):
+        # gh-10294 reported that `root` fails with confusing errors when `fun`
+        # returns a different number of elements than `x0`. Every method except
+        # 'lm' should instead raise a single, informative error.
+        def fun(x):
+            # size-2 output for a size-1 input
+            return np.ravel([1, 2] * np.asarray(x))
+
+        message = "number of elements returned by 'fun'"
+        with assert_raises(ValueError, match=message):
+            root(fun, 1.0, method=method)
+
+    def test_gh_10294_lm(self):
+        # 'lm' solves a least-squares problem, so a mismatch between the number
+        # of outputs of `fun` and elements of `x0` is allowed (gh-10294).
+        def fun(x):
+            return np.ravel([1, 2] * np.asarray(x))
+
+        assert root(fun, 1.0, method='lm').success
+
     @pytest.mark.parametrize("method", ["hybr", "lm", "broyden1", "broyden2",
                                         "anderson", "linearmixing",
                                         "diagbroyden", "excitingmixing",
