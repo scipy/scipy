@@ -29,7 +29,8 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt, _compute_b_inv,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr,
-                                         _penalty_matrix_banded)
+                                         _penalty_matrix_banded,
+                                         _solve_smoothing_spline_coefficients)
 from scipy.interpolate._fitpack_repro import Fperiodic, root_rati
 
 from scipy.interpolate import generate_knots, make_splrep, make_splprep
@@ -3092,6 +3093,16 @@ class TestSmoothingSpline:
         inv = np.linalg.inv(A)
         for d in range(4):
             xp_assert_close(B[3 - d, d:], np.diagonal(inv, d), atol=1e-14)
+
+    def test_solve_coefficients_singular_system(self):
+        """An ill-conditioned system emits an informative warning."""
+        n = 12
+        ab = np.zeros((4, n))
+        ab[3] = 1.0
+        ab[3, -1] = 1e-18
+        with pytest.warns(sl.LinAlgWarning, match="ill-conditioned"):
+            _solve_smoothing_spline_coefficients(
+                ab, 0.0, np.zeros_like(ab), np.ones(n))
 
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""

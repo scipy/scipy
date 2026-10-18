@@ -1430,11 +1430,11 @@ def russellrao(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1454,19 +1454,18 @@ def russellrao(u, v, w=None):
     0.3333333333333333
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        n = float(len(u))
+        ntt = (u & v).sum(axis=-1)
+        n = u.shape[-1]
     elif w is None:
-        ntt = (u * v).sum()
-        n = float(len(u))
+        ntt = (u * v).sum(axis=-1)
+        n = u.shape[-1]
     else:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
-        n = w.sum()
-    return float(n - ntt) / n
+        ntt = (u * v * w).sum(axis=-1)
+        n = w.sum(axis=-1)
+    return (n - ntt) / n
 
 
 def sokalsneath(u, v, w=None):
@@ -2194,6 +2193,9 @@ def squareform(X, force="no", checks=True):
            6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
     """
     X = np.ascontiguousarray(X)
+    if X.dtype.hasobject:
+        # the C code copies raw bytes, which breaks the refcounts of objects
+        raise TypeError("squareform does not support object arrays")
 
     s = X.shape
 
