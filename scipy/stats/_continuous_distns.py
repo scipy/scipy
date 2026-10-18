@@ -20,6 +20,7 @@ from scipy import integrate
 import scipy.special as sc
 
 import scipy.special._ufuncs as scu
+from scipy.special import _special_callbacks
 from scipy._lib._util import _lazyselect
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import xp_promote
@@ -4136,13 +4137,7 @@ class genhyperbolic_gen(rv_continuous):
         return _logpdf_single(x, p, a, b)
 
     def _pdf(self, x, p, a, b):
-        # kve instead of kv works better for large values of p
-        # and smaller values of sqrt(a^2  - b^2)
-        @np.vectorize
-        def _pdf_single(x, p, a, b):
-            return _stats.genhyperbolic_pdf(x, p, a, b)
-
-        return _pdf_single(x, p, a, b)
+        return sc._ufuncs._genhyperbolic_pdf(x, p, a, b)
 
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
@@ -4156,8 +4151,7 @@ class genhyperbolic_gen(rv_continuous):
         will be -inf or x1 will be inf.
         """
         user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
-        llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf',
-                                           user_data)
+        llc = LowLevelCallable(_special_callbacks._genhyperbolic_pdf_callback, user_data)
         d = np.sqrt((a + b)*(a - b))
         mean = b/d * sc.kv(p + 1, d) / sc.kv(p, d)
         epsrel = 1e-10
