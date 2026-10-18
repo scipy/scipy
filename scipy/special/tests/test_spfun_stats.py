@@ -75,7 +75,6 @@ class TestPoissonBinomialSF:
 
     @pytest.mark.parametrize('float_dtype', [np.float32, np.float64])
     def test_empty(self, float_dtype):
-        # An empty sum is a point mass at zero.
         p = np.array([], dtype=float_dtype)
         assert_array_equal(_poisson_binom_sf([-1, 0, 1], p), [1, 0, 0])
 

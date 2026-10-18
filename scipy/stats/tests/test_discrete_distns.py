@@ -748,8 +748,10 @@ class TestPoissonBinomial:
         # prod((128 - a) + a*z) / 128**32, where a cycles through 1, ..., 9.
         # The 256-trial probability is about 5.54e-516 and rounds to zero.
         # Neither CDF subtraction nor reflection preserves all these tails.
+        # atol=0 prevents zero from passing for a tiny positive reference.
         assert_allclose(poisson_binom.sf(k, p), expected, rtol=5e-15, atol=0)
 
+    # Check the exact one-trial SF with fractional thresholds and shifts.
     @pytest.mark.parametrize('p', [0.0, np.nextafter(0.0, 1.0), 1e-20,
                                  0.25, np.nextafter(1.0, 0.0), 1.0])
     @pytest.mark.parametrize('loc', [0, 4])
@@ -770,6 +772,7 @@ class TestPoissonBinomial:
         p = np.array([[0.25, 0.5, 0.75], [0.5, 0.5, 0.5],
                       [0, 0, 0], [1, 1, 1]])
         if reverse:
+            # Exercise a noncontiguous trial axis.
             p = p[:, ::-1]
         k = np.arange(-1, 4)[:, None]
         # Exact dyadic probabilities, including deterministic distributions.

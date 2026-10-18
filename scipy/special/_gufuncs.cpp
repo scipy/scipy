@@ -129,8 +129,10 @@ struct _poisson_binom_sf_kernel {
         }
         if (p.data_handle() != last_p_ptr) {
             xsf::poisson_binom_pmf_all(p, special::as_mdspan(dist));
-            // Sum the upper tail directly, retaining the same per-call cache
-            // as the PMF and CDF kernels for repeated thresholds.
+            /* Walk backward so small upper-tail masses are added directly.
+            * Before each iteration, tail is P(S > j - 1). Store it
+            * before adding the current mass: sf excludes the threshold.
+            * For example, the last table entry is P(S > n) = 0. */
             T tail = T(0);
             for (auto j = dist.size(); j > 0; --j) {
                 T mass = dist[j - 1];
