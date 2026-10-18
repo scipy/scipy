@@ -533,21 +533,19 @@ def mean(
             )
         weights = xp.broadcast_to(weights, quat.shape[:-1])
 
-    # Move reduction axes to the end and flatten them. Reordering the quaternions
-    # instead of their (4, 4) outer products lets the sum over rotations be a single
-    # matmul, instead of materializing one 4x4 matrix per rotation.
+    # Move reduction axes to the end and flatten them
     keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
     q = xp.moveaxis(quat, axes_order, all_axes)
     q = xp.reshape(q, q.shape[: len(keep_axes)] + (-1, 4))
 
-    if weights is None:
-        K = q.mT @ q
-    else:
+    K = q[..., :, None] * q[..., None, :]
+    if weights is not None:
         w = xp.moveaxis(weights, axes_order, all_axes)
-        w = xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1))
-        K = (q * w).mT @ q
-
+        K = K * xp.reshape(w, w.shape[: len(keep_axes)] + (-1, 1, 1))
+    # A GEMM with implicit summation would be faster, but loses precision. We thus take
+    # the explicit mean. See gh-26363 before optimizing this
+    K = xp.mean(K, axis=-3)
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
