@@ -90,6 +90,7 @@ special_ufuncs = [
     "_cosine_invcdf",
     "_cospi",
     "_gen_harmonic",
+    "_genhyperbolic_logpdf",
     "_genhyperbolic_pdf",
     "_hypergeom_cdf",
     "_hypergeom_mean",

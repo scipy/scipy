@@ -4039,6 +4039,32 @@ const char *_gen_harmonic_doc = R"(
     This function is used in scipy.stats.zipfian.
     )";
 
+const char *_genhyperbolic_logpdf_doc = R"(
+    _genhyperbolic_logpdf(x, p, a, b)
+
+    Internal private function.
+
+    Compute the log-PDF of the generalized hyperbolic distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles.
+    p : array_like
+        Shape parameter.
+    a : array_like
+        Shape parameter.
+    b : array_like
+        Scale parameter.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the log-PDF.
+
+    This function is used in scipy.stats.genhyperbolic.
+    )";
+
 const char *_genhyperbolic_pdf_doc = R"(
     _genhyperbolic_pdf(x, p, a, b)
 

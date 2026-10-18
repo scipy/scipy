@@ -4130,11 +4130,7 @@ class genhyperbolic_gen(rv_continuous):
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
         # and smaller values of sqrt(a^2  - b^2)
-        @np.vectorize
-        def _logpdf_single(x, p, a, b):
-            return _stats.genhyperbolic_logpdf(x, p, a, b)
-
-        return _logpdf_single(x, p, a, b)
+        return sc._ufuncs._genhyperbolic_logpdf(x, p, a, b)
 
     def _pdf(self, x, p, a, b):
         return sc._ufuncs._genhyperbolic_pdf(x, p, a, b)
