@@ -195,6 +195,11 @@ Files: scipy/integrate/_lebedev.py
 License: BSD-2-Clause
   For details, see scipy/integrate/_lebedev.py
 
+Name: cobyqa
+Files: subprojects/cobyqa/cobyqa
+License: BSD-3-Clause
+  For details, see subprojects/cobyqa/cobyqa/LICENSE
+
 Name: prima
 Files: subprojects/pyprima/pyprima
 License: BSD-3-Clause
