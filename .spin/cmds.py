@@ -793,10 +793,12 @@ def _commit_to_sha(commit):
 
 def _dirty_git_working_dir():
     # Changes to the working directory
-    p0 = util.run(['git', 'diff-files', '--quiet'])
+    p0 = util.run(['git', 'diff-files', '--quiet'],
+                  sys_exit=False, output=False, echo=False)
 
     # Staged changes
-    p1 = util.run(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+    p1 = util.run(['git', 'diff-index', '--quiet', '--cached', 'HEAD'],
+                  sys_exit=False, output=False, echo=False)
 
     return (p0.returncode != 0 or p1.returncode != 0)
 
@@ -842,6 +844,7 @@ def _dirty_git_working_dir():
 @click.option(
     '--dry-run/--no-dry-run', '-n', default=True,
     help="Run benchmarks without saving results to disk. "
+         "Ignored with --compare, which needs the results of both commits."
 )
 @click.option(
     '--mem-limit/--no-mem-limit', default=True,
@@ -892,8 +895,13 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
-    if dry_run:
-        bench_args = ['--dry-run'] + bench_args
+    # asv 0.6.6 changed its default launch method to spawn, which starts a
+    # fresh interpreter and re-imports SciPy for every benchmark and parameter
+    # set. forkserver imports once and was asv's Linux default up to 0.6.5.
+    # macOS keeps the asv default because many Apple libraries are not
+    # fork-safe.
+    if sys.platform.startswith('linux'):
+        bench_args = ['--launch-method', 'forkserver'] + bench_args
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
@@ -927,7 +935,21 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--show-stderr', '--python=same'] + bench_args
+        if dry_run:
+            run_args = ['--dry-run']
+        else:
+            # asv does not save results from an existing environment
+            # (--python=same) unless it is told which commit they belong to
+            if _dirty_git_working_dir():
+                click.secho(
+                    "WARNING: you have uncommitted changes --- "
+                    "the results are recorded against HEAD!",
+                    fg="red"
+                )
+            run_args = ['--set-commit-hash', _commit_to_sha('HEAD')]
+        cmd = [
+            'asv', 'run', '--show-stderr', '--python=same'
+        ] + run_args + bench_args
         _run_asv(cmd, mem_limit=mem_limit)
     else:
         # Ensure that we don't have uncommitted changes
@@ -940,6 +962,8 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
                 fg="red"
             )
 
+        # `asv continuous` has no --dry-run: it always saves the results of
+        # both commits, since that is what it compares
         cmd_compare = [
             'asv', 'continuous', '--factor', '1.05'
         ] + bench_args + [commit_a, commit_b]

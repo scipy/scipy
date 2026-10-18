@@ -1,4 +1,5 @@
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, eye_array, safely_cast_index_arrays
 from scipy.sparse.linalg import splu
@@ -176,6 +177,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     return factor
 
 
+@xp_capabilities(np_only=True)
 class Radau(OdeSolver):
     """Implicit Runge-Kutta method of Radau IIA family of order 5.
 

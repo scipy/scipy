@@ -8,10 +8,9 @@ import numpy as np
 from numpy import inf
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from hypothesis import strategies, given, reproduce_failure, settings  # noqa: F401
+from hypothesis import strategies, given
 import hypothesis.extra.numpy as npst
 
-from scipy._lib._util import USING_ACCELERATE
 from scipy import special
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
@@ -20,12 +19,13 @@ from scipy.stats import qmc
 from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
-    ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture, _logexpxmexpy)
-from scipy.stats._new_distributions import (StandardNormal, _LogUniform, _Gamma,
-                                            _TestCircular, VonMises)
-from scipy.stats._new_distributions import DiscreteDistribution
-from scipy.stats import Normal, Logistic, Uniform, Binomial
+    ContinuousDistribution, DiscreteDistribution, CircularDistribution, Mixture,
+    ShiftedScaledDistribution, _fiinfo, _generate_domain_support, _logexpxmexpy)
+from scipy.stats._new_distributions import (
+    StandardNormal, _LogUniform, _Gamma, _TestCircular)
+from scipy.stats import Normal, Uniform
+from scipy._lib._testutils import mutually_broadcastable_shapes
+from scipy._lib._util import _RichResult
 
 
 class Test_RealInterval:
@@ -149,16 +149,18 @@ class Test_RealInterval:
         assert domain1.symbols is not domain2.symbols
 
 
-def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
+def draw_distribution_from_family(family, rng, shape_options,
+                                  proportions=None):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
+    proportions = (0.7, 0.1, 0.1, 0.1) if proportions is None else proportions
     n_parameterizations = family._num_parameterizations()
     if n_parameterizations > 0:
-        i = data.draw(strategies.integers(0, max_value=n_parameterizations-1))
+        i = rng.integers(0, n_parameterizations)
         n_parameters = family._num_parameters(i)
-        shapes, result_shape = data.draw(
-            npst.mutually_broadcastable_shapes(num_shapes=n_parameters,
-                                               min_side=min_side))
+        shapes = mutually_broadcastable_shapes(num_shapes=n_parameters,
+                                               rng=rng, **shape_options)
+        result_shape = np.broadcast_shapes(*shapes)
         dist = family._draw(shapes, rng=rng, proportions=proportions,
                             i_parameterization=i)
     else:
@@ -167,13 +169,13 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
 
     # Draw a broadcastable shape for the arguments, and draw values for the
     # arguments.
-    x_shape = data.draw(npst.broadcastable_shapes(result_shape,
-                                                  min_side=min_side))
+    x_shape, = mutually_broadcastable_shapes(1, base_shape=result_shape,
+                                             rng=rng, **shape_options)
     x = dist._variable.draw(x_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     x_result_shape = np.broadcast_shapes(x_shape, result_shape)
-    y_shape = data.draw(npst.broadcastable_shapes(x_result_shape,
-                                                  min_side=min_side))
+    y_shape, = mutually_broadcastable_shapes(1, base_shape=x_result_shape,
+                                             rng=rng, **shape_options)
     y = dist._variable.draw(y_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     xy_result_shape = np.broadcast_shapes(y_shape, x_result_shape)
@@ -183,125 +185,240 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     with np.errstate(divide='ignore', invalid='ignore'):
         logp = np.log(p)
 
-    return dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape
+    return _RichResult(dist=dist, x=x, y=y, p=p, logp=logp, result_shape=result_shape,
+                       x_result_shape=x_result_shape, xy_result_shape=xy_result_shape)
 
 
-continuous_families = [
-    StandardNormal,
-    Normal,
-    Logistic,
-    Uniform,
-    _LogUniform
-]
+class DistributionsTest:
+    _options = [
+        (dict(min_dims=0, max_dims=0), [1, 0, 0, 0]), # all valid scalar
+        (dict(min_dims=0, max_dims=0), [0, 0, 0, 1]), # all nan scalar
+        (dict(min_dims=1, max_dims=1,
+            min_side=5, max_side=6), [1, 0, 0, 0]), # all valid array
+        (dict(min_dims=1, max_dims=1,
+            min_side=5, max_side=6), [0, 0, 0, 1]), # all nan array
+        (dict(min_dims=1, max_dims=1,  # mixed valid, invalid, and edge cases
+            min_side=20, max_side=25), [0.25, 0.25, 0.25, 0.25]),
+    ] + [({}, None)]*15  # other, randomly-generated shape options
 
-discrete_families = [
-    Binomial,
-]
+    @pytest.fixture(params=list(enumerate(_options)), ids=range(len(_options)))
+    def options(self, request):
+        return request.param
 
-circular_families = [
-    _TestCircular,
-    VonMises,
-]
+    @pytest.fixture
+    def case(self, options):
+        i, _options = options
+        shape_options, proportions = _options
+        rng = np.random.default_rng([i, self.seed])
+        tmp = draw_distribution_from_family(self.family, rng,
+                                            shape_options, proportions)
+        return _RichResult(family=self.family, rng=rng, **tmp)
 
-families = continuous_families + discrete_families + circular_families
+    @pytest.fixture
+    def valid_dist_x(self):
+        shape_options = dict(min_dims=1, max_dims=1, min_side=20, max_side=21)
+        proportions = (1, 0, 0, 0)  # all valid
+        rng = np.random.default_rng(self.seed)
+        tmp = draw_distribution_from_family(self.family, rng,
+                                            shape_options, proportions)
+        return tmp.dist, tmp.x
 
-class TestDistributions:
-    @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
-    @settings(max_examples=20)
-    @pytest.mark.parametrize('family', families)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_support_moments_sample(self, family, data, seed):
-        rng = np.random.default_rng(seed)
+    def test_purported_distribution(self, valid_dist_x):
+        message = ("This method must be overridden to demonstrate that the "
+                   "distribution is the purported one.")
+        raise NotImplementedError(message)
 
-        # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, data, rng, proportions)
-        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
-        sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
-                                                   max_side=20))
+    def test_support(self, case):
+        check_support(case.dist)
 
-        with np.errstate(invalid='ignore', divide='ignore'):
-            check_support(dist)
-            check_moment_funcs(dist, result_shape)  # this needs to get split up
-            if family not in circular_families:
-                check_lmoment_funcs(dist, result_shape)
-            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
-            qrng = qmc.Halton(d=1, seed=rng)
-            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_moment(self, case, tol_override=None):
+        check_moment_funcs(case.dist, case.result_shape, tol_override=tol_override)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_lmoment(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support `lmoment`.")
+        check_lmoment_funcs(case.dist, case.result_shape, tol_override=tol_override)
+
+    def test_random_sample(self, case):
+        sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
+        check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
+                                case.result_shape, case.rng)
+
+    @pytest.mark.thread_unsafe(reason="looks like an _rng_spawn issue?")
+    def test_quasi_random_sample(self, case):
+        sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
+        qrng = qmc.Halton(d=1, seed=case.rng)
+        check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
+                                case.result_shape, qrng)
+
+    def test_entropy(self, case, tol_override=None):
+        check_dist_func(case.dist, 'entropy', None, case.result_shape,
+                        {'log/exp', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_logentropy(self, case, tol_override=None):
+        check_dist_func(case.dist, 'logentropy', None, case.result_shape,
+                        {'log/exp', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_median(self, case, tol_override=None):
+        methods = ({'optimization'} if isinstance(case.dist, CircularDistribution)
+                   else {'icdf'})
+        check_dist_func(case.dist, 'median', None, case.result_shape, methods,
+                        tol_override=tol_override)
+
+    def test_mode(self, case, tol_override=None):
+        tol_override = {'atol': 1e-6} if tol_override is None else tol_override
+        check_dist_func(case.dist, 'mode', None, case.result_shape,
+                        {'optimization'}, tol_override=tol_override)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_mean(self, case, tol_override=None):
+        check_dist_func(case.dist, 'mean', None, case.result_shape, {'cache'},
+                        tol_override=tol_override)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_variance(self, case, tol_override=None):
+        check_dist_func(case.dist, 'variance', None, case.result_shape, {'cache'},
+                        tol_override=tol_override)
+
+    def test_standard_deviation(self, case, tol_override=None):
+        tol_override = {} if tol_override is None else tol_override
+        std = case.dist.standard_deviation()
+        res = (1 - np.exp(-0.5*std**2) if isinstance(case.dist, CircularDistribution)
+               else std**2)
+        assert_allclose(res, case.dist.variance(), **tol_override)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_skewness(self, case, tol_override=None):
+        check_dist_func(case.dist, 'skewness', None, case.result_shape,
+                        {'cache'}, tol_override=tol_override)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_kurtosis(self, case, tol_override=None):
+        check_dist_func(case.dist, 'kurtosis', None, case.result_shape,
+                        {'cache'}, tol_override=tol_override)
+
+    def test_pdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'pdf', case.x, case.x_result_shape,
+                        {'log/exp'}, tol_override=tol_override)
+
+    def test_logpdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'logpdf', case.x, case.x_result_shape,
+                        {'log/exp'}, tol_override=tol_override)
+
+    def test_pmf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'pmf', case.x, case.x_result_shape,
+                        {'log/exp'}, tol_override=tol_override)
+
+    def test_logpmf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'logpmf', case.x, case.x_result_shape,
+                        {'log/exp'}, tol_override=tol_override)
+
+    def test_logcdf(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support `logcdf`.")
+        check_dist_func(case.dist, 'logcdf', case.x, case.x_result_shape,
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_cdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'cdf', case.x, case.x_result_shape,
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_cdf2(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support two-arg `cdf`.")
+        check_cdf2(case.dist, False, case.x, case.y,
+                    case.xy_result_shape, {'quadrature'}, tol_override=tol_override)
+        check_cdf2(case.dist, True, case.x, case.y,
+                    case.xy_result_shape, {'quadrature'}, tol_override=tol_override)
+
+    def test_logccdf(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support `logccdf`.")
+        check_dist_func(case.dist, 'logccdf', case.x, case.x_result_shape,
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_ccdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'ccdf', case.x, case.x_result_shape,
+                        {'log/exp', 'complement', 'quadrature'},
+                        tol_override=tol_override)
+
+    def test_ccdf2(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support two-arg `ccdf`.")
+        check_ccdf2(case.dist, False, case.x, case.y,
+                    case.xy_result_shape, {'addition'}, tol_override=tol_override)
+        check_ccdf2(case.dist, True, case.x, case.y,
+                    case.xy_result_shape, {'addition'}, tol_override=tol_override)
+
+    def test_ilogcdf(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support `ilogcdf`.")
+        with np.errstate(divide='ignore', over='ignore'):
+            check_dist_func(case.dist, 'ilogcdf', case.logp, case.x_result_shape,
+                            {'complement', 'inversion'}, tol_override=tol_override)
+
+    def test_icdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'icdf', case.p, case.x_result_shape,
+                        {'complement', 'inversion'}, tol_override=tol_override)
+
+    def test_ilogccdf(self, case, tol_override=None):
+        if isinstance(case.dist, CircularDistribution):
+            pytest.skip("`CircularDistributions` don't support `ilogccdf`.")
+        with np.errstate(divide='ignore', over='ignore'):
+            check_dist_func(case.dist, 'ilogccdf', case.logp, case.x_result_shape,
+                            {'complement', 'inversion'}, tol_override=tol_override)
+
+    def test_iccdf(self, case, tol_override=None):
+        check_dist_func(case.dist, 'iccdf', case.p, case.x_result_shape,
+                        {'complement', 'inversion'}, tol_override=tol_override)
+
+
+# Since this distributions is not public, the tests is really included to test the
+# distribution infrastructure more than the distribution itself. It also avoids
+# `DistributionTest` being detected as a misnamed test class by `check_test_name.py`
+class Test_LogUniform(DistributionsTest):
+    seed = 260607439
+    family = _LogUniform
+
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x), stats.loguniform(dist.a, dist.b).pdf(x))
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.parametrize('family', families)
-    @pytest.mark.parametrize('func, methods, arg',
-                             [('entropy', {'log/exp', 'quadrature'}, None),
-                              ('logentropy', {'log/exp', 'quadrature'}, None),
-                              ('median', {'icdf'}, None),
-                              ('mode', {'optimization'}, None),
-                              ('mean', {'cache'}, None),
-                              ('variance', {'cache'}, None),
-                              ('skewness', {'cache'}, None),
-                              ('kurtosis', {'cache'}, None),
-                              ('pdf', {'log/exp'}, 'x'),
-                              ('logpdf', {'log/exp'}, 'x'),
-                              ('pmf', {'log/exp'}, 'x'),
-                              ('logpmf', {'log/exp'}, 'x'),
-                              ('logcdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('cdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('ilogcdf', {'complement', 'inversion'}, 'logp'),
-                              ('icdf', {'complement', 'inversion'}, 'p'),
-                              ('logccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('ccdf', {'log/exp', 'complement', 'quadrature'}, 'x'),
-                              ('ilogccdf', {'complement', 'inversion'}, 'logp'),
-                              ('iccdf', {'complement', 'inversion'}, 'p'),
-                              ])
-    @settings(max_examples=20)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_funcs(self, family, data, seed, func, methods, arg):
-        if family == Uniform and func == 'mode':
-            pytest.skip("Mode is not unique; `method`s disagree.")
-        if family in circular_families:
-            if func in {'logcdf', 'logccdf', 'ilogcdf', 'ilogccdf'}:
-                pytest.skip("Circular distributions don't have logcdf methods.")
-            elif func in {'median'}:
-                methods = {'optimization'}
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_lmoment(self, case):
+        return super().test_lmoment(case)
 
-        rng = np.random.default_rng(seed)
 
-        # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (0.7, 0.1, 0.1, 0.1)
-        tmp = draw_distribution_from_family(family, data, rng, proportions)
-        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+# Since this distributions is not public, the tests is really included to test the
+# distribution infrastructure more than the distribution itself. It also avoids
+# `DistributionTest` being detected as a misnamed test class by `check_test_name.py`
+class Test_TestCircular(DistributionsTest):
+    seed = 586247944
+    family = _TestCircular
 
-        args = {'x': x, 'p': p, 'logp': p}
-        with np.errstate(invalid='ignore', divide='ignore', over='ignore'):
-            if arg is None:
-                check_dist_func(dist, func, None, result_shape, methods)
-            elif arg in args:
-                check_dist_func(dist, func, args[arg], x_result_shape, methods)
+    def test_purported_distribution(self, valid_dist_x):
+        dist, x = valid_dist_x
+        np.testing.assert_allclose(dist.pdf(x), 0.75 * (1 - x**2))
 
-        if func == 'variance':  # check standard deviation against the variance
-            ref = dist.variance()
-            if family in circular_families:
-                assert_allclose(1 - np.exp(-0.5*dist.standard_deviation()**2), ref)
-            else:
-                assert_allclose(dist.standard_deviation()**2, ref)
+    def test_median(self, case):
+        # can only expect about half precision with optimization
+        return super().test_median(case, tol_override={'atol': 1e-6})
 
-        # invalid and divide are to be expected; maybe look into over
-        with np.errstate(invalid='ignore', divide='ignore', over='ignore'):
-            if not (isinstance(dist, ShiftedScaledDistribution)
-                    or family in circular_families):
-                if func == 'cdf':
-                    methods = {'quadrature'}
-                    check_cdf2(dist, False, x, y, xy_result_shape, methods)
-                    check_cdf2(dist, True, x, y, xy_result_shape, methods)
-                elif func == 'ccdf':
-                    methods = {'addition'}
-                    check_ccdf2(dist, False, x, y, xy_result_shape, methods)
-                    check_ccdf2(dist, True, x, y, xy_result_shape, methods)
 
-    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
-    @pytest.mark.usefixtures("mpl_agg")
+class TestOtherMethods:
     def test_plot(self):
-        import matplotlib.pyplot as plt
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            return
 
         X = Uniform(a=0., b=1.)
         ax = X.plot()
@@ -409,6 +526,7 @@ class TestDistributions:
         assert res1[1] == res2[1]
         assert res1[1] != ref[1]
 
+
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape
     if fname == 'sample':
@@ -454,11 +572,12 @@ def check_support(dist):
     assert b.dtype == dist._dtype
 
 
-def check_dist_func(dist, fname, arg, result_shape, methods):
+def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None):
     # Check that all computation methods of all distribution functions agree
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
+    tol_override = {'atol': 0} if tol_override is None else tol_override
 
     args = tuple() if arg is None else (arg,)
     methods = methods.copy()
@@ -471,20 +590,6 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
 
     ref = getattr(dist, fname)(*args)
     check_nans_and_edges(dist, fname, arg, ref)
-
-    tol_override = {'atol': 1e-15, 'rtol': 1e-5 if USING_ACCELERATE else 1e-7}
-
-    if fname in {'mean', 'skewness'}:
-        tol_override = {'atol': 1e-15}
-    elif (fname in {'mode'}) or (fname in {'median'}
-                                 and dist.__class__ in circular_families):
-        # can only expect about half of machine precision for optimization
-        # because math
-        tol_override = {'atol': 1e-6}
-    elif fname in {'logcdf'}:  # gh-22276
-        tol_override = {'rtol': 2e-7}
-    elif fname in {'ccdf'}:  # similar to gh-22276
-        tol_override = {'atol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')
@@ -500,13 +605,12 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         if 'log' in fname:
             np.testing.assert_allclose(np.exp(res), np.exp(ref), **tol_override)
         else:
-            if fname in {'median', 'mode'} and dist.__class__ in circular_families:
+            if fname in {'median', 'mode'} and isinstance(dist, CircularDistribution):
                 # wrap to center around 0
                 a, b = dist.support()
                 period = b - a
                 res = np.where(res > period/2, res - period, res)[()]
                 ref = np.where(ref > period/2, ref - period, ref)[()]
-
             np.testing.assert_allclose(res, ref, **tol_override)
 
         # for now, make sure dtypes are consistent; later, we can check whether
@@ -517,12 +621,13 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
             assert np.isscalar(res)
 
 
-def check_cdf2(dist, log, x, y, result_shape, methods):
+def check_cdf2(dist, log, x, y, result_shape, methods, tol_override=None):
     # Specialized test for 2-arg cdf since the interface is a bit different
     # from the other methods. Here, we'll use 1-arg cdf as a reference, and
     # since we have already checked 1-arg cdf in `check_nans_and_edges`, this
     # checks the equivalent of both `check_dist_func` and
     # `check_nans_and_edges`.
+    tol_override = {'atol' : 0} if tol_override is None else tol_override
     methods = methods.copy()
 
     if log:
@@ -556,10 +661,11 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 res = (np.exp(dist.logcdf(x, y, method=method)) if log
                        else dist.cdf(x, y, method=method))
             continue
-        res = (np.exp(dist.logcdf(x, y, method=method)) if log
-               else dist.cdf(x, y, method=method))
-        rtol = 1e-5 if USING_ACCELERATE else 1e-7
-        np.testing.assert_allclose(res, ref, rtol=rtol, atol=1e-14)
+        with np.errstate(invalid='ignore'):
+            # np.exp(np.nan) raises on some platforms?
+            res = (np.exp(dist.logcdf(x, y, method=method)) if log
+                else dist.cdf(x, y, method=method))
+        np.testing.assert_allclose(res, ref, **tol_override)
         if log:
             np.testing.assert_equal(res.dtype, (ref + 0j).dtype)
         else:
@@ -569,10 +675,11 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
             assert np.isscalar(res)
 
 
-def check_ccdf2(dist, log, x, y, result_shape, methods):
+def check_ccdf2(dist, log, x, y, result_shape, methods, tol_override=None):
     # Specialized test for 2-arg ccdf since the interface is a bit different
     # from the other methods. Could be combined with check_cdf2 above, but
     # writing it separately is simpler.
+    tol_override = {'atol' : 0} if tol_override is None else tol_override
     methods = methods.copy()
 
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
@@ -594,8 +701,7 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
             continue
         res = (np.exp(dist.logccdf(x, y, method=method)) if log
                else dist.ccdf(x, y, method=method))
-        rtol = 1e-5 if USING_ACCELERATE else 1e-7
-        np.testing.assert_allclose(res, ref, rtol=rtol, atol=1e-14)
+        np.testing.assert_allclose(res, ref, **tol_override)
         np.testing.assert_equal(res.dtype, ref.dtype)
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
@@ -626,7 +732,7 @@ def check_nans_and_edges(dist, fname, arg, res):
     a = np.broadcast_to(a, res.shape)
     b = np.broadcast_to(b, res.shape)
 
-    if dist.__class__ in circular_families:
+    if isinstance(dist, CircularDistribution):
         return check_periodicity(dist, fname, arg, res, a, b, valid_parameters,
                                  classified_args)
 
@@ -685,7 +791,7 @@ def check_nans_and_edges(dist, fname, arg, res):
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], a[endpoint_arg == 1])
 
-    exclude = {'mean', 'variance', 'support'}
+    exclude = {'mean', 'skewness', 'support'}
     if isinstance(dist, ContinuousDistribution):
         # Continuous distributions zero PMF everywhere (-inf in log-space)
         exclude.update({'logpmf'})
@@ -741,18 +847,21 @@ def check_periodicity(dist, fname, arg, res, a, b, valid_parameters, classified_
         assert np.all(res[endpoint_arg == -1] == b[endpoint_arg == -1])
 
 
-def check_moment_funcs(dist, result_shape):
+def check_moment_funcs(dist, result_shape, tol_override=None):
     # Check that all computation methods of all distribution functions agree
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-
-    atol = 1e-9  # make this tighter (e.g. 1e-13) after fixing `draw`
+    _tol_override = {'rtol': 1e-7, 'atol': 1e-13}
+    if tol_override is not None:
+        _tol_override.update(tol_override)
+    tol_override = _tol_override
 
     def check(order, kind, method=None, ref=None, success=True):
         if success:
             res = dist.moment(order, kind, method=method)
-            assert_allclose(res, ref, atol=atol*10**order)
+            assert_allclose(res, ref, rtol=tol_override['rtol'],
+                            atol=tol_override['atol']*10**order)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
@@ -803,11 +912,13 @@ def check_moment_funcs(dist, result_shape):
     for i in range(6):
         check(i, 'central', 'cache', success=False)
         ref = dist.moment(i, 'central', method='quadrature')
+        if i == 0:  # taking central moment of any order with quadrature requires mean
+            dist._moment_central_cache.pop(1, None)
         assert ref.shape == result_shape
         check(i, 'central', 'cache', ref, success=True)
         check(i, 'central', 'formula', ref, success=has_formula(i, 'central'))
         check(i, 'central', 'general', ref,
-              success=(i == 0) if dist.__class__ in circular_families else (i <= 1))
+              success=(i == 0) if isinstance(dist, CircularDistribution) else (i <= 1))
         if dist.__class__ == stats.Normal:
             check(i, 'central', 'quadrature_icdf', ref, success=True)
         if not (dist.__class__ == stats.Uniform and i == 5):
@@ -821,7 +932,7 @@ def check_moment_funcs(dist, result_shape):
             check(i, 'central', 'transform', ref)
 
     # Circular distributions don't have kind='standardized'
-    if dist.__class__ in circular_families:
+    if isinstance(dist, CircularDistribution):
         return
 
     variance = dist.variance()
@@ -862,8 +973,9 @@ def check_moment_funcs(dist, result_shape):
     dist.reset_cache()
 
 
-def check_lmoment_funcs(dist, result_shape):
+def check_lmoment_funcs(dist, result_shape, tol_override=None):
     # Perform consistency check for L-moments similar to check_moment_funcs above
+    tol_override = {'atol' : 5e-13} if tol_override is None else tol_override
 
     if not isinstance(dist, ContinuousDistribution):
         message = "L-moments are currently available only for continuous..."
@@ -871,12 +983,10 @@ def check_lmoment_funcs(dist, result_shape):
             dist.lmoment(1)
         return
 
-    atol = 2e-9
-
     def check(order, standardize=False, method=None, ref=None, success=True):
         if success:
             res = dist.lmoment(order, standardize=standardize, method=method)
-            assert_allclose(res, ref, atol=atol)
+            assert_allclose(res, ref, **tol_override)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
@@ -983,6 +1093,7 @@ def get_valid_parameters(dist):
     assert_equal(~all_valid, dist._invalid)
 
     return all_valid
+
 
 def classify_arg(dist, arg, arg_domain):
     if arg is None:
@@ -1661,14 +1772,13 @@ class TestMakeDistribution:
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
     @pytest.mark.slow  # just in case
-    @settings(max_examples=20)  # no need for more
-    @given(data=strategies.data())
-    def test_draw_distribution(self, data):
-        # `draw_distribution_from_family` is a private function right now, but we will
+    @pytest.mark.parametrize('seed', 77760325 + np.arange(20))
+    def test_draw_distribution(self, seed):
+        # `draw_distribution_from_family` is a private function right now, but we may
         # want that functionality to be public someday. It was broken for custom
         # distributions because the `typical` parameter of the support was ignored.
         # Check that this is resolved.
-        rng = np.random.default_rng(8465652168548465121)
+        rng = np.random.default_rng(seed)
         u_typical = tuple(np.sort(rng.standard_normal(2)))
         s_typical = tuple(np.sort(rng.random(2)*2))
         x_typical = tuple(np.sort(rng.standard_normal(2)))
@@ -1684,8 +1794,8 @@ class TestMakeDistribution:
 
         family = stats.make_distribution(MyNormal())
         proportions = (1.0, 0., 0., 0.)
-        tmp = draw_distribution_from_family(family, data, rng, proportions, min_side=1)
-        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+        tmp = draw_distribution_from_family(family, rng, {'min_side': 1}, proportions)
+        dist, x = tmp.dist, tmp.x
         assert u_typical[0] < np.min(dist.u) and np.max(dist.u) < u_typical[1]
         assert s_typical[0] < np.min(dist.s) and np.max(dist.s) < s_typical[1]
         assert x_typical[0] < np.min(x) and np.max(x) < x_typical[1]
@@ -1715,7 +1825,7 @@ class TestTransforms:
         X = stats.Binomial(n=10, p=0.5)
         # This is applied at the top level TransformedDistribution,
         # so testing one subclass is enough
-        message = "Transformations are currently supported only for continuous..."
+        message = "Transformations are currently supported only for..."
         with pytest.raises(NotImplementedError, match=message):
             stats.exp(X)
 
@@ -1754,8 +1864,8 @@ class TestTransforms:
         assert np.all((sample > lb) & (sample < ub))
 
     @pytest.mark.fail_slow(10)
-    @given(data=strategies.data(), seed=strategies.integers(min_value=0))
-    def test_loc_scale(self, data, seed):
+    @pytest.mark.parametrize('seed', 911679639 + np.arange(20))
+    def test_loc_scale(self, seed):
         # Need tests with negative scale
         rng = np.random.default_rng(seed)
 
@@ -1764,8 +1874,8 @@ class TestTransforms:
                 super().__init__(StandardNormal(), *args, **kwargs)
 
         tmp = draw_distribution_from_family(
-            TransformedNormal, data, rng, proportions=(1, 0, 0, 0), min_side=1)
-        dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
+            TransformedNormal, rng, {'min_side': 1}, proportions=(1, 0, 0, 0))
+        dist, x, y, p, logp = tmp.dist, tmp.x, tmp.y, tmp.p, tmp.logp
 
         loc = dist.loc
         # negative scale tested in test_abs_finite_support, test_reciprocal, etc.
@@ -2113,6 +2223,7 @@ class TestTransforms:
         assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         sample = Y.sample(10)
         assert np.all(sample > 0)
+
 
 class TestOrderStatistic:
     @pytest.mark.fail_slow(20)  # Moments require integration

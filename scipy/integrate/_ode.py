@@ -86,6 +86,7 @@ import warnings
 
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
+from scipy._lib._array_api import xp_capabilities
 
 from scipy.linalg.blas import HAS_ILP64
 
@@ -100,6 +101,7 @@ _iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 # ------------------------------------------------------------------------------
 
 
+@xp_capabilities(out_of_scope=True)
 class ode:
     """
     A generic interface class to numeric integrators.
@@ -573,6 +575,7 @@ def _transform_banded_jac(bjac):
     return newjac
 
 
+@xp_capabilities(out_of_scope=True)
 class complex_ode(ode):
     """
     A wrapper of ode for complex systems.

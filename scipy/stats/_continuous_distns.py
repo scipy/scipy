@@ -307,7 +307,7 @@ class kstwobign_gen(rv_continuous):
 
     Notes
     -----
-    :math:`\sqrt{n} D_n` is given by
+    :math:`D_n` is given by
 
     .. math::
 
@@ -2930,11 +2930,11 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+        f(x, c, a, b) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`a < x <= b`, :math:`0 \le a < b` and :math:`c > 0`.
+    for :math:`a < x \leq b`, :math:`0 \leq a < b` and :math:`c > 0`.
 
-    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    `truncweibull_min` takes :math:`c`, :math:`a`, and :math:`b` as shape
     parameters.
 
     Notice that the truncation values, :math:`a` and :math:`b`, are defined in
@@ -2942,13 +2942,14 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        a = (u_l - loc)/scale
-        b = (u_r - loc)/scale
+        a &= (u_l - \mathrm{loc})/\mathrm{scale} \\
+        b &= (u_r - \mathrm{loc})/\mathrm{scale}
 
     where :math:`u_l` and :math:`u_r` are the specific left and right
     truncation values, respectively. In other words, the support of the
-    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
-    :math:`loc` and/or :math:`scale` are provided.
+    distribution becomes
+    :math:`a\,\mathrm{scale} + \mathrm{loc} < x \leq b\,\mathrm{scale} + \mathrm{loc}`
+    when ``loc`` and/or ``scale`` are provided.
 
     %(after_notes)s
 
@@ -5558,7 +5559,7 @@ class norminvgauss_gen(rv_continuous):
 
     where :math:`x` is a real number, the parameter :math:`a` is the tail
     heaviness and :math:`b` is the asymmetry parameter satisfying
-    :math:`a > 0` and :math:`|b| <= a`.
+    :math:`a > 0` and :math:`|b| < a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 
@@ -9403,7 +9404,7 @@ class rice_gen(rv_continuous):
 
         f(x, b) = x \exp(- \frac{x^2 + b^2}{2}) I_0(x b)
 
-    for :math:`x >= 0`, :math:`b > 0`. :math:`I_0` is the modified Bessel
+    for :math:`x \geq 0`, :math:`b \geq 0`. :math:`I_0` is the modified Bessel
     function of order zero (`scipy.special.i0`).
 
     `rice` takes ``b`` as a shape parameter for :math:`b`.
@@ -12555,7 +12556,7 @@ class rel_breitwigner_gen(rv_continuous):
 
     %(after_notes)s
 
-    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
+    :math:`\rho = M_0/\Gamma` and :math:`\Gamma` is the scale parameter. For
     example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
     \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
     [4]_ one can set ``rho=91.1876/2.4952`` and ``scale=2.4952``.

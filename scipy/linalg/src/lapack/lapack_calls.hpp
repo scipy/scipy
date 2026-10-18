@@ -91,6 +91,11 @@ namespace lapack {
         void BLAS_FUNC(cgesvd)(char *, char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, CBLAS_INT *);
         void BLAS_FUNC(zgesvd)(char *, char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *);
 
+        void BLAS_FUNC(sgesvdx)(char *, char *, char *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(dgesvdx)(char *, char *, char *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(cgesvdx)(char *, char *, char *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f32 *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *,  c64 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
+        void BLAS_FUNC(zgesvdx)(char *, char *, char *, CBLAS_INT *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f64 *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
+
         void BLAS_FUNC(sgels)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *);
         void BLAS_FUNC(dgels)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *);
         void BLAS_FUNC(cgels)(char *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, CBLAS_INT *);
@@ -813,6 +818,15 @@ namespace lapack {
         { BLAS_FUNC(cgesvd)(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, info); }
     inline void gesvd(char jobu, char jobvt, CBLAS_INT m, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 *s, c128 *u, CBLAS_INT ldu, c128 *vt, CBLAS_INT ldvt, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *info)
         { BLAS_FUNC(zgesvd)(&jobu, &jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, info); }
+
+    inline void gesvdx(char jobu, char jobvt, char range, CBLAS_INT m, CBLAS_INT n, f32 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, CBLAS_INT *ns, f32 *s, f32 *u, CBLAS_INT ldu, f32 *vt, CBLAS_INT ldvt, f32 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(sgesvdx)(&jobu, &jobvt, &range, &m, &n, a, &lda, &vl, &vu, &il, &iu, ns, s, u, &ldu, vt, &ldvt, work, &lwork, iwork, info); }
+    inline void gesvdx(char jobu, char jobvt, char range, CBLAS_INT m, CBLAS_INT n, f64 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, CBLAS_INT *ns, f64 *s, f64 *u, CBLAS_INT ldu, f64 *vt, CBLAS_INT ldvt, f64 *work, CBLAS_INT lwork, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(dgesvdx)(&jobu, &jobvt, &range, &m, &n, a, &lda, &vl, &vu, &il, &iu, ns, s, u, &ldu, vt, &ldvt, work, &lwork, iwork, info); }
+    inline void gesvdx(char jobu, char jobvt, char range, CBLAS_INT m, CBLAS_INT n, c64 *a, CBLAS_INT lda, f32 vl, f32 vu, CBLAS_INT il, CBLAS_INT iu, CBLAS_INT *ns, f32 *s, c64 *u, CBLAS_INT ldu, c64 *vt, CBLAS_INT ldvt, c64 *work, CBLAS_INT lwork, f32 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(cgesvdx)(&jobu, &jobvt, &range, &m, &n, a, &lda, &vl, &vu, &il, &iu, ns, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, iwork, info); }
+    inline void gesvdx(char jobu, char jobvt, char range, CBLAS_INT m, CBLAS_INT n, c128 *a, CBLAS_INT lda, f64 vl, f64 vu, CBLAS_INT il, CBLAS_INT iu, CBLAS_INT *ns, f64 *s, c128 *u, CBLAS_INT ldu, c128 *vt, CBLAS_INT ldvt, c128 *work, CBLAS_INT lwork, f64 *rwork, CBLAS_INT *iwork, CBLAS_INT *info)
+        { BLAS_FUNC(zgesvdx)(&jobu, &jobvt, &range, &m, &n, a, &lda, &vl, &vu, &il, &iu, ns, s, u, &ldu, vt, &ldvt, work, &lwork, rwork, iwork, info); }
 
     inline void gels(char trans, CBLAS_INT m, CBLAS_INT n, CBLAS_INT nrhs, f32 *a, CBLAS_INT lda, f32 *b, CBLAS_INT ldb, f32 *work, CBLAS_INT lwork, CBLAS_INT *info)
         { BLAS_FUNC(sgels)(&trans, &m, &n, &nrhs, a, &lda, b, &ldb, work, &lwork, info); }
