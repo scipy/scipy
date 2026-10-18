@@ -538,7 +538,6 @@ def test_atol(solver, xp, batch_A, batch_b):
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
     for M, rtol, atol in itertools.product(Ms, tols, tols):
-        rtol, atol = map(float, (rtol, atol))
         if rtol == 0 and atol == 0:
             continue
 
