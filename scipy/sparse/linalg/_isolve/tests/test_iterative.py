@@ -652,9 +652,11 @@ def _setup_random_system(xp, batch_A, batch_b):
     return A, b, x0
 
 
-@pytest.mark.parametrize("batch_A", [()])
-@pytest.mark.parametrize("batch_b", [()])
+@pytest.mark.parametrize("batch_A", [(), (5,), (0,)])
+@pytest.mark.parametrize("batch_b", [(), (6, 1), (0, 1)])
 def test_x0_working(solver, xp, batch_A, batch_b):
+    skip_if_batching_unsupported(solver, batch_A, batch_b)
+
     # Easy problem
     A, b, x0 = _setup_random_system(xp, batch_A, batch_b)
 
