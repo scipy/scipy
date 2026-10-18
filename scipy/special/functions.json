@@ -7,11 +7,6 @@
             "ellip_harmonic_unsafe": "ddddddd->d"
         }
     },
-    "_sf_error_test_function": {
-        "sf_error.pxd": {
-            "_sf_error_test_function": "i->i"
-        }
-    },
     "bdtr": {
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
@@ -35,36 +30,6 @@
         "cython_special_wrappers.h": {
             "cephes_bdtri_wrap": "dpd->d"
         }
-    },
-    "elliprc": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RC": "dd->d",
-	    "cellint_RC": "DD->D"
-	}
-    },
-    "elliprd": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RD": "ddd->d",
-	    "cellint_RD": "DDD->D"
-	}
-    },
-    "elliprf": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RF": "ddd->d",
-	    "cellint_RF": "DDD->D"
-	}
-    },
-    "elliprg": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RG": "ddd->d",
-	    "cellint_RG": "DDD->D"
-	}
-    },
-    "elliprj": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RJ": "dddd->d",
-	    "cellint_RJ": "DDDD->D"
-	}
     },
     "eval_chebyc": {
         "orthogonal_eval.pxd": {
@@ -101,37 +66,6 @@
             "eval_gegenbauer_l": "pdd->d"
         }
     },
-    "eval_genlaguerre": {
-        "orthogonal_eval.pxd": {
-            "eval_genlaguerre[double complex]": "ddD->D",
-            "eval_genlaguerre[double]": "ddd->d",
-            "eval_genlaguerre_l": "pdd->d"
-        }
-    },
-    "eval_hermite": {
-        "orthogonal_eval.pxd": {
-            "eval_hermite": "pd->d"
-        }
-    },
-    "eval_hermitenorm": {
-        "orthogonal_eval.pxd": {
-            "eval_hermitenorm": "pd->d"
-        }
-    },
-    "eval_jacobi": {
-        "orthogonal_eval.pxd": {
-            "eval_jacobi[double complex]": "dddD->D",
-            "eval_jacobi[double]": "dddd->d",
-            "eval_jacobi_l": "pddd->d"
-        }
-    },
-    "eval_laguerre": {
-        "orthogonal_eval.pxd": {
-            "eval_laguerre[double complex]": "dD->D",
-            "eval_laguerre[double]": "dd->d",
-            "eval_laguerre_l": "pd->d"
-        }
-    },
     "eval_legendre": {
         "orthogonal_eval.pxd": {
             "eval_legendre[double complex]": "dD->D",
@@ -151,13 +85,6 @@
             "eval_sh_chebyu[double complex]": "dD->D",
             "eval_sh_chebyu[double]": "dd->d",
             "eval_sh_chebyu_l": "pd->d"
-        }
-    },
-    "eval_sh_jacobi": {
-        "orthogonal_eval.pxd": {
-            "eval_sh_jacobi[double complex]": "dddD->D",
-            "eval_sh_jacobi[double]": "dddd->d",
-            "eval_sh_jacobi_l": "pddd->d"
         }
     },
     "eval_sh_legendre": {
@@ -228,18 +155,6 @@
             "cephes_pdtri_wrap": "pd->d"
         }
     },
-    "shichi": {
-        "cython_special_wrappers.h": {
-            "xsf_cshichi": "D*DD->*i",
-            "xsf_shichi": "d*dd->*i"
-        }
-    },
-    "sici": {
-        "cython_special_wrappers.h": {
-            "xsf_csici": "D*DD->*i",
-            "xsf_sici": "d*dd->*i"
-        }
-    },
     "smirnov": {
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
@@ -278,11 +193,6 @@
         },
         "cython_special_wrappers.h": {
             "cephes_smirnovp_wrap": "pd->d"
-        }
-    },
-    "stdtridf": {
-        "_cdflib_wrappers.pxd": {
-            "stdtridf": "dd->d"
         }
     },
     "yn": {

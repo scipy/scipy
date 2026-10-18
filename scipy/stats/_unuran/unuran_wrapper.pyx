@@ -1687,11 +1687,11 @@ cdef class NumericalInversePolynomial(Method):
         - After `d` is determined according to the rules above, the output
           shape is ``tuple_shape + d_shape``, where:
 
-              - ``tuple_shape = tuple()`` if `size` is ``None``,
-              - ``tuple_shape = (size,)`` if `size` is an ``int``,
-              - ``tuple_shape = size`` if `size` is a sequence,
-              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
-              - ``d_shape = (d,)`` if `d` is greater than 1.
+          - ``tuple_shape = tuple()`` if `size` is ``None``,
+          - ``tuple_shape = (size,)`` if `size` is an ``int``,
+          - ``tuple_shape = size`` if `size` is a sequence,
+          - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+          - ``d_shape = (d,)`` if `d` is greater than 1.
 
         The elements of the returned array are part of a low-discrepancy
         sequence. If `d` is 1, this means that none of the samples are truly
@@ -2168,11 +2168,11 @@ cdef class NumericalInverseHermite(Method):
         - After `d` is determined according to the rules above, the output
           shape is ``tuple_shape + d_shape``, where:
 
-              - ``tuple_shape = tuple()`` if `size` is ``None``,
-              - ``tuple_shape = (size,)`` if `size` is an ``int``,
-              - ``tuple_shape = size`` if `size` is a sequence,
-              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
-              - ``d_shape = (d,)`` if `d` is greater than 1.
+          - ``tuple_shape = tuple()`` if `size` is ``None``,
+          - ``tuple_shape = (size,)`` if `size` is an ``int``,
+          - ``tuple_shape = size`` if `size` is a sequence,
+          - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+          - ``d_shape = (d,)`` if `d` is greater than 1.
 
         The elements of the returned array are part of a low-discrepancy
         sequence. If `d` is 1, this means that none of the samples are truly

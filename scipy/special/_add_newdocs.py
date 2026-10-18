@@ -18,12 +18,6 @@ def add_newdoc(name, doc):
     docdict[name] = doc
 
 
-add_newdoc("_sf_error_test_function",
-    """
-    Private function; do not use.
-    """)
-
-
 add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
@@ -255,651 +249,6 @@ add_newdoc("bdtri",
     np.float64(0.5)
     """)
 
-add_newdoc(
-    "elliprc",
-    r"""
-    elliprc(x, y, out=None)
-
-    Degenerate symmetric elliptic integral.
-
-    The function RC is defined as [1]_
-
-    .. math::
-
-        R_{\mathrm{C}}(x, y) =
-           \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt
-           = R_{\mathrm{F}}(x, y, y)
-
-    Parameters
-    ----------
-    x, y : array_like
-        Real or complex input parameters. `x` can be any number in the
-        complex plane cut along the negative real axis. `y` must be non-zero.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    R : scalar or ndarray
-        Value of the integral. If `y` is real and negative, the Cauchy
-        principal value is returned. If both of `x` and `y` are real, the
-        return value is real. Otherwise, the return value is complex.
-
-    See Also
-    --------
-    elliprf : Completely-symmetric elliptic integral of the first kind.
-    elliprd : Symmetric elliptic integral of the second kind.
-    elliprg : Completely-symmetric elliptic integral of the second kind.
-    elliprj : Symmetric elliptic integral of the third kind.
-
-    Notes
-    -----
-    RC is a degenerate case of the symmetric integral RF: ``elliprc(x, y) ==
-    elliprf(x, y, y)``. It is an elementary function rather than an elliptic
-    integral.
-
-    The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2]_
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.16.E6
-    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
-
-    Examples
-    --------
-    Basic homogeneity property:
-
-    >>> import numpy as np
-    >>> from scipy.special import elliprc
-
-    >>> x = 1.2 + 3.4j
-    >>> y = 5.
-    >>> scale = 0.3 + 0.4j
-    >>> elliprc(scale*x, scale*y)
-    (0.5484493976710874-0.4169557678995833j)
-
-    >>> elliprc(x, y)/np.sqrt(scale)
-    (0.5484493976710874-0.41695576789958333j)
-
-    When the two arguments coincide, the integral is particularly
-    simple:
-
-    >>> x = 1.2 + 3.4j
-    >>> elliprc(x, x)
-    (0.4299173120614631-0.3041729818745595j)
-
-    >>> 1/np.sqrt(x)
-    (0.4299173120614631-0.30417298187455954j)
-
-    Another simple case: the first argument vanishes:
-
-    >>> y = 1.2 + 3.4j
-    >>> elliprc(0, y)
-    (0.6753125346116815-0.47779380263880866j)
-
-    >>> np.pi/2/np.sqrt(y)
-    (0.6753125346116815-0.4777938026388088j)
-
-    When `x` and `y` are both positive, we can express
-    :math:`R_C(x,y)` in terms of more elementary functions.  For the
-    case :math:`0 \le x < y`,
-
-    >>> x = 3.2
-    >>> y = 6.
-    >>> elliprc(x, y)
-    0.44942991498453444
-
-    >>> np.arctan(np.sqrt((y-x)/x))/np.sqrt(y-x)
-    0.44942991498453433
-
-    And for the case :math:`0 \le y < x`,
-
-    >>> x = 6.
-    >>> y = 3.2
-    >>> elliprc(x,y)
-    0.4989837501576147
-
-    >>> np.log((np.sqrt(x)+np.sqrt(x-y))/np.sqrt(y))/np.sqrt(x-y)
-    0.49898375015761476
-
-    """)
-
-add_newdoc(
-    "elliprd",
-    r"""
-    elliprd(x, y, z, out=None)
-
-    Symmetric elliptic integral of the second kind.
-
-    The function RD is defined as [1]_
-
-    .. math::
-
-        R_{\mathrm{D}}(x, y, z) =
-           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2}
-           dt
-
-    Parameters
-    ----------
-    x, y, z : array_like
-        Real or complex input parameters. `x` or `y` can be any number in the
-        complex plane cut along the negative real axis, but at most one of them
-        can be zero, while `z` must be non-zero.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    R : scalar or ndarray
-        Value of the integral. If all of `x`, `y`, and `z` are real, the
-        return value is real. Otherwise, the return value is complex.
-
-    See Also
-    --------
-    elliprc : Degenerate symmetric elliptic integral.
-    elliprf : Completely-symmetric elliptic integral of the first kind.
-    elliprg : Completely-symmetric elliptic integral of the second kind.
-    elliprj : Symmetric elliptic integral of the third kind.
-
-    Notes
-    -----
-    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) ==
-    elliprj(x, y, z, z)``.
-
-    The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2]_
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.16.E5
-    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
-
-    Examples
-    --------
-    Basic homogeneity property:
-
-    >>> import numpy as np
-    >>> from scipy.special import elliprd
-
-    >>> x = 1.2 + 3.4j
-    >>> y = 5.
-    >>> z = 6.
-    >>> scale = 0.3 + 0.4j
-    >>> elliprd(scale*x, scale*y, scale*z)
-    (-0.03703043835680379-0.24500934665683802j)
-
-    >>> elliprd(x, y, z)*np.power(scale, -1.5)
-    (-0.0370304383568038-0.24500934665683805j)
-
-    All three arguments coincide:
-
-    >>> x = 1.2 + 3.4j
-    >>> elliprd(x, x, x)
-    (-0.03986825876151896-0.14051741840449586j)
-
-    >>> np.power(x, -1.5)
-    (-0.03986825876151894-0.14051741840449583j)
-
-    The so-called "second lemniscate constant":
-
-    >>> elliprd(0, 2, 1)/3
-    0.5990701173677961
-
-    >>> from scipy.special import gamma
-    >>> gamma(0.75)**2/np.sqrt(2*np.pi)
-    0.5990701173677959
-
-    """)
-
-add_newdoc(
-    "elliprf",
-    r"""
-    elliprf(x, y, z, out=None)
-
-    Completely-symmetric elliptic integral of the first kind.
-
-    The function RF is defined as [1]_
-
-    .. math::
-
-        R_{\mathrm{F}}(x, y, z) =
-           \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
-
-    Parameters
-    ----------
-    x, y, z : array_like
-        Real or complex input parameters. `x`, `y`, or `z` can be any number in
-        the complex plane cut along the negative real axis, but at most one of
-        them can be zero.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    R : scalar or ndarray
-        Value of the integral. If all of `x`, `y`, and `z` are real, the return
-        value is real. Otherwise, the return value is complex.
-
-    See Also
-    --------
-    elliprc : Degenerate symmetric integral.
-    elliprd : Symmetric elliptic integral of the second kind.
-    elliprg : Completely-symmetric elliptic integral of the second kind.
-    elliprj : Symmetric elliptic integral of the third kind.
-
-    Notes
-    -----
-    The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order (cf.:
-    https://dlmf.nist.gov/19.36.i) and the AGM algorithm for the complete
-    integral. [2]_
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.16.E1
-    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
-
-    Examples
-    --------
-    Basic homogeneity property:
-
-    >>> import numpy as np
-    >>> from scipy.special import elliprf
-
-    >>> x = 1.2 + 3.4j
-    >>> y = 5.
-    >>> z = 6.
-    >>> scale = 0.3 + 0.4j
-    >>> elliprf(scale*x, scale*y, scale*z)
-    (0.5328051227278146-0.4008623567957094j)
-
-    >>> elliprf(x, y, z)/np.sqrt(scale)
-    (0.5328051227278147-0.4008623567957095j)
-
-    All three arguments coincide:
-
-    >>> x = 1.2 + 3.4j
-    >>> elliprf(x, x, x)
-    (0.42991731206146316-0.30417298187455954j)
-
-    >>> 1/np.sqrt(x)
-    (0.4299173120614631-0.30417298187455954j)
-
-    The so-called "first lemniscate constant":
-
-    >>> elliprf(0, 1, 2)
-    1.3110287771460598
-
-    >>> from scipy.special import gamma
-    >>> gamma(0.25)**2/(4*np.sqrt(2*np.pi))
-    1.3110287771460598
-
-    """)
-
-add_newdoc(
-    "elliprg",
-    r"""
-    elliprg(x, y, z, out=None)
-
-    Completely-symmetric elliptic integral of the second kind.
-
-    The function RG is defined as [1]_
-
-    .. math::
-
-        R_{\mathrm{G}}(x, y, z) =
-           \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
-           \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t
-           dt
-
-    Parameters
-    ----------
-    x, y, z : array_like
-        Real or complex input parameters. `x`, `y`, or `z` can be any number in
-        the complex plane cut along the negative real axis.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    R : scalar or ndarray
-        Value of the integral. If all of `x`, `y`, and `z` are real, the return
-        value is real. Otherwise, the return value is complex.
-
-    See Also
-    --------
-    elliprc : Degenerate symmetric integral.
-    elliprd : Symmetric elliptic integral of the second kind.
-    elliprf : Completely-symmetric elliptic integral of the first kind.
-    elliprj : Symmetric elliptic integral of the third kind.
-
-    Notes
-    -----
-    The implementation uses the relation [1]_
-
-    .. math::
-
-        2 R_{\mathrm{G}}(x, y, z) =
-           z R_{\mathrm{F}}(x, y, z) -
-           \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) +
-           \sqrt{\frac{x y}{z}}
-
-    and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
-    be chosen as the pivot. When one of the arguments is close to zero, the AGM
-    method is applied instead. Other special cases are computed following Ref.
-    [2]_
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
-    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.16.E1
-           https://dlmf.nist.gov/19.20.ii
-
-    Examples
-    --------
-    Basic homogeneity property:
-
-    >>> import numpy as np
-    >>> from scipy.special import elliprg
-
-    >>> x = 1.2 + 3.4j
-    >>> y = 5.
-    >>> z = 6.
-    >>> scale = 0.3 + 0.4j
-    >>> elliprg(scale*x, scale*y, scale*z)
-    (1.195936862005246+0.8470988320464167j)
-
-    >>> elliprg(x, y, z)*np.sqrt(scale)
-    (1.195936862005246+0.8470988320464165j)
-
-    Simplifications:
-
-    >>> elliprg(0, y, y)
-    1.756203682760182
-
-    >>> 0.25*np.pi*np.sqrt(y)
-    1.7562036827601817
-
-    >>> elliprg(0, 0, z)
-    1.224744871391589
-
-    >>> 0.5*np.sqrt(z)
-    1.224744871391589
-
-    The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
-    ``c`` is given by
-
-    .. math::
-
-        S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
-
-    >>> def ellipsoid_area(a, b, c):
-    ...     r = 4.0 * np.pi * a * b * c
-    ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
-    >>> print(ellipsoid_area(1, 3, 5))
-    108.62688289491807
-    """)
-
-add_newdoc(
-    "elliprj",
-    r"""
-    elliprj(x, y, z, p, out=None)
-
-    Symmetric elliptic integral of the third kind.
-
-    The function RJ is defined as [1]_
-
-    .. math::
-
-        R_{\mathrm{J}}(x, y, z, p) =
-           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
-           (t + p)^{-1} dt
-
-    .. warning::
-        This function should be considered experimental when the inputs are
-        unbalanced.  Check correctness with another independent implementation.
-
-    Parameters
-    ----------
-    x, y, z, p : array_like
-        Real or complex input parameters. `x`, `y`, or `z` are numbers in
-        the complex plane cut along the negative real axis (subject to further
-        constraints, see Notes), and at most one of them can be zero. `p` must
-        be non-zero.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    R : scalar or ndarray
-        Value of the integral. If all of `x`, `y`, `z`, and `p` are real, the
-        return value is real. Otherwise, the return value is complex.
-
-        If `p` is real and negative, while `x`, `y`, and `z` are real,
-        non-negative, and at most one of them is zero, the Cauchy principal
-        value is returned. [1]_ [2]_
-
-    See Also
-    --------
-    elliprc : Degenerate symmetric integral.
-    elliprd : Symmetric elliptic integral of the second kind.
-    elliprf : Completely-symmetric elliptic integral of the first kind.
-    elliprg : Completely-symmetric elliptic integral of the second kind.
-
-    Notes
-    -----
-    The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [3]_ The algorithm is slightly
-    different from its earlier incarnation as it appears in [1]_, in that the
-    call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
-    the inner loop. Asymptotic approximations are used where arguments differ
-    widely in the order of magnitude. [5]_
-
-    The input values are subject to certain sufficient but not necessary
-    constraints when input arguments are complex. Notably, ``x``, ``y``, and
-    ``z`` must have non-negative real parts, unless two of them are
-    non-negative and complex-conjugates to each other while the other is a real
-    non-negative number. [1]_ If the inputs do not satisfy the sufficient
-    condition described in Ref. [1]_ they are rejected outright with the output
-    set to NaN.
-
-    In the case where one of ``x``, ``y``, and ``z`` is equal to ``p``, the
-    function ``elliprd`` should be preferred because of its less restrictive
-    domain.
-
-    .. versionadded:: 1.8.0
-
-    References
-    ----------
-    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-           :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
-    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.20.iii
-    .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
-           Integrands with the Square Root of Two Quadratic Factors," J.
-           Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
-           :doi:`10.1016/S0377-0427(00)00282-X`.
-    .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
-           Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
-           Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
-           Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
-           Switzerland: Springer Nature Switzerland).
-           :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
-    .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
-           Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
-           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
-           https://arxiv.org/abs/math/9310223
-
-    Examples
-    --------
-    Basic homogeneity property:
-
-    >>> import numpy as np
-    >>> from scipy.special import elliprj
-
-    >>> x = 1.2 + 3.4j
-    >>> y = 5.
-    >>> z = 6.
-    >>> p = 7.
-    >>> scale = 0.3 - 0.4j
-    >>> elliprj(scale*x, scale*y, scale*z, scale*p)
-    (0.10834905565679157+0.19694950747103812j)
-
-    >>> elliprj(x, y, z, p)*np.power(scale, -1.5)
-    (0.10834905565679556+0.19694950747103854j)
-
-    Reduction to simpler elliptic integral:
-
-    >>> elliprj(x, y, z, z)
-    (0.08288462362195129-0.028376809745123258j)
-
-    >>> from scipy.special import elliprd
-    >>> elliprd(x, y, z)
-    (0.08288462362195136-0.028376809745123296j)
-
-    All arguments coincide:
-
-    >>> elliprj(x, x, x, x)
-    (-0.03986825876151896-0.14051741840449586j)
-
-    >>> np.power(x, -1.5)
-    (-0.03986825876151894-0.14051741840449583j)
-
-    """)
-
-add_newdoc("eval_jacobi",
-    r"""
-    eval_jacobi(n, alpha, beta, x, out=None)
-
-    Evaluate Jacobi polynomial at a point.
-
-    The Jacobi polynomials can be defined via the Gauss hypergeometric
-    function :math:`{}_2F_1` as
-
-    .. math::
-
-        P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - x)/2)
-
-    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
-    :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.42 in [AS]_ or [DLMF]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        Degree of the polynomial. If not an integer the result is
-        determined via the relation to the Gauss hypergeometric
-        function.
-    alpha : array_like
-        Parameter.
-    beta : array_like
-        Parameter.
-    x : array_like
-        Points at which to evaluate the polynomial.
-    out : ndarray, optional
-        Optional output array for the function values.
-
-    Returns
-    -------
-    P : scalar or ndarray
-        Values of the Jacobi polynomial.
-
-    See Also
-    --------
-    roots_jacobi : roots and quadrature weights of Jacobi polynomials
-    jacobi : Jacobi polynomial object
-    hyp2f1 : Gauss hypergeometric function
-
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.5.E7
-
-    """)
-
-add_newdoc("eval_sh_jacobi",
-    r"""
-    eval_sh_jacobi(n, p, q, x, out=None)
-
-    Evaluate shifted Jacobi polynomial at a point.
-
-    Defined by
-
-    .. math::
-
-        G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
-
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
-    See 22.5.2 in [AS]_ (or equivalently [DLMF]_)  for details.
-
-    Parameters
-    ----------
-    n : int
-        Degree of the polynomial. If not an integer, the result is
-        determined via the relation to `binom` and `eval_jacobi`.
-    p : float
-        Parameter
-    q : float
-        Parameter
-    x : array_like
-        Points at which to evaluate the polynomial.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    G : scalar or ndarray
-        Values of the shifted Jacobi polynomial.
-
-    See Also
-    --------
-    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
-                      polynomials
-    sh_jacobi : shifted Jacobi polynomial object
-    eval_jacobi : evaluate Jacobi polynomials
-
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.1.E2
-
-    """)
-
 add_newdoc("eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
@@ -951,6 +300,34 @@ add_newdoc("eval_gegenbauer",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E9
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_gegenbauer
+    >>> import matplotlib.pyplot as plt
+
+    This is the parameter value that we'll use in this example.
+
+    >>> alpha = 1.25
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_gegenbauer(3, alpha, [0, 0.25, 0.5])
+    array([ 0.        , -1.21582031, -1.2890625 ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_gegenbauer(n, alpha, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Gegenbauer Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel(r"$C_n^{(\alpha)}(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebyt",
@@ -1007,6 +384,30 @@ add_newdoc("eval_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_2
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyt(3, [0, 0.25, 0.5])
+    array([-0.    , -0.6875, -1.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebyu",
@@ -1057,6 +458,30 @@ add_newdoc("eval_chebyu",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E11_4
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyu(3, [0, 0.25, 0.5])
+    array([-0.   , -0.875, -1.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_chebys",
@@ -1108,17 +533,36 @@ add_newdoc("eval_chebys",
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import eval_chebys, eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebys(3, [0, 0.25, 0.5])
+    array([-0.      , -0.484375, -0.875   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebys(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$S_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     They are a scaled version of the Chebyshev polynomials of the
     second kind.
 
     >>> x = np.linspace(-2, 2, 6)
-    >>> sc.eval_chebys(3, x)
+    >>> eval_chebys(3, x)
     array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
-    >>> sc.eval_chebyu(3, x / 2)
+    >>> eval_chebyu(3, x / 2)
     array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
-
     """)
 
 add_newdoc("eval_chebyc",
@@ -1171,17 +615,36 @@ add_newdoc("eval_chebyc",
     Examples
     --------
     >>> import numpy as np
-    >>> import scipy.special as sc
+    >>> from scipy.special import eval_chebyc, eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyc(3, [0, 0.25, 0.5])
+    array([-0.      , -0.734375, -1.375   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyc(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$C_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
 
     They are a scaled version of the Chebyshev polynomials of the
     first kind.
 
     >>> x = np.linspace(-2, 2, 6)
-    >>> sc.eval_chebyc(3, x)
+    >>> eval_chebyc(3, x)
     array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
-    >>> 2 * sc.eval_chebyt(3, x / 2)
+    >>> 2 * eval_chebyt(3, x / 2)
     array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
-
     """)
 
 add_newdoc("eval_sh_chebyt",
@@ -1231,6 +694,30 @@ add_newdoc("eval_sh_chebyt",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E7
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyt(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-1.    ,  0.5625,  1.    ,  0.6875, -0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_sh_chebyu",
@@ -1279,6 +766,30 @@ add_newdoc("eval_sh_chebyu",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E8
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyu(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-4.   , -0.375,  1.   ,  0.875, -0.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("eval_legendre",
@@ -1333,6 +844,7 @@ add_newdoc("eval_legendre",
     --------
     >>> import numpy as np
     >>> from scipy.special import eval_legendre
+    >>> import matplotlib.pyplot as plt
 
     Evaluate the zero-order Legendre polynomial at x = 0
 
@@ -1341,31 +853,28 @@ add_newdoc("eval_legendre",
 
     Evaluate the first-order Legendre polynomial between -1 and 1
 
-    >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
-    >>> eval_legendre(1, X)
+    >>> x = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
+    >>> eval_legendre(1, x)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
 
     Evaluate Legendre polynomials of order 0 through 4 at x = 0
 
-    >>> N = range(0, 5)
-    >>> eval_legendre(N, 0)
+    >>> eval_legendre(range(5), 0)
     array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
 
     Plot Legendre polynomials of order 0 through 4
 
-    >>> X = np.linspace(-1, 1)
-
-    >>> import matplotlib.pyplot as plt
-    >>> for n in range(0, 5):
-    ...     y = eval_legendre(n, X)
-    ...     plt.plot(X, y, label=r'$P_{}(x)$'.format(n))
-
-    >>> plt.title("Legendre Polynomials")
-    >>> plt.xlabel("x")
-    >>> plt.ylabel(r'$P_n(x)$')
-    >>> plt.legend(loc='lower right')
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
-
     """)
 
 add_newdoc("eval_sh_legendre",
@@ -1380,7 +889,7 @@ add_newdoc("eval_sh_legendre",
 
         P_n^*(x) = P_n(2x - 1)
 
-    where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
+    where :math:`P_n` is a Legendre polynomial. See 22.2.11 in [AS]_
     or [DLMF]_ for details.
 
     Parameters
@@ -1414,209 +923,30 @@ add_newdoc("eval_sh_legendre",
     .. [DLMF] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.7.E10
 
-    """)
-
-add_newdoc("eval_genlaguerre",
-    r"""
-    eval_genlaguerre(n, alpha, x, out=None)
-
-    Evaluate generalized Laguerre polynomial at a point.
-
-    The generalized Laguerre polynomials can be defined via the
-    confluent hypergeometric function :math:`{}_1F_1` as
-
-    .. math::
-
-        L_n^{(\alpha)}(x) = \binom{n + \alpha}{n}
-          {}_1F_1(-n, \alpha + 1, x).
-
-    When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.54 in [AS]_ or [DLMF]_ for details. The Laguerre
-    polynomials are the special case where :math:`\alpha = 0`.
-
-    Parameters
-    ----------
-    n : array_like
-        Degree of the polynomial. If not an integer, the result is
-        determined via the relation to the confluent hypergeometric
-        function.
-    alpha : array_like
-        Parameter; must have ``alpha > -1``
-    x : array_like
-        Points at which to evaluate the generalized Laguerre
-        polynomial
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    L : scalar or ndarray
-        Values of the generalized Laguerre polynomial
-
-    See Also
+    Examples
     --------
-    roots_genlaguerre : roots and quadrature weights of generalized
-                        Laguerre polynomials
-    genlaguerre : generalized Laguerre polynomial object
-    hyp1f1 : confluent hypergeometric function
-    eval_laguerre : evaluate Laguerre polynomials
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_legendre
+    >>> import matplotlib.pyplot as plt
 
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.5.E12
+    Evaluate the order 3 polynomial at a few values of x.
 
-    """)
+    >>> eval_sh_legendre(3, [0, 0.25, 0.5])
+    array([-1.    ,  0.4375,  0.    ])
 
-add_newdoc("eval_laguerre",
-    r"""
-    eval_laguerre(n, x, out=None)
+    Plot the polynomials of order 0 through 4.
 
-    Evaluate Laguerre polynomial at a point.
-
-    The Laguerre polynomials can be defined via the confluent
-    hypergeometric function :math:`{}_1F_1` as
-
-    .. math::
-
-        L_n(x) = {}_1F_1(-n, 1, x).
-
-    See 22.5.16 and 22.5.54 in [AS]_ (or equivalently [DLMF1]_ and [DLMF2]_)
-    for details. When :math:`n` is an integer the result is a polynomial
-    of degree :math:`n`.
-
-    Parameters
-    ----------
-    n : array_like
-        Degree of the polynomial. If not an integer the result is
-        determined via the relation to the confluent hypergeometric
-        function.
-    x : array_like
-        Points at which to evaluate the Laguerre polynomial
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    L : scalar or ndarray
-        Values of the Laguerre polynomial
-
-    See Also
-    --------
-    roots_laguerre : roots and quadrature weights of Laguerre
-                     polynomials
-    laguerre : Laguerre polynomial object
-    numpy.polynomial.laguerre.Laguerre : Laguerre series
-    eval_genlaguerre : evaluate generalized Laguerre polynomials
-
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF1] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.1#I1.ix7.p1
-    .. [DLMF2] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.5.E12
-
-     """)
-
-add_newdoc("eval_hermite",
-    r"""
-    eval_hermite(n, x, out=None)
-
-    Evaluate physicist's Hermite polynomial at a point.
-
-    Defined by
-
-    .. math::
-
-        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
-
-    :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
-    [AS]_ or [DLMF]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        Degree of the polynomial
-    x : array_like
-        Points at which to evaluate the Hermite polynomial
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    H : scalar or ndarray
-        Values of the Hermite polynomial
-
-    See Also
-    --------
-    roots_hermite : roots and quadrature weights of physicist's
-                    Hermite polynomials
-    hermite : physicist's Hermite polynomial object
-    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
-    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
-
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.5.T1
-
-    """)
-
-add_newdoc("eval_hermitenorm",
-    r"""
-    eval_hermitenorm(n, x, out=None)
-
-    Evaluate probabilist's (normalized) Hermite polynomial at a
-    point.
-
-    Defined by
-
-    .. math::
-
-        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
-
-    :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
-    [AS]_ or [DLMF]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        Degree of the polynomial
-    x : array_like
-        Points at which to evaluate the Hermite polynomial
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    He : scalar or ndarray
-        Values of the Hermite polynomial
-
-    See Also
-    --------
-    roots_hermitenorm : roots and quadrature weights of probabilist's
-                        Hermite polynomials
-    hermitenorm : probabilist's Hermite polynomial object
-    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
-    eval_hermite : evaluate physicist's Hermite polynomials
-
-    References
-    ----------
-    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [DLMF] NIST Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/18.5.T1
-
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     """)
 
 add_newdoc("expn",
@@ -2375,240 +1705,6 @@ add_newdoc("pdtri",
     >>> sc.gammainccinv(k + 1, p)
     array([0.5, 1. , 1.5])
 
-
-    """)
-
-add_newdoc("shichi",
-    r"""
-    shichi(x, out=None)
-
-    Hyperbolic sine and cosine integrals.
-
-    The hyperbolic sine integral is
-
-    .. math::
-
-      \int_0^x \frac{\sinh{t}}{t}dt
-
-    and the hyperbolic cosine integral is
-
-    .. math::
-
-      \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
-
-    where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_ (see also [2]_).
-
-    Parameters
-    ----------
-    x : array_like
-        Real or complex points at which to compute the hyperbolic sine
-        and cosine integrals.
-    out : tuple of ndarray, optional
-        Optional output arrays for the function results
-
-    Returns
-    -------
-    si : scalar or ndarray
-        Hyperbolic sine integral at ``x``
-    ci : scalar or ndarray
-        Hyperbolic cosine integral at ``x``
-
-    See Also
-    --------
-    sici : Sine and cosine integrals.
-    exp1 : Exponential integral E1.
-    expi : Exponential integral Ei.
-
-    Notes
-    -----
-    For real arguments with ``x < 0``, ``chi`` is the real part of the
-    hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x
-    + 0j)`` differ by a factor of ``1j*pi``.
-
-    For real arguments the function is computed by calling Cephes'
-    [3]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [4]_ *shi* and *chi* routines.
-
-    References
-    ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-           (See Section 5.2.)
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/6.2.E15 and https://dlmf.nist.gov/6.2.E16
-    .. [3] Cephes Mathematical Functions Library,
-           https://netlib.org/cephes/
-    .. [4] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) https://mpmath.org/
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import shichi, sici
-
-    `shichi` accepts real or complex input:
-
-    >>> shichi(0.5)
-    (0.5069967498196671, -0.05277684495649357)
-    >>> shichi(0.5 + 2.5j)
-    ((0.11772029666668238+1.831091777729851j),
-     (0.29912435887648825+1.7395351121166562j))
-
-    The hyperbolic sine and cosine integrals Shi(z) and Chi(z) are
-    related to the sine and cosine integrals Si(z) and Ci(z) by
-
-    * Shi(z) = -i*Si(i*z)
-    * Chi(z) = Ci(-i*z) + i*pi/2
-
-    >>> z = 0.25 + 5j
-    >>> shi, chi = shichi(z)
-    >>> shi, -1j*sici(1j*z)[0]            # Should be the same.
-    ((-0.04834719325101729+1.5469354086921228j),
-     (-0.04834719325101729+1.5469354086921228j))
-    >>> chi, sici(-1j*z)[1] + 1j*np.pi/2  # Should be the same.
-    ((-0.19568708973868087+1.556276312103824j),
-     (-0.19568708973868087+1.556276312103824j))
-
-    Plot the functions evaluated on the real axis:
-
-    >>> xp = np.geomspace(1e-8, 4.0, 250)
-    >>> x = np.concatenate((-xp[::-1], xp))
-    >>> shi, chi = shichi(x)
-
-    >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, shi, label='Shi(x)')
-    >>> ax.plot(x, chi, '--', label='Chi(x)')
-    >>> ax.set_xlabel('x')
-    >>> ax.set_title('Hyperbolic Sine and Cosine Integrals')
-    >>> ax.legend(shadow=True, framealpha=1, loc='lower right')
-    >>> ax.grid(True)
-    >>> plt.show()
-
-    """)
-
-add_newdoc("sici",
-    r"""
-    sici(x, out=None)
-
-    Sine and cosine integrals.
-
-    The sine integral is
-
-    .. math::
-
-      \int_0^x \frac{\sin{t}}{t}dt
-
-    and the cosine integral is
-
-    .. math::
-
-      \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
-
-    where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_ (see also [2]_).
-
-    Parameters
-    ----------
-    x : array_like
-        Real or complex points at which to compute the sine and cosine
-        integrals.
-    out : tuple of ndarray, optional
-        Optional output arrays for the function results
-
-    Returns
-    -------
-    si : scalar or ndarray
-        Sine integral at ``x``
-    ci : scalar or ndarray
-        Cosine integral at ``x``
-
-    See Also
-    --------
-    shichi : Hyperbolic sine and cosine integrals.
-    exp1 : Exponential integral E1.
-    expi : Exponential integral Ei.
-
-    Notes
-    -----
-    For real arguments with ``x < 0``, ``ci`` is the real part of the
-    cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``
-    differ by a factor of ``1j*pi``.
-
-    For real arguments the function is computed by calling Cephes'
-    [3]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [4]_ *si* and *ci* routines.
-
-    References
-    ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-           (See Section 5.2.)
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/6.2.E9, https://dlmf.nist.gov/6.2.E12,
-           and https://dlmf.nist.gov/6.2.E13
-    .. [3] Cephes Mathematical Functions Library,
-           https://netlib.org/cephes/
-    .. [4] Fredrik Johansson and others.
-           "mpmath: a Python library for arbitrary-precision floating-point
-           arithmetic" (Version 0.19) https://mpmath.org/
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import sici, exp1
-
-    `sici` accepts real or complex input:
-
-    >>> sici(2.5)
-    (1.7785201734438267, 0.2858711963653835)
-    >>> sici(2.5 + 3j)
-    ((4.505735874563953+0.06863305018999577j),
-    (0.0793644206906966-2.935510262937543j))
-
-    For z in the right half plane, the sine and cosine integrals are
-    related to the exponential integral E1 (implemented in SciPy as
-    `scipy.special.exp1`) by
-
-    * Si(z) = (E1(i*z) - E1(-i*z))/2i + pi/2
-    * Ci(z) = -(E1(i*z) + E1(-i*z))/2
-
-    See [1]_ (equations 5.2.21 and 5.2.23).
-
-    We can verify these relations:
-
-    >>> z = 2 - 3j
-    >>> sici(z)
-    ((4.54751388956229-1.3991965806460565j),
-    (1.408292501520851+2.9836177420296055j))
-
-    >>> (exp1(1j*z) - exp1(-1j*z))/2j + np.pi/2  # Same as sine integral
-    (4.54751388956229-1.3991965806460565j)
-
-    >>> -(exp1(1j*z) + exp1(-1j*z))/2            # Same as cosine integral
-    (1.408292501520851+2.9836177420296055j)
-
-    Plot the functions evaluated on the real axis; the dotted horizontal
-    lines are at pi/2 and -pi/2:
-
-    >>> x = np.linspace(-16, 16, 150)
-    >>> si, ci = sici(x)
-
-    >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, si, label='Si(x)')
-    >>> ax.plot(x, ci, '--', label='Ci(x)')
-    >>> ax.legend(shadow=True, framealpha=1, loc='upper left')
-    >>> ax.set_xlabel('x')
-    >>> ax.set_title('Sine and Cosine Integrals')
-    >>> ax.axhline(np.pi/2, linestyle=':', alpha=0.5, color='k')
-    >>> ax.axhline(-np.pi/2, linestyle=':', alpha=0.5, color='k')
-    >>> ax.grid(True)
-    >>> plt.show()
 
     """)
 

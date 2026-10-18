@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.spatial.distance import euclidean
+from scipy._lib._array_api import xp_capabilities
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -30,6 +31,7 @@ def _geometric_slerp(start, end, t):
     return start * c[:, np.newaxis] + end * s[:, np.newaxis]
 
 
+@xp_capabilities(np_only=True)
 def geometric_slerp(
     start: "npt.ArrayLike",
     end: "npt.ArrayLike",

@@ -28,7 +28,7 @@ from ._stats_py import power_divergence, _untabulate, Power_divergenceResult
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
-from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_result_type,
+from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_promote,
                                    xp_size, xp_device)
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -428,7 +428,8 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
     # vectorized implementation of chi2_contingency for batches of 2D tables
     # (chi2_contingency works for ND tables, so it can't be vectorized)
     xp = array_namespace(observed) if xp is None else xp
-    dtype = xp_result_type(observed.dtype, force_floating=True, xp=xp)
+    observed = xp_promote(observed, force_floating=True, xp=xp)
+    dtype = observed.dtype
     device = xp_device(observed)
     batch_shape = observed.shape[:-2]
     table_shape = observed.shape[-2:]

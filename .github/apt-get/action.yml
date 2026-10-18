@@ -1,0 +1,51 @@
+name: Install apt packages
+description: >
+  `apt-get update && install` with retries and timeouts, so a stalled mirror
+  or a dpkg lock held by unattended-upgrades fails fast instead of hanging CI
+  for hours.
+inputs:
+  packages:
+    description: Packages to install, whitespace-separated
+    required: true
+  repository:
+    description: "Optional PPA to add before installing, e.g. ppa:deadsnakes/ppa"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        set -euo pipefail
+        opts=(
+          -o Acquire::Retries=3
+          -o Acquire::http::Timeout=30
+          -o Acquire::https::Timeout=30
+          -o DPkg::Lock::Timeout=120  # wait out unattended-upgrades rather than erroring
+          -o Dpkg::Options::=--force-unsafe-io  # no fsync; the runner is ephemeral
+        )
+        install() {
+          sudo DEBIAN_FRONTEND=noninteractive timeout 10m apt-get install -y "${opts[@]}" "$@"
+        }
+        # GitHub-hosted Ubuntu runners default to an Azure geo-mirror that is
+        # frequently unreachable; go straight to the canonical mirror instead of
+        # burning the update timeout on retries against a dead host. The actual
+        # mirror lives in apt-mirrors.txt - ubuntu.sources just points at it via
+        # a `mirror+file:` URI, so patching only the .sources files is a no-op.
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors.txt; do
+          [[ -f "$f" ]] && sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' "$f"
+        done
+        sudo timeout 5m apt-get update "${opts[@]}"
+        if [[ -n "$REPOSITORY" ]]; then
+          install software-properties-common
+          sudo DEBIAN_FRONTEND=noninteractive timeout 5m add-apt-repository -y "$REPOSITORY"
+          sudo timeout 5m apt-get update "${opts[@]}"
+        fi
+        # Fold newlines into spaces first: `read` stops at the first newline, so a
+        # caller using a `|` block scalar would otherwise lose packages silently.
+        read -ra packages <<< "${PACKAGES//$'\n'/ }"
+        install "${packages[@]}"

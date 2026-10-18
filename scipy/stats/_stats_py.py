@@ -85,6 +85,7 @@ from scipy._lib._array_api import (
     _masked_apply,
     xp_swapaxes,
     xp_device,
+    xp_copy,
     xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
@@ -222,7 +223,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -315,7 +316,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.9029126213592233
 
     """
-    xp = array_namespace(a, weights)
+    xp = array_namespace(a, weights, masked_ok=True)
     dtype = (xp_result_type(a, weights, force_floating=True, xp=xp)
              if dtype is None else dtype)
     a = xp.asarray(a, dtype=dtype)
@@ -622,6 +623,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     # Extract the corresponding element/count, and eliminate the reduced dimension
     modes = xp.take_along_axis(y, k, axis=-1)[..., 0]
     counts = xp.take_along_axis(counts, k, axis=-1)[..., 0]
+    counts = xp.where(modes.mask, 0, counts.data) if is_marray(xp) else counts
     modes = modes[()] if modes.ndim == 0 else modes
     counts = counts[()] if counts.ndim == 0 else counts
     return ModeResult(modes, counts)
@@ -717,7 +719,9 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype, device=xp_device(a)), axis=axis,
                dtype=a.dtype)
-    mean = xpx.apply_where(n != 0, (sum, n), operator.truediv, fill_value=xp.nan)
+    valid = xp.asarray((n != 0).data) if is_marray(xp) else (n != 0)
+    mean = xpx.apply_where(valid, (sum, n), operator.truediv, fill_value=xp.nan)
+    mean = xp.asarray(mean.data, mask=n.mask | mean.mask) if is_marray(xp) else mean
     return mean[()] if mean.ndim == 0 else mean
 
 
@@ -2334,7 +2338,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, *,
                     else xp.count_nonzero((bin_edges[0] <= a) & (a <= bin_edges[-1])))
     extrapoints = a.shape[0] - binnedpoints
 
-    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype)[()]
+    lowerlimit = xp.asarray(defaultlimits[0], dtype=a.dtype, device=xp_device(a))[()]
 
     hist = xp.asarray(hist, dtype=a.dtype)
     if density:
@@ -2911,7 +2915,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     # working.
 
     like_zscore = (scores is compare)
-    xp = array_namespace(scores, compare)
+    xp = array_namespace(scores, compare, masked_ok=True)
     scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
@@ -2931,6 +2935,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
         zero = xp.broadcast_to(zero, z.shape)
+        zero = xp.asarray(zero.data) if is_marray(xp) else zero
         z = xpx.at(z, zero).set(xp.nan)
 
     return z
@@ -3199,7 +3204,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
         interpolation = '_' + interpolation
 
-    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp),
+                     device=xp_result_device(rng, x))
     pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 
@@ -3927,11 +3933,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
@@ -4007,7 +4014,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
         if is_marray(xp):
             n_t = xp.stack([_count_nonmasked(sample, axis=-1, xp=xp)
                             for sample in samples])
-            n_t = xp.asarray(n_t, dtype=n_t.dtype)
+            mask = xp.any(n_t == 0, axis=0, keepdims=True).data
+            n_t = xp.asarray(n_t, mask=mask, dtype=n_t.dtype)
         else:
             n_t = xp.asarray([sample.shape[-1] for sample in samples],
                              dtype=y_t.dtype, device=xp_device(y_t))
@@ -4170,7 +4178,6 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
     # tests that serve as the basis for equation (8) but are not needed
     # to perform the test.
-
     # precalculate mean and length of each sample
     lengths = [_count_nonmasked(sample, axis=-1, xp=xp) for sample in samples]
     means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
@@ -4202,6 +4209,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     # calculate parameters to be used in transformation
     if is_marray(xp):
         v = xp.stack(lengths) - 1
+        # propagate mask
+        t_stats = xp.asarray(t_stats.data, mask=zero._xp.any(zero.mask, axis=0))
     else:
         v = xp.asarray(lengths, dtype=t_stats.dtype,
                        device=xp_device(t_stats)) - 1
@@ -4250,7 +4259,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     """
     xp = array_namespace(r)
 
-    ones = xp.ones_like(r)
+    ones = xp_copy(xp.ones_like(r))  # copy to avoid sharing r's mask object
     n = xp.asarray(n, dtype=r.dtype, device=xp_device(r))
     confidence_level = xp.asarray(confidence_level, dtype=r.dtype, device=xp_device(r))
 
@@ -4283,7 +4292,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
 
     rlo = xpx.at(rlo)[mask].set(-1)
     rhi = xpx.at(rhi)[mask].set(1)
-
+    rlo, rhi, r = _share_masks(rlo, rhi, r, xp=xp)
     rlo = rlo[()] if rlo.ndim == 0 else rlo
     rhi = rhi[()] if rhi.ndim == 0 else rhi
     return ConfidenceInterval(low=rlo, high=rhi)
@@ -4810,7 +4819,10 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     r = xp.clip(r, -1., 1.)
+    r_mask = xp_copy(r.mask) if is_marray(xp) else None
+    const_xy = xp.asarray(const_xy.data) if is_marray(xp) else const_xy
     r = xpx.at(r, const_xy).set(xp.nan)
+    r = xp.asarray(r, mask=r_mask) if is_marray(xp) else r
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
@@ -5727,13 +5739,16 @@ def kendalltau(x, y, *, nan_policy='propagate', method='auto', variant='b',
             raise ValueError(message)
         nan_policy = 'omit'
         x[mask_x], y[mask_y] = np.nan, np.nan
+        out_mask = (np.all(mask_x, axis=axis, keepdims=keepdims)
+                    | np.all(mask_y, axis=axis, keepdims=keepdims))
     else:
         x, y = _asarray(x, subok=True, xp=np), _asarray(y, subok=True, xp=np)
     res = _kendalltau(x, y, nan_policy=nan_policy, method=method, variant=variant,
                       alternative=alternative, axis=axis, keepdims=keepdims)
+    mask = {'mask': out_mask} if is_marray(xp) else {}
     vals = res.statistic, res.pvalue, res.statistic
-    vals = (xp.asarray(val, dtype=dtype, device=device)[()] if val.ndim == 0
-            else xp.asarray(val, dtype=dtype, device=device) for val in vals)
+    vals = (xp.asarray(val, dtype=dtype, device=device, **mask)[()] if val.ndim == 0
+            else xp.asarray(val, dtype=dtype, device=device, **mask) for val in vals)
     return _pack_CorrelationResult(*vals)
 
 
@@ -7238,7 +7253,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs, f_exp, ddof)
+    xp = array_namespace(f_obs, f_exp, ddof, masked_ok=True)
     f_obs, f_exp, ddof = xp_promote(f_obs, f_exp, ddof,
                                     force_floating=True, xp=xp)
 
@@ -7680,27 +7695,19 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     cdfvals = _masked_apply(cdf, args=(x, *args), xp=xp)
 
     ones = xp.ones(x.shape[:-1], dtype=xp.int8, device=xp_device(x))
+    ones = xp.asarray(ones.data, mask=(N.data == 0)) if is_marray(xp) else ones
     ones = ones[()] if ones.ndim == 0 else ones
 
-    if alternative == 'greater':
-        Dplus, d_location = _compute_d(cdfvals, x, +1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dplus, N), xp=xp)
+    if alternative in ('greater', 'less'):
+        statistic_sign = 1 if alternative == 'greater' else -1
+        D, d_location = _compute_d(cdfvals, x, statistic_sign)
+        pvalue = _masked_apply(distributions.ksone.sf, args=(D, N), xp=xp)
         pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
         pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dplus = xp.asarray(Dplus) if is_marray(xp) else Dplus
-        return KstestResult(Dplus, pvalue,
+        D = xp.asarray(D) if is_marray(xp) else D
+        return KstestResult(D, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=ones)
-
-    if alternative == 'less':
-        Dminus, d_location = _compute_d(cdfvals, x, -1)
-        pvalue = _masked_apply(distributions.ksone.sf, args=(Dminus, N), xp=xp)
-        pvalue = xp.asarray(pvalue, dtype=x.dtype, device=xp_device(x))
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        Dminus = xp.asarray(Dminus) if is_marray(xp) else Dminus
-        return KstestResult(Dminus, pvalue,
-                            statistic_location=d_location,
-                            statistic_sign=-ones)
+                            statistic_sign=ones*statistic_sign)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_d(cdfvals, x, +1)
@@ -8144,6 +8151,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     d_sign = xp.where(selector, -one, one)
 
     if is_marray(xp):
+        d.data[d.mask] = 0  # was NaN; which causes problems in _ks_2samp_prob
         d = d.data  # converted to NumPy below
         n1, n2 = np.asarray(n1.data, dtype=int), np.asarray(n2.data, dtype=int)
     prob = _ks_2samp_prob(np.asarray(d), n1, n2, mode, MAX_AUTO_N, alternative)
@@ -8151,6 +8159,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     device = xp_device(d_location)
     prob = xp.asarray(prob, dtype=dtype, device=device)
     d = xp.asarray(d, dtype=dtype, device=device)
+    d, prob, d_location, d_sign = _share_masks(d, prob, d_location, d_sign, xp=xp)
     if d.ndim == 0:
         d, prob, d_location, d_sign = d[()], prob[()], d_location[()], d_sign[()]
     return KstestResult(d, prob, statistic_location=d_location, statistic_sign=d_sign)
@@ -8222,8 +8231,7 @@ def _parse_kstest_args(data1, data2, args, N):
         rvsfunc = data1
 
     if isinstance(data2, str):
-        special_distributions = {'norm': special.ndtr}
-        cdf = special_distributions.get(data2, getattr(distributions, data2).cdf)
+        cdf = getattr(distributions, data2).cdf
         data2 = None
     elif callable(data2):
         cdf = data2
@@ -8241,7 +8249,9 @@ def _kstest_n_samples(kwargs):
 
 @xp_capabilities(skip_backends=[('dask.array', 'no rankdata')],
                  jax_jit=False, cpu_only=True,  # see ks_1samp/ks_2samp
-                 marray=True)
+                 marray=True,
+                 extra_note="String arguments are compatible only "
+                            "with the NumPy backend.")
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8677,11 +8687,12 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     lengths = [sample.shape[-1] for sample in samples]
     if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
@@ -10219,6 +10230,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 1:
         return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
+        if np.all(np.isfinite(deltas)):
+            # Scale before taking the norm to avoid squaring tiny CDF gaps.
+            return np.hypot.reduce((u_cdf - v_cdf) * np.sqrt(deltas))
+        # Preserve existing NaN/inf behavior for non-finite support gaps.
         return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
@@ -10975,6 +10990,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
+    degenerate = xp.asarray(degenerate.data) if is_marray(xp) else degenerate
     NaN = xp.asarray(xp.nan, dtype=ssxym.dtype, device=xp_device(ssxym))
     r = xpx.apply_where(
         ~degenerate,
@@ -11207,7 +11223,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
             n = n - xp.sum(nan_mask, axis=axis, keepdims=keepdims)
 
         # Produce NaNs silently when n - correction <= 0
-        nc = n - correction
+        nc = xp.asarray((n - correction).data) if is_marray(xp) else n - correction
         factor = xpx.apply_where(nc > 0, (n, nc), operator.truediv, fill_value=xp.nan)
         var *= factor
 
@@ -11224,6 +11240,12 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
+
+    def logcdf(self, x):
+        return special.log_ndtr(x)
+
+    def logsf(self, x):
+        return special.log_ndtr(-x)
 
     def isf(self, x):
         return -special.ndtri(x)
@@ -11294,3 +11316,36 @@ class _SimpleF:
 
     def sf(self, x):
         return special.fdtrc(self.dfn, self.dfd, x)
+
+
+def _log1mexp(x):
+    r"""Compute the log of the complement of the exponential"""
+    # adapted from gh-19021 (https://github.com/scipy/scipy/issues/19021)
+
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return special._ufuncs._log1mexp(x)
+
+    def f1(x):
+        # good for exp(x) close to 0
+        return xp.log1p(-xp.exp(x))
+
+    def f2(x):
+        # good for exp(x) close to 1
+        return xp.real(xp.log(-xp.expm1(x + 0j)))
+
+    x = xp_promote(x, force_floating=True, xp=xp)
+    res = xpx.apply_where(x < -1, (x,), f1, f2)
+    return res[()] if res.ndim == 0 else res
+
+
+class _SimpleExponential:
+    # A very simple, array-API compatible exponential distribution for use in
+    # `anderson` tests. May be replaced by new infrastructure Exponential
+    # distribution in due time.
+
+    def logcdf(self, x):
+        return _log1mexp(-x)
+
+    def logsf(self, x):
+        return -x

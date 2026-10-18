@@ -20,7 +20,6 @@ if (uses_accelerate or blas_name == 'scipy-openblas') and needs_lp64_fblas
 
   blas_lapack_wrapper_lib_lp64 = static_library('blas_lapack_wrapper_lib_lp64',
     blas_lapack_wrappers_lp64,
-    c_args: numpy_nodepr_api,
     dependencies: [lapack_lp64_dep, np_dep, py3_dep],
     include_directories: ['../linalg/', './src'],
     gnu_symbol_visibility: 'hidden',
@@ -41,7 +40,6 @@ if use_ilp64 or uses_accelerate or blas_name == 'scipy-openblas'
 
   blas_lapack_wrapper_lib_ilp64 = static_library('blas_lapack_wrapper_lib_ilp64',
     blas_lapack_wrappers_ilp64,
-    c_args: numpy_nodepr_api,
     dependencies: [lapack_dep, np_dep, py3_dep],
     include_directories: ['../linalg/', './src'],
     gnu_symbol_visibility: 'hidden',

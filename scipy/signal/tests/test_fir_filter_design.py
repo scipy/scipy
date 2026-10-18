@@ -8,7 +8,7 @@ import scipy._external.array_api_extra as xpx
 import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, make_xp_test_case, xp_copy_to_numpy
+    array_namespace, make_xp_test_case, xp_copy_to_numpy, xp_device
 )
 from scipy.fft import fft, fft2, rfft
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -52,7 +52,8 @@ class TestFirwin:
         xp = array_namespace(h)
         N = h.shape[0]
         alpha = 0.5 * (N-1)
-        m = xp.arange(0, N, dtype=xpx.default_dtype(xp)) - alpha  # time indices of taps
+        m = xp.arange(0, N, dtype=xpx.default_dtype(xp),
+                      device=xp_device(h)) - alpha  # time indices of taps
         for freq, expected in expected_response:
             actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2
@@ -101,9 +102,10 @@ class TestFirwin:
         xp = array_namespace(h)
         h_np = xp_copy_to_numpy(h)
         w, H = freqz(h_np, worN=1024)
-        w, H = map(xp.asarray, (w, H))
+        device = xp_device(h)
+        w, H = (xp.asarray(arr, device=device) for arr in (w, H))
         f = w/xp.pi
-        passIndicator = xp.zeros(w.shape[0], dtype=xp.bool)
+        passIndicator = xp.zeros(w.shape[0], dtype=xp.bool, device=device)
         for left, right in bands:
             passIndicator |= (f >= left) & (f < right)
         Hideal = xp.where(passIndicator, xp.ones_like(passIndicator),
@@ -806,6 +808,22 @@ class Testfirwin_2d:
         window = ("hamming", "hamming")
         taps_hamming = firwin_2d(hsize, window, fc=fc)
         assert taps_hamming.shape == (51, 51)
+
+    @pytest.mark.parametrize("pass_zero", [True, False])
+    @pytest.mark.parametrize("scale", [True, False])
+    def test_filter_options(self, pass_zero, scale):
+        hsize = (11, 9)
+        window = ("hamming", "hann")
+        fc = 0.3
+        fs = 2
+
+        taps = firwin_2d(hsize, window, fc=fc, fs=fs,
+                         pass_zero=pass_zero, scale=scale)
+        row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs,
+                            pass_zero=pass_zero, scale=scale)
+        col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs,
+                            pass_zero=pass_zero, scale=scale)
+        xp_assert_close(taps, np.outer(row_filter, col_filter))
 
     def test_impulse_response(self):
         hsize = (31, 31)

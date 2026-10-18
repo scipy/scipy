@@ -72,9 +72,6 @@ dist
 # The shelf plugin uses this dir
 ./.shelf
 MANIFEST
-# distutils configuration
-site.cfg
-setup.cfg
 # other temporary files
 .coverage
 .deps
@@ -269,9 +266,6 @@ scipy/special/cython_special.c
 scipy/special/cython_special.h
 scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
-scipy/special/ellint_carlson_cpp_lite/Makefile
-scipy/special/ellint_carlson_cpp_lite/cellint.*
-scipy/special/ellint_carlson_cpp_lite/tests
 scipy/stats/_rank.c
 scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c

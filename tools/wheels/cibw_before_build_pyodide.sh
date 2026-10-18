@@ -31,13 +31,15 @@ BLIS_REPO="https://github.com/pyodide/blis"
 BLIS_REF="pyodide-2.1"
 
 # semicolon-lapack
-SEMILAPACK_VERSION="0.01.3-pre"
+SEMILAPACK_VERSION="0.01.5-pre"
 SEMILAPACK_URL="https://github.com/ilayn/semicolon-lapack/archive/refs/tags/v${SEMILAPACK_VERSION}.tar.gz"
 
 # To be consumed via PKG_CONFIG_PATH
 BLAS_PREFIX="${PROJECT_DIR}/.blis"
 
-BUILD_ROOT="$(mktemp -d)"
+BUILD_ROOT="${TMPDIR:-/tmp}/scipy-wasm-blas"
+rm -rf "${BUILD_ROOT}"
+mkdir -p "${BUILD_ROOT}"
 trap 'rm -rf "${BUILD_ROOT}"' EXIT
 
 rm -rf "${BLAS_PREFIX}"

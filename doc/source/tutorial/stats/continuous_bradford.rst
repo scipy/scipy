@@ -5,15 +5,15 @@ Bradford Distribution
 =====================
 
 There is one shape parameter, :math:`c>0`, and the support is :math:`x\in [0,1]`.
+Define :math:`k = \log\left(1+c\right)`.
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \textrm{Let } k & = & \log\left(1+c\right)\\
-    \textrm{Then}\\
+    \begin{eqnarray*}
     f\left(x;c\right) & = & \frac{c}{k\left(1+cx\right)}\\
     F\left(x;c\right) & = & \frac{\log\left(1+cx\right)}{k}\\
-    G\left(q\; c\right) & = & \frac{\left(1+c\right)^{q}-1}{c}\\
+    G\left(q;c\right) & = & \frac{\left(1+c\right)^{q}-1}{c}\\
     M\left(t\right) & = & \frac{1}{k}e^{-t/c}\left[\mathrm{Ei}\left(t+\frac{t}{c}\right)-\mathrm{Ei}\left(\frac{t}{c}\right)\right]\\
     \mu & = & \frac{c-k}{ck}\\
     \mu_{2} & = & \frac{\left(c+2\right)k-2c}{2ck^{2}}\\
@@ -23,6 +23,6 @@ There is one shape parameter, :math:`c>0`, and the support is :math:`x\in [0,1]`
     m_{n} & = & \sqrt{1+c}-1\\
     h\left[X\right]& = & \frac{1}{2}\log\left(1+c\right)-\log\left(\frac{c}{\log\left(1+c\right)}\right)\end{eqnarray*}
 
-where :math:`\mathrm{Ei}\left(\mathrm{z}\right)` is the exponential integral function.
+where :math:`\mathrm{Ei}\left(z\right)` is the exponential integral function.
 
 Implementation: `scipy.stats.bradford`

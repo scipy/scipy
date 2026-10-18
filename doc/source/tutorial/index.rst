@@ -17,45 +17,45 @@ each subpackage along with some general application notes.
 .. _NumPy: https://numpy.org
 
 The following table lists the subpackages SciPy provides. The left column contains the
-names which link to their :doc:`../reference/index` whereas the right column provides a
-description and links to the corresponding chapter of this User Guide (if available):
+subpackage names, whereas the right column provides a description and links to the
+corresponding chapter of this User Guide (if available):
 
 .. list-table::
     :header-rows: 1
 
-    * - Subpackage (link to API reference)
+    * - Subpackage
       - Description (link to User Guide chapter)
-    * - :doc:`scipy.cluster <../reference/cluster>`
+    * - ``scipy.cluster``
       - Clustering algorithms
-    * - :doc:`scipy,constants <../reference/constants>`
+    * - ``scipy.constants``
       - Physical and mathematical constants
-    * - :doc:`scipy.differentiate <../reference/differentiate>`
+    * - ``scipy.differentiate``
       - Finite difference differentiation tools
-    * - :doc:`scipy.fft <../reference/fft>`
+    * - ``scipy.fft``
       - :doc:`./fft`
-    * - :doc:`scipy.fftpack <../reference/fftpack>`
+    * - ``scipy.fftpack``
       - Fast Fourier Transform routines (legacy)
-    * - :doc:`scipy.integrate <../reference/integrate>`
+    * - ``scipy.integrate``
       - :doc:`./integrate`
-    * - :doc:`scipy.interpolate <../reference/interpolate>`
+    * - ``scipy.interpolate``
       - :doc:`./interpolate`
-    * - :doc:`scipy.io <../reference/io>`
+    * - ``scipy.io``
       - :doc:`./io`
-    * - :doc:`scipy.linalg <../reference/linalg>`
+    * - ``scipy.linalg``
       - :doc:`./linalg`
-    * - :doc:`scipy.ndimage <../reference/ndimage>`
+    * - ``scipy.ndimage``
       - :doc:`./ndimage`
-    * - :doc:`scipy.optimize <../reference/optimize>`
+    * - ``scipy.optimize``
       - :doc:`./optimize`
-    * - :doc:`scipy.signal <../reference/signal>`
+    * - ``scipy.signal``
       - :doc:`./signal`
-    * - :doc:`scipy.sparse <../reference/sparse>`
+    * - ``scipy.sparse``
       - :doc:`./sparse`
-    * - :doc:`scipy.spatial <../reference/spatial>`
+    * - ``scipy.spatial``
       - :doc:`./spatial`
-    * - :doc:`scipy.special <../reference/special>`
+    * - ``scipy.special``
       - :doc:`./special`
-    * - :doc:`scipy.stats <../reference/stats>`
+    * - ``scipy.stats``
       - :doc:`./stats`
 
 

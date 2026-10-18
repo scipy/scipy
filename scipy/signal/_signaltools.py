@@ -2236,9 +2236,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     if x.shape[axis] == 0:
         if zi is None:
-            return xp.asarray(x)
+            return xp.asarray(x, device=device)
         else:
-            return xp.asarray(x), xp.asarray(zi.copy())
+            return xp.asarray(x, device=device), xp.asarray(zi.copy(), device=device)
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2352,9 +2352,10 @@ def lfiltic(b, a, y, x=None):
 
     """
     xp = array_namespace(a, b, y, x)
+    device = xp_result_device(a, b, y, x)
 
-    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a, device=device), ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b, device=device), ndim=1, xp=xp)
     if a.ndim > 1:
         raise ValueError('Filter coefficients `a` must be 1-D.')
     if b.ndim > 1:
@@ -2362,7 +2363,7 @@ def lfiltic(b, a, y, x=None):
     N = a.shape[0] - 1
     M = b.shape[0] - 1
     K = max(M, N)
-    y = xp.asarray(y)
+    y = xpx.atleast_nd(xp.asarray(y, device=device), ndim=1, xp=xp)
 
     if N < 0:
         raise ValueError("There must be at least one `a` coefficient.")
@@ -2373,7 +2374,7 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.zeros(M, dtype=result_type, device=xp_device(b))
     else:
-        x = xp.asarray(x)
+        x = xpx.atleast_nd(xp.asarray(x, device=device), ndim=1, xp=xp)
 
         result_type = xp.result_type(b, a, y, x)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
@@ -3472,6 +3473,41 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     See Also
     --------
     invresz, residue, unique_roots
+
+    Examples
+    --------
+    The following example computes the partial-fraction
+    expansion of b(z) / a(z):
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> b = np.array([1, 0.3])
+    >>> a = np.array([1, -0.75, 0.125])
+    >>> r, p, k = signal.residuez(b, a)
+    >>> r
+    array([-2.2,  3.2])
+    >>> p
+    array([0.25, 0.5 ])
+
+    There is no direct term here, so `k` is empty:
+
+    >>> k
+    array([], dtype=float64)
+
+    Get `b` and `a` back with `invresz`:
+
+    >>> signal.invresz(r, p, k)
+    (array([1. , 0.3]), array([ 1.   , -0.75 ,  0.125]))
+
+    An example where `k` is not empty:
+
+    >>> b = np.array([2, -1, 0.1])
+    >>> a = np.array([1, -0.5])
+    >>> r, p, k = signal.residuez(b, a)
+    >>> r, p
+    (array([0.4]), array([0.5]))
+    >>> k
+    array([ 1.6, -0.2])
     """
     b = np.asarray(b)
     a = np.asarray(a)
@@ -3607,6 +3643,35 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     --------
     residuez, unique_roots, invres
 
+    Examples
+    --------
+    The following example builds b(z) / a(z) back from its
+    partial-fraction expansion:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> r = np.array([-2.2, 3.2])
+    >>> p = np.array([0.25, 0.5])
+    >>> k = np.array([])
+    >>> b, a = signal.invresz(r, p, k)
+    >>> b
+    array([1. , 0.3])
+    >>> a
+    array([ 1.   , -0.75 ,  0.125])
+
+    Use `residuez` to get back the expansion:
+
+    >>> signal.residuez(b, a)
+    (array([-2.2,  3.2]), array([0.25, 0.5 ]), array([], dtype=float64))
+
+    A non-empty `k` adds the direct term:
+
+    >>> r = np.array([0.4])
+    >>> p = np.array([0.5])
+    >>> k = np.array([1.6, -0.2])
+    >>> b, a = signal.invresz(r, p, k)
+    >>> b, a
+    (array([ 2. , -1. ,  0.1]), array([ 1. , -0.5]))
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
@@ -4263,8 +4328,9 @@ def vectorstrength(events, period):
     '''
     xp = array_namespace(events, period)
 
-    events = xp.asarray(events)
-    period = xp.asarray(period)
+    device = xp_result_device(events, period)
+    events = xp.asarray(events, device=device)
+    period = xp.asarray(period, device=device)
     if xp.isdtype(period.dtype, 'integral'):
         period = xp.astype(period, xp.float64)
 

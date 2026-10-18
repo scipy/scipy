@@ -14,7 +14,7 @@ from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
 from scipy._lib._util import _apply_over_batch
 from ._basic import solve, solve_triangular, matrix_balance
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _ensure_dtype_cdsz
 from ._decomp_schur import schur
 from ._decomp_lu import lu
 from ._decomp_qr import qr
@@ -28,7 +28,7 @@ __all__ = ['solve_sylvester',
            'solve_continuous_are', 'solve_discrete_are']
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), signature='(i,i),(j,j),(i,j)->(i,j)')
 def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.
@@ -82,6 +82,7 @@ def solve_sylvester(a, b, q):
     True
 
     """
+    a, b, q = _ensure_dtype_cdsz(a, b, q)
     # Accommodate empty a
     if a.size == 0 or b.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
@@ -90,10 +91,10 @@ def solve_sylvester(a, b, q):
         return np.empty(q.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
-    r, u = schur(a, output='real')
+    r, u = schur(a)
 
     # Compute the Schur decomposition of b
-    s, v = schur(b.conj().transpose(), output='real')
+    s, v = schur(b.conj().transpose())
 
     # Construct f = u'*q*v
     f = np.dot(np.dot(u.conj().transpose(), q), v)
@@ -113,7 +114,7 @@ def solve_sylvester(a, b, q):
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
-@_apply_over_batch(('a', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('q', 2), signature="(i,i),(i,i)->(i,i)")
 def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
@@ -166,6 +167,7 @@ def solve_continuous_lyapunov(a, q):
 
     a = np.atleast_2d(_asarray_validated(a, check_finite=True))
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+    a, q = _ensure_dtype_cdsz(a, q)
 
     r_or_c = float
 
@@ -188,7 +190,7 @@ def solve_continuous_lyapunov(a, q):
         return np.empty(a.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
-    r, u = schur(a, output='real')
+    r, u = schur(a)
 
     # Construct f = u'*q*u
     f = u.conj().T.dot(q.dot(u))
@@ -224,9 +226,8 @@ def _solve_discrete_lyapunov_direct(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=direct`. It is not supposed to be called directly.
     """
-
     lhs = np.kron(a, a.conj())
-    lhs = np.eye(lhs.shape[0]) - lhs
+    lhs = np.eye(lhs.shape[0], dtype=a.dtype) - lhs
     x = solve(lhs, q.flatten())
 
     return np.reshape(x, q.shape)
@@ -239,7 +240,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     This function is called by the `solve_discrete_lyapunov` function with
     `method=bilinear`. It is not supposed to be called directly.
     """
-    eye = np.eye(a.shape[0])
+    eye = np.eye(a.shape[0], dtype=a.dtype)
     aH = a.conj().transpose()
     aHI_inv = inv(aH + eye)
     b = np.dot(aH - eye, aHI_inv)
@@ -247,7 +248,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     return solve_lyapunov(b.conj().transpose(), -c)
 
 
-@_apply_over_batch(('a', 2), ('q', 2))
+@_apply_over_batch(('a', 2), ('q', 2), signature="(i,i),(i,i)->(i,i)")
 def solve_discrete_lyapunov(a, q, method=None):
     """
     Solves the discrete Lyapunov equation :math:`AXA^H - X + Q = 0`.
@@ -320,6 +321,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     """
     a = np.asarray(a)
     q = np.asarray(q)
+    a, q = _ensure_dtype_cdsz(a, q)
     if method is None:
         # Select automatically based on size of matrices
         if a.shape[0] >= 10:
@@ -466,7 +468,8 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     return _solve_continuous_are(a, b, q, r, e, s, balanced)
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
+                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
@@ -683,7 +686,8 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     return _solve_discrete_are(a, b, q, r, e, s, balanced)
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2),
+                   signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(

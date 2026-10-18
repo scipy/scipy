@@ -5,6 +5,11 @@ The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
 
+Name: biteopt
+Files: subprojects/biteopt/biteopt/*
+License: MIT
+  For details, see subprojects/biteopt/biteopt/LICENSE
+
 Name: fast_matrix_market
 Files: scipy/io/_fast_matrix_market/*
 License: BSD-2-Clause
@@ -89,12 +94,12 @@ License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exc
 
 Name: pyduccfft
 Files: scipy/fft/_duccfft/pyduccfft.cxx
-License: 3-Clause BSD
+License: BSD-3-Clause
   For details, see scipy/fft/_duccfft/LICENSE.md
 
 Name: ducc0
 Files: subprojects/duccfft/ducc0/*
-License: 3-Clause BSD
+License: BSD-3-Clause
   For details, see subprojects/duccfft/LICENSE.md
 
 Name: uarray

@@ -457,8 +457,9 @@ def _quantile_hf(y, p, n, method, weights, xp):
         g = xpx.at(g, jg < 0).set(0)
 
     g = xpx.at(g)[j < 0].set(0)
-    j = xp.clip(j, 0., n - 1)
-    jp1 = xp.clip(jp1, 0., n - 1)
+    zero = xp.zeros_like(j)
+    j = xp.clip(j, zero, xp.maximum(n - 1, zero))
+    jp1 = xp.clip(jp1, zero, xp.maximum(n - 1, zero))
 
     return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
             + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
@@ -679,7 +680,7 @@ def estimated_cdf(x, y, *, method='linear',
     3. ``closest_observation``: ``m = -1/2`` and
        ``g = 1 - int((index == j) & (j%2 == 1))``
 
-    When all the data in ``x`` are unique, `estimated_cdf` and `quantile` are are
+    When all the data in ``x`` are unique, `estimated_cdf` and `quantile` are
     inverses of one another within a certain domain.
     Although `quantile` with ``method='linear'`` is invertible over the whole domain
     of ``p`` from ``0`` to ``1``, this is not true of other methods.

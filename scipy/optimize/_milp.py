@@ -136,7 +136,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     indptr, indices, data = A.indptr, A.indices, A.data.astype(np.float64)
 
     # options IV
-    options = options or {}
+    options = dict(options) if options else {}
     supported_options = {'disp', 'presolve', 'time_limit', 'node_limit',
                          'mip_rel_gap'}
     unsupported_options = set(options).difference(supported_options)

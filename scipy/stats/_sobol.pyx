@@ -344,8 +344,8 @@ cpdef void _fast_forward(const uint_32_64 n,
                          uint_32_64[::1] quasi) noexcept nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
-    cdef uint_32_64 i
-    for i in range(n):
+    cdef uint_32_64 _i
+    for _i in range(n):
         l = low_0_bit(num_gen_loc)
         for j in range(dim):
             quasi[j] = quasi[j] ^ sv[j, l - 1]

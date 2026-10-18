@@ -1,0 +1,88 @@
+==========================
+SciPy 1.18.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.18.1 is a bug-fix release with no new features
+compared to 1.18.0. This release includes binaries on
+PyPI for Python 3.15, and the minimum required version
+of the GCC toolchain has been increased to 10.3.0.
+
+
+
+Authors
+=======
+* Name (commits)
+* Wasim Akram (2) +
+* Jake Bowhay (1)
+* Michael Bratsch (1)
+* Dietrich Brunn (1)
+* Evgeni Burovski (1)
+* Aadya Chinubhai (1)
+* Lucas Colley (3)
+* Tekin Ertekin (1) +
+* Fuyugithub (2) +
+* Ralf Gommers (11)
+* Joren Hammudoglu (1)
+* Ijtihed Kilani (1) +
+* Andrew Nelson (2)
+* Ilhan Polat (1)
+* Tyler Reddy (39)
+* romao05 (1) +
+* Michael Simacek (1) +
+* Jacob Vanderplas (2)
+
+    A total of 18 people contributed to this release.
+    People with a "+" by their names contributed a patch for the first time.
+    This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.18.1
+------------------------
+
+* `#23076 <https://github.com/scipy/scipy/issues/23076>`__: BUG: Incorrect use of NumPy scalar types instead of np.dtype...
+* `#24495 <https://github.com/scipy/scipy/issues/24495>`__: BUG: remez hilbert segfault
+* `#25340 <https://github.com/scipy/scipy/issues/25340>`__: MAINT, TYP: some typing-related concerns in 1.18.x
+* `#25351 <https://github.com/scipy/scipy/issues/25351>`__: BUG: forkserver forcing breaks interpreters that don't have it
+* `#25405 <https://github.com/scipy/scipy/issues/25405>`__: [BUG] Py_XDECREF on borrowed refs in fitpack_sphere (iopt==-1)...
+* `#25406 <https://github.com/scipy/scipy/issues/25406>`__: [BUG] Double-free of wrk1/wrk2/iwrk in fitpack_surfit on allocation...
+* `#25435 <https://github.com/scipy/scipy/issues/25435>`__: [BUG] Double-DECREF of ap_t in fitpack_parcur — use-after-free...
+* `#25436 <https://github.com/scipy/scipy/issues/25436>`__: [BUG] PyTuple_SET_ITEM on unchecked NULL args_tuple in DVODE/ZVODE...
+* `#25471 <https://github.com/scipy/scipy/issues/25471>`__: BUG: interpolate: ``BivariateSpline(grid=False)`` returns (1,)-shaped...
+* `#25489 <https://github.com/scipy/scipy/issues/25489>`__: BUG: ``copy.deepcopy`` and ``pickle`` fail for interpolation...
+* `#25522 <https://github.com/scipy/scipy/issues/25522>`__: BUG: test_convergence fails very often on aarch64-linux
+* `#25572 <https://github.com/scipy/scipy/issues/25572>`__: CI: 32-bit Linux job is failing because numpy needs GCC 10 now
+* `#25657 <https://github.com/scipy/scipy/issues/25657>`__: BUG: ``linalg.signm`` unpredictable output dtype
+* `#25730 <https://github.com/scipy/scipy/issues/25730>`__: BUG: RectBivariateSpline interpolation issues with new fitpack...
+* `#25864 <https://github.com/scipy/scipy/issues/25864>`__: BUG: linalg.expm matrix L1-norm implemented as infinity norm
+* `#25924 <https://github.com/scipy/scipy/issues/25924>`__: BUG: Batched ``linalg.expm`` Accuracy Regression
+
+Pull requests for 1.18.1
+------------------------
+
+* `#24923 <https://github.com/scipy/scipy/pull/24923>`__: BUG: sparse: fix ``get_sum_dtype`` return type consistency
+* `#25352 <https://github.com/scipy/scipy/pull/25352>`__: BUG: use ``forkserver`` only when available
+* `#25407 <https://github.com/scipy/scipy/pull/25407>`__: BUG: interpolate: INCREF borrowed refs at assignment in fitpack_sphere
+* `#25443 <https://github.com/scipy/scipy/pull/25443>`__: REL, MAINT: prepare for SciPy 1.18.1
+* `#25450 <https://github.com/scipy/scipy/pull/25450>`__: BUG: interpolate: fix double-free of wrk buffers in fitpack_surfit
+* `#25484 <https://github.com/scipy/scipy/pull/25484>`__: BUG: interpolate: coerce non-contiguous input in surfit wrappers
+* `#25500 <https://github.com/scipy/scipy/pull/25500>`__: BUG: interpolate: ensure interpolators are pickleable
+* `#25507 <https://github.com/scipy/scipy/pull/25507>`__: BUG/MAINT: fix refcounting and error handling in ``fitpack_parcur``
+* `#25508 <https://github.com/scipy/scipy/pull/25508>`__: API: linalg.bandwidth: revert ``int`` to ``np.int64`` type change
+* `#25509 <https://github.com/scipy/scipy/pull/25509>`__: API: stats.binomtest: revert ``k, n`` type change from ``int``...
+* `#25521 <https://github.com/scipy/scipy/pull/25521>`__: BUG: integrate: guard against NULL PyTuple_New in DVODE/ZVODE...
+* `#25542 <https://github.com/scipy/scipy/pull/25542>`__: BUG: interpolate: fix shapes of {Rect,Smooth}BivariateSpline...
+* `#25579 <https://github.com/scipy/scipy/pull/25579>`__: BLD/CI: bump minimum GCC version to 10.3.0, fix i686 Linux CI...
+* `#25581 <https://github.com/scipy/scipy/pull/25581>`__: DOC/MAINT: Make the forum icon in header visible again
+* `#25602 <https://github.com/scipy/scipy/pull/25602>`__: BUG: signal: fix segfault in remez for too-narrow bands
+* `#25609 <https://github.com/scipy/scipy/pull/25609>`__: BUG/TYP: ``interpolate``\ : restore ``__class_getitem__`` methods...
+* `#25632 <https://github.com/scipy/scipy/pull/25632>`__: TST: sparse.linalg: skip tfqmr/rand-sym-pd-F on all platforms
+* `#25638 <https://github.com/scipy/scipy/pull/25638>`__: BUG: ``make_splprep`` does not validate periodic endpoints at...
+* `#25658 <https://github.com/scipy/scipy/pull/25658>`__: BUG: linalg.signm: preserve input dtype for defective matrices
+* `#25690 <https://github.com/scipy/scipy/pull/25690>`__: BUG: special.eval_gegenbauer: fix UBSAN crash for NaN
+* `#25726 <https://github.com/scipy/scipy/pull/25726>`__: dfitpack.c: avoid potentially undefined float->int cast
+* `#25764 <https://github.com/scipy/scipy/pull/25764>`__: BUG: interpolate: flatten the grid coordinates before evaluating...
+* `#25913 <https://github.com/scipy/scipy/pull/25913>`__: BLD: package: pin meson on win-64 to avoid clang-cl bug
+* `#25934 <https://github.com/scipy/scipy/pull/25934>`__: MAINT/BUG:linalg.expm: fix the norms and recover batch handling
+* `#25958 <https://github.com/scipy/scipy/pull/25958>`__: TST: stats - bump some tolerances

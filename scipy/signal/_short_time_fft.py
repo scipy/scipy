@@ -556,7 +556,7 @@ class ShortTimeFFT:
 
         Parameters
         ----------
-        win_param: Union[str, tuple, float],
+        win_param : str | tuple | float
             Parameters passed to `get_window`. For windows with no parameters,
             it may be a string (e.g., ``'hann'``), for parametrized windows a
             tuple (e.g., ``('gaussian', 2.)``) or a single float specifying
@@ -565,12 +565,12 @@ class ShortTimeFFT:
         fs : float
             Sampling frequency of input signal. Its relation to the
             sampling interval `T` is ``T = 1 / fs``.
-        nperseg: int
+        nperseg : int
             Window length in samples, which corresponds to the `m_num`.
-        noverlap: int
+        noverlap : int
             Window overlap in samples. It relates to the `hop` increment by
             ``hop = npsereg - noverlap``.
-        symmetric_win: bool
+        symmetric_win : bool
             If ``True`` then a symmetric window is generated, else a periodic window is
             generated (default). Though symmetric windows seem for most applications to
             be more sensible, the default of a periodic windows was chosen to
@@ -580,7 +580,7 @@ class ShortTimeFFT:
         fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
             Mode of FFT to be used (default 'onesided').
             See property `fft_mode` for details.
-        mfft: int | None
+        mfft : int | None
             Length of the FFT used, if a zero padded FFT is desired.
             If ``None`` (default), the length of the window `win` is used.
         scale_to : 'magnitude', 'psd' | None
