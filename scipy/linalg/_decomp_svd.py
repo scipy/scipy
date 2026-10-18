@@ -1,12 +1,14 @@
 """SVD decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
+import scipy._external.array_api_extra as xpx
 from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native, HAS_ILP64
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native
 from scipy.linalg.lapack import get_lapack_funcs   # noqa: F401  (backwards compat)
 from ._decomp import _asarray_validated
 
@@ -306,6 +308,7 @@ def _diagsvd_signature(s, M, N):
     return f"(i)->({M}, {N})"
 
 
+@xp_capabilities()
 @_apply_over_batch(('s', 1), signature=_diagsvd_signature)
 def diagsvd(s, M, N):
     """
@@ -346,13 +349,16 @@ def diagsvd(s, M, N):
            [0, 0, 0]])
 
     """
-    part = np.diag(s)
-    typ = part.dtype.char
-    MorN = len(s)
+    xp = array_namespace(s)
+    s = xp.asarray(s)
+    part = xpx.create_diagonal(s, xp=xp)
+    MorN = s.shape[0]
     if MorN == M:
-        return np.hstack((part, np.zeros((M, N - M), dtype=typ)))
+        return xp.concat((part,xp.zeros((M, N - M), dtype=part.dtype,
+                                        device=xp_device(part))), axis=1)
     elif MorN == N:
-        return np.r_[part, np.zeros((M - N, N), dtype=typ)]
+        return xp.concat((part, xp.zeros((M - N, N), dtype=part.dtype,
+                                         device=xp_device(part))), axis=0)
     else:
         raise ValueError("Length of s must be M or N.")
 

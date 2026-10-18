@@ -432,7 +432,7 @@ cdef class _Qhull:
 
     @cython.final
     def add_points(self, points, interior_point=None):
-        cdef int j
+        cdef int _j
         cdef realT *p
         cdef facetT *facet
         cdef double bestdist
@@ -477,7 +477,7 @@ cdef class _Qhull:
 
                 p = <realT*>arr.data
 
-                for j in range(arr.shape[0]):
+                for _j in range(arr.shape[0]):
                     facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
                     if isoutside:
                         if not qh_addpoint(self._qh, p, facet, 0):
@@ -1202,11 +1202,11 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 cdef double _matrix_norm1(int n, double *a) noexcept nogil:
     """Compute the 1-norm of a square matrix given in in Fortran order"""
     cdef double maxsum = 0, colsum
-    cdef int i, j
+    cdef int _i, _j
 
-    for j in range(n):
+    for _j in range(n):
         colsum = 0
-        for i in range(n):
+        for _i in range(n):
             colsum += fabs(a[0])
             a += 1
         if maxsum < colsum:
@@ -1411,7 +1411,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     count needs to be limited, and a fallback to brute force provided.
 
     """
-    cdef int k, m, ndim, inside, isimplex, cycle_k
+    cdef int k, m, ndim, inside, isimplex, _cycle_k
     cdef double *transform
 
     ndim = d.ndim
@@ -1425,7 +1425,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     # that for the cases where the algorithm fails, the main cost
     # still comes from the brute force search.
 
-    for cycle_k in range(1 + d.nsimplex//4):
+    for _cycle_k in range(1 + d.nsimplex//4):
         if isimplex == -1:
             break
 

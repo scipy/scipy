@@ -4,7 +4,8 @@ basinhopping: The basinhopping global optimization algorithm
 import numpy as np
 import math
 import inspect
-import scipy.optimize
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
 from scipy._lib._util import (check_random_state, _transition_to_rng,
                               wrapped_inspect_signature)
 
@@ -72,7 +73,7 @@ class BasinHoppingRunner:
         self.nstep = 0
 
         # initialize return object
-        self.res = scipy.optimize.OptimizeResult()
+        self.res = OptimizeResult()
         self.res.minimization_failures = 0
 
         # do initial minimization
@@ -661,8 +662,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     # set up minimizer
     if minimizer_kwargs is None:
         minimizer_kwargs = dict()
-    wrapped_minimizer = MinimizerWrapper(scipy.optimize.minimize, func,
-                                         **minimizer_kwargs)
+    wrapped_minimizer = MinimizerWrapper(minimize, func, **minimizer_kwargs)
 
     # set up step-taking algorithm
     if take_step is not None:

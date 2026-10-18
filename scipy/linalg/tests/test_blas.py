@@ -130,8 +130,10 @@ def test_wrapper_traverses_its_type(module):
     # The wrappers are instances of a heap type and own a reference to it, so
     # they have to report it to the GC.  Without that the type -> module ->
     # wrapper cycle is never collected and the extension module cannot unload.
+    # `get_referents` only calls the wrapper's own `tp_traverse`; `get_referrers`
+    # would walk every tracked object and trip over unrelated extension types.
     func = module.daxpy
-    assert any(ref is func for ref in gc.get_referrers(type(func)))
+    assert any(ref is type(func) for ref in gc.get_referents(func))
 
 
 @pytest.mark.parametrize('module', [

@@ -134,8 +134,9 @@ Implementation notes
 A key part of the support for the array API standard and specific compatibility
 functions for Numpy, CuPy and PyTorch is provided through
 `array-api-compat <https://github.com/data-apis/array-api-compat>`_.
-This package is included in the SciPy codebase via a git submodule (under
-``scipy/_lib``), so no new dependencies are introduced.
+This package is included in the SciPy codebase via a git submodule (located in
+``/subprojects`` and copied to ``scipy/_external`` once SciPy has been built), so no
+new dependencies are introduced.
 
 ``array-api-compat`` provides generic utility functions and adds aliases such
 as ``xp.concat`` (which, for numpy, mapped to ``np.concatenate`` before NumPy added

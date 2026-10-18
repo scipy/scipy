@@ -307,7 +307,7 @@ class kstwobign_gen(rv_continuous):
 
     Notes
     -----
-    :math:`\sqrt{n} D_n` is given by
+    :math:`D_n` is given by
 
     .. math::
 
@@ -1874,10 +1874,10 @@ class dpareto_lognorm_gen(rv_continuous):
         \left( R(y_1) + R(y_2) \right)
 
     where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
-    :math:`\phi` and :math:`\Phi` are the normal PDF and CDF, respectively,
+    :math:`\phi` and :math:`\Phi` are the standard normal PDF and CDF, respectively,
     :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
     and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
-    for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
+    for :math:`x > 0`, real :math:`\mu`, :math:`\sigma > 0`,
     :math:`\alpha > 0`, and :math:`\beta > 0` [1]_.
 
     `dpareto_lognorm` takes
@@ -2930,11 +2930,11 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+        f(x, c, a, b) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`a < x <= b`, :math:`0 \le a < b` and :math:`c > 0`.
+    for :math:`a < x \leq b`, :math:`0 \leq a < b` and :math:`c > 0`.
 
-    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    `truncweibull_min` takes :math:`c`, :math:`a`, and :math:`b` as shape
     parameters.
 
     Notice that the truncation values, :math:`a` and :math:`b`, are defined in
@@ -2942,13 +2942,14 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        a = (u_l - loc)/scale
-        b = (u_r - loc)/scale
+        a &= (u_l - \mathrm{loc})/\mathrm{scale} \\
+        b &= (u_r - \mathrm{loc})/\mathrm{scale}
 
     where :math:`u_l` and :math:`u_r` are the specific left and right
     truncation values, respectively. In other words, the support of the
-    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
-    :math:`loc` and/or :math:`scale` are provided.
+    distribution becomes
+    :math:`a\,\mathrm{scale} + \mathrm{loc} < x \leq b\,\mathrm{scale} + \mathrm{loc}`
+    when ``loc`` and/or ``scale`` are provided.
 
     %(after_notes)s
 
@@ -3221,6 +3222,11 @@ class genpareto_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Generalized Pareto distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_Pareto_distribution
+
     %(example)s
 
     """
@@ -3410,6 +3416,11 @@ class genextreme_gen(rv_continuous):
     `genextreme` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Generalized extreme value distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_extreme_value_distribution
 
     %(example)s
 
@@ -3968,7 +3979,7 @@ class genhalflogistic_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = \frac{2 (1 - c x)^{1/(c-1)}}{[1 + (1 - c x)^{1/c}]^2}
+        f(x, c) = \frac{2 (1 - c x)^{1/c-1}}{[1 + (1 - c x)^{1/c}]^2}
 
     for :math:`0 \le x \le 1/c`, and :math:`c > 0`.
 
@@ -4326,6 +4337,11 @@ class gumbel_r_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
+
     %(example)s
 
     """
@@ -4457,6 +4473,11 @@ class gumbel_l_gen(rv_continuous):
     log-Weibull and Gompertz distributions.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.16,
+           https://www.itl.nist.gov/div898/handbook/eda/section3/eda366g.htm
 
     %(example)s
 
@@ -5538,7 +5559,7 @@ class norminvgauss_gen(rv_continuous):
 
     where :math:`x` is a real number, the parameter :math:`a` is the tail
     heaviness and :math:`b` is the asymmetry parameter satisfying
-    :math:`a > 0` and :math:`|b| <= a`.
+    :math:`a > 0` and :math:`|b| < a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 
@@ -6008,7 +6029,8 @@ class landau_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
+        f(x) = \frac{1}{\pi}\int_0^\infty
+               \exp(-t)\cos(xt + \frac{2t}{\pi}\log t) dt
 
     for a real number :math:`x`.
 
@@ -6653,7 +6675,7 @@ class loggamma_gen(rv_continuous):
         f(x, c) = \frac{\exp(c x - \exp(x))}
                        {\Gamma(c)}
 
-    for all :math:`x, c > 0`. Here, :math:`\Gamma` is the
+    for real :math:`x` and :math:`c > 0`. Here, :math:`\Gamma` is the
     gamma function (`scipy.special.gamma`).
 
     `loggamma` takes ``c`` as a shape parameter for :math:`c`.
@@ -7971,21 +7993,21 @@ class ncf_gen(rv_continuous):
     .. math::
 
         f(x, n_1, n_2, \lambda) =
-            \exp\left(\frac{\lambda}{2} +
+            \exp\left(-\frac{\lambda}{2} +
                       \lambda n_1 \frac{x}{2(n_1 x + n_2)}
                 \right)
             n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
             (n_2 + n_1 x)^{-(n_1 + n_2)/2}
-            \gamma(n_1/2) \gamma(1 + n_2/2) \\
+            \Gamma(n_1/2) \Gamma(1 + n_2/2) \\
             \frac{L^{\frac{n_1}{2}-1}_{n_2/2}
                 \left(-\lambda n_1 \frac{x}{2(n_1 x + n_2)}\right)}
             {B(n_1/2, n_2/2)
-                \gamma\left(\frac{n_1 + n_2}{2}\right)}
+                \Gamma\left(\frac{n_1 + n_2}{2}\right)}
 
     for :math:`n_1, n_2 > 0`, :math:`\lambda \ge 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
     the denominator, :math:`\lambda` the non-centrality parameter,
-    :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
+    :math:`\Gamma` is the gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
     `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
@@ -8693,7 +8715,7 @@ class powerlaw_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}
+        f(x; a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
 
     with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 
@@ -9382,7 +9404,7 @@ class rice_gen(rv_continuous):
 
         f(x, b) = x \exp(- \frac{x^2 + b^2}{2}) I_0(x b)
 
-    for :math:`x >= 0`, :math:`b > 0`. :math:`I_0` is the modified Bessel
+    for :math:`x \geq 0`, :math:`b \geq 0`. :math:`I_0` is the modified Bessel
     function of order zero (`scipy.special.i0`).
 
     `rice` takes ``b`` as a shape parameter for :math:`b`.
@@ -12534,7 +12556,7 @@ class rel_breitwigner_gen(rv_continuous):
 
     %(after_notes)s
 
-    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
+    :math:`\rho = M_0/\Gamma` and :math:`\Gamma` is the scale parameter. For
     example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
     \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
     [4]_ one can set ``rho=91.1876/2.4952`` and ``scale=2.4952``.

@@ -4,6 +4,7 @@ python_sources = [
   'test_basic.py',
   'test_batch.py',
   'test_blas.py',
+  'test_blas_lapack_wrappers.py',
   'test_cython_abi.py',
   'test_cython_blas.py',
   'test_cython_lapack.py',
