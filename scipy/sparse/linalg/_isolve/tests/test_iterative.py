@@ -70,10 +70,13 @@ def _assert_success(*, A, x, b, xp, rtol=1.0, atol=0.0, less_equal=False):
     assertion(err, limit)
 
 
-def skip_if_batching_unsupported(solver, batch_A, batch_b):
+def skip_if_batching_unsupported(solver, batch_A, batch_b, inverse=False):
     batched_solvers = [SOLVERS.cg]
-    if solver not in batched_solvers and (batch_A != () or batch_b != ()):
+    batched = batch_A != () or batch_b != ()
+    if batched and solver not in batched_solvers and not inverse:
         pytest.skip(f"batching unsupported for {solver}")
+    if batched and solver in batched_solvers and inverse:
+        pytest.skip(f"batching supported for {solver}")
 
 
 @pytest.fixture(
@@ -999,12 +1002,12 @@ class TestGMRES:
 
 def test_nD(solver, xp):
     """Check that >2-D operators are rejected cleanly."""
-    if solver == SOLVERS.cg:
-        # cg has batch support
-        return
+    batch_A = (2,)
+    batch_b = (2,)
+    skip_if_batching_unsupported(solver, batch_A, batch_b, inverse=True)
     def id(x):
         return x
-    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=xp.float64, xp=xp)
-    b = xp.ones((2, 2))
+    A = LinearOperator(shape=(*batch_A, 2, 2), matvec=id, dtype=xp.float64, xp=xp)
+    b = xp.ones((*batch_b, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         solver.impl(A, b)
