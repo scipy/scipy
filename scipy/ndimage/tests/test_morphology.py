@@ -3038,6 +3038,7 @@ def test_binary_closing_noninteger_iterations(xp):
     assert_raises(TypeError, ndimage.binary_closing, data, iterations=1.5)
 
 
+@xfail_xp_backends("cupy", reason="CuPy does not validate the origin")
 @pytest.mark.parametrize('origin', [-2, 1, (0, -2), (1, 0)])
 @pytest.mark.parametrize('func', [
     make_xp_pytest_param(ndimage.binary_erosion),
@@ -3055,6 +3056,7 @@ def test_binary_invalid_origin(func, origin, xp):
         func(data, structure, origin=origin)
 
 
+@xfail_xp_backends("cupy", reason="CuPy does not validate the origin")
 @make_xp_test_case(ndimage.binary_hit_or_miss)
 def test_binary_hit_or_miss_invalid_origin(xp):
     data = xp.ones((6, 6))
