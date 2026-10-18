@@ -1345,21 +1345,22 @@ def dice(u, v, w=None):
     -0.3333333333333333
 
     """
-    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
+    u = _validate_vector(u)
+    v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum(axis=-1)
+        ntt = (u & v).sum()
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         if w is None:
-            ntt = (u * v).sum(axis=-1)
+            ntt = (u * v).sum()
         else:
-            ntt = (u * v * w).sum(axis=-1)
+            ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
-    return (ntf + nft) / (2.0 * ntt + ntf + nft)
+    return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
 
 
 def rogerstanimoto(u, v, w=None):
