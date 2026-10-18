@@ -1173,29 +1173,20 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype=None, xp=None):
+        if shape[-1] != shape[-2]:
+            raise ValueError(f"IdentityOperator must be square, got shape {shape}")
         super().__init__(dtype, shape, xp)
 
     def _matvec(self, x):
-        xp = self._xp
         shape = np.broadcast_shapes(self.shape[:-1], x.shape)
-        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
-
-    def _rmatvec(self, x):
-        xp = self._xp
-        shape = np.broadcast_shapes((*self.shape[:-2], self.shape[-1]), x.shape)
-        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
-
-    def _rmatmat(self, x):
-        xp = self._xp
-        batch_shape = np.broadcast_shapes(self.shape[:-2], x.shape[:-2])
-        shape = (*batch_shape, self.shape[-1], x.shape[-1])
-        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
+        return xp_copy(self._xp.broadcast_to(x, shape), xp=self._xp)
 
     def _matmat(self, x):
-        xp = self._xp
-        batch_shape = np.broadcast_shapes(self.shape[:-2], x.shape[:-2])
-        shape = (*batch_shape, self.shape[-2], x.shape[-1])
-        return xp_copy(xp.broadcast_to(x, shape), xp=xp)
+        shape = np.broadcast_shapes((*self.shape[:-1], 1), x.shape)
+        return xp_copy(self._xp.broadcast_to(x, shape), xp=self._xp)
+
+    _rmatvec = _matvec
+    _rmatmat = _matmat
 
     def _adjoint(self):
         return self
