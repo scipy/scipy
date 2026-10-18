@@ -3016,13 +3016,15 @@ class TestMatrix_Balance:
                       [0, 0, 3, 0, 0],
                       [0, 0, 1, 1, 1e40],
                       [1, 0, 1, 1e-40, 1]])
-        x, y = matrix_balance(A, permute=permute)
-        x, (s, p) = matrix_balance(A, permute=permute, separate=True)
+        B, T = matrix_balance(A, permute=permute)
+        _, (s, p) = matrix_balance(A, permute=permute, separate=True)
         assert_equal(p, [1, 0, 4, 3, 2] if permute else np.arange(5))
-        ip = np.empty_like(p)
-        ip[p] = np.arange(5)
-        assert_allclose(y, np.diag(s)[ip, :])
-        assert_allclose(x, A[np.ix_(p, p)] * s / s[:, None])
+        # T = P D with the permutation matrix P and the diagonal scaling D,
+        # so B = T^{-1} A T = D^{-1} P^T A P D
+        P = np.eye(5)[:, p]
+        D = np.diag(s)
+        assert_allclose(T, P @ D)
+        assert_allclose(B, np.diag(1 / s) @ P.T @ A @ P @ D)
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
