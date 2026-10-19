@@ -194,6 +194,68 @@ We stress that the coefficients are given in the
 of :math:`1, x, \cdots, x^k`.
 
 
+.. _tutorial-interpolate_bspl_basis:
+
+B-spline basis elements
+-----------------------
+
+The b-spline basis is used in a variety of applications which include interpolation,
+regression and curve representation.
+B-splines are piecewise polynomials, represented as linear combinations of
+*b-spline basis elements* --- which themselves are certain linear combinations
+of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
+
+Formally, a spline function is defined as a linear combination of B-spline
+basis elements, :math:`B_j(x)`,
+
+.. math::
+
+    f(x) = \sum_j c_j B_j(x) .
+
+The properties of b-splines are well described in the literature (see, for
+example, [Floater]_, [deBoor]_, [PBP]_, [Dierckx]_). For our purposes, it is enough to know
+that a b-spline function is uniquely defined by an array of coefficients and
+an array of the so-called *knots*, which may or may not coincide with the data points,
+``x``.
+
+Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
+is defined by :math:`k+2` knots and is zero outside of these knots.
+To illustrate, plot a collection of non-zero basis elements on a certain
+interval:
+
+.. plot::
+
+    >>> k = 3      # cubic splines
+    >>> t = [0., 1.4, 2., 3.1, 5.]   # internal knots
+    >>> t = np.r_[[0]*k, t, [5]*k]   # add boundary knots
+
+    >>> from scipy.interpolate import BSpline
+    >>> import matplotlib.pyplot as plt
+    >>> for j in [-2, -1, 0, 1, 2]:
+    ...     a, b = t[k+j], t[-k+j-1]
+    ...     xx = np.linspace(a, b, 101)
+    ...     bspl = BSpline.basis_element(t[k+j:-k+j])
+    ...     plt.plot(xx, bspl(xx), label=f'j = {j}')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+Here `BSpline.basis_element` is essentially a shorthand for constructing a spline
+with only a single non-zero coefficient. For instance, the ``j=2`` element in
+the above example is equivalent to
+
+    >>> c = np.zeros(t.size - k - 1)
+    >>> c[-2] = 1
+    >>> b = BSpline(t, c, k)
+    >>> np.allclose(b(xx), bspl(xx))
+    True
+
+If desired, a b-spline can be converted into a `PPoly` object using
+`PPoly.from_spline` method which accepts a `BSpline` instance and returns a
+`PPoly` instance. The reverse conversion is performed by the
+`BSpline.from_power_basis` method. However, conversions between bases is best
+avoided because it accumulates rounding errors.
+
+
 .. _tutorial-interpolate_bspl_control_points:
 
 Coefficients and control points
@@ -221,10 +283,11 @@ knots,
 
 where ``n = len(t) - k - 1`` is the number of coefficients.
 This is the definition of the control polygon of a spline function in [Floater]_,
-Sec. 3.8.1, p. 42, where the :math:`\xi_j` are denoted by :math:`t_i^*` (the
+Sec. 3.8.1, p. 42, where the points :math:`\xi_j` are denoted by :math:`t_i^*` (the
 formula directly follows Eq. (3.20)).
-The reason for this choice is that the points :math:`\xi_j` are
-the coefficients of the linear function, :math:`x = \sum_j \xi_j B_{j,k}(x)`;
+The reason for this choice is that the linear function, :math:`f(x) = x`, has
+the B-spline coefficients :math:`c_j = \xi_j`, i.e.
+:math:`x = \sum_j c_j B_j(x)`;
 this is Eq. (4.7) in [Floater]_, Sec. 4.2.1, p. 52, with :math:`r = 1`.
 
 .. plot::
@@ -251,7 +314,7 @@ this is Eq. (4.7) in [Floater]_, Sec. 4.2.1, p. 52, with :math:`r = 1`.
 
 **Parametric curves.** For a curve in :math:`d` dimensions, e.g. constructed
 by `make_splprep`, each coefficient is itself a point: the coefficient array
-has shape ``(n, d)``, and its rows are the control points [Floater]_.
+has shape ``(n, d)``, and its rows are the control points [Floater]_, Sec. 3.8.2.
 
 .. plot::
 
@@ -452,61 +515,6 @@ References
    techniques, Springer, 2002.
 .. [Dierckx] P. Dierckx, Curve and surface fitting with splines, Monographs on
    Numerical Analysis, Oxford University Press, 1993.
-
-
-.. _tutorial-interpolate_bspl_basis:
-
-B-spline basis elements
------------------------
-
-The b-spline basis is used in a variety of applications which include interpolation,
-regression and curve representation.
-B-splines are piecewise polynomials, represented as linear combinations of
-*b-spline basis elements* --- which themselves are certain linear combinations
-of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
-
-The properties of b-splines are well described in the literature (see, for example,
-references listed in the `BSpline` docstring). For our purposes, it is enough to know
-that a b-spline function is uniquely defined by an array of coefficients and
-an array of the so-called *knots*, which may or may not coincide with the data points,
-``x``.
-
-Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
-is defined by :math:`k+2` knots and is zero outside of these knots.
-To illustrate, plot a collection of non-zero basis elements on a certain
-interval:
-
-.. plot::
-
-    >>> k = 3      # cubic splines
-    >>> t = [0., 1.4, 2., 3.1, 5.]   # internal knots
-    >>> t = np.r_[[0]*k, t, [5]*k]   # add boundary knots
-
-    >>> from scipy.interpolate import BSpline
-    >>> import matplotlib.pyplot as plt
-    >>> for j in [-2, -1, 0, 1, 2]:
-    ...     a, b = t[k+j], t[-k+j-1]
-    ...     xx = np.linspace(a, b, 101)
-    ...     bspl = BSpline.basis_element(t[k+j:-k+j])
-    ...     plt.plot(xx, bspl(xx), label=f'j = {j}')
-    >>> plt.legend(loc='best')
-    >>> plt.show()
-
-Here `BSpline.basis_element` is essentially a shorthand for constructing a spline
-with only a single non-zero coefficient. For instance, the ``j=2`` element in
-the above example is equivalent to
-
-    >>> c = np.zeros(t.size - k - 1)
-    >>> c[-2] = 1
-    >>> b = BSpline(t, c, k)
-    >>> np.allclose(b(xx), bspl(xx))
-    True
-
-If desired, a b-spline can be converted into a `PPoly` object using
-`PPoly.from_spline` method which accepts a `BSpline` instance and returns a
-`PPoly` instance. The reverse conversion is performed by the
-`BSpline.from_power_basis` method. However, conversions between bases is best
-avoided because it accumulates rounding errors.
 
 
 .. _tutorial-interpolate_bspl_design_matrix:
