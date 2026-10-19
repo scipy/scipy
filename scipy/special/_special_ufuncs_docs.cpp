@@ -4051,11 +4051,11 @@ const char *_genhyperbolic_logpdf_doc = R"(
     x : array_like
         Quantiles.
     p : array_like
-        Shape parameter.
+        Tail parameter.
     a : array_like
         Shape parameter.
     b : array_like
-        Scale parameter.
+        Skewness parameter.
 
     Returns
     -------
@@ -4077,11 +4077,11 @@ const char *_genhyperbolic_pdf_doc = R"(
     x : array_like
         Quantiles.
     p : array_like
-        Shape parameter.
+        Tail parameter.
     a : array_like
         Shape parameter.
     b : array_like
-        Scale parameter.
+        Skewness parameter.
 
     Returns
     -------
