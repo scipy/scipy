@@ -29,7 +29,7 @@ generators to sample random variates from a wide variety of univariate
 continuous and discrete distributions. Implementations of a fast C library
 called [UNU.RAN](https://statmath.wu.ac.at/software/unuran/) are used
 for speed and performance. Please look at [UNU.RAN's
-documentation](http://statmath.wu.ac.at/software/unuran/doc/unuran.html)
+documentation](https://statmath.wu.ac.at/software/unuran/doc/unuran.html)
 for an in-depth explanation of these methods. It is heavily referred to
 for writing this tutorial and the documentation of all the generators.
 
@@ -45,10 +45,10 @@ rather than being designed for one specific distribution, they work for large
 classes of univariate distributions described by a small set of inputs,
 such as a probability density function (PDF) or a cumulative distribution
 function (CDF). All of them assume a uniform random number generator is
-available, and work by transforming a stream of U(0,1) variates into
+available, and work by transforming a stream of $U(0,1)$ variates into
 variates of the target distribution. This makes them useful for sampling
 from custom distributions that {mod}`scipy.stats` does not implement,
-and to optimize performance depending on the use case (see below).
+and for optimizing performance depending on the use case (see below).
 
 These generators are based on important concepts:
 
@@ -57,11 +57,11 @@ These generators are based on important concepts:
   We just generate a uniformly $U(0,1)$ distributed random number U and
   return $X = F^{-1}(U)$. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
-  the inverse (e.g. {class}`scipy.special.ndtri`,
-  {class}`scipy.special.stdtrit`). In general, the implementation of special
+the inverse (e.g. {func}`scipy.special.ndtri`,
+{func}`scipy.special.stdtrit`). In general, the implementation of special
   functions is quite slow compared to the inversion methods in UNU.RAN,
-  namely, `~scipy.stats.sampling.NumericalInversePolynomial` and
-  `~scipy.stats.sampling.NumericalInverseHermite`.
+  namely, {class}`~scipy.stats.sampling.NumericalInversePolynomial` and
+  {class}`~scipy.stats.sampling.NumericalInverseHermite`.
 * The Rejection Method: The rejection method, often called
   acceptance-rejection method, has been suggested by John von Neumann in
   1951[^1]. It involves computing an upper bound to the PDF (also called the
@@ -191,11 +191,11 @@ method which requires a PDF and its derivative w.r.t. `x` (i.e. the variate).
   that contains all the required methods and that is not vectorized as shown in
   the example above. If one wants to apply a numerical inversion method to a
   distribution defined in SciPy, please also take a look at
-  {class}`scipy.stats.sampling.FastGeneratorInversion`.
+  {class}`~scipy.stats.sampling.FastGeneratorInversion`.
 ```
 
 In the above example, we have set up an object of the
-{class}`scipy.stats.sampling.TransformedDensityRejection` method to sample from a
+{class}`~scipy.stats.sampling.TransformedDensityRejection` method to sample from a
 standard normal distribution. Now, we can start sampling from our
 distribution by calling the `rvs` method:
 
