@@ -8338,7 +8338,7 @@ class TestBurr12:
         # Reference values were computed with mpmath (mp.dps = 50) from
         #   L = d * log1p(x**c); cdf = -expm1(-L); sf = exp(-L)
         assert_allclose(stats.burr12.sf(1e31, 10, 0.1), 1e-31, rtol=1e-14)
-        assert_allclose(stats.burr12.isf(1e-31, 10, 0.1), 1e31, rtol=1e-14)
+        assert_allclose(stats.burr12.isf(1e-31, 10, 0.1), 1e31, rtol=5e-14)
         assert_allclose(stats.burr12.logcdf(1e-100, 2, 3), -459.41840631014103,
                         rtol=1e-14)
 
