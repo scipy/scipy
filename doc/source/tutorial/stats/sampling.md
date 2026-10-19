@@ -57,8 +57,8 @@ These generators are based on important concepts:
   We just generate a uniformly $U(0,1)$ distributed random number U and
   return $X = F^{-1}(U)$. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
-the inverse (e.g. {func}`scipy.special.ndtri`,
-{func}`scipy.special.stdtrit`). In general, the implementation of special
+  the inverse (e.g. {func}`scipy.special.ndtri`,
+  {func}`scipy.special.stdtrit`). In general, the implementation of special
   functions is quite slow compared to the inversion methods in UNU.RAN,
   namely, {class}`~scipy.stats.sampling.NumericalInversePolynomial` and
   {class}`~scipy.stats.sampling.NumericalInverseHermite`.
