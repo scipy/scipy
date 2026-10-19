@@ -392,8 +392,6 @@ def _validate_indices(key, self_shape, self_format):
             index_ndim += 1
         # bool array (checked in first pass)
         elif idx.dtype.kind == 'b':
-            if not hasattr(idx, 'nonzero'):
-                idx = np.asarray(idx)
             tmp_ndim = index_ndim + idx.ndim
             mid_shape = self_shape[index_ndim:tmp_ndim]
             if idx.shape != mid_shape:
@@ -489,5 +487,7 @@ def _compatible_boolean_index(idx, desired_ndim):
         idx = np.asanyarray(idx)
 
     if idx.dtype.kind == 'b':
+        if not hasattr(idx, 'nonzero'):
+            idx = np.asarray(idx, dtype=bool)
         return idx
     return None
