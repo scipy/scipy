@@ -4147,7 +4147,8 @@ class genhyperbolic_gen(rv_continuous):
         will be -inf or x1 will be inf.
         """
         user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
-        llc = LowLevelCallable(_special_callbacks._genhyperbolic_pdf_callback, user_data)
+        llc = LowLevelCallable(_special_callbacks._genhyperbolic_pdf_callback,
+                               user_data)
         d = np.sqrt((a + b)*(a - b))
         mean = b/d * sc.kv(p + 1, d) / sc.kv(p, d)
         epsrel = 1e-10
