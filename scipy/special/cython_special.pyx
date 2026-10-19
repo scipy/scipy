@@ -1177,6 +1177,9 @@ cdef extern from r"cython_special_wrappers.h":
     void special_airye(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void special_cairye(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
 
+    npy_double xsf_eval_gegenbauer(npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_gegenbauer(npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_gegenbauer_l(npy_intp, npy_double, npy_double) nogil
     npy_double xsf_eval_genlaguerre(npy_double, npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_genlaguerre(npy_double, npy_double, npy_cdouble) nogil
     npy_double xsf_eval_genlaguerre_l(npy_intp, npy_double, npy_double) nogil
@@ -1548,18 +1551,6 @@ cdef _proto_eval_chebyu_double__t *_proto_eval_chebyu_double__t_var = &_func_eva
 from .orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
 ctypedef double _proto_eval_chebyu_l_t(Py_ssize_t, double) noexcept nogil
 cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
-
-from .orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
-ctypedef double complex _proto_eval_gegenbauer_double_complex__t(double, double, double complex) noexcept nogil
-cdef _proto_eval_gegenbauer_double_complex__t *_proto_eval_gegenbauer_double_complex__t_var = &_func_eval_gegenbauer[double_complex]
-
-from .orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
-ctypedef double _proto_eval_gegenbauer_double__t(double, double, double) noexcept nogil
-cdef _proto_eval_gegenbauer_double__t *_proto_eval_gegenbauer_double__t_var = &_func_eval_gegenbauer[double]
-
-from .orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
-ctypedef double _proto_eval_gegenbauer_l_t(Py_ssize_t, double, double) noexcept nogil
-cdef _proto_eval_gegenbauer_l_t *_proto_eval_gegenbauer_l_t_var = &_func_eval_gegenbauer_l
 
 from .orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) noexcept nogil
@@ -2100,13 +2091,15 @@ cpdef Dd_number_t eval_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t eval_gegenbauer(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_gegenbauer"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_gegenbauer[double_complex](x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_gegenbauer(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_gegenbauer[double](x0, x1, x2)
+        return xsf_eval_gegenbauer(x0, x1, x2)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_gegenbauer_l(x0, x1, x2)
+        return xsf_eval_gegenbauer_l(<npy_intp>x0, x1, x2)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_gegenbauer_l(x0, x1, x2)
+        return xsf_eval_gegenbauer_l(<npy_intp>x0, x1, x2)
 
 cpdef Dd_number_t eval_genlaguerre(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_genlaguerre"""

@@ -2089,6 +2089,87 @@ const char *erfinv_doc = R"(
 
     )";
 
+const char *eval_gegenbauer_doc = R"(
+    eval_gegenbauer(n, alpha, x, out=None)
+
+    Evaluate Gegenbauer (ultraspherical) polynomial at a point.
+
+    The Gegenbauer polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        C_n^{(\alpha)}(x) = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - x)/2).
+
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter.
+    x : array_like
+        Points at which to evaluate the Gegenbauer polynomial.
+    out : ndarray, optional
+        Optional output array for the function values.
+
+    Returns
+    -------
+    C : scalar or ndarray
+        Values of the Gegenbauer polynomial.
+
+    See Also
+    --------
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+    gegenbauer : Gegenbauer polynomial object
+    hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E9
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_gegenbauer
+    >>> import matplotlib.pyplot as plt
+
+    This is the parameter value that we'll use in this example.
+
+    >>> alpha = 1.25
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_gegenbauer(3, alpha, [0, 0.25, 0.5])
+    array([ 0.        , -1.21582031, -1.2890625 ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_gegenbauer(n, alpha, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Gegenbauer Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel(r"$C_n^{(\alpha)}(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+
+    )";
+
 const char *eval_genlaguerre_doc = R"(
     eval_genlaguerre(n, alpha, x, out=None)
 

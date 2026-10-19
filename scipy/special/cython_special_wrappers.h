@@ -226,6 +226,9 @@ double xsf_struve_l(double v, double z);
 
 // Orthogonal Polynomial
 
+double xsf_eval_gegenbauer(double n, double alpha, double x);
+npy_cdouble xsf_ceval_gegenbauer(double n, double alpha, npy_cdouble x);
+double xsf_eval_gegenbauer_l(npy_intp n, double alpha, double x);
 double xsf_eval_genlaguerre(double n, double alpha, double x);
 npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x);
 double xsf_eval_genlaguerre_l(npy_intp n, double alpha, double x);
