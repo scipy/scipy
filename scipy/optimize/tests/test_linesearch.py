@@ -17,7 +17,7 @@ from scipy._lib._array_api import (
 )
 from scipy._external import array_api_extra as xpx
 import scipy.optimize._linesearch as ls
-from scipy.optimize._linesearch import line_search_wolfe2
+from scipy.optimize._linesearch import line_search_wolfe1, line_search_wolfe2
 from scipy.optimize._linesearch import LineSearchWarning
 
 
@@ -318,6 +318,25 @@ class TestLineSearch:
             assert_fp_equal(fv, f(x + s*p))
             assert_line_armijo(x, p, s, f, err_msg=name)
         assert c >= 9
+
+    @pytest.mark.parametrize("x", [1.5, 5])
+    @pytest.mark.parametrize(["c1", "c2"], [(0.4, 0.9), (0.8, 0.9), (0.1, 0.2)])
+    @pytest.mark.parametrize("ls", [line_search_wolfe2, line_search_wolfe1])
+    def test_line_search_with_c1(self, ls, c1, c2, x):
+        """Test that line search with different values of c1 with 0 < c1 < c2 < 1.
+
+        We set up a function and starting value such that the cubic extrapolation
+        _cubicmin of _zoom does not work and should resort to the quadratic
+        extrapolation _quadmin.
+
+        See https://github.com/scipy/scipy/issues/26386.
+        """
+        f = lambda x: x[0]**4
+        g = lambda x: 4 * x**3
+        x = np.array([x])  # start value
+        p = -g(x)
+        alpha, _, _, _, _, _ = ls(f, g, x, p, c1=c1, c2=c2)
+        assert_line_armijo(x, p, alpha, f)
 
     # -- More specific tests
 

@@ -514,26 +514,24 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
 
     """
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
-
-    with np.errstate(divide='raise', over='raise', invalid='raise'):
-        try:
-            C = fpa
-            db = b - a
-            dc = c - a
-            denom = (db * dc) ** 2 * (db - dc)
-            D_00 = dc ** 2
-            D_01 = -db ** 2
-            D_10 = -dc ** 3
-            D_11 = db ** 3
-            v_0 = fb - fa - C * db
-            v_1 = fc - fa - C * dc
-            # [A, B] = (D @ v) / denom
-            A = (D_00 * v_0 + D_01 * v_1) / denom
-            B = (D_10 * v_0 + D_11 * v_1) / denom
-            radical = B * B - 3 * A * C
-            xmin = a + (-B + math.sqrt(radical)) / (3 * A)
-        except ArithmeticError:
-            return None
+    try:
+        C = fpa
+        db = b - a
+        dc = c - a
+        denom = (db * dc) ** 2 * (db - dc)
+        D_00 = dc ** 2
+        D_01 = -db ** 2
+        D_10 = -dc ** 3
+        D_11 = db ** 3
+        v_0 = fb - fa - C * db
+        v_1 = fc - fa - C * dc
+        # [A, B] = (D @ v) / denom
+        A = (D_00 * v_0 + D_01 * v_1) / denom
+        B = (D_10 * v_0 + D_11 * v_1) / denom
+        radical = B * B - 3 * A * C
+        xmin = a + (-B + math.sqrt(radical)) / (3 * A)
+    except (ArithmeticError, ValueError) as e:
+        return None
     if not math.isfinite(xmin):
         return None
     return xmin
@@ -546,15 +544,14 @@ def _quadmin(a, fa, fpa, b, fb):
 
     """
     # f(x) = B*(x-a)^2 + C*(x-a) + D
-    with np.errstate(divide='raise', over='raise', invalid='raise'):
-        try:
-            D = fa
-            C = fpa
-            db = b - a * 1.0
-            B = (fb - D - C * db) / (db * db)
-            xmin = a - C / (2.0 * B)
-        except ArithmeticError:
-            return None
+    try:
+        D = fa
+        C = fpa
+        db = b - a * 1.0
+        B = (fb - D - C * db) / (db * db)
+        xmin = a - C / (2.0 * B)
+    except (ArithmeticError, ValueError) as e:
+        return None
     if not math.isfinite(xmin):
         return None
     return xmin
