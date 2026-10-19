@@ -165,6 +165,14 @@ void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
 }
 
+double xsf_eval_gegenbauer(double n, double alpha, double x) { return xsf::eval_gegenbauer(n, alpha, x); }
+
+npy_cdouble xsf_ceval_gegenbauer(double n, double alpha, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_gegenbauer(n, alpha, to_complex(x)));
+}
+
+double xsf_eval_gegenbauer_l(npy_intp n, double alpha, double x) { return xsf::eval_gegenbauer(n, alpha, x); }
+
 double xsf_eval_genlaguerre(double n, double alpha, double x) { return xsf::eval_genlaguerre(n, alpha, x); }
 
 npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x) {

@@ -59,13 +59,6 @@
             "eval_chebyu_l": "pd->d"
         }
     },
-    "eval_gegenbauer": {
-        "orthogonal_eval.pxd": {
-            "eval_gegenbauer[double complex]": "ddD->D",
-            "eval_gegenbauer[double]": "ddd->d",
-            "eval_gegenbauer_l": "pdd->d"
-        }
-    },
     "eval_legendre": {
         "orthogonal_eval.pxd": {
             "eval_legendre[double complex]": "dD->D",

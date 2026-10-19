@@ -24,7 +24,7 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport exp, floor, fabs, log, sin, isnan, NAN, M_PI as pi
+from libc.math cimport fabs
 
 from numpy cimport npy_cdouble
 from ._complexstuff cimport (
@@ -35,9 +35,7 @@ from ._complexstuff cimport (
 
 cdef extern from "cython_special_wrappers.h" nogil:
     npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
-    double xsf_binom(double n, double k)
     double xsf_hyp2f1(double a, double b, double c, double x)
-    double xsf_gamma(double x)
     double xsf_beta(double a, double b)
 
 
@@ -50,85 +48,6 @@ cdef inline number_t hyp2f1(double a, double b, double c, number_t z) noexcept n
     else:
         r = xsf_chyp2f1(a, b, c, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
-
-#-----------------------------------------------------------------------------
-# Gegenbauer (Ultraspherical)
-#-----------------------------------------------------------------------------
-
-@cython.cdivision(True)
-cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexcept nogil:
-    cdef Py_ssize_t kk
-    cdef Py_ssize_t a, b
-    cdef double p, d
-    cdef double k
-    cdef int sign
-
-    if isnan(alpha) or isnan(x):
-        return NAN
-
-    if alpha == 0.0:
-        return 0.0
-    if n < 0:
-        return 0.0
-    if n == 0:
-        return 1.0
-    if n == 1:
-        return 2*alpha*x
-
-    # Symmetry property: C_n^alpha(-x) = (-1)^n C_n^alpha(x) for integer n
-    sign = -1 if (x < 0 and n % 2) else 1
-    x = fabs(x)
-    
-    if x < 1e-5:
-        # Power series rather than recurrence due to loss of precision
-        # http://functions.wolfram.com/Polynomials/GegenbauerC3/02/
-        a = n//2
-
-        d = 1 if a % 2 == 0 else -1
-        d /= xsf_beta(alpha, 1 + a)
-        if n == 2*a:
-            d /= (a + alpha)
-        else:
-            d *= 2*x
-
-        p = 0
-        for kk in range(a+1):
-            p += d
-            d *= -4*x**2 * (a - kk) * (-a + alpha + kk + n) / (
-                (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) < 1e-20*fabs(p):
-                # converged
-                break
-        return sign * p
-    else:
-        d = x - 1
-        p = x
-        for kk in range(n-1):
-            k = kk+1.0
-            d = (2*(k+alpha)/(k+2*alpha))*(x-1)*p + (k/(k+2*alpha)) * d
-            p = d + p
-
-        if fabs(alpha/n) < 1e-8:
-            # avoid loss of precision
-            return sign * 2*alpha/n * p
-        else:
-            return sign * xsf_binom(n+2*alpha-1, n)*p
-
-@cython.cdivision(True)
-cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcept nogil:
-    # If n is an integer, use more stable `eval_gegenbauer_l`
-    if number_t is double and n >= 0 and n < 1e10 and n == <long long> n:
-        return <number_t> eval_gegenbauer_l(<Py_ssize_t> n, alpha, <double> x)
-
-    cdef double a, b, c, d
-    cdef number_t g
-    
-    d = xsf_gamma(n+2*alpha)/xsf_gamma(1+n)/xsf_gamma(2*alpha)
-    a = -n
-    b = n + 2*alpha
-    c = alpha + 0.5
-    g = (1-x)/2.0
-    return d * hyp2f1(a, b, c, g)
 
 #-----------------------------------------------------------------------------
 # Chebyshev 1st kind (T)

@@ -194,6 +194,7 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_gegenbauer_doc;
 extern const char *eval_genlaguerre_doc;
 extern const char *eval_hermite_doc;
 extern const char *eval_hermitenorm_doc;
@@ -796,6 +797,17 @@ _special_ufuncs_module_exec(PyObject *module)
         {static_cast<xsf::numpy::fff_f>(xsf::nrdtrisd), static_cast<xsf::numpy::ddd_d>(xsf::nrdtrisd)},
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
+
+    PyObject *eval_gegenbauer = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::idd_d>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::ldd_d>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::qdd_d>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::fff_f>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::ffF_F>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::ddd_d>(xsf::eval_gegenbauer),
+         static_cast<xsf::numpy::ddD_D>(xsf::eval_gegenbauer)},
+        "eval_gegenbauer", eval_gegenbauer_doc);
+    PyModule_AddObjectRef(module, "eval_gegenbauer", eval_gegenbauer);
 
     PyObject *eval_genlaguerre = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::idd_d>(xsf::eval_genlaguerre),

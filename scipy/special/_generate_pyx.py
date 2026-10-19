@@ -214,6 +214,7 @@ special_ufuncs = [
     "erfcx",
     "erfi",
     "erfinv",
+    "eval_gegenbauer",
     "eval_genlaguerre",
     "eval_hermite",
     "eval_hermitenorm",
