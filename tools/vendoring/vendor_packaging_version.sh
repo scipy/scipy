@@ -1,6 +1,15 @@
-#!/bin/bash
+# /// conda-script
+# channels = ["https://prefix.dev/conda-forge"]
+# entrypoint = "brush -x ${SCRIPT}"
+#
+# [dependencies]
+# brush = "*"
+# uutils-coreutils = "*"
+# /// end-conda-script
 
 # Vendors `packaging.version` from https://github.com/pypa/packaging
+# Can be run via `pixi run --script tools/vendoring/vendor_packaging_version.sh`
+# Must be run from the repo root
 
 set -o nounset
 set -o errexit
@@ -8,7 +17,6 @@ set -o errexit
 REPO_URL="https://github.com/pypa/packaging"
 COMMIT_HASH="f58537628042c7f29780b9d33f31597e7fc9d664"
 
-# XXX: run this from the repo top level like `./tools/vendoring/vendor_packaging_version.sh`
 ROOT_DIR="scipy/_external/packaging_version/src"
 
 rm -rf $ROOT_DIR
