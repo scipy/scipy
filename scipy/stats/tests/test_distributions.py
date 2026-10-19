@@ -8328,6 +8328,8 @@ class TestBurr:
                         rtol=1e-14)
         assert_allclose(stats.burr.cdf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
         assert_allclose(stats.burr.ppf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
+        assert_allclose(stats.burr.cdf(4000, 2, 1e7), 0.53526143897331468,
+                        rtol=1e-14)
 
 
 class TestBurr12:
