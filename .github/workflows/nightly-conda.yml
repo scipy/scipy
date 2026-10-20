@@ -54,12 +54,11 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: scientific-python-nightly-forge
+      name: scientific-python-nightly
       url: https://prefix.dev/scientific-python/scientific-python-nightly
 
     permissions:
       contents: read
-      attestations: write # generate and store attestations
       issues: write # report failures
       id-token: write # upload to prefix.dev
 

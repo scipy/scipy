@@ -1,5 +1,5 @@
 The nightly conda package build/upload to the
-[`sp-nightly-forge`](https://prefix.dev/channels/sp-nightly-forge) channel failed.
+[`scientific-python-nightly`](https://prefix.dev/channels/@scientific-python/scientific-python-nightly) channel failed.
 
 - Workflow: {{WORKFLOW}}
 - Run ID: {{RUN_ID}}
