@@ -331,8 +331,12 @@ class TestLineSearch:
 
         See https://github.com/scipy/scipy/issues/26386.
         """
-        f = lambda x: x[0]**4
-        g = lambda x: 4 * x**3
+        def f(x):
+            return x[0]**4
+
+        def g(x):
+            return 4 * x**3
+
         x = np.array([x])  # start value
         p = -g(x)
         alpha, _, _, _, _, _ = ls(f, g, x, p, c1=c1, c2=c2)

@@ -530,7 +530,7 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
         B = (D_10 * v_0 + D_11 * v_1) / denom
         radical = B * B - 3 * A * C
         xmin = a + (-B + math.sqrt(radical)) / (3 * A)
-    except (ArithmeticError, ValueError) as e:
+    except (ArithmeticError, ValueError):
         return None
     if not math.isfinite(xmin):
         return None
@@ -550,7 +550,7 @@ def _quadmin(a, fa, fpa, b, fb):
         db = b - a * 1.0
         B = (fb - D - C * db) / (db * db)
         xmin = a - C / (2.0 * B)
-    except (ArithmeticError, ValueError) as e:
+    except (ArithmeticError, ValueError):
         return None
     if not math.isfinite(xmin):
         return None
