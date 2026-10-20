@@ -402,6 +402,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
     dsave = np.zeros(29, dtype=np.float64)
 
     n_iterations = 0
+    accepted_f = None
 
     while True:
         # g may become float32 if a user provides a function that calculates
@@ -418,9 +419,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
             f, g = func_and_grad(x)
+            if accepted_f is None:
+                accepted_f = f
         elif task[0] == 1:
             # new iteration
             n_iterations += 1
+            accepted_f = f
 
             intermediate_result = OptimizeResult(x=x, fun=f)
             if _call_callback_maybe_halt(callback, intermediate_result):
@@ -434,6 +438,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
                 task[1] = 502
         else:
             break
+
+    if task[0] == 8 and accepted_f is not None:
+        # The C wrapper takes f by value, so its restored value is lost when
+        # a failed line search restores the accepted x and g in place.
+        f = accepted_f
 
     if task[0] == 4:
         warnflag = 0
