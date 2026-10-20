@@ -3436,8 +3436,8 @@ class _TestFancyIndexing:
 
         assert_equal(toarray(A[row_mask]), B[row_mask])
         assert_equal(toarray(A[:, col_mask]), B[:, col_mask])
-        row_mask_object_as_bool = np.asarray(row_mask_object, dtype=bool)
-        assert_equal(toarray(A[row_mask_object]), B[row_mask_object_as_bool])
+        with pytest.raises(IndexError, match='non-boolean dtype'):
+            _ = A[row_mask_object]
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True,

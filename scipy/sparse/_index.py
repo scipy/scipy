@@ -488,6 +488,11 @@ def _compatible_boolean_index(idx, desired_ndim):
 
     if idx.dtype.kind == 'b':
         if not hasattr(idx, 'nonzero'):
-            idx = np.asarray(idx, dtype=bool)
+            idx = np.asarray(idx)
+            if idx.dtype.kind != 'b':
+                raise IndexError(
+                    "bool index array-like converted to non-boolean dtype "
+                    f"{idx.dtype}"
+                )
         return idx
     return None
