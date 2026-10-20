@@ -27,13 +27,15 @@
     #define SCIPY_RESTRICT restrict
 #endif
 
-// AVX2 dispatch requires __builtin_cpu_supports and __attribute__((target)),
-// available on GCC and Clang on x86-64, including MinGW-w64 targets. clang-cl
-// (MSVC ABI) uses lld-link which cannot resolve __cpu_model from compiler-rt.
+// AVX2 kernels are built whenever the compiler supports __attribute__((target))
+// and __builtin_cpu_supports, regardless of the build machine's CPU; the
+// constructor below picks AVX2 or scalar at load time. This covers GCC and Clang
+// on x86-64, including MinGW-w64 targets. clang-cl (MSVC ABI) is excluded since
+// lld-link cannot resolve __cpu_model from compiler-rt.
 
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
 #include <immintrin.h>
-#define SCIPY_HAVE_AVX2_TARGET 1
+#define SCIPY_AVX2_DISPATCH 1
 #endif
 
 
@@ -184,7 +186,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
  * Bandwidth detection — AVX2 implementations and dynamic dispatch
  */
 
-#ifdef SCIPY_HAVE_AVX2_TARGET
+#ifdef SCIPY_AVX2_DISPATCH
 
     __attribute__((target("avx2")))
     static void
@@ -593,7 +595,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
         }
     }
 
-#endif /* SCIPY_HAVE_AVX2_TARGET */
+#endif /* SCIPY_AVX2_DISPATCH */
 
 
 /**
@@ -603,7 +605,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 static inline void
 bandwidth_s(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-#ifdef SCIPY_HAVE_AVX2_TARGET
+#ifdef SCIPY_AVX2_DISPATCH
     bandwidth_s_impl(data, n, m, lower_band, upper_band);
 #else
     bandwidth_s_scalar(data, n, m, lower_band, upper_band);
@@ -613,7 +615,7 @@ bandwidth_s(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* low
 static inline void
 bandwidth_d(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-#ifdef SCIPY_HAVE_AVX2_TARGET
+#ifdef SCIPY_AVX2_DISPATCH
     bandwidth_d_impl(data, n, m, lower_band, upper_band);
 #else
     bandwidth_d_scalar(data, n, m, lower_band, upper_band);
@@ -623,7 +625,7 @@ bandwidth_d(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lo
 static inline void
 bandwidth_c(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-#ifdef SCIPY_HAVE_AVX2_TARGET
+#ifdef SCIPY_AVX2_DISPATCH
     bandwidth_c_impl(data, n, m, lower_band, upper_band);
 #else
     bandwidth_c_scalar(data, n, m, lower_band, upper_band);
@@ -633,7 +635,7 @@ bandwidth_c(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* l
 static inline void
 bandwidth_z(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
-#ifdef SCIPY_HAVE_AVX2_TARGET
+#ifdef SCIPY_AVX2_DISPATCH
     bandwidth_z_impl(data, n, m, lower_band, upper_band);
 #else
     bandwidth_z_scalar(data, n, m, lower_band, upper_band);
