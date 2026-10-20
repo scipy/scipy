@@ -166,6 +166,7 @@ bench = [
     "asv==0.6.6",
     # 0.2.2-0.3.0 run a class's setup() before its setup_cache()
     "asv_runner>=0.3.1",
+    "py-rattler",
     "pyfftw",
     "cffi", 
 ]

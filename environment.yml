@@ -28,7 +28,9 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
-  - asv >=0.6
+  - asv >=0.6.6
+  - asv_runner >=0.3.1
+  - py-rattler
   - conda-build
   - hypothesis
   - array-api-strict>=2.3.1

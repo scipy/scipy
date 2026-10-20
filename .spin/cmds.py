@@ -948,7 +948,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
                 )
             run_args = ['--set-commit-hash', _commit_to_sha('HEAD')]
         cmd = [
-            'asv', 'run', '--show-stderr', '--python=same'
+            'asv', 'run', '--show-stderr', '--python=same', '--config=asv.conf.jsonc'
         ] + run_args + bench_args
         _run_asv(cmd, mem_limit=mem_limit)
     else:

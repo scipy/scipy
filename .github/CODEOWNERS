@@ -60,7 +60,7 @@ scipy/stats/_unuran/  @tirthasheshpatel
 # Testing infrastructure
 pytest.ini  @larsoner
 .coveragerc  @larsoner
-benchmarks/asv.conf.json  @larsoner
+benchmarks/asv.conf.jsonc  @larsoner
 
 # Tools
 tools/  @rgommers
