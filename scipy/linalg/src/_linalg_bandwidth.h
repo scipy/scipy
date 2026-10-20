@@ -28,10 +28,10 @@
 #endif
 
 // AVX2 dispatch requires __builtin_cpu_supports and __attribute__((target)),
-// available on GCC and Clang on non-Windows x86-64. Clang on Windows uses
-// lld-link which cannot resolve __cpu_model from compiler-rt.
+// available on GCC and Clang on x86-64, including MinGW-w64 targets. clang-cl
+// (MSVC ABI) uses lld-link which cannot resolve __cpu_model from compiler-rt.
 
-#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
 #include <immintrin.h>
 #define SCIPY_HAVE_AVX2_TARGET 1
 #endif
@@ -579,6 +579,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
     __attribute__((constructor))
     static void bandwidth_resolve(void) {
+        __builtin_cpu_init();
         if (__builtin_cpu_supports("avx2")) {
             bandwidth_s_impl = bandwidth_s_avx2;
             bandwidth_d_impl = bandwidth_d_avx2;
