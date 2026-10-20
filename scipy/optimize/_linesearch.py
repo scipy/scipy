@@ -12,7 +12,7 @@ Functions
 
 """
 import math
-from warnings import warn
+import warnings
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, xp_capabilities
@@ -345,7 +345,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             extra_condition2, maxiter=maxiter)
 
     if derphi_star is None:
-        warn('The line search algorithm did not converge',
+        warnings.warn('The line search algorithm did not converge',
              LineSearchWarning, stacklevel=2)
     else:
         # derphi_star is a number (derphi) -- so use the most recently
@@ -458,7 +458,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 msg = "The line search algorithm could not find a solution " + \
                       f"less than or equal to amax: {amax}"
 
-            warn(msg, LineSearchWarning, stacklevel=2)
+            warnings.warn(msg, LineSearchWarning, stacklevel=2)
             break
 
         not_first_iteration = i > 0
@@ -499,7 +499,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         alpha_star = alpha1
         phi_star = phi_a1
         derphi_star = None
-        warn('The line search algorithm did not converge',
+        warnings.warn('The line search algorithm did not converge',
              LineSearchWarning, stacklevel=2)
 
     return alpha_star, phi_star, phi0, derphi_star
@@ -514,24 +514,26 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
 
     """
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
-    try:
-        C = fpa
-        db = b - a
-        dc = c - a
-        denom = (db * dc) ** 2 * (db - dc)
-        D_00 = dc ** 2
-        D_01 = -db ** 2
-        D_10 = -dc ** 3
-        D_11 = db ** 3
-        v_0 = fb - fa - C * db
-        v_1 = fc - fa - C * dc
-        # [A, B] = (D @ v) / denom
-        A = (D_00 * v_0 + D_01 * v_1) / denom
-        B = (D_10 * v_0 + D_11 * v_1) / denom
-        radical = B * B - 3 * A * C
-        xmin = a + (-B + math.sqrt(radical)) / (3 * A)
-    except (ArithmeticError, ValueError):
-        return None
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        try:
+            C = fpa
+            db = b - a
+            dc = c - a
+            denom = (db * dc) ** 2 * (db - dc)
+            D_00 = dc ** 2
+            D_01 = -db ** 2
+            D_10 = -dc ** 3
+            D_11 = db ** 3
+            v_0 = fb - fa - C * db
+            v_1 = fc - fa - C * dc
+            # [A, B] = (D @ v) / denom
+            A = (D_00 * v_0 + D_01 * v_1) / denom
+            B = (D_10 * v_0 + D_11 * v_1) / denom
+            radical = B * B - 3 * A * C
+            xmin = a + (-B + math.sqrt(radical)) / (3 * A)
+        except (ArithmeticError, ValueError, RuntimeWarning):
+            return None
     if not math.isfinite(xmin):
         return None
     return xmin
@@ -544,14 +546,16 @@ def _quadmin(a, fa, fpa, b, fb):
 
     """
     # f(x) = B*(x-a)^2 + C*(x-a) + D
-    try:
-        D = fa
-        C = fpa
-        db = b - a * 1.0
-        B = (fb - D - C * db) / (db * db)
-        xmin = a - C / (2.0 * B)
-    except (ArithmeticError, ValueError):
-        return None
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        try:
+            D = fa
+            C = fpa
+            db = b - a * 1.0
+            B = (fb - D - C * db) / (db * db)
+            xmin = a - C / (2.0 * B)
+        except (ArithmeticError, ValueError, RuntimeWarning):
+            return None
     if not math.isfinite(xmin):
         return None
     return xmin
