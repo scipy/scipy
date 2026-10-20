@@ -1,0 +1,123 @@
+name: Upload nightly conda packages
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *" # once per day
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-artifacts:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runs-on }}
+    if: github.repository == 'scipy/scipy'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-64
+            runs-on: ubuntu-latest
+          - platform: linux-aarch64
+            runs-on: ubuntu-24.04-arm
+          - platform: osx-arm64
+            runs-on: macos-latest
+          - platform: win-64
+            runs-on: windows-2025
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514 # v0.11.0
+        with:
+          cache: false
+          run-install: false
+
+      - name: build the package
+        run: pixi publish --target-dir dist
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: releases-${{ matrix.platform }}
+          path: dist/*.conda
+
+  upload:
+    needs: build-artifacts
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: scientific-python-nightly-forge
+      url: https://prefix.dev/scientific-python/scientific-python-nightly
+
+    permissions:
+      contents: read
+      attestations: write # generate and store attestations
+      issues: write # report failures
+      id-token: write # upload to prefix.dev
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: releases-*
+          merge-multiple: true
+          path: dist
+
+      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514 # v0.11.0
+        with:
+          run-install: false
+
+      - name: Upload packages
+        id: upload
+        run: |
+          pixi upload prefix \
+            -vvv \
+            -c scientific-python/scientific-python-nightly \
+            --generate-attestation \
+            --force \
+            dist/scipy-*.conda
+
+      - name: Report failures
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+        run: |
+          # Read the template
+          template=$(cat .github/nightly-conda-failure-template.md)
+
+          # Replace placeholders
+          issue_body="${template//\{\{WORKFLOW\}\}/$GITHUB_WORKFLOW}"
+          issue_body="${issue_body//\{\{RUN_ID\}\}/${{ github.run_id }}}"
+          issue_body="${issue_body//\{\{RUN_URL\}\}/${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}}"
+          issue_body="${issue_body//\{\{DATE\}\}/$(date -u)}"
+
+          # Check for existing open issue with same title
+          issue_title="Nightly conda build/upload failed"
+          existing_issue=$(gh issue list --state open --label "CI" --search "\"$issue_title\" in:title" --json number --jq '.[0].number // empty')
+
+          if [ -n "$existing_issue" ]; then
+            echo "Found existing open issue #$existing_issue, updating it..."
+            echo "$issue_body" | gh issue edit "$existing_issue" --body-file -
+            echo "Updated existing issue #$existing_issue"
+          else
+            echo "No existing open issue found, creating new one..."
+            echo "$issue_body" | gh issue create \
+              --title "$issue_title" \
+              --body-file - \
+              --label "CI"
+            echo "Created new issue"
+          fi
