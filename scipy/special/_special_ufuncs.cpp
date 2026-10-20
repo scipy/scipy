@@ -200,7 +200,9 @@ extern const char *eval_hermite_doc;
 extern const char *eval_hermitenorm_doc;
 extern const char *eval_jacobi_doc;
 extern const char *eval_laguerre_doc;
+extern const char *eval_legendre_doc;
 extern const char *eval_sh_jacobi_doc;
+extern const char *eval_sh_legendre_doc;
 extern const char *exp10_doc;
 extern const char *exp1_doc;
 extern const char *exp2_doc;
@@ -852,6 +854,17 @@ _special_ufuncs_module_exec(PyObject *module)
         "eval_laguerre", eval_laguerre_doc);
     PyModule_AddObjectRef(module, "eval_laguerre", eval_laguerre);
 
+    PyObject *eval_legendre = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_legendre),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_legendre),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_legendre),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_legendre),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_legendre),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_legendre),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_legendre)},
+        "eval_legendre", eval_legendre_doc);
+    PyModule_AddObjectRef(module, "eval_legendre", eval_legendre);
+
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::iddd_d>(xsf::eval_sh_jacobi),
          static_cast<xsf::numpy::lddd_d>(xsf::eval_sh_jacobi),
@@ -862,6 +875,17 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::dddD_D>(xsf::eval_sh_jacobi)},
         "eval_sh_jacobi", eval_sh_jacobi_doc);
     PyModule_AddObjectRef(module, "eval_sh_jacobi", eval_sh_jacobi);
+
+    PyObject *eval_sh_legendre = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_sh_legendre),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_sh_legendre)},
+        "eval_sh_legendre", eval_sh_legendre_doc);
+    PyModule_AddObjectRef(module, "eval_sh_legendre", eval_sh_legendre);
 
     PyObject *_sinpi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::sinpi), static_cast<xsf::numpy::d_d>(xsf::sinpi),
