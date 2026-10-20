@@ -1191,9 +1191,15 @@ cdef extern from r"cython_special_wrappers.h":
     npy_double xsf_eval_laguerre(npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_laguerre(npy_double, npy_cdouble) nogil
     npy_double xsf_eval_laguerre_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_legendre(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_legendre(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_legendre_l(npy_intp, npy_double) nogil
     npy_double xsf_eval_sh_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_sh_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
     npy_double xsf_eval_sh_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
+    npy_double xsf_eval_sh_legendre(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_sh_legendre(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_sh_legendre_l(npy_intp, npy_double) nogil
 
     npy_cdouble special_ccyl_hankel_1(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_1e(npy_double, npy_cdouble) nogil
@@ -1552,18 +1558,6 @@ from .orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
 ctypedef double _proto_eval_chebyu_l_t(Py_ssize_t, double) noexcept nogil
 cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
 
-from .orthogonal_eval cimport eval_legendre as _func_eval_legendre
-ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_legendre_double_complex__t *_proto_eval_legendre_double_complex__t_var = &_func_eval_legendre[double_complex]
-
-from .orthogonal_eval cimport eval_legendre as _func_eval_legendre
-ctypedef double _proto_eval_legendre_double__t(double, double) noexcept nogil
-cdef _proto_eval_legendre_double__t *_proto_eval_legendre_double__t_var = &_func_eval_legendre[double]
-
-from .orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
-ctypedef double _proto_eval_legendre_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_legendre_l_t *_proto_eval_legendre_l_t_var = &_func_eval_legendre_l
-
 from .orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double complex _proto_eval_sh_chebyt_double_complex__t(double, double complex) noexcept nogil
 cdef _proto_eval_sh_chebyt_double_complex__t *_proto_eval_sh_chebyt_double_complex__t_var = &_func_eval_sh_chebyt[double_complex]
@@ -1587,18 +1581,6 @@ cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_fu
 from .orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
 ctypedef double _proto_eval_sh_chebyu_l_t(Py_ssize_t, double) noexcept nogil
 cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-
-from .orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
-ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_sh_legendre_double_complex__t *_proto_eval_sh_legendre_double_complex__t_var = &_func_eval_sh_legendre[double_complex]
-
-from .orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
-ctypedef double _proto_eval_sh_legendre_double__t(double, double) noexcept nogil
-cdef _proto_eval_sh_legendre_double__t *_proto_eval_sh_legendre_double__t_var = &_func_eval_sh_legendre[double]
-
-from .orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
-ctypedef double _proto_eval_sh_legendre_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 
 from ._legacy cimport expn_unsafe as _func_expn_unsafe
 ctypedef double _proto_expn_unsafe_t(double, double) noexcept nogil
@@ -2151,13 +2133,15 @@ cpdef Dd_number_t eval_laguerre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t eval_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_legendre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_legendre[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_legendre(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_legendre[double](x0, x1)
+        return xsf_eval_legendre(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_legendre_l(x0, x1)
+        return xsf_eval_legendre_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_legendre_l(x0, x1)
+        return xsf_eval_legendre_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_sh_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_chebyt"""
@@ -2197,13 +2181,15 @@ cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_numbe
 cpdef Dd_number_t eval_sh_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_legendre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_sh_legendre[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_sh_legendre(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_sh_legendre[double](x0, x1)
+        return xsf_eval_sh_legendre(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_sh_legendre_l(x0, x1)
+        return xsf_eval_sh_legendre_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_sh_legendre_l(x0, x1)
+        return xsf_eval_sh_legendre_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.exp1"""

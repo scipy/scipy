@@ -23,9 +23,6 @@ References
 #------------------------------------------------------------------------------
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
-cimport cython
-from libc.math cimport fabs
-
 from numpy cimport npy_cdouble
 from ._complexstuff cimport (
     number_t,
@@ -36,7 +33,6 @@ from ._complexstuff cimport (
 cdef extern from "cython_special_wrappers.h" nogil:
     npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
     double xsf_hyp2f1(double a, double b, double c, double x)
-    double xsf_beta(double a, double b)
 
 
 # Fused type wrappers
@@ -161,71 +157,3 @@ cdef inline number_t eval_sh_chebyu(double n, number_t x) noexcept nogil:
 
 cdef inline double eval_sh_chebyu_l(Py_ssize_t n, double x) noexcept nogil:
     return eval_chebyu_l(n, 2*x-1)
-
-#-----------------------------------------------------------------------------
-# Legendre
-#-----------------------------------------------------------------------------
-
-cdef inline number_t eval_legendre(double n, number_t x) noexcept nogil:
-    cdef double a, b, c, d
-    cdef number_t g
-
-    d = 1
-    a = -n
-    b = n+1
-    c = 1
-    g = 0.5*(1-x)
-    return d*hyp2f1(a, b, c, g)
-
-@cython.cdivision(True)
-cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
-    cdef Py_ssize_t kk, a
-    cdef double p, d
-    cdef double k
-
-    if n < 0:
-        # symmetry
-        n = -n - 1
-
-    if n == 0:
-        return 1.0
-    elif n == 1:
-        return x
-    elif fabs(x) < 1e-5:
-        # Power series rather than recurrence due to loss of precision
-        # http://functions.wolfram.com/Polynomials/LegendreP/02/
-        a = n//2
-
-        d = 1 if a % 2 == 0 else -1
-        if n == 2*a:
-            d *= -2 / xsf_beta(a + 1, -0.5)
-        else:
-            d *= 2 * x / xsf_beta(a + 1, 0.5)
-
-        p = 0
-        for kk in range(a+1):
-            p += d
-            d *= -2 * x**2 * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
-                (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
-            if fabs(d) < 1e-20*fabs(p):
-                # converged
-                break
-        return p
-    else:
-        d = x - 1
-        p = x
-        for kk in range(n-1):
-            k = kk+1.0
-            d = ((2*k+1)/(k+1))*(x-1)*p + (k/(k+1)) * d
-            p = d + p
-        return p
-
-#-----------------------------------------------------------------------------
-# Legendre Shifted
-#-----------------------------------------------------------------------------
-
-cdef inline number_t eval_sh_legendre(double n, number_t x) noexcept nogil:
-    return eval_legendre(n, 2*x-1)
-
-cdef inline double eval_sh_legendre_l(Py_ssize_t n, double x) noexcept nogil:
-    return eval_legendre_l(n, 2*x-1)

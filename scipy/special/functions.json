@@ -59,13 +59,6 @@
             "eval_chebyu_l": "pd->d"
         }
     },
-    "eval_legendre": {
-        "orthogonal_eval.pxd": {
-            "eval_legendre[double complex]": "dD->D",
-            "eval_legendre[double]": "dd->d",
-            "eval_legendre_l": "pd->d"
-        }
-    },
     "eval_sh_chebyt": {
         "orthogonal_eval.pxd": {
             "eval_sh_chebyt[double complex]": "dD->D",
@@ -78,13 +71,6 @@
             "eval_sh_chebyu[double complex]": "dD->D",
             "eval_sh_chebyu[double]": "dd->d",
             "eval_sh_chebyu_l": "pd->d"
-        }
-    },
-    "eval_sh_legendre": {
-        "orthogonal_eval.pxd": {
-            "eval_sh_legendre[double complex]": "dD->D",
-            "eval_sh_legendre[double]": "dd->d",
-            "eval_sh_legendre_l": "pd->d"
         }
     },
     "expn": {

@@ -2556,6 +2556,90 @@ const char *eval_laguerre_doc = R"(
 
     )";
 
+const char *eval_legendre_doc = R"(
+    eval_legendre(n, x, out=None)
+
+    Evaluate Legendre polynomial at a point.
+
+    The Legendre polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.49 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Legendre polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    P : scalar or ndarray
+        Values of the Legendre polynomial
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    legendre : Legendre polynomial object
+    hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/15.9.E7
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_legendre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the zero-order Legendre polynomial at x = 0
+
+    >>> eval_legendre(0, 0)
+    1.0
+
+    Evaluate the first-order Legendre polynomial between -1 and 1
+
+    >>> x = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
+    >>> eval_legendre(1, x)
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
+
+    Evaluate Legendre polynomials of order 0 through 4 at x = 0
+
+    >>> eval_legendre(range(5), 0)
+    array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
+
+    Plot Legendre polynomials of order 0 through 4
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+    )";
+
 const char *eval_sh_jacobi_doc = R"(
     eval_sh_jacobi(n, p, q, x, out=None)
 
@@ -2637,6 +2721,77 @@ const char *eval_sh_jacobi_doc = R"(
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
+    )";
+
+const char *eval_sh_legendre_doc = R"(
+    eval_sh_legendre(n, x, out=None)
+
+    Evaluate shifted Legendre polynomial at a point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        P_n^*(x) = P_n(2x - 1)
+
+    where :math:`P_n` is a Legendre polynomial. See 22.2.11 in [AS]_
+    or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the value is
+        determined via the relation to `eval_legendre`.
+    x : array_like
+        Points at which to evaluate the shifted Legendre polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    P : scalar or ndarray
+        Values of the shifted Legendre polynomial
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    sh_legendre : shifted Legendre polynomial object
+    eval_legendre : evaluate Legendre polynomials
+    numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E10
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_legendre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_legendre(3, [0, 0.25, 0.5])
+    array([-1.    ,  0.4375,  0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     )";
 
 const char *lpmv_doc = R"(

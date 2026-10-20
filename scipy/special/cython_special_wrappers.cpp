@@ -203,6 +203,14 @@ npy_cdouble xsf_ceval_laguerre(double n, npy_cdouble x) {
 
 double xsf_eval_laguerre_l(npy_intp n, double x) { return xsf::eval_laguerre(n, x); }
 
+double xsf_eval_legendre(double n, double x) { return xsf::eval_legendre(n, x); }
+
+npy_cdouble xsf_ceval_legendre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_legendre(n, to_complex(x)));
+}
+
+double xsf_eval_legendre_l(npy_intp n, double x) { return xsf::eval_legendre(n, x); }
+
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
 
 npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
@@ -212,6 +220,14 @@ npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
 double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x) {
     return xsf::eval_sh_jacobi(n, p, q, x);
 }
+
+double xsf_eval_sh_legendre(double n, double x) { return xsf::eval_sh_legendre(n, x); }
+
+npy_cdouble xsf_ceval_sh_legendre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_legendre(n, to_complex(x)));
+}
+
+double xsf_eval_sh_legendre_l(npy_intp n, double x) { return xsf::eval_sh_legendre(n, x); }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }
 
