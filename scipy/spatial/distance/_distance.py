@@ -1300,7 +1300,7 @@ def yule(u, v, w=None):
 
 def dice(u, v, w=None):
     """
-    Compute the Dice dissimilarity between two boolean 1-D arrays.
+    Compute the Dice dissimilarity between boolean vectors.
 
     The Dice dissimilarity between `u` and `v`, is
 
@@ -1315,11 +1315,11 @@ def dice(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input 1-D array.
-    v : (N,) array_like, bool
-        Input 1-D array.
-    w : (N,) array_like, optional
+    u : (...,N) array_like, bool
+        Input array.
+    v : (...,N) array_like, bool
+        Input array.
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1345,22 +1345,21 @@ def dice(u, v, w=None):
     -0.3333333333333333
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if w is not None:
         w = _validate_weights(w)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
+        ntt = (u & v).sum(axis=-1)
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         if w is None:
-            ntt = (u * v).sum()
+            ntt = (u * v).sum(axis=-1)
         else:
-            ntt = (u * v * w).sum()
+            ntt = (u * v * w).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
-    return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
+    return (ntf + nft) / (2.0 * ntt + ntf + nft)
 
 
 def rogerstanimoto(u, v, w=None):
