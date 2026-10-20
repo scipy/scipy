@@ -53,7 +53,7 @@ bandwidth_s_scalar(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64
         }
         if (r <= lb) { break; }
     }
-    for (int64_t r = 0; r < n-1; r++) {
+    for (int64_t r = 0; r < n; r++) {
         for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0f) { ub = c - r; break; }
         }
@@ -76,7 +76,7 @@ bandwidth_d_scalar(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int6
         }
         if (r <= lb) { break; }
     }
-    for (int64_t r = 0; r < n-1; r++) {
+    for (int64_t r = 0; r < n; r++) {
         for (int64_t c = m-1; c > r + ub; c--) {
             if (data[r*m + c] != 0.0) { ub = c - r; break; }
         }
@@ -101,7 +101,7 @@ bandwidth_c_scalar(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int
         }
         if (r <= lb) { break; }
     }
-    for (int64_t r = 0; r < n-1; r++) {
+    for (int64_t r = 0; r < n; r++) {
         for (int64_t c = m-1; c > r + ub; c--) {
             int64_t idx = (r*m + c) * 2;
             if (fdata[idx] != 0.0f || fdata[idx + 1] != 0.0f) { ub = c - r; break; }
@@ -127,7 +127,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
         }
         if (r <= lb) { break; }
     }
-    for (int64_t r = 0; r < n-1; r++) {
+    for (int64_t r = 0; r < n; r++) {
         for (int64_t c = m-1; c > r + ub; c--) {
             int64_t idx = (r*m + c) * 2;
             if (ddata[idx] != 0.0 || ddata[idx + 1] != 0.0) { ub = c - r; break; }
@@ -166,7 +166,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
             if (r <= lb) { break; }
         }
 
-        for (int64_t r = 0; r < n - 1; r++) {
+        for (int64_t r = 0; r < n; r++) {
             for (int64_t c = m - 1; c > r + ub; c--) {
                 if (slice[r * s0 + c * s1] != zero) { ub = c - r; break; }
             }
@@ -261,7 +261,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
         // Upper bandwidth:
         // Scanning from the upper right corner going left for each row.
-        for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t r = 0; r < n; r++) {
 
             // We scan right-to-left starting from column m-1. Similar story
             // as lower bandwidth. So we stop the row scan at the current ub
@@ -349,7 +349,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
             if (r <= lb) { break; }
         }
 
-        for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t r = 0; r < n; r++) {
             int64_t stop_col = r + ub;
             int64_t ncols = m - 1 - stop_col;
             if (ncols >= 4) {
@@ -432,7 +432,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
             if (r <= lb) { break; }
         }
 
-        for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t r = 0; r < n; r++) {
             int64_t stop_col = r + ub;
             int64_t ncols = m - 1 - stop_col;
             if (ncols >= 4) {
@@ -519,7 +519,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
             if (r <= lb) { break; }
         }
 
-        for (int64_t r = 0; r < n-1; r++) {
+        for (int64_t r = 0; r < n; r++) {
             int64_t stop_col = r + ub;
             int64_t ncols = m - 1 - stop_col;
             if (ncols >= 2) {
