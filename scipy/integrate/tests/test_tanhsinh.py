@@ -595,7 +595,7 @@ class TestTanhSinh:
     def test_improper_integrals(self, xp):
         # Test handling of infinite limits of integration (mixed with finite limits)
         def f(x):
-            x[xp.isinf(x)] = xp.nan
+            x = xp.where(xp.isinf(x), xp.nan, x)
             return xp.exp(-x**2)
         a = xp.asarray([-xp.inf, 0, -xp.inf, xp.inf, -20, -xp.inf, -20])
         b = xp.asarray([xp.inf, xp.inf, 0, -xp.inf, 20, 20, xp.inf])
