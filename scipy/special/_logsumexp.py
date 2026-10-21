@@ -130,9 +130,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         # Replace infinite results. This probably could be done with an
         # `apply_where`-like strategy to avoid redundant calculation, but currently
         # `apply_where` itself is only for elementwise functions.
-        out_finite = xp.isfinite(out)
-        out = xp.where(out_finite, out, out_inf)
-        sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
+        use_out = xp.isfinite(out) | (out == -xp.inf)
+        out = xp.where(use_out, out, out_inf)
+        sgn = xp.where(use_out, sgn, sgn_inf) if return_sign else sgn
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         shape[axis] = 1
@@ -205,22 +205,24 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     if b is not None:
         a = xpx.at(a, b == 0).set(-xp.inf, copy=True)
 
-    # Find element with maximum real part, since this is what affects the magnitude
-    # of the exponential. Possible enhancement: include log of `b` magnitude in `a`.
-    a_max, i_max = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
+    while True:
+        a_max, i_max = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
+        i_max_dt = xp.astype(i_max, a.dtype)
+        b_i_max = i_max_dt if b is None else b * i_max_dt
+        m = xp.sum(b_i_max, axis=axis, keepdims=True, dtype=a.dtype)
 
-    # for precision, these terms are separated out of the main sum.
+        if b is not None:
+            zero_m = (m == 0) & (xp.real(a_max) != -xp.inf)
+            if xp.any(zero_m):
+                a = xpx.at(a, zero_m & i_max).set(-xp.inf)
+                continue
+        break
+
+    all_neg_inf = xp.real(a_max) == -xp.inf
     a = xpx.at(a, i_max).set(-xp.inf, copy=True if b is None else None)
-    i_max_dt = xp.astype(i_max, a.dtype)
-    # This is an inefficient way of getting `m` because it is the sum of a sparse
-    # array; however, this is the simplest way I can think of to get the right shape.
-    b_i_max = i_max_dt if b is None else b * i_max_dt
-    m = xp.sum(b_i_max, axis=axis, keepdims=True, dtype=a.dtype)
-
-    # Shift, exponentiate, scale, and sum
     exp = b * xp.exp(a - a_max) if b is not None else xp.exp(a - a_max)
     s = xp.sum(exp, axis=axis, keepdims=True, dtype=exp.dtype)
-    s = xp.where(s == 0, s, s/m)
+    s = xp.where(all_neg_inf | (s == 0), s, s / m)
 
     # Separate sign/magnitude information
     # Originally, this was only performed if `return_sign=True`.
@@ -239,6 +241,10 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
+
+    if xp.any(all_neg_inf):
+        out = xp.where(all_neg_inf, -xp.inf, out)
+        sgn = xp.where(all_neg_inf, xp.asarray(0.0, dtype=sgn.dtype), sgn)
 
     if return_sign:
         out = xp.real(out)

@@ -328,6 +328,35 @@ class TestLogSumExp:
         xp_assert_equal(sign, xp.asarray(sign_ref))
 
 
+    def test_gh26340_equal_leading_terms_cancellation(self, xp):
+        # gh-26340: logsumexp returned NaN when equal leading terms canceled out
+        a = xp.asarray([1000.0, 1000.0, 999.0])
+        b = xp.asarray([1.0, -1.0, 1.0])
+        val, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_close(val, xp.asarray(999.0, dtype=a.dtype))
+        xp_assert_equal(sign, xp.asarray(1.0, dtype=a.dtype))
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(999.0, dtype=a.dtype))
+
+        # Large gap between canceled leading terms and surviving terms
+        a_gap = xp.asarray([1000.0, 1000.0, 1.0])
+        val_gap, sign_gap = logsumexp(a_gap, b=b, return_sign=True)
+        xp_assert_close(val_gap, xp.asarray(1.0, dtype=a_gap.dtype))
+        xp_assert_equal(sign_gap, xp.asarray(1.0, dtype=a_gap.dtype))
+
+        # Total cancellation of all terms evaluates to -inf and sign 0
+        a_zero = xp.asarray([1000.0, 1000.0])
+        b_zero = xp.asarray([1.0, -1.0])
+        val_zero, sign_zero = logsumexp(a_zero, b=b_zero, return_sign=True)
+        assert xp.all(val_zero == -xp.inf)
+        xp_assert_equal(sign_zero, xp.asarray(0.0, dtype=a_zero.dtype))
+
+        # Multidimensional 2D cancellation
+        a_2d = xp.asarray([[1000.0, 1000.0, 999.0], [10.0, 20.0, 30.0]])
+        b_2d = xp.asarray([[1.0, -1.0, 1.0], [1.0, 1.0, 1.0]])
+        val_2d, sign_2d = logsumexp(a_2d, b=b_2d, axis=1, return_sign=True)
+        xp_assert_close(val_2d[0], xp.asarray(999.0, dtype=a_2d.dtype))
+        xp_assert_equal(sign_2d[0], xp.asarray(1.0, dtype=a_2d.dtype))
+
 @make_xp_test_case(softmax)
 class TestSoftmax:
     def test_softmax_fixtures(self, xp):
