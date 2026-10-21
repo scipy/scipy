@@ -62,6 +62,15 @@ Multivariate interpolation
     :ref:`An example wrapper for map_coordinates <tutorial-interpolate_cartesian-grids>`
 
 
+**Least-squares tensor-product splines:**
+
+.. autosummary::
+   :toctree: generated/
+
+   make_lsq_ndbspline
+   make_lsq_ndbspline_from_grid
+
+
 **Low-level data structures for tensor product polynomials and splines:**
 
 
@@ -210,7 +219,11 @@ from ._pade import *
 
 from ._rgi import *
 
-from ._ndbspline import NdBSpline
+from ._ndbspline import (
+    NdBSpline,
+    make_lsq_ndbspline,
+    make_lsq_ndbspline_from_grid,
+)
 
 from ._bary_rational import *
 
