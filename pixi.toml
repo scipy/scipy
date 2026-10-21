@@ -922,7 +922,7 @@ pythran = "*"
 
 
 [feature.scikit-sparse.dependencies]
-scikit-sparse = "*"
+scikit-sparse = ">=0.5.0"
 
 
 [feature.system-libs.dependencies]
