@@ -31,9 +31,11 @@
 // and __builtin_cpu_supports, regardless of the build machine's CPU; the
 // constructor below picks AVX2 or scalar at load time. This covers GCC and Clang
 // on x86-64, including MinGW-w64 targets. clang-cl (MSVC ABI) is excluded since
-// lld-link cannot resolve __cpu_model from compiler-rt.
+// lld-link cannot resolve __cpu_model from compiler-rt. Building with
+// -Duse-simd=false defines SCIPY_DISABLE_SIMD and leaves only the scalar code.
 
-#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
+#if !defined(SCIPY_DISABLE_SIMD) && defined(__x86_64__) \
+    && (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
 #include <immintrin.h>
 #define SCIPY_AVX2_DISPATCH 1
 #endif
