@@ -1417,8 +1417,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> res.pvalue
     0.0355
 
-    Under the null hypothesis that scientists are happier in their work than
-    college professors, the probability of obtaining test
+    Under the null hypothesis that college professors are not more satisfied
+    with their work than scientists, the probability of obtaining test
     results at least as extreme as the observed data is approximately 3.55%.
     Since this p-value is less than our chosen significance level, we have
     evidence to reject :math:`H_0` in favor of the alternative hypothesis.
