@@ -150,3 +150,25 @@ class TestVsNumpyNorm:
                     for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
+
+# https://github.com/scipy/scipy/issues/26281
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.int32])
+@pytest.mark.parametrize("ord", [None, 'fro', 1, -1, np.inf, -np.inf])
+def test_matrix_norm_dtype_matches_dense(dtype, ord):
+    a = (np.arange(9) - 4).reshape(3, 3).astype(dtype)
+    expected = npnorm(a, ord=ord)
+    actual = spnorm(scipy.sparse.csr_array(a), ord=ord)
+    assert hasattr(actual, "dtype")
+    assert actual.dtype == np.asarray(expected).dtype
+    assert_allclose(actual, expected)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.int32])
+@pytest.mark.parametrize("ord", [None, 1, 2, np.inf, -np.inf])
+def test_vector_norm_dtype_matches_dense(dtype, ord):
+    v = np.array([1, -2, 3], dtype=dtype)
+    expected = npnorm(v, ord=ord)
+    actual = spnorm(scipy.sparse.csr_array(v), ord=ord)
+    assert hasattr(actual, "dtype")
+    assert actual.dtype == np.asarray(expected).dtype
+    assert_allclose(actual, expected)
