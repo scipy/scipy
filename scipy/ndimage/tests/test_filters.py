@@ -3380,6 +3380,37 @@ def test_gh_23075_constant(samples, size, cval, expected):
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
 
 
+def test_gh_26465_median_filter_1d_mirror_window_longer_than_input():
+    # original report: uninitialized memory such as 1.63e-322
+    x = np.array([0.5])
+    assert_array_equal(ndimage.median_filter(x, size=3, mode='mirror'), x)
+
+
+@pytest.mark.parametrize('mode', ["reflect", "mirror", "wrap",
+                                  "grid-mirror", "grid-wrap"])
+@pytest.mark.parametrize('n', [1, 2, 3])
+@pytest.mark.parametrize('extra', [1, 2, 5])
+@pytest.mark.parametrize('filter_func, kwargs', [
+    (ndimage.median_filter, {}),
+    (ndimage.rank_filter, {'rank': 0}),
+    (ndimage.rank_filter, {'rank': -1}),
+    (ndimage.percentile_filter, {'percentile': 30}),
+])
+def test_gh_26465_rank_filters_1d_window_longer_than_input(
+        mode, n, extra, filter_func, kwargs):
+    # The 1-D fast path pads by reading the input once in each direction, so
+    # with these modes a footprint longer than the input read past its ends.
+    # Such inputs must give the same result as the n-D implementation, used
+    # here through the equivalent 2-D call.
+    size = n + extra
+    x = np.arange(1., n + 1)
+    for origin in (-(size // 2), 0, (size - 1) // 2):
+        res = filter_func(x, size=size, mode=mode, origin=origin, **kwargs)
+        ref = filter_func(x[np.newaxis, :], size=(1, size), mode=mode,
+                          origin=(0, origin), **kwargs)[0]
+        assert_array_equal(res, ref)
+
+
 def test_median_filter_lim2():
     sample_array = np.ones(8)
     expected = np.ones(8)

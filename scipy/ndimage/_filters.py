@@ -2013,7 +2013,14 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # to allow the fast path for these corner cases as well,
         # if algorithmic fixes are found.
         lim2 = input.size - ((footprint.size - 1) // 2 - origin)
-        if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
+        # The fast path pads by reading the input once in each direction, so
+        # for the reflecting modes ("reflect", "mirror", "wrap") a footprint
+        # longer than the input reads past its ends (gh-26465). "nearest" and
+        # "constant" pad without reading the input and have no such limit.
+        pads_from_input = mode not in (0, 4)  # i.e. not "nearest"/"constant"
+        footprint_fits = footprint.size <= input.size
+        if (input.ndim == 1 and ((lim2 >= 0) or (input.size == 1))
+                and (footprint_fits or not pads_from_input)):
             if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
