@@ -1181,11 +1181,40 @@ class BSpline:
 
         Examples
         --------
+        The derivative can be used for finding maxima of a curve:
+
         >>> import numpy as np
+        >>> from scipy.interpolate import make_splrep, PPoly
+        >>> x = np.linspace(0, 10, 70)
+        >>> y = np.sin(x)
+        >>> spl = make_splrep(x, y, k=4)     # spl is a quartic (degree 4) spline
+
+        Now, differentiate the spline and find the zeros of the derivative.
+        `BSpline` objects do not have a ``roots`` method, so we convert the
+        derivative to a `PPoly`, which represents the same curve as a piecewise
+        polynomial. We fit a spline of degree 4 rather than the default cubic,
+        so that its derivative is smooth enough to locate the extrema
+        accurately.
+
+        >>> dspl = spl.derivative()
+        >>> PPoly.from_spline(dspl).roots(extrapolate=False) / np.pi
+        array([0.50000001, 1.5       , 2.49999998])
+
+        The array holds the locations, in units of :math:`\\pi`, where the
+        derivative vanishes on the data interval :math:`[0, 10]`, i.e. the
+        extrema of the curve: maxima at :math:`x \\approx \\pi/2` and
+        :math:`x \\approx 5\\pi/2`, and a minimum at :math:`x \\approx 3\\pi/2`.
+        This agrees well with roots :math:`\\pi/2 + n\\pi` of
+        :math:`\\cos(x) = \\sin'(x)`.
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
         >>> from scipy.interpolate import BSpline, make_interp_spline
         >>> x = np.arange(11)
         >>> y = x**4 + np.sin(x)
-        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
 
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
@@ -1269,11 +1298,38 @@ class BSpline:
 
         Examples
         --------
+        Taking the derivative of the antiderivative recovers the original
+        spline, up to floating point error:
+
         >>> import numpy as np
+        >>> from scipy.interpolate import make_splrep
+        >>> x = np.linspace(0, np.pi/2, 70)
+        >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
+        >>> spl = make_splrep(x, y)          # spl is a cubic spline
+        >>> spl(1.7), spl.antiderivative().derivative()(1.7)
+        (array(2.15654299), array(2.15654299))
+
+        Antiderivative can be used to evaluate definite integrals:
+
+        >>> ispl = spl.antiderivative()
+        >>> ispl(np.pi/2) - ispl(0)
+        np.float64(2.25720536)
+
+        This is indeed an approximation to the complete elliptic integral
+        :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
+
+        >>> from scipy.special import ellipk
+        >>> ellipk(0.8)
+        np.float64(2.25720533)
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
         >>> from scipy.interpolate import BSpline, make_interp_spline
         >>> x = np.arange(11)
         >>> y = x**4 + np.sin(x)
-        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
 
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
