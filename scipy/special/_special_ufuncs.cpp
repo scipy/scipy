@@ -83,6 +83,8 @@ extern const char *_cosine_cdf_doc;
 extern const char *_cosine_invcdf_doc;
 extern const char *_cospi_doc;
 extern const char *_gen_harmonic_doc;
+extern const char *_genhyperbolic_logpdf_doc;
+extern const char *_genhyperbolic_pdf_doc;
 extern const char *_hypergeom_cdf_doc;
 extern const char *_hypergeom_mean_doc;
 extern const char *_hypergeom_pmf_doc;
@@ -483,6 +485,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dd_d>(xsf::gen_harmonic)},
                            "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(module, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_genhyperbolic_pdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::cpu::genhyperbolic_pdf),
+                           static_cast<xsf::numpy::dddd_d>(xsf::cpu::genhyperbolic_pdf)},
+                          "_genhyperbolic_pdf", _genhyperbolic_pdf_doc);
+    PyModule_AddObjectRef(module, "_genhyperbolic_pdf", _genhyperbolic_pdf);
+
+    PyObject *_genhyperbolic_logpdf =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(xsf::cpu::genhyperbolic_logpdf),
+                           static_cast<xsf::numpy::dddd_d>(xsf::cpu::genhyperbolic_logpdf)},
+                          "_genhyperbolic_logpdf", _genhyperbolic_logpdf_doc);
+    PyModule_AddObjectRef(module, "_genhyperbolic_logpdf", _genhyperbolic_logpdf);
 
     PyObject *_hypergeom_pmf =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(hypergeom_pmf_float),

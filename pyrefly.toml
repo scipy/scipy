@@ -54,7 +54,8 @@ ignore-missing-imports = [
     "scipy.spatial.distance._distance_wrap",
     "scipy.spatial.cKDTree", # TODO(lucascolley): figure out why this is needed, I can't reproduce locally
     "scipy.special._gufuncs",
-    "scipy.special._special_ufuncs",
+    "scipy.special._special_callbacks",
+    "scipy.special._special_ufuncs"
 ]
 replace-imports-with-any = [
     # missing attributes from modules
