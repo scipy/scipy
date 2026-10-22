@@ -120,6 +120,11 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
     lhs, rhs, shift, scale = _build_system(
         y, d, smoothing, kernel, epsilon, powers, xp
         )
+    # A symmetric-indefinite solve may miss singularity if the matrix has
+    # exactly repeated rows but factorization leaves a tiny nonzero pivot.
+    if np.unique(lhs, axis=0).shape[0] < lhs.shape[0]:
+        raise LinAlgError("Singular matrix.")
+
     _, _, coeffs, info = dsysv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")

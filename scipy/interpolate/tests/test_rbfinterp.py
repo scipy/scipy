@@ -672,6 +672,24 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         with pytest.raises(LinAlgError, match="Singular matrix"):
             RBFInterpolator(points, values.reshape(-1, 1))
 
+    def test_numerically_singular(self):
+        # Regression test for https://github.com/scipy/scipy/issues/26475.
+        # The two near-zero coordinates produce identical kernel rows in
+        # floating-point, although a symmetric-indefinite solve may not report
+        # an exactly zero pivot on every LAPACK implementation.
+        points = np.array([
+            [0.0, 2.0],
+            [0.0, 1.5],
+            [0.0, 2.2250738585e-313],
+            [0.0, 1.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+        ])
+        values = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+
+        with pytest.raises(LinAlgError, match="Singular matrix"):
+            RBFInterpolator(points, values)
+
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
 @make_xp_test_case(RBFInterpolator)
