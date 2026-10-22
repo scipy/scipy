@@ -305,8 +305,11 @@ class TestEig:
                    [16, 25, 27, 14, 23],
                    [24, 35, 18, 21, 22]])
 
+        # The homogeneous residual scales with (alpha, beta), which LAPACK only
+        # defines up to a scale factor; Accelerate on macOS 26 returns them
+        # larger than OpenBLAS does for this pencil (gh-25313).
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B, atol_homog=5e-13, atol=5e-13)
+            self._check_gen_eig(A, B, atol_homog=1e-12, atol=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
