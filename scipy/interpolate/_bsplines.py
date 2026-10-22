@@ -1184,10 +1184,10 @@ class BSpline:
         The derivative can be used for finding the local extrema of a curve:
 
         >>> import numpy as np
-        >>> from scipy.interpolate import make_splrep, PPoly
+        >>> from scipy.interpolate import make_interp_spline, PPoly
         >>> x = np.linspace(0, 10, 70)
         >>> y = np.sin(x)
-        >>> spl = make_splrep(x, y, k=4)     # spl is a quartic (degree 4) spline
+        >>> spl = make_interp_spline(x, y, k=4)  # spl is a quartic (degree 4) spline
 
         Now, differentiate the spline and find the zeros of the derivative.
         `BSpline` objects do not have a ``roots`` method, so we convert the
@@ -1313,10 +1313,10 @@ class BSpline:
         spline, up to floating point error:
 
         >>> import numpy as np
-        >>> from scipy.interpolate import make_splrep
+        >>> from scipy.interpolate import make_interp_spline
         >>> x = np.linspace(0, np.pi/2, 70)
         >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
-        >>> spl = make_splrep(x, y)          # spl is a cubic spline
+        >>> spl = make_interp_spline(x, y)    # spl is a cubic spline
         >>> spl(1.7), spl.antiderivative().derivative()(1.7)
         (array(2.15654299), array(2.15654299))
 
