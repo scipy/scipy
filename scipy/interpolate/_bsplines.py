@@ -1181,7 +1181,7 @@ class BSpline:
 
         Examples
         --------
-        The derivative can be used for finding maxima of a curve:
+        The derivative can be used for finding the local extrema of a curve:
 
         >>> import numpy as np
         >>> from scipy.interpolate import make_splrep, PPoly
@@ -1194,18 +1194,29 @@ class BSpline:
         derivative to a `PPoly`, which represents the same curve as a piecewise
         polynomial. We fit a spline of degree 4 rather than the default cubic,
         so that its derivative is smooth enough to locate the extrema
-        accurately.
+        accurately: the derivative of a quartic spline is a cubic spline with
+        the same breakpoints, and `PPoly.roots` finds all real roots of each
+        cubic piece directly, without iterating.
 
         >>> dspl = spl.derivative()
-        >>> PPoly.from_spline(dspl).roots(extrapolate=False) / np.pi
+        >>> xe = PPoly.from_spline(dspl).roots(extrapolate=False)
+        >>> xe / np.pi
         array([0.50000001, 1.5       , 2.49999998])
 
         The array holds the locations, in units of :math:`\\pi`, where the
-        derivative vanishes on the data interval :math:`[0, 10]`, i.e. the
-        extrema of the curve: maxima at :math:`x \\approx \\pi/2` and
+        derivative vanishes on the data interval :math:`[0, 10]`. This agrees
+        well with roots :math:`\\pi/2 + n\\pi` of :math:`\\cos(x) = \\sin'(x)`.
+
+        A zero of the derivative only tells us that the curve is flat there,
+        which usually means a local extremum. To tell maxima from minima, check
+        the sign of the second derivative: negative at a maximum, positive at a
+        minimum.
+
+        >>> np.sign(spl.derivative(2)(xe))
+        array([-1.,  1., -1.])
+
+        So the curve has maxima at :math:`x \\approx \\pi/2` and
         :math:`x \\approx 5\\pi/2`, and a minimum at :math:`x \\approx 3\\pi/2`.
-        This agrees well with roots :math:`\\pi/2 + n\\pi` of
-        :math:`\\cos(x) = \\sin'(x)`.
 
         The coefficient array of the returned spline is padded with ``k + 1``
         extra trailing entries, which are not used in evaluations, as the
