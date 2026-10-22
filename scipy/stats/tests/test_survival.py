@@ -372,19 +372,26 @@ class TestSurvival:
         assert_equal(res.sf._d[:-1], ref.sf._d[:-1])  # difference @ [-1]
         assert_allclose(res.sf._sf[:-1], ref.sf._sf[:-1], rtol=1e-14)
 
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_plot_iv(self):
         rng = np.random.default_rng(1769658657308472721)
         n_unique = rng.integers(10, 100)
         sample, _, _ = self.get_random_sample(rng, n_unique)
         res = stats.ecdf(sample)
+        res.sf.plot()  # no errors occur
 
+    def test_plot_without_matplotlib(self):
         try:
-            import matplotlib.pyplot as plt  # noqa: F401
-            res.sf.plot()  # no other errors occur
-        except (ModuleNotFoundError, ImportError):
-            message = r"matplotlib must be installed to use method `plot`."
-            with pytest.raises(ModuleNotFoundError, match=message):
-                res.sf.plot()
+            import matplotlib  # noqa: F401
+        except ImportError:
+            pass
+        else:
+            pytest.skip("matplotlib is installed")
+        res = stats.ecdf([1, 2, 3])
+        message = r"matplotlib must be installed to use method `plot`."
+        with pytest.raises(ModuleNotFoundError, match=message):
+            res.sf.plot()
 
 
 class TestLogRank:

@@ -47,8 +47,8 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz2 = 2 * len - 2;
-                in = sz2 * (npy_intp)(-in / sz2) + in;
+                double sz2 = 2.0 * len - 2;
+                in = fmod(in, sz2);
                 in = in <= 1 - len ? in + sz2 : -in;
             }
             break;
@@ -56,9 +56,9 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz2 = 2 * len;
+                double sz2 = 2.0 * len;
                 if (in < -sz2)
-                    in = sz2 * (npy_intp)(-in / sz2) + in;
+                    in = fmod(in, sz2);
                 // -1e-15 check to avoid possibility that: (-in - 1) == -1
                 in = in < -len ? in + sz2 : (in > -1e-15 ? 1e-15 : -in) - 1;
             }
@@ -68,17 +68,17 @@ map_coordinate(double in, npy_intp len, int mode)
                 in = 0;
             } else {
                 npy_intp sz = len - 1;
-                // Integer division of -in/sz gives (-in mod sz)
-                // Note that 'in' is negative
-                in += sz * ((npy_intp)(-in / sz) + 1);
+                // Negative multiples map to the overlapping last endpoint.
+                in = fmod(in, sz) + sz;
             }
             break;
         case NI_EXTEND_GRID_WRAP:
             if (len <= 1) {
                 in = 0;
             } else {
-                // in = len - 1 + fmod(in + 1, len);
-                in += len * ((npy_intp)((-1 - in) / len) + 1);
+                in = fmod(in, len);
+                if (in < 0)
+                    in += len;
             }
             break;
         case NI_EXTEND_NEAREST:
@@ -94,8 +94,8 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz2 = 2 * len - 2;
-                in -= sz2 * (npy_intp)(in / sz2);
+                double sz2 = 2.0 * len - 2;
+                in = fmod(in, sz2);
                 if (in >= len)
                     in = sz2 - in;
             }
@@ -104,8 +104,8 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz2 = 2 * len;
-                in -= sz2 * (npy_intp)(in / sz2);
+                double sz2 = 2.0 * len;
+                in = fmod(in, sz2);
                 if (in >= len)
                     in = sz2 - in - 1;
             }
@@ -115,14 +115,14 @@ map_coordinate(double in, npy_intp len, int mode)
                 in = 0;
             } else {
                 npy_intp sz = len - 1;
-                in -= sz * (npy_intp)(in / sz);
+                in = fmod(in, sz);
             }
             break;
         case NI_EXTEND_GRID_WRAP:
             if (len <= 1) {
                 in = 0;
             } else {
-                in -= len * (npy_intp)(in / len);
+                in = fmod(in, len);
             }
             break;
         case NI_EXTEND_NEAREST:
@@ -479,12 +479,27 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             goto exit;
         }
 
+        /* Check every axis before a constant boundary can short-circuit. */
+        for(hh = 0; hh < irank; hh++) {
+            if (!isfinite(icoor[hh])) {
+                NPY_END_THREADS;
+                PyErr_SetString(PyExc_ValueError, "coordinates must be finite");
+                goto exit;
+            }
+        }
+
         /* iterate over axes: */
         for(hh = 0; hh < irank; hh++) {
             double cc = icoor[hh] + nprepad;
             if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
                 /* if the input coordinate is outside the borders, map it: */
                 cc = map_coordinate(cc, idimensions[hh], mode);
+            } else {
+                /* Beyond this interval the entire spline footprint is outside
+                   the input. Bound the coordinate before converting to an
+                   integer, preserving fractional coordinates near the edge. */
+                cc = fmax(cc, -order - 1.0);
+                cc = fmin(cc, (double)idimensions[hh] + order + 1.0);
             }
             if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 /* find the filter location along this axis: */
@@ -806,9 +821,20 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 }
             }
             cc += (double)nprepad;
+            if (!isfinite(cc)) {
+                NPY_END_THREADS;
+                PyErr_SetString(PyExc_ValueError, "coordinates must be finite");
+                goto exit;
+            }
             if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
                 /* if the input coordinate is outside the borders, map it: */
                 cc = map_coordinate(cc, idimensions[jj], mode);
+            } else {
+                /* Beyond this interval the entire spline footprint is outside
+                   the input. Bound the coordinate before converting to an
+                   integer, preserving fractional coordinates near the edge. */
+                cc = fmax(cc, -order - 1.0);
+                cc = fmin(cc, (double)idimensions[jj] + order + 1.0);
             }
             if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 npy_intp start;

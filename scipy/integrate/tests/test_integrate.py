@@ -12,6 +12,7 @@ from numpy.testing import (
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
+from scipy.linalg import expm
 
 #------------------------------------------------------------------------------
 # Test ODE integrators
@@ -142,6 +143,16 @@ class TestOde(TestODEClass):
             if hasattr(problem, 'jac'):
                 continue
             self._do_problem(problem, 'dop853', method=None)
+
+    @pytest.mark.parametrize('integrator', ['dopri5', 'dop853', 'vode', 'lsoda'])
+    def test_ode_tuple_return(self, integrator):
+        # Functions returning a tuple work properly across integrators
+        # without triggering legacy f2py SystemError (gh-5134).
+        r = ode(lambda t, y: (y[0],)).set_integrator(integrator)
+        r.set_initial_value([1.0], 0.0)
+        res = r.integrate(1.0)
+        assert_(r.successful())
+        assert_allclose(res, [np.e], rtol=1e-5)
 
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
@@ -864,3 +875,28 @@ def test_vode_jacobian_convention():
     r.set_initial_value(y0, 0.0)
     r.integrate(1.0)
     assert r.successful()
+
+
+@pytest.mark.parametrize('banded', [False, True])
+@pytest.mark.parametrize('use_jac', [False, True])
+def test_vode_stiff_saved_jacobian(banded, use_jac):
+    # Regression test for gh-26384: the saved Jacobian overlapped the last
+    # diagonal entry of the iteration matrix; this needed ~3500 steps.
+    A = np.array([[-1.0, 0.5], [0.0, -1000.0]])
+    # Packed upper banded storage with lband=0, uband=1.
+    A_band = np.array([[0.0, A[0, 1]], [A[0, 0], A[1, 1]]])
+    bands = {'lband': 0, 'uband': 1} if banded else {}
+
+    def f(t, y):
+        return A @ y
+
+    def jac(t, y):
+        return A_band if banded else A
+
+    r = ode(f, jac if use_jac else None)
+    r.set_integrator('vode', method='bdf', with_jacobian=True, rtol=1e-6,
+                     atol=1e-8, **bands)
+    r.set_initial_value(np.ones(2), 0.0)
+    y = r.integrate(2.0)
+    assert r.successful()
+    assert_allclose(y, expm(2.0*A) @ np.ones(2), atol=1e-5)

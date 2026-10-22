@@ -16,7 +16,7 @@ inline void solve_slice_general(
     CBLAS_INT info;
     char norm = '1';
     real_type rcond;
-    real_type anorm = norm1_(data, work, (npy_intp)N);
+    real_type anorm = norm1_(data, (npy_intp)N);
 
     call_getrf(&N, &N, data, &N, ipiv, &info);
 

@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from . import eigsh
+from .arpack.arpack import eigsh
 
 from scipy._lib._util import _transition_to_rng, check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator

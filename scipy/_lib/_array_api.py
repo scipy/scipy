@@ -490,7 +490,7 @@ def xp_result_type(*args, force_floating=False, xp):
         return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 
-def xp_promote(*args, broadcast=False, force_floating=False, xp):
+def xp_promote(*args, broadcast=False, force_floating=False, order=None, xp):
     """
     Promotes elements of *args to result dtype, ignoring `None`s.
     Includes options for forcing promotion to floating point and
@@ -521,13 +521,13 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
     # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
-    args = [(_asarray(arg, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, subok=True, xp=xp, device=d, order=order)
              if is_torch_array(arg) or np.iterable(arg)
              else arg) for arg, d in zip(args, devices)]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d, order=order)
              if arg is not None else arg)
             for arg, d in zip(args, devices)]
 
@@ -1228,3 +1228,44 @@ def xp_isscalar(x):
 
 def is_mparray(xp):
     return "mparray" in str(xp)
+
+
+def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
+    # vectorized, array API interpolation along last axis
+    xp = array_namespace(x1, x, y) if xp is None else xp
+    x1, x, y = xp_promote(x1, x, y, force_floating=True, xp=xp)
+    out_shape = x1.shape
+
+    if is_numpy(xp) and x.ndim <= 1 and y.ndim <= 1:
+        res = np.interp(x1, x, y, left=left, right=right)
+        return res.astype(x1.dtype)
+
+    ndim = max(x1.ndim, x.ndim, y.ndim)
+    x1 = xpx.atleast_nd(x1, ndim=ndim)
+    x = xpx.atleast_nd(x, ndim=ndim)
+    y = xpx.atleast_nd(y, ndim=ndim)
+
+    # sort x in ascending order for efficient binary search
+    j = xp.argsort(x, axis=-1)
+    x = xp.take_along_axis(x, j, axis=-1)
+    y = xp.take_along_axis(y, j, axis=-1)
+
+    # binary search for adjacent elements of `x` that bound elements of `x1`
+    i = xp.clip(xpx.searchsorted(x, x1) - 1, 0, x.shape[-1]-2)
+
+    # interpolation
+    xi = xp.take_along_axis(x, i, axis=-1)
+    xip1 = xp.take_along_axis(x, i+1, axis=-1)
+    yi = xp.take_along_axis(y, i, axis=-1)
+    yip1 = xp.take_along_axis(y, i+1, axis=-1)
+    res = yi + (x1 - xi) * (yip1 - yi) / (xip1 - xi)
+
+    # clip to bounds, don't extrapolate
+    xl = x[..., 0:1]
+    xr = x[..., -1:]
+    left = y[..., 0:1] if left is None else left
+    right = y[..., -1:] if right is None else right
+    res, left, right = xp.broadcast_arrays(res, left, right)
+    res = xp.where(x1 < xl, left, res)
+    res = xp.where(x1 > xr, right, res)
+    return xp.reshape(res, out_shape)

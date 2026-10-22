@@ -14,12 +14,12 @@ import numpy as np
 from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse._base import issparse
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg._dsolve.linsolve import spsolve
 from scipy.sparse._sputils import is_pydata_spmatrix, isintlike
 
 import scipy.sparse
-import scipy.sparse.linalg
 from scipy.sparse.linalg._interface import LinearOperator
+from scipy.sparse.linalg._onenormest import onenormest
 from scipy.sparse._construct import eye_array
 
 from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
@@ -287,7 +287,7 @@ def _onenormest_matrix_power(A, p,
         that is relatively large in norm compared to the input.
 
     """
-    return scipy.sparse.linalg.onenormest(
+    return onenormest(
             MatrixPowerOperator(A, p, structure=structure))
 
 
@@ -329,7 +329,7 @@ def _onenormest_product(operator_seq,
         that is relatively large in norm compared to the input.
 
     """
-    return scipy.sparse.linalg.onenormest(
+    return onenormest(
             ProductOperator(*operator_seq, structure=structure))
 
 

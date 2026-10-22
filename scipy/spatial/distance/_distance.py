@@ -39,10 +39,10 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import _asarray
+from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
+                                   is_numpy, xp_promote, xp_capabilities)
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._external import array_api_extra as xpx
-from scipy.linalg import norm
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
 
@@ -52,6 +52,55 @@ def _copy_array_if_base_present(a):
     if a.base is not None:
         return a.copy()
     return a
+
+
+def _promote(*args, xp, order=None):
+    """Promote array to float64 for numpy, else according to the Array API spec.
+
+    The return array dtype follows the following rules:
+    - If x is an ArrayLike or NumPy array, we always promote to float64
+    - If x is an Array from frameworks other than NumPy, we preserve the precision
+      of the input array dtype.
+    """
+    if is_numpy(xp):
+        args = args + (np.asarray(1.0, dtype=np.float64),)
+        res = xp_promote(*args, force_floating=True,
+                         broadcast=True, xp=xp, order=order)[:-1]
+        if len(res) == 1:
+            return res[0]
+        return res
+    return xp_promote(*args, force_floating=True, broadcast=True, xp=xp)
+
+
+def _validate_vector(u, dtype=None):
+    try:
+        u = _asarray(u, dtype=dtype)
+    except TypeError:
+        # String/object arrays (e.g. hamming on byte strings) have no array-API
+        # namespace. Fall back to NumPy, which handles them.
+        u = np.asarray(u, dtype=dtype)
+    if u.ndim == 1:
+        return u
+    raise ValueError("Input vector should be 1-D.")
+
+
+def _validate_weights(w, xp=None):
+    """Reject negatives along the last axis.
+
+    Note:
+        If w is a numpy array, we also cast to float64. If w is lazy, we fill the
+        weights with NaN.
+    """
+    xp = array_namespace(w) if xp is None else xp
+    # TODO: Remove the following line once all functions call _promote at start
+    w = _promote(w, xp=xp)
+    invalid = w < 0
+    if is_lazy_array(w):
+        any_invalid = xp.any(invalid, axis=-1, keepdims=True)
+        return xp.where(any_invalid, xp.nan, w)
+    if xp.any(invalid):
+        raise ValueError("Input weights should be all non-negative")
+    return w
 
 
 def _correlation_cdist_wrap(XA, XB, dm, **kwargs):
@@ -73,10 +122,10 @@ def _nbool_correspond_all(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
         not_v = ~v
-        nff = (not_u & not_v).sum()
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
-        ntt = (u & v).sum()
+        nff = (not_u & not_v).sum(axis=-1)
+        nft = (not_u & v).sum(axis=-1)
+        ntf = (u & not_v).sum(axis=-1)
+        ntt = (u & v).sum(axis=-1)
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
@@ -86,10 +135,10 @@ def _nbool_correspond_all(u, v, w=None):
         if w is not None:
             not_u = w * not_u
             u = w * u
-        nff = (not_u * not_v).sum()
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
-        ntt = (u * v).sum()
+        nff = (not_u * not_v).sum(axis=-1)
+        nft = (not_u * v).sum(axis=-1)
+        ntf = (u * not_v).sum(axis=-1)
+        ntt = (u * v).sum(axis=-1)
     return (nff, nft, ntf, ntt)
 
 
@@ -97,8 +146,8 @@ def _nbool_correspond_ft_tf(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
         not_v = ~v
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
+        nft = (not_u & v).sum(axis=-1)
+        ntf = (u & not_v).sum(axis=-1)
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
@@ -108,8 +157,8 @@ def _nbool_correspond_ft_tf(u, v, w=None):
         if w is not None:
             not_u = w * not_u
             u = w * u
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
+        nft = (not_u * v).sum(axis=-1)
+        ntf = (u * not_v).sum(axis=-1)
     return (nft, ntf)
 
 
@@ -216,19 +265,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     return kwargs
 
 
-def _validate_vector(u, dtype=None):
-    # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c')
-    if u.ndim == 1:
-        return u
-    raise ValueError("Input vector should be 1-D.")
-
-
-def _validate_weights(w, dtype=np.float64):
-    w = _validate_vector(w, dtype=dtype)
-    if np.any(w < 0):
-        raise ValueError("Input weights should be all non-negative")
-    return w
 
 
 @_transition_to_rng('seed', position_num=2, replace_doc=False)
@@ -361,6 +397,7 @@ def directed_hausdorff(u, v, rng=0):
     return result
 
 
+@xp_capabilities()
 def minkowski(u, v, p=2, w=None):
     """
     Compute the Minkowski distance between two arrays.
@@ -411,27 +448,26 @@ def minkowski(u, v, p=2, w=None):
     1.0
 
     """
-    u = _asarray(u, order='C')
-    v = _asarray(v, order='C')
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp, order='C')
     if p <= 0:
         raise ValueError("p must be greater than 0")
     u_v = u - v
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         if p == 1:
             root_w = w
         elif p == 2:
-            # better precision and speed
-            root_w = np.sqrt(w)
+            root_w = xp.sqrt(w)  # better precision and speed
         elif p == np.inf:
-            root_w = (w != 0)
+            root_w = xp.astype(w != 0, w.dtype)
         else:
-            root_w = np.power(w, 1/p)
+            root_w = w ** (1 / p)
         u_v = root_w * u_v
-    dist = norm(u_v, ord=p, axis=-1)
-    return dist
+    return xp.linalg.vector_norm(u_v, ord=p, axis=-1)
 
 
+@xp_capabilities()
 def euclidean(u, v, w=None):
     """
     Computes the Euclidean distance between two arrays.
@@ -505,16 +541,8 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    # Preserve float dtypes, but convert everything else to np.float64
-    # for stability.
-    utype, vtype = None, None
-    if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
-        utype = np.float64
-    if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
-        vtype = np.float64
-
-    u = _asarray(u, dtype=utype, order='C')
-    v = _asarray(v, dtype=vtype, order='C')
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np,
+                         order='C')
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
@@ -828,11 +856,12 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
+@xp_capabilities()
 def seuclidean(u, v, V):
     """
-    Return the standardized Euclidean distance between two 1-D arrays.
+    Return the standardized Euclidean distance between two arrays.
 
-    The standardized Euclidean distance between two n-vectors `u` and `v` is
+    The standardized Euclidean distance between arrays `u` and `v` is
 
     .. math::
 
@@ -843,17 +872,17 @@ def seuclidean(u, v, V):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    V : (N,) array_like
-        `V` is a 1-D array of component variances. It is usually computed
+    V : (..., N) array_like
+        `V` is an array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
     -------
-    seuclidean : double
+    seuclidean : float or array
         The standardized Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -867,12 +896,8 @@ def seuclidean(u, v, V):
     3.1780497164141406
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    V = _validate_vector(V, dtype=np.float64)
-    if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D array of the same dimension '
-                        'as u and v.')
+    xp = array_namespace(u, v, V)
+    u, v, V = _promote(u, v, V, xp=xp, order='C')
     return euclidean(u, v, w=1/V)
 
 
@@ -1273,7 +1298,7 @@ def yule(u, v, w=None):
 
 def dice(u, v, w=None):
     """
-    Compute the Dice dissimilarity between two boolean 1-D arrays.
+    Compute the Dice dissimilarity between boolean vectors.
 
     The Dice dissimilarity between `u` and `v`, is
 
@@ -1288,11 +1313,11 @@ def dice(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input 1-D array.
-    v : (N,) array_like, bool
-        Input 1-D array.
-    w : (N,) array_like, optional
+    u : (...,N) array_like, bool
+        Input array.
+    v : (...,N) array_like, bool
+        Input array.
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1318,22 +1343,21 @@ def dice(u, v, w=None):
     -0.3333333333333333
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if w is not None:
         w = _validate_weights(w)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
+        ntt = (u & v).sum(axis=-1)
     else:
         dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         if w is None:
-            ntt = (u * v).sum()
+            ntt = (u * v).sum(axis=-1)
         else:
-            ntt = (u * v * w).sum()
+            ntt = (u * v * w).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
-    return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
+    return (ntf + nft) / (2.0 * ntt + ntf + nft)
 
 
 def rogerstanimoto(u, v, w=None):
@@ -1353,11 +1377,11 @@ def rogerstanimoto(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1378,12 +1402,11 @@ def rogerstanimoto(u, v, w=None):
     -1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
+    return (2.0 * (ntf + nft))/(ntt + nff + (2.0 * (ntf + nft)))
 
 
 def russellrao(u, v, w=None):
@@ -1404,11 +1427,11 @@ def russellrao(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1428,19 +1451,18 @@ def russellrao(u, v, w=None):
     0.3333333333333333
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        n = float(len(u))
+        ntt = (u & v).sum(axis=-1)
+        n = u.shape[-1]
     elif w is None:
-        ntt = (u * v).sum()
-        n = float(len(u))
+        ntt = (u * v).sum(axis=-1)
+        n = u.shape[-1]
     else:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
-        n = w.sum()
-    return float(n - ntt) / n
+        ntt = (u * v * w).sum(axis=-1)
+        n = w.sum(axis=-1)
+    return (n - ntt) / n
 
 
 def sokalsneath(u, v, w=None):
@@ -1460,11 +1482,11 @@ def sokalsneath(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1486,21 +1508,20 @@ def sokalsneath(u, v, w=None):
     -2.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
+        ntt = (u & v).sum(axis=-1)
     elif w is None:
-        ntt = (u * v).sum()
+        ntt = (u * v).sum(axis=-1)
     else:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
+        ntt = (u * v * w).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
     if not denom.any():
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
                          'vectors that are entirely false.')
-    return float(2.0 * (ntf + nft)) / denom
+    return (2.0 * (ntf + nft)) / denom
 
 
 _convert_to_double = partial(_convert_to_type, out_type=np.float64)
@@ -2169,6 +2190,9 @@ def squareform(X, force="no", checks=True):
            6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
     """
     X = np.ascontiguousarray(X)
+    if X.dtype.hasobject:
+        # the C code copies raw bytes, which breaks the refcounts of objects
+        raise TypeError("squareform does not support object arrays")
 
     s = X.shape
 

@@ -16,12 +16,13 @@ from collections.abc import Callable
 
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType
 
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-import scipy.stats as stats
+from scipy.stats._continuous_distns import norm
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
@@ -81,6 +82,7 @@ def check_random_state(seed=None):
                          ' numpy.random.Generator instance')
 
 
+@xp_capabilities(np_only=True)
 def scale(
     sample: "npt.ArrayLike",
     l_bounds: "npt.ArrayLike",
@@ -194,6 +196,7 @@ def _ensure_in_unit_hypercube(sample: "npt.ArrayLike") -> np.ndarray:
     return sample
 
 
+@xp_capabilities(np_only=True)
 def discrepancy(
         sample: "npt.ArrayLike",
         *,
@@ -332,6 +335,7 @@ def discrepancy(
                          f" {set(methods)!r}")
 
 
+@xp_capabilities(np_only=True)
 def geometric_discrepancy(
         sample: "npt.ArrayLike",
         method: Literal["mindist", "mst"] = "mindist",
@@ -458,6 +462,7 @@ def geometric_discrepancy(
                          f"It must be one of {{'mindist', 'mst'}}")
 
 
+@xp_capabilities(np_only=True)
 def update_discrepancy(
         x_new: "npt.ArrayLike",
         sample: "npt.ArrayLike",
@@ -796,6 +801,7 @@ def van_der_corput(
         return _cy_van_der_corput(n, base, start_index, workers)
 
 
+@xp_capabilities(np_only=True)
 class QMCEngine(ABC):
     """A generic Quasi-Monte Carlo sampler class meant for subclassing.
 
@@ -1111,6 +1117,7 @@ class QMCEngine(ABC):
         return self
 
 
+@xp_capabilities(np_only=True)
 class Halton(QMCEngine):
     """Halton sequence.
 
@@ -1282,6 +1289,7 @@ class Halton(QMCEngine):
         return np.array(sample).T.reshape(n, self.d)
 
 
+@xp_capabilities(np_only=True)
 class LatinHypercube(QMCEngine):
     r"""Latin hypercube sampling (LHS).
 
@@ -1608,6 +1616,7 @@ class LatinHypercube(QMCEngine):
         return oa_lhs_sample[:, :self.d]
 
 
+@xp_capabilities(np_only=True)
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
 
@@ -1958,6 +1967,7 @@ class Sobol(QMCEngine):
         return self
 
 
+@xp_capabilities(np_only=True)
 class PoissonDisk(QMCEngine):
     """Poisson disk sampling.
 
@@ -2308,6 +2318,7 @@ class PoissonDisk(QMCEngine):
         return p
 
 
+@xp_capabilities(np_only=True)
 class MultivariateNormalQMC:
     r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
@@ -2470,7 +2481,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
+            return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -2484,6 +2495,7 @@ class MultivariateNormalQMC:
             return transf_samples[:, : self._d]
 
 
+@xp_capabilities(np_only=True)
 class MultinomialQMC:
     r"""QMC sampling from a multinomial distribution.
 

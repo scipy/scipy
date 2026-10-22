@@ -11,8 +11,7 @@ from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
 from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 
 # Local imports
-from scipy.linalg import LinAlgError, LinAlgWarning
-from ._misc import norm
+from ._misc import LinAlgError, LinAlgWarning, norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
@@ -678,10 +677,10 @@ def tanhm(A):
 
 
 def _funm_signature(*args, **kwargs):
-    return "(i,i)->(i,i),()" if kwargs.get('return_rank') else "(i,i)->(i,i)"
+    return "(i,i)->(i,i),float()" if not kwargs.get('disp') else "(i,i)->(i,i)"
 
 
-@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
+@_apply_over_batch(('A', 2), signature=_funm_signature)
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.

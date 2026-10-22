@@ -592,7 +592,8 @@ false_positives = ["scipy.stats.Uniform",
                    "scipy.stats.Normal",
                    "scipy.stats.Mixture",
                    "scipy.stats.Binomial",
-                   "scipy.stats.Logistic"]
+                   "scipy.stats.Logistic",
+                   "scipy.stats.VonMises"]
 
 skip_modules = [
     "scipy.fftpack",

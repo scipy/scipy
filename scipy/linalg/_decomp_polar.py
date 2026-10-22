@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._util import _apply_over_batch
-from scipy.linalg import svd
+from scipy.linalg._decomp_svd import svd
 
 
 __all__ = ['polar']
