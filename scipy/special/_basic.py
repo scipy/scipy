@@ -12,9 +12,10 @@ from numpy import (pi, asarray, floor, isscalar, sqrt, where,
 
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
-                      psi, hankel1, hankel2, yv, kv, poch, binom,
+from ._ufuncs import (mathieu_a, mathieu_b, iv, gamma, rgamma,
+                      psi, hankel1, hankel2, poch, binom,
                       _stirling2_inexact)
+from ._support_alternative_backends import _zeta, _riemann_zeta, jv, yv, kv
 
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
@@ -193,6 +194,7 @@ def diric(x, n):
     return y
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnjnp_zeros(nt):
     """Compute zeros of integer-order Bessel functions Jn and Jn'.
 
@@ -234,6 +236,7 @@ def jnjnp_zeros(nt):
     return zo[1:nt+1], n[:nt], m[:nt], t[:nt]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnyn_zeros(n, nt):
     """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
 
@@ -319,6 +322,7 @@ def jnyn_zeros(n, nt):
     return _specfun.jyzo(abs(n), nt)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jn_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel functions Jn.
 
@@ -382,6 +386,7 @@ def jn_zeros(n, nt):
     return jnyn_zeros(n, nt)[0]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnp_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function derivatives Jn'.
 
@@ -445,6 +450,7 @@ def jnp_zeros(n, nt):
     return jnyn_zeros(n, nt)[1]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def yn_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function Yn(x).
 
@@ -503,6 +509,7 @@ def yn_zeros(n, nt):
     return jnyn_zeros(n, nt)[2]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def ynp_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function derivatives Yn'(x).
 
@@ -570,6 +577,7 @@ def ynp_zeros(n, nt):
     return jnyn_zeros(n, nt)[3]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y0_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
 
@@ -646,6 +654,7 @@ def y0_zeros(nt, complex=False):
     return _specfun.cyzo(nt, kf, kc)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y1_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
 
@@ -728,6 +737,7 @@ def y1_zeros(nt, complex=False):
     return _specfun.cyzo(nt, kf, kc)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y1p_zeros(nt, complex=False):
     """Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
 
@@ -806,7 +816,8 @@ def _bessel_diff_formula(v, z, n, L, phase):
     # L(v, z) = J(v, z), Y(v, z), H1(v, z), H2(v, z), phase = -1
     # L(v, z) = I(v, z) or exp(v*pi*i)K(v, z), phase = 1
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
-    v = asarray(v)
+    xp = array_namespace(v, z)
+    v, z = xp.asarray(v), xp.asarray(z)
     p = 1.0
     s = L(v-n, z)
     for i in range(1, n+1):
@@ -815,6 +826,7 @@ def _bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+@xp_capabilities(cpu_only=True)
 def jvp(v, z, n=1):
     """Compute derivatives of Bessel functions of the first kind.
 
@@ -893,6 +905,7 @@ def jvp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, jv, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def yvp(v, z, n=1):
     """Compute derivatives of Bessel functions of the second kind.
 
@@ -975,6 +988,7 @@ def yvp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, yv, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def kvp(v, z, n=1):
     """Compute derivatives of real-order modified Bessel function Kv(z).
 
@@ -1275,6 +1289,7 @@ def h2vp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, hankel2, -1)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def riccati_jn(n, x):
     r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
@@ -1363,6 +1378,7 @@ def riccati_jn(n, x):
     return jn[:(n+1)], jnp[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def riccati_yn(n, x):
     """Compute Riccati-Bessel function of the second kind and its derivative.
 
@@ -2296,6 +2312,7 @@ def lqn(n, z):
     return qn[:(n+1)], qd[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def ai_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Ai and its derivative.
@@ -2347,6 +2364,7 @@ def ai_zeros(nt):
     return _specfun.airyzo(nt, kf)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def bi_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Bi and its derivative.
@@ -2398,6 +2416,7 @@ def bi_zeros(nt):
     return _specfun.airyzo(nt, kf)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def lmbda(v, x):
     r"""Jahnke-Emden Lambda function, Lambdav(x).
 
@@ -3707,6 +3726,14 @@ def stirling2(N, K, *, exact=False):
     return output
 
 
+zeta_extra_note = (
+    """Currently, only NumPy supports ``q = None`` and evaluation of the
+    Riemann Zeta (``q = 1.0`` or ``q = None``) function off of the real line.
+
+    """
+)
+
+@xp_capabilities(extra_note=zeta_extra_note)
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -3783,9 +3810,16 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return _ufuncs._riemann_zeta(x, out)
-    else:
-        return _ufuncs._zeta(x, q, out)
+        if out is None:
+            # Need to avoid forwarding ``out`` since backend may be
+            # JAX which doesn't support ``out``.
+            return _riemann_zeta(x)
+        else:
+            return _riemann_zeta(x, out)
+    elif out is None:
+        # as above, avoid forwarding ``out`` to support JAX.
+        return _zeta(x, q)
+    return _zeta(x, q, out)
 
 
 @xp_capabilities()
