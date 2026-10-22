@@ -291,7 +291,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
           statistic under the null hypothesis. No correction is made for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
           is less than or equal to 8 and there are no ties;
-          chooses ``'asymptotic'`` otherwise.
+          chooses ``'asymptotic'`` otherwise. For N-d input, the choice is
+          made independently for each slice.
         * `PermutationMethod` instance. In this case, the p-value
           is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
@@ -510,23 +511,38 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     else:
         U, f = xp.maximum(U1, U2), 2  # and will multiply SF by two for two-sided test
 
+    per_slice = False
     if method == "auto":
         if is_jax(xp):
             message = "`method='auto'` is incompatible with JAX arrays."
             raise ValueError(message)
-        method = _mwu_choose_method(n1, n2, xp.any(t > 1))
+        ties = xp.any(t > 1, axis=-1)
+        method = _mwu_choose_method(n1, n2, xp.any(ties))
+        # If the asymptotic method was chosen only because *some* slices have
+        # ties, slices without ties can still use the exact method. Choose the
+        # method for each slice separately so that the p-value of a slice does
+        # not depend on ties in other slices (gh-26115).
+        per_slice = (method == "asymptotic" and not (n1 > 8 and n2 > 8)
+                     and xp.any(~ties))
 
-    if method == "exact":
+    if method == "exact" or per_slice:
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
-        p = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
-                           as_numpy=True, dtype=xp.float64)
-        p = xp.astype(p, x.dtype, copy=False) * f
-    elif method == "asymptotic":
+        p_exact = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
+                                 as_numpy=True, dtype=xp.float64)
+        p_exact = xp.astype(p_exact, x.dtype, copy=False) * f
+    if method == "asymptotic" or per_slice:
         z = _get_mwu_z(U1, n1, n2, t, continuity=use_continuity,
                        alternative=alternative, xp=xp)
-        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
+        p_asymptotic = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
+
+    if per_slice:
+        p = xp.where(ties, xp.astype(p_asymptotic, x.dtype, copy=False), p_exact)
+    elif method == "exact":
+        p = p_exact
+    elif method == "asymptotic":
+        p = p_asymptotic
     else:  # `PermutationMethod` instance (already validated)
         def statistic(x, y, axis):
             return mannwhitneyu(x, y, use_continuity=use_continuity,

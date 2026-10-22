@@ -581,6 +581,32 @@ class TestMannWhitneyU:
         xp_assert_close(res.pvalue, xp.asarray(pvalues), atol=1e-16)
         xp_assert_close(res.statistic, xp.asarray(statistics), atol=1e-16)
 
+    @skip_xp_backends("jax.numpy",
+                      reason="`method='auto'` is incompatible with JAX arrays.")
+    def test_gh_26115(self, xp):
+        # gh-26115: with `method='auto'`, the method is chosen independently
+        # for each slice; the p-value of a slice without ties must not depend
+        # on whether other slices contain ties.
+        x = [[0, 1, 2, 3, 9],
+             [20, 20, 22, 23, 29]]  # second slice has a tie
+        y = [[4, 5, 6, 7, 8, 10, 11],
+             [24, 25, 26, 27, 28, 30, 31]]
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
+        res = mannwhitneyu(x, y, method='auto', axis=-1)
+
+        # results agree with separate calls for each slice
+        for i in range(2):
+            res_i = mannwhitneyu(x[i], y[i], method='auto')
+            xp_assert_close(res.statistic[i], res_i.statistic)
+            xp_assert_close(res.pvalue[i], res_i.pvalue)
+
+        # the first slice has no ties, so the exact method is used for it
+        # (two-sided exact p-value is 38/792); the second slice has a tie,
+        # so the asymptotic method is used for it
+        xp_assert_close(res.pvalue[0], xp.asarray(38/792, dtype=xp.float64))
+        p_asymptotic = mannwhitneyu(x[1], y[1], method='asymptotic').pvalue
+        xp_assert_close(res.pvalue[1], p_asymptotic)
+
     def test_gh_11355(self, xp):
         # Test for correct behavior with NaN/Inf in input
         x = [1, 2, 3, 4]
