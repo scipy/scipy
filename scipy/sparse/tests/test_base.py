@@ -3404,19 +3404,14 @@ class _TestFancyIndexing:
                 self.ndim = self._data.ndim
 
             def __array__(self, dtype=None, copy=None):
-                arr = np.asarray(self._data, dtype=dtype)
-                if copy:
-                    arr = arr.copy()
-                return arr
+                return np.asarray(self._data, dtype=dtype, copy=copy)
 
         class BoolLikeObjectArrayNoNonzero(BoolLikeNoNonzero):
             def __array__(self, dtype=None, copy=None):
                 if dtype is None:
-                    arr = np.asarray(self._data, dtype=object)
+                    arr = np.asarray(self._data, dtype=object, copy=copy)
                 else:
-                    arr = np.asarray(self._data, dtype=dtype)
-                if copy:
-                    arr = arr.copy()
+                    arr = np.asarray(self._data, dtype=dtype, copy=copy)
                 return arr
 
         I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
