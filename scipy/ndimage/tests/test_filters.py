@@ -3362,6 +3362,25 @@ def test_gh_23075(samples, mode, size, expected):
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
 
 
+@pytest.mark.parametrize("filter_func, args", [
+    pytest.param(ndimage.median_filter, (), id="median"),
+    pytest.param(ndimage.rank_filter, (1,), id="rank"),
+    pytest.param(ndimage.percentile_filter, (50,), id="percentile"),
+])
+def test_gh_26465_mirror_rank_filter_singleton(filter_func, args):
+    data = np.array([0.5], dtype=np.float64)
+    actual = filter_func(data, *args, size=3, mode="mirror")
+    expected = filter_func(data[:, None], *args, size=(3, 1), mode="mirror")[:, 0]
+    xp_assert_equal(actual, expected)
+
+
+def test_gh_26465_mirror_rank_filter_lim2_zero():
+    data = np.array([1.0, 2.0], dtype=np.float64)
+    actual = ndimage.median_filter(data, size=5, mode="mirror")
+    expected = ndimage.median_filter(data[:, None], size=(5, 1), mode="mirror")[:, 0]
+    xp_assert_equal(actual, expected)
+
+
 @pytest.mark.parametrize('samples, size, cval, expected', [
     ([2], 5, 17.7, [17.7]),
     ([2], 1, 0, [2]),
