@@ -672,6 +672,40 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         with pytest.raises(LinAlgError, match="Singular matrix"):
             RBFInterpolator(points, values.reshape(-1, 1))
 
+    @skip_xp_backends(
+        np_only=True, reason="check is specific to the NumPy backend"
+    )
+    def test_numerically_singular(self):
+        # Regression test for https://github.com/scipy/scipy/issues/26475.
+        # The third and fifth points are distinct in the input, but their
+        # kernel rows round to the same values. Coordinate normalization also
+        # rounds their polynomial rows to the same values, so the augmented
+        # system is exactly singular even though the input points differ.
+        points = np.array([
+            [0.0, 2.0],
+            [0.0, 1.5],
+            [0.0, 2.2250738585e-313],
+            [0.0, 1.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+        ])
+        values = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+
+        with pytest.raises(LinAlgError, match="Singular matrix"):
+            RBFInterpolator(points, values)
+
+    @skip_xp_backends(
+        np_only=True, reason="check is specific to the NumPy backend"
+    )
+    def test_ill_conditioned_but_nonsingular(self):
+        # Close, distinct points make a valid kernel system ill-conditioned.
+        # They must not be rejected by the exact-row singularity check.
+        points = np.array([[0.0], [1e-6], [1.0]])
+        values = np.array([0.0, 1.0, 2.0])
+
+        rbf = RBFInterpolator(points, values, kernel="gaussian", epsilon=1.0)
+        assert np.all(np.isfinite(rbf(points)))
+
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
 @make_xp_test_case(RBFInterpolator)
