@@ -587,6 +587,7 @@ class SHGO:
         if minimizer_kwargs is not None:
             # Overwrite with supplied values
             self.minimizer_kwargs.update(minimizer_kwargs)
+            self.minimizer_kwargs['options'] = {}
 
         else:
             self.minimizer_kwargs['options'] = {'ftol': 1e-12}
@@ -641,7 +642,6 @@ class SHGO:
 
         # we've already wrapped fun, grad, hess, so no need for args
         self.minimizer_kwargs.pop("args", None)
-        self.minimizer_kwargs["options"].pop("args", None)
 
         # Remove unknown arguments in self.minimizer_kwargs
         # Start with arguments all the solvers have in common
@@ -679,6 +679,11 @@ class SHGO:
         _restrict_to_keys(self.minimizer_kwargs, self.min_solver_args)
         _restrict_to_keys(self.minimizer_kwargs['options'],
                           self.min_solver_args + ['ftol'])
+        if minimizer_kwargs is not None:
+            self.minimizer_kwargs['options'] = (
+                minimizer_kwargs.get('options', {})
+                | self.minimizer_kwargs['options'])
+        self.minimizer_kwargs["options"].pop("args", None)
 
         # Algorithm controls
         # Global controls

@@ -1226,3 +1226,33 @@ def test_gh16971():
 
     assert s.minimizer_kwargs['method'].lower() == 'cobyla'
     assert s.minimizer_kwargs['options']['catol'] == 0.05
+
+
+@pytest.mark.parametrize('method, local_options', [
+    ('SLSQP', {'maxiter': 2, 'eps': 1e-5}),
+    ('BFGS', {'maxiter': 2, 'gtol': 1e-3}),
+    ('COBYLA', {'rhobeg': 5, 'tol': 0.5, 'catol': 0.05}),
+])
+@pytest.mark.parametrize('options', [None, {'maxiter': 7, 'disp': True}])
+def test_local_minimizer_options(method, local_options, options):
+    supplied_options = local_options.copy()
+    with SHGO(rosen, [(0, 10)] * 2, options=options,
+              minimizer_kwargs={'method': method,
+                                'options': supplied_options}) as solver:
+        assert solver.minimizer_kwargs['options'] == local_options
+    assert supplied_options == local_options
+
+
+def test_local_minimizer_maxiter():
+    iterations = []
+    shgo(lambda x: (x[0] - 0.2)**4, [(0, 1)], n=3,
+         callback=iterations.append,
+         minimizer_kwargs={'options': {'maxiter': 2}},
+         options={'maxiter': 1})
+    assert 0 < len(iterations) <= 2
+
+
+def test_unknown_local_minimizer_option():
+    with pytest.warns(OptimizeWarning, match='Unknown solver options: maxietr'):
+        shgo(lambda x: (x[0] - 0.2)**4, [(0, 1)], n=3,
+             minimizer_kwargs={'options': {'maxietr': 2}})
