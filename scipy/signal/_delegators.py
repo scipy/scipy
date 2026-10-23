@@ -143,8 +143,8 @@ def savgol_coeffs_signature(
 
 
 
-def unit_impulse_signature(shape, idx=None, dtype=float):
-    return np
+def unit_impulse_signature(shape, idx=None, dtype=float, *, xp=None, device=None):
+    return np if xp is None else xp
 ############################
 
 
