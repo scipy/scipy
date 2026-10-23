@@ -4457,9 +4457,10 @@ class _CompressedMixin:
             A.check_format()
 
     @with_64bit_maxval_limit(300)
-    def test_large_assignments(self, maxval_limit=300):
+    def test_large_assignments(self):
         # Here maxval_limit is our proxy for switching int32 to int64
         # tests assume a match between decorator and default value
+        maxval_limit = 300  # must match decorator value for this test!
 
         # When nnz grows bigger than int32 can hold, shift to int64 index arrays
         def check(A, index, rhs):
