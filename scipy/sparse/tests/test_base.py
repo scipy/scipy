@@ -149,6 +149,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                    scipy.sparse._compressed, scipy.sparse._construct]
 
         @functools.wraps(func)
+        @pytest.mark.thread_unsafe
         def wrapper(*a, **kw):
             try:
                 for mod in modules:
@@ -4456,7 +4457,10 @@ class _CompressedMixin:
             A.check_format()
 
     @with_64bit_maxval_limit(300)
-    def test_large_assignments(self):
+    def test_large_assignments(self, maxval_limit=300):
+        # Here maxval_limit is our proxy for switching int32 to int64
+        # tests assume a match between decorator and default value
+
         # When nnz grows bigger than int32 can hold, shift to int64 index arrays
         def check(A, index, rhs):
             # check that we start small
@@ -4468,16 +4472,18 @@ class _CompressedMixin:
                                         sparse.SparseEfficiencyWarning)
                 A[index[:, None], index] = rhs
             # check that we end large
+            assert A.indptr.dtype == np.int64
             assert A.indices.dtype == np.int64
             assert A.nnz > maxval_limit
 
-        # Here maxval_limit is our proxy for switching int32 to int64
-        maxval_limit = 300
-        # select N, NN with N**2 < maxval_limit <= (N*2)**2, d>N*2+NN
-        N = 9
-        d = 69
-        NN = 30
-        Nb = 2 * N  # Nb >= 2*N for noncanonical tests which duplicate entries
+        # select N, NN with:
+        #   2*(N**2+1) < maxval_limit: so noncanonical A.nnz < maxval_limit preupdate
+        #   NN**2 < maxval_limit: so rhs.nnz < maxval_limit
+        #   maxval_limit <= (2*N)**2: so A.nnz > maxval_limit postupdate (case 1)
+        #   N**2 + NN**2 > maxval_limit: so A.nnz > maxval_limit postupdate (case 2-4)
+        N = 12
+        NN = 14
+        d = 38  # need d >= 2*N+NN
         warn_msg = "Changing the sparsity structure"
 
         big_data = np.ones((N, N), dtype=np.float32)
@@ -4485,8 +4491,9 @@ class _CompressedMixin:
         big_data = big_data.reshape(-1)
         big_info = (big_data, big_coords)
 
-        index_N = np.arange(Nb, dtype=np.int32)
-        index_NN = np.arange(Nb, Nb + NN, dtype=np.int32)
+        # Use 2*N because noncanonical tests duplicate the entries
+        index_N = np.arange(2 * N, dtype=np.int32)
+        index_NN = np.arange(2 * N, 2 * N + NN, dtype=np.int32)
 
         rhs_NN_dense = np.arange(NN * NN, dtype=np.float32).reshape((NN, NN))
         rhs_NN_sparse = csr_array(rhs_NN_dense)
