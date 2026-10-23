@@ -1231,6 +1231,27 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
+@make_xp_test_case(cut_tree)
+def test_cut_tree_n_clusters_order(xp):
+    # gh-9818: an `n_clusters` entry equal to the number of observations was
+    # written to the first column of the result regardless of its position in
+    # `n_clusters`, leaving the column that requested it filled with zeros.
+    np.random.seed(195)
+    Z = xp.asarray(linkage(np.random.randn(5, 4), method='average'))
+
+    # requesting several cluster counts at once must agree with requesting
+    # them one at a time
+    one_at_a_time = xp.concat([cut_tree(Z, n_clusters=k) for k in range(1, 6)],
+                              axis=1)
+    xp_assert_close(cut_tree(Z, n_clusters=list(range(1, 6))), one_at_a_time,
+                    rtol=1e-15)
+
+    # ... and the column for `n_clusters=5` must not depend on it being the
+    # first entry requested
+    xp_assert_close(cut_tree(Z, n_clusters=[4, 5])[:, [1]],
+                    cut_tree(Z, n_clusters=[5]), rtol=1e-15)
+
+
 @make_xp_test_case(optimal_leaf_ordering)
 def test_optimal_leaf_ordering(xp):
     # test with the distance vector y
