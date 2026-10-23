@@ -1203,10 +1203,20 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     """
     Find peaks in a 1-D array with wavelet transformation.
 
-    The general approach is to smooth `vector` by convolving it with
-    `wavelet(width)` for each width in `widths`. Relative maxima which
-    appear at enough length scales, and with sufficiently high SNR, are
-    accepted.
+    This approach for peak identification uses wavelet transformation to
+    identify the locations of sharp peaks in noisy signals.
+    Many other approaches are very sensitive to noise, requiring smoothing
+    before locating peaks, but smoothing algorithms can distort peak locations.
+    A wavelet transform preserves only peaks which are similar in shape and
+    width to the convolving wavelet, and should be used on unsmoothed data.
+
+    This approach generates wavelet functions defined by `widths` and
+    `wavelet` and convolves `vector` with them, yielding one `row` of convolved
+    data for each width. The result is best visualized as a 2-D plot of
+    `vector` index vs. ``row[n]``. In this plot, peaks which persist across
+    many width values form ridge lines in the `row` dimension. A ridge line is
+    considered a peak if it meets the conditions of `max_distances`,
+    `gap_thresh`, and `min_length`, and `min_snr`.
 
     Parameters
     ----------
@@ -1223,9 +1233,10 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         (`width`) of the wavelet. Should be normalized and symmetric.
         Default is the ricker wavelet.
     max_distances : ndarray, optional
-        At each row, a ridge line is only connected if the relative max at
-        ``row[n]`` is within ``max_distances[n]`` from the relative max at
-        ``row[n+1]``.  Default value is ``widths/4``.
+        At each row, a ridge line is only connected if the relative amplitude
+        of the convolved signal at ``row[n]`` is within ``max_distances[n]``
+        of the relative amplitude at ``row[n+1]``.  Default value is
+        ``widths/4``.
     gap_thresh : float, optional
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
