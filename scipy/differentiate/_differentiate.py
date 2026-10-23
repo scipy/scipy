@@ -100,7 +100,7 @@ def derivative(f, x, *, args=(), kwargs=None, tolerances=None, maxiter=10,
     args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
-        If the callable for which the root is desired requires arguments that are
+        If the callable to be differentiated requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
     kwargs : dict of str:array_like, optional
