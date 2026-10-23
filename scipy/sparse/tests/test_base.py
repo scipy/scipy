@@ -149,6 +149,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                    scipy.sparse._compressed, scipy.sparse._construct]
 
         @functools.wraps(func)
+        @pytest.mark.thread_unsafe
         def wrapper(*a, **kw):
             try:
                 for mod in modules:
@@ -4454,6 +4455,61 @@ class _CompressedMixin:
         A.indices = A.indices.astype(np.int32)
         with pytest.raises(ValueError, match=r'must have the same dtype'):
             A.check_format()
+
+    @with_64bit_maxval_limit(300)
+    def test_large_assignments(self):
+        # Here maxval_limit is our proxy for switching int32 to int64
+        # tests assume a match between decorator and default value
+        maxval_limit = 300  # must match decorator value for this test!
+
+        # When nnz grows bigger than int32 can hold, shift to int64 index arrays
+        def check(A, index, rhs):
+            # check that we start small
+            assert A.indices.dtype == np.int32
+            assert A.nnz < maxval_limit
+            # do the assignment
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", warn_msg,
+                                        sparse.SparseEfficiencyWarning)
+                A[index[:, None], index] = rhs
+            # check that we end large
+            assert A.indptr.dtype == np.int64
+            assert A.indices.dtype == np.int64
+            assert A.nnz > maxval_limit
+
+        # select N, NN with:
+        #   2*(N**2+1) < maxval_limit: so noncanonical A.nnz < maxval_limit preupdate
+        #   NN**2 < maxval_limit: so rhs.nnz < maxval_limit
+        #   maxval_limit <= (2*N)**2: so A.nnz > maxval_limit postupdate (case 1)
+        #   N**2 + NN**2 > maxval_limit: so A.nnz > maxval_limit postupdate (case 2-4)
+        N = 12
+        NN = 14
+        d = 38  # need d >= 2*N+NN
+        warn_msg = "Changing the sparsity structure"
+
+        big_data = np.ones((N, N), dtype=np.float32)
+        big_coords = tuple(co.astype(np.int32) for co in big_data.nonzero())
+        big_data = big_data.reshape(-1)
+        big_info = (big_data, big_coords)
+
+        # Use 2*N because noncanonical tests duplicate the entries
+        index_N = np.arange(2 * N, dtype=np.int32)
+        index_NN = np.arange(2 * N, 2 * N + NN, dtype=np.int32)
+
+        rhs_NN_dense = np.arange(NN * NN, dtype=np.float32).reshape((NN, NN))
+        rhs_NN_sparse = csr_array(rhs_NN_dense)
+
+        # 1: see gh-24915: From empty array, assign 1 to N2xN2 region
+        check(self.spcreator((d, d), dtype=np.int8), index_N, 1)
+
+        # 2: From NxN region filled, assign 1 to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, 1)
+
+        # 3: From NxN region filled, assign np.array to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, rhs_NN_dense)
+
+        # 4: From NxN region filled, assign sparse to new NNxNN region
+        check(self.spcreator(big_info, shape=(d, d)), index_NN, rhs_NN_sparse)
 
 
 class TestCSR(_CompressedMixin, sparse_test_class()):
