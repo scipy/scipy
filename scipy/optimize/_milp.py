@@ -298,6 +298,12 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     algorithm is deterministic, and it typically finds the global optimum of
     moderately challenging mixed-integer linear programs (when it exists).
 
+    Since the HiGHS solver uses floating point arithmetic, so the solution may
+    be inexact. The feasibility conditions are satisfied to within tolerances.
+    Variables with integrality constraints are likewise integral only to
+    within tolerance. In such a case, returned values are not rounded, as doing
+    so can possibly violate constraints.
+
     References
     ----------
     .. [1] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
