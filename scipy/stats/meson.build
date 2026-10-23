@@ -128,6 +128,7 @@ py3.install_sources([
     '_entropy.py',
     '_finite_differences.py',
     '_fit.py',
+    '_hypoexpon.py',
     '_hypotests.py',
     '_kde.py',
     '_ksstats.py',
