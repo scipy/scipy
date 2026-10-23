@@ -53,12 +53,11 @@ from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock
-# jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
                                     minkowski, rogerstanimoto,
-                                    russellrao, seuclidean,  # noqa: F401
+                                    russellrao, seuclidean,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -1301,54 +1300,6 @@ class TestPdist:
         xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
         xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
 
-    def test_pdist_dice_mtica1(self):
-        m = wdice(np.array([1, 0, 1, 1, 0]),
-                  np.array([1, 1, 0, 1, 1]))
-        m2 = wdice(np.array([1, 0, 1, 1, 0], dtype=bool),
-                   np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 7, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 7, rtol=0, atol=1e-10)
-
-    def test_pdist_dice_mtica2(self):
-        m = wdice(np.array([1, 0, 1]),
-                  np.array([1, 1, 0]))
-        m2 = wdice(np.array([1, 0, 1], dtype=bool),
-                   np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
-
-    def test_pdist_rogerstanimoto_mtica1(self):
-        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
-                            np.array([1, 1, 0, 1, 1]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
-                             np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
-
-    def test_pdist_rogerstanimoto_mtica2(self):
-        m = wrogerstanimoto(np.array([1, 0, 1]),
-                            np.array([1, 1, 0]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
-                             np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
-
     @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1526,6 +1477,58 @@ class TestMinkowski:
             minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
 
 
+class TestDice:
+    def test_pdist_dice_mtica1(self):
+        m = wdice(np.array([1, 0, 1, 1, 0]),
+                  np.array([1, 1, 0, 1, 1]))
+        m2 = wdice(np.array([1, 0, 1, 1, 0], dtype=bool),
+                   np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 7, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 7, rtol=0, atol=1e-10)
+
+    def test_pdist_dice_mtica2(self):
+        m = wdice(np.array([1, 0, 1]),
+                  np.array([1, 1, 0]))
+        m2 = wdice(np.array([1, 0, 1], dtype=bool),
+                   np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
+
+
+class TestRogersTanimoto:
+    def test_pdist_rogerstanimoto_mtica1(self):
+        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
+                            np.array([1, 1, 0, 1, 1]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
+                             np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
+
+    def test_pdist_rogerstanimoto_mtica2(self):
+        m = wrogerstanimoto(np.array([1, 0, 1]),
+                            np.array([1, 1, 0]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
+                             np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+
+
 @make_xp_test_case(euclidean)
 class TestEuclidean:
     def test_euclidean(self, xp):
@@ -1547,6 +1550,31 @@ class TestEuclidean:
         xp_assert_duplication_weight(euclidean, x, y)
         xp_assert_split_weight(euclidean, x, y)
         # euclidean is not invariant to rescaling of weights
+
+
+@make_xp_test_case(seuclidean)
+class TestSEuclidean:
+    def test_seuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        V = xp.asarray([1.0, 0.5, 2.0])
+        xp_assert_close(seuclidean(x, y, V), xp.asarray(2.0), atol=1.5e-7)
+
+    def test_seuclidean_array_like(self):
+        x, y, V = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0], [1.0, 0.5, 2.0]
+        xp_assert_close(seuclidean(x, y, V), np.asarray(2.0), atol=1.5e-7)
+
+    def test_seuclidean_nd(self):
+        # We need to test this separate from other metrics because seuclidean uses "V"
+        rng = np.random.default_rng(6738657865438)
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('V', 1))(seuclidean)
+        u = rng.random((5, 2, 4))
+        v = rng.random((2, 4))
+        V = rng.random((3, 1, 1, 4))
+        xp_assert_close(seuclidean(u, v, V), ref_func(u, v, V))
+        # check error is raised for non-broadcastable inputs
+        with pytest.raises(ValueError,
+                           match="Array shapes are incompatible for broadcasting."):
+            seuclidean(u, v, rng.random((3, 4)))
 
 
 class TestSomeDistanceFunctions:
@@ -1914,6 +1942,24 @@ class TestIsValidY:
     def correct_n_by_n(self, n):
         y = np.random.rand((n * (n - 1)) // 2)
         return y
+
+
+class TestRussellrao:
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
 
 
 class TestSokalsneath:
@@ -2383,7 +2429,10 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, 3.5),
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
+        (dice, None),
+        (rogerstanimoto, None),
         (sqeuclidean, None),
+        (russellrao, None),
         (sokalsneath, None),
     ],
 )

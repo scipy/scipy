@@ -226,6 +226,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if x0 is None:
         dtype = result_type(A, b, float)
     else:
+        x0 = atleast_1d(x0)
         dtype = result_type(A, b, x0, float)
 
     if show:
@@ -242,7 +243,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         x = zeros(n, dtype)
         beta = normb.copy()
     else:
-        x = atleast_1d(x0.copy())
+        x = x0.astype(dtype)
         u = u - A.matvec(x)
         beta = norm(u)
 
