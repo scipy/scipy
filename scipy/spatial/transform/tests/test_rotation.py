@@ -1814,10 +1814,11 @@ def test_random_rotation():
         Rotation.random(num=3,rng=rng, shape=(2, 2))
     with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
         Rotation.random(rng=rng, shape=2.5)
-    # could not seem to make this work without nested contexts
-    with (pytest.raises(TypeError, match="takes from 0 to 2 positional arguments") as _,
-          pytest.warns(FutureWarning, match="Positional use of `rng`") as _):
+    with pytest.raises(TypeError, match="takes from 0 to 2 positional arguments") as _:
         Rotation.random(1, rng, None)  # Shape should be kwarg only
+    # Warnings
+    with pytest.warns(FutureWarning, match="Positional use of `rng`") as _:
+        Rotation.random(1, 15)
 
 
 @make_xp_test_case((Rotation, "align_vectors"), (Rotation, "as_matrix"))
