@@ -152,17 +152,12 @@ py3.extension_module('_decomp_interpolative',
   subdir: 'scipy/linalg'
 )
 
-# batched linalg inv module
+# batched linalg module
 py3.extension_module('_batched_linalg',
   [
-    'src/_common_array_utils.hh',
-    'src/_linalg_lu_det.hh',
-    'src/_linalg_inv.hh',
-    'src/_linalg_solve.hh',
-    'src/_npymath.hh',
-    'src/_batched_linalg_module.cc',
+    'src/batched_linalg/_batched_linalg_module.cc',
   ],
-  include_directories: ['src'],
+  include_directories: ['src/batched_linalg', 'src/lapack', 'src/wrapper'],
   dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,
   install: true,
@@ -232,10 +227,10 @@ py3.extension_module('_decomp_update',
 py3.extension_module('_internal_matfuncs',
   [
     '_matfuncsmodule.c',
-    'src/_matfuncs_expm.c',
-    'src/_matfuncs_sqrtm.c',
+    'src/batched_linalg/_matfuncs_expm.c',
+    'src/batched_linalg/_matfuncs_sqrtm.c',
   ],
-  include_directories: ['src/'],
+  include_directories: ['src/batched_linalg'],
   dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,
   install: true,
