@@ -90,6 +90,22 @@ def test_bandwidth_rect_inputs(T):
 
 
 @skip_xp_invalid_arg
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
+@pytest.mark.parametrize('order', ['C', 'F'])
+def test_bandwidth_rect_last_row(T, order):
+    # For wide arrays the last row also holds superdiagonal entries
+    A = np.zeros((3, 7), dtype=T, order=order)
+    A[2, 6] = 1
+    assert bandwidth(A) == (0, 4)
+    assert bandwidth(A.T) == (4, 0)
+    # non-contiguous view, A[2, 6] lands on (2, 3)
+    assert bandwidth(A[:, ::2]) == (0, 1)
+    lo, hi = bandwidth(np.stack([A, A]))
+    assert_equal(lo, [0, 0])
+    assert_equal(hi, [4, 4])
+
+
+@skip_xp_invalid_arg
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_issymetric_ishermitian_dtypes():
     n = 5
