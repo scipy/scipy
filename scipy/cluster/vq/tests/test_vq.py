@@ -445,7 +445,8 @@ class TestKMeans:
         ]
 
         for seed in seed_list:
-            if isinstance(seed, np.random.RandomState) and np.__version__ < "2.2":
+            if (isinstance(seed, np.random.RandomState)
+                    and np.lib.NumpyVersion(np.__version__) < "2.2.0"):
                 # `default_rng` added support for `RandomState` in NP 2.2
                 continue
             seed1 = deepcopy(seed)

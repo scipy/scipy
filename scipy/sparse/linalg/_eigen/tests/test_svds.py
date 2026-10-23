@@ -434,7 +434,7 @@ class SVDSCommonTests:
             res = svds(A, 1, solver=self.solver, random_state=np.random.RandomState(0))
         _check_svds(A, 1, *res)
 
-        if np.__version__ < "2.2":
+        if np.lib.NumpyVersion(np.__version__) < "2.2.0":
             # `default_rng` added support for `RandomState` in NP 2.2
             return
         res = svds(A, 1, solver=self.solver, rng=np.random.RandomState(0))

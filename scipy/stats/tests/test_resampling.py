@@ -1398,7 +1398,8 @@ class TestPermutationTest:
     @pytest.mark.parametrize('permutation_type',
                              ['pairings', 'samples', 'independent'])
     def test_batch(self, permutation_type, random_state, xp):
-        if np.__version__ < "2.2" and random_state == np.random.RandomState:
+        if (np.lib.NumpyVersion(np.__version__) < "2.2.0"
+                and random_state == np.random.RandomState):
             pytest.skip("NumPy 2.2+ required to pass RandomState by `rng` kwarg")
 
         # make sure that the `batch` parameter is respected by checking the

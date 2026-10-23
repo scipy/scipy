@@ -2295,7 +2295,7 @@ class Rotation:
         return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
     @staticmethod
-    @_transition_to_rng("random_state", position_num=2)
+    @_transition_to_rng("random_state", position_num=1)
     def random(
         num: int | None = None,
         rng: np.random.Generator | None = None,

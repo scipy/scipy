@@ -1042,7 +1042,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
         sample_method = dist.sample
 
     if rng_type != np.random.Generator:
-        rng = rng_type(d=1, seed=rng)
+        rng = rng_type(d=1, rng=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 

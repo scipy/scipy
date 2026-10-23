@@ -1051,7 +1051,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
                              args=args, f0=f0)
 
 
-@_transition_to_rng("seed", position_num=6)
+@_transition_to_rng("seed")
 def check_grad(func, grad, x0, *args, epsilon=_epsilon, direction='all', rng=None):
     r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
