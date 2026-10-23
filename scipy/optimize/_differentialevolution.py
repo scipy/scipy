@@ -177,6 +177,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
         ``x``, ``nfev``, ``jac``.
+        A polished solution replaces the best population member only if it
+        improves the objective and stays within bounds and the polish reports
+        success; a polish that ends without success (for instance
+        ``'ABNORMAL_TERMINATION_IN_LNSRCH'`` or the evaluation limit) leaves
+        the result unchanged, even when it evaluated a strictly better
+        in-bounds point. This matches `scipy.optimize.basinhopping`, whose
+        ``lowest_optimization_result`` is also only updated on a successful
+        local minimization.
 
         .. versionchanged:: 1.15.0
             If `workers` is specified then the map-like callable that wraps
@@ -696,6 +704,14 @@ class DifferentialEvolutionSolver:
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
         ``x``, ``nfev``, ``jac``.
+        A polished solution replaces the best population member only if it
+        improves the objective and stays within bounds and the polish reports
+        success; a polish that ends without success (for instance
+        ``'ABNORMAL_TERMINATION_IN_LNSRCH'`` or the evaluation limit) leaves
+        the result unchanged, even when it evaluated a strictly better
+        in-bounds point. This matches `scipy.optimize.basinhopping`, whose
+        ``lowest_optimization_result`` is also only updated on a successful
+        local minimization.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
