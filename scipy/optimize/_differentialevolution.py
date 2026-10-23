@@ -177,6 +177,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
         ``x``, ``nfev``, ``jac``.
+        A polished point is accepted when it improves the objective and lies
+        within the bounds, even if the local solver reported failure
+        (``success=False``).
 
         .. versionchanged:: 1.15.0
             If `workers` is specified then the map-like callable that wraps
@@ -1313,11 +1316,15 @@ class DifferentialEvolutionSolver:
             self._nfev += result.get("nfev", 0)
             DE_result.nfev = self._nfev
 
-            # Polishing solution is only accepted if there is an improvement in
-            # cost function, the polishing was successful and the solution lies
-            # within the bounds.
+            # Polishing solution is accepted if it improves the cost function
+            # and lies within the bounds. ``result.success`` is not required:
+            # a local minimizer (e.g. L-BFGS-B) can stop with ``success=False``
+            # (ABNORMAL, or hitting ``maxfun``) after having evaluated a better,
+            # in-bounds point, and that point should not be discarded. The
+            # finiteness checks guard against a useless/garbage result.
             if (result.fun < DE_result.fun and
-                    result.success and
+                    np.isfinite(result.fun) and
+                    np.all(np.isfinite(result.x)) and
                     np.all(result.x <= self.limits[1]) and
                     np.all(self.limits[0] <= result.x)):
                 DE_result.fun = result.fun

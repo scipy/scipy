@@ -1660,6 +1660,31 @@ class TestDifferentialEvolutionSolver:
         assert_allclose(res.x, res2.x)
         assert_allclose(res.fun, res2.fun)
 
+    def test_polish_accepts_better_point_on_unsuccessful_minimizer(self):
+        # gh-26479: a polished point that improves the objective and lies
+        # within the bounds must be accepted even when the local minimizer
+        # reports ``success=False`` (e.g. L-BFGS-B stopping with ABNORMAL or
+        # hitting ``maxfun``). Previously the better point was discarded and
+        # the worse DE result was returned.
+        calls = []
+
+        def f(x):
+            value = float(np.sum((x - 0.3) ** 2)
+                          + 1e5 * max(0.0, np.sum(x) - 2.0))
+            calls.append((value, x.copy()))
+            return value
+
+        res = differential_evolution(f, [(-5, 5)] * 10, maxiter=3, rng=1)
+        best_value, best_x = min(calls, key=lambda c: c[0])
+        # The best point the solver evaluated is inside the bounds.
+        assert np.all(np.abs(best_x) <= 5)
+        # The returned optimum must be close to the best point the solver
+        # evaluated (the accepted polished point is near-optimal) and far
+        # better than the buggy ~22.97. With the bug this returned ~22.97
+        # while the best evaluated value was ~1.1017.
+        assert res.fun <= best_value + 0.1
+        assert res.fun < 2.0
+
     def test_constraint_violation_error_message(self):
         rng = np.random.default_rng(209331234)
 
