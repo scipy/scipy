@@ -1,4 +1,5 @@
 import warnings
+from decimal import Decimal, localcontext
 
 from itertools import product
 from multiprocessing import Pool
@@ -1000,3 +1001,78 @@ def test_gh_19103():
     bounds = ((0.01, 0, 0), (np.inf, 10, 20.9))
     res = least_squares(exponential_wrapped, x0, method='trf', bounds=bounds)
     assert res.success
+
+
+# ---------------------------------------------------------------------------
+# soft_l1 numerical stability (Phase E submission-ready variant)
+# ---------------------------------------------------------------------------
+def _soft_l1_reference_rho(z):
+    """2*(sqrt(1+z)-1) evaluated to high precision from its definition."""
+    with localcontext() as ctx:
+        ctx.prec = 400
+        d = Decimal(float(z))
+        return float(2 * ((Decimal(1) + d).sqrt() - Decimal(1)))
+
+
+@pytest.mark.parametrize("z", [1e-30, 1e-24, 1e-16, 1e-15, 1e-14, 1e-8])
+def test_soft_l1_small_positive_loss_not_zeroed(z):
+    rho = np.empty((3, 1))
+    IMPLEMENTED_LOSSES["soft_l1"](np.array([z]), rho, False)
+    assert rho[0, 0] > 0
+    assert_allclose(rho[0, 0], _soft_l1_reference_rho(z), rtol=1e-14)
+
+
+def test_soft_l1_cost_only_matches_full_call():
+    z = np.array([0.0, 1e-30, 1e-16, 1.0, 1e308])
+    full = np.empty((3, z.size))
+    cost_only = np.empty((3, z.size))
+    loss = IMPLEMENTED_LOSSES["soft_l1"]
+    loss(z, full, False)
+    loss(z, cost_only, True)
+    assert_equal(full[0], cost_only[0])
+
+
+def test_soft_l1_cost_only_leaves_derivatives_untouched():
+    rho = np.full((3, 2), np.nan)
+    IMPLEMENTED_LOSSES["soft_l1"](np.array([1e-16, 1.0]), rho, True)
+    assert np.isnan(rho[1]).all()
+    assert np.isnan(rho[2]).all()
+
+
+def test_soft_l1_derivatives_are_the_original_expressions():
+    # Guard: the patch must not change rho[1] and rho[2].
+    z = np.array([0.0, 1e-16, 1.0, 1e308, np.inf])
+    rho = np.empty((3, z.size))
+    IMPLEMENTED_LOSSES["soft_l1"](z, rho, False)
+    t = 1 + z
+    assert_equal(rho[1], t**(-0.5))
+    assert_equal(rho[2], -0.5 * t**(-1.5))
+    assert_equal(rho[2, -1], -0.0)
+
+
+def test_soft_l1_boundary_large_and_infinity():
+    z = np.array([np.nextafter(1.0, 0.0), 1.0, np.nextafter(1.0, np.inf), 1e308])
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with np.errstate(invalid="raise", divide="raise", over="raise"):
+            rho = np.empty((3, z.size))
+            IMPLEMENTED_LOSSES["soft_l1"](z, rho, False)
+    assert not caught
+    assert_allclose(rho[0], [_soft_l1_reference_rho(x) for x in z], rtol=1e-14)
+
+    rho_inf = np.empty((3, 1))
+    IMPLEMENTED_LOSSES["soft_l1"](np.array([np.inf]), rho_inf, False)
+    assert np.isposinf(rho_inf[0, 0])
+    assert rho_inf[1, 0] == 0.0
+    assert not np.signbit(rho_inf[1, 0])
+    assert np.signbit(rho_inf[2, 0])
+
+
+def test_soft_l1_tiny_residual_least_squares_cost_is_positive():
+    res = least_squares(lambda x: 1e-9 * x, np.ones(6),
+                        loss="soft_l1", f_scale=1e6)
+    assert res.status == 1
+    exact = 0.5 * 1e6**2 * sum(
+        _soft_l1_reference_rho(float(v)) for v in (res.fun / 1e6)**2)
+    assert res.cost > 0
+    assert_allclose(res.cost, exact, rtol=1e-12)
