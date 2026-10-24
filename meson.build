@@ -165,9 +165,6 @@ endif
 if not fs.exists('subprojects/array_api_extra/README.md')
   error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('subprojects/cobyqa/README.rst')
-  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('subprojects/unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
