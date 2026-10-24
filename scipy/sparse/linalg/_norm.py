@@ -153,7 +153,9 @@ def norm(x, ord=None, axis=None):
         if ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)
-        if np.can_cast(x.dtype, float):
+        # Like `numpy.linalg.norm`, only cast integer and boolean input to
+        # float (so that `abs` cannot overflow); keep inexact dtypes as is.
+        if not np.issubdtype(x.dtype, np.inexact):
             x = x.astype(float, copy=False)
         if ord == 1:
             return abs(x).sum(axis=row_axis).max()
@@ -172,7 +174,9 @@ def norm(x, ord=None, axis=None):
             raise ValueError(message)
         if ord == 0:
             return x.count_nonzero(axis=a)
-        if np.can_cast(x.dtype, float):
+        # Like `numpy.linalg.norm`, only cast integer and boolean input to
+        # float (so that `abs` cannot overflow); keep inexact dtypes as is.
+        if not np.issubdtype(x.dtype, np.inexact):
             x = x.astype(float, copy=False)
         if ord == np.inf:
             return _ravel(abs(x).max(axis=a))
