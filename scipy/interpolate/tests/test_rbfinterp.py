@@ -677,7 +677,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         except LinAlgError as e:
             assert "Singular matrix" in str(e)
         else:
-            xp_assert_close(interp(points), values, atol=1e-8)
+            xp_assert_close(interp(points), values, atol=1e-14)
 
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
