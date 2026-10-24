@@ -7,7 +7,7 @@ name: scipy-dev
 channels:
   - conda-forge
 dependencies:
-  - python
+  - pythonf
   - cython>=3.2.0
   - c-compiler
   - cxx-compiler
