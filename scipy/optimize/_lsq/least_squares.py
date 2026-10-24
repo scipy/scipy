@@ -194,10 +194,15 @@ def huber(z, rho, cost_only):
 
 
 def soft_l1(z, rho, cost_only):
-    t = 1 + z
-    rho[0] = 2 * (t**0.5 - 1)
+    # Rationalize the small-z branch to avoid catastrophic cancellation.
+    # Keep the original expression for z > 1 so its infinity behavior and
+    # large-z rounding are unchanged.
+    mask = z <= 1.0
+    rho[0, mask] = z[mask] / (0.5 * (np.sqrt(1.0 + z[mask]) + 1.0))
+    rho[0, ~mask] = 2.0 * (np.sqrt(1.0 + z[~mask]) - 1.0)
     if cost_only:
         return
+    t = 1 + z
     rho[1] = t**-0.5
     rho[2] = -0.5 * t**-1.5
 
