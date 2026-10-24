@@ -5,6 +5,7 @@ We try and read any file that matlab reads, these files included
 from io import BytesIO
 from os.path import dirname, join as pjoin
 
+import pytest
 from numpy.testing import assert_
 from pytest import raises as assert_raises
 
@@ -23,6 +24,8 @@ def test_multiple_fieldnames():
                      '_3_Station_Q'}.issubset(funny_names))
 
 
+# savemat is not thread-safe (class-level VarWriter5.mat_tag), as in test_mio.py
+@pytest.mark.thread_unsafe
 def test_duplicate_fieldnames_numbering():
     # Repeats of a field name are numbered per name, in order of appearance.
     # savemat cannot write duplicates, so patch unique names in the file.
