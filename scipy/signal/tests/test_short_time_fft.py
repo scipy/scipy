@@ -819,8 +819,8 @@ def test_tutorial_stft_legacy_stft():
 
     xp_assert_close(Sz0, Sz1[:, 2:-1])
 
-    xp_assert_close((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
-                    (6.925060911593139e-07, 8.00271269218721e-07))
+    xp_assert_close(abs(Sz1[:, 1]).min(), 6.925060911593139e-07)
+    xp_assert_close(abs(Sz1[:, 1]).max(), 8.00271269218721e-07)
 
     t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap, input_onesided=False,
                        scaling='spectrum')
