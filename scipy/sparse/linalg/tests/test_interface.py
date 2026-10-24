@@ -1030,7 +1030,7 @@ def test_inheritance(xp):
     xp_assert_equal(id_wp3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
     assert_raises(NotImplementedError, id_wp3.rmatvec, xp.asarray([4, 5, 6]))
 
-    class IdentityManualAttibutes(interface.LinearOperator):
+    class IdentityManualAttributes(interface.LinearOperator):
         def __init__(self, n):
             super().__init__(xp=xp)
             self.dtype = np.dtype(float)
@@ -1039,7 +1039,7 @@ def test_inheritance(xp):
         def _matvec(self, x):
             return x
 
-    id_ma3 = IdentityManualAttibutes(3)
+    id_ma3 = IdentityManualAttributes(3)
     xp_assert_equal(id_ma3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
     assert_raises(NotImplementedError, id_ma3.rmatvec, xp.asarray([4, 5, 6]))
 
