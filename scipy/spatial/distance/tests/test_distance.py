@@ -2207,6 +2207,12 @@ class TestYule:
         d = cdist(x[:1], x[:1], 'yule')
         xp_assert_equal(d, [[0.0]])
 
+    def test_batch_zero_guard(self):
+        # zero-guard for one batch element must not affect the others
+        u = np.array([[1, 1, 0, 0], [1, 0, 1, 0]], dtype=bool)
+        v = np.array([[1, 1, 0, 0], [0, 1, 0, 1]], dtype=bool)
+        xp_assert_equal(yule(u, v), np.asarray([0.0, 2.0]))
+
 
 def test_jensenshannon():
     assert math.isclose(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0), 1.0)

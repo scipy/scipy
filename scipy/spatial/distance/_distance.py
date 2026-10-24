@@ -1288,9 +1288,8 @@ def yule(u, v, w=None):
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     half_R = ntf * nft
-    cond = np.any(half_R == 0, axis=-1, keepdims=True)
     with np.errstate(divide='ignore', invalid='ignore'):
-        res = np.where(cond, 0.0, 2.0 * half_R / (ntt * nff + half_R))
+        res = np.where(half_R == 0, 0.0, 2.0 * half_R / (ntt * nff + half_R))
     return res if res.ndim > 0 else res[()]
 
 
