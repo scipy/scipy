@@ -1305,5 +1305,5 @@ globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # digamma is an alias for psi. Define here so it also has alternative backend
 # support. Add noqa because the linter gets confused by the sneaky way psi
 # is inserted into globals above.
-digamma = psi  # type:ignore[name-defined]  # noqa: F821
+digamma = psi  # pyrefly:ignore[unknown-name]  # noqa: F821
 __all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]
