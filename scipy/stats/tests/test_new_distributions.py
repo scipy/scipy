@@ -85,6 +85,21 @@ class TestNormal(DistributionsTest):
     seed = 353965734
     family = stats.Normal
 
+    @pytest.mark.parametrize('mu, sigma, upper, logmass', [
+        (0., 1., 1e-20, -46.97064039308559),
+        (0., 1., np.nextafter(0., 1.), -745.3590104545859),
+        (-1e18, 1e8, 1., -5e19),
+    ])
+    def test_normal_narrow_interval(self, mu, sigma, upper, logmass):
+        # gh-26119: monotone-density integral bounds round to these log masses.
+        X = stats.Normal(mu=mu, sigma=sigma)
+        # Mix failed subtraction with zero-width and ordinary intervals.
+        x = np.array([0., upper, 0., -np.inf])
+        y = np.array([upper, 0., 0., np.inf])
+        ref = np.array([logmass, logmass + np.pi*1j, -np.inf, 0.])
+        assert_allclose(X.logcdf(x, y), ref, rtol=2e-15)
+        assert_allclose(X.cdf(x, y), np.exp(ref).real, rtol=2e-14, atol=0)
+
     def test_purported_distribution(self, valid_dist_x):
         dist, x = valid_dist_x
         np.testing.assert_allclose(dist.pdf(x),
