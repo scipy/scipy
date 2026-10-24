@@ -1277,4 +1277,4 @@ def xp_spacing(x, xp=None):
     if is_numpy(xp) or is_jax(xp):
         return xp.spacing(x)
 
-    return xp.abs(x - xp.nextafter(x, xp.inf))
+    return xp.nextafter(x, xp.copysign(xp.inf, x)) - x

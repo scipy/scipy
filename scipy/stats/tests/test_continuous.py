@@ -432,13 +432,14 @@ class Test_TestCircular(DistributionsTest):
 
 @make_xp_test_case(stats.Normal)
 class TestOtherMethods:
-    def test_plot(self):
+    @make_xp_test_case((stats.Uniform, 'plot'))
+    def test_plot(self, xp):
         try:
             import matplotlib.pyplot as plt
         except ImportError:
             return
 
-        X = Uniform(a=0., b=1.)
+        X = Uniform(a=0., b=1., xp=xp)
         ax = X.plot()
         assert ax == plt.gca()
 

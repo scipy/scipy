@@ -10,7 +10,7 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy,
+    is_numpy, is_cupy, xp_result_device,
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -54,7 +54,6 @@ _SKIP_ALL = "skip_all"
 _NO_CACHE = "no_cache"
 
 # TODO:
-#  Complete addition of CuPy support
 #  Test dtype behavior - specified dtype is only the base dtype for promotion with
 #    parameters and arguments. Test sample dtypes.
 #  Add PyTorch support
@@ -358,9 +357,6 @@ class _Interval(_Domain):
             The Generator used for drawing random values.
 
         """
-        # this is only used for testing, so we will generate everything with NumPy
-        # and return an array of the desired type at the end. We'll figure out how
-        # to choose the right device later.
         rng = np.random.default_rng(rng)
 
         # def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
@@ -369,7 +365,7 @@ class _Interval(_Domain):
             is_integer = isinstance(self, _IntegerInterval)
             offset = 1 if is_integer else 0
             raw = a + (b - a + offset) * xp.asarray(rng.random(size=size))
-            return np.floor(raw) if is_integer else raw
+            return xp.floor(raw) if is_integer else raw
 
         # get copies of min and max with no nans so that uniform doesn't fail
         min_nn, max_nn = min.copy(), max.copy()
@@ -828,8 +824,8 @@ class _Parameterization:
             all_valid = all_valid & valid
             parameter_values[name] = arr
         dtype = arr.dtype if len(dtypes)==1 else xp.result_type(*list(dtypes))
-
-        return all_valid, dtype
+        device = xp_result_device(*parameter_values.values())
+        return all_valid, dtype, device
 
     def __str__(self):
         r"""Returns a string representation of the parameterization."""
@@ -1509,6 +1505,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         The base dtype of the distribution. The output dtype of methods that
         accept arguments will follow standard promotion rules. Default is the
         default dtype of the backend.
+    device : device, optional
+        The base device of the distribution. Must be compatible with distribution
+        parameters and method arguments. Default is the default device of the backend.
 
     Attributes
     ----------
@@ -1581,7 +1580,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     ### Initialization
 
     def __init__(self, *, tol=_null, validation_policy=None, cache_policy=None,
-                 xp=None, dtype=None, **parameters):
+                 xp=None, dtype=None, device=None, **parameters):
         self.validation_policy = validation_policy
         self.cache_policy = cache_policy
         self._not_implemented = (
@@ -1614,9 +1613,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # self._xp = np  # need array API version of namespace
             self._xp = array_namespace(np.asarray(0))
 
-        # for now, only NumPy and CuPy are supported, so default device is fine for now
         xp_info = self._xp.__array_namespace_info__()
-        self._device = xp_info.default_device()
+        self._device = xp_info.default_device() if device is None else device
         self._dtype = (xp_info.default_dtypes()['real floating']
                        if dtype is None else dtype)
 
@@ -1646,7 +1644,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         parameters = original_parameters = self._original_parameters.copy()
         parameters.update(**params)
         parameterization = None
-        self._invalid = xp.asarray(False, device=self._device)
+        self._invalid = False
         self._any_invalid = False
         self._shape = tuple()
         self._ndim = 0
@@ -1681,7 +1679,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
             parameterization = self._identify_parameterization(parameters)
             parameters, shape, size, ndim = self._broadcast(parameters)
-            parameters, invalid, any_invalid, dtype = (
+            parameters, invalid, any_invalid, dtype, device = (
                 self._validate(parameterization, parameters))
             parameters = self._process_parameters(**parameters)
 
@@ -1691,6 +1689,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             self._size = size
             self._ndim = ndim
             self._dtype = dtype
+            self._device = device
 
         self.reset_cache()
         self._parameters = parameters
@@ -1811,7 +1810,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # are invalid (to skip special treatments if none are invalid), and
         # the common dtype.
         xp = self._xp
-        valid, dtype = parameterization.validation(parameters, xp=xp)
+        valid, dtype, device = parameterization.validation(parameters, xp=xp)
         invalid = ~valid
         any_invalid = invalid if invalid.shape == () else xp.any(invalid)
         # If necessary, make the arrays contiguous and replace invalid with NaN
@@ -1820,7 +1819,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 parameters[parameter_name] = xp_copy(parameters[parameter_name])
                 parameters[parameter_name][invalid] = xp.nan
 
-        return parameters, invalid, any_invalid, dtype
+        return parameters, invalid, any_invalid, dtype, device
 
     def _process_parameters(self, **params):
         r""" Process and cache distribution parameters for reuse.

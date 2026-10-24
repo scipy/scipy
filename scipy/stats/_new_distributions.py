@@ -20,7 +20,7 @@ rv_capabilities = xp_capabilities(
                    ('torch', 'no attempt'),
                    ("jax.numpy", 'mutation'),
                    ('dask.array', 'no attempt')],
-    method_capabilities={  # no effect unless I apply to superclass?
+    method_capabilities={
             "plot": dict(np_only=True),
     }
 )
