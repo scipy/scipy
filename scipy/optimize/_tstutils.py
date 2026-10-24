@@ -850,8 +850,9 @@ def get_tests(collection='original', smoothness=None):
 
 
 # Backwards compatibility
-methods = [cc.bisect, cc.ridder, cc.brenth, cc.brentq]
-mstrings = ['cc.bisect', 'cc.ridder', 'cc.brenth', 'cc.brentq']
+methods = [cc.bisect, cc.ridder, cc.brenth, cc.brentq, cc.bisect_exact]
+mstrings = ['cc.bisect', 'cc.ridder', 'cc.brenth', 'cc.brentq',
+            'cc.bisect_exact']
 functions = [f2, f3, f4, f5, f6]
 fstrings = ['f2', 'f3', 'f4', 'f5', 'f6']
 
