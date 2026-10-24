@@ -179,7 +179,7 @@ def test_csr_hstack_int64():
 def test_mixed_index_dtype_int_indexing(cls):
     # https://github.com/scipy/scipy/issues/20182
     rng = np.random.default_rng(0)
-    base_mtx = cls(sparse.random(50, 50, random_state=rng, density=0.1))
+    base_mtx = cls(sparse.random(50, 50, rng=rng, density=0.1))
     indptr_64bit = base_mtx.copy()
     indices_64bit = base_mtx.copy()
     indptr_64bit.indptr = base_mtx.indptr.astype(np.int64)

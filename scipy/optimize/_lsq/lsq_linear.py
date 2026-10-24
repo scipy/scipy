@@ -235,7 +235,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> m = 2000
     >>> n = 1000
     ...
-    >>> A = random_array((m, n), density=1e-4, random_state=rng)
+    >>> A = random_array((m, n), density=1e-4, rng=rng)
     >>> b = rng.standard_normal(m)
     ...
     >>> lb = rng.standard_normal(n)

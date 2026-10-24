@@ -144,6 +144,7 @@ def test_spline_properties():
 
 
 def test_error_handling():
+
     with pytest.raises(ValueError):
         RotationSpline([1.0], Rotation.random())
 

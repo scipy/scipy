@@ -42,7 +42,7 @@ def _trace(A):
         return A.trace()
 
 
-def traceest(A, m3, seed=None):
+def traceest(A, m3, rng=None):
     """Estimate `np.trace(A)` using `3*m3` matrix-vector products.
 
     The result is not deterministic.
@@ -54,8 +54,8 @@ def traceest(A, m3, seed=None):
     m3 : int
         Number of matrix-vector products divided by 3 used to estimate the
         trace.
-    seed : optional
-        Seed for `numpy.random.default_rng`.
+    rng : optional
+        rng for `numpy.random.default_rng`.
         Can be provided to obtain deterministic results.
 
     Returns
@@ -76,7 +76,7 @@ def traceest(A, m3, seed=None):
        :doi:`10.1137/1.9781611976496.16`.
 
     """
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(rng)
     if len(A.shape) != 2 or A.shape[-1] != A.shape[-2]:
         raise ValueError("Expected A to be like a square matrix.")
     n = A.shape[-1]

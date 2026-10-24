@@ -462,7 +462,7 @@ class TestQMCQuad:
             return xp.exp(-0.5 * xp.sum(x*x, axis=0)) / (2 * xp.pi)
 
         rng = np.random.default_rng(2879434385674690281)
-        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        qrng = stats.qmc.Sobol(ndim, rng=rng)
         a = np.zeros(ndim)
         b = np.ones(ndim) * signs
         res = qmc_quad(func, xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype),
@@ -473,7 +473,7 @@ class TestQMCQuad:
         assert np.prod(signs)*res.integral > 0
 
         rng = np.random.default_rng(2879434385674690281)
-        qrng = stats.qmc.Sobol(ndim, seed=rng)
+        qrng = stats.qmc.Sobol(ndim, rng=rng)
         logres = qmc_quad(lambda *args: xp.log(func(*args)),
                           xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype),
                           n_points=n_points, n_estimates=n_estimates,

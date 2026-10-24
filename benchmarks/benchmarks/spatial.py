@@ -509,13 +509,13 @@ class Hausdorff(Benchmark):
     param_names = ['num_points']
 
     def setup(self, num_points):
-        rng = np.random.default_rng(123)
-        self.points1 = rng.random((num_points, 3))
-        self.points2 = rng.random((num_points, 3))
+        self.rng = np.random.default_rng(123)
+        self.points1 = self.rng.random((num_points, 3))
+        self.points2 = self.rng.random((num_points, 3))
 
     def time_directed_hausdorff(self, num_points):
         # time directed_hausdorff code in 3 D
-        distance.directed_hausdorff(self.points1, self.points2)
+        distance.directed_hausdorff(self.points1, self.points2, rng=self.rng)
 
 class GeometricSlerpBench(Benchmark):
     params = [10, 1000, 10000]
@@ -541,7 +541,7 @@ class RotationBench(Benchmark):
 
     def setup(self, num_rotations):
         rng = np.random.default_rng(1234)
-        self.rotations = Rotation.random(num_rotations, random_state=rng)
+        self.rotations = Rotation.random(num_rotations, rng=rng)
 
     def time_matrix_conversion(self, num_rotations):
         '''Time converting rotation from and to matrices'''

@@ -42,7 +42,7 @@ class BenchmarkOneNormEst(Benchmark):
                     shape[0],
                     shape[1],
                     min(max_nnz/(shape[0]*shape[1]), 1e-5),
-                    random_state=rng,
+                    rng=rng,
                 )
                 self.matrices.append(M)
 

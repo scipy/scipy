@@ -561,6 +561,7 @@ class TestTransitionToRNG:
         method = stats.BootstrapMethod(**kwargs)
         return res.confidence_interval(method=method)
 
+    @pytest.mark.filterwarnings("always::FutureWarning")
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow
     @pytest.mark.parametrize("method, arg_name", [
@@ -604,25 +605,38 @@ class TestTransitionToRNG:
 
         if method.__name__ in {"dunnett", "sobol_indices"}:
             # the two kwargs have essentially the same behavior for these functions
-            res3 = method(self, **{arg_name: seed})
+            with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+                res3 = method(self, **{arg_name: seed})
             assert_equal(res3, res1)
             return
 
         rng = np.random.RandomState(seed)
-        res1 = method(self, **{arg_name: rng})
-        res2 = method(self, **{arg_name: seed})
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res1 = method(self, **{arg_name: rng})
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res2 = method(self, **{arg_name: seed})
 
         if method.__name__ in {"halton", "sobol", "latin_hypercube", "poisson_disk",
                                "multivariate_normal_qmc", "multinomial_qmc"}:
             # For these, passing `random_state=RandomState(seed)` is not the same as
-            # passing integer `seed`.
-            res1b = method(self, **{arg_name: np.random.RandomState(seed)})
+            # passing integer `seed`. Turns out it's also not behaving as documented:
+            # there is a difference between passing `seed` and `default_rng(seed)`...
+            with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+                res1b = method(self, **{arg_name: np.random.RandomState(seed)})
             assert_equal(res1b, res1)
-            res2b = method(self, **{arg_name: seed})
+            with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+                res2b = method(self, **{arg_name: seed})
             assert_equal(res2b, res2)
             return
 
         np.random.seed(seed)
-        res3 = method(self, **{arg_name: None})
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res3 = method(self, **{arg_name: None})
+
+        np.random.seed(seed)
+        with pytest.warns(FutureWarning):
+            res4 = method(self)
+
         assert_equal(res2, res1)
         assert_equal(res3, res1)
+        assert_equal(res4, res1)
