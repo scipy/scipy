@@ -48,7 +48,6 @@ import warnings
 
 import numpy as np
 
-from scipy import sparse
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API,
@@ -1165,14 +1164,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
     def __init__(self, A, xp=None):
         xp = np_compat if xp is None else xp
-        if A.ndim > 2:
-            if issparse(A):
-                A_T = sparse.swapaxes(A, -1, -2)
-            else:
-                A_T = A.mT
-        else:
-            A_T = A.T
-        super().__init__(xp.conj(A_T), xp=xp)
+        super().__init__(xp.conj(A.mT), xp=xp)
         self.args = (A,)  # override to ensure `self.args[0]` is accurate
 
     def _adjoint(self):
@@ -1181,19 +1173,20 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype=None, xp=None):
+        if shape[-1] != shape[-2]:
+            raise ValueError(f"IdentityOperator must be square, got shape {shape}")
         super().__init__(dtype, shape, xp)
 
     def _matvec(self, x):
-        return x
-
-    def _rmatvec(self, x):
-        return x
-
-    def _rmatmat(self, x):
-        return x
+        shape = np.broadcast_shapes(self.shape[:-1], x.shape)
+        return xp_copy(self._xp.broadcast_to(x, shape), xp=self._xp)
 
     def _matmat(self, x):
-        return x
+        shape = np.broadcast_shapes((*self.shape[:-1], 1), x.shape)
+        return xp_copy(self._xp.broadcast_to(x, shape), xp=self._xp)
+
+    _rmatvec = _matvec
+    _rmatmat = _matmat
 
     def _adjoint(self):
         return self
