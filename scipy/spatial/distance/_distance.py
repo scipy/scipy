@@ -506,6 +506,7 @@ def euclidean(u, v, w=None):
     return minkowski(u, v, p=2, w=w)
 
 
+@xp_capabilities()
 def sqeuclidean(u, v, w=None):
     """
     Compute the squared Euclidean distance between two arrays.
@@ -522,13 +523,13 @@ def sqeuclidean(u, v, w=None):
         Input array.
     v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    sqeuclidean : float or ndarray
+    sqeuclidean : float or array
         The squared Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -540,14 +541,14 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np,
-                         order='C')
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         u_v_w = w * u_v
-    return np.vecdot(u_v, u_v_w)
+    return xp.vecdot(u_v, u_v_w)
 
 
 def correlation(u, v, w=None, centered=True):

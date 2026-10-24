@@ -469,7 +469,6 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wjaccard = _weight_checked(jaccard)
-wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
@@ -1536,6 +1535,68 @@ class TestEuclidean:
         # euclidean is not invariant to rescaling of weights
 
 
+@make_xp_test_case(sqeuclidean)
+class TestSqeuclidean:
+    def test_sqeuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(sqeuclidean(x, y), xp.asarray(5.0), atol=1.5e-7)
+
+    def test_sqeuclidean_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(sqeuclidean(x, y), np.asarray(5.0), atol=1.5e-7)
+
+    def test_euclidean_squared(self, xp):
+        rng = np.random.default_rng(42)
+        x, y = xp.asarray(rng.random(10)), xp.asarray(rng.random(10))
+        xp_assert_close(sqeuclidean(x, y), euclidean(x, y)**2)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(sqeuclidean, x, y)
+        xp_assert_zero_weight(sqeuclidean, x, y)
+        xp_assert_duplication_weight(sqeuclidean, x, y)
+        xp_assert_split_weight(sqeuclidean, x, y)
+        # sqeuclidean is linear in the weights, so not invariant to rescaling
+
+    @pytest.mark.skipif(
+        (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
+        reason="dtypes do not match, on MacOS x86-64 only"
+    )
+    def test_sqeuclidean_dtypes(self):
+        # Assert that sqeuclidean returns the right types of values.
+        # Integer types should be converted to floating for stability.
+        # Floating point types should be the same as the input.
+        x = [1, 2, 3]
+        y = [4, 5, 6]
+
+        for dtype in [np.int8, np.int16, np.int32, np.int64]:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert np.issubdtype(d.dtype, np.floating)
+
+        for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+            umax = np.iinfo(dtype).max
+            d1 = sqeuclidean([0], np.asarray([umax], dtype=dtype))
+            d2 = sqeuclidean(np.asarray([umax], dtype=dtype), [0])
+
+            xp_assert_equal(d1, d2)
+            xp_assert_equal(d1, np.float64(umax)**2)
+
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        for dtype in ['float16', 'float128']:
+            # These aren't present in older numpy versions; float128 may also not
+            # be present on all platforms.
+            if hasattr(np, dtype):
+                dtypes.append(getattr(np, dtype))
+
+        for dtype in dtypes:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert d.dtype == dtype
+
+
 @make_xp_test_case(seuclidean)
 class TestSEuclidean:
     def test_seuclidean(self, xp):
@@ -1569,11 +1630,6 @@ class TestSomeDistanceFunctions:
         y = np.array([1.0, 1.0, 5.0])
 
         self.cases = [(x, y)]
-
-    def test_sqeuclidean(self):
-        for x, y in self.cases:
-            dist = wsqeuclidean(x, y)
-            assert math.isclose(dist, 5.0, abs_tol=1.5e-7)
 
     def test_cosine(self):
         for x, y in self.cases:
@@ -1980,24 +2036,6 @@ def test_braycurtis():
     assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
     assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
 
-def test_euclideans():
-    # Regression test for ticket #1328.
-    x1 = np.array([1, 1, 1])
-    x2 = np.array([0, 0, 0])
-
-    # Basic test of the calculation.
-    assert math.isclose(wsqeuclidean(x1, x2), 3.0, abs_tol=1e-14)
-    assert math.isclose(euclidean(x1, x2), math.sqrt(3), abs_tol=1e-14)
-
-    # Another check, with random data.
-    rs = np.random.RandomState(1234567890)
-    x = rs.rand(10)
-    y = rs.rand(10)
-    d1 = euclidean(x, y)
-    d2 = wsqeuclidean(x, y)
-    assert math.isclose(d1**2, d2, abs_tol=1e-14)
-
-
 def test_hamming_unequal_length():
     # Regression test for gh-4290.
     x = [0, 0, 1]
@@ -2043,41 +2081,6 @@ def test_minkowski_w():
 
     xp_assert_close(p0, p1, rtol=1e-15)
     xp_assert_close(c0, c1, rtol=1e-15)
-
-
-@pytest.mark.skipif(
-    (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
-    reason="dtypes do not match, on MacOS x86-64 only"
-)
-def test_sqeuclidean_dtypes():
-    # Assert that sqeuclidean returns the right types of values.
-    # Integer types should be converted to floating for stability.
-    # Floating point types should be the same as the input.
-    x = [1, 2, 3]
-    y = [4, 5, 6]
-
-    for dtype in [np.int8, np.int16, np.int32, np.int64]:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert np.issubdtype(d.dtype, np.floating)
-
-    for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        umax = np.iinfo(dtype).max
-        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
-
-        xp_assert_equal(d1, d2)
-        xp_assert_equal(d1, np.float64(umax)**2)
-
-    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-    for dtype in ['float16', 'float128']:
-        # These aren't present in older numpy versions; float128 may also not
-        # be present on all platforms.
-        if hasattr(np, dtype):
-            dtypes.append(getattr(np, dtype))
-
-    for dtype in dtypes:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert d.dtype == dtype
 
 
 def test_modifies_input(metric):
@@ -2435,10 +2438,10 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, 3.5),
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
+        make_xp_pytest_param(sqeuclidean, None),
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
-        (sqeuclidean, None),
         (russellrao, None),
         (sokalsneath, None),
     ],

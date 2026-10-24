@@ -2234,7 +2234,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if not (a.ndim == 1 and xp_size(a) > 0):
         raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
 
-    if x.shape[axis] == 0:
+    # Nothing to filter if `x` is empty, whether along `axis` or along another
+    # dimension (the FIR path below cannot handle the latter, e.g. shape (0, 5)).
+    if x.size == 0:
         if zi is None:
             return xp.asarray(x, device=device)
         else:
@@ -5245,6 +5247,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)
         return_zi = False
+    if x.size == 0:
+        # Nothing to filter: the state is unchanged (`zi` is already a copy).
+        x = np.asarray(x, dtype=dtype)
+        if return_zi:
+            return xp.asarray(x, device=device), xp.asarray(zi, device=device)
+        return xp.asarray(x, device=device)
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
     zi = np.moveaxis(zi, (0, axis + 1), (-2, -1))
