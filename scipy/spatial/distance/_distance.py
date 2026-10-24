@@ -1143,7 +1143,7 @@ def canberra(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
+    u = _validate_vector(u, dtype=np.float64)
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
