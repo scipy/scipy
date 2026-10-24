@@ -342,7 +342,7 @@ description = "Build SciPy (default settings)"
 ### Default testing ###
 
 [feature.test-deps.dependencies]
-pytest = "*"
+pytest = ">=9.0.3"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-timeout = "*"
@@ -498,7 +498,7 @@ description = "Launch IPython (array-api-cpu env)"
 ### Jupyter ###
 
 [feature.jupyter.dependencies]
-jupyterlab = "*"
+jupyterlab = ">=4.6.4"
 ipykernel = "*"
 
 [feature.jupyter.tasks.jupyter]
@@ -516,7 +516,7 @@ asv = "==0.6.6"
 asv_runner = ">=0.3.1"
 cffi = "*"
 pyfftw = "*"
-pytest = "*"
+pytest = ">=9.0.3"
 psutil = "*"
 # peak_finding calls scipy.datasets.electrocardiogram() in setup(), so a missing
 # pooch is an asv failure rather than a skip
