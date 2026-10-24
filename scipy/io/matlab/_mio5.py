@@ -516,10 +516,12 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
-    mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX
 
     def __init__(self, file_writer):
+        # Per instance, not per class: update_matrix_tag writes the byte count
+        # into it, so a shared array breaks concurrent savemat calls (gh-7260)
+        self.mat_tag = np.zeros((), NDT_TAG_FULL)
+        self.mat_tag['mdtype'] = miMATRIX
         self.file_stream = file_writer.file_stream
         self.unicode_strings = file_writer.unicode_strings
         self.long_field_names = file_writer.long_field_names
