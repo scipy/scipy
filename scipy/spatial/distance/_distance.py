@@ -856,11 +856,12 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
+@xp_capabilities()
 def seuclidean(u, v, V):
     """
-    Return the standardized Euclidean distance between two 1-D arrays.
+    Return the standardized Euclidean distance between two arrays.
 
-    The standardized Euclidean distance between two n-vectors `u` and `v` is
+    The standardized Euclidean distance between arrays `u` and `v` is
 
     .. math::
 
@@ -871,17 +872,17 @@ def seuclidean(u, v, V):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    V : (N,) array_like
-        `V` is a 1-D array of component variances. It is usually computed
+    V : (..., N) array_like
+        `V` is an array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
     -------
-    seuclidean : double
+    seuclidean : float or array
         The standardized Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -895,12 +896,8 @@ def seuclidean(u, v, V):
     3.1780497164141406
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    V = _validate_vector(V, dtype=np.float64)
-    if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D array of the same dimension '
-                        'as u and v.')
+    xp = array_namespace(u, v, V)
+    u, v, V = _promote(u, v, V, xp=xp, order='C')
     return euclidean(u, v, w=1/V)
 
 
