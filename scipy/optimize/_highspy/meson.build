@@ -7,7 +7,7 @@ endif
 
 highs_opts = {
     'default_library': 'static',
-    'with_pybind11': false,  # We don't want to build and install highspy
+    'with_nanobind': false,  # We don't want to build and install highspy
     'use_zlib': 'disabled',
     'do_install': false,
 }
@@ -55,7 +55,7 @@ _highs_dep = declare_dependency(
     include_directories: highs_incdirs,
 )
 
-scipy_highspy_dep = [pybind11_dep, _highs_dep, thread_dep, atomic_dep]
+scipy_highspy_dep = [nanobind_dep, _highs_dep, thread_dep, atomic_dep]
 
 py3.install_sources(
     ['__init__.py', '_highs_wrapper.py'],
