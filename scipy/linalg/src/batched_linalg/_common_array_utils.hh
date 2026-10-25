@@ -40,7 +40,7 @@ enum QR_mode : Py_ssize_t
     ECONOMIC = 31
 };
 
-// Eigh driver tags; pythn side maps driver strings to these values
+// Eigh driver tags; python side maps driver strings to these values
 enum Eigh_driver : Py_ssize_t
 {
     EV = 1,
@@ -50,6 +50,14 @@ enum Eigh_driver : Py_ssize_t
     GV = 10,
     GVD = 11,
     GVX = 12
+};
+
+// Which matrix norm to compute; python side maps to these values
+enum MATRIX_NORM_ORD : Py_ssize_t
+{
+    FRO = 0,
+    ONE = 1,
+    INF = 2,
 };
 
 
