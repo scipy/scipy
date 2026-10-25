@@ -123,7 +123,19 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         "Please also check CXXFLAGS and FFLAGS.")
 
     if asan:
-        meson_args = meson_args + ('-Db_sanitize=address,undefined', )
+        root = Path(__file__).parent.parent
+        asan_ignore_file = root.absolute() / 'tools' / 'asan-ignore.txt'
+
+        # TODO: `-Db_sanitize=address,undefined` ?
+        meson_args += ('-Db_sanitize=address',)
+        # silence spurious Meson warning about `b_lundef` with Clang; the ASAN
+        # runtime is linked into every target via `-shared-libsan`
+        meson_args += ('-Db_lundef=false',)
+        compiler_args = (
+            f'-fno-omit-frame-pointer -fsanitize-ignorelist={asan_ignore_file}'
+        )
+        meson_args += (f'-Dc_args={compiler_args}',)
+        meson_args += (f'-Dcpp_args={compiler_args}',)
 
     if setup_args:
         meson_args = meson_args + tuple([str(arg) for arg in setup_args])
@@ -447,7 +459,7 @@ def refguide_check(ctx, build: bool | None = None, build_dir=None, *args, **kwar
         ctx.invoke(build_cmd)
 
     build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
+    root = Path(__file__).parent.parent
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',
