@@ -2038,6 +2038,15 @@ class TestBrayCurtis:
         assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
 
 
+def test_canberra_int64_min():
+    # Regression test for gh-26486: integer inputs at the int64 limit
+    # must not overflow to a negative, asymmetric distance in canberra.
+    u = np.array([np.iinfo(np.int64).min])
+    v = np.array([0])
+    assert canberra(u, v) == 1.0
+    assert canberra(v, u) == 1.0
+
+
 def test_hamming_unequal_length():
     # Regression test for gh-4290.
     x = [0, 0, 1]
