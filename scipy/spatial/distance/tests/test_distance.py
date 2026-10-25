@@ -53,12 +53,11 @@ from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock
-# jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
                                     minkowski, rogerstanimoto,
-                                    russellrao, seuclidean,  # noqa: F401
+                                    russellrao, seuclidean,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
@@ -470,7 +469,6 @@ wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
 wjaccard = _weight_checked(jaccard)
-wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
@@ -1285,70 +1283,6 @@ class TestPdist:
         xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
         xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
 
-    def test_pdist_yule_mtica1(self):
-        m = wyule(np.array([1, 0, 1, 1, 0]),
-                  np.array([1, 1, 0, 1, 1]))
-        m2 = wyule(np.array([1, 0, 1, 1, 0], dtype=bool),
-                   np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
-
-    def test_pdist_yule_mtica2(self):
-        m = wyule(np.array([1, 0, 1]),
-                  np.array([1, 1, 0]))
-        m2 = wyule(np.array([1, 0, 1], dtype=bool),
-                   np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
-
-    def test_pdist_dice_mtica1(self):
-        m = wdice(np.array([1, 0, 1, 1, 0]),
-                  np.array([1, 1, 0, 1, 1]))
-        m2 = wdice(np.array([1, 0, 1, 1, 0], dtype=bool),
-                   np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 7, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 7, rtol=0, atol=1e-10)
-
-    def test_pdist_dice_mtica2(self):
-        m = wdice(np.array([1, 0, 1]),
-                  np.array([1, 1, 0]))
-        m2 = wdice(np.array([1, 0, 1], dtype=bool),
-                   np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
-
-    def test_pdist_rogerstanimoto_mtica1(self):
-        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
-                            np.array([1, 1, 0, 1, 1]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
-                             np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
-
-    def test_pdist_rogerstanimoto_mtica2(self):
-        m = wrogerstanimoto(np.array([1, 0, 1]),
-                            np.array([1, 1, 0]))
-        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
-                             np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
-
     @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1526,6 +1460,58 @@ class TestMinkowski:
             minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
 
 
+class TestDice:
+    def test_pdist_dice_mtica1(self):
+        m = wdice(np.array([1, 0, 1, 1, 0]),
+                  np.array([1, 1, 0, 1, 1]))
+        m2 = wdice(np.array([1, 0, 1, 1, 0], dtype=bool),
+                   np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 7, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 7, rtol=0, atol=1e-10)
+
+    def test_pdist_dice_mtica2(self):
+        m = wdice(np.array([1, 0, 1]),
+                  np.array([1, 1, 0]))
+        m2 = wdice(np.array([1, 0, 1], dtype=bool),
+                   np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
+
+
+class TestRogersTanimoto:
+    def test_pdist_rogerstanimoto_mtica1(self):
+        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
+                            np.array([1, 1, 0, 1, 1]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
+                             np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
+
+    def test_pdist_rogerstanimoto_mtica2(self):
+        m = wrogerstanimoto(np.array([1, 0, 1]),
+                            np.array([1, 1, 0]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
+                             np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+
+
 @make_xp_test_case(euclidean)
 class TestEuclidean:
     def test_euclidean(self, xp):
@@ -1549,6 +1535,93 @@ class TestEuclidean:
         # euclidean is not invariant to rescaling of weights
 
 
+@make_xp_test_case(sqeuclidean)
+class TestSqeuclidean:
+    def test_sqeuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(sqeuclidean(x, y), xp.asarray(5.0), atol=1.5e-7)
+
+    def test_sqeuclidean_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(sqeuclidean(x, y), np.asarray(5.0), atol=1.5e-7)
+
+    def test_euclidean_squared(self, xp):
+        rng = np.random.default_rng(42)
+        x, y = xp.asarray(rng.random(10)), xp.asarray(rng.random(10))
+        xp_assert_close(sqeuclidean(x, y), euclidean(x, y)**2)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(sqeuclidean, x, y)
+        xp_assert_zero_weight(sqeuclidean, x, y)
+        xp_assert_duplication_weight(sqeuclidean, x, y)
+        xp_assert_split_weight(sqeuclidean, x, y)
+        # sqeuclidean is linear in the weights, so not invariant to rescaling
+
+    @pytest.mark.skipif(
+        (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
+        reason="dtypes do not match, on MacOS x86-64 only"
+    )
+    def test_sqeuclidean_dtypes(self):
+        # Assert that sqeuclidean returns the right types of values.
+        # Integer types should be converted to floating for stability.
+        # Floating point types should be the same as the input.
+        x = [1, 2, 3]
+        y = [4, 5, 6]
+
+        for dtype in [np.int8, np.int16, np.int32, np.int64]:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert np.issubdtype(d.dtype, np.floating)
+
+        for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+            umax = np.iinfo(dtype).max
+            d1 = sqeuclidean([0], np.asarray([umax], dtype=dtype))
+            d2 = sqeuclidean(np.asarray([umax], dtype=dtype), [0])
+
+            xp_assert_equal(d1, d2)
+            xp_assert_equal(d1, np.float64(umax)**2)
+
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        for dtype in ['float16', 'float128']:
+            # These aren't present in older numpy versions; float128 may also not
+            # be present on all platforms.
+            if hasattr(np, dtype):
+                dtypes.append(getattr(np, dtype))
+
+        for dtype in dtypes:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert d.dtype == dtype
+
+
+@make_xp_test_case(seuclidean)
+class TestSEuclidean:
+    def test_seuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        V = xp.asarray([1.0, 0.5, 2.0])
+        xp_assert_close(seuclidean(x, y, V), xp.asarray(2.0), atol=1.5e-7)
+
+    def test_seuclidean_array_like(self):
+        x, y, V = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0], [1.0, 0.5, 2.0]
+        xp_assert_close(seuclidean(x, y, V), np.asarray(2.0), atol=1.5e-7)
+
+    def test_seuclidean_nd(self):
+        # We need to test this separate from other metrics because seuclidean uses "V"
+        rng = np.random.default_rng(6738657865438)
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('V', 1))(seuclidean)
+        u = rng.random((5, 2, 4))
+        v = rng.random((2, 4))
+        V = rng.random((3, 1, 1, 4))
+        xp_assert_close(seuclidean(u, v, V), ref_func(u, v, V))
+        # check error is raised for non-broadcastable inputs
+        with pytest.raises(ValueError,
+                           match="Array shapes are incompatible for broadcasting."):
+            seuclidean(u, v, rng.random((3, 4)))
+
+
 class TestSomeDistanceFunctions:
 
     def setup_method(self):
@@ -1557,11 +1630,6 @@ class TestSomeDistanceFunctions:
         y = np.array([1.0, 1.0, 5.0])
 
         self.cases = [(x, y)]
-
-    def test_sqeuclidean(self):
-        for x, y in self.cases:
-            dist = wsqeuclidean(x, y)
-            assert math.isclose(dist, 5.0, abs_tol=1.5e-7)
 
     def test_cosine(self):
         for x, y in self.cases:
@@ -1916,6 +1984,24 @@ class TestIsValidY:
         return y
 
 
+class TestRussellrao:
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+
+
 class TestSokalsneath:
     def test_sokalsneath_all_false(self):
         # Regression test for ticket #876
@@ -1945,27 +2031,20 @@ def test_canberra():
     assert wcanberra([1, 1, 0, 0], [1, 0, 1, 0]) == 2
 
 
-def test_braycurtis():
-    # Regression test for ticket #1430.
-    assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
-    assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+class TestBrayCurtis:
+    def test_braycurtis(self):
+        # Regression test for ticket #1430.
+        assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
+        assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
 
-def test_euclideans():
-    # Regression test for ticket #1328.
-    x1 = np.array([1, 1, 1])
-    x2 = np.array([0, 0, 0])
 
-    # Basic test of the calculation.
-    assert math.isclose(wsqeuclidean(x1, x2), 3.0, abs_tol=1e-14)
-    assert math.isclose(euclidean(x1, x2), math.sqrt(3), abs_tol=1e-14)
-
-    # Another check, with random data.
-    rs = np.random.RandomState(1234567890)
-    x = rs.rand(10)
-    y = rs.rand(10)
-    d1 = euclidean(x, y)
-    d2 = wsqeuclidean(x, y)
-    assert math.isclose(d1**2, d2, abs_tol=1e-14)
+def test_canberra_int64_min():
+    # Regression test for gh-26486: integer inputs at the int64 limit
+    # must not overflow to a negative, asymmetric distance in canberra.
+    u = np.array([np.iinfo(np.int64).min])
+    v = np.array([0])
+    assert canberra(u, v) == 1.0
+    assert canberra(v, u) == 1.0
 
 
 def test_hamming_unequal_length():
@@ -2013,41 +2092,6 @@ def test_minkowski_w():
 
     xp_assert_close(p0, p1, rtol=1e-15)
     xp_assert_close(c0, c1, rtol=1e-15)
-
-
-@pytest.mark.skipif(
-    (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
-    reason="dtypes do not match, on MacOS x86-64 only"
-)
-def test_sqeuclidean_dtypes():
-    # Assert that sqeuclidean returns the right types of values.
-    # Integer types should be converted to floating for stability.
-    # Floating point types should be the same as the input.
-    x = [1, 2, 3]
-    y = [4, 5, 6]
-
-    for dtype in [np.int8, np.int16, np.int32, np.int64]:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert np.issubdtype(d.dtype, np.floating)
-
-    for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
-        umax = np.iinfo(dtype).max
-        d1 = wsqeuclidean([0], np.asarray([umax], dtype=dtype))
-        d2 = wsqeuclidean(np.asarray([umax], dtype=dtype), [0])
-
-        xp_assert_equal(d1, d2)
-        xp_assert_equal(d1, np.float64(umax)**2)
-
-    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-    for dtype in ['float16', 'float128']:
-        # These aren't present in older numpy versions; float128 may also not
-        # be present on all platforms.
-        if hasattr(np, dtype):
-            dtypes.append(getattr(np, dtype))
-
-    for dtype in dtypes:
-        d = wsqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert d.dtype == dtype
 
 
 def test_modifies_input(metric):
@@ -2148,18 +2192,40 @@ def test_validate_weights(xp):
     xp_assert_close(_validate_weights(xp.asarray([1.0, 2.0, 3.0])),
                     xp.asarray([1.0, 2.0, 3.0]))
 
+class TestYule:
+    def test_pdist_yule_mtica1(self):
+        m = wyule(np.array([1, 0, 1, 1, 0]),
+                  np.array([1, 1, 0, 1, 1]))
+        m2 = wyule(np.array([1, 0, 1, 1, 0], dtype=bool),
+                   np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
 
-def test_yule_all_same():
-    # Test yule avoids a divide by zero when exactly equal
-    x = np.ones((2, 6), dtype=bool)
-    d = wyule(x[0], x[0])
-    assert d == 0.0
+    def test_pdist_yule_mtica2(self):
+        m = wyule(np.array([1, 0, 1]),
+                  np.array([1, 1, 0]))
+        m2 = wyule(np.array([1, 0, 1], dtype=bool),
+                   np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
 
-    d = pdist(x, 'yule')
-    xp_assert_equal(d, [0.0])
+    def test_yule_all_same(self):
+        # Test yule avoids a divide by zero when exactly equal
+        x = np.ones((2, 6), dtype=bool)
+        d = wyule(x[0], x[0])
+        assert d == 0.0
 
-    d = cdist(x[:1], x[:1], 'yule')
-    xp_assert_equal(d, [[0.0]])
+        d = pdist(x, 'yule')
+        xp_assert_equal(d, [0.0])
+
+        d = cdist(x[:1], x[:1], 'yule')
+        xp_assert_equal(d, [[0.0]])
+
+    def test_batch_zero_guard(self):
+        # zero-guard for one batch element must not affect the others
+        u = np.array([[1, 1, 0, 0], [1, 0, 1, 0]], dtype=bool)
+        v = np.array([[1, 1, 0, 0], [0, 1, 0, 1]], dtype=bool)
+        xp_assert_equal(yule(u, v), np.asarray([0.0, 2.0]))
 
 
 def test_jensenshannon():
@@ -2383,7 +2449,12 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, 3.5),
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
-        (sqeuclidean, None),
+        make_xp_pytest_param(sqeuclidean, None),
+        (braycurtis, None),
+        (yule, None),
+        (dice, None),
+        (rogerstanimoto, None),
+        (russellrao, None),
         (sokalsneath, None),
     ],
 )

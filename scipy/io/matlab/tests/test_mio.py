@@ -31,7 +31,6 @@ import scipy.io.matlab._mio5_params as mio5p
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
-pytestmark = pytest.mark.thread_unsafe
 
 
 def mlarr(*args, **kwargs):
