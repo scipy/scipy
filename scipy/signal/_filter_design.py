@@ -1378,6 +1378,43 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     array([[  0. ,   0. ,   1. ,   1. ,   2. , -15. ],
            [  1. ,  -3.5,  -2. ,   1. ,   1. ,  -2. ]])
     """
+    if not analog:
+        xp = array_namespace(b, a)
+        b_arr = xp.asarray(b)
+        a_arr = xp.asarray(a)
+        if b_arr.ndim == 1 and a_arr.ndim == 1:
+            nz_b = xp.nonzero(b_arr != 0)[0]
+            nz_a = xp.nonzero(a_arr != 0)[0]
+            if nz_b.shape[0] > 0 and nz_a.shape[0] > 0:
+                delay = int(nz_b[0]) - int(nz_a[0])
+                if delay > 0:
+                    device = xp_result_device(b_arr, a_arr)
+                    b_trim = b_arr[int(nz_b[0]):]
+                    a_trim = a_arr[int(nz_a[0]):]
+                    sos = zpk2sos(*tf2zpk(b_trim, a_trim), pairing=pairing, analog=analog)
+
+                    sos_np = np.array(sos, copy=True)
+                    for i in range(len(sos_np)):
+                        if delay == 0:
+                            break
+                        if delay >= 2 and sos_np[i, 1] == 0 and sos_np[i, 2] == 0:
+                            sos_np[i, :3] = [0.0, 0.0, sos_np[i, 0]]
+                            delay -= 2
+                        elif delay >= 1 and sos_np[i, 2] == 0:
+                            sos_np[i, :3] = [0.0, sos_np[i, 0], sos_np[i, 1]]
+                            delay -= 1
+
+                    delay_secs = []
+                    while delay >= 2:
+                        delay_secs.append([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
+                        delay -= 2
+                    if delay == 1:
+                        delay_secs.append([0.0, 1.0, 0.0, 1.0, 0.0, 0.0])
+                        delay -= 1
+                    if delay_secs:
+                        sos_np = np.vstack([delay_secs, sos_np])
+                    return xp.asarray(sos_np, dtype=sos.dtype, device=device)
+
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
