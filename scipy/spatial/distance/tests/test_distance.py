@@ -1927,57 +1927,58 @@ def is_valid_y_throw(y):
     return is_valid_y(y, throw=True)
 
 
+@make_xp_test_case(is_valid_y)
 class TestIsValidY:
     # If test case name ends on "_E" then an exception is expected for the
     # given input, if it ends in "_F" then False is expected for the is_valid_y
     # check.  Otherwise the input is expected to be valid.
 
-    def test_is_valid_y_improper_shape_2D_E(self):
-        y = np.zeros((3, 3,), dtype=np.float64)
+    def test_is_valid_y_improper_shape_2D_E(self, xp):
+        y = xp.zeros((3, 3,), dtype=xp.float64)
         with pytest.raises(ValueError):
             is_valid_y_throw(y)
 
-    def test_is_valid_y_improper_shape_2D_F(self):
-        y = np.zeros((3, 3,), dtype=np.float64)
+    def test_is_valid_y_improper_shape_2D_F(self, xp):
+        y = xp.zeros((3, 3,), dtype=xp.float64)
         assert not is_valid_y(y)
 
-    def test_is_valid_y_improper_shape_3D_E(self):
-        y = np.zeros((3, 3, 3), dtype=np.float64)
+    def test_is_valid_y_improper_shape_3D_E(self, xp):
+        y = xp.zeros((3, 3, 3), dtype=xp.float64)
         with pytest.raises(ValueError):
             is_valid_y_throw(y)
 
-    def test_is_valid_y_improper_shape_3D_F(self):
-        y = np.zeros((3, 3, 3), dtype=np.float64)
+    def test_is_valid_y_improper_shape_3D_F(self, xp):
+        y = xp.zeros((3, 3, 3), dtype=xp.float64)
         assert not is_valid_y(y)
 
-    def test_is_valid_y_correct_2_by_2(self):
-        y = self.correct_n_by_n(2)
+    def test_is_valid_y_correct_2_by_2(self, xp):
+        y = xp.asarray(self.correct_n_by_n(2))
         assert is_valid_y(y)
 
-    def test_is_valid_y_correct_3_by_3(self):
-        y = self.correct_n_by_n(3)
+    def test_is_valid_y_correct_3_by_3(self, xp):
+        y = xp.asarray(self.correct_n_by_n(3))
         assert is_valid_y(y)
 
-    def test_is_valid_y_correct_4_by_4(self):
-        y = self.correct_n_by_n(4)
+    def test_is_valid_y_correct_4_by_4(self, xp):
+        y = xp.asarray(self.correct_n_by_n(4))
         assert is_valid_y(y)
 
-    def test_is_valid_y_correct_5_by_5(self):
-        y = self.correct_n_by_n(5)
+    def test_is_valid_y_correct_5_by_5(self, xp):
+        y = xp.asarray(self.correct_n_by_n(5))
         assert is_valid_y(y)
 
-    def test_is_valid_y_2_100(self):
+    def test_is_valid_y_2_100(self, xp):
         a = set()
         for n in range(2, 16):
             a.add(n * (n - 1) / 2)
         for i in range(5, 105):
             if i not in a:
                 with pytest.raises(ValueError):
-                    self.bad_y(i)
+                    self.bad_y(i, xp)
 
-    def bad_y(self, n):
+    def bad_y(self, n, xp):
         y = np.random.rand(n)
-        return is_valid_y(y, throw=True)
+        return is_valid_y(xp.asarray(y), throw=True)
 
     def correct_n_by_n(self, n):
         y = np.random.rand((n * (n - 1)) // 2)

@@ -2384,6 +2384,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     return valid
 
 
+@xp_capabilities()
 def is_valid_y(y, warning=False, throw=False, name=None):
     """
     Return True if the input array is a valid condensed distance matrix.
@@ -2432,14 +2433,15 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = _asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
     name_str = f"'{name}' " if name else ""
     try:
         if len(y.shape) != 1:
             raise ValueError(f"Condensed distance matrix {name_str}must "
                              "have shape=1 (i.e. be one-dimensional).")
         n = y.shape[0]
-        d = int(np.ceil(np.sqrt(n * 2)))
+        d = int(math.ceil(math.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             raise ValueError(f"Length n of condensed distance matrix {name_str}"
                              "must be a binomial coefficient, i.e. "
