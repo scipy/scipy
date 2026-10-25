@@ -39,11 +39,12 @@ py3.extension_module('_special_ufuncs',
 )
 
 py3.extension_module('_special_callbacks',
-  ['_special_callbacks.cpp'],
+  ['_special_callbacks.cpp', 'sf_error.cc'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
-  dependencies: [xsf_dep],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   subdir: 'scipy/special',
 )
 
