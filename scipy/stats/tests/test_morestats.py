@@ -3052,7 +3052,6 @@ class TestBoxcoxNormplot:
 class TestYeojohnson_llf:
 
     def test_array_like(self):
-        # array_like not applicable with SCIPY_ARRAY_API=1
         x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)

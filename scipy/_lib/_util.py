@@ -847,7 +847,7 @@ def _contains_nan(
         return False
 
     if xp is None:
-        xp = array_namespace(a)
+        xp = array_namespace(a, masked_ok=True)
 
     if xp.isdtype(a.dtype, "real floating"):
         # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other

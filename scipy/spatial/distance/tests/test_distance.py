@@ -61,7 +61,6 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
-from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (
     make_xp_test_case,
     is_lazy_array,
@@ -1299,7 +1298,6 @@ class TestPdist:
         right_y = np.asarray([0.01492537])
         xp_assert_close(pdist_y, right_y, atol=eps)
 
-    @skip_xp_invalid_arg
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
         class myclass:

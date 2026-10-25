@@ -23,11 +23,6 @@ from scipy._lib._sparse import SparseABC
 type Array = Any  # To be changed to a Protocol later (see array-api#589)
 type ArrayLike = Array | npt.ArrayLike
 
-# To enable array API and strict array-like input validation
-SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
-# To control the default device - for use in the test suite only
-SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
-
 
 class _ArrayClsInfo(enum.Enum):
     skip = 0
@@ -99,8 +94,8 @@ def array_namespace(*arrays: Array, sparse_ok=False, masked_ok=False) -> ModuleT
     -----
     Wrapper around `array_api_compat.array_namespace`.
 
-    1. Check for the global switch `SCIPY_ARRAY_API`. If disabled, just
-       return array_api_compat.numpy namespace and skip all compliance checks.
+    1. ~~Check for the global switch `SCIPY_ARRAY_API`. If disabled, just~~
+       ~~return array_api_compat.numpy namespace and skip all compliance checks.~~
 
     2. Check for known-bad array classes.
        The following subclasses are not supported and raise and error:
@@ -117,10 +112,6 @@ def array_namespace(*arrays: Array, sparse_ok=False, masked_ok=False) -> ModuleT
        - `array_namespace(np.asarray([1, 2], [3, 4])` returns NumPy namespace;
        - `array_namespace(cp.asarray([1, 2], [3, 4])` raises an error.
     """
-    if not SCIPY_ARRAY_API:
-        # here we could wrap the namespace if needed
-        return np_compat
-
     numpy_arrays = []
     api_arrays = []
 

@@ -1558,7 +1558,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
 def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
     """Get p-value given the statistic, (continuous) distribution, and alternative"""
-    xp = array_namespace(statistic) if xp is None else xp
+    xp = array_namespace(statistic, masked_ok=True) if xp is None else xp
 
     if alternative == 'less':
         pvalue = distribution.cdf(statistic)
@@ -11114,7 +11114,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
     """
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
-    xp = array_namespace(x) if xp is None else xp
+    xp = array_namespace(x, masked_ok=True) if xp is None else xp
     x = _asarray(x, dtype=dtype, subok=True)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
@@ -11193,7 +11193,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
             dtype=None, xp=None):
     # an array-api compatible function for variance with scipy.stats interface
     # and features (e.g. `nan_policy`).
-    xp = array_namespace(x) if xp is None else xp
+    xp = array_namespace(x, masked_ok=True) if xp is None else xp
     x = _asarray(x, subok=True)
 
     # use `_xp_mean` instead of `xp.var` for desired warning behavior

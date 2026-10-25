@@ -15,7 +15,7 @@ from scipy.sparse._sputils import matrix
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, eager_warns, is_lazy_array, make_xp_test_case,
+    eager_warns, is_lazy_array, make_xp_test_case,
     xp_copy, xp_assert_close, xp_assert_equal
 )
 
@@ -127,17 +127,6 @@ class TestWhiten:
         else:
             assert_raises(ValueError, whiten, obs)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
-    def test_whiten_not_finite_matrix(self):
-        for bad_value in np.nan, np.inf, -np.inf:
-            obs = matrix([[0.98744510, bad_value],
-                          [0.62093317, 0.19406729],
-                          [0.87545741, 0.00735733],
-                          [0.85124403, 0.26499712],
-                          [0.45067590, 0.45464607]])
-            assert_raises(ValueError, whiten, obs)
-
 
 @make_xp_test_case(vq)
 class TestVq:
@@ -149,14 +138,6 @@ class TestVq:
         xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
                         check_dtype=False)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
-    def test_py_vq_matrix(self):
-        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        # label1.dtype varies between int32 and int64 over platforms
-        label1 = _py_vq(matrix(X), matrix(initc))[0]
-        assert_array_equal(label1, LABEL1)
-
     @pytest.mark.parametrize("dtype", ["float64", "int64"])
     def test_vq(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -164,14 +145,6 @@ class TestVq:
         label1, _ = _vq.vq(X, initc)
         assert_array_equal(label1, LABEL1)
         _, _ = vq(xp.asarray(X, dtype=dtype), xp.asarray(initc, dtype=dtype))
-
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
-    def test_vq_matrix(self):
-        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        label1, _ = _vq.vq(matrix(X), matrix(initc))
-        assert_array_equal(label1, LABEL1)
-        _, _ = vq(matrix(X), matrix(initc))
 
     def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
@@ -259,14 +232,6 @@ class TestKMeans:
         code1 = kmeans(xp.asarray(X), xp.asarray(initc), iter=1, rng=rng)[0]
         xp_assert_close(code1, xp.asarray(CODET2))
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
-    def test_kmeans_simple_matrix(self):
-        rng = np.random.default_rng(54321)
-        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        code1 = kmeans(matrix(X), matrix(initc), iter=1, rng=rng)[0]
-        xp_assert_close(code1, CODET2)
-
     def test_kmeans_lost_cluster(self, xp):
         # This will cause kmeans to have a cluster with no points.
         data = xp.asarray(TESTDATA_2D)
@@ -289,24 +254,11 @@ class TestKMeans:
     def test_kmeans2_simple(self, xp):
         rng = np.random.default_rng(12345678)
         initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
-        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
-        for tp in arrays:
-            code1 = kmeans2(tp(X), tp(initc), iter=1, rng=rng)[0]
-            code2 = kmeans2(tp(X), tp(initc), iter=2, rng=rng)[0]
+        code1 = kmeans2(xp.asarray(X), xp.asarray(initc), iter=1, rng=rng)[0]
+        code2 = kmeans2(xp.asarray(X), xp.asarray(initc), iter=2, rng=rng)[0]
 
-            xp_assert_close(code1, xp.asarray(CODET1))
-            xp_assert_close(code2, xp.asarray(CODET2))
-
-    @pytest.mark.skipif(SCIPY_ARRAY_API,
-                        reason='`np.matrix` unsupported in array API mode')
-    def test_kmeans2_simple_matrix(self):
-        rng = np.random.default_rng(12345678)
-        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        code1 = kmeans2(matrix(X), matrix(initc), iter=1, rng=rng)[0]
-        code2 = kmeans2(matrix(X), matrix(initc), iter=2, rng=rng)[0]
-
-        xp_assert_close(code1, CODET1)
-        xp_assert_close(code2, CODET2)
+        xp_assert_close(code1, xp.asarray(CODET1))
+        xp_assert_close(code2, xp.asarray(CODET2))
 
     def test_kmeans2_rank1(self, xp):
         data = xp.asarray(TESTDATA_2D)

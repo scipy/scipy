@@ -8,7 +8,6 @@ from pytest import raises as assert_raises
 from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
 from scipy._lib._array_api import make_xp_test_case, xp_assert_close
-from scipy.conftest import skip_xp_invalid_arg
 
 def _centered(A, xp):
     mu = xp.mean(A, axis=0)
@@ -57,14 +56,13 @@ class TestOrthogonalProcrustes:
                                                  B_orig * xp.asarray(B_scale))
                     xp_assert_close(R, R_orig)
 
-    @skip_xp_invalid_arg()
     def test_orthogonal_procrustes_array_conversion(self):
         rng = np.random.RandomState(1234)
         for m, n in ((6, 4), (4, 4), (4, 6)):
             A_arr = rng.randn(m, n)
             B_arr = rng.randn(m, n)
-            As = (A_arr, A_arr.tolist(), matrix(A_arr))
-            Bs = (B_arr, B_arr.tolist(), matrix(B_arr))
+            As = (A_arr, A_arr.tolist())
+            Bs = (B_arr, B_arr.tolist())
             R_arr, s = orthogonal_procrustes(A_arr, B_arr)
             AR_arr = A_arr.dot(R_arr)
             for A, B in product(As, Bs):

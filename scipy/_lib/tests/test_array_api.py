@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_device, xp_promote, xp_result_device,
     xp_result_type, is_torch, xp_copy_to_numpy
 )
@@ -21,8 +21,6 @@ lazy_xp_function(xp_copy)
 
 
 @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
-@pytest.mark.skipif(not SCIPY_ARRAY_API,
-        reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
     def test_array_namespace(self):
