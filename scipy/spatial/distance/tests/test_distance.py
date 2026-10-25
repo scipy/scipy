@@ -1548,7 +1548,7 @@ class TestEuclidean:
 class TestCorrelation:
     def test_correlation(self, xp):
         x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
-        expected = xp.asarray(1.0 - xp.sqrt(3.0) / 2.0)
+        expected = xp.asarray(1.0 - math.sqrt(3.0) / 2.0)
         xp_assert_close(correlation(x, y), expected, atol=1.5e-7)
 
     def test_correlation_array_like(self):
