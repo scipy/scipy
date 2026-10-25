@@ -7,6 +7,7 @@
  * declare LAPACK prototypes
  */
 
+#include "pyport.h"
 extern "C" {
 
 /* ?GETRF */
@@ -304,6 +305,11 @@ void BLAS_FUNC(zhegvx)(CBLAS_INT *itype, char *jobz, char *range, char *uplo, CB
 
 namespace sp_linalg {
 
+using wrapper::f32;
+using wrapper::f64;
+using wrapper::c64;
+using wrapper::c128;
+using wrapper::real_of_t;
 
 /*
  * Generate type overloads, to map from C array types (float, double, npy_complex64, npy_complex128)
@@ -1168,6 +1174,13 @@ enum Eigh_driver : Py_ssize_t
     GV = 10,
     GVD = 11,
     GVX = 12
+};
+
+enum MATRIX_NORM_ORD : Py_ssize_t
+{
+    FRO = 0,
+    ONE = 1,
+    INF = 2,
 };
 
 

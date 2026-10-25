@@ -722,6 +722,26 @@ class TestBatch:
         with pytest.raises(NotImplementedError, match=message):
             linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
 
+    @pytest.mark.parametrize("dtype", floating)
+    @pytest.mark.parametrize("ord", ["fro", 1, np.inf])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_matrix_norm(self, dtype, ord, keepdims):
+        rng = np.random.default_rng(8342310302941288912051)
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
+        self.batch_test(
+            linalg.matrix_norm, A, kwargs={"ord": ord, "keepdims": keepdims}
+        )
+
+    @pytest.mark.parametrize("dtype", floating)
+    @pytest.mark.parametrize("axis", [(-1,), (-1, -2)])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_vector_norm(self, dtype, axis, keepdims):
+        rng = np.random.default_rng(8342310302941288912051)
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
+        self.batch_test(
+            linalg.vector_norm, A, kwargs={"axis": axis, "keepdims": keepdims}
+        )
+
 
 @pytest.mark.parametrize(
     "func, core_shape",

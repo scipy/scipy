@@ -14,19 +14,20 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
-                          solve_banded, solveh_banded, solve_triangular,
+from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm, matrix_norm,
+                          vector_norm, solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, qr, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy._lib._array_api import xp_assert_close
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
+_test_dtypes = [np.int64, np.float32, np.float64, np.complex64, np.complex128]
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
     "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
@@ -2752,6 +2753,43 @@ class TestVectorNorms:
         del x
         assert_allclose(res, 1.0)
 
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("n", [0, 5])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_shape_dtype(self, dtype, n, keepdims):
+        rng = np.random.default_rng(seed=123456789)
+
+        a = rng.normal(size=(n, n))
+        if np.isdtype(dtype, "complex floating"):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = vector_norm(a, keepdims=keepdims)
+
+        ref = np.sqrt(np.sum(np.abs(a) ** 2))
+        if keepdims:
+            ref = ref.reshape((1, 1))
+
+        xp_assert_close(res, ref)
+
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("n_slices", [0, 3])
+    @pytest.mark.parametrize("axis", [None, (1,), (1, 2)])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_axis(self, dtype, n_slices, axis, keepdims):
+        rng = np.random.default_rng(seed=123456789)
+        n = 5
+
+        a = rng.normal(size=(n_slices, n, n))
+        if np.isdtype(dtype, "complex floating"):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = vector_norm(a, keepdims=keepdims, axis=axis)
+        ref = np.sqrt(np.sum(np.abs(a) ** 2, axis=axis, keepdims=keepdims))
+
+        xp_assert_close(res, ref)
+
 
 class TestMatrixNorms:
 
@@ -2809,6 +2847,35 @@ class TestMatrixNorms:
         assert_allclose(norm(a), 0.)
         assert_allclose(norm(a, axis=0), np.zeros((3,)))
         assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("ord", ["fro", 1, np.inf])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_shape_dtype(self, dtype, ord, keepdims, n):
+        rng = np.random.default_rng(seed=123456)
+
+        a = rng.normal(size=(n, n))
+        if np.isdtype(dtype, "complex floating"):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = matrix_norm(a, ord=ord, keepdims=keepdims)
+
+        if ord == "fro":
+            ref = np.sqrt(np.sum(np.abs(a) ** 2))
+        elif ord == 1:
+            ref = np.max(np.sum(np.abs(a), axis=0), initial=0)
+        elif ord == np.inf:
+            ref = np.max(np.sum(np.abs(a), axis=1), initial=0)
+
+        if keepdims:
+            ref = ref.reshape((1, 1))
+
+        if dtype is np.int64:
+            ref = ref.astype(np.float64)
+
+        xp_assert_close(res, ref)
 
 
 class TestOverwrite:
