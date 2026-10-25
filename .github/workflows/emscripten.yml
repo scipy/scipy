@@ -1,14 +1,17 @@
 name: Emscripten/Pyodide
 
 on:
-  push:
-    branches:
-      - main
-      - maintenance/**
-  pull_request:
-    branches:
-      - main
-      - maintenance/**
+  # TODO: re-enable regular runs.
+  # These were disabled when making a security bump
+  # to the cibuildwheel version.
+  # push:
+  #   branches:
+  #     - main
+  #     - maintenance/**
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - maintenance/**
   workflow_dispatch:
 
 permissions:
