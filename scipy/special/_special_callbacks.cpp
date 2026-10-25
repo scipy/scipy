@@ -1,8 +1,7 @@
 // Raw C callbacks from xsf for use with scipy.LowLevelCallable. Each is exported as a PyCapsule
 // whose name is the C signature.
 
-#include <Python.h>
-
+#include <xsf/numpy.h>
 #include <xsf/cpu/stats.h>
 
 
@@ -18,6 +17,10 @@ _genhyperbolic_pdf_callback(double x, void *user_data)
 static int
 _special_callbacks_module_exec(PyObject *module)
 {
+    // Needed by wrap_PyUFunc_getfperr, which sf_error.cc calls.
+    if (_import_array() < 0) { return -1; }
+    if (_import_umath() < 0) { return -1; }
+
     PyObject *capsule = PyCapsule_New(
         (void *)_genhyperbolic_pdf_callback, "double (double, void *)", NULL);
     if (capsule == NULL) {
