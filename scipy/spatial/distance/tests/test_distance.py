@@ -2031,10 +2031,12 @@ def test_canberra():
     assert wcanberra([1, 1, 0, 0], [1, 0, 1, 0]) == 2
 
 
-def test_braycurtis():
-    # Regression test for ticket #1430.
-    assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
-    assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+class TestBrayCurtis:
+    def test_braycurtis(self):
+        # Regression test for ticket #1430.
+        assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
+        assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+
 
 def test_hamming_unequal_length():
     # Regression test for gh-4290.
