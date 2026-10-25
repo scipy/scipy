@@ -1080,7 +1080,7 @@ def braycurtis(u, v, w=None):
 
     Returns
     -------
-    braycurtis : array
+    braycurtis : float or array
         The Bray-Curtis distance between 1-D arrays `u` and `v`.
 
     Examples
