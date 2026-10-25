@@ -1,0 +1,40 @@
+lefthook: pixi run --no-progress --environment=lint --frozen lefthook
+no_auto_install: true
+
+templates:
+  run: run --quiet --no-progress --environment=lint --frozen
+
+colors: true
+
+output:
+  - meta # Print lefthook version
+  - summary # Print summary block (successful and failed steps)
+  - empty_summary # Print summary heading when there are no steps to run
+  # - success # Print successful steps
+  # - failure # Print failed steps printing
+  # - execution # Print any execution logs
+  # - execution_out # Print execution output
+  # - execution_info # Print `EXECUTE > ...` logging
+  - skips # Print "skip" (i.e. no files matched)
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      stage_fixed: true
+      run: pixi {run} lint
+    - name: check-python-h
+      glob: "*.{c,h,cpp,hpp,cc,hh,cxx,hxx}"
+      run: pixi {run} check-python-h
+    - name: tach-check
+      glob: "*.{py,pyi}"
+      run: pixi {run} tach-check
+    - name: tach-check-external
+      glob: "*.{py,pyi}"
+      run: pixi {run} tach-check-external
+    - name: zizmor
+      glob: ".github/**"
+      run: pixi {run} zizmor
+    - name: actionlint
+      glob: ".github/**"
+      run: pixi {run} actionlint

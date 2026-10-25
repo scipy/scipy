@@ -304,9 +304,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``population`` the solution vectors present in the population, and
         ``population_energies`` the value of the objective function for each
         entry in ``population``.
-        See `OptimizeResult` for a description of other attributes. If `polish`
-        was employed, and a lower minimum was obtained by the polishing, then
-        OptimizeResult also contains the ``jac`` attribute.
+        See `OptimizeResult` for a description of other attributes.
+        If `polish` was employed, and a lower minimum was obtained by the polishing,
+        then OptimizeResult also contains the ``jac`` attribute. The minimum is only
+        updated if the polishing minimization was successful.
         If the eventual solution does not satisfy the applied constraints
         ``success`` will be `False`.
 

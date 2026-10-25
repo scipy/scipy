@@ -3104,6 +3104,19 @@ class TestSmoothingSpline:
             _solve_smoothing_spline_coefficients(
                 ab, 0.0, np.zeros_like(ab), np.ones(n))
 
+    def test_gcv_search_warns_at_most_once(self):
+        """The lam values tried during the GCV search must not warn, only
+        the final solve may."""
+        rng = np.random.default_rng(14)
+        x = np.sort(rng.uniform(0, 1, 10))
+        y = 2.0 * x + 1.0 + 0.3 * rng.normal(size=10)
+        t = np.r_[[0.0] * 4, np.linspace(0.01, 0.99, 100), [1.0] * 4]
+        with warnings.catch_warnings(record=True) as rec:
+            warnings.simplefilter("always")
+            make_smoothing_spline(x, y, t=t)
+        n_warns = sum(issubclass(r.category, sl.LinAlgWarning) for r in rec)
+        assert n_warns <= 1
+
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
         rng = np.random.default_rng(7)

@@ -226,6 +226,21 @@ double xsf_struve_l(double v, double z);
 
 // Orthogonal Polynomial
 
+double xsf_eval_chebyc(double n, double x);
+npy_cdouble xsf_ceval_chebyc(double n, npy_cdouble x);
+double xsf_eval_chebyc_l(npy_intp n, double x);
+double xsf_eval_chebys(double n, double x);
+npy_cdouble xsf_ceval_chebys(double n, npy_cdouble x);
+double xsf_eval_chebys_l(npy_intp n, double x);
+double xsf_eval_chebyt(double n, double x);
+npy_cdouble xsf_ceval_chebyt(double n, npy_cdouble x);
+double xsf_eval_chebyt_l(npy_intp n, double x);
+double xsf_eval_chebyu(double n, double x);
+npy_cdouble xsf_ceval_chebyu(double n, npy_cdouble x);
+double xsf_eval_chebyu_l(npy_intp n, double x);
+double xsf_eval_gegenbauer(double n, double alpha, double x);
+npy_cdouble xsf_ceval_gegenbauer(double n, double alpha, npy_cdouble x);
+double xsf_eval_gegenbauer_l(npy_intp n, double alpha, double x);
 double xsf_eval_genlaguerre(double n, double alpha, double x);
 npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x);
 double xsf_eval_genlaguerre_l(npy_intp n, double alpha, double x);
@@ -237,9 +252,21 @@ double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x);
 double xsf_eval_laguerre(double n, double x);
 npy_cdouble xsf_ceval_laguerre(double n, npy_cdouble x);
 double xsf_eval_laguerre_l(npy_intp n, double x);
+double xsf_eval_legendre(double n, double x);
+npy_cdouble xsf_ceval_legendre(double n, npy_cdouble x);
+double xsf_eval_legendre_l(npy_intp n, double x);
+double xsf_eval_sh_chebyt(double n, double x);
+npy_cdouble xsf_ceval_sh_chebyt(double n, npy_cdouble x);
+double xsf_eval_sh_chebyt_l(npy_intp n, double x);
+double xsf_eval_sh_chebyu(double n, double x);
+npy_cdouble xsf_ceval_sh_chebyu(double n, npy_cdouble x);
+double xsf_eval_sh_chebyu_l(npy_intp n, double x);
 double xsf_eval_sh_jacobi(double n, double p, double q, double x);
 npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x);
 double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x);
+double xsf_eval_sh_legendre(double n, double x);
+npy_cdouble xsf_ceval_sh_legendre(double n, npy_cdouble x);
+double xsf_eval_sh_legendre_l(npy_intp n, double x);
 
 double special_mathieu_a(double m, double q);
 double special_mathieu_b(double m, double q);

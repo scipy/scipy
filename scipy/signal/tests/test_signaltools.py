@@ -2389,6 +2389,33 @@ def test_lfilter_empty_input(xp):
     assert y_no_zi.shape == (0,)
 
 
+# (x.shape, axis): empty along `axis`, or along another dimension only (gh-26406)
+_EMPTY_INPUT_CASES = [((0,), -1), ((2, 0), -1), ((0, 2), 0), ((3, 0, 4), 1),
+                      ((0, 5), -1), ((0, 5), 0)]
+
+
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/10199")
+@make_xp_test_case(lfilter)
+@pytest.mark.parametrize("ba", [([1.0, 0.5, 0.25], [1.0]),  # FIR
+                                ([1.0, 0.5], [1.0, -0.5])],  # IIR
+                         ids=["FIR", "IIR"])
+@pytest.mark.parametrize("shape, axis", _EMPTY_INPUT_CASES)
+def test_lfilter_empty_input_nd(ba, shape, axis, xp):
+    b, a = map(xp.asarray, ba)
+    x = xp.zeros(shape)
+    zi_shape = list(shape)
+    zi_shape[axis] = max(b.shape[0], a.shape[0]) - 1
+    zi = xp.reshape(xp.arange(math.prod(zi_shape), dtype=xp.float64),
+                    tuple(zi_shape))
+
+    y, zf = lfilter(b, a, x, axis=axis, zi=zi)
+    assert y.shape == shape
+    xp_assert_equal(zf, zi)
+
+    y_no_zi = lfilter(b, a, x, axis=axis)
+    assert y_no_zi.shape == shape
+
+
 @pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
                                 "uint32", "int32",
                                 "uint64", "int64",
@@ -4610,6 +4637,29 @@ class TestSOSFilt:
         sos = xpx.at(sos)[:, 3].set(1.)
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
+
+    @pytest.mark.parametrize("shape, axis", _EMPTY_INPUT_CASES)
+    def test_empty_input(self, shape, axis, dt, xp):
+        # gh-26406: empty input used to raise in the internal reshape
+        dt = getattr(xp, dt)
+        sos = xp.asarray(signal.butter(4, 0.2, output='sos'))
+        x = xp.zeros(shape, dtype=dt)
+        zi_shape = [sos.shape[0]] + list(shape)
+        zi_shape[axis % len(shape) + 1] = 2
+        zi = xp.reshape(xp.arange(math.prod(zi_shape), dtype=xp.float64),
+                        tuple(zi_shape))
+        zi = xp.astype(zi, dt)
+
+        y, zf = sosfilt(sos, x, axis=axis, zi=zi)
+        assert y.shape == shape
+        xp_assert_equal(zf, zi, check_dtype=False)
+
+        y_no_zi = sosfilt(sos, x, axis=axis)
+        assert y_no_zi.shape == shape
+
+        # zi is still validated
+        with pytest.raises(ValueError, match='Invalid zi shape'):
+            sosfilt(sos, x, axis=axis, zi=xp.zeros((sos.shape[0] + 1, 2)))
 
     @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
