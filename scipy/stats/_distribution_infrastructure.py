@@ -1661,7 +1661,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         elif (validation_policy or self.validation_policy) == _SKIP_ALL:
             parameters = self._process_parameters(**parameters)
-            inferred_dtype = xp_result_type(*parameters.values(), force_floating=True, xp=self._xp)
+            inferred_dtype = xp_result_type(*parameters.values(), force_floating=True,
+                                            xp=self._xp)
             inferred_device = xp_result_device(*parameters.values())
 
         else:
