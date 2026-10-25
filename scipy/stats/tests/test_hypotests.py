@@ -1294,7 +1294,10 @@ class TestBarnardExact:
             ([[5, 15], [20, 20]], (-1.974771239528, 0.063038448651)),
             ([[5, 16], [20, 25]], (-1.722122973346, 0.133329494287)),
             ([[10, 5], [10, 1]], (-1.765469659009, 0.250566655215)),
-            ([[5, 0], [1, 4]], (5.477225575052, 0.007812500000)),
+            # The former reference excluded a tied table and gave
+            # 0.0078125; the exact value is derived in
+            # `test_ties_in_wald_statistic_exact_value`.
+            ([[5, 0], [1, 4]], (5.477225575052, 0.013671875000)),
             ([[0, 1], [3, 2]], (-1.224744871392, 0.509667991877)),
             ([[0, 2], [6, 4]], (-1.732050807569, 0.197019618792)),
             ([[2, 7], [8, 2]], (-3.079373904042, 0.020172119141)),
@@ -1397,6 +1400,28 @@ class TestBarnardExact:
         assert_allclose(
             [statistic, pvalue], [expected_stat, less_pvalue_expect], atol=1e-7
         )
+
+    @pytest.mark.parametrize("pooled", [True, False])
+    @pytest.mark.parametrize("table", [[[3, 3], [0, 6]], [[0, 5], [6, 1]],
+                                       [[5, 0], [1, 4]], [[4, 2], [0, 4]],
+                                       [[2, 4], [3, 1]], [[6, 3], [4, 7]]])
+    def test_ties_in_wald_statistic(self, table, pooled):
+        # gh-18798: tables whose Wald statistic equals the observed one only
+        # up to rounding were dropped from the rejection region, so the
+        # p-value changed when successes and failures were relabeled.
+        table = np.asarray(table)
+        res = barnard_exact(table, pooled=pooled)
+        res_rows = barnard_exact(table[::-1], pooled=pooled)
+        res_cols = barnard_exact(table[:, ::-1], pooled=pooled)
+        assert_allclose(res_rows.pvalue, res.pvalue, rtol=1e-12)
+        assert_allclose(res_cols.pvalue, res.pvalue, rtol=1e-12)
+
+    def test_ties_in_wald_statistic_exact_value(self):
+        # [[5, 0], [1, 4]]: tables (5, 0), (6, 0), (0, 4) and (1, 4) are at
+        # least as extreme as the observed one; the maximum over the nuisance
+        # parameter is attained at pi = 1/2, so p = (6 + 1 + 1 + 6) / 2**10.
+        res = barnard_exact([[5, 0], [1, 4]], pooled=False)
+        assert_allclose(res.pvalue, 14 / 2**10, rtol=1e-7)
 
 
 class TestBoschlooExact:
@@ -2055,6 +2080,18 @@ class TestPoissonMeansTest:
         nobs1, nobs2 = 10000, 10000
         res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         assert_allclose(res.pvalue, 1)
+
+    @pytest.mark.parametrize("n", [1, 10, 50, 100, 365])
+    def test_ties_observed_statistic(self, n):
+        # The p-value must include the observed outcome itself; it was
+        # dropped when its statistic was rounded differently from the
+        # observed statistic, so the result depended on the unit of the
+        # exposure (e.g. person-years vs 100 person-years).
+        ref = 0.05154174980573627  # independent Decimal summation
+        res = stats.poisson_means_test(7, n, 2, n, alternative='greater')
+        assert_allclose(res.pvalue, ref, rtol=1e-5)
+        res = stats.poisson_means_test(7, n, 2, n)
+        assert_allclose(res.pvalue, 2 * ref, rtol=1e-4)
 
     def test_less_than_zero_lambda_hat2(self):
         # demonstrates behavior that fixes a known fault from original Fortran.

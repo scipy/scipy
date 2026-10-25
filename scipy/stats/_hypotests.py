@@ -372,12 +372,18 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
 
     # `[indicator]` implements the "I[.] ... the indicator function" per
     # the paragraph following equation (3.5).
+    # `t_k1k2` and the element of `t_x1x2` for the observed counts are
+    # computed with different rounding (e.g. ``k1/n1**2`` vs ``(k1/n1)/n1``),
+    # and distinct counts can have mathematically equal statistics. Use a
+    # relative tolerance so that such ties are counted as "at least as
+    # extreme", including the observed outcome itself.
+    tol = np.abs(t_k1k2) * np.finfo(np.float64).eps * 100
     if alternative == 'two-sided':
-        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2) - tol
     elif alternative == 'less':
-        indicator = t_x1x2 <= t_k1k2
+        indicator = t_x1x2 <= t_k1k2 + tol
     else:
-        indicator = t_x1x2 >= t_k1k2
+        indicator = t_x1x2 >= t_k1k2 - tol
 
     # Multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
@@ -1253,12 +1259,19 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     wald_stat_obs = wald_statistic[table[0, 0], table[0, 1]]
 
+    # Tables with mathematically equal Wald statistics (e.g. those related by
+    # swapping successes and failures) often get statistics that differ in
+    # the last bits; use a relative tolerance so that they are not dropped
+    # from the rejection region (gh-18798).
+    tol = (abs(wald_stat_obs) * np.finfo(np.float64).eps * 100
+           if np.isfinite(wald_stat_obs) else 0)
+
     if alternative == "two-sided":
-        index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs)
+        index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs) - tol
     elif alternative == "less":
-        index_arr = wald_statistic <= wald_stat_obs
+        index_arr = wald_statistic <= wald_stat_obs + tol
     elif alternative == "greater":
-        index_arr = wald_statistic >= wald_stat_obs
+        index_arr = wald_statistic >= wald_stat_obs - tol
     else:
         msg = (
             "`alternative` should be one of {'two-sided', 'less', 'greater'},"
