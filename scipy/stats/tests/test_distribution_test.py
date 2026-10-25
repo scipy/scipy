@@ -5,11 +5,8 @@ import pytest
 import numpy as np
 from scipy import stats, special
 from .test_continuous import DistributionsTest
-# TODO: make this work without array API imports again...
-from scipy._lib._array_api import xp_capabilities, make_xp_test_case
 
 
-@xp_capabilities(np_only=True)
 class MyNormal:
     __make_distribution_version__ = "1.16.0"
     parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': (-1, 1)},
@@ -32,10 +29,13 @@ class MyNormal:
         return np.full_like(u, fill_value=np.log(2*np.pi*np.e*s**2)/2)
 
 
-@make_xp_test_case(MyNormal)
 class TestMyNormal(DistributionsTest):
     family = stats.make_distribution(MyNormal())
-    seed =7694871136
+    seed = 7694871136
+
+    @pytest.fixture
+    def xp(self):
+        return np
 
     def test_purported_distribution(self, valid_dist_x):
         message = "This method must be overridden..."
@@ -44,9 +44,5 @@ class TestMyNormal(DistributionsTest):
 
     @pytest.mark.xslow
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_lmoment(self, case):
-        # providing a default value for xp in the superclass definitions seems
-        # to break things, but I don't want developers to have to pass `xp`
-        # explicitly or add these decorators to their class or test unless
-        # they want to run tests against non-NumPy backends. TODO: fix this.
-        return super().test_lmoment(case, tol_override={'atol': 1e-9}, xp=np)
+    def test_lmoment(self, case, xp):
+        return super().test_lmoment(case, tol_override={'atol': 1e-9}, xp=xp)

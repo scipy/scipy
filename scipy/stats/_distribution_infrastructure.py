@@ -10,7 +10,7 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy, xp_result_device,
+    is_numpy, is_cupy, xp_result_device, xp_result_type,
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -816,7 +816,7 @@ class _Parameterization:
             the dtype of the output of distribution methods.
         """
         all_valid = True
-        dtypes = set()  # avoid np.result_type if there's only one type
+        dtypes = set()  # avoid xp.result_type if there's only one type
         for name, arr in parameter_values.items():
             parameter = self.parameters[name]
             arr, dtype, valid = parameter.validate(arr, parameter_values, xp=xp)
@@ -1500,14 +1500,16 @@ class UnivariateDistribution(_ProbabilityDistribution):
         instance.
     xp : module, optional
         The backend to use for calculations - either NumPy or CuPy. Default is
-        inferred from the parameters, or NumPy if there are no parameters.
+        inferred from the parameters if possible or NumPy otherwise.
     dtype : dtype, optional
         The base dtype of the distribution. The output dtype of methods that
-        accept arguments will follow standard promotion rules. Default is the
-        default dtype of the backend.
+        accept arguments will follow standard promotion rules. Default is inferred
+        from the parameters if possible and the default floating point dtype of
+        the backend otherwise.
     device : device, optional
-        The base device of the distribution. Must be compatible with distribution
-        parameters and method arguments. Default is the default device of the backend.
+        The base device of the distribution. Must be compatible with method arguments.
+        Default is inferred from the parameters if possible and the default device of
+        the backend otherwise.
 
     Attributes
     ----------
@@ -1613,12 +1615,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # self._xp = np  # need array API version of namespace
             self._xp = array_namespace(np.asarray(0))
 
-        xp_info = self._xp.__array_namespace_info__()
-        self._device = xp_info.default_device() if device is None else device
-        self._dtype = (xp_info.default_dtypes()['real floating']
-                       if dtype is None else dtype)
-
         self.tol = tol
+        self._dtype = dtype
+        self._device = device
         self._update_parameters(**parameters)
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -1640,7 +1639,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
             may be modified. Parameters used in alternative parameterizations
             are not accepted.
         """
-        xp = self._xp
         parameters = original_parameters = self._original_parameters.copy()
         parameters.update(**params)
         parameterization = None
@@ -1650,14 +1648,22 @@ class UnivariateDistribution(_ProbabilityDistribution):
         self._ndim = 0
         self._size = 1
 
-        if (validation_policy or self.validation_policy) == _SKIP_ALL:
-            parameters = self._process_parameters(**parameters)
-        elif not len(self._parameterizations):
+        if not len(self._parameterizations):
+            xp_info = self._xp.__array_namespace_info__()
+            inferred_dtype = xp_info.default_dtypes()['real floating']
+            inferred_device = xp_info.default_device()
+
             if parameters:
                 message = (f"The `{self.__class__.__name__}` distribution "
                            "family does not accept parameters, but parameters "
                            f"`{set(parameters)}` were provided.")
                 raise ValueError(message)
+
+        elif (validation_policy or self.validation_policy) == _SKIP_ALL:
+            parameters = self._process_parameters(**parameters)
+            inferred_dtype = xp_result_type(*parameters.values(), force_floating=True, xp=self._xp)
+            inferred_device = xp_result_device(*parameters.values())
+
         else:
             # This is default behavior, which re-runs all parameter validations
             # even when only a single parameter is modified. For many
@@ -1688,8 +1694,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
             self._shape = shape
             self._size = size
             self._ndim = ndim
-            self._dtype = dtype
-            self._device = device
+            inferred_dtype = dtype
+            inferred_device = device
+
+        # TODO: we should probably validate user-provided dtype and cast all parameters
+        # Would also be good to allow dtype resolution to be deferred until a method
+        # is called (e.g., if a distribution is passed Python scalar parameters).
+        self._dtype = self._dtype or inferred_dtype
+        self._device = self._device or inferred_device
 
         self.reset_cache()
         self._parameters = parameters
