@@ -722,6 +722,16 @@ class VarWriter5:
         if arr.dtype.kind == 'S' and not arr.tobytes().isascii():
             # MATLAB has no byte strings, so non-ASCII bytes must be text in `codec`
             arr = np.char.decode(arr, codec)
+        if arr.size == 1 and arr.dtype.kind == 'U':
+            # Fast path for a single string, e.g. a str in a cell or struct.
+            # Without NUL characters (which are written as spaces below) it
+            # is a char array holding the encoded string.
+            s = np.asarray(arr).item()
+            n_chars = arr.dtype.itemsize // 4
+            if s and len(s) == n_chars and '\x00' not in s:
+                self.write_header((arr.shape or (1,)) + (n_chars,), mxCHAR_CLASS)
+                self.file_stream.write(_element_bytes(s.encode(codec), miUTF8))
+                return
         # np.asarray: chararray comparisons ignore trailing whitespace
         if arr.size == 0 or np.all(np.asarray(arr) == arr.dtype.type()):
             # This an empty string array or a string array containing
