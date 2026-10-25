@@ -10473,9 +10473,9 @@ class truncnorm_gen(rv_continuous):
             return sc.ndtri_exp(np.real(log_Phi_x))
 
         def isf_right(q, a, b):
-            log_Phi_x = _log_diff(_norm_logcdf(-a),
-                                  np.log1p(-q) + _log_gauss_mass(a, b))
-            return -sc.ndtri_exp(np.real(log_Phi_x))
+            log_Phi_x = _log_sum(_norm_logcdf(-b),
+                                 np.log(q) + _log_gauss_mass(a, b))
+            return -sc.ndtri_exp(log_Phi_x)
 
         out = np.empty_like(q)
 

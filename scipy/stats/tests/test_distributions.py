@@ -2002,6 +2002,17 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
                         0.9163220907327540)
 
+    @pytest.mark.parametrize("q, a, b, ref",
+                             [(1e-17, 30, 40, 31.27626489282185),
+                              (1e-50, 30, 40, 33.615938980251784),
+                              (1e-100, 30, 40, 36.87959930091373),
+                              (1e-20, 0, np.inf, 9.33604484923406)])
+    def test_isf_small_q(self, q, a, b, ref):
+        # Reference values were computed with mpmath by solving
+        # ncdf(-x) = ncdf(-b) + q*(ncdf(-a) - ncdf(-b)) for x.
+        assert_allclose(stats.truncnorm.isf(q, a, b), ref, rtol=1e-14)
+        assert_allclose(stats.truncnorm.ppf(q, -b, -a), -ref, rtol=1e-14)
+
     # Test data for the truncnorm stats() method.
     # The data in each row is:
     #   a, b, mean, variance, skewness, excess kurtosis. Generated using
