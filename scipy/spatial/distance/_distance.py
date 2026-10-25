@@ -1057,7 +1057,7 @@ def chebyshev(u, v, w=None):
 
 def braycurtis(u, v, w=None):
     """
-    Compute the Bray-Curtis distance between two 1-D arrays.
+    Compute the Bray-Curtis distance between two vectors.
 
     Bray-Curtis distance is defined as
 
@@ -1070,17 +1070,17 @@ def braycurtis(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    braycurtis : double
+    braycurtis : float or array
         The Bray-Curtis distance between 1-D arrays `u` and `v`.
 
     Examples
@@ -1092,15 +1092,14 @@ def braycurtis(u, v, w=None):
     0.33333333333333331
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
-    l1_diff = abs(u - v)
-    l1_sum = abs(u + v)
+    u, v, w = _promote(u, v, w, xp=np)
+    l1_diff = np.abs(u - v)
+    l1_sum = np.abs(u + v)
     if w is not None:
         w = _validate_weights(w)
         l1_diff = w * l1_diff
         l1_sum = w * l1_sum
-    return l1_diff.sum() / l1_sum.sum()
+    return l1_diff.sum(axis=-1) / l1_sum.sum(axis=-1)
 
 
 def canberra(u, v, w=None):

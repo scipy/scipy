@@ -2031,6 +2031,13 @@ def test_canberra():
     assert wcanberra([1, 1, 0, 0], [1, 0, 1, 0]) == 2
 
 
+class TestBrayCurtis:
+    def test_braycurtis(self):
+        # Regression test for ticket #1430.
+        assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
+        assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+
+
 def test_canberra_int64_min():
     # Regression test for gh-26486: integer inputs at the int64 limit
     # must not overflow to a negative, asymmetric distance in canberra.
@@ -2039,11 +2046,6 @@ def test_canberra_int64_min():
     assert canberra(u, v) == 1.0
     assert canberra(v, u) == 1.0
 
-
-def test_braycurtis():
-    # Regression test for ticket #1430.
-    assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
-    assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
 
 def test_hamming_unequal_length():
     # Regression test for gh-4290.
@@ -2448,6 +2450,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
+        (braycurtis, None),
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
