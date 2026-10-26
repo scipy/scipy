@@ -3134,7 +3134,7 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
             check_conditioning=False,
         )
-        rss = np.sum(w * np.square(y - X @ c)) / n
+        rss = np.sum(w[:, None] * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
 
     def _gcv_log(s):
@@ -3201,10 +3201,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             )
         if lam < 0.:
             raise ValueError('Regularization parameter should be non-negative')
-    if np.ndim(y) > 1:
-        raise NotImplementedError(
-            "batched `y` is not supported with user-provided knots yet; "
-            "`y` must be 1-D")
+    y_shape1 = y.shape[1:]
+    y = y.reshape((y.shape[0], -1))  # flatten trailing dims.
     t = np.ascontiguousarray(t, dtype=float)
     if not np.all(np.isfinite(t)):
         raise ValueError("`t` must not contain infs or nans")
@@ -3256,19 +3254,28 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
 
     omega = _penalty_matrix_banded(t)
     XtWX = X.T @ X.multiply(w[:, None])
-    XtWy = X.T @ (w * y)
+    XtWy = X.T @ (w[:, None] * y)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
     if lam is None:
-        lam = _make_smoothing_spline_user_knots_gcv(
-            XtWX_banded, X, y, w, XtWy, omega)
+        lams = np.empty(y.shape[1])
+        for i in range(y.shape[1]):
+            lams[i] = _make_smoothing_spline_user_knots_gcv(
+                XtWX_banded, X, y[:, i: i+1], w, XtWy[:, i: i+1], omega)
     try:
-        c, _ = _solve_smoothing_spline_coefficients(
-            XtWX_banded, lam, omega, XtWy, compute_trace=False,
-        )
+        if lam is not None:
+            c, _ = _solve_smoothing_spline_coefficients(
+                XtWX_banded, lam, omega, XtWy, compute_trace=False,
+            )
+        else:
+            c = np.empty((m, y.shape[1]))
+            for i in range(y.shape[1]):
+                c[:, i], _ = _solve_smoothing_spline_coefficients(
+                    XtWX_banded, lams[i], omega, XtWy[:, i], compute_trace=False,
+                )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
@@ -3284,6 +3291,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             "proportionally to `lam` (use a smaller `lam`; the fit there is "
             "already indistinguishable from its straight-line limit).") from e
     c = np.ascontiguousarray(c)
+    c = c.reshape((c.shape[0],) + y_shape1)
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, 3, axis=axis)
 
