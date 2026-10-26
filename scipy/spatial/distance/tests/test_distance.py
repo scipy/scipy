@@ -1935,7 +1935,7 @@ class TestIsValidY:
             is_valid_y(y, throw=True)
 
     @pytest.mark.parametrize("shape", [(3, 3), (3, 3, 3)])
-    def test_is_valid_y_improper_shape_2D_F(self, shape, xp):
+    def test_is_valid_y_improper_shape_F(self, shape, xp):
         y = xp.zeros(shape, dtype=xpx.default_dtype(xp))
         assert not is_valid_y(y)
 
