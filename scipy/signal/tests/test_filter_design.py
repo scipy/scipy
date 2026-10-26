@@ -455,6 +455,37 @@ class TestTf2Sos:
         y_sos = sosfilt(np.asarray(sos), x)
         assert_allclose(y_sos, y_tf, atol=1e-14)
 
+    def test_complex_pure_delay(self):
+        b = np.array([0.0, 0.0, 1.0 + 0.5j])
+        a = np.array([1.0, -0.25 + 0.1j])
+        x = np.arange(1.0, 9.0) + 0.25j
+
+        sos = tf2sos(b, a)
+
+        assert_array_almost_equal(sosfilt(sos, x), lfilter(b, a, x))
+
+    def test_zero_numerator_is_not_treated_as_delay(self):
+        b = [0.0, 0.0, 0.0]
+        a = [1.0, -0.5]
+        x = np.arange(1.0, 9.0)
+
+        sos = tf2sos(b, a)
+
+        assert_array_almost_equal(sosfilt(sos, x), lfilter(b, a, x))
+
+    def test_delayed_filter_can_be_processed_in_chunks(self):
+        b = [0.0, 0.0, 1.0, 2.0]
+        a = [1.0, -0.5]
+        x = np.arange(1.0, 9.0)
+        sos = tf2sos(b, a)
+
+        y_first, zi = sosfilt(sos, x[:3], zi=np.zeros((len(sos), 2)))
+        y_second, _ = sosfilt(sos, x[3:], zi=zi)
+
+        assert_array_almost_equal(
+            np.r_[y_first, y_second], lfilter(b, a, x)
+        )
+
 
 @make_xp_test_case(zpk2sos)
 class TestZpk2Sos:
