@@ -3202,7 +3202,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
         if lam < 0.:
             raise ValueError('Regularization parameter should be non-negative')
     y_shape1 = y.shape[1:]
-    y = y.reshape((y.shape[0], -1))  # flatten trailing dims.
+    y_flat = y.reshape((y.shape[0], -1))  # flatten trailing dims.
     t = np.ascontiguousarray(t, dtype=float)
     if not np.all(np.isfinite(t)):
         raise ValueError("`t` must not contain infs or nans")
@@ -3254,25 +3254,25 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
 
     omega = _penalty_matrix_banded(t)
     XtWX = X.T @ X.multiply(w[:, None])
-    XtWy = X.T @ (w[:, None] * y)
+    XtWy = X.T @ (w[:, None] * y_flat)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
     if lam is None:
-        lams = np.empty(y.shape[1])
-        for i in range(y.shape[1]):
+        lams = np.empty(y_flat.shape[1])
+        for i in range(y_flat.shape[1]):
             lams[i] = _make_smoothing_spline_user_knots_gcv(
-                XtWX_banded, X, y[:, i: i+1], w, XtWy[:, i: i+1], omega)
+                XtWX_banded, X, y_flat[:, i: i+1], w, XtWy[:, i: i+1], omega)
     try:
         if lam is not None:
             c, _ = _solve_smoothing_spline_coefficients(
                 XtWX_banded, lam, omega, XtWy, compute_trace=False,
             )
         else:
-            c = np.empty((m, y.shape[1]))
-            for i in range(y.shape[1]):
+            c = np.empty((m, y_flat.shape[1]))
+            for i in range(y_flat.shape[1]):
                 c[:, i], _ = _solve_smoothing_spline_coefficients(
                     XtWX_banded, lams[i], omega, XtWy[:, i], compute_trace=False,
                 )

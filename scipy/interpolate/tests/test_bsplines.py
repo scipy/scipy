@@ -3208,10 +3208,9 @@ class TestSmoothingSpline:
         xp_assert_close(f, r_yhat, atol=5e-4)
 
     def test_user_defined_knots_axis(self):
-        # batched (n-D) `y` is not supported on the user-knots path yet,
-        # so for 1-D `y` the only valid axes are 0 and -1 and must give
-        # identical results; -1 must be normalized before being stored on
-        # the BSpline, else evaluation fails
+        # for 1-D `y` the axes 0 and -1 must give identical results, and
+        # -1 must be normalized before being stored on the BSpline, else
+        # evaluation fails
         x = np.linspace(0.0, 1.0, 12)
         y = np.sin(3 * x)
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
@@ -5853,6 +5852,8 @@ class TestBatch:
         [(make_interp_spline, {}),
          (make_smoothing_spline, {}),
          (make_smoothing_spline, {'lam': 1.0}),
+         (make_smoothing_spline, {'user_t': True}),
+         (make_smoothing_spline, {'lam': 1.0, 'user_t': True}),
          (make_lsq_spline, {'method': "norm-eq"}),
          (make_lsq_spline, {'method': "qr"}),
          ])
@@ -5871,6 +5872,10 @@ class TestBatch:
             k = 3  # spline degree, if needed
             t = (x[0],) * (k + 1) + (x[-1],) * (k + 1)  # valid knots, if needed
             kwargs = kwargs | dict(t=t, k=k)
+
+        if kwargs.get('user_t'):
+            t = np.concatenate([[x[0]] * 4, x[2:-2:2], [x[-1]] * 4])
+            kwargs = {k: v for k, v in kwargs.items() if k != 'user_t'} | dict(t=t)
 
         res = make_spline(x, y, axis=axis, **kwargs)
         ref = BatchSpline(x, y, axis=axis, spline=make_spline, **kwargs)
