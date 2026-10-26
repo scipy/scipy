@@ -408,9 +408,6 @@ def _calcSSTF_helper(T, B, C, s_values, rtol, atol, overwrite_b, xp, device):
     return G
 
 
-@xp_capabilities(skip_backends=[
-    ('jax.numpy', "In-place item assignment and boolean masking are not supported"),
-    ('dask.array', "Needs `mT`, boolean-mask assignment and eager NumPy conversion")])
 def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     r"""Frequency response of a continuous-time state space system.
 
@@ -683,7 +680,7 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
             if abs(om1 - om0) <= rtol * max(om1, om0) + atol:  # no frequency range
                 om0, om1 = (om1/2, om1) if om1 > 0 else (0., 10.)
             if f_scale == 'linear':
-                om = xp.linspace(om0/2  , 1.5 * om1, N, device=device)
+                om = xp.linspace(om0 / 2, 1.5 * om1, N, device=device)
             else:
                 om0 = om0 if om0 > rtol*om1 + atol else om1
                 om = _geomspace(om0 / 5, 5 * om1, N, xp=xp)

@@ -8,7 +8,7 @@ from scipy._lib._array_api import array_namespace, make_xp_test_case, xp_assert_
 from scipy import signal
 
 from scipy.signal._state_space import _calcSSTF_helper, _cancel_poles_zeros, _diagsvd, \
-    _svd_rank, _tran_zeros_reduce, _transmission_zeros, conjT, freqs_ss
+    _svd_rank, _tran_zeros_reduce, _transmission_zeros, conjT
 
 
 def _abcd_normalize(A=None, B=None, C=None, D=None, *, xp=None):
@@ -410,7 +410,7 @@ class TestTransmissionZeros:
         xp_assert_close(z, xp.asarray([-1+0j, -1+0j]))
 
 
-@make_xp_test_case(freqs_ss)
+@make_xp_test_case(signal.freqs_ss)
 class TestFreqsSS:
     """Tests for function `freqs_ss`.
 
@@ -425,7 +425,7 @@ class TestFreqsSS:
         A, B = xp.eye(3), xp.asarray(B)
         C, D = xp.asarray(C), xp.asarray([[1., 2.], [3., 4.]])
         G_ref = xp.moveaxis(xp.tile(D, (5, 1, 1)), 0, -1)
-        om, G = freqs_ss(A, B, C, D, om_spec=(0, 10, 5))
+        om, G = signal.freqs_ss(A, B, C, D, om_spec=(0, 10, 5))
         xp_assert_close(om, xp.linspace(0, 10, 5))
         xp_assert_close(G, G_ref)
 
@@ -446,7 +446,7 @@ class TestFreqsSS:
         om, b_ = xp.arange(20, dtype=AA.dtype), xp.asarray([1.,])
         _, H0_ref = signal.freqs(b_, xp.asarray([1/om0**2, 2*d0/om0, 1.]), worN=om)
         _, H1_ref = signal.freqs(b_, xp.asarray([1/om1**2, 2*d1/om1, 1.]), worN=om)
-        om_GG, GG = freqs_ss(AA, BB, CC, DD, om_spec=om)  # the response
+        om_GG, GG = signal.freqs_ss(AA, BB, CC, DD, om_spec=om)  # the response
 
         xp_assert_equal(om, om_GG)
         xp_assert_close(GG[0, 0, :], H0_ref)
@@ -462,14 +462,14 @@ class TestFreqsSS:
     def test_degenerate_system(self, n, q, p, N, xp):
         """Test degenerate systems with empty matrices."""
         ABCD = (xp.eye(n), xp.ones((n, p)), xp.ones((q, n)), xp.ones((q, p)))
-        _, GG = freqs_ss(*ABCD, om_spec=(0, 1, N))
+        _, GG = signal.freqs_ss(*ABCD, om_spec=(0, 1, N))
         xp_assert_close(GG.shape, (q, p, N))
 
     @pytest.mark.parametrize('f_scale, om_min, om_max', [
         ('linear', 0., 30.), ('log', 4., 100.)])
     def test_automatic_frequency_range(self, f_scale, om_min, om_max, xp):
         ABCD = xp.asarray(np.diag([2j, 1, -20j])), xp.eye(3), xp.eye(3), xp.eye(3)
-        om, _ = freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
+        om, _ = signal.freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
         xp_assert_close(om, xp.asarray((om_min, om_max)))
 
     @pytest.mark.parametrize('f_scale, om_min, om_max', [
@@ -477,7 +477,7 @@ class TestFreqsSS:
     def test_automatic_frequency_range_no_imag(self, f_scale, om_min, om_max, xp):
         """Test when `A` has only real eigenvalues."""
         ABCD = xp.eye(3), xp.eye(3), xp.eye(3), xp.eye(3)
-        om, _ = freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
+        om, _ = signal.freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
         xp_assert_close(om, (om_min, om_max))
 
     @pytest.mark.parametrize('f_scale, om_min, om_max', [
@@ -485,7 +485,7 @@ class TestFreqsSS:
     def test_automatic_frequency_range_one_ev(self, f_scale, om_min, om_max, xp):
         """Test when `A` has only one eigenvalue."""
         ABCD = [xp.ones((1, 1)) for _ in range(4)]
-        om, _ = freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
+        om, _ = signal.freqs_ss(*ABCD, om_spec=2, f_scale=f_scale)
         xp_assert_close(om, xp.asarray((om_min, om_max)))
 
     @pytest.mark.parametrize('f_scale, om_min, om_max', [
@@ -495,6 +495,6 @@ class TestFreqsSS:
         A, B, C = xp.zeros((0, 0)), xp.zeros((0, 1)), xp.zeros((2, 0))
         D = xp.ones((2, 1))
 
-        om, _ = freqs_ss(A, B, C, D, om_spec=2, f_scale=f_scale)
+        om, _ = signal.freqs_ss(A, B, C, D, om_spec=2, f_scale=f_scale)
         xp_assert_close(om, xp.asarray((om_min, om_max)))
 
