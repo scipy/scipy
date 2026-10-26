@@ -2484,6 +2484,7 @@ def num_obs_dm(d):
     return d.shape[0]
 
 
+@xp_capabilities()
 def num_obs_y(Y):
     """
     Return the number of original observations that correspond to a
@@ -2509,13 +2510,14 @@ def num_obs_y(Y):
     >>> num_obs_y(Y)
     4
     """
-    Y = _asarray(Y)
+    xp = array_namespace(Y)
+    Y = xp.asarray(Y)
     is_valid_y(Y, throw=True, name='Y')
     k = Y.shape[0]
     if k == 0:
         raise ValueError("The number of observations cannot be determined on "
                          "an empty distance matrix.")
-    d = int(np.ceil(np.sqrt(k * 2)))
+    d = math.isqrt(2 * k - 1) + 1 if k > 0 else 0
     if (d * (d - 1) / 2) != k:
         raise ValueError("Invalid condensed distance matrix passed. Must be "
                          "some k where k=(n choose 2) for some n >= 2.")
