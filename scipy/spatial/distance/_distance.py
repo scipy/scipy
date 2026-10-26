@@ -2441,7 +2441,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
             raise ValueError(f"Condensed distance matrix {name_str}must "
                              "have shape=1 (i.e. be one-dimensional).")
         n = y.shape[0]
-        d = int(math.ceil(math.sqrt(n * 2)))
+        d = math.isqrt(2 * n - 1) + 1 if n > 0 else 0
         if (d * (d - 1) / 2) != n:
             raise ValueError(f"Length n of condensed distance matrix {name_str}"
                              "must be a binomial coefficient, i.e. "
