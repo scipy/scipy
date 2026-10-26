@@ -1,4 +1,6 @@
 import pytest
+import threading
+import warnings
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal
 import scipy.sparse as sps
@@ -259,3 +261,32 @@ class TestLinearConstraint:
         lc = LinearConstraint(A, -2, 4)
         x0 = [-1, 2]
         np.testing.assert_allclose(lc.residual(x0), ([1, 4], [5, 2]))
+    
+    def test_linear_constraint_thread_safety(self):
+        # Issue #25123: LinearConstraint context manager catches unrelated warnings
+        # from other threads and converts them to errors, causing crashes.
+        exceptions = []
+
+        def create_constraints():
+            try:
+                # Rapidly instantiate valid constraints to create a race condition window
+                for _ in range(1000):
+                    LinearConstraint([[1.0]], [0.0], [1.0])
+            except Exception as e:
+                exceptions.append(e)
+
+        def emit_warnings():
+            # Rapidly emit unrelated warnings from a parallel thread
+            for _ in range(1000):
+                warnings.warn("This is an unrelated dummy warning", UserWarning)
+
+        t1 = threading.Thread(target=create_constraints)
+        t2 = threading.Thread(target=emit_warnings)
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        assert not exceptions, f"Thread-safety failed. Exceptions raised: {exceptions}"
