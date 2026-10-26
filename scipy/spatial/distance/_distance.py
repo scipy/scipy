@@ -31,6 +31,7 @@ __all__ = [
 ]
 
 
+import math
 import warnings
 import dataclasses
 from collections.abc import Callable
@@ -505,6 +506,7 @@ def euclidean(u, v, w=None):
     return minkowski(u, v, p=2, w=w)
 
 
+@xp_capabilities()
 def sqeuclidean(u, v, w=None):
     """
     Compute the squared Euclidean distance between two arrays.
@@ -521,13 +523,13 @@ def sqeuclidean(u, v, w=None):
         Input array.
     v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    sqeuclidean : float or ndarray
+    sqeuclidean : float or array
         The squared Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -539,14 +541,14 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=np,
-                         order='C')
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         u_v_w = w * u_v
-    return np.vecdot(u_v, u_v_w)
+    return xp.vecdot(u_v, u_v_w)
 
 
 @xp_capabilities()
@@ -848,11 +850,12 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
+@xp_capabilities()
 def seuclidean(u, v, V):
     """
-    Return the standardized Euclidean distance between two 1-D arrays.
+    Return the standardized Euclidean distance between two arrays.
 
-    The standardized Euclidean distance between two n-vectors `u` and `v` is
+    The standardized Euclidean distance between arrays `u` and `v` is
 
     .. math::
 
@@ -863,17 +866,17 @@ def seuclidean(u, v, V):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    V : (N,) array_like
-        `V` is a 1-D array of component variances. It is usually computed
+    V : (..., N) array_like
+        `V` is an array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
     -------
-    seuclidean : double
+    seuclidean : float or array
         The standardized Euclidean distance between vectors `u` and `v`.
 
     Examples
@@ -887,12 +890,8 @@ def seuclidean(u, v, V):
     3.1780497164141406
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    V = _validate_vector(V, dtype=np.float64)
-    if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
-        raise TypeError('V must be a 1-D array of the same dimension '
-                        'as u and v.')
+    xp = array_namespace(u, v, V)
+    u, v, V = _promote(u, v, V, xp=xp, order='C')
     return euclidean(u, v, w=1/V)
 
 
@@ -1052,7 +1051,7 @@ def chebyshev(u, v, w=None):
 
 def braycurtis(u, v, w=None):
     """
-    Compute the Bray-Curtis distance between two 1-D arrays.
+    Compute the Bray-Curtis distance between two vectors.
 
     Bray-Curtis distance is defined as
 
@@ -1065,17 +1064,17 @@ def braycurtis(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    braycurtis : double
+    braycurtis : float or array
         The Bray-Curtis distance between 1-D arrays `u` and `v`.
 
     Examples
@@ -1087,15 +1086,14 @@ def braycurtis(u, v, w=None):
     0.33333333333333331
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
-    l1_diff = abs(u - v)
-    l1_sum = abs(u + v)
+    u, v, w = _promote(u, v, w, xp=np)
+    l1_diff = np.abs(u - v)
+    l1_sum = np.abs(u + v)
     if w is not None:
         w = _validate_weights(w)
         l1_diff = w * l1_diff
         l1_sum = w * l1_sum
-    return l1_diff.sum() / l1_sum.sum()
+    return l1_diff.sum(axis=-1) / l1_sum.sum(axis=-1)
 
 
 def canberra(u, v, w=None):
@@ -1138,7 +1136,7 @@ def canberra(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u)
+    u = _validate_vector(u, dtype=np.float64)
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
@@ -1243,7 +1241,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
 
 def yule(u, v, w=None):
     """
-    Compute the Yule dissimilarity between two boolean 1-D arrays.
+    Compute the Yule dissimilarity between two boolean vectors.
 
     The Yule dissimilarity is defined as
 
@@ -1257,11 +1255,11 @@ def yule(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
-    w : (N,) array_like, optional
+    w : (...,N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -1279,16 +1277,14 @@ def yule(u, v, w=None):
     0.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     half_R = ntf * nft
-    if half_R == 0:
-        return 0.0
-    else:
-        return float(2.0 * half_R / (ntt * nff + half_R))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = np.where(half_R == 0, 0.0, 2.0 * half_R / (ntt * nff + half_R))
+    return res if res.ndim > 0 else res[()]
 
 
 def dice(u, v, w=None):
@@ -2381,6 +2377,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     return valid
 
 
+@xp_capabilities()
 def is_valid_y(y, warning=False, throw=False, name=None):
     """
     Return True if the input array is a valid condensed distance matrix.
@@ -2429,14 +2426,15 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = _asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
     name_str = f"'{name}' " if name else ""
     try:
         if len(y.shape) != 1:
             raise ValueError(f"Condensed distance matrix {name_str}must "
                              "have shape=1 (i.e. be one-dimensional).")
         n = y.shape[0]
-        d = int(np.ceil(np.sqrt(n * 2)))
+        d = math.isqrt(2 * n - 1) + 1 if n > 0 else 0
         if (d * (d - 1) / 2) != n:
             raise ValueError(f"Length n of condensed distance matrix {name_str}"
                              "must be a binomial coefficient, i.e. "

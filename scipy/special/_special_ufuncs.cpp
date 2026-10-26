@@ -194,6 +194,10 @@ extern const char *erfcinv_doc;
 extern const char *erfcx_doc;
 extern const char *erfi_doc;
 extern const char *erfinv_doc;
+extern const char *eval_chebyc_doc;
+extern const char *eval_chebys_doc;
+extern const char *eval_chebyt_doc;
+extern const char *eval_chebyu_doc;
 extern const char *eval_gegenbauer_doc;
 extern const char *eval_genlaguerre_doc;
 extern const char *eval_hermite_doc;
@@ -201,6 +205,8 @@ extern const char *eval_hermitenorm_doc;
 extern const char *eval_jacobi_doc;
 extern const char *eval_laguerre_doc;
 extern const char *eval_legendre_doc;
+extern const char *eval_sh_chebyt_doc;
+extern const char *eval_sh_chebyu_doc;
 extern const char *eval_sh_jacobi_doc;
 extern const char *eval_sh_legendre_doc;
 extern const char *exp10_doc;
@@ -800,6 +806,50 @@ _special_ufuncs_module_exec(PyObject *module)
         "nrdtrisd", nrdtrisd_doc);
     PyModule_AddObjectRef(module, "nrdtrisd", nrdtrisd);
 
+    PyObject *eval_chebyc = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_chebyc),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_chebyc)},
+        "eval_chebyc", eval_chebyc_doc);
+    PyModule_AddObjectRef(module, "eval_chebyc", eval_chebyc);
+
+    PyObject *eval_chebys = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_chebys),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_chebys),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_chebys),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_chebys),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_chebys),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_chebys),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_chebys)},
+        "eval_chebys", eval_chebys_doc);
+    PyModule_AddObjectRef(module, "eval_chebys", eval_chebys);
+
+    PyObject *eval_chebyt = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_chebyt),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_chebyt)},
+        "eval_chebyt", eval_chebyt_doc);
+    PyModule_AddObjectRef(module, "eval_chebyt", eval_chebyt);
+
+    PyObject *eval_chebyu = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_chebyu),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_chebyu)},
+        "eval_chebyu", eval_chebyu_doc);
+    PyModule_AddObjectRef(module, "eval_chebyu", eval_chebyu);
+
     PyObject *eval_gegenbauer = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::idd_d>(xsf::eval_gegenbauer),
          static_cast<xsf::numpy::ldd_d>(xsf::eval_gegenbauer),
@@ -864,6 +914,28 @@ _special_ufuncs_module_exec(PyObject *module)
          static_cast<xsf::numpy::dD_D>(xsf::eval_legendre)},
         "eval_legendre", eval_legendre_doc);
     PyModule_AddObjectRef(module, "eval_legendre", eval_legendre);
+
+    PyObject *eval_sh_chebyt = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_sh_chebyt),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_sh_chebyt)},
+        "eval_sh_chebyt", eval_sh_chebyt_doc);
+    PyModule_AddObjectRef(module, "eval_sh_chebyt", eval_sh_chebyt);
+
+    PyObject *eval_sh_chebyu = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::id_d>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::ld_d>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::qd_d>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::ff_f>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::fF_F>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::dd_d>(xsf::eval_sh_chebyu),
+         static_cast<xsf::numpy::dD_D>(xsf::eval_sh_chebyu)},
+        "eval_sh_chebyu", eval_sh_chebyu_doc);
+    PyModule_AddObjectRef(module, "eval_sh_chebyu", eval_sh_chebyu);
 
     PyObject *eval_sh_jacobi = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::iddd_d>(xsf::eval_sh_jacobi),

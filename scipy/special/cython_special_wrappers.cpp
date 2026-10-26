@@ -165,6 +165,38 @@ void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
 }
 
+double xsf_eval_chebyc(double n, double x) { return xsf::eval_chebyc(n, x); }
+
+npy_cdouble xsf_ceval_chebyc(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyc(n, to_complex(x)));
+}
+
+double xsf_eval_chebyc_l(npy_intp n, double x) { return xsf::eval_chebyc(n, x); }
+
+double xsf_eval_chebys(double n, double x) { return xsf::eval_chebys(n, x); }
+
+npy_cdouble xsf_ceval_chebys(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebys(n, to_complex(x)));
+}
+
+double xsf_eval_chebys_l(npy_intp n, double x) { return xsf::eval_chebys(n, x); }
+
+double xsf_eval_chebyt(double n, double x) { return xsf::eval_chebyt(n, x); }
+
+npy_cdouble xsf_ceval_chebyt(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyt(n, to_complex(x)));
+}
+
+double xsf_eval_chebyt_l(npy_intp n, double x) { return xsf::eval_chebyt(n, x); }
+
+double xsf_eval_chebyu(double n, double x) { return xsf::eval_chebyu(n, x); }
+
+npy_cdouble xsf_ceval_chebyu(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyu(n, to_complex(x)));
+}
+
+double xsf_eval_chebyu_l(npy_intp n, double x) { return xsf::eval_chebyu(n, x); }
+
 double xsf_eval_gegenbauer(double n, double alpha, double x) { return xsf::eval_gegenbauer(n, alpha, x); }
 
 npy_cdouble xsf_ceval_gegenbauer(double n, double alpha, npy_cdouble x) {
@@ -210,6 +242,22 @@ npy_cdouble xsf_ceval_legendre(double n, npy_cdouble x) {
 }
 
 double xsf_eval_legendre_l(npy_intp n, double x) { return xsf::eval_legendre(n, x); }
+
+double xsf_eval_sh_chebyt(double n, double x) { return xsf::eval_sh_chebyt(n, x); }
+
+npy_cdouble xsf_ceval_sh_chebyt(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_chebyt(n, to_complex(x)));
+}
+
+double xsf_eval_sh_chebyt_l(npy_intp n, double x) { return xsf::eval_sh_chebyt(n, x); }
+
+double xsf_eval_sh_chebyu(double n, double x) { return xsf::eval_sh_chebyu(n, x); }
+
+npy_cdouble xsf_ceval_sh_chebyu(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_chebyu(n, to_complex(x)));
+}
+
+double xsf_eval_sh_chebyu_l(npy_intp n, double x) { return xsf::eval_sh_chebyu(n, x); }
 
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
 

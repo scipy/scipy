@@ -67,6 +67,7 @@ from scipy.sparse._sputils import asmatrix, is_pydata_spmatrix, isintlike, issha
 
 __all__ = ["LinearOperator", "aslinearoperator"]
 
+_UNDEFINED = object()
 
 @xp_capabilities()
 class LinearOperator:
@@ -85,10 +86,11 @@ class LinearOperator:
     A subclass must implement either one of the methods ``_matvec``
     and ``_matmat``, and the attributes/properties ``shape`` (pair of
     integers, optionally with additional batch dimensions at the front)
-    and ``dtype`` (may be None). It may call the ``__init__``
-    on this class to have these attributes validated. Implementing
-    ``_matvec`` automatically implements ``_matmat`` (using a naive
-    algorithm) and vice-versa.
+    and ``dtype`` (may be None). It must call the ``__init__`` method
+    of this class. When passing the ``shape`` or the ``dtype`` argument to the
+    ``__init__`` method, the arguments are validated and the corresponding
+    attributes are set. Implementing ``_matvec`` automatically implements
+    ``_matmat`` (using a naive algorithm) and vice-versa.
 
     Optionally, a subclass may implement ``_rmatvec`` or ``_adjoint``
     to implement the Hermitian adjoint (conjugate transpose). As with
@@ -218,7 +220,9 @@ class LinearOperator:
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
-    ndim: int
+    @property
+    def ndim(self):
+        return len(self.shape)
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
@@ -240,26 +244,30 @@ class LinearOperator:
 
             return obj
 
-    def __init__(self, dtype, shape, xp=None):
+    def __init__(self, dtype=_UNDEFINED, shape=_UNDEFINED, xp=None):
         """Initialize this LinearOperator.
 
         To be called by subclasses. ``dtype`` may be None; ``shape`` should
         be convertible to a length >=2 tuple.
         """
         xp = np_compat if xp is None else xp
-        if dtype is not None:
+
+        if dtype is not _UNDEFINED and dtype is not None:
             # throwaway 0-size array to canonicalize `dtype`; no array in scope
             dtype = xp.empty(0, dtype=dtype).dtype  # skip device check
 
-        shape = tuple(shape)
-        if len(shape) < 2:
-            raise ValueError(f"invalid shape {shape!r} (must be at least 2-d)")
-        if not isshape(shape, check_nd=False):
-            raise ValueError(f"invalid shape {shape!r}")
+        if dtype is not _UNDEFINED:
+            self.dtype = dtype
 
-        self.dtype = dtype
-        self.shape = shape
-        self.ndim = len(shape)
+        if shape is not _UNDEFINED:
+            shape = tuple(shape)
+            if len(shape) < 2:
+                raise ValueError(f"invalid shape {shape!r} (must be at least 2-d)")
+            if not isshape(shape, check_nd=False):
+                raise ValueError(f"invalid shape {shape!r}")
+
+            self.shape = shape
+
         self._xp = xp
 
     def __getstate__(self):
@@ -277,11 +285,15 @@ class LinearOperator:
         # keep loading those without crashing.
         dict_state, slots_state = state if isinstance(state, tuple) else (state, None)
         dict_state = dict(dict_state) if dict_state else {}
-        self._xp = array_namespace(dict_state.pop("_xp"))
+        # scipy 1.17 pickles have no `_xp` (always numpy) and no instance `ndim`.
+        xp = dict_state.pop("_xp", None)
+        self._xp = np_compat if xp is None else array_namespace(xp)
         self.__dict__.update(dict_state)
         if slots_state:
             for slot, value in slots_state.items():
                 setattr(self, slot, value)
+        if not hasattr(self, "ndim"):
+            self.ndim = len(self.shape)
 
     def _init_dtype(self):
         """Determine the dtype by executing `matvec` on an `int8` test vector.
@@ -1174,6 +1186,12 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
             A_T = A.T
         super().__init__(xp.conj(A_T), xp=xp)
         self.args = (A,)  # override to ensure `self.args[0]` is accurate
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        # scipy 1.17 pickles have no `dtype` (it was a property).
+        if "dtype" not in self.__dict__:
+            self.dtype = self.A.dtype
 
     def _adjoint(self):
         return MatrixLinearOperator(self.args[0], xp=self._xp)

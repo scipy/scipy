@@ -31,7 +31,6 @@ import scipy.io.matlab._mio5_params as mio5p
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
-pytestmark = pytest.mark.thread_unsafe
 
 
 def mlarr(*args, **kwargs):
@@ -1326,6 +1325,13 @@ def test_matlab_string_opaque():
     # Ensure different object IDs
     assert data['matstring1'][0]['_ObjectMetadata'][4, 0] == 1
     assert data['matstring2'][0]['_ObjectMetadata'][4, 0] == 2
+
+
+def test_whosmat_opaque():
+    # gh-3539: whosmat raised a TypeError on files with MATLAB objects
+    whos = whosmat(pjoin(test_data_path, 'testmatlabstring_7_WIN64.mat'))
+    assert ('matstring1', (), 'opaque') in whos
+    assert ('matstring2', (), 'opaque') in whos
 
 
 def test_write_matlab_opaque():
