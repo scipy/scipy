@@ -19,7 +19,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
-from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
+from scipy.signal import (lfilter, sosfilt, argrelextrema, BadCoefficients, bessel, besselap, bilinear,
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           findfreqs, firwin, freqs_zpk, freqs, freqz, freqz_zpk,
