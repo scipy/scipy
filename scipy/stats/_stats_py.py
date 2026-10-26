@@ -9954,9 +9954,16 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     b = np.concatenate((p_u, p_v), axis=0)
 
     # solving LP
+    # Scale the objective by the largest cost (but never below 1) so that
+    # the solver's absolute feasibility tolerances cannot turn into large
+    # absolute errors in the distance when the costs are huge and the
+    # probability differences are tiny (gh-26490). The result is divided
+    # by the same factor, so the returned distance is unchanged.
+    cost_scale = max(cost.max(), 1.0)
     constraints = LinearConstraint(A=A.T, ub=cost)
-    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return -opt_res.fun
+    opt_res = milp(c=-cost_scale * b, constraints=constraints,
+                   bounds=(-np.inf, np.inf))
+    return -opt_res.fun / cost_scale
 
 
 @xp_capabilities(np_only=True)

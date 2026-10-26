@@ -8508,6 +8508,38 @@ class TestWassersteinDistanceND:
         assert_allclose(d2, d1)
         assert_allclose(d3, d1)
 
+    def test_gh26490_negative_distance(self):
+        # gh-26490: the distance must never be negative, and it must be
+        # symmetric, even when the costs are huge and the probability
+        # differences are tiny (exact dyadic inputs).
+        L = 2**24
+        support = [[0, 0], [L, 0]]
+        p_counts = [2**23, 2**23]
+        q_counts = [2**23 - 1, 2**23 + 1]
+        res = stats.wasserstein_distance_nd(support, support,
+                                            p_counts, q_counts)
+        assert_allclose(res, 1.0)
+        res_swapped = stats.wasserstein_distance_nd(support, support,
+                                                   q_counts, p_counts)
+        assert_allclose(res_swapped, 1.0)
+        # A second case from gh-26490 where the unscaled solver returned
+        # 0 instead of the exact distance.
+        res = stats.wasserstein_distance_nd([[0, 0], [2**24, 0]],
+                                            [[0, 0], [2**24, 0]],
+                                            [2**24 - 1, 1], [2**24 - 2, 2])
+        assert_allclose(res, 1.0)
+
+    @pytest.mark.parametrize('k', (24, 30))
+    def test_gh26490_dyadic_family(self, k):
+        # gh-26490: with eps = 2**-k and L = 2**k, the exact distance is 1.
+        L = 2**k
+        support = [[0, 0], [L, 0]]
+        p_counts = [2**(k - 1), 2**(k - 1)]
+        q_counts = [2**(k - 1) - 1, 2**(k - 1) + 1]
+        res = stats.wasserstein_distance_nd(support, support,
+                                            p_counts, q_counts)
+        assert_allclose(res, 1.0)
+
 
 class TestWassersteinDistance:
     """ Tests for wasserstein_distance() output values.
