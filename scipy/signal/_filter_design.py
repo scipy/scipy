@@ -1394,15 +1394,14 @@ def tf2sos(b, a, pairing=None, *, analog=False):
                     sos = zpk2sos(*tf2zpk(b_trim, a_trim), pairing=pairing, analog=analog)
 
                     sos_np = np.array(sos, copy=True)
-                    for i in range(len(sos_np)):
-                        if delay == 0:
-                            break
-                        if delay >= 2 and sos_np[i, 1] == 0 and sos_np[i, 2] == 0:
-                            sos_np[i, :3] = [0.0, 0.0, sos_np[i, 0]]
+                    if len(sos_np) == 1 and np.all(sos_np[0, 1:3] == 0) and np.all(sos_np[0, 4:6] == 0):
+                        k = sos_np[0, 0]
+                        if delay == 1:
+                            sos_np[0, :3] = [0.0, k, 0.0]
+                            delay = 0
+                        elif delay >= 2:
+                            sos_np[0, :3] = [0.0, 0.0, k]
                             delay -= 2
-                        elif delay >= 1 and sos_np[i, 2] == 0:
-                            sos_np[i, :3] = [0.0, sos_np[i, 0], sos_np[i, 1]]
-                            delay -= 1
 
                     delay_secs = []
                     while delay >= 2:
