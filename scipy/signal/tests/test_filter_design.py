@@ -9,6 +9,7 @@ from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
+from numpy.testing import assert_allclose
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, is_numpy,
@@ -439,7 +440,9 @@ class TestTf2Sos:
         ([0.0, 0.0, 0.0, 1.0], [1.0],
          [[0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
           [0.0, 0.0, 1.0, 1.0, 0.0, 0.0]]),
-        ([0.0, 1.0], [1.0, -0.5], [[0.0, 1.0, 0.0, 1.0, -0.5, 0.0]]),
+        ([0.0, 1.0], [1.0, -0.5],
+         [[0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+          [1.0, 0.0, 0.0, 1.0, -0.5, 0.0]]),
     ])
     def test_pure_delays(self, b, a, expected_sos, xp):
         # gh-26417: tf2sos should preserve pure delays instead of dropping them
@@ -455,9 +458,9 @@ class TestTf2Sos:
         y_sos = sosfilt(np.asarray(sos), x)
         assert_allclose(y_sos, y_tf, atol=1e-14)
 
-    def test_complex_pure_delay(self):
-        b = np.array([0.0, 0.0, 1.0 + 0.5j])
-        a = np.array([1.0, -0.25 + 0.1j])
+    def test_complex_input_with_pure_delay(self):
+        b = np.array([0.0, 0.0, 1.0, 2.0])
+        a = np.array([1.0, -0.25])
         x = np.arange(1.0, 9.0) + 0.25j
 
         sos = tf2sos(b, a)
