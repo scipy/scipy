@@ -51,6 +51,15 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
     device = xp_device(matrix)
 
     if not assume_valid:
+        # Matrices with non-finite entries cannot be orthogonalized: SVD
+        # raises on NaN/inf. Swap them for identity so the checks below
+        # never see non-finite values, then restore NaN so they become NaN
+        # rotations, consistent with from_rotvec/from_euler/from_mrp and
+        # with from_matrix(..., assume_valid=True) (gh-26413).
+        is_finite = xp.all(xp.isfinite(matrix), axis=(-2, -1))
+        eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        matrix = xp.where(is_finite[..., None, None], matrix, eye)
+
         mask = xp.linalg.det(matrix) <= 0
         lazy = is_lazy_array(mask)
         # Only non-lazy backends raise an error for non-positive determinants.
@@ -64,7 +73,6 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
             matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
         gramians = matrix @ matrix.mT
-        eye = xp.eye(3, dtype=matrix.dtype, device=device)
         # float32 reduced precision compared to float64 requires a higher threshold
         atol = 1e-12 if matrix.dtype == xp.float64 else 1e-6
         is_orthogonal = xp.all(
@@ -95,6 +103,9 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
             is_not_orthogonal = ~is_orthogonal
             U, _, Vt = xp.linalg.svd(matrix[is_not_orthogonal], full_matrices=False)
             matrix = xpx.at(matrix)[is_not_orthogonal].set(U @ Vt)
+
+        # Restore NaN so matrices with non-finite entries become NaN rotations.
+        matrix = xp.where(is_finite[..., None, None], matrix, xp.nan)
 
     return _from_matrix_orthogonal(matrix)
 

@@ -538,7 +538,8 @@ class Rotation:
         created by orthogonalizing the input matrix using the method described
         in [2]_, and then converting the orthogonal rotation matrices to
         quaternions using the algorithm described in [3]_. Matrices must be
-        right-handed.
+        right-handed. Matrices containing NaN or infinite values produce NaN
+        rotations.
 
         Parameters
         ----------

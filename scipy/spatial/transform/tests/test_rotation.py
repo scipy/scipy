@@ -453,6 +453,24 @@ def test_from_matrix_non_positive_determinant(xp):
             Rotation.from_matrix(mat)
 
 
+@make_xp_test_case((Rotation, "from_matrix"))
+def test_from_matrix_non_finite(xp):
+    # gh-26413: NaN/inf entries should give NaN rotations, not raise
+    # (consistent with from_rotvec/from_euler/from_mrp and with
+    # from_matrix(..., assume_valid=True)).
+    nan_mat = xp.asarray([[xp.nan, 0, 0], [0, xp.nan, 0], [0, 0, 1]])
+    assert xp.all(xp.isnan(Rotation.from_matrix(nan_mat).as_quat()))
+    inf_mat = xp.asarray([[xp.inf, 0, 0], [0, 1, 0], [0, 0, 1]])
+    assert xp.all(xp.isnan(Rotation.from_matrix(inf_mat).as_quat()))
+
+    # A mixed stack: the valid rotation is unaffected, the NaN one is NaN.
+    stack = xp.asarray([[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                        [[xp.nan, 0, 0], [0, xp.nan, 0], [0, 0, 1]]])
+    quats = Rotation.from_matrix(stack).as_quat()
+    xp_assert_close(quats[0], xp.asarray([0., 0., 0., 1.]))
+    assert xp.all(xp.isnan(quats[1]))
+
+
 def test_from_matrix_array_like():
     rng = np.random.default_rng(123)
     # Single rotation

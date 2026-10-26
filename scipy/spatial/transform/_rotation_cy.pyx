@@ -480,6 +480,14 @@ def from_matrix(matrix, bint assume_valid=False):
         is_single = True
 
     if not assume_valid:
+        # Matrices with non-finite entries cannot be orthogonalized: SVD
+        # raises on NaN/inf. Swap them for identity so the checks below
+        # never see non-finite values, then restore NaN so they become NaN
+        # rotations, consistent with from_rotvec/from_euler/from_mrp and
+        # with from_matrix(..., assume_valid=True) (gh-26413).
+        is_finite = np.all(np.isfinite(matrix), axis=(1, 2))
+        matrix[~is_finite] = np.eye(3)
+
         # Calculate the determinant of the rotation matrix
         # (should be positive for right-handed rotations)
         dets = np.linalg.det(matrix)
@@ -503,6 +511,9 @@ def from_matrix(matrix, bint assume_valid=False):
             # value decomposition
             U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
             matrix[indices_to_orthogonalize, :, :] = U @ Vt
+
+        # Restore NaN so matrices with non-finite entries become NaN rotations
+        matrix[~is_finite] = np.nan
 
     # Convert the orthogonal rotation matrices to quaternions using the
     # algorithm described in [3]_. This will also apply another
