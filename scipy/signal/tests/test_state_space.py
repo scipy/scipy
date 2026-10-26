@@ -106,6 +106,59 @@ class TestSvdRank:
         assert Vh.shape == (0, 0)
         assert rank == 0
 
+    def test_numeric0(self, xp):
+        """Numerics test to verify comparable behavior for various ARRAY API backends.
+
+        The values are from a (previously failing) unit test for `_tran_zeros_reduce`.
+        """
+        M = [[0.0, 14.0, 15.0], [12.0, 0.0, 0.0], [0.0, 0.0, 16.0],
+             [0.0, 0.0, 0.0], [13.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        U_ref = [[0.8139655301396516, 0.0, -0.5809131740152533, 0.0,
+                  -5.551115123125783e-17, 0.0],
+                 [0.0, -0.6782801027330658, 0.0, 0.0, -0.7348034446274879, 0.0],
+                 [0.5809131740152533, 0.0, 0.8139655301396516, 0.0, 0.0, 0.0],
+                 [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                 [9.03683272812263e-17, -0.734803444627488, -6.449431810998144e-17, 0.0,
+                  0.6782801027330658, 0.0],
+                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]
+        s_ref = [24.3368828064592, 17.69180601295413, 9.204136856037646]
+        Vh_ref = [[0.0, 0.46824063346891176, 0.8836009897960915],
+                  [-1.0, -0.0, -0.0],
+                  [0.0, -0.8836009897960915, 0.46824063346891176]]
+        rank_ref = 3
+        M, U_ref, s_ref, Vh_ref = (xp.asarray(M_, dtype=xp.float64)
+                                   for M_ in (M, U_ref, s_ref, Vh_ref))
+
+        U, s, Vh, rank = _svd_rank(M, 'full', rtol=1e-12, atol=0.)
+        assert rank == rank_ref
+        xp_assert_close(U, U_ref)
+        xp_assert_close(s, s_ref)
+        xp_assert_close(Vh, Vh_ref)
+
+    def test_numeric1(self, xp):
+        """Numerics test to verify comparable behavior for various ARRAY API backends.
+
+        The values are from a (previously failing) unit test for `_tran_zeros_reduce`.
+        """
+        M  = [[-4.883793180837909, 3.4854790440915204],
+              [-3.0860669221185293e-16, -2.263201414601555e-16],
+              [-3.6259467351940904e-16, -2.502507524710882e-16]]
+        U_ref = [[-1.0, 3.1922823406232296e-17, -1.4615456460262937e-18],
+                 [-1.9953809685277505e-17, -0.6594806710187051, -0.7517215206129984],
+                 [-2.496093445655904e-17, -0.7517215206129984, 0.6594806710187051]]
+        s_ref = [6.0, 0.0]
+        Vh_ref = [[0.8139655301396516, -0.5809131740152534],
+                  [0.5809131740152534, 0.8139655301396516]]
+        rank_ref = 1
+        M, U_ref, s_ref, Vh_ref = (xp.asarray(M_, dtype=xp.float64)
+                                   for M_ in (M, U_ref, s_ref, Vh_ref))
+
+        U, s, Vh, rank = _svd_rank(M, 'full', rtol=1e-12, atol=0.)
+        assert rank == rank_ref
+        xp_assert_close(U, U_ref)
+        xp_assert_close(s, s_ref)
+        xp_assert_close(Vh, Vh_ref)
+
 
 @make_xp_test_case(_cancel_poles_zeros)
 class TestCancelPolesZeros:
