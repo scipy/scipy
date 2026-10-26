@@ -2853,7 +2853,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    xp = array_namespace(a)
+    xp = array_namespace(a, masked_ok=True)
     a = xp_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
@@ -2936,7 +2936,10 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
         zero = std <= xp.abs(eps * mn)
         zero = xp.broadcast_to(zero, z.shape)
         zero = xp.asarray(zero.data) if is_marray(xp) else zero
-        z = xpx.at(z, zero).set(xp.nan)
+        if isinstance(z, np.ma.MaskedArray):
+            z[zero] = xp.nan
+        else:
+            z = xpx.at(z, zero).set(xp.nan)
 
     return z
 

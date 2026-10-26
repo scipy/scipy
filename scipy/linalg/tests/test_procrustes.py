@@ -6,7 +6,6 @@ from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 
 from scipy.linalg import orthogonal_procrustes
-from scipy.sparse._sputils import matrix
 from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 
 def _centered(A, xp):

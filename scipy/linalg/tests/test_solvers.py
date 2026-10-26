@@ -9,7 +9,6 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse._sputils import matrix
 from scipy.linalg.lapack import _ensure_dtype_cdsz
 
 

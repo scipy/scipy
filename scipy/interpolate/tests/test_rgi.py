@@ -18,7 +18,6 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
-from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 

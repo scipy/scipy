@@ -6897,7 +6897,10 @@ def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     args = (array_like,) if len(args) == 2 else (array_like, p)
     x = mean_fun(*args, axis=axis, weights=weights)
-    xp_assert_close(x, desired, rtol=rtol)
+    if xp == np.ma:
+        assert_allclose(x, desired, rtol=rtol)
+    else:
+        xp_assert_close(x, desired, rtol=rtol)
 
 
 def check_equal_gmean(*args, **kwargs):

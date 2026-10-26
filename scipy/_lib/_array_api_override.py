@@ -5,7 +5,6 @@ and internally.
 See also _array_api_compat_vendor.py
 """
 import enum
-import os
 
 from functools import lru_cache
 from types import ModuleType

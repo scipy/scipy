@@ -387,7 +387,7 @@ def value_indices(arr, *, ignore_value=None):
     value in the input array.
 
     >>> val_indices.keys()
-    dict_keys([np.int64(0), np.int64(1), np.int64(2), np.int64(3)])
+    dict_keys([0, 1, 2, 3])
 
     The entry for each value is an index tuple, locating the elements
     with that value.

@@ -258,7 +258,7 @@ class TestArrayAPI:
 
         # Check default convention: 0d-arrays are NOT distinguished from scalars
         xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.))
-        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42))
+        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42, dtype=xp.int64))
 
         # opt in to 0d-check remains possible
         message = "array-ness does not match:*"
@@ -267,9 +267,11 @@ class TestArrayAPI:
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(0), check_0d=True)
+            xp_assert_equal_no_0d(xp.asarray(42, dtype=xp.int64), xp.int64(0),
+                                  check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42), check_0d=True)
+            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42, dtype=xp.int64),
+                                  check_0d=True)
 
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))

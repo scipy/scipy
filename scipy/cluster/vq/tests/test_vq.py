@@ -11,7 +11,6 @@ from pytest import raises as assert_raises
 
 from scipy.cluster.vq import ClusterError, kmeans, kmeans2, vq, whiten
 from scipy.cluster.vq._vq_impl import _py_vq, _krandinit, _vq
-from scipy.sparse._sputils import matrix
 
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
