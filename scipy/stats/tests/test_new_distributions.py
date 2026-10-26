@@ -85,6 +85,21 @@ class TestNormal(DistributionsTest):
     seed = 353965734
     family = stats.Normal
 
+    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                      'ccdf', 'logccdf'])
+    def test_normal_standardization_overflow(self, method):
+        # gh-26120: subtraction can overflow even when (x - mu)/sigma is finite.
+        largest = np.finfo(np.float64).max
+        X = stats.Normal(mu=[-largest, largest, largest],
+                         sigma=[largest, largest, 0.5])
+        x = [largest/2, -largest/2, largest]
+        ref = getattr(stats.Normal(), method)([1.5, -1.5, 0.])
+        if method == 'pdf':
+            ref /= X.sigma
+        elif method == 'logpdf':
+            ref -= np.log(X.sigma)
+        assert_allclose(getattr(X, method)(x), ref, rtol=1e-14, atol=0)
+
     def test_purported_distribution(self, valid_dist_x):
         dist, x = valid_dist_x
         np.testing.assert_allclose(dist.pdf(x),
