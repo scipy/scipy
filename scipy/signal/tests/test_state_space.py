@@ -130,10 +130,15 @@ class TestSvdRank:
                                    for M_ in (M, U_ref, s_ref, Vh_ref))
 
         U, s, Vh, rank = _svd_rank(M, 'full', rtol=1e-12, atol=0.)
-        assert rank == rank_ref
+        M1 = U @ _diagsvd(s, U.shape[1], Vh.shape[0]) @ Vh
+
+        M_diff_ptp = np.ptp(np.asarray(M1-M))  # just for debugging
+        xp_assert_close(M1, M, atol=xp.finfo(M.dtype).eps**.5*4)
         xp_assert_close(U, U_ref)
         xp_assert_close(s, s_ref)
         xp_assert_close(Vh, Vh_ref)
+        assert rank == rank_ref
+        assert M_diff_ptp < 1e-7
 
     def test_numeric1(self, xp):
         """Numerics test to verify comparable behavior for various ARRAY API backends.
