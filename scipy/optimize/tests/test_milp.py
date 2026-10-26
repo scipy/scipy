@@ -97,6 +97,23 @@ def test_milp_options(capsys):
     assert not res.success
 
 
+@pytest.mark.thread_unsafe(reason="HiGHS writes to a file")
+def test_milp_options_passed_verbatim(tmp_path):
+    # `HighsOptions` exposes only some of HiGHS's options as attributes;
+    # the others raised AttributeError when passed through verbatim
+    path = tmp_path / "improving.sol"
+    options = {"mip_improving_solution_save": True,
+               "mip_improving_solution_file": str(path)}
+    c = -np.array([10, 13, 7, 8, 9, 11])
+    constraints = LinearConstraint([[5, 6, 3, 4, 4, 5]], -np.inf, 14)
+    with pytest.warns(RuntimeWarning, match="Unrecognized options detected"):
+        res = milp(c, constraints=constraints, integrality=1, bounds=(0, 1),
+                   options=options)
+    assert res.status == 0
+    assert_allclose(res.fun, -31)
+    assert path.stat().st_size > 0
+
+
 def test_result():
     A, b, c, numbers, M = magic_square(3)
     res = milp(c=c, constraints=(A, b, b), bounds=(0, 1), integrality=1)
