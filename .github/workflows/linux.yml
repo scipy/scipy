@@ -50,6 +50,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -149,6 +156,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - name: Install Ubuntu dependencies
         # We're not running the full test suite here, only testing the install
         # into a venv is working, so leave out optional dependencies. That's
@@ -221,6 +235,13 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -314,6 +335,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - name: Configuring Test Environment
         uses: ./.github/apt-get
         with:
@@ -354,6 +382,13 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -425,6 +460,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -485,6 +527,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - name: build + test in i686 container
         run: |
           set -exuo pipefail
@@ -522,6 +571,13 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
 
       - name: Setup system dependencies
         uses: ./.github/apt-get
@@ -585,6 +641,13 @@ jobs:
           submodules: recursive
           fetch-tags: true
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
 
       - name: Install system dependencies
         uses: ./.github/apt-get
@@ -655,6 +718,13 @@ jobs:
           submodules: recursive
           fetch-tags: true
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
       
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
@@ -699,6 +769,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
           pixi-version: v0.83.0
@@ -723,6 +800,13 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
 
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:

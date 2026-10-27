@@ -39,6 +39,14 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
           pixi-version: v0.83.0

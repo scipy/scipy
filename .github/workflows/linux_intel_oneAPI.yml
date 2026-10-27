@@ -46,6 +46,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Drop the compromised emSign root from the system CA store
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade -y ca-certificates
+          dpkg-query -W ca-certificates
+          test ! -e /etc/ssl/certs/emSign_ECC_Root_CA_-_G3.pem
+
       # Reference https://github.com/easimon/maximize-build-space/blob/master/action.yml
       # see https://github.com/scipy/scipy/issues/23813
       - name: Free up disk space
