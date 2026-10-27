@@ -1257,6 +1257,16 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
         return gaussian_filter(input, sigma, order, output, mode,
                                cval, **kwargs)
 
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    sigma = _ni_support._normalize_sequence(sigma, num_axes)
+    if num_axes < input.ndim:
+        # set sigma = 0 for any axes not being filtered
+        sigma_temp = [0,] * input.ndim
+        for s, ax in zip(sigma, axes):
+            sigma_temp[ax] = s
+        sigma = sigma_temp
+
     return generic_gradient_magnitude(input, derivative, output, mode,
                                       cval, extra_arguments=(sigma,),
                                       extra_keywords=kwargs, axes=axes)
