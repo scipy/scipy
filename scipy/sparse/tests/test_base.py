@@ -18,6 +18,7 @@ import sys
 import warnings
 from typing import Any
 from collections.abc import Callable
+import tracemalloc
 
 import pytest
 from pytest import raises as assert_raises
@@ -84,6 +85,33 @@ def sparse_may_share_memory(A, B):
             if np.may_share_memory(a, b):
                 return True
     return False
+
+
+class peak_memory_gain:
+    """Context manager that asserts a specified peak memory gain"""
+    def __init__(self, peak_delta):
+        self.peak_delta = peak_delta
+
+    def __enter__(self):
+        tracemalloc.start()
+        tracemalloc.reset_peak()
+
+    def __exit__(self, type, value, traceback):
+        _, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        assert peak <= self.peak_delta, (
+            f"{peak} bytes memory increase is above limit {self.peak_delta}")
+
+
+class TestPeakMemoryGain:
+    def test_passes(self):
+        with peak_memory_gain(40_001_000):
+            A = np.zeros((5000, 1000))
+
+    def test_fails(self):
+        with pytest.raises(AssertionError, match="assert "):
+            with peak_memory_gain(40_001_000):
+                A = np.zeros((5000, 1001))
 
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
@@ -3895,6 +3923,55 @@ class _TestFancyMultidimAssign:
                 B[key] = rhs_dense
                 assert_array_equal(A.toarray(), B,
                                    err_msg=f"key={key}, rhs_shape={rhs_shape}")
+
+    def test_set_arrayXarray_memory_dense(self):
+        A = self.spcreator((100, 100), dtype=np.int8)
+
+        if A.format not in ("csr", "csc", "coo"):
+            return
+        elif A.format == "coo":
+            scale = 7
+        else:
+            scale = 6
+
+        N = 30
+        rhs = self.spcreator(np.ones((N, N), dtype=np.int8))
+        index_N = np.arange(40, 40 + N)
+        # N x N x (8(int64) x 2 + 1(int8))
+        exp_net_mem_chg = N * N * 17
+
+        warn_msg = "Changing the sparsity structure"
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
+            with peak_memory_gain(scale * exp_net_mem_chg):
+                A[index_N[:, None], index_N] = rhs
+
+    def test_set_arrayXarray_memory_scalar(self):
+        A = self.spcreator((100, 100), dtype=np.int8)
+
+        if A.format not in ("csr", "csc", "coo"):
+            return
+        elif A.format == "coo":
+            scale = 8
+        else:
+            scale = 4
+
+        N = 30
+        rhs = self.spcreator(np.ones((N, N), dtype=np.int8))
+        index_N = np.arange(40, 40 + N)
+        # N x N x (8(int64) x 2 + 1(int8))
+        exp_net_mem_chg = N * N * 17
+
+        if A.format == "coo":
+            with peak_memory_gain(scale * exp_net_mem_chg):
+                A[index_N[:, None], index_N] = 1
+            return
+
+        warn_msg = "Changing the sparsity structure"
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
+            with peak_memory_gain(scale * exp_net_mem_chg):
+                A[index_N[:, None], index_N] = 1
 
 
 class _TestArithmetic:
