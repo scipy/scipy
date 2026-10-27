@@ -1,7 +1,9 @@
 import pickle
+import warnings
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy.linalg import LinAlgWarning
 from scipy.__config__ import CONFIG
 
 from scipy import LowLevelCallable
@@ -669,8 +671,31 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         )
         values = np.array([0.0, 0.0, 0.0, 1.0])
 
-        with pytest.raises(LinAlgError, match="Singular matrix"):
-            RBFInterpolator(points, values.reshape(-1, 1))
+        # Depending on the LAPACK library, ?sysv either reports the matrix as
+        # singular or the condition number check catches it (gh-25313).
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", LinAlgWarning)
+            with pytest.raises((LinAlgError, LinAlgWarning),
+                               match="Singular matrix|ill-conditioned"):
+                RBFInterpolator(points, values.reshape(-1, 1))
+
+    def test_ill_conditioned(self):
+        # gh-14150: warn when the system is too ill-conditioned for the
+        # interpolant to be accurate
+        x = np.random.RandomState(0).uniform(0.0, 3.0, (20, 1))
+        y = np.exp(-x[:, 0])
+        with pytest.warns(LinAlgWarning, match="ill-conditioned"):
+            RBFInterpolator(x, y, kernel="gaussian", epsilon=0.1)
+
+    def test_large_kernel_values_not_ill_conditioned(self):
+        # gh-14150: the kernel values are much larger than the monomials here,
+        # which makes the unscaled system look ill-conditioned, but it is fine
+        x = np.random.RandomState(0).uniform(0.0, 3.0, (20, 1))
+        y = np.exp(-x[:, 0])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", LinAlgWarning)
+            interp = RBFInterpolator(x, y, kernel="multiquadric", epsilon=1e10)
+        xp_assert_close(interp(x), y, atol=1e-12)
 
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
