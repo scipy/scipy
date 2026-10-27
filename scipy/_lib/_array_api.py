@@ -427,7 +427,7 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # Equivalent of np.ravel written in terms of array API
     # Even though it's one line, it comes up so often that it's worth having
     # this function for readability
-    # `masked_ok=True` because this is use heavily in stats
+    # `masked_ok=True` because this is used heavily in stats
     xp = array_namespace(x, masked_ok=True) if xp is None else xp
     return xp.reshape(x, (-1,))
 
@@ -644,7 +644,8 @@ def _xp_result_devices(*args):
         data. They are effectively single-device, so creating on the backend
         default -- what a `None` anchor means -- is correct for them.
         """
-        return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
+        return (hasattr(arg, "device")
+                and not isinstance(arg, (np.ndarray, np.generic, type)))
 
 
     device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)

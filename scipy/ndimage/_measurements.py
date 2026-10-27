@@ -407,7 +407,7 @@ def value_indices(arr, *, ignore_value=None):
 
     >>> val_indices = ndimage.value_indices(a, ignore_value=0)
     >>> val_indices.keys()
-    dict_keys([np.int64(1), np.int64(2), np.int64(3)])
+    dict_keys([1, 2, 3])
 
     """
     # Cope with ignore_value being None, without too much extra complexity
