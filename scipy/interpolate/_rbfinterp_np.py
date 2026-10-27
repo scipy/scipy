@@ -121,6 +121,15 @@ def _scaled_rcond(lu, ipiv, anorm, nobs, kmax):
     norm of the inverse is estimated from the Bunch-Kaufman factorization of
     ``lhs`` with a simplified version of the Hager/Higham method used by
     LAPACK's ``?lacn2``.
+
+    This is not ``?sycon``, because ``?sycon`` needs the factorization of the
+    matrix whose condition number it estimates, here ``D @ lhs @ D``. Solving
+    the scaled system instead would change the pivots ``?sysv`` picks, and
+    with them whether an exactly singular system is reported (gh-23761), and
+    factoring ``D @ lhs @ D`` separately would double the cost of the solve.
+    With ``kmax=1`` this gives the same estimate as ``?sycon``. ``?lansy`` is
+    not needed either, as `_scaled_norm` takes the norm without forming
+    ``D @ lhs @ D``.
     """
     n = lu.shape[0]
     dinv = np.ones(n)

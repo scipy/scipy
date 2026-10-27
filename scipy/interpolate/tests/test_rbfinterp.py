@@ -8,7 +8,11 @@ from scipy.__config__ import CONFIG
 
 from scipy import LowLevelCallable
 from scipy._lib._array_api import xp_assert_close, make_xp_test_case
-from scipy.interpolate._rbfinterp_np import _get_kernel_capsule
+from scipy.interpolate._rbfinterp_np import (
+    _get_kernel_capsule, _build_system, _monomial_powers, _scaled_norm,
+    _scaled_rcond
+)
+from scipy.linalg.lapack import get_lapack_funcs
 from scipy.interpolate.tests import _rbfinterp_kernel_pythran
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
@@ -89,6 +93,50 @@ def test_conditionally_positive_definite(kernel):
     # condition for the smoothed RBF interpolant to be well-posed in general.
     m = _NAME_TO_MIN_DEGREE.get(kernel, -1) + 1
     assert _is_conditionally_positive_definite(kernel, m)
+
+
+@pytest.mark.parametrize('kernel, epsilon, degree', [
+    ('thin_plate_spline', 1.0, 1),
+    ('cubic', 1.0, 1),
+    ('quintic', 1.0, 2),
+    ('linear', 1.0, 0),
+    ('gaussian', 3.0, 0),
+    ('multiquadric', 1.0, 0),
+    ('multiquadric', 1e6, 0),
+])
+def test_scaled_rcond_matches_sycon(kernel, epsilon, degree):
+    # gh-14150: `_scaled_rcond` stands in for ?sycon on D @ lhs @ D, which is
+    # never factored. With D = I it must give ?sycon's estimate on the same
+    # factorization, and otherwise one close to ?sycon's on D @ lhs @ D.
+    sytrf, sycon = get_lapack_funcs(
+        ('sytrf', 'sycon'), dtype=np.float64, ilp64="preferred"
+    )
+    rng = np.random.default_rng(1234)
+    y = rng.uniform(size=(40, 2))
+    d = rng.standard_normal((40, 1))
+    powers = _monomial_powers(2, degree, np)
+    lhs = _build_system(y, d, np.zeros(40), kernel, epsilon, powers, np)[0]
+    nobs = y.shape[0]
+
+    lu, ipiv, info = sytrf(lhs)
+    assert info == 0
+    anorm = np.linalg.norm(lhs, 1)
+    np.testing.assert_allclose(
+        _scaled_rcond(lu, ipiv, anorm, nobs, 1.0), sycon(lu, ipiv, anorm)[0],
+        rtol=1e-12
+    )
+
+    anorm_scaled, kmax = _scaled_norm(lhs, nobs)
+    scaled = lhs.copy()
+    scaled[:nobs, nobs:] *= kmax
+    scaled[nobs:, :nobs] *= kmax
+    np.testing.assert_allclose(anorm_scaled, np.linalg.norm(scaled, 1), rtol=1e-14)
+    lu_scaled, ipiv_scaled, info = sytrf(scaled)
+    assert info == 0
+    expected = sycon(lu_scaled, ipiv_scaled, anorm_scaled)[0]
+    # both are estimates of the same number from different factorizations
+    rcond = _scaled_rcond(lu, ipiv, anorm_scaled, nobs, kmax)
+    np.testing.assert_allclose(rcond, expected, rtol=0.5)
 
 
 class _TestRBFInterpolator:
