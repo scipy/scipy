@@ -11,7 +11,7 @@ from scipy._lib._array_api import xp_capabilities
 _init_nd_shape_and_axes = _helper._init_nd_shape_and_axes
 
 
-def next_fast_len(target, real=False):
+def next_fast_len(target, real=False) -> int:
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
     SciPy's FFT algorithms gain their speed by a recursive divide and conquer
@@ -67,7 +67,7 @@ def next_fast_len(target, real=False):
     >>> b = fft.fft(a, 131072)
 
     """
-    pass
+    ...
 
 
 # Directly wrap the c-function good_size but take the docstring etc., from the
@@ -79,7 +79,7 @@ next_fast_len.__wrapped__ = _helper.good_size
 next_fast_len.__signature__ = _sig
 
 
-def prev_fast_len(target, real=False):
+def prev_fast_len(target, real=False) -> int:
     """Find the previous fast size of input data to ``fft``.
     Useful for discarding a minimal number of samples before FFT.
 
@@ -134,7 +134,7 @@ def prev_fast_len(target, real=False):
     >>> c = fft.fft(a[:92160]) # discard last 899 samples
 
     """
-    pass
+    ...
 
 
 # Directly wrap the c-function prev_good_size but take the docstring etc.,
