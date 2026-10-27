@@ -1608,6 +1608,7 @@ def cdf2rdf(w, v):
     """
     w, v = _asarray_validated(w), _asarray_validated(v)
     _deprecate_dtypes("cdf2rdf", w, v)
+    w, v = _ensure_dtype_cdsz(w, v)
 
     # check dimensions
     if w.ndim < 1:
@@ -1661,7 +1662,8 @@ def cdf2rdf(w, v):
     wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = zeros(M + (n, n), dtype=np.cdouble)
+    u = zeros(M + (n, n), dtype=np.complex64 if v.dtype in
+              [np.float32, np.complex64] else np.complex128)
     u[..., di, di] = 1.0
     u[stack_ind + (j, j)] = 0.5j
     u[stack_ind + (j, k)] = 0.5

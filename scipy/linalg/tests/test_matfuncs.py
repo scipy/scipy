@@ -783,6 +783,14 @@ class TestFractionalMatrixPower:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
+    def test_integer_a(self):
+        a_diag = np.array([2, 3]).astype(np.int32)
+        a = np.diag(a_diag)
+        b = 0.5
+
+        res = fractional_matrix_power(a, b)
+        assert_allclose(res, np.diag(np.sqrt(a_diag)))
+
 
 class TestExpM:
     def test_zero(self):

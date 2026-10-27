@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy import linalg, sparse
+from scipy._lib._util import HAS_ILP64
 
 
 real_floating = [np.float32, np.float64]
@@ -176,10 +177,18 @@ class TestBatch:
         # One test failed absolute tolerance with default random seed
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A)
-        # test that `disp` can be passed by position
-        res2 = linalg.logm(A)
+        A = A + 6*np.eye(4, dtype=dtype)  # avoid complex output for real input
+
+        # logm tolerances are only tuned for double precision
+        if dtype in [np.float32, np.complex64]:
+            with pytest.warns(RuntimeWarning, match="logm result may be"):
+                res1 = self.batch_test(linalg.logm, A)
+            with pytest.warns(RuntimeWarning, match="logm result may be"):
+                res2 = linalg.logm(A)
+        else:
+            res1 = self.batch_test(linalg.logm, A)
+            res2 = linalg.logm(A)
+
         for res1i, res2i in zip(res1, res2):
             np.testing.assert_equal(res1i, res2i)
 
@@ -290,17 +299,26 @@ class TestBatch:
 
 
     @pytest.mark.parametrize('cdim', [(5,), (5, 4), (2, 3, 5, 4)])
-    @pytest.mark.parametrize('dtype', floating)
-    def test_qr_multiply(self, cdim, dtype):
+    @pytest.mark.parametrize('dtype_a', floating)
+    @pytest.mark.parametrize('dtype_c', floating)
+    @pytest.mark.parametrize('pivoting', [True, False])
+    def test_qr_multiply(self, cdim, dtype_a, dtype_c, pivoting):
         rng = np.random.default_rng(8342310302941288912051)
-        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        c = get_random(cdim, dtype=dtype, rng=rng)
-        res = linalg.qr_multiply(A, c, mode='left')
-        q, r = linalg.qr(A)
-        ref = q @ c
-        atol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
+        A = get_random((2, 3, 5, 5), dtype=dtype_a, rng=rng)
+        c = get_random(cdim, dtype=dtype_c, rng=rng)
+        res_dtype = np.common_type(A, c)
+        res = linalg.qr_multiply(A, c, mode='left', pivoting=pivoting)
+        ref_qr = linalg.qr(np.astype(A, res_dtype), pivoting=pivoting)
+        ref = ref_qr[0] @ c
+        atol = 1e-6 if res_dtype in {np.float32, np.complex64} else 1e-12
+
+        assert res[0].dtype == res_dtype
+        assert res[1].dtype == res_dtype
+        if pivoting:
+            assert res[2].dtype == np.int64 if HAS_ILP64 else np.int32
+            assert np.all(res[2] == ref_qr[2])
         assert_allclose(res[0], ref, atol=atol)
-        assert_allclose(res[1], r, atol=atol)
+        assert_allclose(res[1], ref_qr[1], atol=atol)
 
     @pytest.mark.parametrize('uvdim', [[(5,), (3,)], [(4, 5, 2), (4, 3, 2)]])
     @pytest.mark.parametrize('dtype', floating)
@@ -483,19 +501,22 @@ class TestBatch:
 
     @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
                                      linalg.solve_discrete_are])
-    @pytest.mark.parametrize('dtype', floating)
-    def test_are(self, fun, dtype):
+    @pytest.mark.parametrize('dtype_1', floating)
+    @pytest.mark.parametrize('dtype_2', floating)
+    def test_are(self, fun, dtype_1, dtype_2):
         rng = np.random.default_rng(8342310302941288912051)
-        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
-        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
-        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
-        a = a + 5*np.eye(5)  # making these positive definite seems to help
-        b = b + 5*np.eye(5)
-        q = q + 5*np.eye(5)
-        r = r + 5*np.eye(5)
-        e = np.eye(5)
-        s = np.zeros((5, 5))
+        a = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
+
+        # making these positive definite seems to help
+        a = a + 5*np.eye(5, dtype=dtype_1)
+        b = b + 5*np.eye(5, dtype=dtype_1)
+        q = q + 5*np.eye(5, dtype=dtype_2)
+        r = r + 5*np.eye(5, dtype=dtype_2)
+        e = np.eye(5, dtype=dtype_2)
+        s = np.zeros((5, 5), dtype=dtype_2)
         self.batch_test(fun, (a, b, q, r))
         self.batch_test(fun, (a, b, q, r, e))
         self.batch_test(fun, (a, b, q, r, e, s))
