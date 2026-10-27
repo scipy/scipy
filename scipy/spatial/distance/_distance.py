@@ -603,7 +603,7 @@ def correlation(u, v, w=None, centered=True):
     0.5
     """
     xp = array_namespace(u, v, w)
-    u, v, w = _promote(u, v, w, xp=xp, order='C')
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     if xp.isdtype(u.dtype, 'complex floating'):
         raise TypeError("`u` and `v` must be real.")
     if w is not None:
