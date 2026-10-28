@@ -42,7 +42,6 @@ import weakref
 import math
 
 import numpy as np
-from numpy.linalg import norm
 import pytest
 
 import scipy.spatial.distance
@@ -277,14 +276,7 @@ def xp_assert_ones_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
 
 
-# TODO: drop once we use the function in the file and it no longer throws a lint error
-def xp_assert_scaling_weight(  # skip name check
-    fn,
-    *arrays,
-    rest = (),
-    axis = 0,
-    **kwargs
-):
+def xp_assert_scaling_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to weight scaling."""
     xp = array_namespace(*arrays)
     w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
@@ -467,7 +459,6 @@ wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
-wcorrelation = _weight_checked(correlation)
 wjaccard = _weight_checked(jaccard)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
@@ -1622,6 +1613,49 @@ class TestSEuclidean:
             seuclidean(u, v, rng.random((3, 4)))
 
 
+@make_xp_test_case(correlation)
+class TestCorrelation:
+    def test_correlation(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        expected = xp.asarray(1.0 - math.sqrt(3.0) / 2.0)
+        xp_assert_close(correlation(x, y), expected, atol=1.5e-7)
+
+    def test_correlation_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        expected = np.asarray(1.0 - np.sqrt(3.0) / 2.0)
+        xp_assert_close(correlation(x, y), expected, atol=1.5e-7)
+
+    def test_correlation_positive(self, xp):
+        # Regression test for gh-12320 (negative return value due to rounding
+        x = xp.asarray([0., 0., 0., 0., 0., 0., -2., 0., 0., 0., -2., -2., -2.,
+                        0., -2., 0., -2., 0., 0., -1., -2., 0., 1., 0., 0., -2.,
+                        0., 0., -2., 0., -2., -2., -2., -2., -2., -2., 0.],
+                       dtype=xp.float64)
+        y = xp.asarray([1., 1., 1., 1., 1., 1., -1., 1., 1., 1., -1., -1., -1.,
+                        1., -1., 1., -1., 1., 1., 0., -1., 1., 2., 1., 1., -1.,
+                        1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.],
+                       dtype=xp.float64)
+        dist = float(correlation(x, y))
+        assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
+    def test_complex(self, xp):
+        x, y = xp.asarray([1+0j, 2+0j]), xp.asarray([3+0j, 4+0j])
+        with pytest.raises(TypeError, match="real"):
+            correlation(x, y)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(correlation, x, y)
+        xp_assert_scaling_weight(correlation, x, y)
+        xp_assert_zero_weight(correlation, x, y)
+        xp_assert_duplication_weight(correlation, x, y)
+        xp_assert_split_weight(correlation, x, y)
+
+
 class TestSomeDistanceFunctions:
 
     def setup_method(self):
@@ -1642,38 +1676,15 @@ class TestSomeDistanceFunctions:
 
     def test_cosine_output_dtype(self):
         # Regression test for gh-19541
-        assert isinstance(wcorrelation([1, 1], [1, 1], centered=False), float)
+        assert isinstance(correlation([1, 1], [1, 1], centered=False), float)
         assert isinstance(wcosine([1, 1], [1, 1]), float)
 
-    def test_correlation(self):
-        xm = np.array([-1.0, 0, 1.0])
-        ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
-        for x, y in self.cases:
-            dist = wcorrelation(x, y)
-            assert math.isclose(
-                dist,
-                1.0 - (xm @ ym) / (norm(xm) * norm(ym)),
-                abs_tol=1.5e-7
-            )
-
-    def test_correlation_positive(self):
-        # Regression test for gh-12320 (negative return value due to rounding
-        x = np.array([0., 0., 0., 0., 0., 0., -2., 0., 0., 0., -2., -2., -2.,
-                      0., -2., 0., -2., 0., 0., -1., -2., 0., 1., 0., 0., -2.,
-                      0., 0., -2., 0., -2., -2., -2., -2., -2., -2., 0.])
-        y = np.array([1., 1., 1., 1., 1., 1., -1., 1., 1., 1., -1., -1., -1.,
-                      1., -1., 1., -1., 1., 1., 0., -1., 1., 2., 1., 1., -1.,
-                      1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.])
-        dist = correlation(x, y)
-        assert 0 <= dist <= 10 * np.finfo(np.float64).eps
-
     @pytest.mark.filterwarnings('ignore:Casting complex')
-    @pytest.mark.parametrize("func", [correlation, cosine])
-    def test_corr_dep_complex(self, func):
+    def test_corr_dep_complex(self):
         x = [1+0j, 2+0j]
         y = [3+0j, 4+0j]
         with pytest.raises(TypeError, match="real"):
-            func(x, y)
+            cosine(x, y)
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
@@ -2420,6 +2431,7 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
+        make_xp_pytest_param(correlation, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
