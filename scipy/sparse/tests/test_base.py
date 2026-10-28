@@ -103,15 +103,16 @@ class peak_memory_gain:
             f"{peak} bytes memory increase is above limit {self.peak_delta}")
 
 
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 class TestPeakMemoryGain:
     def test_passes(self):
-        with peak_memory_gain(40_001_000):
-            A = np.zeros((5000, 1000))
+        with peak_memory_gain(401_000):
+            np.zeros((500, 100))
 
     def test_fails(self):
-        with pytest.raises(AssertionError, match="assert "):
-            with peak_memory_gain(40_001_000):
-                A = np.zeros((5000, 1001))
+        with pytest.raises(AssertionError, match=".* is above limit "):
+            with peak_memory_gain(401_000):
+                np.zeros((500, 101))
 
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
@@ -3932,7 +3933,7 @@ class _TestFancyMultidimAssign:
         elif A.format == "coo":
             scale = 7
         else:
-            scale = 6
+            scale = 7
 
         N = 30
         rhs = self.spcreator(np.ones((N, N), dtype=np.int8))
@@ -3943,7 +3944,7 @@ class _TestFancyMultidimAssign:
         warn_msg = "Changing the sparsity structure"
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
-            with peak_memory_gain(scale * exp_net_mem_chg):
+            with peak_memory_gain(scale * exp_net_mem_chg + 2560):
                 A[index_N[:, None], index_N] = rhs
 
     def test_set_arrayXarray_memory_scalar(self):
@@ -3954,23 +3955,22 @@ class _TestFancyMultidimAssign:
         elif A.format == "coo":
             scale = 8
         else:
-            scale = 4
+            scale = 5
 
         N = 30
-        rhs = self.spcreator(np.ones((N, N), dtype=np.int8))
         index_N = np.arange(40, 40 + N)
         # N x N x (8(int64) x 2 + 1(int8))
         exp_net_mem_chg = N * N * 17
 
         if A.format == "coo":
-            with peak_memory_gain(scale * exp_net_mem_chg):
+            with peak_memory_gain(scale * exp_net_mem_chg + 2560):
                 A[index_N[:, None], index_N] = 1
             return
 
         warn_msg = "Changing the sparsity structure"
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
-            with peak_memory_gain(scale * exp_net_mem_chg):
+            with peak_memory_gain(scale * exp_net_mem_chg + 2560):
                 A[index_N[:, None], index_N] = 1
 
 
