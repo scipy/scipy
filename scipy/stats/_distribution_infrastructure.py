@@ -10,7 +10,7 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy, xp_result_device, xp_result_type,
+    is_numpy, is_cupy, xp_device, xp_result_device, xp_result_type,
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -25,7 +25,6 @@ from scipy.stats import qmc
 
 rv_capabilities = xp_capabilities(
     skip_backends=[('array_api_strict', "fancy indexing in EIM"),
-                   ('torch', 'no attempt'),
                    ("jax.numpy", 'mutation'),
                    ('dask.array', 'no attempt')]
 )
@@ -3524,7 +3523,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
         with np.errstate(invalid='ignore'):  # can happen with infinite moment
-            moment_as = self._preserve_type(xp.stack(moment_as))  # TODO: tuple? investigate
+            # TODO: tuple? investigate
+            moment_as = self._preserve_type(xp.stack(moment_as))
             moment_b = xp.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 

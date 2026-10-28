@@ -17,7 +17,6 @@ __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 rv_capabilities = xp_capabilities(
     skip_backends=[('array_api_strict', "fancy indexing in EIM"),
-                   ('torch', 'no attempt'),
                    ("jax.numpy", 'mutation'),
                    ('dask.array', 'no attempt')],
     method_capabilities={
@@ -213,7 +212,6 @@ class StandardNormal(Normal):
         return (1 + math.log(2*xp.pi))/2
 
     def _logentropy_formula(self, **kwargs):
-        xp = self._xp
         return math.log1p(math.log(2*math.pi)) - math.log(2)
 
     def _median_formula(self, **kwargs):
@@ -283,7 +281,7 @@ class Logistic(ContinuousDistribution):
     def _logpdf_formula(self, x, **kwargs):
         xp = self._xp
         y = -xp.abs(x)
-        return y - 2 * special.log1p(xp.exp(y))
+        return y - 2 * xp.log1p(xp.exp(y))
 
     def _pdf_formula(self, x, **kwargs):
         # f(x) = sech(x / 2)**2 / 4
@@ -801,5 +799,5 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
 # summary portion of the class documentation. All other documentation, including
 # examples, is generated automatically.
 _module = sys.modules[__name__].__dict__
-# for dist_name in __all__:
-#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
