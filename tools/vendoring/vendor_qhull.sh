@@ -6,7 +6,7 @@ set -o nounset
 set -o errexit
 
 REPO_URL="https://github.com/qhull/qhull"
-COMMIT_HASH="613debeaea72ee66626dace9ba1a2eff11b5d37d"
+COMMIT_HASH="d1c2fc0caa5f644f3a0f220290d4a868c68ed4f6"  # v8.1-alpha6
 
 # XXX: run this from the repo top level like `./tools/vendoring/vendor_qhull.sh`
 ROOT_DIR="subprojects/qhull_r/libqhull_r"
@@ -17,8 +17,6 @@ mkdir $ROOT_DIR/.tmp
 git clone $REPO_URL $ROOT_DIR/.tmp
 pushd $ROOT_DIR/.tmp
 git checkout $COMMIT_HASH
-# TODO: delete this git apply when qhull v8.2.0 is released
-git apply ../../patches/poly2rc.patch
 pushd src/libqhull_r/
 rm *.htm
 rm *.pro
