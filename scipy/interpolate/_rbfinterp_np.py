@@ -120,6 +120,21 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
     lhs, rhs, shift, scale = _build_system(
         y, d, smoothing, kernel, epsilon, powers, xp
         )
+
+    # Coordinate normalization can make distinct input points identical in
+    # floating point. Check the complete augmented rows for these candidates:
+    # identical rows prove that the system is singular, while a kernel-only
+    # comparison would ignore the polynomial and smoothing blocks.
+    scaled_y = (y - shift) / scale
+    _, inverse, counts = np.unique(
+        scaled_y, axis=0, return_inverse=True, return_counts=True
+    )
+    for group in np.flatnonzero(counts > 1):
+        indices = np.flatnonzero(inverse == group)
+        row = lhs[indices[0]]
+        if any(np.array_equal(row, lhs[index]) for index in indices[1:]):
+            raise LinAlgError("Singular matrix.")
+
     _, _, coeffs, info = dsysv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")
