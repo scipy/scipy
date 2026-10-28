@@ -312,6 +312,14 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Notes
     -----
+    For all modes other than 'interp', `x` is first extended past its edges
+    as described below, and the filter is then applied to the extended
+    signal. The output therefore contains filtered values all the way to
+    the edges; the extension only supplies the samples that the window
+    covers beyond the edges of `x`. For example, with ``mode='constant'``,
+    the output values near the edges are not equal to `cval`; instead, they
+    are computed from windows that include samples with the value `cval`.
+
     Details on the `mode` options:
 
     - 'mirror':
