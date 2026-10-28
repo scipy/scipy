@@ -149,6 +149,21 @@ def test_read_numeric_writeable():
     assert_(el.flags.writeable is True)
 
 
+def test_read_numeric_invalid_mdtype():
+    # gh-25829: invalid mdtype in tag should raise ValueError, not crash
+    str_io = BytesIO()
+    r = _make_readerlike(str_io, '<')
+    c_reader = m5u.VarReader5(r)
+    tag_dt = np.dtype([('mdtype', '<u4'), ('byte_count', '<u4'),
+                       ('val', '<u2'), ('padding', 'u1', 6)])
+    tag = np.zeros((1,), dtype=tag_dt)
+    tag['mdtype'] = 99
+    tag['byte_count'] = 2
+    tag['val'] = 1
+    _write_stream(str_io, tag.tobytes())
+    assert_raises(ValueError, c_reader.read_numeric)
+
+
 def test_zero_byte_string():
     # Tests hack to allow chars of non-zero length, but 0 bytes
     # make reader-like thing
