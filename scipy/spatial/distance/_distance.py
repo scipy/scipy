@@ -39,8 +39,9 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
-                                   is_numpy, xp_promote, xp_capabilities)
+from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
+                                   is_lazy_array, is_numpy, is_numpy_array, np_compat,
+                                   xp_promote, xp_capabilities)
 from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
@@ -715,17 +716,24 @@ def hamming(u, v, w=None):
     0.33333333333333331
 
     """
-    xp = array_namespace(u, v, w)
+    try:
+        xp = array_namespace(u, v, w)
+    except TypeError:
+        # String and object arrays have no array API namespace, so we fall back to np
+        if any(is_array_api_obj(x) and not is_numpy_array(x) for x in (u, v, w)):
+            raise
+        xp = np_compat
     u, v = xp_promote(u, xp=xp), xp_promote(v, xp=xp)
     if not broadcastable(u.shape, v.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
     u_ne_v = u != v
     if w is None:
-        return xp.mean(u_ne_v, axis=-1)
+        mismatches = xp.count_nonzero(u_ne_v, axis=-1)
+        return xp.astype(mismatches, xpx.default_dtype(xp)) / u_ne_v.shape[-1]
     w = _validate_weights(w, xp=xp)
     if not broadcastable(u_ne_v.shape, w.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
-    return xp.vecdot(u_ne_v, w / w.sum(axis=-1, keepdims=True))
+    return xp.vecdot(xp.astype(u_ne_v, w.dtype), w / xp.sum(w, axis=-1, keepdims=True))
 
 
 def jaccard(u, v, w=None):

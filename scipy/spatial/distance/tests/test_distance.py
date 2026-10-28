@@ -294,10 +294,11 @@ def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     n = w.shape[0]
     index = rng.integers(n, size=n).tolist()
     padded = xp.concat([w, xp.zeros_like(w)])
+    pads = [_take(xp, a, index, axis) for a in arrays]
     for scale in (1, 101):
-        arrays_padded = [
-            xp.concat([a, _take(xp, a, index, axis) * scale], axis=axis) for a in arrays
-        ]
+        # Bool arrays support no multiplication
+        scaled = [p if p.dtype == xp.bool else p * scale for p in pads]
+        arrays_padded = [xp.concat(pair, axis=axis) for pair in zip(arrays, scaled)]
         xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
 
 
@@ -453,7 +454,6 @@ wpdist = _weight_checked(pdist, default_axis=1, squeeze=False, n_args=1)
 wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
                                   const_test=False, n_args=1)
 wrogerstanimoto = _weight_checked(rogerstanimoto)
-wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
@@ -1256,24 +1256,6 @@ class TestPdist:
         Y_test2 = pdist(X, 'test_jensenshannon')
         xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
-    def test_pdist_matching_mtica1(self):
-        # Test matching(*,*) with mtica example #1 (nums).
-        m = wmatching(np.array([1, 0, 1, 1, 0]),
-                      np.array([1, 1, 0, 1, 1]))
-        m2 = wmatching(np.array([1, 0, 1, 1, 0], dtype=bool),
-                       np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 0.6, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10, check_0d=False)
-
-    def test_pdist_matching_mtica2(self):
-        # Test matching(*,*) with mtica example #2.
-        m = wmatching(np.array([1, 0, 1]),
-                     np.array([1, 1, 0]))
-        m2 = wmatching(np.array([1, 0, 1], dtype=bool),
-                      np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-
     @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1658,9 +1640,16 @@ class TestCorrelation:
 
 @make_xp_test_case(hamming)
 class TestHamming:
-    def test_hamming(self, xp):
-        x, y = xp.asarray([1, 0, 1, 1, 0]), xp.asarray([1, 1, 0, 1, 1])
-        xp_assert_close(hamming(x, y), xp.asarray(3 / 5))
+    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_hamming(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(hamming(x, y), xp.asarray(expected))
 
     def test_hamming_array_like(self):
         x, y = [1, 0, 1, 1, 0], [1, 1, 0, 1, 1]
@@ -1668,8 +1657,8 @@ class TestHamming:
 
     def test_weight_invariance(self, xp):
         rng = np.random.default_rng(42)
-        x = xp.asarray((rng.random(100) > 0.5), dtype=bool)
-        y = xp.asarray((rng.random(100) > 0.5), dtype=bool)
+        x = xp.asarray(rng.random(100) > 0.5)
+        y = xp.asarray(rng.random(100) > 0.5)
         xp_assert_ones_weight(hamming, x, y)
         xp_assert_scaling_weight(hamming, x, y)
         xp_assert_zero_weight(hamming, x, y)
