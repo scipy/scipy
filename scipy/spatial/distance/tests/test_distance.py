@@ -458,7 +458,6 @@ wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
-wcosine = _weight_checked(cosine)
 wjaccard = _weight_checked(jaccard)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
@@ -2451,6 +2450,7 @@ class TestChebyshev:
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
         make_xp_pytest_param(correlation, None),
+        make_xp_pytest_param(cosine, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
