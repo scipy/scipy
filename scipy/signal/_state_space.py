@@ -5,8 +5,8 @@ from typing import Literal
 import scipy._external.array_api_extra as xpx
 import numpy as np
 from scipy import linalg, optimize
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_result_device, \
-    xp_size
+from scipy._lib._array_api import Array, array_namespace, xp_capabilities, \
+    xp_result_device, xp_size
 
 from ._lti_conversion import abcd_normalize
 
@@ -60,7 +60,7 @@ def _solve_triangular(a, b, trans: Literal['C', 'N', 'T', 0, 1, 2] = 0,
 
 
 @xp_capabilities(skip_backends=[('dask.array', "Missing property `mT`")])
-def conjT(M):
+def conjT(M: Array) -> Array:
     """Conjugate transpose or Hermitian transpose of the matrix `M`.
 
     If `M` has more than two dimensions, the conjugate transpose is applied to the last
@@ -73,13 +73,13 @@ def conjT(M):
 @xp_capabilities(skip_backends=[
     ('dask.array', "svd() does not support parameter `full_matrices=True`"),
     ('jax.numpy', "Using `s = xpx.at(s)[r:].set(0)` for `s[r:] = 0` fails.")])
-def _svd_rank(A, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
-              rtol: float = 1e-12, atol: float = 0.):
-    """Helper for calculating the SVD and the rank of a matrix.
+def _svd_rank(A: Array, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
+              rtol: float = 1e-12, atol: float = 0.) -> tuple[Array, Array, Array, int]:
+    """Calculate the SVD ``A = U @ diag(s) @ Vh``and the rank `r` of a matrix `A`.
 
     Parameters
     ----------
-    A : array_like
+    A : array
         Input matrix of shape (m, n).
     m_size : {'full', 'shape', 'rank'}
         Determines the shape of the returned matrices:
@@ -87,15 +87,19 @@ def _svd_rank(A, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
         If 'shape', `U` and `Vh` are of shape (m, k) and (k, n), with k = min(m, n).
         If 'rank',  `U` and `Vh` are of shape (m, r) and (r, n), with `r` being the
         rank of `A`.
-    rtol, atol : float
+    rtol, atol : (float, float)
         Tolerance for considering the singular values of `A` to be zero.
         That is, ``s = 0 if abs(s) <= rtol * s_max + atol else s``, where `s_max` is the
         largest singular value of `A`.
 
     Returns
     -------
-    U, s, Vh : array
-        The singular value decomposition of `A`, i.e., ``A = U @ diag(s) @ Vh``.
+    U : array
+        First unitary matrix
+    s : array
+        1d array with singular values
+    Vh: array
+        Conjugate transpose of second unitary matrix.
     r : int
         The rank of `A`, i.e., the number of non-zero singular values based on the given
         tolerance.
@@ -120,14 +124,15 @@ def _svd_rank(A, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
 
 
 @xp_capabilities(np_only=True)
-def _cancel_poles_zeros(poles, zeros, rtol=1e-12, atol=0.):
+def _cancel_poles_zeros(poles: Array, zeros: Array, rtol: float = 1e-12,
+                        atol: float = 0.) -> tuple[Array, Array]:
     """Cancel poles and zeros that are within a given tolerance of each other.
 
     Parameters
     ----------
-    poles, zeros : array
+    poles, zeros : (array, array)
         Complex-valued or real-valued 1d arrays of poles and zeros.
-    rtol, atol : float
+    rtol, atol : (float, float), optional
         Tolerance for considering a pole ``p`` and a zero ``z`` to be equal. They are
         equal if ``abs(p - z) <= rtol * max(abs(p), abs(z)) + atol`` holds.
 
@@ -186,22 +191,23 @@ def _cancel_poles_zeros(poles, zeros, rtol=1e-12, atol=0.):
 @xp_capabilities(skip_backends=[
     ('dask.array', "function _svd_rank() not supported."),
     ('jax.numpy',  "function _svd_rank() not supported.")])
-def _tran_zeros_reduce(A, B, C, D, rtol=1e-12, atol=0.):
+def _tran_zeros_reduce(A: Array, B: Array, C: Array, D: Array, rtol: float = 1e-12,
+                       atol: float = 0.) -> tuple[Array, Array, Array, Array]:
     """Reduce a system so that its feedthrough matrix `D` has full row rank.
 
     Parameters
     ----------
-    A, B, C, D : array
+    A, B, C, D : (array, array, array, array)
         `A`, `B`, `C`, `D` are complex or real-valued arrays of
         shape (n, n), (n, p), (q, n), (q, p).
-    rtol, atol : float
+    rtol, atol : (float, float)
         Tolerance for considering a (positive) singular value to be zero; that is,
         ``s = 0 if s <= rtol * s_max + atol else s``, where `s_max` is the largest
         singular value of the matrix.
 
     Returns
     -------
-    A_r, B_r, C_r, D_r : array
+    A_r, B_r, C_r, D_r : (array, array, array, array)
         Reduced system matrices of shape (n_r, n_r), (n_r, p_r), (q_r, n_r), and
         (q_r, p_r), respectively.
 
@@ -242,9 +248,7 @@ def _tran_zeros_reduce(A, B, C, D, rtol=1e-12, atol=0.):
         U_C = xp.flip(U_C, axis=1)
         nu_, mu_ = nu_ - rho_, rho_ + sigma_
         if nu_ == 0:  # C_tilde has full column rank → system has no zeros.
-            return (xp.zeros((  0, 0), dtype=A.dtype, device=device),
-                    xp.zeros((0, m), dtype=B.dtype, device=device),
-                    xp.zeros((D.shape[0], 0), dtype=C.dtype, device=device), D)
+            return (xp.zeros((0, 0), dtype=A.dtype, device=device),) * 4
         if rho_ == 0:  # C_tilde is zero, so the reduction is complete.
             break
         Uh_C = conjT(U_C)
@@ -257,7 +261,8 @@ def _tran_zeros_reduce(A, B, C, D, rtol=1e-12, atol=0.):
 @xp_capabilities(skip_backends=[
     ('dask.array', "function _tran_zeros_reduce() not supported."),
     ('jax.numpy',  "function _tran_zeros_reduce() not supported.")])
-def _transmission_zeros(A, B, C, D, inf_zeros=True, rtol=1e-12, atol=0.):
+def _transmission_zeros(A: Array, B: Array, C: Array, D: Array, inf_zeros: bool = True,
+                        rtol: float = 1e-12, atol: float = 0.) -> Array:
     r"""Helper for calculating the transmission zeros of a state space system.
 
     Parameters
@@ -446,7 +451,7 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     f_scale : 'linear' | 'log', optional
         The frequency scale can be either linear (default) or logarithmic.
         This parameter is ignored if `om_spec` is an array.
-    rtol, atol : float, optional
+    rtol, atol : (float, float) optional
         Tolerance for considering an angular frequency equal to a system's pole (i.e.,
         `A`'s eigenvalue). For automatic range selection (i.e., ``om_spec = N``), it is
         also used for checking equality and canceling transmission zeros and poles. Two
@@ -548,16 +553,17 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
                 = \frac{ \omega_i^2 }{ (s-p^{(i)}_0) (s-p^{(i)}_1) } \,, \qquad
         p^{(i)}_{0,1} = \omega_i \left( -d_i ± \sqrt{d_i^2 - 1} \right)  \,.
 
-    For :math:`d_i < 1/\sqrt{2}`, the magnitude :math:`|H_i(\jj\omega)|` has the maximum
+    For :math:`d_i \leq 1/\sqrt{2}`, the magnitude response :math:`|H_i(\jj\omega)|` has
+    a maximum
 
     .. math::
 
         |H_i(\jj\omega^{(i)}_\max)| = \frac{1}{2d_i \sqrt{1 - d_i^2}}
-        \quad\text{with}\quad
+        \quad\text{at}\quad
         \omega^{(i)}_\max = \omega_i \sqrt{1 - 2 d_i^2} \,.
 
     For an undamped system, i.e., :math:`d_i=0`, the maximum magnitude is unbounded,
-    i.e., :math:`|H_i(\jj\omega^{(i)}_\max)| = \infty`. As an example, two oscillators,
+    i.e., :math:`|H_i(\jj\omega^{(i)}_\max)| = \infty`. As an example two oscillators
     linked in series by the coupling factor :math:`\gamma = 1` are investigated. The
     state space system is given by
 
@@ -673,9 +679,9 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
             zz = _transmission_zeros(A, B, C, D, rtol, atol)  # system zeros
             pp, zz = _cancel_poles_zeros(pp, zz, rtol=rtol, atol=atol)  # NumPy arrays
             # Positive frequencies of system poles and zeros:
-            # Pytorch's `imag()` accepts only complex dtypes, hence staying with NumPy:
-            om_ppzz = np.concat((np.abs(np.imag(pp)), np.abs(np.imag(zz))))
-            om0, om1 = (np.min(om_ppzz), np.max(om_ppzz)) if om_ppzz.size else (0.,0.)
+            # PyTorch's `imag()` accepts only complex dtypes, hence staying with NumPy:
+            om_pz = np.concat((np.abs(np.imag(pp)), np.abs(np.imag(zz))))
+            om0, om1 = (np.min(om_pz), np.max(om_pz)) if om_pz.size else (0.,0.)
 
             if abs(om1 - om0) <= rtol * max(om1, om0) + atol:  # no frequency range
                 om0, om1 = (om1/2, om1) if om1 > 0 else (0., 10.)
@@ -693,17 +699,12 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
             om = (xp.linspace(om0, om1, N, device=device) if f_scale == 'linear' else
                   _geomspace(om0, om1, N, xp=xp))
         case _:
-            err_msg = ("Parameter `om_spec` must either be a positive int, a valid " +
-                       "tuple (float, float, int), or a real-valued 1d array with " +
-                       "at least one value.")
-            try:
-                om = xpx.atleast_nd(xp.asarray(om_spec), ndim=1, xp=xp)
-            except TypeError as e:
-                raise ValueError(err_msg) from e
+            om = xpx.atleast_nd(xp.asarray(om_spec), ndim=1, xp=xp)
             if not (om.ndim == 1 and xp_size(om) and
                     xp.isdtype(om.dtype, ('real floating', 'integral'))):
-                raise ValueError(err_msg)
-
+                raise ValueError("Parameter `om_spec` must either be a positive int, " +
+                                 "a valid tuple (float, float, int), " +
+                                 "or a real-valued 1d array with at least one value.")
     if xp.all(B == 0) or xp.all(C == 0):  # constant transfer function
         N = om.shape[0]
         return om, xp.moveaxis(xp.tile(D, (N, 1, 1)), 0, -1)  # return (N, q, p) array

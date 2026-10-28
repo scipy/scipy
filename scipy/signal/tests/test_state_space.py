@@ -1,17 +1,20 @@
 """Unit tests for `_state_space.py`."""
 from itertools import permutations
+from typing import Literal
 
 import numpy as np
 import pytest
-from scipy._lib._array_api import array_namespace, make_xp_test_case, xp_assert_close, \
-    xp_assert_equal
+from scipy._lib._array_api import Array, array_namespace, make_xp_test_case, \
+    xp_assert_close, xp_assert_equal
 from scipy import signal
 
 from scipy.signal._state_space import _calcSSTF_helper, _cancel_poles_zeros, _diagsvd, \
     _svd_rank, _tran_zeros_reduce, _transmission_zeros, conjT
 
 
-def _abcd_normalize(A=None, B=None, C=None, D=None, *, xp=None):
+def _abcd_normalize(A: Array|None = None, B: Array|None = None, C: Array|None = None,
+                    D: Array|None = None, *, xp=None) \
+    -> tuple[Array, Array, Array, Array]:
     """Wrapper for `abcd_normalize()` which allows forcing an Array API namespace `xp`.
 
     This helper adds an optional `xp` parameter to `signal.abcd_normalize()`. This
@@ -30,7 +33,8 @@ def _abcd_normalize(A=None, B=None, C=None, D=None, *, xp=None):
     return signal.abcd_normalize(A_, B_, C_, D_)
 
 
-def _xp_assert_close_unsorted(z0, z1, rtol=None, atol=0.):
+def _xp_assert_close_unsorted(z0: Array, z1: Array, rtol: float | None = None,
+                              atol: float = 0.):
     """Compare two real- or complex-valued 1d arrays which are sorted differently.
 
     The function `_transmission_zeros` does not return its result in a particular order.
@@ -75,12 +79,11 @@ class TestSvdRank:
         """Test exception handling in `_svd_rank()`."""
         A = xp.eye(3)
         with pytest.raises(ValueError, match="^Parameter m_size='INVALID' not in "):
-            # pyrefly: ignore [bad-argument-type]
             _svd_rank(A, 'INVALID', rtol=1e-12, atol=0.)
 
     @pytest.mark.parametrize('m_size', ['full', 'shape', 'rank'])
     @pytest.mark.parametrize('atol, rtol', [(1e-12, 0.), (1e-8, 0.), (0., 1e-8)])
-    def test_basic(self, atol, rtol, m_size, xp):
+    def test_basic(self, atol, rtol, m_size: Literal['full', 'shape', 'rank'], xp):
         """Test `_svd_rank()` function. """
         s_in = np.asarray([2., 1e-8, 1.])
         A = np.zeros((3, 4), dtype=s_in.dtype)
@@ -97,7 +100,7 @@ class TestSvdRank:
         assert rank == rank_ref
 
     @pytest.mark.parametrize('m_size', ['full', 'shape', 'rank'])
-    def test_empty(self, m_size, xp):
+    def test_empty(self, m_size: Literal['full', 'shape', 'rank'], xp):
         """Test `_svd_rank()` with an empty matrix."""
         A = xp.zeros((0, 0))
         U, s, Vh, rank = _svd_rank(A, m_size, rtol=1e-12, atol=0.)
@@ -159,10 +162,13 @@ class TestSvdRank:
                                    for M_ in (M, U_ref, s_ref, Vh_ref))
 
         U, s, Vh, rank = _svd_rank(M, 'full', rtol=1e-12, atol=0.)
-        assert rank == rank_ref
+        M1 = U @ _diagsvd(s, U.shape[1], Vh.shape[0]) @ Vh
+
+        xp_assert_close(M1, M, atol=xp.finfo(M.dtype).eps**.5*4)
         xp_assert_close(U, U_ref)
         xp_assert_close(s, s_ref)
         xp_assert_close(Vh, Vh_ref)
+        assert rank == rank_ref
 
 
 @make_xp_test_case(_cancel_poles_zeros)
@@ -261,7 +267,6 @@ class Test_tran_zeros_reduce:
         D_ref = xp.asarray([[0., 0, 0, -1], [0, 0, -1, 0], [1, 0, 0, 0], [0, 1, 0, 0]])
 
         A, B, C, D = _tran_zeros_reduce(*ABCD, rtol=1e-13, atol=0.)
-
         xp_assert_close(A, A_ref)
         xp_assert_close(B, B_ref)
         xp_assert_close(C, C_ref)
@@ -273,30 +278,31 @@ class Test_tran_zeros_reduce:
         C_ref = xp.asarray([[0., 0], [0, 0], [0, -1], [-1, 0]])
         D_ref = xp.asarray([[0., 0, 0, 0], [0, 0, 0, 0], [0, 2, 0, 0], [1, 0, 0, 0]])
         A_ref, B_ref, C_ref, D_ref = _abcd_normalize(C=C_ref, D=D_ref)
-        A, B, C, D = _tran_zeros_reduce(A0, B0, C0, D0, rtol=1e-13, atol=0.)
 
+        A, B, C, D = _tran_zeros_reduce(A0, B0, C0, D0, rtol=1e-13, atol=0.)
         xp_assert_close(A, A_ref)
         xp_assert_close(B, B_ref)
         xp_assert_close(C, C_ref)
         xp_assert_close(D, D_ref)
 
-    def test_no_system_zeros(self, xp):
-        """Test for rank-zero `C_tilde`."""
-        C0 = xp.ones((3, 1))
-        A0, B0, C0, D0 = _abcd_normalize(C=C0, D=xp.zeros((3, 0)))
-        A_ref, B_ref, C_ref, D_ref = _abcd_normalize(A=xp.zeros((0, 0)), D=D0)
-        A, B, C, D = _tran_zeros_reduce(A0, B0, C0, D0, rtol=1e-13, atol=0.)
+    @pytest.mark.parametrize("B, D", [(1, np.ones((3, 1))),
+        (np.ones((1, 3)), np.diag([1, 1, 0])), (0, np.zeros((3, 0)))])
+    def test_no_system_zeros(self, B, D, xp):
+        """Test (degenerated) systems with no zeros. """
+        ABCD = _abcd_normalize(A=1, B=xp.asarray(B), C=xp.ones((3, 1)), D=xp.asarray(D))
 
-        xp_assert_close(A, A_ref)
-        xp_assert_close(B, B_ref)
-        xp_assert_close(C, C_ref)
-        xp_assert_close(D, D_ref)
+        A, B, C, D = _tran_zeros_reduce(*ABCD, rtol=1e-12, atol=0.)
+        xp_assert_close(A, xp.zeros((0, 0)))
+        xp_assert_close(B, xp.zeros((0, 0)))
+        xp_assert_close(C, xp.zeros((0, 0)))
+        xp_assert_close(D, xp.zeros((0, 0)))
+
 
     def test_full_rankD(self, xp):
         """Test a system that is already reduced."""
         A0, B0, C0, D0 = xp.eye(4), xp.eye(4), xp.eye(4), xp.eye(4)
-        A, B, C, D = _tran_zeros_reduce(A0, B0, C0, D0, rtol=1e-13, atol=0.)
 
+        A, B, C, D = _tran_zeros_reduce(A0, B0, C0, D0, rtol=1e-13, atol=0.)
         xp_assert_close(A, A0)
         xp_assert_close(B, B0)
         xp_assert_close(C, C0)
@@ -474,6 +480,24 @@ class TestFreqsSS:
 
     Since `_calcSSTF_helper` has its own tests, `freqs_ss` needs only rudimentary tests.
     """
+
+    def test_invalid_f_scale_parameter(self, xp):
+        """Verify that `f_scale` parameter raises an exception."""
+        with pytest.raises(ValueError, match="^Parameter f_scale='INVALID'"):
+            signal.freqs_ss(A=1, B=1, C=1, D=1, om_spec=1, f_scale='INVALID')
+
+    @pytest.mark.parametrize('om_spec', [
+        (0, 1, 'INVALID'), (0, 2, -5), (0, 1j, 5), (3, 2, 5)])
+    def test_invalid_om_spec_tuple(self, om_spec, xp):
+        """Test for invalid `om_spec` tuple values. """
+        with pytest.raises(ValueError, match="^Parameter om_spec="):
+            signal.freqs_ss(A=1, B=1, C=1, D=1, om_spec=om_spec)
+
+    @pytest.mark.parametrize('om_spec', ['INVALID', [[1, 2]], [], [3+4j]])
+    def test_invalid_om_spec_array(self, om_spec, xp):
+        """Test invalid `om_spec` values when `om_spec` is not a tuple."""
+        with pytest.raises(ValueError, match="^Parameter `om_spec` must either be"):
+            signal.freqs_ss(A=1, B=1, C=1, D=1, om_spec=om_spec)
 
     @pytest.mark.parametrize('B, C', [
         (np.zeros((3, 2)), np.ones((2, 3))),
