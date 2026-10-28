@@ -217,6 +217,9 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
         CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
+    if kwargs["VI"].shape != (n, n):
+        raise ValueError(f"The inverse covariance matrix VI must have shape ({n}, {n}); "
+                         f"got {kwargs['VI'].shape}.")
     return kwargs
 
 

@@ -586,6 +586,13 @@ class TestCdist:
         with pytest.raises(ValueError):
             cdist([[0, 1]], [[2, 3]], metric='mahalanobis')
 
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=1.0)
+
     def test_cdist_custom_notdouble(self):
         class myclass:
             pass
@@ -1166,6 +1173,13 @@ class TestPdist:
         # Too few observations
         with pytest.raises(ValueError):
             wpdist([[0, 1], [2, 3]], metric='mahalanobis')
+
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=1.0)
 
     def test_pdist_hamming_random(self):
         eps = 1e-15
