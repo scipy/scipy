@@ -728,8 +728,7 @@ def hamming(u, v, w=None):
         raise ValueError("Array shapes are incompatible for broadcasting.")
     u_ne_v = u != v
     if w is None:
-        mismatches = xp.count_nonzero(u_ne_v, axis=-1)
-        return xp.astype(mismatches, xpx.default_dtype(xp)) / u_ne_v.shape[-1]
+        return xp.mean(xp.astype(u_ne_v, xpx.default_dtype(xp)), axis=-1)
     w = _validate_weights(w, xp=xp)
     if not broadcastable(u_ne_v.shape, w.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
