@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_,
         assert_array_equal, assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._testutils import check_free_memory
+from .test_base import with_64bit_maxval_limit
 
 from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
@@ -764,17 +764,16 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
-    @pytest.mark.xslow
-    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    @with_64bit_maxval_limit(101)
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
-        check_free_memory(30000)
-
-        n = 33000
+        # overflow here modeled as maxval_limit. Must convert to int64
+        n = 10
         A = csr_array(np.ones((n, n), dtype=bool))
         B = A.copy()
-        C = construct._compressed_sparse_stack((A, B), axis=0,
-                                               return_spmatrix=False)
+        assert_equal(A.indices.dtype, np.int32)
+        assert_equal(A.indptr.dtype, np.int32)
+        C = construct._compressed_sparse_stack((A, B), axis=0, return_spmatrix=False)
 
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
