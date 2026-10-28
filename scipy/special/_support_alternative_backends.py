@@ -519,7 +519,7 @@ def _ndtri_exp(xp, spsx):
     # The difference between this and just using `ndtri`
     # defined by `get_array_special_func` is that if `ndtri`
     # isn't found, we don't want to use the SciPy version; we'll
-    # return None here and use the SciPy version of `chdtr`.
+    # return None here and use the SciPy version of `ndtri_exp`.
     ndtri = _get_native_func(xp, spsx, 'ndtri')
     if ndtri is None:
         return None

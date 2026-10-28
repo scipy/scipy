@@ -20,21 +20,13 @@ rv_capabilities = xp_capabilities(
                    ('torch', 'no attempt'),
                    ("jax.numpy", 'mutation'),
                    ('dask.array', 'no attempt')],
-    method_capabilities={  # no effect unless I apply to superclass?
+    method_capabilities={
             "plot": dict(np_only=True),
     }
 )
 
 
-
-@xp_capabilities(
-    skip_backends=[('array_api_strict', "fancy indexing in EIM"),
-                   ("jax.numpy", 'mutation'),
-                   ('dask.array', 'no attempt')],
-    method_capabilities={  # no effect unless I apply to superclass?
-            "plot": dict(np_only=True),
-    }
-)
+@rv_capabilities
 class Normal(ContinuousDistribution):
     r"""Normal distribution with prescribed mean and standard deviation.
 

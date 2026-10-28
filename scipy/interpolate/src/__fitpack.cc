@@ -22,9 +22,12 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      * Implements a recursive algorithm similar to the original algorithm of
      * deBoor.
      */
-    double *hh = result + k + 1;
+    /*
+     * The recursion is done in place: `saved` holds the term of the previous
+     * basis function, so h never needs to be copied.
+     */
     double *h = result;
-    double xb, xa, w;
+    double xb, xa, w, saved;
     int ind, j, n;
 
     /*
@@ -34,20 +37,21 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      */
     result[0] = 1.0;
     for (j = 1; j <= k - m; j++) {
-        memcpy(hh, h, j*sizeof(double));
-        h[0] = 0.0;
+        saved = 0.0;
         for (n = 1; n <= j; n++) {
             ind = ell + n;
             xb = t[ind];
             xa = t[ind - j];
             if (xb == xa) {
-                h[n] = 0.0;
+                h[n - 1] = saved;
+                saved = 0.0;
                 continue;
             }
-            w = hh[n - 1]/(xb - xa);
-            h[n - 1] += w*(xb - x);
-            h[n] = w*(x - xa);
+            w = h[n - 1]/(xb - xa);
+            h[n - 1] = saved + w*(xb - x);
+            saved = w*(x - xa);
         }
+        h[j] = saved;
     }
 
     /*
@@ -55,20 +59,21 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      * to convert the values of beta into the mth derivative
      */
     for (j = k - m + 1; j <= k; j++) {
-        memcpy(hh, h, j*sizeof(double));
-        h[0] = 0.0;
+        saved = 0.0;
         for (n = 1; n <= j; n++) {
             ind = ell + n;
             xb = t[ind];
             xa = t[ind - j];
             if (xb == xa) {
-                h[n] = 0.0;
+                h[n - 1] = saved;
+                saved = 0.0;
                 continue;
             }
-            w = j*hh[n - 1]/(xb - xa);
-            h[n - 1] -= w;
-            h[n] = w;
+            w = j*h[n - 1]/(xb - xa);
+            h[n - 1] = saved - w;
+            saved = w;
         }
+        h[j] = saved;
     }
 }
 
