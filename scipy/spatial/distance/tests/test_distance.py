@@ -458,7 +458,6 @@ wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
-wcosine = _weight_checked(cosine)
 wjaccard = _weight_checked(jaccard)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
@@ -585,6 +584,13 @@ class TestCdist:
         # Too few observations
         with pytest.raises(ValueError):
             cdist([[0, 1]], [[2, 3]], metric='mahalanobis')
+
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=1.0)
 
     def test_cdist_custom_notdouble(self):
         class myclass:
@@ -1167,6 +1173,13 @@ class TestPdist:
         with pytest.raises(ValueError):
             wpdist([[0, 1], [2, 3]], metric='mahalanobis')
 
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=1.0)
+
     def test_pdist_hamming_random(self):
         eps = 1e-15
         X = eo['pdist-boolean-inp']
@@ -1637,6 +1650,46 @@ class TestCorrelation:
         xp_assert_duplication_weight(correlation, x, y)
         xp_assert_split_weight(correlation, x, y)
 
+    def test_correlation_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(correlation([1, 1], [1, 1], centered=False), float)
+
+
+@make_xp_test_case(cosine)
+class TestCosine:
+    def test_cosine(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        expected = xp.asarray(1.0 - 18.0 / (math.sqrt(14) * math.sqrt(27)))
+        xp_assert_close(cosine(x, y), expected, atol=1.5e-7)
+
+    def test_cosine_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        expected = np.asarray(1.0 - 18.0 / (math.sqrt(14) * math.sqrt(27)))
+        xp_assert_close(cosine(x, y), expected, atol=1.5e-7)
+
+    def test_cosine_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(cosine([1, 1], [1, 1]), float)
+
+    @pytest.mark.filterwarnings('ignore:Casting complex')
+    def test_complex(self):
+        x = [1+0j, 2+0j]
+        y = [3+0j, 4+0j]
+        with pytest.raises(TypeError, match="real"):
+            cosine(x, y)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(cosine, x, y)
+        xp_assert_scaling_weight(cosine, x, y)
+        xp_assert_zero_weight(cosine, x, y)
+        xp_assert_duplication_weight(cosine, x, y)
+        xp_assert_split_weight(cosine, x, y)
+
 
 @make_xp_test_case(hamming)
 class TestHamming:
@@ -1735,27 +1788,6 @@ class TestSomeDistanceFunctions:
         y = np.array([1.0, 1.0, 5.0])
 
         self.cases = [(x, y)]
-
-    def test_cosine(self):
-        for x, y in self.cases:
-            dist = wcosine(x, y)
-            assert math.isclose(
-                dist,
-                1.0 - 18.0 / (math.sqrt(14) * math.sqrt(27)),
-                abs_tol=1.5e-7
-            )
-
-    def test_cosine_output_dtype(self):
-        # Regression test for gh-19541
-        assert isinstance(correlation([1, 1], [1, 1], centered=False), float)
-        assert isinstance(wcosine([1, 1], [1, 1]), float)
-
-    @pytest.mark.filterwarnings('ignore:Casting complex')
-    def test_corr_dep_complex(self):
-        x = [1+0j, 2+0j]
-        y = [3+0j, 4+0j]
-        with pytest.raises(TypeError, match="real"):
-            cosine(x, y)
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
@@ -2471,6 +2503,7 @@ class TestChebyshev:
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
         make_xp_pytest_param(correlation, None),
+        make_xp_pytest_param(cosine, None),
         make_xp_pytest_param(hamming, None),
         (braycurtis, None),
         (yule, None),
