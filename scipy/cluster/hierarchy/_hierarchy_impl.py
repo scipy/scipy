@@ -2250,8 +2250,6 @@ def _is_valid_linkage(Z, warning=False, throw=False, name=None,
         return False
 
     n = Z.shape[0]
-    if n < 2:
-        return True
 
     return _lazy_valid_checks(
         (xp.any(Z[:, :2] < 0),

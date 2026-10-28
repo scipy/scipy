@@ -305,6 +305,17 @@ class TestFclusterData:
 @make_xp_test_case(fcluster)
 class TestFcluster:
 
+    @pytest.mark.parametrize("children", [[0, 1], [1, 0]])
+    def test_single_row_valid_linkage(self, children, xp):
+        Z = xp.asarray([[*children, 1, 2]], dtype=xp.float64)
+        xp_assert_equal(fcluster(Z, t=1, criterion='distance'),
+                        xp.asarray([1, 1], dtype=xp.int32))
+
+    def test_single_row_negative_distance(self):
+        Z = np.asarray([[0, 1, -1, 2]], dtype=np.float64)
+        with pytest.raises(ValueError, match="negative distances"):
+            fcluster(Z, t=1, criterion='distance')
+
     @make_xp_test_case(single, is_isomorphic)
     @pytest.mark.parametrize("criterion,t",
         [("inconsistent", t) for t in hierarchy_test_data.fcluster_inconsistent]
@@ -469,6 +480,23 @@ class TestIsIsomorphic:
 
 @make_xp_test_case(is_valid_linkage)
 class TestIsValidLinkage:
+
+    @pytest.mark.parametrize("row, message", [
+        ([-1, 1, 1, 2], "negative indices"),
+        ([0, -1, 1, 2], "negative indices"),
+        ([0, 1, -1, 2], "negative distances"),
+        ([0, 1, 1, -1], "negative counts"),
+        ([0, 1, 1, 3], "excessive observations"),
+        ([0, 2, 1, 2], "before it is formed"),
+        ([0, 0, 1, 2], "same cluster more than once"),
+    ])
+    def test_single_row_invalid_values(self, row, message, xp):
+        Z = xp.asarray([row], dtype=xp.float64)
+        xp_assert_equal(xp.asarray(is_valid_linkage(Z)), False)
+        with pytest.raises(ValueError, match=message):
+            eager.is_valid_linkage(Z, throw=True)
+        with pytest.warns(ClusterWarning, match=message):
+            assert not eager.is_valid_linkage(Z, warning=True)
 
     @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
                                                   (1, 4, True), (2, 4, True)])
@@ -836,7 +864,7 @@ class TestMaxDists:
 
     def test_maxdists_one_cluster_linkage(self, xp):
         # Tests maxdists(Z) on linkage with one cluster.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
@@ -864,14 +892,14 @@ class TestMaxInconsts:
     def test_maxinconsts_difrow_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage and inconsistency matrices with
         # different numbers of clusters. Expecting exception.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         R = np.random.rand(2, 4)
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         MD = maxinconsts(Z, R)
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
@@ -895,7 +923,7 @@ class TestMaxRStat:
 
     def test_maxRstat_invalid_index(self, xp):
         # Tests maxRstat(Z, R, i). Expecting exception.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         with pytest.raises(TypeError):
             maxRstat(Z, R, 3.3)
@@ -915,14 +943,14 @@ class TestMaxRStat:
     def test_maxRstat_difrow_linkage(self, i, xp):
         # Tests maxRstat(Z, R, i) on linkage and inconsistency matrices with
         # different numbers of clusters. Expecting exception.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         R = np.random.rand(2, 4)
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
     def test_maxRstat_one_cluster_linkage(self, xp):
         # Tests maxRstat(Z, R, i) on linkage with one cluster.
-        Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
+        Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         MD = maxRstat(Z, R, 1)
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
