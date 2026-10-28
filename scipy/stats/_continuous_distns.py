@@ -1147,6 +1147,11 @@ class bradford_gen(rv_continuous):
 bradford = bradford_gen(a=0.0, b=1.0, name='bradford')
 
 
+def _log_expm1(y):
+    # log(expm1(y)) for y > 0, finite where expm1(y) overflows
+    return y + scu._log1mexp(-y)
+
+
 class burr_gen(rv_continuous):
     r"""A Burr (Type III) continuous random variable.
 
@@ -1222,19 +1227,35 @@ class burr_gen(rv_continuous):
         return output[()] if output.ndim == 0 else output
 
     def _cdf(self, x, c, d):
-        return (1 + x**(-c))**(-d)
+        def power(x, c, d):
+            # x**-c overflows to inf for small x, where the log form holds
+            with np.errstate(over='ignore'):
+                cdf = (1 + x**(-c))**(-d)
+            return np.where(cdf == 0, np.exp(self._logcdf(x, c, d)), cdf)
+
+        # the power form loses about d ulp for x >= 1, in rounding 1 + x**-c
+        return xpx.apply_where(
+            x < 1, (x, c, d), power,
+            lambda x, c, d: np.exp(self._logcdf(x, c, d)))
 
     def _logcdf(self, x, c, d):
-        return sc.log1p(x**(-c)) * (-d)
+        # log1p(x**c) - c*log(x) is log1p(x**-c) without overflow for x < 1
+        return -d * xpx.apply_where(
+            x < 1, (x, c),
+            lambda x, c: sc.log1p(x**c) - c * np.log(x),
+            lambda x, c: sc.log1p(x**-c))
 
     def _sf(self, x, c, d):
-        return np.exp(self._logsf(x, c, d))
+        return -sc.expm1(self._logcdf(x, c, d))
 
     def _logsf(self, x, c, d):
-        return np.log1p(- (1 + x**(-c))**(-d))
+        return scu._log1mexp(self._logcdf(x, c, d))
 
     def _ppf(self, q, c, d):
-        return (q**(-1.0/d) - 1)**(-1.0/c)
+        # q**(-1/d) overflows to inf for small q, where the log form holds
+        with np.errstate(over='ignore'):
+            ppf = (q**(-1.0/d) - 1)**(-1.0/c)
+        return np.where(ppf == 0, np.exp(-_log_expm1(-np.log(q) / d) / c), ppf)
 
     def _isf(self, q, c, d):
         _q = sc.xlog1py(-1.0 / d, -q)
@@ -1335,13 +1356,17 @@ class burr12_gen(rv_continuous):
         return -sc.expm1(self._logsf(x, c, d))
 
     def _logcdf(self, x, c, d):
-        return sc.log1p(-(1 + x**c)**(-d))
+        return scu._log1mexp(self._logsf(x, c, d))
 
     def _sf(self, x, c, d):
         return np.exp(self._logsf(x, c, d))
 
     def _logsf(self, x, c, d):
-        return sc.xlog1py(-d, x**c)
+        # log1p(x**-c) + c*log(x) is log1p(x**c) without overflow for x > 1
+        return -d * xpx.apply_where(
+            x > 1, (x, c),
+            lambda x, c: sc.log1p(x**-c) + c * np.log(x),
+            lambda x, c: sc.log1p(x**c))
 
     def _ppf(self, q, c, d):
         # The following is an implementation of
@@ -1350,7 +1375,10 @@ class burr12_gen(rv_continuous):
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
 
     def _isf(self, p, c, d):
-        return sc.expm1(-1/d * np.log(p))**(1/c)
+        # expm1 overflows to inf for small p, where the log form holds
+        with np.errstate(over='ignore'):
+            isf = sc.expm1(-1/d * np.log(p))**(1/c)
+        return np.where(np.isinf(isf), np.exp(_log_expm1(-np.log(p) / d) / c), isf)
 
     def _munp(self, n, c, d):
         def moment_if_exists(n, c, d):
