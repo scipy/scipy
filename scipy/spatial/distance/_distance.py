@@ -628,9 +628,10 @@ def correlation(u, v, w=None, centered=True):
     return xp.clip(dist, 0.0, 2.0)
 
 
+@xp_capabilities()
 def cosine(u, v, w=None):
     """
-    Compute the Cosine distance between 1-D arrays.
+    Compute the Cosine distance between two arrays.
 
     The Cosine distance between `u` and `v`, is defined as
 
@@ -644,18 +645,18 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like of floats
+    u : (..., N) array_like of floats
         Input array.
-    v : (N,) array_like of floats
+    v : (..., N) array_like of floats
         Input array.
-    w : (N,) array_like of floats, optional
+    w : (..., N) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    cosine : double
-        The Cosine distance between vectors `u` and `v`.
+    cosine : float or array
+        The Cosine distance between arrays `u` and `v`.
 
     Examples
     --------
@@ -669,7 +670,7 @@ def cosine(u, v, w=None):
 
     """
     # cosine distance is also referred to as 'uncentered correlation',
-    #   or 'reflective correlation'
+    # or 'reflective correlation'
     return correlation(u, v, w=w, centered=False)
 
 
