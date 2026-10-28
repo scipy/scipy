@@ -40,8 +40,8 @@ from functools import partial
 import numpy as np
 
 from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
-                                   is_numpy, xp_promote, xp_capabilities)
-from scipy._lib._util import _asarray_validated, _transition_to_rng
+                                   is_numpy, xp_promote, xp_capabilities, xp_device)
+from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -732,9 +732,10 @@ def hamming(u, v, w=None):
     return np.mean(u_ne_v)
 
 
+@xp_capabilities()
 def jaccard(u, v, w=None):
     r"""
-    Compute the Jaccard dissimilarity between two boolean vectors.
+    Compute the Jaccard dissimilarity between two boolean arrays.
 
     Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
     and :math:`v \equiv (v_1, \cdots, v_n)` that are not both zero,
@@ -764,18 +765,18 @@ def jaccard(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like of bools
+    u : (..., N) array_like of bools
         Input vector.
-    v : (N,) array_like of bools
+    v : (..., N) array_like of bools
         Input vector.
-    w : (N,) array_like of floats, optional
+    w : (..., N) array_like of floats, optional
         Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
         which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    jaccard : float
-        The Jaccard dissimilarity between vectors `u` and `v`, optionally
+    jaccard : float or array
+        The Jaccard dissimilarity between arrays `u` and `v`, optionally
         weighted by `w` if supplied.
 
     Notes
@@ -840,18 +841,28 @@ def jaccard(u, v, w=None):
     0.7633587786259542  # (41+59)/(31+41+59)
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-
-    unequal = np.bitwise_xor(u != 0, v != 0)
-    nonzero = np.bitwise_or(u != 0, v != 0)
+    xp = array_namespace(u, v, w)
+    u = _asarray(u, dtype=xp.bool, xp=xp)
+    v = _asarray(v, dtype=xp.bool, xp=xp)
+    if not broadcastable(u.shape, v.shape):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    dtype = xpx.default_dtype(xp, "real floating")
+    zero = xp.zeros((), dtype=xp.bool, device=xp_device(u))
+    unequal = xp.astype(xp.bitwise_xor(u != zero, v != zero), dtype)
+    nonzero = xp.astype(xp.bitwise_or(u != zero, v != zero), dtype)
     if w is not None:
+        w = xp_promote(w, force_floating=True, xp=xp)
+        if not broadcastable(w.shape, unequal.shape):
+            raise ValueError("Array shapes are incompatible for broadcasting.")
         w = _validate_weights(w)
         unequal = w * unequal
         nonzero = w * nonzero
-    a = np.float64(unequal.sum())
-    b = np.float64(nonzero.sum())
-    return (a / b) if b != 0 else np.float64(0)
+    a = xp.sum(unequal, axis=-1)
+    b = xp.sum(nonzero, axis=-1)
+    # We must avoid division by zero where b is 0. To make this work with arrays, we
+    # add 1 to b where b is 0. Because b must be larger than a, and a is non-negative,
+    # this does not change the result, because 0 / (0 + 1) = 0, which is the fallback
+    return a / (b + xp.astype(b == 0, b.dtype))
 
 
 @xp_capabilities()
