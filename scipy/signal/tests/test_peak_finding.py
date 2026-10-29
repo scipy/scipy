@@ -830,6 +830,15 @@ class TestFindPeaks:
         assert peaks.size == 2
         xp_assert_equal(peaks, np.asarray([0, 4]))
 
+    def test_no_wrap(self):
+        """
+        Test no wrap (default behavior) condition for peaks.
+        """
+        x = np.array([5, 2, 0, 1, 3, 1, 4])
+        peaks, props = find_peaks(x, wrap=False)
+        assert peaks.size == 1
+        xp_assert_equal(peaks, np.asarray([4]))
+
     def test_properties(self):
         """
         Test returned properties.
