@@ -78,7 +78,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/infra/mav.h"
 #include "ducc0/infra/misc_utils.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 #ifdef DUCC0_USE_NANOBIND
 namespace py = nanobind;
@@ -133,10 +133,9 @@ template<typename T, bool rw> stride_t copy_strides(const CNpArr &arr,
   {
   stride_t res(size_t(arr.ndim()));
   bool zerosized = false;
-  if constexpr(rw)
-    for (size_t i=0; i<res.size(); ++i)
-      if (arr.shape(i)==0)
-        zerosized=true;
+  for (size_t i=0; i<res.size(); ++i)
+    if (arr.shape(i)==0)
+      zerosized=true;
   for (size_t i=0; i<res.size(); ++i)
     {
 #ifdef DUCC0_USE_NANOBIND
@@ -145,8 +144,13 @@ template<typename T, bool rw> stride_t copy_strides(const CNpArr &arr,
 #else
     auto tmp = arr.strides(int(i));
     constexpr auto st = ptrdiff_t(sizeof(T));
-    MR_assert((tmp/st)*st==tmp, spec, "bad stride");
-    res[i] = tmp/st;
+    if ((tmp/st)*st==tmp)
+      res[i] = tmp/st;
+    else
+      {
+      MR_assert(zerosized || arr.shape(int(i))==1, spec, "bad stride");
+      res[i] = 0;
+      }
 #endif
     if constexpr(rw)
       if (!zerosized)  // if the array has no elements, we needn't worry
@@ -286,7 +290,7 @@ template<typename T> auto make_Pyarr_and_vfmav
 template<typename T> NpArr make_noncritical_Pyarr(const shape_t &shape, bool zero=false, size_t nthreads=1)
   {
   auto ndim = shape.size();
-  if (ndim==1) return make_Pyarr<T>(shape);
+  if (ndim==1) return make_Pyarr<T>(shape, zero, nthreads);
   auto shape2 = noncritical_shape(shape, sizeof(T));
   NpArr res;
 #ifdef DUCC0_USE_NANOBIND
