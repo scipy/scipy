@@ -840,6 +840,20 @@ class TestFindPeaks:
         assert peaks.size == 1
         xp_assert_equal(peaks, np.asarray([4]))
 
+    def test_plateau_size_wrap(self):
+        """
+        Test plateau size condition for peaks with wrap enabled.
+        """
+        # Prepare signal with peaks with peak_height == plateau_size
+        plateau_sizes = np.array([1, 2, 3, 4, 8, 20, 111])
+        x = np.zeros(plateau_sizes.size * 2 + 1)
+        x[1::2] = plateau_sizes
+        repeats = np.ones(x.size, dtype=int)
+        repeats[1::2] = x[1::2]
+        x = np.repeat(x, repeats)
+         # Shift to test plateau size around end of array
+        x = np.roll(x, shift=60)
+
     def test_properties(self):
         """
         Test returned properties.
