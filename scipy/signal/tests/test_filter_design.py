@@ -9,6 +9,7 @@ from scipy._external.packaging_version import version
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
+from numpy.testing import assert_allclose
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, is_numpy,
@@ -19,7 +20,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close as xp_assert_close_no_0d
 import scipy._external.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
-from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
+from scipy.signal import (lfilter, sosfilt, argrelextrema, BadCoefficients, bessel, besselap, bilinear,
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           findfreqs, firwin, freqs_zpk, freqs, freqz, freqz_zpk,
@@ -432,6 +433,61 @@ class TestTf2Sos:
         b, a, sos = map(xp.asarray, (b, a, sos))
         sos2 = tf2sos(b, a, analog=analog)
         assert_array_almost_equal(sos, sos2, decimal=4)
+
+    @pytest.mark.parametrize("b, a, expected_sos", [
+        ([0.0, 1.0], [1.0], [[0.0, 1.0, 0.0, 1.0, 0.0, 0.0]]),
+        ([0.0, 0.0, 1.0], [1.0], [[0.0, 0.0, 1.0, 1.0, 0.0, 0.0]]),
+        ([0.0, 0.0, 0.0, 1.0], [1.0],
+         [[0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+          [0.0, 0.0, 1.0, 1.0, 0.0, 0.0]]),
+        ([0.0, 1.0], [1.0, -0.5],
+         [[0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+          [1.0, 0.0, 0.0, 1.0, -0.5, 0.0]]),
+    ])
+    def test_pure_delays(self, b, a, expected_sos, xp):
+        # gh-26417: tf2sos should preserve pure delays instead of dropping them
+        b_xp = xp.asarray(b)
+        a_xp = xp.asarray(a)
+        expected_sos_xp = xp.asarray(expected_sos)
+        sos = tf2sos(b_xp, a_xp)
+        assert_allclose(sos, expected_sos_xp, atol=1e-14)
+
+        # Check filtering behavior matches lfilter
+        x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        y_tf = lfilter(b, a, x)
+        y_sos = sosfilt(np.asarray(sos), x)
+        assert_allclose(y_sos, y_tf, atol=1e-14)
+
+    def test_complex_input_with_pure_delay(self):
+        b = np.array([0.0, 0.0, 1.0, 2.0])
+        a = np.array([1.0, -0.25])
+        x = np.arange(1.0, 9.0) + 0.25j
+
+        sos = tf2sos(b, a)
+
+        assert_array_almost_equal(sosfilt(sos, x), lfilter(b, a, x))
+
+    def test_zero_numerator_is_not_treated_as_delay(self):
+        b = [0.0, 0.0, 0.0]
+        a = [1.0, -0.5]
+        x = np.arange(1.0, 9.0)
+
+        sos = tf2sos(b, a)
+
+        assert_array_almost_equal(sosfilt(sos, x), lfilter(b, a, x))
+
+    def test_delayed_filter_can_be_processed_in_chunks(self):
+        b = [0.0, 0.0, 1.0, 2.0]
+        a = [1.0, -0.5]
+        x = np.arange(1.0, 9.0)
+        sos = tf2sos(b, a)
+
+        y_first, zi = sosfilt(sos, x[:3], zi=np.zeros((len(sos), 2)))
+        y_second, _ = sosfilt(sos, x[3:], zi=zi)
+
+        assert_array_almost_equal(
+            np.r_[y_first, y_second], lfilter(b, a, x)
+        )
 
 
 @make_xp_test_case(zpk2sos)
