@@ -631,6 +631,20 @@ class TestSolveCommonAre:
         ref = solver(A, B, Q, R, E, S)
         np.testing.assert_allclose(res, ref)
 
+    @pytest.mark.parametrize("solver", [solve_continuous_are, solve_discrete_are])
+    def test_balanced_with_nondiagonal_e_gh26555(self, solver):
+        # gh-26555 reported that balancing with an e that does not commute
+        # with the balancing scaling returned a wrong solution
+        A = np.array([[3.0, -3.0], [-1.0, -1.0]])
+        B = np.array([[3.0], [-2.0]])
+        Q = np.eye(2)
+        R = np.eye(1)
+        E = np.array([[1.0, -2.0], [0.0, 100.0]])
+
+        res = solver(A, B, Q, R, e=E)
+        ref = solver(A, B, Q, R, e=E, balanced=False)
+        assert_allclose(res, ref, rtol=1e-12)
+
 
 def test_solve_generalized_continuous_are():
     cases = [
