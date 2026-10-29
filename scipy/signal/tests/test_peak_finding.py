@@ -809,6 +809,20 @@ class TestFindPeaks:
         xp_assert_close(props['left_ips'], np.asarray([6.4]))
         xp_assert_close(props['right_ips'], np.asarray([7.75]))
 
+    def test_constant_wrap(self):
+        """
+        Test behavior for signal without local maxima with wrap enabled.
+        """
+        open_interval = (None, None)
+        peaks, props = find_peaks(np.ones(10),
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval, wrap=True)
+        assert peaks.size == 0
+        for key in self.property_keys:
+            assert props[key].size == 0
+
+
+
     def test_properties(self):
         """
         Test returned properties.
