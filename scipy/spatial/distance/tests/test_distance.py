@@ -1807,7 +1807,7 @@ class TestNumObsY:
     def test_num_obs_y_multi_matrix(self, xp):
         for n in range(2, 10):
             X = np.random.rand(n, 4)
-            Y = wpdist_no_const(xp.asarray(X))
+            Y = xp.asarray(pdist(X))
             assert num_obs_y(Y) == n
 
     def test_num_obs_y_1(self, xp):
