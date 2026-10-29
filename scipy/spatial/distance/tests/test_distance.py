@@ -294,10 +294,11 @@ def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     n = w.shape[0]
     index = rng.integers(n, size=n).tolist()
     padded = xp.concat([w, xp.zeros_like(w)])
+    pads = [_take(xp, a, index, axis) for a in arrays]
     for scale in (1, 101):
-        arrays_padded = [
-            xp.concat([a, _take(xp, a, index, axis) * scale], axis=axis) for a in arrays
-        ]
+        # Bool arrays support no multiplication
+        scaled = [p if p.dtype == xp.bool else p * scale for p in pads]
+        arrays_padded = [xp.concat(pair, axis=axis) for pair in zip(arrays, scaled)]
         xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
 
 
@@ -458,7 +459,6 @@ wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
-wjaccard = _weight_checked(jaccard)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
@@ -2309,7 +2309,75 @@ def test_gh_23109():
     xp_assert_close(actual, np.asarray([[expected]]))
 
 
+@make_xp_test_case(jaccard)
 class TestJaccard:
+    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_jaccard(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(jaccard(x, y), xp.asarray(expected))
+
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_jaccard_array_like(self, x, y, expected):
+        xp_assert_close(jaccard(x, y), np.asarray(expected))
+
+    @pytest.mark.parametrize("dtype", ["float64", "int64", "bool"])
+    def test_weight_invariance(self, xp, dtype):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        y = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        xp_assert_ones_weight(jaccard, x, y)
+        xp_assert_scaling_weight(jaccard, x, y)
+        xp_assert_zero_weight(jaccard, x, y)
+        xp_assert_duplication_weight(jaccard, x, y)
+        xp_assert_split_weight(jaccard, x, y)
+
+    def test_jaccard_all_zero(self, xp):
+        x = xp.asarray([[0, 0, 0], [0, 0, 0]])
+        y = xp.asarray([[0, 0, 0], [1, 0, 0]])
+        xp_assert_close(jaccard(x, y), xp.asarray([0.0, 1.0]))
+        xp_assert_close(jaccard(x, y, w=xp.asarray([1.0, 2.0, 3.0])),
+                        xp.asarray([0.0, 1.0]))
+
+    @pytest.mark.parametrize("weights", [True, False])
+    def test_jaccard_nd(self, weights):
+        # We need to test this separate from other metrics because jaccard casts its
+        # inputs to bool, which turns the random floats of test_distance_nd all True
+        rng = np.random.default_rng(6738657865438)
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('w', 1))(jaccard)
+        u = rng.integers(2, size=(5, 2, 4))
+        v = rng.integers(2, size=(2, 4))
+        w = rng.random((3, 1, 1, 4)) if weights else None
+        xp_assert_close(jaccard(u, v, w=w), ref_func(u, v, w=w))
+        # check error is raised for non-broadcastable inputs
+        if weights:
+            w = rng.random((3, 4))
+        else:
+            v = rng.integers(2, size=(3, 4))
+        with pytest.raises(ValueError,
+                           match="Array shapes are incompatible for broadcasting."):
+            jaccard(u, v, w=w)
+
+    def test_non_01_input(self, xp):
+        eps = np.finfo(float).eps
+        x, y = xp.asarray([-10, 2.5, 0]), xp.asarray([2, -5, 2])
+        xp_assert_close(jaccard(x, y), 1/3, rtol=eps, check_0d=False)
+
+    def test_non_01_input_Xdist(self):
+        # Non-0/1 numeric input should be cast to bool before computation.
+        # See gh-21176.
+        x = np.array([-10, 2.5, 0])  # [True, True, False]
+        y = np.array([ 2,   -5, 2])  # [True, True, True]
+        xp_assert_close(cdist([x], [y], 'jaccard'), [[1/3]])
+        xp_assert_close(pdist([x, y], 'jaccard'), [1/3])
 
     def test_pdist_jaccard_random(self):
         eps = 1e-8
@@ -2362,32 +2430,6 @@ class TestJaccard:
         eps = 1e-15
         Y = pdist(np.zeros((5, 3)), 'test_jaccard')
         xp_assert_close(np.zeros(10), Y, rtol=eps)
-
-    def test_pdist_jaccard_mtica1(self):
-        m = wjaccard(np.array([1, 0, 1, 1, 0]),
-                     np.array([1, 1, 0, 1, 1]))
-        m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
-                      np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 0.6, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10, check_0d=False)
-
-    def test_pdist_jaccard_mtica2(self):
-        m = wjaccard(np.array([1, 0, 1]),
-                     np.array([1, 1, 0]))
-        m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
-                      np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-
-    def test_non_01_input(self):
-        # Non-0/1 numeric input should be cast to bool before computation.
-        # See gh-21176.
-        x = np.array([-10, 2.5, 0])  # [True, True, False]
-        y = np.array([ 2,   -5, 2])  # [True, True, True]
-        eps = np.finfo(float).eps
-        xp_assert_close(jaccard(x, y), 1/3, rtol=eps, check_0d=False)
-        xp_assert_close(cdist([x], [y], 'jaccard'), [[1/3]])
-        xp_assert_close(pdist([x, y], 'jaccard'), [1/3])
 
 
 class TestChebyshev:
@@ -2465,6 +2507,7 @@ class TestChebyshev:
         make_xp_pytest_param(sqeuclidean, None),
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
+        # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
         (braycurtis, None),
         (yule, None),
         (dice, None),
