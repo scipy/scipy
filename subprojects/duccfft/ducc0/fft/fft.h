@@ -67,7 +67,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/math/cmplx.h"
 #include "ducc0/math/unity_roots.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_fft {
 
@@ -82,7 +82,7 @@ template<typename T> inline void PMINPLACE(T &a, T &b)
   { T t = a; a+=b; b=t-b; }
 template<typename T> inline void MPINPLACE(T &a, T &b)
   { T t = a; a-=b; b=t+b; }
-template<bool fwd, typename T, typename T2> void special_mul (const Cmplx<T> &v1, const Cmplx<T2> &v2, Cmplx<T> &res)
+template<bool fwd, typename T, typename T2> DUCC0_ALWAYS_INLINE void special_mul (const Cmplx<T> &v1, const Cmplx<T2> &v2, Cmplx<T> &res)
   {
   res = fwd ? Cmplx<T>(v1.r*v2.r+v1.i*v2.i, v1.i*v2.r-v1.r*v2.i)
             : Cmplx<T>(v1.r*v2.r-v1.i*v2.i, v1.r*v2.i+v1.i*v2.r);
@@ -546,11 +546,11 @@ template<typename T0> class T_dct1
       size_t N=fftplan.length(), n=N/2+1;
       if (ortho)
         { c[0]*=sqrt2; c[n-1]*=sqrt2; }
-      auto tmp=&buf[0];
+      auto tmp=buf;
       tmp[0] = c[0];
       for (size_t i=1; i<n; ++i)
         tmp[i] = tmp[N-i] = c[i];
-      auto res = fftplan.exec(tmp, &buf[N], fct, true, nthreads);
+      auto res = fftplan.exec(tmp, buf+N, fct, true, nthreads);
       c[0] = res[0];
       for (size_t i=1; i<n; ++i)
         c[i] = res[2*i-1];
@@ -588,7 +588,7 @@ template<typename T0> class T_dst1
       bool /*ortho*/, int /*type*/, bool /*cosine*/, size_t nthreads=1) const
       {
       size_t N=fftplan.length(), n=N/2-1;
-      auto tmp = &buf[0];
+      auto tmp=buf;
       tmp[0] = tmp[n+1] = c[0]*0;
       for (size_t i=0; i<n; ++i)
         { tmp[i+1]=c[i]; tmp[N-1-i]=-c[i]; }
@@ -701,7 +701,7 @@ template<typename T0> class T_dcst23
       int type, bool cosine, size_t nthreads=1) const
       {
       aligned_array<T> buf(bufsize());
-      exec(c, &buf[0], fct, ortho, type, cosine, nthreads);
+      exec(c, buf.data(), fct, ortho, type, cosine, nthreads);
       }
 
     size_t length() const { return fftplan.length(); }
@@ -820,7 +820,7 @@ template<typename T0> class T_dcst4
       bool /*ortho*/, int /*type*/, bool cosine, size_t nthreads=1) const
       {
       aligned_array<T> buf(bufsize());
-      exec(c, &buf[0], fct, true, 4, cosine, nthreads);
+      exec(c, buf.data(), fct, true, 4, cosine, nthreads);
       }
 
     size_t length() const { return N; }

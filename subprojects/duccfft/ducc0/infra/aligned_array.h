@@ -1,6 +1,6 @@
 /** \file ducc0/infra/aligned_array.h
  *
- * \copyright Copyright (C) 2019-2022 Max-Planck-Society
+ * \copyright Copyright (C) 2019-2026 Max-Planck-Society
  * \author Martin Reinecke
  */
 
@@ -53,21 +53,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DUCC0_ALIGNED_ARRAY_H
 
 #include <algorithm>
-#include <cstdlib>
 #include <cstddef>
 #include <new>
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_aligned_array {
 
 using namespace std;
-
-// std::aligned_alloc is a bit cursed ... it doesn't exist on MacOS < 10.15
-// and in musl. Let's unconditionally work around it for now.
-//#if ((__cplusplus >= 201703L) && (!defined(__APPLE__)))
-#define DUCC0_WORKAROUND_ALIGNED_ALLOC
-//#endif
 
 /// Bare bones array class.
 /** Mostly useful for uninitialized temporary buffers.
@@ -76,47 +69,27 @@ using namespace std;
 template<typename T, size_t alignment=alignof(T)> class array_base
   {
   private:
+    static_assert((alignment&(alignment-1))==0, "alignment is not a power of 2");
+    static_assert(alignment>=alignof(T), "requested alignment is too small");
+
     T *p;
     size_t sz;
 
     static T *ralloc(size_t num)
       {
+      if (num==0) return nullptr;
       if constexpr(alignment<=alignof(max_align_t))
-        {
-        void *res = malloc(num*sizeof(T));
-        if (!res) throw bad_alloc();
-        return reinterpret_cast<T *>(res);
-        }
+        return reinterpret_cast<T *>(::operator new(num*sizeof(T)));
       else
-        {
-        if (num==0) return nullptr;
-#if (!defined(DUCC0_WORKAROUND_ALIGNED_ALLOC))
-        // aligned_alloc requires the allocated size to be a multiple of the
-        // requested alignment, so increase size if necessary
-        void *res = aligned_alloc(alignment,((num*sizeof(T)+alignment-1)/alignment)*alignment);
-        if (!res) throw bad_alloc();
-#else // portable emulation
-        void *ptr = malloc(num*sizeof(T)+alignment);
-        if (!ptr) throw bad_alloc();
-        void *res = reinterpret_cast<void *>((reinterpret_cast<size_t>(ptr) & ~(size_t(alignment-1))) + alignment);
-        (reinterpret_cast<void**>(res))[-1] = ptr;
-#endif
-        return reinterpret_cast<T *>(res);
-        }
+        return reinterpret_cast<T *>(::operator new(num*sizeof(T), std::align_val_t(alignment)));
       }
     static void dealloc(T *ptr)
       {
       if constexpr(alignment<=alignof(max_align_t))
-        free(ptr);
+        ::operator delete(ptr);
       else
-#if (!defined(DUCC0_WORKAROUND_ALIGNED_ALLOC))
-        free(ptr);
-#else
-        if (ptr) free((reinterpret_cast<void**>(ptr))[-1]);
-#endif
+        ::operator delete(ptr, std::align_val_t(alignment));
       }
-
-#undef DUCC0_WORKAROUND_ALIGNED_ALLOC
 
   public:
     /// Creates a zero-sized array with no associated memory.
