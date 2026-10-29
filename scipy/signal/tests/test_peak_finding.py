@@ -854,6 +854,23 @@ class TestFindPeaks:
          # Shift to test plateau size around end of array
         x = np.roll(x, shift=60)
 
+        # Test full output
+        peaks, props = find_peaks(x, plateau_size=(None, None), wrap=True)
+        xp_assert_equal(peaks, [3, 61, 63, 67, 71, 78, 93], check_dtype=False)
+        xp_assert_equal(props["plateau_sizes"], [111, 1, 2, 3, 4, 8, 20], check_dtype=False)
+        xp_assert_equal(props["left_edges"], [105, 61, 63, 66, 70, 75, 84],
+                        check_dtype=False)
+        xp_assert_equal(props["right_edges"], [58, 61, 64, 68, 73, 82, 103],
+                        check_dtype=False)
+
+        # Test conditions
+        xp_assert_equal(find_peaks(x, plateau_size=4, wrap=True)[0], [3, 71, 78, 93],
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, plateau_size=(None, 3.5), wrap=True)[0], [61, 63, 67],
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, plateau_size=(5, 50), wrap=True)[0], [78, 93],
+                        check_dtype=False)
+
     def test_properties(self):
         """
         Test returned properties.
