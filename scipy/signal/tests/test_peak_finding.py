@@ -821,7 +821,14 @@ class TestFindPeaks:
         for key in self.property_keys:
             assert props[key].size == 0
 
-
+    def test_wrap(self):
+        """
+        Test wrap condition for peaks.
+        """
+        x = np.array([5, 2, 0, 1, 3, 1, 4])
+        peaks, props = find_peaks(x, wrap=True)
+        assert peaks.size == 2
+        xp_assert_equal(peaks, np.asarray([0, 4]))
 
     def test_properties(self):
         """
