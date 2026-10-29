@@ -185,6 +185,40 @@ class TestSolveBanded:
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
 
+    def test_1x1_dtype_promotion(self):
+        # gh-26554: 1x1 complex band with real right-hand side
+        ab_c = array([[2.0 + 1.0j]])
+        b_r = array([1.0])
+        x = solve_banded((0, 0), ab_c, b_r)
+        assert_allclose(x, [0.4 - 0.2j], rtol=1e-15)
+        assert_equal(x.dtype, np.dtype('c16'))
+        assert_array_equal(b_r, [1.0])
+
+        # Real band with complex right-hand side
+        ab_r = array([[2.0]])
+        b_c = array([1.0 + 2.0j])
+        x = solve_banded((0, 0), ab_r, b_c)
+        assert_allclose(x, [0.5 + 1.0j], rtol=1e-15)
+        assert_equal(x.dtype, np.dtype('c16'))
+
+        # Promotion between float32 and float64
+        x = solve_banded((0, 0), array([[2.0]], dtype=np.float64),
+                         array([1.0], dtype=np.float32))
+        assert_equal(x.dtype, np.dtype('f8'))
+        assert_allclose(x, [0.5], rtol=1e-15)
+
+        # overwrite_b=True when dtypes match overwrites in place
+        b_match = array([[1.0, 2.0]])
+        x = solve_banded((0, 0), [[2.0]], b_match, overwrite_b=True)
+        assert_allclose(b_match, [[0.5, 1.0]], rtol=1e-15)
+        assert x is b_match
+
+        # overwrite_b=True when dtypes differ does not overwrite in place
+        b_diff = array([1.0])
+        x = solve_banded((0, 0), ab_c, b_diff, overwrite_b=True)
+        assert_allclose(x, [0.4 - 0.2j], rtol=1e-15)
+        assert_equal(b_diff[0], 1.0)
+
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
              [-30, 4, 6, 0],

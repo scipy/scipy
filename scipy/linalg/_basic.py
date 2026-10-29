@@ -508,14 +508,16 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
-        b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
         # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
         # function works with unnecessary rows in `a1` as long as
         # `a1[u + i - j, j] == a[i,j]`. In the 1x1 case, we want i = j = 0,
         # so the diagonal is in row `u` of `a1`. See gh-8906.
-        b2 /= a1[nupper, 0]
-        return b2
+        res_dtype = np.result_type(a1, b1)
+        if overwrite_b and b1.dtype == res_dtype:
+            b1 /= a1[nupper, 0]
+            return b1
+        return b1 / a1[nupper, 0]
     if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
         gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
