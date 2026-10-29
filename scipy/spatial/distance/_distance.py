@@ -842,8 +842,8 @@ def jaccard(u, v, w=None):
 
     """
     xp = array_namespace(u, v, w)
-    u = _asarray(u, dtype=xp.bool, xp=xp)
-    v = _asarray(v, dtype=xp.bool, xp=xp)
+    u = xp.asarray(u, dtype=xp.bool)
+    v = xp.asarray(v, dtype=xp.bool)
     if not broadcastable(u.shape, v.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
     dtype = xpx.default_dtype(xp, "real floating")
