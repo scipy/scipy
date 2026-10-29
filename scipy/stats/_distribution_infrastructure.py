@@ -10,7 +10,7 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy, xp_device, xp_result_device, xp_result_type,
+    is_numpy, is_cupy, xp_device, xp_result_device, xp_result_type
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -360,13 +360,16 @@ class _Interval(_Domain):
         # and return an array of the desired type at the end. We'll figure out how
         # to choose the right device later.
         rng = np.random.default_rng(rng)
+        dtype = xpx.default_dtype(xp)
+        device = xp.__array_namespace_info__().default_device()
+        ddd = dict(dtype=dtype, device=device)
 
         # def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
         # uniform = rng.uniform if isinstance(self, _RealInterval) else ints
         def uniform(a, b, size):
             is_integer = isinstance(self, _IntegerInterval)
             offset = 1 if is_integer else 0
-            raw = a + (b - a + offset) * xp.asarray(rng.random(size=size))
+            raw = a + (b - a + offset) * xp.asarray(rng.random(size=size), **ddd)
             return xp.floor(raw) if is_integer else raw
 
         # get copies of min and max with no nans so that uniform doesn't fail
@@ -378,26 +381,25 @@ class _Interval(_Domain):
         shape = (n,) + squeezed_base_shape
         if is_numpy(xp) and np.__version__ < "2.1":
             xp = array_namespace(i)
-        device = xp.__array_namespace_info__().default_device()
 
         if type_ == 'in':
             z = uniform(min_nn, max_nn, size=shape)
 
         elif type_ == 'on':
             z_on_shape = shape
-            z = xp.ones(z_on_shape, device=device)
-            i = xp.asarray(rng.random(size=n) < 0.5)
+            z = xp.ones(z_on_shape, **ddd)
+            i = xp.asarray(rng.random(size=n) < 0.5, device=device)
             z[i] = min
             z[~i] = max
 
         elif type_ == 'out':
             z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitrary; we just want
             zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
-            i = xp.asarray(rng.random(size=n) < 0.5)
+            i = xp.asarray(rng.random(size=n) < 0.5, device=device)
             z[i] = zr[i]
 
         elif type_ == 'nan':
-            z = xp.full(shape, xp.nan, device=device)
+            z = xp.full(shape, xp.nan, **ddd)
 
         return z
 
@@ -3551,7 +3553,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return None
 
         if standardize and order >= 3 and lmoment is not None:
-            lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
+            lscale = self._lmoment_dispatch(2., methods=methods, **self._parameters)
             if lscale is None:
                 return None
             lmoment = lmoment / lscale
@@ -3593,16 +3595,18 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _lmoment_from_order_statistics(self, order, **params):
         xp = self._xp
-        k = xp.arange(order, device=self._device)
+        k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
         E = order_statistic(self, r=order-k, n=order).mean()
-        bc = special.binom(order-1, k)
+        bc = xp.astype(special.binom(order-1, k), self._dtype)
         return xp.sum((-1)**k * bc * E, axis=0) / order
 
     def _lmoment_integrate_icdf(self, order, **params):
+        xp = self._xp
         def integrand(p, **params):
             x = self._icdf_dispatch(p, **params)
             P = special.eval_sh_legendre(order - 1, p)  # NOT array API compatible
+            P = xp.astype(P, x.dtype)
             return x * P
         return self._quadrature(integrand, limits=(0., 1.), params=params)
 

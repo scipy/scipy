@@ -32,6 +32,9 @@ from scipy._lib._array_api import (
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 
 
+import torch
+torch.set_default_dtype(torch.float32)
+
 class Test_RealInterval:
     rng = np.random.default_rng(349849812549824)
 
@@ -277,7 +280,8 @@ class DistributionsTest:
                         tol_override=tol_override, xp=xp)
 
     def test_mode(self, case, *, tol_override=None, xp):
-        tol_override = {'atol': 1e-6} if tol_override is None else tol_override
+        default_atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-4
+        tol_override = {'atol': default_atol} if tol_override is None else tol_override
         check_dist_func(case.dist, 'mode', None, case.result_shape,
                         {'optimization'}, tol_override=tol_override, xp=xp)
 
@@ -881,7 +885,9 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-    _tol_override = {'rtol': 1e-7, 'atol': 1e-13}
+    default_atol = 1e-13 if dist._dtype == xp.float64 else 1e-7
+    default_rtol = 1e-7 if dist._dtype == xp.float64 else 1e-5
+    _tol_override = {'rtol': default_rtol, 'atol': default_atol}
     if tol_override is not None:
         _tol_override.update(tol_override)
     tol_override = _tol_override
@@ -889,8 +895,9 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
     def check(order, kind, method=None, ref=None, success=True):
         if success:
             res = dist.moment(order, kind, method=method)
-            xp_assert_close(res, ref, rtol=tol_override['rtol'],
-                            atol=tol_override['atol']*10**order)
+            rtol = tol_override['rtol']
+            atol = tol_override['atol']
+            xp_assert_close(res, ref, rtol=rtol, atol=atol*10**order)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
@@ -1004,7 +1011,8 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
 
 def check_lmoment_funcs(dist, result_shape, *, tol_override=None, xp):
     # Perform consistency check for L-moments similar to check_moment_funcs above
-    tol_override = {'atol' : 5e-13} if tol_override is None else tol_override
+    default_atol = 5e-13 if dist._dtype == xp.float64 else 5e-7
+    tol_override = {'atol' : default_atol} if tol_override is None else tol_override
 
     if not isinstance(dist, ContinuousDistribution):
         message = "L-moments are currently available only for continuous..."

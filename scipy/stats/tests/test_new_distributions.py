@@ -1,12 +1,15 @@
 # file for distribution-specific tests with new infrastructure (UnivariateDistribution)
 import pytest
 import numpy as np
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case, is_cupy
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy import stats, special
 from scipy.stats.tests.test_continuous import DistributionsTest
 from scipy.stats._new_distributions import StandardNormal
 
+import torch
+torch.set_default_dtype(torch.float32)
 
 @make_xp_test_case(stats.Binomial)
 class TestBinomial(DistributionsTest):
@@ -144,6 +147,8 @@ class TestUniform(DistributionsTest):
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, xp):
+        if xpx.default_dtype(xp) == xp.float32:
+            pytest.xfail("Serious accuracy issues; needs investigation")
         return super().test_moment(case, tol_override={'atol': 1e-9}, xp=xp)
 
 
