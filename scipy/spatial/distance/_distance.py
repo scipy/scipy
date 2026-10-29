@@ -217,6 +217,9 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
         CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
+    if kwargs["VI"].shape != (n, n):
+        raise ValueError(f"The inverse covariance matrix VI must have shape ({n}, {n});"
+                         f" got {kwargs['VI'].shape}.")
     return kwargs
 
 
@@ -551,9 +554,10 @@ def sqeuclidean(u, v, w=None):
     return xp.vecdot(u_v, u_v_w)
 
 
+@xp_capabilities()
 def correlation(u, v, w=None, centered=True):
     """
-    Compute the correlation distance between two 1-D arrays.
+    Compute the correlation distance between two arrays.
 
     The correlation distance between `u` and `v`, is
     defined as
@@ -568,11 +572,11 @@ def correlation(u, v, w=None, centered=True):
 
     Parameters
     ----------
-    u : (N,) array_like of floats
+    u : (..., N) array_like of floats
         Input array.
-    v : (N,) array_like of floats
+    v : (..., N) array_like of floats
         Input array.
-    w : (N,) array_like of floats, optional
+    w : (..., N) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
     centered : bool, optional
@@ -580,8 +584,8 @@ def correlation(u, v, w=None, centered=True):
 
     Returns
     -------
-    correlation : double
-        The correlation distance between 1-D array `u` and `v`.
+    correlation : float or array
+        The correlation distance between arrays `u` and `v`.
 
     Examples
     --------
@@ -601,39 +605,33 @@ def correlation(u, v, w=None, centered=True):
     >>> correlation([1, 0, 1], [1, 1, 0], centered=False)
     0.5
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if np.iscomplexobj(u) or np.iscomplexobj(v):
-        msg = "`u` and `v` must be real."
-        raise TypeError(msg)
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
+    if xp.isdtype(u.dtype, 'complex floating'):
+        raise TypeError("`u` and `v` must be real.")
     if w is not None:
-        w = _validate_weights(w)
-        w = w / w.sum()
+        w = _validate_weights(w, xp=xp)
+        w = w / xp.sum(w, axis=-1, keepdims=True)
     if centered:
-        if w is not None:
-            umu = np.dot(u, w)
-            vmu = np.dot(v, w)
+        if w is None:
+            u = u - xp.mean(u, axis=-1, keepdims=True)
+            v = v - xp.mean(v, axis=-1, keepdims=True)
         else:
-            umu = np.mean(u)
-            vmu = np.mean(v)
-        u = u - umu
-        v = v - vmu
-    if w is not None:
-        vw = v * w
-        uw = u * w
-    else:
-        vw, uw = v, u
-    uv = np.dot(u, vw)
-    uu = np.dot(u, uw)
-    vv = np.dot(v, vw)
-    dist = 1.0 - uv / math.sqrt(uu * vv)
+            u = u - xp.vecdot(u, w)[..., None]
+            v = v - xp.vecdot(v, w)[..., None]
+    uw, vw = (u, v) if w is None else (u * w, v * w)
+    uv = xp.vecdot(u, vw)
+    uu = xp.vecdot(u, uw)
+    vv = xp.vecdot(v, vw)
+    dist = 1.0 - uv / xp.sqrt(uu * vv)
     # Clip the result to avoid rounding error
-    return np.clip(dist, 0.0, 2.0)
+    return xp.clip(dist, 0.0, 2.0)
 
 
+@xp_capabilities()
 def cosine(u, v, w=None):
     """
-    Compute the Cosine distance between 1-D arrays.
+    Compute the Cosine distance between two arrays.
 
     The Cosine distance between `u` and `v`, is defined as
 
@@ -647,18 +645,18 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like of floats
+    u : (..., N) array_like of floats
         Input array.
-    v : (N,) array_like of floats
+    v : (..., N) array_like of floats
         Input array.
-    w : (N,) array_like of floats, optional
+    w : (..., N) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    cosine : double
-        The Cosine distance between vectors `u` and `v`.
+    cosine : float or array
+        The Cosine distance between arrays `u` and `v`.
 
     Examples
     --------
@@ -672,7 +670,7 @@ def cosine(u, v, w=None):
 
     """
     # cosine distance is also referred to as 'uncentered correlation',
-    #   or 'reflective correlation'
+    # or 'reflective correlation'
     return correlation(u, v, w=w, centered=False)
 
 

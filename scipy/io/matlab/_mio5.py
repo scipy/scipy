@@ -364,7 +364,11 @@ class MatFile5Reader(MatFileReader):
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
 
-            shape = self._matrix_reader.shape_from_header(hdr)
+            if hdr.mclass == mxOPAQUE_CLASS:
+                # MATLAB objects (e.g. string, table) store no dims in the header
+                shape = ()
+            else:
+                shape = self._matrix_reader.shape_from_header(hdr)
             if hdr.is_logical:
                 info = 'logical'
             else:

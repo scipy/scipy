@@ -58,7 +58,7 @@ def tanhsinh(f, a, b, *, args=(), kwargs=None, log=False, maxlevel=None, minleve
     args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `a` and `b`.
-        If the callable for which the root is desired requires arguments that are
+        If the callable for which the integral is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
     kwargs : dict of str:array_like, optional
@@ -830,7 +830,8 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
                  atol, rtol, args, kwargs, preserve_shape, callback):
     # Input validation and standardization
 
-    xp = array_namespace(a, b)
+    kwargs = {} if kwargs is None else kwargs
+    xp = array_namespace(a, b, *args, *kwargs.values())
     a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
 
     message = '`f` must be callable.'
