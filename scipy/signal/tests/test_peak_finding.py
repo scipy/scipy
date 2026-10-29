@@ -816,7 +816,8 @@ class TestFindPeaks:
         open_interval = (None, None)
         peaks, props = find_peaks(np.ones(10),
                                   height=open_interval, threshold=open_interval,
-                                  prominence=open_interval, width=open_interval, wrap=True)
+                                  prominence=open_interval, width=open_interval,
+                                  wrap=True)
         assert peaks.size == 0
         for key in self.property_keys:
             assert props[key].size == 0
