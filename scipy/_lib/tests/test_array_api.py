@@ -1,3 +1,4 @@
+import os
 import re
 
 import numpy as np
@@ -209,6 +210,8 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
+    @pytest.mark.skipif(int(os.environ.get("PYTHONOPTIMIZE", 0)) >= 1,
+                        reason="Removes `assert`s; see data-apis/array-api-extra#1068")
     @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar(self, xp):
         # identity always passes
@@ -240,6 +243,8 @@ class TestArrayAPI:
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
+    @pytest.mark.skipif(int(os.environ.get("PYTHONOPTIMIZE", 0)) >= 1,
+                        reason="Removes `assert`s; see data-apis/array-api-extra#1068")
     @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar_no_0d(self, xp):
         # identity passes, if first argument is not 0d (or check_0d=True)
