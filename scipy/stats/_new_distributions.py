@@ -1,3 +1,4 @@
+import cmath
 import math
 from math import inf
 import sys
@@ -209,10 +210,14 @@ class StandardNormal(Normal):
 
     def _entropy_formula(self, **kwargs):
         xp = self._xp
-        return (1 + math.log(2*xp.pi))/2
+        pi = xp.asarray(xp.pi, dtype=self._dtype, device=self._device)
+        return (1 + xp.log(2*pi))/2
 
     def _logentropy_formula(self, **kwargs):
-        return math.log1p(math.log(2*math.pi)) - math.log(2)
+        xp = self._xp
+        pi = xp.asarray(xp.pi, dtype=self._dtype, device=self._device)
+        two = xp.full_like(pi, fill_value=2)
+        return xp.log1p(xp.log(2*pi)) - xp.log(two)
 
     def _median_formula(self, **kwargs):
         return 0
@@ -738,7 +743,7 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         xp = self._xp
         assert not xp.any(xp.abs(x) > 1)
         with np.errstate(divide='ignore'):
-            return xp.log(0.75) + xp.log1p(-x**2)
+            return math.log(0.75) + xp.log1p(-x**2)
 
     def _pdf_formula(self, x, **kwargs):
         xp = self._xp
@@ -764,25 +769,25 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return 2*xp.cos(1/3 * xp.acos(2*p - 1) + 4*xp.pi/3)
 
     def _moment_raw_formula(self, order, **kwargs):
-        xp = self._xp
         res = self._moment_central_formula(order, **kwargs)
         # infrastructure considers the origin to be the left endpoint
         # of the support.
-        return res * xp.exp(1j*order*xp.pi)
+        return res * cmath.exp(1j*order*math.pi)
 
     def _moment_central_formula(self, order, **kwargs):
         xp = self._xp
         if order == 0:
-            return 1.0 + 0.0j
-        return 3*(-1)**(order + 1) / (xp.pi * order)**2 + 0j
+            moment = 1.0 + 0.0j
+        else:
+            moment = 3*(-1)**(order + 1) / (xp.pi * order)**2 + 0j
+        dtype = xp.result_type(self._dtype, 0j)
+        return xp.asarray(moment, dtype=dtype, device=self._device)
 
     def _entropy_formula(self):
-        xp = self._xp
-        return 5/3 - xp.log(3)
+        return 5/3 - math.log(3)
 
     def _logentropy_formula(self, **kwargs):
-        xp = self._xp
-        return xp.log(5/3 - xp.log(3))
+        return math.log(5/3 - math.log(3))
 
     def _median_formula(self, **kwargs):
         return 0.0

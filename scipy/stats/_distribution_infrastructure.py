@@ -952,7 +952,7 @@ def _set_invalid_nan(f):
         low, high = endpoints.get(method_name, self.support())
 
         if circular:
-            x = xp.array(x, dtype=dtype, copy=True)  # ideally, avoid multiple copies
+            x = xp.asarray(x, dtype=dtype, copy=True)  # ideally, avoid multiple copies
             x[xp.isinf(x)] = xp.nan
             a, b = self.support()  # not the same as low, high for inverse methods
             period = b - a
@@ -1039,7 +1039,7 @@ def _set_invalid_nan(f):
             a, b = self.support()
             if a.shape != shape:
                 a = xp.asarray(xp.broadcast_to(a, shape), copy=True)
-                b = xp.array(xp.broadcast_to(b, shape), copy=True)
+                b = xp.asarray(xp.broadcast_to(b, shape), copy=True)
 
             replace_low_endpoint = (
                 b[mask_low_endpoint] if method_name.endswith('ccdf')
@@ -1275,7 +1275,7 @@ def _log_real_standardize(x, *, xp):
     real = xp.astype(xp.real(x), x.dtype)
     complex = xp.imag(x)
     y = real
-    negative = xp.abs(xp.exp(complex*1j)) < 0.5
+    negative = xp.real(xp.exp(complex*1j)) < 0
     y[negative] = y[negative] + xp.pi * 1j
     return xp.reshape(y, shape)[()]
 
@@ -2027,8 +2027,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         with np.printoptions(threshold=10):
             funcs = dict(g=lambda u: other**u,
-                         h=lambda u: xp.log(u) / xp.log(other),
-                         dh=lambda u: 1 / xp.abs(u * xp.log(other)),
+                         h=lambda u: xp.log(u) / math.log(other),
+                         dh=lambda u: 1 / xp.abs(u * math.log(other)),
                          repr_pattern=f"{repr(other)}**({repr(self)})",
                          str_pattern=f"{str(other)}**({str(self)})",
                          xp=xp)
@@ -2355,7 +2355,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         with np.errstate(invalid='ignore', divide='ignore'):
             # np.log warns with complex NaN argument
-            res = xp.log(self._entropy_dispatch(**params)+0j)
+            entropy = xp.asarray(self._entropy_dispatch(**params),
+                                 dtype=self._dtype, device=self._device)
+            res = xp.log(entropy+0j)
             return _log_real_standardize(res, xp=xp)
 
     def _logentropy_logexp_safe(self, **params):
@@ -2397,7 +2399,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         with np.errstate(invalid='ignore'):
             # np.exp(np.nan) raises on some platforms?
-            return xp.real(xp.exp(self._logentropy_dispatch(**params)))
+            dtype = xp.result_type(self._dtype, 0j)
+            logentropy = xp.asarray(self._logentropy_dispatch(**params),
+                                    dtype=dtype, device=self._device)
+            return xp.real(xp.exp(logentropy))
 
     def _entropy_quadrature(self, **params):
         xp = self._xp
@@ -3359,12 +3364,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return None
 
     def _moment_raw_transform(self, order, **params):
+        xp = self._xp
         central_moments = []
         for i in range(int(order) + 1):
             methods = {'cache', 'formula', 'normalize', 'general'}
             moment_i = self._moment_central_dispatch(order=i, methods=methods, **params)
             if moment_i is None:
                 return None
+            moment_i = xp.asarray(moment_i, dtype=self._dtype, device=self._device)
             central_moments.append(moment_i)
 
         # Doesn't make sense to get the mean by "transform", since that's
@@ -3425,13 +3432,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return None
 
     def _moment_central_transform(self, order, **params):
-
+        xp = self._xp
         raw_moments = []
         for i in range(int(order) + 1):
             methods = {'cache', 'formula', 'general'}
             moment_i = self._moment_raw_dispatch(order=i, methods=methods, **params)
             if moment_i is None:
                 return None
+            moment_i = xp.asarray(moment_i, dtype=self._dtype, device=self._device)
             raw_moments.append(moment_i)
 
         mean_methods = self._moment_methods
@@ -3524,7 +3532,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         n_choose_i = special.binom(n, i)
         with np.errstate(invalid='ignore'):  # can happen with infinite moment
             # TODO: tuple? investigate
-            moment_as = self._preserve_type(xp.stack(moment_as))
+            moment_as = self._preserve_type(xp.stack(tuple(moment_as)))
             moment_b = xp.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
@@ -5229,7 +5237,8 @@ class ShiftedScaledDistribution(TransformedDistribution):
             if not self.loc.ndim and self.loc < 0:
                 result += f" - {repr(-self.loc)}"
             elif (xp.any(self.loc != 0)
-                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):  # TODO: fix
+                  or xp.result_type(self.loc.dtype, self.scale.dtype)
+                      != self.scale.dtype):
                 # We don't want to hide a zero array loc if it can cause
                 # a type promotion.
                 result += f" + {repr(self.loc)}"
@@ -5242,7 +5251,8 @@ class ShiftedScaledDistribution(TransformedDistribution):
             if not self.loc.ndim and self.loc < 0:
                 result += f" - {str(-self.loc)}"
             elif (xp.any(self.loc != 0)
-                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):
+                  or xp.result_type(self.loc.dtype, self.scale.dtype)
+                      != self.scale.dtype):
                 # We don't want to hide a zero array loc if it can cause
                 # a type promotion.
                 result += f" + {str(self.loc)}"
@@ -5813,7 +5823,8 @@ class Mixture(_ProbabilityDistribution):
             message = "`weights` must have floating point dtype."
             raise ValueError(message)
 
-        if not xp.isclose(xp.sum(weights), 1.0):  # not array API, but works
+          # not array API, but works
+        if not xp.isclose(xp.sum(weights), xp.asarray(1.0, device=self._device)):
             message = "`weights` must sum to 1.0."
             raise ValueError(message)
 
@@ -5841,7 +5852,7 @@ class Mixture(_ProbabilityDistribution):
 
     @property
     def weights(self):
-        return self._weights.copy()
+        return xp_copy(self._weights)
 
     def _full(self, val, *args):
         xp = self._xp
@@ -6006,6 +6017,7 @@ class Mixture(_ProbabilityDistribution):
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
         xl0, xr0 = _guess_bracket(xmin, xmax, xp=xp)
+        xl0, xr0, xmin, xmax, p = xp_promote(xl0, xr0, xmin, xmax, p, xp=xp)
         res = elementwise.bracket_root(f, xl0=xl0, xr0=xr0,
                                        xmin=xmin, xmax=xmax, args=(p,))
         return elementwise.find_root(f, res.bracket, args=(p,)).x
@@ -6036,8 +6048,11 @@ class Mixture(_ProbabilityDistribution):
         rng = xp.random.default_rng(rng) if is_cupy(xp) else np.random.default_rng(rng)
         size = xp.prod(xpx.atleast_nd(xp.asarray(shape), ndim=1, xp=xp))
         ns = rng.multinomial(size, self._weights)
-        x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
-        x = xp.reshape(rng.permuted(xp.concat(x)), shape)
+        x = xp.concat([var.sample(shape=n, rng=rng)
+                       for n, var in zip(ns, self._components)])
+        i = xp.asarray(rng.permutation(x.shape[0]), device=xp_device(x))
+        shape = (shape,) if np.isscalar(shape) else shape
+        x = xp.reshape(x[i], shape)
         return x[()]
 
     def __repr__(self):
@@ -6150,7 +6165,8 @@ class MonotonicTransformedDistribution(TransformedDistribution):
         xp = self._xp
         a, b = self._dist._support(**params)
         # For reciprocal transformation, we want this zero to become -inf
-        b = xp.where(b==0, xp.asarray("-0", dtype=b.dtype, device = self._device), b)
+        n0 = float('-0')
+        b = xp.where(b==0, xp.asarray(n0, dtype=b.dtype, device = self._device), b)
         with np.errstate(divide='ignore'):
             if self._increasing:
                 return self._g(a), self._g(b)

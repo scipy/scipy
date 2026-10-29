@@ -131,8 +131,8 @@ class TestUniform(DistributionsTest):
 
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
-        xp_assert_close(dist.pdf(x),
-                        1 / xp.full_like(x, fill_value=(dist.b - dist.a)))
+        _, c = xp.broadcast_arrays(x, dist.b - dist.a)
+        xp_assert_close(dist.pdf(x), 1 / c)
 
     def test_mode(self, case, xp):
         xp_assert_close(case.dist.mode(), case.dist.a + case.dist.ab/2)

@@ -1,4 +1,5 @@
 import itertools as it
+import math
 import operator
 import os
 import pickle
@@ -26,7 +27,8 @@ from scipy.stats._new_distributions import (
 from scipy.stats import Normal, Uniform
 from scipy._lib._testutils import mutually_broadcastable_shapes
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import make_xp_test_case, is_numpy, is_cupy
+from scipy._lib._array_api import (
+    make_xp_test_case, is_numpy, is_cupy, is_torch, xp_copy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 
 
@@ -408,8 +410,8 @@ class Test_LogUniform(DistributionsTest):
         return super().test_lmoment(case, xp=xp)
 
     def test_gh_25180(self, xp):
-        X = _LogUniform(log_a=xp.float64(-0.28915434544814245),
-                        log_b=xp.float64(0.3085224670197856))
+        X = _LogUniform(log_a=xp.asarray(-0.28915434544814245, dtype=xp.float64),
+                        log_b=xp.asarray(0.3085224670197856, dtype=xp.float64))
         actual = X.mode(method='optimization')
         assert xp.isfinite(actual)
 
@@ -481,8 +483,12 @@ class TestOtherMethods:
         p0 = X.cdf(x, y, method='quadrature')
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
-        xp_assert_equal(p2, p1)
         xp_assert_close(p1, p0, rtol=X.tol)
+
+        if is_torch(xp):
+            pass  # https://github.com/pytorch/pytorch/issues/192295
+        else:
+            xp_assert_equal(p2, p1)
 
         # Safe subtraction is needed in special cases
         x = xp.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
@@ -1760,8 +1766,8 @@ class TestMakeDistribution:
         p = rng.random(x.shape)
         x_np, p_np = xp.asarray(x), xp.asarray(p)
 
-        xp_assert_close(X.support()[0], xp.asarray(Y.support()[0]))
-        xp_assert_close(X.support()[1], xp.asarray(Y.support()[1]))
+        xp_assert_close(X.support()[0], xp.asarray(xp_copy(Y.support()[0])))
+        xp_assert_close(X.support()[1], xp.asarray(xp_copy(Y.support()[1])))
         xp_assert_close(X.entropy(), xp.asarray(Y.entropy()))
         xp_assert_close(X.median(), xp.asarray(Y.median()))
         xp_assert_close(X.logpdf(x_np), xp.asarray(Y.logpdf(x)))
@@ -2627,8 +2633,8 @@ class MixedDist(ContinuousDistribution):
     _variable = _RealParameter('x', domain=_RealInterval(endpoints=(-inf, inf)))
     def _pdf_formula(self, x, *args, **kwargs):
         xp = self._xp
-        return (0.4 * 1/(1.1 * xp.sqrt(2*xp.pi)) * xp.exp(-0.5*((x+0.25)/1.1)**2)
-                + 0.6 * 1/(0.9 * xp.sqrt(2*xp.pi)) * xp.exp(-0.5*((x-0.5)/0.9)**2))
+        return (0.4 * 1/(1.1 * math.sqrt(2*math.pi)) * xp.exp(-0.5*((x+0.25)/1.1)**2)
+                + 0.6 * 1/(0.9 * math.sqrt(2*math.pi)) * xp.exp(-0.5*((x-0.5)/0.9)**2))
 
 
 @make_xp_test_case(stats.Mixture)
