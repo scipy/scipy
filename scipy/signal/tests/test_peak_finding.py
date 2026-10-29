@@ -887,6 +887,23 @@ class TestFindPeaks:
         xp_assert_equal(find_peaks(x, height=(2, 3), wrap=True)[0], np.array([3]),
                         check_dtype=False)
 
+    def test_threshold_condition_wrap(self):
+        """
+        Test threshold condition for peaks with wrap enabled.
+        """
+        x = (7, 2, 1, 4, -1)
+        peaks, props = find_peaks(x, threshold=(None, None), wrap=True)
+        xp_assert_equal(peaks, np.array([0, 3]), check_dtype=False)
+        xp_assert_equal(props['left_thresholds'], np.array([8.0, 3.0]))
+        xp_assert_equal(props['right_thresholds'], np.array([5.0, 5.0]))
+        xp_assert_equal(find_peaks(x, threshold=4, wrap=True)[0], np.array([0]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, threshold=5.5, wrap=True)[0], np.array([], dtype=int),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, threshold=(3, 5), wrap=True)[0], np.array([3], dtype=int),
+                        check_dtype=False)
+
+
     def test_properties(self):
         """
         Test returned properties.
