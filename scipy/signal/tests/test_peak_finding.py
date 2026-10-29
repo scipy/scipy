@@ -871,6 +871,22 @@ class TestFindPeaks:
         xp_assert_equal(find_peaks(x, plateau_size=(5, 50), wrap=True)[0], [78, 93],
                         check_dtype=False)
 
+    def test_height_condition_wrap(self):
+        """
+        Test height condition for peaks with wrap enabled.
+        """
+        x = (10, 1/3, 0., 2.5, 0, 4., 0)
+        peaks, props = find_peaks(x, height=(None, None), wrap=True)
+        xp_assert_equal(peaks, np.array([0, 3, 5]), check_dtype=False)
+        xp_assert_equal(props['peak_heights'], np.array([10., 2.5, 4.,]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=0.5, wrap=True)[0], np.array([0, 3, 5]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=(None, 3), wrap=True)[0], np.array([3]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=(2, 3), wrap=True)[0], np.array([3]),
+                        check_dtype=False)
+
     def test_properties(self):
         """
         Test returned properties.
