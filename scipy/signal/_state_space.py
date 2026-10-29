@@ -2,14 +2,14 @@
 import numbers
 from typing import Literal
 
-import scipy._external.array_api_extra as xpx
 import numpy as np
-from scipy import linalg, optimize
+
+import scipy._external.array_api_extra as xpx
+from scipy import linalg
 from scipy._lib._array_api import Array, array_namespace, xp_capabilities, \
     xp_result_device, xp_size
 
 from ._lti_conversion import abcd_normalize
-
 
 __all__ = ['freqs_ss']
 
@@ -38,19 +38,21 @@ def _geomspace(start, stop, num, xp):
     return xp.asarray(a)
 
 
-def _schur_complex(A, overwrite_a=False, check_finite=True):
+def _schur_complex(A, overwrite_a=False):
     """Array API compatible version of `scipy.linalg.schur` with complex output and
     without sorting. """
     xp = array_namespace(A)
     T_np, Z_np = linalg.schur(np.asarray(A), output='complex', overwrite_a=overwrite_a,
-                              sort=None, check_finite=check_finite)
-    return xp.asarray(T_np), xp.asarray(Z_np)
+                              sort=None)
+    T, Z = xp.asarray(T_np), xp.asarray(Z_np)
+    dtyp = xp.result_type(T, Z, 1j)  # We want allways the same return dtype
+    return xp.astype(T, dtyp, copy=False), xp.astype(Z, dtyp, copy=False)
 
 
 def _solve_triangular(a, b, trans: Literal['C', 'N', 'T', 0, 1, 2] = 0,
                       lower=False, unit_diagonal=False, overwrite_b=False,
                       check_finite=True):
-    """Array API compatible version of `scipy.linalg.solve_triangular`."""
+    """Array API compatible version of `scipy.linalg.solve_triangular`. """
     xp = array_namespace(a, b)
     a_np, b_np = np.asarray(a), np.asarray(b)
     x_np = linalg.solve_triangular(a_np, b_np, trans=trans, lower=lower,
@@ -87,19 +89,15 @@ def _svd_rank(A: Array, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
         If 'shape', `U` and `Vh` are of shape (m, k) and (k, n), with k = min(m, n).
         If 'rank',  `U` and `Vh` are of shape (m, r) and (r, n), with `r` being the
         rank of `A`.
-    rtol, atol : (float, float)
+    rtol, atol : float
         Tolerance for considering the singular values of `A` to be zero.
         That is, ``s = 0 if abs(s) <= rtol * s_max + atol else s``, where `s_max` is the
         largest singular value of `A`.
 
     Returns
     -------
-    U : array
-        First unitary matrix
-    s : array
-        1d array with singular values
-    Vh: array
-        Conjugate transpose of second unitary matrix.
+    U, s, Vh : array
+       The singular value composition as three arrays.
     r : int
         The rank of `A`, i.e., the number of non-zero singular values based on the given
         tolerance.
@@ -109,8 +107,7 @@ def _svd_rank(A: Array, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
     U, s, Vh = xp.linalg.svd(A, full_matrices=(m_size == 'full')) # A = U @ diag(s) @ Vh
 
     if xp_size(s):  # Search s for nearest value to tolerance:
-        r = s.shape[0] - xp.searchsorted(xp.flip(s, axis=0), rtol * s[0] + atol,
-                                         side='right')
+        r = s.shape[0] - xp.searchsorted(xp.flip(s), rtol * s[0] + atol, side='right')
     else:
         r = 0
 
@@ -122,72 +119,6 @@ def _svd_rank(A: Array, m_size: Literal['full', 'shape', 'rank'] = 'full', *,
     else:
         raise ValueError(f"Parameter {m_size=} not in ('full', 'shape', 'rank')")
 
-
-@xp_capabilities(np_only=True)
-def _cancel_poles_zeros(poles: Array, zeros: Array, rtol: float = 1e-12,
-                        atol: float = 0.) -> tuple[Array, Array]:
-    """Cancel poles and zeros that are within a given tolerance of each other.
-
-    Parameters
-    ----------
-    poles, zeros : (array, array)
-        Complex-valued or real-valued 1d arrays of poles and zeros.
-    rtol, atol : (float, float), optional
-        Tolerance for considering a pole ``p`` and a zero ``z`` to be equal. They are
-        equal if ``abs(p - z) <= rtol * max(abs(p), abs(z)) + atol`` holds.
-
-    Returns
-    -------
-    r_poles, r_zeros : array
-        1d arrays of the remaining poles and zeros after cancellation. The dtypes are
-        the same as of the input arrays.
-
-    Notes
-    -----
-    Maximizing the number of cancellations within a given tolerance is a combinatorial
-    problem. Here, this is solved by treating it as a linear sum assignment problem
-    (as in :func:`~scipy.optimize.linear_sum_assignment`) with the (maximized) total
-    cost being the number of cancellations.
-
-    Due to :func:`~scipy.optimize.linear_sum_assignment` not being ARRAY API compatible
-    yet, this whole function is not either.
-
-    Examples
-    --------
-    Consider a tolerance of ``rtol, atol = 0, 0.11``, the ``poles = [0.0, 0.1, 0.2]``
-    and the ``zeros = [0.1, 0.2, 0.3]``.  If a greedy best-match strategy is used, then
-    only the values of ``0.1`` and ``0.2`` would be canceled. If instead the number of
-    cancellations is maximized, then ``0.1 / 0.0``, ``0.1 / 0.2`` and ``0.2 / 0.3``
-    would be canceled, leaving no poles and no zeros.
-    """
-    poles, zeros = np.atleast_1d(np.asarray(poles)), np.atleast_1d(np.asarray(zeros))
-    if poles.ndim != 1 or zeros.ndim != 1:
-        raise ValueError(f"Parameters aren't 1d arrays: {poles.shape=}, {zeros.shape=}")
-    if not (zeros.size and poles.size):  # no cancellation on empty arrays
-        return poles, zeros
-
-    n_z, n_p = zeros.shape[0], poles.shape[0]
-    p_idx = np.ones(n_p, dtype=bool) # boolean indexes for indicating
-    z_idx = np.ones(n_z, dtype=bool) # which values to keep.
-
-    # Entry CC[i,j] of boolean matrix CC is set if pole i and zero j are within tol.:
-    PP, ZZ = np.reshape(poles, (-1, 1)), np.reshape(zeros, (1, -1))
-    CC = np.abs(PP - ZZ) <= rtol * np.maximum(np.abs(PP), np.abs(ZZ)) + atol
-
-    # Reduce CC to CC1 by removing rows and columns that are all False:
-    ii, jj = np.any(CC, axis=1), np.any(CC, axis=0)
-    # CC1 = CC[ii, :][:, jj]
-    CC1 = (CC[ii].T[jj]).T  # Array API compatible way for CC1 = CC[ii, :][:, jj]
-    if not CC1.size:  # no cancellation possible
-        return poles, zeros
-    p_idx1 = np.arange(n_p)[ii]  # Indexes for mapping CC1 back to CC
-    z_idx1 = np.arange(n_z)[jj]
-    # Determine the valid cancellation pairs∵
-    ii1, jj1 = optimize.linear_sum_assignment(CC1, maximize=True)
-    p_idx[p_idx1[ii1]], z_idx[z_idx1[jj1]] = False, False
-    return poles[p_idx], zeros[z_idx]
-
-
 @xp_capabilities(skip_backends=[
     ('dask.array', "function _svd_rank() not supported."),
     ('jax.numpy',  "function _svd_rank() not supported.")])
@@ -197,17 +128,17 @@ def _tran_zeros_reduce(A: Array, B: Array, C: Array, D: Array, rtol: float = 1e-
 
     Parameters
     ----------
-    A, B, C, D : (array, array, array, array)
+    A, B, C, D : array
         `A`, `B`, `C`, `D` are complex or real-valued arrays of
         shape (n, n), (n, p), (q, n), (q, p).
-    rtol, atol : (float, float)
+    rtol, atol : float
         Tolerance for considering a (positive) singular value to be zero; that is,
         ``s = 0 if s <= rtol * s_max + atol else s``, where `s_max` is the largest
         singular value of the matrix.
 
     Returns
     -------
-    A_r, B_r, C_r, D_r : (array, array, array, array)
+    A_r, B_r, C_r, D_r : array
         Reduced system matrices of shape (n_r, n_r), (n_r, p_r), (q_r, n_r), and
         (q_r, p_r), respectively.
 
@@ -304,21 +235,23 @@ def _transmission_zeros(A: Array, B: Array, C: Array, D: Array, inf_zeros: bool 
     A, B, C, D = abcd_normalize(A, B, C, D)
     xp = array_namespace(A)  # abcd_normalize() already ensures a unified API backend.
     device = xp_result_device(A, B, C, D)
+    dtyp = xp.result_type(A, 1j)  # we want always the same return dtype
+
     # Zeros only exist if B != 0 and C != 0:
     if not (xp.any(B) and xp.any(C)):  # Using any() ensures B and C being non-empty
-        return xp.asarray([], dtype=A.dtype, device=device)
+        return xp.asarray([], dtype=dtyp, device=device)
 
     # Reduce system to full row rank feedthrough matrix D:
     A, B, C, D = _tran_zeros_reduce(A, B, C, D, rtol=rtol, atol=atol)
     if A.shape[0] == 0:  # no zeros
-        return xp.asarray([], dtype=A.dtype, device=device)
+        return xp.asarray([], dtype=dtyp, device=device)
 
     if D.shape[0] != D.shape[1]:  # If D not square, reduce to full column rank D:
         ACBD_conjT = _tran_zeros_reduce(conjT(A), conjT(C), conjT(B), conjT(D),
                                         rtol=rtol, atol=atol)
         A, C, B, D = (conjT(M_) for M_ in ACBD_conjT)
     if A.shape[0] == 0:  # no zeros
-        return xp.asarray([], dtype=A.dtype, device=device)
+        return xp.asarray([], dtype=dtyp, device=device)
 
     # Find unitary W for which [C D] = [0 D_f] @ W holds:
     _, _, Wh = xp.linalg.svd(xp.concat((C, D), axis=1), full_matrices=True)
@@ -390,26 +323,28 @@ def _calcSSTF_helper(T, B, C, s_values, rtol, atol, overwrite_b, xp, device):
     tol = rtol * xp.max(abs_lamsM, axis=-1) + atol  # (N,) array of tolerances
     ii = xp.all(abs_lamsM.T > tol, axis=0)  # invertible matrices
     if xp.any(ii):  # Use triangular solver for invertible matrices (no Array API)
-        G[ii] = C @ _solve_triangular(M[ii], B, lower=False, overwrite_b=overwrite_b)
+        M_ii = _solve_triangular(M[ii], B, lower=False, overwrite_b=overwrite_b)
+        G[ii] = xp.astype(C, G.dtype) @ xp.astype(M_ii, G.dtype)  # astype() for PyTorch
     if not xp.all(ii):  # Use SVD for non-invertible matrices (no Array API):
         U, s, Vh = xp.linalg.svd(M[~ii])  # M[~ii] = U @ diag(s) @ Vh
+        U, Vh, B, C = (xp.astype(X_, G.dtype) for X_ in (U, Vh, B, C))  # for PyTorch
         V, Uh_B = xp.conj(Vh).mT, xp.conj(U).mT @ B
 
         # Split S^{-1} into a finite and an infinite part:
         inv_s, ii0_s = xp.zeros_like(s), (s.T > tol[~ii]).T
         inv_s[ii0_s] = 1 / s[ii0_s]  # finite
         V_iS = V * xp.reshape(inv_s, (-1, 1, n))  # V_iS = V @ S^{-1}
-        G_finite = C @ V_iS @ Uh_B
+        G_ = C @ V_iS @ Uh_B  # the result of the finite part
 
         # Infinite part: Mark all ∞ values in S^{-1} as 1 and all others as 0.
         # Then propagate those marks to G:
         ii1_s = inv_s == 0
         inv_s[ii1_s], inv_s[~ii1_s] = 1, 0
         V_iS = V * xp.reshape(inv_s, (-1, 1, n))  # V_iS = V @ S^{-1}
-        G_inf = C @ V_iS @ Uh_B
-        G_inf[G_inf != 0] = xp.inf  # non-zero values become ∞
+        G_inf = C @ V_iS @ Uh_B  # values for G ≠ 0 are ∞
 
-        G[~ii] += G_finite + G_inf
+        G_[G_inf != 0] = xp.inf * (1+1j) # set both real and imaginary pat to ∞
+        G[~ii] = G_
     return G
 
 
@@ -442,28 +377,25 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
         selected based on the system poles and transmission zeros: Consider ``v0``,
         ``v1`` being the smallest and largest value of the absolute values of the
         imaginary parts of poles and zeros (i.e., the respective frequencies). ``om0,
-        om1 = v0 / 2, 1.5 * v1`` is used or linear spacing, whereas for logarithmic
+        om1 = v0 / 2, 1.5 * v1`` is used for linear spacing, whereas for logarithmic
         spacing ``om0, om1 = v0 / 5, v1 * 5`` is used. If ``v0 == v1 > 0`` (within the
         specified tolerance), then ``v0 = v1 / 2``. If there are no poles or
-        transmission zeros, then ``om0, om1 = 0, 10``. Note that the poles and
-        transmission zeros are canceled first, if they are within the specified
-        tolerance of each other.
+        transmission zeros, then ``om0, om1 = 0, 10``.
     f_scale : 'linear' | 'log', optional
         The frequency scale can be either linear (default) or logarithmic.
         This parameter is ignored if `om_spec` is an array.
     rtol, atol : (float, float) optional
         Tolerance for considering an angular frequency equal to a system's pole (i.e.,
         `A`'s eigenvalue). For automatic range selection (i.e., ``om_spec = N``), it is
-        also used for checking equality and canceling transmission zeros and poles. Two
-        values ``x1``, ``x2`` are considered equal if ``abs(x1 - x2) <= rtol *
-        max(abs(x1), abs(x2)) + atol`` holds. The default values are ``rtol=1e-12`` and
-        ``atol=0``.
+        also used for checking if a singular value equals is zero. Two values ``x1``,
+        ``x2`` are considered equal if ``abs(x1 - x2) <= rtol * max(abs(x1), abs(x2)) +
+        atol`` holds. The default values are ``rtol=1e-12`` and ``atol=0``.
 
     Returns
     -------
     om : array
         A real-valued array of angular frequencies of shape (N,) for which the response
-        is calculated.
+        is calculated. If `om_spec` is an array, it is returned.
     G : array
         A complex-valued array of shape (q, p, N) representing the frequency response.
 
@@ -550,8 +482,8 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     .. math::
 
         H_i(s)  = \frac{ 1 }{\frac{1}{\omega_i^2} s^2 + 2\frac{d_i}{\omega_i} s + 1}
-                = \frac{ \omega_i^2 }{ (s-p^{(i)}_0) (s-p^{(i)}_1) } \,, \qquad
-        p^{(i)}_{0,1} = \omega_i \left( -d_i ± \sqrt{d_i^2 - 1} \right)  \,.
+                = \frac{ \omega_i^2 }{ (s-p^{(i)}_0) (s-p^{(i)}_1) } \,, \quad
+        p^{(i)}_{0,1} = \omega_i \left( -d_i \pm \sqrt{d_i^2 - 1} \right)  \,.
 
     For :math:`d_i \leq 1/\sqrt{2}`, the magnitude response :math:`|H_i(\jj\omega)|` has
     a maximum
@@ -560,10 +492,10 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
 
         |H_i(\jj\omega^{(i)}_\max)| = \frac{1}{2d_i \sqrt{1 - d_i^2}}
         \quad\text{at}\quad
-        \omega^{(i)}_\max = \omega_i \sqrt{1 - 2 d_i^2} \,.
+        \omega^{(i)}_\max = \pm\omega_i \sqrt{1 - 2 d_i^2} \,.
 
     For an undamped system, i.e., :math:`d_i=0`, the maximum magnitude is unbounded,
-    i.e., :math:`|H_i(\jj\omega^{(i)}_\max)| = \infty`. As an example two oscillators
+    i.e., :math:`|H_i(\jj\omega^{(i)}_\max)| = \infty`. For this example two oscillators
     linked in series by the coupling factor :math:`\gamma = 1` are investigated. The
     state space system is given by
 
@@ -580,11 +512,11 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
         \begin{bmatrix} x_0(t)\\ x_1(t)\\ x_2(t)\\ x_3(t) \end{bmatrix} +
         \underbrace{\begin{bmatrix} 0 & 0 \\ \omega_0^2 & 0\\ 0 & 0 \\ 0 & \omega_1^2
         \end{bmatrix}}_{=:\mB}
-        \begin{bmatrix} u_0(t)\\ u_1(t)\\  \end{bmatrix} \,, \\
+        \begin{bmatrix} u_0(t)\\ u_1(t)\\  \end{bmatrix} ,\\
         \begin{bmatrix} y_0(t)\\ y_1(t)\\  \end{bmatrix} &=
         \underbrace{\begin{bmatrix}  1 & 0 & 0 & 0\\  0 & 0 & 1 & 0
         \end{bmatrix}}_{=:\mC}
-        \begin{bmatrix} x_0(t)\\ x_1(t)\\ x_2(t)\\ x_3(t) \end{bmatrix} \,,
+        \begin{bmatrix} x_0(t)\\ x_1(t)\\ x_2(t)\\ x_3(t) \end{bmatrix} ,
 
     with the undamped angular frequencies :math:`\omega_0 = 5\,`\ rad/s,
     :math:`\omega_1 = 15\,`\ rad/s and the damping ratios :math:`d_0 = 0.1\,,`
@@ -621,7 +553,7 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
         om, GG = freqs_ss(AA, BB, CC, DD, om_spec=(0, 20, 200))  # the response
 
         om0_max = om0 * np.sqrt(1 - 2*d0**2)
-        mH0_max = 1 / (2*d0 * np.sqrt(1 - d0**2))  # |H_0(j 𝜔^0_max)|
+        mag_H0_max = 1 / (2*d0 * np.sqrt(1 - d0**2))  # |H_0(j 𝜔^0_max)|
 
         fig, ax = plt.subplots(constrained_layout=True)
         ax.set(title="Frequency Response", xlim=(om[0], om[-1]), ylim=(-0.1, 7),
@@ -630,7 +562,7 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
         for i, j in product(range(2), range(2)):
             ax.plot(om, abs(GG[i, j]), f'C{i*2+j}-', alpha=0.7,
                     label=rf"$|G_{{{i},{j}}}(j\omega)|$")
-        ax.plot(om0_max, mH0_max, 'C4x', alpha=.7,
+        ax.plot(om0_max, mag_H0_max, 'C4x', alpha=.7,
                 label=r'$|H_0(j\omega^{(0)}_\max)|$')
         ax.grid(True)
         ax.legend()
@@ -658,8 +590,8 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     [[0.+4.j 0.+0.j]
      [0.+0.j 0.+0.j]]
     >>> print(G[..., 1])  # infinite entry, since eigenvalue 1j*om[1] passes through C.
-    [[inf+0.j  0.+0.j]
-     [ 0.+0.j  0.+0.j]]
+    [[inf+infj  0. +0.j]
+     [ 0. +0.j  0. +0.j]]
     >>> print(G[..., 2])  # finite, since eigenvalue 1j*om[2] is blocked by C.
     [[ 0.-4.j  0.+0.j]
      [ 0.+0.j  0.+0.j]]
@@ -671,17 +603,15 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
     xp = array_namespace(A, B, C, D)
     device = xp_result_device(A, B, C, D)
 
-    T, Z = _schur_complex(A)  # A = Z @ T @ Z^H; T, Z have shape (n, n)
+    T, Z = _schur_complex(A)  # A = Z @ T @ Z^H; T, Z are complex-valued (n, n) arrays
 
     match om_spec:
         case N if isinstance(N, numbers.Integral) and N > 0:
             pp = xp.linalg.diagonal(T)  # system poles are the eigenvalues of A
             zz = _transmission_zeros(A, B, C, D, rtol, atol)  # system zeros
-            pp, zz = _cancel_poles_zeros(pp, zz, rtol=rtol, atol=atol)  # NumPy arrays
             # Positive frequencies of system poles and zeros:
-            # PyTorch's `imag()` accepts only complex dtypes, hence staying with NumPy:
-            om_pz = np.concat((np.abs(np.imag(pp)), np.abs(np.imag(zz))))
-            om0, om1 = (np.min(om_pz), np.max(om_pz)) if om_pz.size else (0.,0.)
+            om_pz = xp.concat((xp.abs(xp.imag(pp)), xp.abs(xp.imag(zz))))
+            om0, om1 = (xp.min(om_pz), xp.max(om_pz)) if xp_size(om_pz) else (0.,0.)
 
             if abs(om1 - om0) <= rtol * max(om1, om0) + atol:  # no frequency range
                 om0, om1 = (om1/2, om1) if om1 > 0 else (0., 10.)
@@ -710,8 +640,8 @@ def freqs_ss(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
         return om, xp.moveaxis(xp.tile(D, (N, 1, 1)), 0, -1)  # return (N, q, p) array
 
     # Calculate G = C Z (j𝜔 I - T)^{-1} Z_h B + D:
-    # PyTorch does not promote real to complex in matmul, so cast explicitly (from Z):
-    dtyp = xp.result_type(Z, C, B)
-    C_Z, B_Zh = xp.astype(C, dtyp) @ Z, conjT(Z) @ xp.astype(B, dtyp)
+    dtyp = xp.result_type(Z, C, B)  # PyTorch does not promote real to complex in matmul
+    Z, C, B = (xp.astype(X_, dtyp, copy=False) for X_ in (Z, C, B))
+    C_Z, B_Zh = C @ Z, conjT(Z) @ B
     G = _calcSSTF_helper(T, B_Zh, C_Z, 1j*om, rtol, atol, True, xp, device) + D
     return om, xp.moveaxis(G, 0, -1)
