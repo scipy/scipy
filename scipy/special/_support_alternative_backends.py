@@ -1,6 +1,6 @@
 import functools
 import operator
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
 
@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
     is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
+from . import _ellip_harm
 from . import _gufuncs
 from . import _mathieu
 from . import _special_ufuncs
@@ -86,8 +87,9 @@ class _FuncInfo:
     # Handle case where a backend uses an alternative name for a function.
     # Should map backend names to alternative function names.
     alt_names_map: dict[str, str] | None = None
-    # Some functions only take integer arrays for some arguments.
-    int_only: tuple[bool, ...] | None = None
+    # Handle cases where a backend has an implementation that takes its
+    # arguments in a different order.
+    alt_arg_orders_map: dict[str, tuple[int, ...]] | None = None
     # For testing purposes, whether tests should only use positive values
     # for some arguments. If bool and equal to True, restrict to positive
     # values for all arguments. To restrict only some arguments to positive
@@ -96,8 +98,11 @@ class _FuncInfo:
     # the ith argument. To make backend specific choices for positive_only,
     # pass in a dict mapping backend names to bool or tuple[bool, ...].
     positive_only: (
-        bool | tuple[bool, ...] | Mapping[str, bool | tuple[bool, ...]]
+        bool | tuple[bool, ...] | dict[str, bool | tuple[bool, ...]]
     ) = False
+    # For testing purposes. Some functions only take integer arrays
+    # for some arguments.
+    int_only: tuple[bool, ...] | dict[str, tuple[bool, ...]] | None = None
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True
@@ -202,6 +207,13 @@ class _FuncInfo:
             xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
+            order = (self.alt_arg_orders_map or {}).get(get_native_namespace_name(xp))
+            if order is not None:
+                native_f = f
+
+                def f(*args, **kwargs):
+                    return native_f(*(args[i] for i in order), **kwargs)
+
             return f
 
         if in_xp:
@@ -2106,9 +2118,191 @@ _special_funcs = (
         ),
         torch_native=False,
     ),
-    # Legendre functions
-    
-    
+    # Elliptic Harmonics
+    _FuncInfo(
+        _ellip_harm.ellip_harm, ["h2", "k2", "n", "p", "s", "signm=1", "signn=1"],
+        xp_capabilities(cpu_only=True),
+        torch_native=False,
+        is_ufunc=False,
+        int_only=(False, False, True, True, False, True, True),
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ellip_harm.ellip_harm_2, ["h2", "k2", "n", "p", "s"],
+        xp_capabilities(cpu_only=True),
+        torch_native=False,
+        is_ufunc=False,
+        int_only=(False, False, True, True, False),
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ellip_harm.ellip_normal, ["h2", "k2", "n", "p"],
+        xp_capabilities(cpu_only=True),
+        torch_native=False,
+        is_ufunc=False,
+        int_only=(False, False, True, True),
+        test_large_ints=False,
+    ),
+    # Orthogonal Polynomials
+    _FuncInfo(
+        _ufuncs.eval_legendre, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "legendre_polynomial_p"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+        _FuncInfo(
+        _ufuncs.eval_chebyt, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "chebyshev_polynomial_t"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_chebyu, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "chebyshev_polynomial_u"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_chebyc, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_chebyc", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_chebys, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_chebys", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_jacobi, ["n", "alpha", "beta", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_jacobi", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_laguerre, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "laguerre_polynomial_l"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_genlaguerre, ["n", "alpha", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_genlaguerre", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_hermite, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "hermite_polynomial_h"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only=(True, False),
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_hermitenorm, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "hermite_polynomial_he"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only=(True, False),
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_gegenbauer, ["n", "alpha", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_gegenbauer", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_sh_legendre, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_sh_legendre", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_sh_chebyt, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "shifted_chebyshev_polynomial_t"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_sh_chebyu, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
+        alt_names_map={"torch": "shifted_chebyshev_polynomial_u"},
+        alt_arg_orders_map={"torch": (1, 0)},
+        int_only={"torch": (True, False)},
+        positive_only={"torch": (True, False)},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _ufuncs.eval_sh_jacobi, ["n", "p", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("eval_sh_jacobi", ["torch"]),
+        ),
+        torch_native=False,
+        test_large_ints=False,
+    ),
 )
 
 

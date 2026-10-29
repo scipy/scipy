@@ -15,7 +15,9 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, gamma, rgamma,
                       psi, hankel1, hankel2, poch, binom,
                       _stirling2_inexact)
-from ._support_alternative_backends import _zeta, _riemann_zeta, jv, yv, kv
+from ._support_alternative_backends import (
+    _zeta, _riemann_zeta, jv, yv, kv, eval_genlaguerre,
+)
 
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
@@ -32,7 +34,6 @@ __all__ = [
     'berp_zeros',
     'bi_zeros',
     'comb',
-    'digamma',
     'diric',
     'erf_zeros',
     'euler',
@@ -66,7 +67,6 @@ __all__ = [
     'pbdv_seq',
     'pbvv_seq',
     'perm',
-    'polygamma',
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
@@ -1585,6 +1585,7 @@ def fresnel_zeros(nt):
     return _specfun.fcszo(2, nt), _specfun.fcszo(1, nt)
 
 
+@xp_capabilities(cpu_only=True)
 def assoc_laguerre(x, n, k=0.0):
     r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
     and order :math:`k`.
@@ -1653,53 +1654,7 @@ def assoc_laguerre(x, n, k=0.0):
     >>> plt.show()
 
     """
-    return _ufuncs.eval_genlaguerre(n, k, x)
-
-
-digamma = psi
-
-
-def polygamma(n, x):
-    r"""Polygamma functions.
-
-    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
-    `digamma` function. See [dlmf]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        The order of the derivative of the digamma function; must be
-        integral
-    x : array_like
-        Real valued input
-
-    Returns
-    -------
-    ndarray
-        Function results
-
-    See Also
-    --------
-    digamma
-
-    References
-    ----------
-    .. [dlmf] NIST, Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/5.15
-
-    Examples
-    --------
-    >>> from scipy import special
-    >>> x = [2, 3, 25.5]
-    >>> special.polygamma(1, x)
-    array([ 0.64493407,  0.39493407,  0.03999467])
-    >>> special.polygamma(0, x) == special.psi(x)
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    n, x = asarray(n), asarray(x)
-    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
-    return where(n == 0, psi(x), fac2)
+    return eval_genlaguerre(n, k, x)
 
 
 def mathieu_even_coef(m, q):

@@ -145,13 +145,14 @@ def _skip_or_tweak_alternative_backends(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get(get_native_namespace_name(xp))
     if int_only is None:
         int_only = (False, ) * nfo.n_args
-        dtypes = (base_dtype, ) * nfo.n_args
-    else:
-        dtypes = tuple(
-            'intp' if needs_int else base_dtype for needs_int in int_only
-        )
+
+    dtypes = tuple(
+        'intp' if needs_int else base_dtype for needs_int in int_only
+    )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, int_only, elementwise_only=True
