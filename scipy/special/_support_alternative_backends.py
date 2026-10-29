@@ -11,7 +11,9 @@ from scipy._lib._array_api import (
     is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
+from . import _gufuncs
 from . import _mathieu
+from . import _special_ufuncs
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
@@ -159,7 +161,7 @@ class _FuncInfo:
 
         module = "scipy.special"
         if not self.public:
-            module f"{module}._support_alternative_backends"
+            module = f"{module}._support_alternative_backends"
 
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
@@ -172,6 +174,8 @@ class _FuncInfo:
                 self.name,
                 self.arg_names,
                 self.func.__doc__,
+                module=module,
+            )
         else:
             @functools.wraps(self.func)
             def func(*args, **kwargs):
@@ -179,7 +183,7 @@ class _FuncInfo:
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             # needed to allow pickling
-            func.__module__ = "scipy.special"
+            func.__module__ = module
             func.__qualname__ = self.name
 
         capabilities = self.xp_capabilities or xp_capabilities()
@@ -442,8 +446,8 @@ def polygamma(n, x):
 
     """
     n, x = np.asarray(n), np.asarray(x)
-    fac2 = (-1.0)**(n+1) * ._ufuncs.gamma(n+1.0) * _ufuncs._zeta(n+1, x)
-    return np.where(n == 0, ._ufuncs.psi(x), fac2)
+    fac2 = (-1.0)**(n+1) * _ufuncs.gamma(n+1.0) * _ufuncs._zeta(n+1, x)
+    return np.where(n == 0, _ufuncs.psi(x), fac2)
 
 
 def _rel_entr(xp, spsx):
@@ -474,7 +478,6 @@ def _xlogy(xp, spsx):
             temp = x * xp.log(y)
         return xp.where(x == 0., 0., temp)
     return __xlogy
-
 
 
 def _chdtr(xp, spsx):
@@ -572,6 +575,17 @@ def _ndtri_exp(xp, spsx):
     return __ndtri_exp
 
 
+def __riemann_zeta(z):
+    zeta = _get_native_func(xp, spsx, "zeta")
+    if zeta is None:
+        return None
+
+    def ___riemann_zeta(x):
+        return zeta(z, 1.0)
+
+    return __riemann_zeta
+
+
 def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
     # Used to infer out shape for lazy_apply under JAX JIT.
     if kwargs:
@@ -599,60 +613,6 @@ def _needs_betainc(name):
     )
 
 _special_funcs = (
-    _FuncInfo(
-        _ufuncs.bdtr, ["k", "n", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("bdtr", ["torch"]),
-        ),
-        int_only=(False, True, False), torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.bdtrc, ["k", "n", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("bdtrc", ["torch"]),
-        ),
-        int_only=(False, True, False), torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.bdtri, ["k", "n", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("bdtri", ["torch"]),
-        ),
-        int_only=(False, True, False), torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.betainc, ["a", "b", "x"], _needs_betainc("betainc"), torch_native=False
-    ),
-    _FuncInfo(
-        _ufuncs.betaincc, ["a", "b", "x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["jax.numpy", "cupy"],  # needs betainc
-            extra_note=_ufunc_kwargs_extra_note("betaincc", ["cupy", "torch"]),
-        ),
-        generic_impl=_betaincc,
-        torch_native=False
-    ),
-    _FuncInfo(
-        _ufuncs.betaincinv, ["a", "b", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("betaincinv", ["torch"]),
-        ),
-        test_large_ints=False, positive_only=True, torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.betaln, ["a", "b"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "jax.numpy"],
-            extra_note=_ufunc_kwargs_extra_note("betaln", ["torch"]),
-        ),
-        # For betaln, nan mismatches can occur at negative integer a or b of
-        # sufficiently large magnitude.
-        positive_only={"jax.numpy": True}, torch_native=False,
-    ),
     _FuncInfo(
         _ufuncs.binom, ["x", "y"],
         xp_capabilities(
@@ -686,26 +646,6 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _ufuncs.chdtr, ["v", "x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("chdtr", ["torch"])),
-        generic_impl=_chdtr,
-    ),
-    _FuncInfo(
-        _ufuncs.chdtrc, ["v", "x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("chdtrc", ["torch"])),
-        generic_impl=_chdtrc,
-        # scipy/scipy#20972
-        positive_only={"cupy": True, "jax.numpy": True, "torch": True}
-    ),
-    _FuncInfo(
-        _ufuncs.chdtri, ["v", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("chdtri", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
         _ufuncs.cosdg, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
@@ -728,26 +668,6 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("cotdg", ["torch"]),
         ),
         torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.entr, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.erf, ["z"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.erfc, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.erfcx, ["x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "torch"],
-            extra_note=_ufunc_kwargs_extra_note("erfcx", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.erfinv, ["y"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
     ),
     _FuncInfo(
         _ufuncs.exp1, ["z"],
@@ -790,9 +710,6 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _ufuncs.expit, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
         _ufuncs.expn, ["n", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "jax.numpy"],
@@ -802,100 +719,6 @@ _special_funcs = (
         # taking analytic continuation.
         positive_only=True,
         int_only=(True, False), test_large_ints=False,
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.fdtr, ["dfn", "dfd", "x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("fdtr", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.fdtrc, ["dfn", "dfd", "x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("fdtrc", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.fdtri, ["dfn", "dfd", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("fdtri", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gamma, ["z"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "jax.numpy"],
-            extra_note=_ufunc_kwargs_extra_note("gamma", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gammainc, ["a", "x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-
-    ),
-    _FuncInfo(
-        _ufuncs.gammaincc, ["a", "x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-        # google/jax#20699
-        positive_only={"jax.numpy": True},
-    ),
-    _FuncInfo(
-        _ufuncs.gammainccinv, ["a", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("gammainccinv", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gammaincinv, ["a", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("gammaincinv", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gammaln, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.gammasgn, ["x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "jax.numpy"],
-            extra_note=_ufunc_kwargs_extra_note("gammasgn", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gdtr, ["a", "b", "x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("gdtr", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.gdtrc, ["a", "b", "x"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("gdtrc", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.huber, ["delta", "r"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("huber", ["torch"]),
-        ),
         torch_native=False,
     ),
     _FuncInfo(
@@ -933,28 +756,6 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _ufuncs.kl_div, ["x", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "jax.numpy"],
-            extra_note=_ufunc_kwargs_extra_note("kl_div", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.log_ndtr, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.loggamma, ["z"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("loggamma", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.logit, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
         _ufuncs.lpmv, ["m", "v", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
@@ -988,149 +789,10 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _spfun_stats.multigammaln, ["a", "d"],
-        is_ufunc=False,
-        python_int_only={
-            "cupy": (False, True),
-            "jax.numpy": (False, True),
-            "torch": (False, True),
-        },
-        scalar_or_0d_only={
-            "array_api_strict": (False, True),
-            "numpy": (False, True),
-            "dask.array": (False, True),
-            "marray": (False, True),
-        },
-        int_only=(False, True), test_large_ints=False,
-        positive_only=True, torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.nbdtr, ["k", "n", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("nbdtr", ["torch"]),
-        ),
-        int_only=(True, True, False), positive_only=True,
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.nbdtrc, ["k", "n", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("nbdtrc", ["torch"]),
-        ),
-        int_only=(True, True, False), positive_only=True,
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.nbdtri, ["k", "n", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("nbdtri", ["torch"]),
-        ),
-        int_only=(True, True, False), positive_only=True,
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.ndtr, ["x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note(), mparray=True)
-    ),
-    _FuncInfo(
-        _ufuncs.ndtri, ["p"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
-    ),
-    _FuncInfo(
-        _ufuncs.ndtri_exp, ["y"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-        generic_impl=_ndtri_exp, torch_native=False,
-        test_large_ints=False,
-    ),
-    _FuncInfo(
-        _ufuncs.pdtr, ["k", "m"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("pdtr", ["torch"]),
-        ),
-        positive_only=True, torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.pdtrc, ["k", "m"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("pdtrc", ["torch"]),
-        ),
-        positive_only=True, torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.pdtri, ["k", "y"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("pdtri", ["torch"]),
-        ),
-        int_only=(True, False), positive_only=True,
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.poch, ["z", "m"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy", "jax.numpy"],
-            extra_note=_ufunc_kwargs_extra_note("poch", ["torch"]),
-        ),
-        test_large_ints=False, torch_native=False,
-    ),
-    _FuncInfo(
-        _spfun_stats.poisson_binom_cdf, ["k", "p"],
-        xp_capabilities(
-            cpu_only=True,
-            skip_backends=[("dask.array", "not elementwise")],
-            extra_note=_ufunc_kwargs_extra_note(
-                "poisson_binom_cdf",
-                ["torch"],
-                "It supports the ``axis`` kwarg for all supported backends.",
-            ),
-        ),
-        is_elementwise=False,
-        shape_mapper=_poisson_binom_cdf_shape_mapper,
-        int_only=(True, False),
-        test_large_ints=False, torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.pseudo_huber, ["delta", "r"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("pseudo_huber", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        polygamma, ["n", "x"],
-        int_only=(True, False), is_ufunc=False,
-        scalar_or_0d_only={"torch": (True, False)}, produces_0d=True,
-        positive_only={"torch": (True, False), "jax.numpy": True},
-        test_large_ints=False,
-    ),
-    _FuncInfo(
-        _ufuncs.psi, ["z"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-        alt_names_map={"jax.numpy": "digamma"}
-    ),
-    _FuncInfo(
         _ufuncs.radian, ["d", "m", "s"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
             extra_note=_ufunc_kwargs_extra_note("radian", ["torch"]),
-        ),
-        torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.rel_entr, ["x", "y"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("rel_entr", ["torch"])),
-        generic_impl=_rel_entr,
-    ),
-    _FuncInfo(
-        _ufuncs.rgamma, ["z"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("rgamma", ["torch"]),
         ),
         torch_native=False,
     ),
@@ -1157,23 +819,6 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("spence", ["torch"]),
         ),
         torch_native=False,
-    ),
-    _FuncInfo(
-        _ufuncs.stdtr,  ["df", "t"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["jax.numpy", "cupy"],  # needs betainc
-            extra_note=_ufunc_kwargs_extra_note("stdtr", ["cupy", "torch"]),
-        ),
-        generic_impl=_stdtr, torch_native=False
-    ),
-    _FuncInfo(
-        _ufuncs.stdtrit, ["df", "p"],
-        xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],  # needs betainc
-            skip_backends=[("jax.numpy", "no scipy.optimize support")],
-            extra_note=_ufunc_kwargs_extra_note("stdtrit", ["cupy", "torch"]),
-        ),
-        generic_impl=_stdtrit, torch_native=False,
     ),
     _FuncInfo(
         _ufuncs.tandg, ["x"],
@@ -1203,6 +848,7 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("_reimann_zeta", ["torch"]),
         ),
+        generic_impl=__riemann_zeta,
         public=False,
     ),
     _FuncInfo(
@@ -1583,41 +1229,886 @@ _special_funcs = (
     ),
     # Spherical Bessel functions
     _FuncInfo(
-        _ufuncs.spherical_jn, ["n", "z"],
+        _ufuncs._spherical_jn, ["n", "z"],
         xp_capabilities(
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("spherical_jn", ["torch"]),
         ),
         int_only=(True, False),
         test_large_ints=False, torch_native=False,
+        public=False,
     ),
     _FuncInfo(
-        _ufuncs.spherical_yn, ["n", "z"],
+        _ufuncs._spherical_yn, ["n", "z"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("spherical_yn", ["torch"]),
         ),
         int_only=(True, False),
         test_large_ints=False, torch_native=False,
+        public=False,
     ),
     _FuncInfo(
-        _ufuncs.spherical_in, ["n", "z"],
+        _ufuncs._spherical_in, ["n", "z"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("spherical_in", ["torch"]),
         ),
         int_only=(True, False),
         test_large_ints=False, torch_native=False,
+        public=False,
     ),
     _FuncInfo(
-        _ufuncs.spherical_kn, ["n", "z"],
+        _ufuncs._spherical_kn, ["n", "z"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("spherical_kn", ["torch"]),
         ),
         int_only=(True, False),
         test_large_ints=False, torch_native=False,
+        public=False,
     ),
+    _FuncInfo(
+        _ufuncs._spherical_jn_d, ["n", "z"],
+        xp_capabilities(
+            cpu_only=True,
+        ),
+        int_only=(True, False),
+        test_large_ints=False, torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_yn_d, ["n", "z"],
+        xp_capabilities(
+            cpu_only=True,
+        ),
+        int_only=(True, False),
+        test_large_ints=False, torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_in_d, ["n", "z"],
+        xp_capabilities(
+            cpu_only=True,
+        ),
+        int_only=(True, False),
+        test_large_ints=False, torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_kn_d, ["n", "z"],
+        xp_capabilities(
+            cpu_only=True,
+        ),
+        int_only=(True, False),
+        test_large_ints=False, torch_native=False,
+        public=False,
+    ),
+    # Struve Functions
+    _FuncInfo(
+        _ufuncs.struve, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("struve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.modstruve, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modstruve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.itstruve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modstruve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.it2struve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modstruve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.itmodstruve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modstruve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    # Raw Statistical Functions
+    ## Binomial Distribution
+    _FuncInfo(
+        _ufuncs.bdtr, ["k", "n", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("bdtr", ["torch"]),
+        ),
+        int_only=(False, True, False), torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bdtrc, ["k", "n", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("bdtrc", ["torch"]),
+        ),
+        int_only=(False, True, False), torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bdtri, ["k", "n", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("bdtri", ["torch"]),
+        ),
+        int_only=(False, True, False), torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bdtrik, ["y", "n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("bdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bdtrin, ["k", "y", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("bdtrin", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Beta Distribution
+    _FuncInfo(
+        _ufuncs.btdtria, ["p", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("btdtria", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.btdtrib, ["a", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("btdtrib", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## F Distribution
+    _FuncInfo(
+        _ufuncs.fdtr, ["dfn", "dfd", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("fdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.fdtrc, ["dfn", "dfd", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("fdtrc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.fdtri, ["dfn", "dfd", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("fdtri", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.fdtridfd, ["dfn", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("fdtridfd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Gamma distribution
+    _FuncInfo(
+        _ufuncs.gdtr, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("gdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtrc, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("gdtrc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtria, ["p", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtria", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtrib, ["a", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtrib", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtrix, ["a", "b", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtrix", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Negative Binomial Distribution
+    _FuncInfo(
+        _ufuncs.nbdtr, ["k", "n", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("nbdtr", ["torch"]),
+        ),
+        int_only=(True, True, False), positive_only=True,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nbdtrc, ["k", "n", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("nbdtrc", ["torch"]),
+        ),
+        int_only=(True, True, False), positive_only=True,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nbdtri, ["k", "n", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("nbdtri", ["torch"]),
+        ),
+        int_only=(True, True, False), positive_only=True,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nbdtrik, ["y", "n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nbdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nbdtrin, ["k", "y", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nbdtrin", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Noncentral F distribution
+    _FuncInfo(
+        _ufuncs.ncfdtr, ["dfn", "dfd", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtridfd, ["dfn", "p", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtridfd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtridfn, ["p", "dfd", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtridfn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtri, ["dfn", "dfd", "nc", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtri", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtrinc, ["dfn", "dfd", "p", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtrinc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Noncentral t distribution
+    _FuncInfo(
+        _ufuncs.nctdtr, ["df", "nc", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtridf, ["p", "nc", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtrit, ["df", "nc", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtrit", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtrinc, ["df", "p", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtrinc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Normal distribution
+    _FuncInfo(
+        _ufuncs.nrdtrimn, ["p", "std", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nrdtrimn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nrdtrimn, ["mn", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nrdtrisd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_ndtr, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.ndtr, ["x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note(), mparray=True)
+    ),
+    _FuncInfo(
+        _ufuncs.ndtri, ["p"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.ndtri_exp, ["y"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("ndtri_exp", ["torch"])),
+        generic_impl=_ndtri_exp,
+        test_large_ints=False,
+    ),
+    ## Poisson distribution
+    _FuncInfo(
+        _ufuncs.pdtr, ["k", "m"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("pdtr", ["torch"]),
+        ),
+        positive_only=True, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pdtrc, ["k", "m"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("pdtrc", ["torch"]),
+        ),
+        positive_only=True, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pdtri, ["k", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("pdtri", ["torch"]),
+        ),
+        int_only=(True, False), positive_only=True,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pdtrik, ["p", "m"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("pdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Student t distribution
+    _FuncInfo(
+        _ufuncs.stdtr,  ["df", "t"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["jax.numpy", "cupy"],  # needs betainc
+            extra_note=_ufunc_kwargs_extra_note("stdtr", ["cupy", "torch"]),
+        ),
+        generic_impl=_stdtr, torch_native=False
+    ),
+    _FuncInfo(
+        _ufuncs.stdtridf, ["p", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("stdtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.stdtrit, ["df", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],  # needs betainc
+            skip_backends=[("jax.numpy", "no scipy.optimize support")],
+            extra_note=_ufunc_kwargs_extra_note("stdtrit", ["cupy", "torch"]),
+        ),
+        generic_impl=_stdtrit, torch_native=False,
+    ),
+    # Chi square distribution
+    _FuncInfo(
+        _ufuncs.chdtr, ["v", "x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("chdtr", ["torch"])),
+        generic_impl=_chdtr,
+    ),
+    _FuncInfo(
+        _ufuncs.chdtrc, ["v", "x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("chdtrc", ["torch"])),
+        generic_impl=_chdtrc,
+        # scipy/scipy#20972
+        positive_only={"cupy": True, "jax.numpy": True, "torch": True}
+    ),
+    _FuncInfo(
+        _ufuncs.chdtri, ["v", "p"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("chdtri", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chdtriv, ["p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chdtriv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Non-central chi square distribution
+    _FuncInfo(
+        _ufuncs.chndtr, ["x", "df", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtridf, ["x", "p", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtrinc, ["x", "df", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtrix, ["p", "df", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtrix", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Kolmogorov distribution
+    _FuncInfo(
+        _ufuncs.smirnov, ["n", "d"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("smirnov", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.smirnovi, ["n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("smirnovi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kolmogorov, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kolmogorov", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kolmogi, ["p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kolmogi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Sigmoidal functions
+    _FuncInfo(
+        _ufuncs.logit, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.expit, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.log_expit, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_expit", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Miscellaneous
+    _FuncInfo(
+        _ufuncs.tklmbda, ["x", "lmbda"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("tklmbda", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.owens_t, ["h", "a"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("owens_t", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _spfun_stats.poisson_binom_cdf, ["k", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "not elementwise")],
+            extra_note=_ufunc_kwargs_extra_note(
+                "poisson_binom_cdf",
+                ["torch"],
+                "It supports the ``axis`` kwarg for all supported backends.",
+            ),
+        ),
+        is_elementwise=False,
+        shape_mapper=_poisson_binom_cdf_shape_mapper,
+        int_only=(True, False),
+        test_large_ints=False, torch_native=False,
+    ),
+    # Information theory functions
+    _FuncInfo(
+        _ufuncs.entr, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.rel_entr, ["x", "y"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note("rel_entr", ["torch"])),
+        generic_impl=_rel_entr,
+    ),
+    _FuncInfo(
+        _ufuncs.kl_div, ["x", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("kl_div", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.huber, ["delta", "r"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("huber", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pseudo_huber, ["delta", "r"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("pseudo_huber", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    # Gamma and related functions
+    _FuncInfo(
+        _ufuncs.gamma, ["z"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("gamma", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gammaln, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.loggamma, ["z"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("loggamma", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gammasgn, ["x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("gammasgn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gammainc, ["a", "x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+
+    ),
+    _FuncInfo(
+        _ufuncs.gammaincinv, ["a", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("gammaincinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gammaincc, ["a", "x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+        # google/jax#20699
+        positive_only={"jax.numpy": True},
+    ),
+    _FuncInfo(
+        _ufuncs.gammainccinv, ["a", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("gammainccinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_gammainc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammainc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_gammaincc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammaincc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.beta, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("beta", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.betaln, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("betaln", ["torch"]),
+        ),
+        # For betaln, nan mismatches can occur at negative integer a or b of
+        # sufficiently large magnitude.
+        positive_only={"jax.numpy": True}, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.betainc, ["a", "b", "x"], _needs_betainc("betainc"), torch_native=False
+    ),
+    _FuncInfo(
+        _ufuncs.betaincc, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["jax.numpy", "cupy"],  # needs betainc
+            extra_note=_ufunc_kwargs_extra_note("betaincc", ["cupy", "torch"]),
+        ),
+        generic_impl=_betaincc,
+        torch_native=False
+    ),
+    _FuncInfo(
+        _ufuncs.betaincinv, ["a", "b", "y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("betaincinv", ["torch"]),
+        ),
+        test_large_ints=False, positive_only=True, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.betainccinv, ["a", "b", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("betainccinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.psi, ["z"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+        alt_names_map={"jax.numpy": "digamma"}
+    ),
+    _FuncInfo(
+        _ufuncs.rgamma, ["z"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("rgamma", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        polygamma, ["n", "x"],
+        int_only=(True, False), is_ufunc=False,
+        scalar_or_0d_only={"torch": (True, False)}, produces_0d=True,
+        positive_only={"torch": (True, False), "jax.numpy": True},
+        test_large_ints=False,
+    ),
+    _FuncInfo(
+        _spfun_stats.multigammaln, ["a", "d"],
+        is_ufunc=False,
+        python_int_only={
+            "cupy": (False, True),
+            "jax.numpy": (False, True),
+            "torch": (False, True),
+        },
+        scalar_or_0d_only={
+            "array_api_strict": (False, True),
+            "numpy": (False, True),
+            "dask.array": (False, True),
+            "marray": (False, True),
+        },
+        int_only=(False, True), test_large_ints=False,
+        positive_only=True, torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.poch, ["z", "m"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("poch", ["torch"]),
+        ),
+        test_large_ints=False, torch_native=False,
+    ),
+    # Error function and Fresnel integrals
+    _FuncInfo(
+        _ufuncs.erf, ["z"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.erfc, ["x"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.erfcx, ["x"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "torch"],
+            extra_note=_ufunc_kwargs_extra_note("erfcx", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.erfi, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("erfi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.erfinv, ["y"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.erfcinv, ["y"],
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("erfcinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.wofz, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("wofz", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.dawsn, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("dawsn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.fresnel, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("fresnel", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.modfresnelp, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("fresnel", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.modfresnelp, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modfresnelp", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.voigt_profile, ["x", "sigma", "gamma"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("voigt_profile", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    # Legendre functions
+    
+    
 )
 
 
@@ -1632,15 +2123,16 @@ def get_function(name):
         return get_function("psi")
 
     info = _FUNC_INFO[name]
-    return info.make_wrapper()
+    return info.wrapper
 
 
 def __getattr__(name):
-    if name not in _FuncInfo and name != "digamma"
+    if name not in _FUNC_INFO and name != "digamma":
         raise AttributeError(
             f"module {__name__!r} has no attribute {name!r}"
         )
     return get_function(name)
+
 
 def __dir__():
     return sorted(set(globals()) | set(__all__))

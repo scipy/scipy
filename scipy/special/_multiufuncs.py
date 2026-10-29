@@ -2,6 +2,10 @@ import collections
 import numbers
 import numpy as np
 
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, xp_capabilities, xp_result_device
+)
+
 from ._input_validation import _nonneg_int_or_fail
 
 from ._special_ufuncs import (legendre_p, assoc_legendre_p,
@@ -46,7 +50,7 @@ class MultiUFunc:
 
         self.__name__ = name
         self._ufunc_or_ufuncs = ufunc_or_ufuncs
-        self.__doc = doc
+        self.__doc__ = doc
         self.__force_complex_output = force_complex_output
         self._default_kwargs = default_kwargs
         self._resolve_out_shapes = None
@@ -55,10 +59,6 @@ class MultiUFunc:
         self._ufunc_default_args = lambda *args, **kwargs: ()
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
         self.__text_signature__ = doc.split("\n\n")[0] if doc else None
-
-    @property
-    def __doc__(self):  # pyrefly:ignore[bad-override]
-        return self.__doc
 
     def _override_key(self, func):
         """Set `key` method by decorating a function.
@@ -99,7 +99,11 @@ class MultiUFunc:
         ufunc = self._resolve_ufunc(**kwargs)
 
         # array arguments to be passed to the ufunc
-        ufunc_args = [np.asarray(arg) for arg in args[-ufunc.nin:]]
+        ufunc_args = args[-ufunc.nin:]
+        xp = array_namespace(*ufunc_args)
+        if not is_numpy(xp):
+            device = xp_result_device(*ufunc_args)
+        ufunc_args = [np.asarray(arg) for arg in ufunc_args]
 
         ufunc_kwargs = self._ufunc_default_kwargs(**kwargs)
 
@@ -110,7 +114,7 @@ class MultiUFunc:
                                                         **kwargs)
 
             ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
-                                     else np.dtype(type(ufunc_arg))
+                                     else type(ufunc_arg)
                                      for ufunc_arg in ufunc_args)
 
             if hasattr(ufunc, 'resolve_dtypes'):
@@ -138,7 +142,11 @@ class MultiUFunc:
         if (self._finalize_out is not None):
             out = self._finalize_out(out)
 
-        return out
+        if is_numpy(xp):
+            return out
+        if isinstance(out, tuple):
+            return tuple(xp.asarray(x, device=device) for x in out)
+        return xp.asarray(out, device=device)
 
 
 sph_legendre_p = MultiUFunc(
@@ -742,3 +750,22 @@ def _(out):
     if (out.shape[-1] == 3):
         return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
             out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])
+
+
+capabilities = xp_capabilities(
+    cpu_only=True,
+    jax_jit=False,
+    skip_backends=[("dask.array", "deprioritized")],
+)
+
+for func in [
+        assoc_legendre_p,
+        assoc_legendre_p_all,
+        legendre_p,
+        legendre_p_all,
+        sph_harm_y,
+        sph_harm_y_all,
+        sph_legendre_p,
+        sph_legendre_p_all,
+]:
+    capabilities(func)
