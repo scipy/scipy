@@ -10,7 +10,7 @@ from math import pi
 import numpy as np
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize, fft as sp_fft
+from scipy import special, optimize, linalg, fft as sp_fft
 from scipy.special import comb
 from scipy._lib import doccer
 from scipy._lib._util import float_factorial
@@ -30,7 +30,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'iirfilter', 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
-           'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
+           'BadCoefficients', 'freqs_zpk', 'freqz_zpk', 'invfreqz',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
            'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
@@ -403,6 +403,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     --------
     freqz_zpk
     freqz_sos
+    invfreqz : Design a digital filter from its frequency response.
 
     Notes
     -----
@@ -699,6 +700,325 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     w = w*(fs/(2*pi))
 
     return w, h
+
+
+def _invfreqz_eqnerr(H, n_zeros, n_poles, W):
+    """FFT-based equation-error filter design on the uniform [0, pi]
+    inclusive frequency grid.  H holds len(H) samples of the desired
+    response from dc to Nyquist inclusive and W >= 0 the corresponding
+    weights (``|U|**2`` for an input spectrum U).  Returns (b, a) with
+    ``a[0] == 1``.
+
+    Reference: J. O. Smith, Introduction to Digital Filters, "FFT-Based
+    Equation-Error Method".
+    """
+    n_fft = 2 * (len(H) - 1)
+    # Correlation functions of the weighted filter input u and output
+    # y = h * u, as inverse real FFTs of the half spectra.
+    r_uu = sp_fft.irfft(W, n_fft)  # input autocorrelation
+    r_yu = sp_fft.irfft(H * W, n_fft)  # input-output cross-correlation
+    r_yy = sp_fft.irfft(np.abs(H)**2 * W, n_fft)  # output autocorrelation
+
+    # Block normal equations coupling the numerator and denominator.  The
+    # autocorrelations are even, so their Toeplitz blocks are symmetric;
+    # for n_poles == 0 the denominator blocks are empty and the system
+    # reduces to the FIR least-squares fit.
+    R_uu = linalg.toeplitz(r_uu[:n_zeros + 1])
+    R_yy = linalg.toeplitz(r_yy[:n_poles])
+    R_yu = linalg.toeplitz(np.roll(r_yu, 1)[:n_zeros + 1],
+                           r_yu[n_fft - n_poles:][::-1])
+    A = np.block([[R_uu, R_yu], [R_yu.T, R_yy]])
+    rhs = np.concatenate([r_yu[:n_zeros + 1], r_yy[1:n_poles + 1]])
+
+    # lstsq (SVD): the block system is singular or ill-conditioned when
+    # the orders exceed what H needs (near pole-zero cancellation, e.g.
+    # H = z**-d with d < n_zeros duplicates numerator columns exactly);
+    # SVD returns the minimum-norm solution where a plain solve would
+    # amplify noise or raise LinAlgError.
+    x, *_ = linalg.lstsq(A, rhs)
+
+    b = x[:n_zeros + 1]
+    a = np.concatenate([[1.0], -x[n_zeros + 1:]])
+    return b, a
+
+
+def _reflect_unstable_poles(a):
+    """Reflect any roots of the monic polynomial ``a`` lying outside the
+    unit circle to their conjugate reciprocals.  Returns the monic
+    reflected polynomial and the factor ``gain`` by which its magnitude
+    response was reduced: ``|A_stable(e^jw)| == |A(e^jw)| / gain`` for
+    all w (``gain == 1`` if ``a`` was already stable)."""
+    roots = np.roots(a)
+    unstable = np.abs(roots) > 1
+    if not unstable.any():
+        return a, 1.0
+    gain = np.prod(np.abs(roots[unstable]))
+    roots[unstable] = 1.0 / np.conj(roots[unstable])
+    # a is real with conjugate-symmetric roots, so the product is real.
+    return np.real(np.poly(roots)), gain
+
+
+def _invfreqz_smb(H, n_zeros, n_poles, W, maxiter, tol):
+    """Frequency-domain Steiglitz-McBride iteration: starting from the
+    equation-error design, re-solve with the weight divided by |A|**2 of
+    the previous iterate, until the relative change of both coefficient
+    vectors is below tol or maxiter refinements have been made.
+    Returns (b, a, converged)."""
+    w = np.linspace(0, pi, len(H))
+    b, a = _invfreqz_eqnerr(H, n_zeros, n_poles, W)
+    for _ in range(maxiter):
+        # Steiglitz-McBride prefilters input and output by 1/A of the
+        # previous iterate, i.e. weights the equation error by W/|A|**2:
+        # always from the original W (the prefilter is not cumulative),
+        # with unstable poles reflected first so the prefilter stays
+        # bounded (the reflection gain is a constant weight factor, so it
+        # is irrelevant here), and with 1/A evaluated on the same
+        # inclusive [0, pi] grid as H (an integer worN would use freqz's
+        # endpoint-exclusive grid and bias every iteration).
+        a_pre, _ = _reflect_unstable_poles(a)
+        _, Ai = freqz(1.0, a_pre, worN=w)
+        b_new, a_new = _invfreqz_eqnerr(H, n_zeros, n_poles,
+                                        W * np.abs(Ai)**2)
+        db = np.linalg.norm(b_new - b)
+        da = np.linalg.norm(a_new - a)
+        b, a = b_new, a_new
+        if (da <= tol * np.linalg.norm(a)
+                and db <= tol * np.linalg.norm(b)):
+            return b, a, True
+    return b, a, False
+
+
+def invfreqz(H, n_zeros, n_poles, *, U=None, w=None, fs=2*pi, maxiter=0,
+             tol=1e-8, stabilize=False):
+    r"""
+    Design a digital filter from its frequency response (inverse of freqz).
+
+    Find the coefficients ``(b, a)`` of a digital filter of numerator
+    order `n_zeros` and denominator order `n_poles` whose frequency
+    response best matches the desired response `H`, uniformly sampled
+    from dc to the Nyquist frequency inclusive.  The direct method
+    (``maxiter=0``) minimizes the *equation error* via FFT-derived normal
+    equations; ``maxiter > 0`` refines the fit toward the *output error*
+    solution with Steiglitz-McBride iterations.
+
+    Parameters
+    ----------
+    H : array_like
+        Desired complex frequency response, sampled on the uniform grid
+        ``np.linspace(0, np.pi, len(H))`` (dc to Nyquist inclusive, no
+        negative frequencies).  ``H[0]`` and ``H[-1]`` must be real, as
+        required of a real filter.  For FFT efficiency, ``len(H)`` is
+        ideally ``2**k + 1`` for some integer k.
+    n_zeros : int
+        Numerator order (number of zeros).
+    n_poles : int
+        Denominator order (number of poles).
+    U : array_like, optional
+        Input spectrum, same shape as `H`; the fit error at each
+        frequency is weighted by ``|U|**2``.  To weight the fit by a
+        non-negative function ``W(w)``, pass ``U=np.sqrt(W)``.  In
+        system-identification terms `U` is the input-signal spectrum and
+        ``H*U`` the output spectrum.  Default is uniform weighting.
+    w : array_like, optional
+        Frequencies of the `H` samples, in the same units as `fs`.  Must
+        equal ``np.linspace(0, fs/2, len(H))``; the argument exists so
+        that grid mistakes (e.g. frequencies in Hz with the default `fs`,
+        or a non-uniform grid) raise an error instead of returning a
+        wrong filter.  Unlike MATLAB's ``invfreqz``, arbitrary grids are
+        not supported (see Notes).
+    fs : float, optional
+        The sampling frequency of the digital system, used only to
+        interpret `w`.  Defaults to 2*pi radians/sample, so `w` is in
+        radians/sample.
+    maxiter : int, optional
+        Maximum number of Steiglitz-McBride refinement iterations
+        following the initial equation-error design.  The default 0
+        performs the direct equation-error design only.
+    tol : float, optional
+        Stopping tolerance for the iterative method: iteration stops
+        when the norms of the change of both `b` and `a` fall below
+        `tol` times the respective coefficient norms.
+    stabilize : bool, optional
+        If True, poles of the result lying outside the unit circle are
+        reflected to their conjugate reciprocals, which preserves the
+        magnitude response but alters the phase.  Default is False.
+
+    Returns
+    -------
+    b : ndarray
+        Numerator coefficients, length ``n_zeros + 1``.
+    a : ndarray
+        Denominator coefficients, length ``n_poles + 1``, with
+        ``a[0] == 1``.
+
+    Warns
+    -----
+    UserWarning
+        If ``maxiter > 0`` and the Steiglitz-McBride iteration does not
+        reach `tol` within `maxiter` iterations (the last iterate is
+        returned).
+
+    See Also
+    --------
+    freqz : Compute the frequency response of a digital filter.
+    firls : FIR filter design by least squares (linear phase).
+    minimum_phase : Convert a linear-phase FIR filter to minimum phase.
+
+    Notes
+    -----
+    The equation error at frequency :math:`\omega_k` is
+    :math:`A(e^{j\omega_k}) H(e^{j\omega_k}) - B(e^{j\omega_k})` (times
+    :math:`U(e^{j\omega_k})` when `U` is given): the response error
+    multiplied through by the denominator.  Minimizing its sum of
+    squares is linear in the coefficients [3]_, and on a uniform
+    frequency grid the normal equations assemble from filter-input and
+    filter-output correlation functions computed by inverse FFT, making
+    the method fast [1]_.  The equation-error weighting effectively
+    de-emphasizes frequencies where :math:`|A|` is small (near
+    resonances).  The Steiglitz-McBride iteration [2]_ (``maxiter > 0``)
+    compensates by re-solving with the previous denominator divided out,
+    converging toward the least-squares fit of the response error
+    itself.
+
+    Because the correlations are computed by FFT, `H` must be sampled
+    uniformly from dc to Nyquist inclusive -- this is what `freqz`
+    returns for ``worN=n, include_nyquist=True``.  This differs from
+    MATLAB's ``invfreqz``, which accepts arbitrary grids at higher cost.
+    The number of frequencies bounds the size of the implied
+    time-domain aliasing of the correlations; a response with features
+    narrow relative to the grid spacing needs a denser grid to be fit
+    accurately.
+
+    The equation-error normal equations become singular or
+    ill-conditioned when the requested orders exceed what the target
+    needs, so that fits with (nearly) cancelling pole-zero pairs match
+    it (nearly) equally well -- e.g., a pure delay :math:`z^{-d}` with
+    ``d < n_zeros``, or a nearly constant `H`.  Allpass targets are not
+    special in this respect: an allpass response fit at its own order,
+    or a pure delay with ``d >= n_zeros``, is well conditioned.  The
+    solve is performed with an SVD-based least-squares routine, which
+    returns the minimum-norm solution in the singular case and keeps
+    the result usable when nearly singular, but coefficients should not
+    be trusted to full precision in that regime.
+
+    A least-squares fit may place poles outside the unit circle,
+    exactly matching an unstable (or maximum-phase) target response.
+    Pass ``stabilize=True`` to obtain a stable filter with the same
+    magnitude response, or convert `H` to minimum phase first.
+
+    .. versionadded:: 2.0.0
+
+    References
+    ----------
+    .. [1] J. O. Smith, "Introduction to Digital Filters with Audio
+           Applications", online book, "FFT-Based Equation-Error
+           Method".
+           https://ccrma.stanford.edu/~jos/filters/FFT_Based_Equation_Error_Method.html
+    .. [2] K. Steiglitz and L. E. McBride, "A technique for the
+           identification of linear systems", IEEE Trans. Automatic
+           Control, vol. AC-10, pp. 461-464, 1965.
+    .. [3] E. C. Levy, "Complex-curve fitting", IRE Trans. Automatic
+           Control, vol. AC-4, pp. 37-43, 1959.
+
+    Examples
+    --------
+    Recover a Butterworth filter exactly from its sampled response:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> b_true, a_true = signal.butter(3, 0.25)
+    >>> w, H = signal.freqz(b_true, a_true, worN=65, include_nyquist=True)
+    >>> b, a = signal.invfreqz(H, 3, 3)
+    >>> np.allclose(b, b_true), np.allclose(a, a_true)
+    (True, True)
+
+    Fit a reduced-order model, and improve the fit with Steiglitz-McBride
+    iteration:
+
+    >>> b2, a2 = signal.invfreqz(H, 2, 2)
+    >>> b2i, a2i = signal.invfreqz(H, 2, 2, maxiter=30)
+    >>> _, H2 = signal.freqz(b2, a2, worN=65, include_nyquist=True)
+    >>> _, H2i = signal.freqz(b2i, a2i, worN=65, include_nyquist=True)
+    >>> np.linalg.norm(H - H2i) < np.linalg.norm(H - H2)
+    True
+
+    """
+    H = np.atleast_1d(np.asarray(H))
+    n_zeros = operator.index(n_zeros)
+    n_poles = operator.index(n_poles)
+    maxiter = operator.index(maxiter)
+    if H.ndim != 1:
+        raise ValueError("H must be one-dimensional")
+    if n_zeros < 0 or n_poles < 0:
+        raise ValueError("n_zeros and n_poles must be non-negative")
+    if maxiter < 0:
+        raise ValueError("maxiter must be non-negative")
+    if not tol > 0:
+        raise ValueError("tol must be positive")
+    N = len(H)
+    if N < max(n_zeros + n_poles + 1, 2):
+        raise ValueError(
+            f"len(H) = {N} is too short for n_zeros + n_poles = "
+            f"{n_zeros + n_poles}; provide at least n_zeros + n_poles "
+            "+ 1 frequency samples (ideally 2**k + 1 for FFT "
+            "efficiency)")
+    if not np.all(np.isfinite(H)):
+        raise ValueError("H must be finite everywhere")
+    fs = _validate_fs(fs, allow_none=False)
+    if w is not None:
+        w = np.asarray(w)
+        if not np.issubdtype(w.dtype, np.floating):
+            w = w.astype(np.float64)
+        expected = np.linspace(0, fs / 2, N)
+        atol = 64 * np.finfo(w.dtype).eps * (fs / 2)
+        if w.shape != H.shape or not np.allclose(w, expected, rtol=0,
+                                                 atol=atol):
+            raise ValueError(
+                "w must be the uniform grid np.linspace(0, fs/2, len(H)) "
+                "(dc to Nyquist inclusive, in the units of fs).  Unlike "
+                "MATLAB's invfreqz, this FFT-based method requires "
+                "uniformly spaced frequencies; resample H onto the "
+                "uniform grid to use it.")
+    scale = np.max(np.abs(H))
+    if scale == 0:
+        raise ValueError("H must not be identically zero")
+    # Real filter design: dc and Nyquist samples must be (nearly) real.
+    if max(abs(H[0].imag), abs(H[-1].imag)) > 1e-6 * scale:
+        raise ValueError("H[0] (dc) and H[-1] (Nyquist) must be real for "
+                         "real filter design")
+    # The normal equations are not scale invariant (their blocks scale as
+    # 1, |H| and |H|**2), so fit the unit-peak response and rescale b.
+    H = H / scale
+    if U is None:
+        W = np.ones(N)
+    else:
+        U = np.atleast_1d(np.asarray(U))
+        if U.shape != H.shape:
+            raise ValueError("U must have the same shape as H")
+        if not np.all(np.isfinite(U)):
+            raise ValueError("U must be finite everywhere")
+        U_max = np.max(np.abs(U))
+        if U_max == 0:
+            raise ValueError("U must not be identically zero")
+        W = np.abs(U / U_max)**2
+
+    if maxiter == 0:
+        b, a = _invfreqz_eqnerr(H, n_zeros, n_poles, W)
+    else:
+        b, a, converged = _invfreqz_smb(H, n_zeros, n_poles, W, maxiter,
+                                        tol)
+        if not converged:
+            warnings.warn(
+                "invfreqz: Steiglitz-McBride iteration did not converge "
+                f"to tol={tol} within maxiter={maxiter} iterations; "
+                "returning the last iterate", stacklevel=2)
+    b = b * scale
+
+    if stabilize:
+        a, gain = _reflect_unstable_poles(a)
+        b = b / gain  # keeps |B/A| unchanged
+
+    return b, a
 
 
 def group_delay(system, w=512, whole=False, fs=2*pi):
