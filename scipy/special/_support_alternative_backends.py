@@ -1785,6 +1785,14 @@ _special_funcs = (
         alt_names_map={"jax.numpy": "digamma"}
     ),
     _FuncInfo(
+        _ufuncs.digammainv, ["y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("digammainv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.rgamma, ["z"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
