@@ -91,6 +91,10 @@ _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
                              6: 43, 7: 47, 8: 51, 9: 56}
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[("dask.array", "deprioritized")],
+)
 def diric(x, n):
     """Periodic sinc function, also called the Dirichlet kernel.
 
@@ -157,6 +161,11 @@ def diric(x, n):
     array([ 3.        ,  2.41421356,  1.        , -0.41421356, -1.        ,
            -0.41421356,  1.        ,  2.41421356])
     """
+    # This could be made array-agnostic, but for now just convert to
+    # NumPy and back.
+    xp = array_namespace(x, n)
+    device = xp_result_device(x, n)
+
     x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
@@ -191,7 +200,7 @@ def diric(x, n):
     nsub = extract(mask, n)
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
-    return y
+    return xp.asarray(y, device=device)
 
 
 @xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
@@ -2078,6 +2087,8 @@ _BERNOULLI_EVEN = [1.0,
                    -7.950212504588525e+302,
                    1.3352784187354634e+306]
 
+
+@xp_capabilities(out_of_scope=True)
 def bernoulli(n):
     """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
@@ -2133,6 +2144,7 @@ def bernoulli(n):
     return res
 
 
+@xp_capabilities(out_of_scope=True)
 def euler(n):
     """Euler numbers E(0), E(1), ..., E(n).
 
@@ -2901,6 +2913,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
+@xp_capabilities(out_of_scope=True)
 def comb(N, k, *, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
@@ -2988,6 +3001,7 @@ def comb(N, k, *, exact=False, repetition=False):
         return vals
 
 
+@xp_capabilities(out_of_scope=True)
 def perm(N, k, exact=False):
     """Permutations of N things taken k at a time, i.e., k-permutations of N.
 
@@ -3362,6 +3376,7 @@ def _factorialx_wrapper(fname, n, k, exact, extend):
     return _factorialx_array_approx(n, k=k, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorial(n, exact=False, extend="zero"):
     """
     The factorial of a number or array of numbers.
@@ -3419,6 +3434,7 @@ def factorial(n, exact=False, extend="zero"):
     return _factorialx_wrapper("factorial", n, k=1, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorial2(n, exact=False, extend="zero"):
     """
     Double factorial.
@@ -3476,6 +3492,7 @@ def factorial2(n, exact=False, extend="zero"):
     return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorialk(n, k, exact=False, extend="zero"):
     """
     Multifactorial of n of order k, n(!!...!).
@@ -3561,6 +3578,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def stirling2(N, K, *, exact=False):
     r"""Generate Stirling number(s) of the second kind.
 
