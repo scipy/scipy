@@ -85,6 +85,16 @@ def _skip_or_tweak_alternative_backends(
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
+    if f_name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal", "lambertw"}:
+        pytest.skip("requires dedicated tests due to keyword arguments.")
+
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
@@ -161,7 +171,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
     dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
 
-    shapes = shapes[:nfo.n_args]
+    shapes = [shapes[i % len(shapes)] for i in range(nfo.n_args)]
     rng = np.random.default_rng(984254252920492019)
     args_np = []
 
@@ -258,7 +268,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
                          'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri', 'boxcox', 'boxcox1p'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtypes = ['intp', 'float32', 'float64', 'float64'][:nfo.n_args]
+    dtypes = ['intp', 'float32'] + ['float64']*(nfo.n_args - 2)
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, (False,)*nfo.n_args
@@ -274,10 +284,14 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
         randint = partial(rng.integers, -20, 21)
     args_np = [
         randint(size=1, dtype=np.int64),
-        rng.standard_normal(size=1, dtype=np.float32),
-        rng.standard_normal(size=1, dtype=np.float64),
-        rng.standard_normal(size=1, dtype=np.float64),
-    ][:nfo.n_args]
+        *[
+            rng.standard_normal(
+                size=1,
+                dtype=np.float32 if i == 1 else np.float64,
+            )
+            for i in range(1, nfo.n_args)
+        ],
+    ]
     args_np = [
         np.abs(arg) if cond else arg for arg, cond in zip(args_np, positive_only)
     ]
@@ -366,48 +380,78 @@ def test_doc(func):
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize('nfo', _special_funcs)
-def test_ufunc_kwargs(nfo):
+@pytest.mark.parametrize(
+    'func,nfo',
+    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public and nfo.is_ufunc],
+)
+def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work even though ufuncs have been replaced.
     """
+    if nfo.name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+    
+    ufunc = nfo.func
     int_only = nfo.int_only
-    if not nfo.is_ufunc:
-        pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
-    func, ufunc = nfo.wrapper, nfo.func
+    if isinstance(int_only, dict):
+        int_only = int_only.get("numpy")
     if int_only is None:
-        int_only = (False, ) * nfo.n_args
-    # out=
+        int_only = (False,) * nfo.n_args
+
     args = [
-        np.asarray([.1, .2]) if not needs_int
-        else np.asarray([1, 2])
+        np.asarray([1, 2]) if needs_int else np.asarray([.1, .2])
         for needs_int in int_only
     ]
 
-    nout = ufunc.nout
+    nin, nout = ufunc.nin, ufunc.nout
 
     if nfo.is_elementwise:
-        out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
+        shape = np.broadcast_shapes(*(arg.shape for arg in args))
+        out_shapes = (shape,) * nout
     else:
         shape = nfo.shape_mapper(*(arg.shape for arg in args))
         out_shapes = (shape,) if nout == 1 else shape
 
-    if nout == 1:
-        out = np.empty(out_shapes[0])
-    else:
-        out = tuple(np.empty(shape) for shape in out_shapes)
+    # Determine output dtypes using the ufunc's own type resolution.
+    resolved_dtypes = ufunc.resolve_dtypes(
+        tuple(arg.dtype for arg in args) + (None,) * nout
+    )
+    out_dtypes = resolved_dtypes[nin:]
+
+    def make_out(dtypes):
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, dtypes)
+        )
+        return out[0] if nout == 1 else out
+
+    # out= with the naturally resolved output dtypes.
+    out = make_out(out_dtypes)
 
     y = func(*args, out=out)
-    _tuple_aware_xp_assert_close(y, out)
-
-    # out= with out.dtype != args.dtype
     if nout == 1:
-        out = np.empty(2, dtype=np.float32)
+        assert y is out
     else:
-        out = tuple(np.empty(2, dtype=np.float32) for _ in range(nout))
+        assert all(y_i is out_i for y_i, out_i in zip(y, out))
 
-    y = func(*args, out=out)
-    _tuple_aware_xp_assert_close(y, out)
+    # out= with lower-precision output dtypes.
+    # Complex-valued ufuncs cannot write into real-valued arrays.
+    lower_dtypes = [
+        np.complex64 if np.issubdtype(dtype, np.complexfloating)
+        else np.float32
+        for dtype in out_dtypes
+    ]
+    out = make_out(lower_dtypes)
+    with np.errstate(over="ignore"):
+        y = func(*args, out=out)
+    if nout == 1:
+        assert y is out
+    else:
+        assert all(y_i is out_i for y_i, out_i in zip(y, out))
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
         # The below function evaluation will trigger a deprecation warning
@@ -415,17 +459,29 @@ def test_ufunc_kwargs(nfo):
         # pulled on the deprecation.
         return
 
-    if func.__name__ in {"poisson_binom_cdf"}:
-        # dtype=np.float32 not available due to mixed integer and floating point inputs.
+    if func.__name__ == "poisson_binom_cdf":
+        # dtype=np.float32 is not available due to mixed integer and
+        # floating-point inputs.
+        return
+
+    if not any(
+            sig.split("->")[1] == "f" * nout
+            for sig in ufunc.types
+    ):
+        # dtype=np.float32 will not be available if there is no loop
+        # with float32 output.
         return
 
     # dtype=
-    y = func(*args, dtype=np.float32)
+    dtype = np.float32
+    with np.errstate(over="ignore"):
+        y = func(*args, dtype=dtype)
+            
     if nout == 1:
-        assert y.dtype == np.float32
+        assert y.dtype == dtype
     else:
         for y_i in y:
-            assert y_i.dtype == np.float32
+            assert y_i.dtype == dtype
 
 
 @pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")

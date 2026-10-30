@@ -1,5 +1,6 @@
 import functools
 import operator
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
@@ -12,13 +13,15 @@ from scipy._lib._array_api import (
 )
 import scipy._external.array_api_extra as xpx
 from . import _ellip_harm
-from . import _gufuncs
 from . import _lambertw
 from . import _mathieu
 from . import _special_ufuncs
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
+
+
+_wrapper_lock = threading.RLock()
 
 
 def _special_namespace_for(xp):
@@ -159,12 +162,17 @@ class _FuncInfo:
 
     @property
     def wrapper(self):
-        if self.name in globals():
-            # Already initialised. We are likely in a unit test.
-            # Return function potentially overridden by xpx.testing.lazy_xp_function.
-            import scipy.special
-            return getattr(scipy.special, self.name)
+        # Need to ensure wrapper is only constructed once, even in multithreaded
+        # context.
+        with _wrapper_lock:
+            try:
+                return self.__dict__["_wrapper"]
+            except KeyError:
+                wrapper = self._make_wrapper()
+                self.__dict__["_wrapper"] = wrapper
+                return wrapper
 
+    def _make_wrapper(self):
         module = "scipy.special"
         if not self.public:
             module = f"{module}._support_alternative_backends"
@@ -193,8 +201,8 @@ class _FuncInfo:
             func.__qualname__ = self.name
 
         capabilities = self.xp_capabilities or xp_capabilities()
-        cap_func = capabilities(func)
-        return func
+        return capabilities(func)
+
 
     @functools.lru_cache(1000)
     def _wrapper_for(self, xp):
@@ -1522,6 +1530,8 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("smirnov", ["torch"]),
         ),
+        int_only=(True, False),
+        positive_only=(True, False),
         torch_native=False,
     ),
     _FuncInfo(
@@ -1530,6 +1540,8 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("smirnovi", ["torch"]),
         ),
+        int_only=(True, False),
+        positive_only=(True, False),
         torch_native=False,
     ),
     _FuncInfo(
@@ -2151,6 +2163,7 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("pbdv", ["torch"]),
         ),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
@@ -2159,6 +2172,7 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("pbvv", ["torch"]),
         ),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
@@ -2167,6 +2181,7 @@ _special_funcs = (
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("pbwa", ["torch"]),
         ),
+        test_large_ints=False,
         torch_native=False,
     ),
     # Mathieu and related functions
