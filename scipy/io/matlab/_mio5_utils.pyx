@@ -17,8 +17,6 @@ from copy import copy as pycopy
 cimport cython
 
 from libc.stdint cimport SIZE_MAX
-from libc.stdlib cimport calloc, free
-from libc.string cimport strcmp
 
 from cpython cimport Py_INCREF
 from cpython cimport PyObject
@@ -915,28 +913,20 @@ cdef class VarReader5:
         cdef object names = self.read_int8_string()
         field_names = []
         n_names = PyBytes_Size(names) // namelength
-        # Make n_duplicates and pointer arrays
+        # Count of each name seen so far, to rename duplicates
         cdef:
-            int *n_duplicates
-        n_duplicates = <int *>calloc(n_names, sizeof(int))
-        cdef:
-            char *names_ptr = names
+            dict n_duplicates = {}
             char *n_ptr = names
-            int j, dup_no
+            int dup_no
         for i in range(n_names):
             name = PyUnicode_FromString(n_ptr)
             # Check if this is a duplicate field, rename if so
-            dup_no = 0
-            for j in range(i):
-                if strcmp(n_ptr, names_ptr + j * namelength) == 0: # the same
-                    n_duplicates[j] += 1
-                    dup_no = n_duplicates[j]
-                    break
+            dup_no = n_duplicates.get(name, 0)
+            n_duplicates[name] = dup_no + 1
             if dup_no != 0:
                 name = '_%d_%s' % (dup_no, name)
             field_names.append(name)
             n_ptr += namelength
-        free(n_duplicates)
         n_names_ptr[0] = n_names
         return field_names
 

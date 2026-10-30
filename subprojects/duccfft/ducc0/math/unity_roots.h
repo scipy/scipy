@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <tuple>
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_unity_roots {
 

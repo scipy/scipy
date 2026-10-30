@@ -515,6 +515,21 @@ def _stdtrit(xp, spsx):
     return __stdtrit
 
 
+def _ndtri_exp(xp, spsx):
+    # The difference between this and just using `ndtri`
+    # defined by `get_array_special_func` is that if `ndtri`
+    # isn't found, we don't want to use the SciPy version; we'll
+    # return None here and use the SciPy version of `ndtri_exp`.
+    ndtri = _get_native_func(xp, spsx, 'ndtri')
+    if ndtri is None:
+        return None
+
+    def __ndtri_exp(x):
+        return ndtri(xp.exp(x))  # this is almost all we need
+
+    return __ndtri_exp
+
+
 def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
     # Used to infer out shape for lazy_apply under JAX JIT.
     if kwargs:
@@ -1097,6 +1112,12 @@ _special_funcs = (
     ),
     _FuncInfo(
         _ufuncs.ndtri, ["p"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
+    ),
+    _FuncInfo(
+        _ufuncs.ndtri_exp, ["y"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+        generic_impl=_ndtri_exp, torch_native=False,
+        test_large_ints=False,
     ),
     _FuncInfo(
         _ufuncs.pdtr, ["k", "m"],
