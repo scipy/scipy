@@ -2709,7 +2709,7 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _ufuncs.powm1, ["x"],
+        _ufuncs.powm1, ["x", "y"],
         xp_capabilities(
             cpu_only=True,
             extra_note=_ufunc_kwargs_extra_note("powm1", ["torch"]),
