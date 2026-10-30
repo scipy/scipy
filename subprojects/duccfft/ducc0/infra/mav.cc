@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include "ducc0/infra/mav.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_mav {
 
@@ -69,7 +69,8 @@ DUCC0_NOINLINE void opt_shp_str(fmav_info::shape_t &shp, vector<fmav_info::strid
     vector<size_t> strcrit(shp.size(),~size_t(0));
     for (const auto &curstr: str)
       for (size_t i=0; i<curstr.size(); ++i)
-        strcrit[i] = min(strcrit[i],size_t(abs(curstr[i])));
+        if (curstr[i]!=0)  // Broadcast axes do not say anything about mem layout
+          strcrit[i] = min(strcrit[i],size_t(abs(curstr[i])));
 
     for (size_t lastdim=shp.size(); lastdim>1; --lastdim)
       {
@@ -146,7 +147,9 @@ DUCC0_NOINLINE tuple<fmav_info::shape_t, vector<fmav_info::stride_t>, size_t, si
   if (ndim<2) return make_tuple(shp, str, 0, 0);
 
   for (size_t j=0; j<narr; ++j)
-    if (abs(str[j][ndim-2])<abs(str[j][ndim-1]))
+    // No blocking necessary for zero strides on one of the two last axes
+    if ((str[j][ndim-2]!=0) && (str[j][ndim-1]!=0)
+     && (abs(str[j][ndim-2])<abs(str[j][ndim-1])))
       transpose=true;
   if (!transpose) return make_tuple(shp, str, 0, 0);
   bool crit0=false, crit1=false;
@@ -154,8 +157,8 @@ DUCC0_NOINLINE tuple<fmav_info::shape_t, vector<fmav_info::stride_t>, size_t, si
     {
     auto str0 = abs(str[j][ndim-2]);
     auto str1 = abs(str[j][ndim-1]);
-    if (((tsizes[j]*str0)%4096)==0) crit0=true;
-    if (((tsizes[j]*str1)%4096)==0) crit1=true;
+    if ((str0!=0) && (((tsizes[j]*str0)%4096)==0)) crit0=true;
+    if ((str1!=0) && (((tsizes[j]*str1)%4096)==0)) crit1=true;
     }
   if (crit0 && crit1) return make_tuple(shp, str, 4, 4);
   size_t load=0;

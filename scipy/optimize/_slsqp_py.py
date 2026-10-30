@@ -18,7 +18,6 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 import numpy as np
 from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
-from scipy.linalg.lapack import HAS_ILP64
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x, _wrap_callback)
@@ -26,7 +25,7 @@ from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
 from scipy._external import array_api_extra as xpx
-from scipy._lib._util import _call_callback_maybe_halt
+from scipy._lib._util import _call_callback_maybe_halt, HAS_ILP64
 from numpy.typing import NDArray
 
 __docformat__ = "restructuredtext en"

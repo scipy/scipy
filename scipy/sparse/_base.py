@@ -379,10 +379,13 @@ class _spbase(SparseABC):
 
     @property
     def size(self) -> int:
-        """Number of stored values.
+        """Number of stored values, including explicit zeros.
+
+        This is the same as `nnz`. Implicit zeros are not counted.
 
         See Also
         --------
+        nnz : Number of stored values, including explicit zeros.
         count_nonzero : Number of non-zero values.
         """
         return self._getnnz()

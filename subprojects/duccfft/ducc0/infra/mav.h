@@ -2,7 +2,9 @@
  *  Classes for dealing with multidimensional arrays
  *
  *  \copyright Copyright (C) 2019-2026 Max-Planck-Society
+ *  \copyright Copyright (C) 2026 Philipp Arras
  *  \author Martin Reinecke
+ *  \author Philipp Arras
  *  */
 
 /* SPDX-License-Identifier: BSD-3-Clause OR GPL-2.0-or-later */
@@ -67,7 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/infra/misc_utils.h"
 #include "ducc0/infra/threading.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_mav {
 
@@ -165,7 +167,10 @@ struct slice
   slice(size_t beg_, size_t end_, ptrdiff_t step_=1)
     : beg(beg_), end(end_), step(step_)
     {
-// FIXME: add sanity checks here
+    MR_assert(step!=0, "slice step must not be 0");
+    // FIXME: support (MAXIDX,MAXIDX,-1) and similar? (reversal)
+    if ((beg!=end) && (end!=MAXIDX))
+      MR_assert((beg<end)!=(step<0), "step does not match begin, end ordering");
     }
 
   size_t size(size_t shp) const
@@ -323,7 +328,7 @@ class fmav_info
 
     void swap_axes(size_t ax0, size_t ax1)
       {
-      MR_assert(ax0<=ndim() && ax1<=ndim(), "bad axes");
+      MR_assert(ax0<ndim() && ax1<ndim(), "bad axes");
       if (ax0==ax1) return;
       swap(shp[ax0], shp[ax1]);
       swap(str[ax0], str[ax1]);
@@ -533,7 +538,7 @@ template<template<typename, size_t> typename Tcontainer, size_t ndim> class mav_
       }
     void swap_axes(size_t ax0, size_t ax1)
       {
-      MR_assert(ax0<=ndim && ax1<=ndim, "bad axes");
+      MR_assert(ax0<ndim && ax1<ndim, "bad axes");
       if (ax0==ax1) return;
       swap(shp[ax0], shp[ax1]);
       swap(str[ax0], str[ax1]);
@@ -1170,17 +1175,76 @@ template<typename Ttuple> inline Ttuple update_pointers_contiguous (const Ttuple
   }
 template<typename Ttuple> inline void advance_contiguous (Ttuple &ptrs)
   { tuple_for_each(ptrs, [](auto &&ptr) { ++ptr; }); }
-template<typename Ttuple> inline void advance (Ttuple &ptrs,
-  const vector<vector<ptrdiff_t>> &str, size_t idim)
+template<typename Ttuple, size_t N> inline void advance (Ttuple &ptrs,
+  const array<ptrdiff_t, N> &str)
   {
-  tuple_for_each_idx(ptrs, [idim,&str](auto &&ptr, size_t idx)
-                     { ptr += str[idx][idim]; });
+  tuple_for_each_idx(ptrs, [&str](auto &&ptr, size_t idx)
+                     { ptr += str[idx]; });
   }
 template<typename Ttuple> inline void advance_by_n (Ttuple &ptrs,
   const vector<vector<ptrdiff_t>> &str, size_t idim, size_t n)
   {
   tuple_for_each_idx(ptrs, [idim,n,&str](auto &&ptr, size_t idx)
                      { ptr += n*str[idx][idim]; });
+  }
+template<typename Ttuple> inline auto get_strides
+  (const vector<vector<ptrdiff_t>> &str, size_t idim)
+  {
+  array<ptrdiff_t, tuplelike_size<Ttuple>()> res;
+  for (size_t i=0; i<res.size(); ++i)
+    res[i] = str[i][idim];
+  return res;
+  }
+
+// Multithreaded mav_apply (and its variants) distribute the work along axis 0
+// by default. If axis 0 is too short for a balanced static distribution among
+// the threads, the combined index range of as many leading axes as necessary is
+// distributed instead (definitely excluding blocks). The busiest thread is at
+// most a factor of (BALANCE_FACTOR+1)/BALANCE_FACTOR slower than a perfectly
+// balanced distribution (12.5% for the value 8). Larger values balance better,
+// but split the work into shorter pieces increasing per-piece overhead.
+constexpr size_t BALANCE_FACTOR=8;
+inline size_t parallel_naxes(const vector<size_t> &shp, size_t nthreads,
+  size_t block0)
+  {
+  size_t nmax = shp.size() - ((block0!=0) ? 1 : 0);
+  size_t naxes=1, nwork=shp[0];
+  while ((naxes<nmax) && (nwork<BALANCE_FACTOR*nthreads))
+    nwork *= shp[naxes++];
+  return naxes;
+  }
+inline size_t leading_size(const vector<size_t> &shp, size_t naxes)
+  {
+  size_t res=1;
+  for (size_t i=0; i<naxes; ++i)
+    res *= shp[i];
+  return res;
+  }
+// Counterpart to parallel_naxes(). Calls func() for all parts of the iteration
+// space that belong to the work items [lo; hi) of the index range that has been
+// combined by parallel_naxes.
+template<typename Ttuple, typename Func>
+  inline void for_each_work_chunk(const vector<size_t> &shp,
+    const vector<vector<ptrdiff_t>> &str, const Ttuple &ptrs, size_t naxes,
+    size_t lo, size_t hi, Func &&func)
+  {
+  size_t idim = naxes-1;
+  auto locshp(shp);
+  vector<size_t> pos(naxes);
+  while (lo<hi)
+    {
+    auto locptrs(ptrs);
+    for (size_t i=naxes, rest=lo; i>0; --i)
+      {
+      pos[i-1] = rest%shp[i-1];
+      rest /= shp[i-1];
+      advance_by_n(locptrs, str, i-1, pos[i-1]);
+      }
+    size_t n=min(hi-lo, shp[idim]-pos[idim]);
+    locshp[idim] = n;
+    func(idim, locshp, locptrs, pos);
+    lo += n;
+    }
   }
 
 template<typename Ttuple, typename Func>
@@ -1191,21 +1255,39 @@ template<typename Ttuple, typename Func>
   auto leni=shp[idim], lenj=shp[idim+1];
   size_t nbi = (leni+bsi-1)/bsi;
   size_t nbj = (lenj+bsj-1)/bsj;
+  const auto stri = get_strides<Ttuple>(str, idim),
+             strj = get_strides<Ttuple>(str, idim+1);
   for (size_t bi=0; bi<nbi; ++bi)
     for (size_t bj=0; bj<nbj; ++bj)
       {
       auto locptrs(ptrs);
       advance_by_n(locptrs, str, idim, bi*bsi);
       advance_by_n(locptrs, str, idim+1, bj*bsj);
-      for (size_t i=bi*bsi; i<min(leni, (bi+1)*bsi); ++i, advance(locptrs, str, idim))
+      for (size_t i=bi*bsi; i<min(leni, (bi+1)*bsi); ++i, advance(locptrs, stri))
         {
         auto locptrs2(locptrs);
-        for (size_t j=bj*bsj; j<min(lenj, (bj+1)*bsj); ++j, advance(locptrs2, str, idim+1))
+        for (size_t j=bj*bsj; j<min(lenj, (bj+1)*bsj); ++j, advance(locptrs2, strj))
           call_with_tuple(func, to_ref(locptrs2));
         }
       }
   }
 
+template<typename Ttuple, typename Func>
+  inline void applyHelper_leaf(size_t idim, size_t len,
+    const vector<vector<ptrdiff_t>> &str, const Ttuple &ptrs, Func &&func,
+    bool last_contiguous)
+  {
+  auto locptrs(ptrs);
+  if (last_contiguous)
+    for (size_t i=0; i<len; ++i, advance_contiguous(locptrs))
+      call_with_tuple(func, to_ref(locptrs));
+  else
+    {
+    const auto locstr = get_strides<Ttuple>(str, idim);
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
+      call_with_tuple(func, to_ref(locptrs));
+    }
+  }
 template<typename Ttuple, typename Func>
   DUCC0_NOINLINE void applyHelper(size_t idim, const vector<size_t> &shp,
     const vector<vector<ptrdiff_t>> &str, size_t block0, size_t block1,
@@ -1214,20 +1296,19 @@ template<typename Ttuple, typename Func>
   auto len = shp[idim];
   if ((idim+2==shp.size()) && (block0!=0))  // we should do blocking
     applyHelper_block(idim, shp, str, block0, block1, ptrs, func);
+  else if (idim+2==shp.size())  // avoid a function call for every short row
+    {
+    auto locptrs(ptrs);
+    const auto locstr = get_strides<Ttuple>(str, idim);
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
+      applyHelper_leaf(idim+1, shp[idim+1], str, locptrs, func, last_contiguous);
+    }
   else if (idim+1<shp.size())
     for (size_t i=0; i<len; ++i)
       applyHelper(idim+1, shp, str, block0, block1, update_pointers(ptrs, str, idim, i),
         func, last_contiguous);
   else
-    {
-    auto locptrs(ptrs);
-    if (last_contiguous)
-      for (size_t i=0; i<len; ++i, advance_contiguous(locptrs))
-        call_with_tuple(func, to_ref(locptrs));
-    else
-      for (size_t i=0; i<len; ++i, advance(locptrs, str, idim))
-        call_with_tuple(func, to_ref(locptrs));
-    }
+    applyHelper_leaf(idim, len, str, ptrs, func, last_contiguous);
   }
 template<typename Func, typename Ttuple>
   inline void applyHelper(const vector<size_t> &shp,
@@ -1239,13 +1320,19 @@ template<typename Func, typename Ttuple>
   else if (nthreads==1)
     applyHelper(0, shp, str, block0, block1, ptrs, std::forward<Func>(func), last_contiguous);
   else
-    execParallel(shp[0], nthreads, [&](size_t lo, size_t hi)
+    {
+    size_t naxes = parallel_naxes(shp, adjust_nthreads(nthreads), block0);
+    execParallel(leading_size(shp, naxes), nthreads, [&](size_t lo, size_t hi)
       {
-      auto locptrs = update_pointers(ptrs, str, 0, lo);
-      auto locshp(shp);
-      locshp[0] = hi-lo;
-      applyHelper(0, locshp, str, block0, block1, locptrs, func, last_contiguous);
+      for_each_work_chunk(shp, str, ptrs, naxes, lo, hi,
+        [&](size_t idim, const vector<size_t> &locshp, const Ttuple &locptrs,
+          const vector<size_t> &/*pos*/)
+        {
+        applyHelper(idim, locshp, str, block0, block1, locptrs, func,
+          last_contiguous);
+        });
       });
+    }
   }
 
 template<typename Func, typename... Targs>
@@ -1285,19 +1372,39 @@ template<typename ReduceType, typename Ttuple, typename Func>
   auto leni=shp[idim], lenj=shp[idim+1];
   size_t nbi = (leni+bsi-1)/bsi;
   size_t nbj = (lenj+bsj-1)/bsj;
+  const auto stri = get_strides<Ttuple>(str, idim),
+             strj = get_strides<Ttuple>(str, idim+1);
   for (size_t bi=0; bi<nbi; ++bi)
     for (size_t bj=0; bj<nbj; ++bj)
       {
       auto locptrs(ptrs);
       advance_by_n(locptrs, str, idim, bi*bsi);
       advance_by_n(locptrs, str, idim+1, bj*bsj);
-      for (size_t i=bi*bsi; i<min(leni, (bi+1)*bsi); ++i, advance(locptrs, str, idim))
+      for (size_t i=bi*bsi; i<min(leni, (bi+1)*bsi); ++i, advance(locptrs, stri))
         {
         auto locptrs2(locptrs);
-        for (size_t j=bj*bsj; j<min(lenj, (bj+1)*bsj); ++j, advance(locptrs2, str, idim+1))
+        for (size_t j=bj*bsj; j<min(lenj, (bj+1)*bsj); ++j, advance(locptrs2, strj))
           rt.reduceWith(call_reduce_with_tuple<ReduceType>(func, to_ref(locptrs2)));
         }
       }
+  return rt;
+  }
+template<typename ReduceType, typename Ttuple, typename Func>
+  inline ReduceType applyReduceHelper_leaf(size_t idim, size_t len,
+    const vector<vector<ptrdiff_t>> &str, const Ttuple &ptrs, Func &&func,
+    bool last_contiguous)
+  {
+  ReduceType rt;
+  auto locptrs(ptrs);
+  if (last_contiguous)
+    for (size_t i=0; i<len; ++i, advance_contiguous(locptrs))
+      rt.reduceWith(call_reduce_with_tuple<ReduceType>(func, to_ref(locptrs)));
+  else
+    {
+    const auto locstr = get_strides<Ttuple>(str, idim);
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
+      rt.reduceWith(call_reduce_with_tuple<ReduceType>(func, to_ref(locptrs)));
+    }
   return rt;
   }
 template<typename ReduceType, typename Ttuple, typename Func>
@@ -1310,20 +1417,21 @@ template<typename ReduceType, typename Ttuple, typename Func>
   if ((idim+2==shp.size()) && (block0!=0))  // we should do blocking
     rt.reduceWith(applyReduceHelper_block<ReduceType>(idim, shp, str,
       block0, block1, ptrs, func));
+  else if (idim+2==shp.size())  // avoid a function call for every short row
+    {
+    auto locptrs(ptrs);
+    const auto locstr = get_strides<Ttuple>(str, idim);
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
+      rt.reduceWith(applyReduceHelper_leaf<ReduceType>(idim+1, shp[idim+1],
+        str, locptrs, func, last_contiguous));
+    }
   else if (idim+1<shp.size())
     for (size_t i=0; i<len; ++i)
       rt.reduceWith(applyReduceHelper<ReduceType>(idim+1, shp, str, block0,
         block1, update_pointers(ptrs, str, idim, i), func, last_contiguous));
   else
-    {
-    auto locptrs(ptrs);
-    if (last_contiguous)
-      for (size_t i=0; i<len; ++i, advance_contiguous(locptrs))
-        rt.reduceWith(call_reduce_with_tuple<ReduceType>(func, to_ref(locptrs)));
-    else
-      for (size_t i=0; i<len; ++i, advance(locptrs, str, idim))
-        rt.reduceWith(call_reduce_with_tuple<ReduceType>(func, to_ref(locptrs)));
-    }
+    return applyReduceHelper_leaf<ReduceType>(idim, len, str, ptrs, func,
+      last_contiguous);
   return rt;
   }
 template<typename ReduceType, typename Func, typename Ttuple>
@@ -1341,13 +1449,17 @@ template<typename ReduceType, typename Func, typename Ttuple>
   else
     {
     Mutex mut;
-    execParallel(shp[0], nthreads, [&](size_t lo, size_t hi)
+    size_t naxes = parallel_naxes(shp, adjust_nthreads(nthreads), block0);
+    execParallel(leading_size(shp, naxes), nthreads, [&](size_t lo, size_t hi)
       {
-      auto locptrs = update_pointers(ptrs, str, 0, lo);
-      auto locshp(shp);
-      locshp[0] = hi-lo;
-      auto local_rt = applyReduceHelper<ReduceType>(0, locshp, str, block0,
-        block1, locptrs, func, last_contiguous);
+      ReduceType local_rt;
+      for_each_work_chunk(shp, str, ptrs, naxes, lo, hi,
+        [&](size_t idim, const vector<size_t> &locshp, const Ttuple &locptrs,
+          const vector<size_t> &/*pos*/)
+        {
+        local_rt.reduceWith(applyReduceHelper<ReduceType>(idim, locshp, str,
+          block0, block1, locptrs, func, last_contiguous));
+        });
       {
       LockGuard lock(mut);
       rt.reduceWith(local_rt);
@@ -1406,8 +1518,9 @@ template<typename Ttuple, typename Func>
   else
     {
     auto locptrs(ptrs);
+    const auto locstr = get_strides<Ttuple>(str, idim);
     auto idxbak = index[idim];
-    for (size_t i=0; i<len; ++i, ++index[idim], advance(locptrs, str, idim))
+    for (size_t i=0; i<len; ++i, ++index[idim], advance(locptrs, locstr))
       call_with_tuple_arg(func, const_cast<const vector<size_t> &>(index), to_ref(locptrs));
     index[idim] = idxbak;
     }
@@ -1422,15 +1535,21 @@ template<typename Func, typename Ttuple>
   else if (nthreads==1)
     applyHelper_with_index(0, shp, str, ptrs, std::forward<Func>(func), index);
   else
-    execParallel(shp[0], nthreads, [&](size_t lo, size_t hi)
+    {
+    size_t naxes = parallel_naxes(shp, adjust_nthreads(nthreads), 0);
+    execParallel(leading_size(shp, naxes), nthreads, [&](size_t lo, size_t hi)
       {
-      auto locptrs = update_pointers(ptrs, str, 0, lo);
-      auto locshp(shp);
-      locshp[0] = hi-lo;
       auto locidx(index);
-      locidx[0]=lo;
-      applyHelper_with_index(0, locshp, str, locptrs, func, locidx);
+      for_each_work_chunk(shp, str, ptrs, naxes, lo, hi,
+        [&](size_t idim, const vector<size_t> &locshp, const Ttuple &locptrs,
+          const vector<size_t> &pos)
+        {
+        for (size_t i=0; i<pos.size(); ++i)
+          locidx[i] = pos[i];
+        applyHelper_with_index(idim, locshp, str, locptrs, func, locidx);
+        });
       });
+    }
   }
 template<typename Func, typename... Targs>
   void mav_apply_with_index(Func &&func, int nthreads, Targs... args)
@@ -1531,11 +1650,12 @@ template<typename Tptrs, typename Tinfos, typename Func>
   {
   auto len = shp[idim];
   auto locptrs(ptrs);
+  const auto locstr = get_strides<Tptrs>(str, idim);
   if (idim+1<shp.size())
-    for (size_t i=0; i<len; ++i, advance(locptrs, str, idim))
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
       flexible_mav_applyHelper(idim+1, shp, str, locptrs, infos, func);
   else
-    for (size_t i=0; i<len; ++i, advance(locptrs, str, idim))
+    for (size_t i=0; i<len; ++i, advance(locptrs, locstr))
       call_with_tuple2(func, make_mavrefs(locptrs, infos));
   }
 template<typename Tptrs, typename Tinfos, typename Func>
@@ -1548,13 +1668,16 @@ template<typename Tptrs, typename Tinfos, typename Func>
   else if (nthreads==1)
     flexible_mav_applyHelper(0, shp, str, ptrs, infos, std::forward<Func>(func));
   else
-    execParallel(shp[0], nthreads, [&](size_t lo, size_t hi)
+    {
+    size_t naxes = parallel_naxes(shp, adjust_nthreads(nthreads), 0);
+    execParallel(leading_size(shp, naxes), nthreads, [&](size_t lo, size_t hi)
       {
-      auto locptrs = update_pointers(ptrs, str, 0, lo);
-      auto locshp(shp);
-      locshp[0] = hi-lo;
-      flexible_mav_applyHelper(0, locshp, str, locptrs, infos, func);
+      for_each_work_chunk(shp, str, ptrs, naxes, lo, hi,
+        [&](size_t idim, const vector<size_t> &locshp, const Tptrs &locptrs,
+          const vector<size_t> &/*pos*/)
+        { flexible_mav_applyHelper(idim, locshp, str, locptrs, infos, func); });
       });
+    }
   }
 
 template<size_t ndim> struct Xdim { static constexpr size_t dim=ndim; };

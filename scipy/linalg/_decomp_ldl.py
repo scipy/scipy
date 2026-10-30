@@ -2,10 +2,10 @@ from warnings import warn
 
 import numpy as np
 from numpy import (atleast_2d, arange, zeros_like, imag, diag,
-                   iscomplexobj, tril, triu, argsort, empty_like)
+                   iscomplexobj, tril, triu, argsort)
 from numpy.exceptions import ComplexWarning
 
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, HAS_ILP64
 from ._decomp import _asarray_validated
 from .lapack import get_lapack_funcs, _compute_lwork
 
@@ -112,7 +112,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
            [ 0. ,  1.5,  0. ],
            [ 0. ,  0. ,  2. ]])
     >>> perm
-    array([2, 1, 0])
+    array([2, 1, 0], dtype=int32)
     >>> lu[perm, :]
     array([[ 1. ,  1. ,  1.5],
            [ 0. ,  1. , -0.5],
@@ -126,9 +126,6 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))
     if a.shape[0] != a.shape[1]:
         raise ValueError('The input array "a" should be square.')
-    # Return empty arrays for empty square input
-    if a.size == 0:
-        return empty_like(a), empty_like(a), np.array([], dtype=int)
 
     n = a.shape[0]
     r_or_c = complex if iscomplexobj(a) else float
@@ -208,8 +205,8 @@ def _ldl_sanitize_ipiv(a, lower=True):
 
     """
     n = a.size
-    swap_ = arange(n)
-    pivots = zeros_like(swap_, dtype=int)
+    swap_ = arange(n, dtype=np.int64 if HAS_ILP64 else np.int32)
+    pivots = zeros_like(swap_)
     skip_2x2 = False
 
     # Some upper/lower dependent offset values
@@ -336,7 +333,7 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
 
     """
     n = lu.shape[0]
-    perm = arange(n)
+    perm = arange(n, dtype=np.int64 if HAS_ILP64 else np.int32)
     # Setup the reading order of the permutation matrix for upper/lower
     rs, re, ri = (n-1, -1, -1) if lower else (0, n, 1)
 
@@ -354,4 +351,4 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
             lu[[s_ind, ind], col_s:col_e] = lu[[ind, s_ind], col_s:col_e]
             perm[[s_ind, ind]] = perm[[ind, s_ind]]
 
-    return lu, argsort(perm)
+    return lu, argsort(perm).astype(perm.dtype)

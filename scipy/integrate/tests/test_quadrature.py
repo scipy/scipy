@@ -12,7 +12,6 @@ from scipy.integrate import (romb, newton_cotes,
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
-from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._external import array_api_extra as xpx
@@ -376,23 +375,6 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
             trapezoid(y, x=xp.linspace(0, 9, 10), axis=1),
             out1
         )
-
-    @skip_xp_invalid_arg
-    def test_masked(self, xp):
-        # Testing that masked arrays behave as if the function is 0 where
-        # masked
-        x = np.arange(5)
-        y = x * x
-        mask = x == 2
-        ym = np.ma.array(y, mask=mask)
-        r = 13.0  # sum(0.5 * (0 + 1) * 1.0 + 0.5 * (9 + 16))
-        assert_allclose(trapezoid(ym, x), r)
-
-        xm = np.ma.array(x, mask=mask)
-        assert_allclose(trapezoid(ym, xm), r)
-
-        xm = np.ma.array(x, mask=mask)
-        assert_allclose(trapezoid(y, xm), r)
 
     def test_array_like(self):  # array_like is np only
         x = list(range(5))

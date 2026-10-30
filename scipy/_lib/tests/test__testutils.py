@@ -30,3 +30,17 @@ def test__mem_available():
         assert available >= 0
     else:
         assert available is None or available >= 0
+
+
+def test_pytest_report_header(monkeypatch):
+    from scipy._lib._pytest_header import TEST_ENV_VARS, environment_report_header
+    for name in TEST_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SCIPY_DEFAULT_DTYPE", "float32")
+
+    header = environment_report_header()
+    assert header == (
+        "SciPy test environment: SCIPY_ARRAY_API=<unset>, SCIPY_DEVICE=<unset>, "
+        "SCIPY_DEFAULT_DTYPE=float32, SCIPY_XSLOW=<unset>, "
+        "SCIPY_HYPOTHESIS_PROFILE=<unset>, SCIPY_AVAILABLE_MEM=<unset>"
+    )

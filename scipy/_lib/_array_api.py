@@ -7,6 +7,7 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import operator
+import os
 import dataclasses
 import functools
 import textwrap
@@ -42,9 +43,7 @@ from scipy._external.array_api_compat import (
 )
 from scipy._external.array_api_compat.common._helpers import _compat_module_name
 from scipy._external.array_api_extra.testing import lazy_xp_function
-from scipy._lib._array_api_override import (
-    array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
-)
+from scipy._lib._array_api_override import array_namespace
 
 from scipy._lib._docscrape import FunctionDoc
 import scipy._external.array_api_extra as xpx
@@ -65,6 +64,13 @@ __all__ = [
     'xp_result_type', 'xp_result_device', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
 ]
+
+
+# For use in the test suite only:
+# To enable array API and strict array-like input validation
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
+# To control the default device
+SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
 
 type Array = Any  # To be changed to a Protocol later (see array-api#589)
@@ -106,7 +112,7 @@ def _asarray(
     based inputs, where the only device is the (default) CPU.
     """
     if xp is None:
-        xp = array_namespace(array)
+        xp = array_namespace(array, masked_ok=subok)
     if is_numpy(xp):
         # Use NumPy API to support order
         if copy is True:
@@ -402,30 +408,27 @@ def xp_vector_norm(x: Array, /, *,
                    xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
 
-    if SCIPY_ARRAY_API:
-        # check for optional `linalg` extension
-        if hasattr(xp, 'linalg'):
-            return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
-        else:
-            if ord != 2:
-                raise ValueError(
-                    "only the Euclidean norm (`ord=2`) is currently supported in "
-                    "`xp_vector_norm` for backends not implementing the `linalg` "
-                    "extension."
-                )
-            # return (x @ x)**0.5
-            # or to get the right behavior with nd, complex arrays
-            return xp.sum(xp.conj(x) * x, axis=axis, keepdims=keepdims)**0.5
+    # check for optional `linalg` extension
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.vector_norm(x, axis=axis, keepdims=keepdims, ord=ord)
     else:
-        # to maintain backwards compatibility
-        return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)
+        if ord != 2:
+            raise ValueError(
+                "only the Euclidean norm (`ord=2`) is currently supported in "
+                "`xp_vector_norm` for backends not implementing the `linalg` "
+                "extension."
+            )
+        # return (x @ x)**0.5
+        # or to get the right behavior with nd, complex arrays
+        return xp.sum(xp.conj(x) * x, axis=axis, keepdims=keepdims)**0.5
 
 
 def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # Equivalent of np.ravel written in terms of array API
     # Even though it's one line, it comes up so often that it's worth having
     # this function for readability
-    xp = array_namespace(x) if xp is None else xp
+    # `masked_ok=True` because this is used heavily in stats
+    xp = array_namespace(x, masked_ok=True) if xp is None else xp
     return xp.reshape(x, (-1,))
 
 
@@ -490,7 +493,7 @@ def xp_result_type(*args, force_floating=False, xp):
         return xp.result_type(*float_args, xpx.default_dtype(xp))
 
 
-def xp_promote(*args, broadcast=False, force_floating=False, xp):
+def xp_promote(*args, broadcast=False, force_floating=False, order=None, xp):
     """
     Promotes elements of *args to result dtype, ignoring `None`s.
     Includes options for forcing promotion to floating point and
@@ -521,13 +524,13 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     # prevent double conversion of iterable to array
     # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
     # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
-    args = [(_asarray(arg, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, subok=True, xp=xp, device=d, order=order)
              if is_torch_array(arg) or np.iterable(arg)
              else arg) for arg, d in zip(args, devices)]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d)
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp, device=d, order=order)
              if arg is not None else arg)
             for arg, d in zip(args, devices)]
 
@@ -641,7 +644,8 @@ def _xp_result_devices(*args):
         data. They are effectively single-device, so creating on the backend
         default -- what a `None` anchor means -- is correct for them.
         """
-        return hasattr(arg, "device") and not isinstance(arg, (np.ndarray, np.generic))
+        return (hasattr(arg, "device")
+                and not isinstance(arg, (np.ndarray, np.generic, type)))
 
 
     device = next((xp_device(arg) for arg in args if _has_own_device(arg)), None)
@@ -1228,3 +1232,53 @@ def xp_isscalar(x):
 
 def is_mparray(xp):
     return "mparray" in str(xp)
+
+
+def xp_interp(x1, x, y, *, left=None, right=None, xp=None):
+    # vectorized, array API interpolation along last axis
+    xp = array_namespace(x1, x, y) if xp is None else xp
+    x1, x, y = xp_promote(x1, x, y, force_floating=True, xp=xp)
+    out_shape = x1.shape
+
+    if is_numpy(xp) and x.ndim <= 1 and y.ndim <= 1:
+        res = np.interp(x1, x, y, left=left, right=right)
+        return res.astype(x1.dtype)
+
+    ndim = max(x1.ndim, x.ndim, y.ndim)
+    x1 = xpx.atleast_nd(x1, ndim=ndim)
+    x = xpx.atleast_nd(x, ndim=ndim)
+    y = xpx.atleast_nd(y, ndim=ndim)
+
+    # sort x in ascending order for efficient binary search
+    j = xp.argsort(x, axis=-1)
+    x = xp.take_along_axis(x, j, axis=-1)
+    y = xp.take_along_axis(y, j, axis=-1)
+
+    # binary search for adjacent elements of `x` that bound elements of `x1`
+    i = xp.clip(xpx.searchsorted(x, x1) - 1, 0, x.shape[-1]-2)
+
+    # interpolation
+    xi = xp.take_along_axis(x, i, axis=-1)
+    xip1 = xp.take_along_axis(x, i+1, axis=-1)
+    yi = xp.take_along_axis(y, i, axis=-1)
+    yip1 = xp.take_along_axis(y, i+1, axis=-1)
+    res = yi + (x1 - xi) * (yip1 - yi) / (xip1 - xi)
+
+    # clip to bounds, don't extrapolate
+    xl = x[..., 0:1]
+    xr = x[..., -1:]
+    left = y[..., 0:1] if left is None else left
+    right = y[..., -1:] if right is None else right
+    res, left, right = xp.broadcast_arrays(res, left, right)
+    res = xp.where(x1 < xl, left, res)
+    res = xp.where(x1 > xr, right, res)
+    return xp.reshape(res, out_shape)
+
+
+def xp_spacing(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+
+    if is_numpy(xp) or is_jax(xp):
+        return xp.spacing(x)
+
+    return xp.nextafter(x, xp.copysign(xp.inf, x)) - x

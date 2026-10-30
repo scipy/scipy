@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.conftest import skip_xp_invalid_arg
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, is_jax, is_cupy,
                                    eager_warns, xp_result_type, is_array_api_strict)
@@ -241,7 +240,6 @@ class RobustSlopesTest:
         with pytest.raises(ValueError, match=msg):
             pfun(xp.asarray([0, 1, 1]), method='joint_separate')
 
-    @skip_xp_invalid_arg
     @pytest.mark.parametrize("method", ['separate', 'other'])
     @pytest.mark.filterwarnings("ignore:Support for NumPy masked:DeprecationWarning")
     def test_mask(self, method):

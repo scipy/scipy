@@ -77,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/math/unity_roots.h"
 #include "ducc0/fft/fft.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_fft {
 
@@ -86,13 +86,7 @@ using namespace std;
 namespace {
 
 template<typename T> constexpr inline size_t fft1d_simdlen
-  = min<size_t>(8, native_simd<T>::size());
-template<> constexpr inline size_t fft1d_simdlen<double>
-  = min<size_t>(4, native_simd<double>::size());
-template<> constexpr inline size_t fft1d_simdlen<float>
-  = min<size_t>(8, native_simd<float>::size());
-template<typename T> using fft1d_simd = typename simd_select<T,fft1d_simdlen<T>>::type;
-template<typename T> constexpr inline bool fft1d_simd_exists = (fft1d_simdlen<T> > 1);
+  = native_simd<T>::size();
 
 template<bool fwd, typename T> void ROTX90(Cmplx<T> &a)
   { auto tmp_= fwd ? -a.r : a.r; a.r = fwd ? a.i : -a.i; a.i=tmp_; }
@@ -1103,8 +1097,8 @@ template <typename Tfs> class cfftpblue: public cfftpass<Tfs>
        Tcd * DUCC0_RESTRICT buf, size_t nthreads) const
       {
       static const auto ti=tidx<Tcd *>();
-      Tcd *akf = &buf[0];
-      Tcd *akf2 = subplan->needs_copy() ? (&buf[ip2]) : akf;
+      Tcd *akf = buf;
+      Tcd *akf2 = subplan->needs_copy() ? (buf+ip2) : akf;
       Tcd *subbuf = akf2+ip2;
 
       auto CH = [ch,this](size_t a, size_t b, size_t c) -> Tcd&
@@ -1257,9 +1251,9 @@ template <typename Tfs> class cfft_multipass: public cfftpass<Tfs>
         }
       else
         {
-        if constexpr(is_same<T,Tfs>::value && fft1d_simd_exists<Tfs>) // we can vectorize!
+        if constexpr(is_same<T,Tfs>::value && simd_exists<Tfs, native_simd<Tfs>::size()>) // we can vectorize!
           {
-          using Tfv = fft1d_simd<Tfs>;
+          using Tfv = native_simd<Tfs>;
           using Tcv = Cmplx<Tfv>;
           constexpr size_t vlen = Tfv::size();
           size_t nvtrans = (l1*ido + vlen-1)/vlen;
@@ -1277,9 +1271,9 @@ template <typename Tfs> class cfft_multipass: public cfftpass<Tfs>
             execStatic(nvtrans, nthreads, 0, [&](auto &sched)
               {
               aligned_array<Tcv> tbuf(2*ip+32+bufsize());
-              auto cc2 = &tbuf[0];
-              auto ch2 = &tbuf[ip+16];
-              auto buf2 = &tbuf[2*ip+32];
+              auto cc2 = tbuf.data();
+              auto ch2 = tbuf.data()+ip+16;
+              auto buf2 = tbuf.data()+2*ip+32;
 
               while (auto rng=sched.getNext())
                 for(auto itrans=rng.lo; itrans<rng.hi; ++itrans)
@@ -1319,9 +1313,9 @@ template <typename Tfs> class cfft_multipass: public cfftpass<Tfs>
             execStatic(nvtrans, nthreads, 0, [&](auto &sched)
               {
               aligned_array<Tcv> tbuf(2*ip+32+bufsize());
-              auto cc2 = &tbuf[0];
-              auto ch2 = &tbuf[ip+16];
-              auto buf2 = &tbuf[2*ip+32];
+              auto cc2 = tbuf.data();
+              auto ch2 = tbuf.data()+ip+16;
+              auto buf2 = tbuf.data()+2*ip+32;
 
               while (auto rng=sched.getNext())
                 for(auto itrans=rng.lo; itrans<rng.hi; ++itrans)
@@ -1366,9 +1360,9 @@ MR_fail("must not get here");
 #if 0
 //FIXME this code path is currently unused
           aligned_array<Tcv> tbuf(2*ip+bufsize());
-          auto cc2 = &tbuf[0];
-          auto ch2 = &tbuf[ip];
-          auto buf2 = &tbuf[2*ip];
+          auto cc2 = tbuf;
+          auto ch2 = tbuf+ip;
+          auto buf2 = tbuf+2*ip;
 
           auto CH = [ch,this](size_t a, size_t b, size_t c) -> Tc&
             { return ch[a+ido*(b+l1*c)]; };
@@ -1463,9 +1457,9 @@ MR_fail("must not get here");
             }
           if (l1==1)
             {
-            auto cc2 = &buf[0];
-            auto ch2 = &buf[bunchsize*ip];
-            auto buf2 = &buf[(bunchsize+1)*ip];
+            auto cc2 = buf;
+            auto ch2 = buf+bunchsize*ip;
+            auto buf2 = buf+(bunchsize+1)*ip;
             size_t nbunch = (ido + bunchsize-1)/bunchsize;
 
             auto CC = [cc,this](size_t a, size_t b) -> Tc&
@@ -1522,9 +1516,9 @@ MR_fail("must not get here");
 MR_fail("must not get here");
 #if 0
 //FIXME this code path is currently unused
-          auto cc2 = &buf[0];
-          auto ch2 = &buf[bunchsize*ip];
-          auto buf2 = &buf[(bunchsize+1)*ip];
+          auto cc2 = buf;
+          auto ch2 = buf+bunchsize*ip;
+          auto buf2 = buf+(bunchsize+1)*ip;
           size_t nbunch = (l1*ido + bunchsize-1)/bunchsize;
 
           auto CH = [ch,this](size_t a, size_t b, size_t c) -> Tc&
@@ -2689,9 +2683,9 @@ template <typename Tfs> class rfftpblue: public rfftpass<Tfs>
       {
       using Tcd = Cmplx<Tfd>;
       auto buf = reinterpret_cast<Tcd *>(buf_);
-      Tcd *cc2 = &buf[0];
-      Tcd *ch2 = &buf[ip];
-      Tcd *subbuf = &buf[2*ip];
+      Tcd *cc2 = buf;
+      Tcd *ch2 = buf+ip;
+      Tcd *subbuf = buf+2*ip;
       static const auto ticd = tidx<Tcd *>();
 
       if constexpr(fwd)

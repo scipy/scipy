@@ -1177,12 +1177,47 @@ cdef extern from r"cython_special_wrappers.h":
     void special_airye(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void special_cairye(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
 
+    npy_double xsf_eval_chebyc(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_chebyc(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_chebyc_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_chebys(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_chebys(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_chebys_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_chebyt(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_chebyt(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_chebyt_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_chebyu(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_chebyu(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_chebyu_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_gegenbauer(npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_gegenbauer(npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_gegenbauer_l(npy_intp, npy_double, npy_double) nogil
+    npy_double xsf_eval_genlaguerre(npy_double, npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_genlaguerre(npy_double, npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_genlaguerre_l(npy_intp, npy_double, npy_double) nogil
+    npy_double xsf_eval_hermite(npy_intp, npy_double) nogil
+    npy_double xsf_eval_hermitenorm(npy_intp, npy_double) nogil
     npy_double xsf_eval_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
     npy_double xsf_eval_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
+    npy_double xsf_eval_laguerre(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_laguerre(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_laguerre_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_legendre(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_legendre(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_legendre_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_sh_chebyt(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_sh_chebyt(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_sh_chebyt_l(npy_intp, npy_double) nogil
+    npy_double xsf_eval_sh_chebyu(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_sh_chebyu(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_sh_chebyu_l(npy_intp, npy_double) nogil
     npy_double xsf_eval_sh_jacobi(npy_double, npy_double, npy_double, npy_double) nogil
     npy_cdouble xsf_ceval_sh_jacobi(npy_double, npy_double, npy_double, npy_cdouble) nogil
     npy_double xsf_eval_sh_jacobi_l(npy_intp, npy_double, npy_double, npy_double) nogil
+    npy_double xsf_eval_sh_legendre(npy_double, npy_double) nogil
+    npy_cdouble xsf_ceval_sh_legendre(npy_double, npy_cdouble) nogil
+    npy_double xsf_eval_sh_legendre_l(npy_intp, npy_double) nogil
 
     npy_cdouble special_ccyl_hankel_1(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_1e(npy_double, npy_cdouble) nogil
@@ -1355,10 +1390,10 @@ cdef extern from r"cython_special_wrappers.h":
     double cephes_erfcinv(double y) nogil
     double xsf_exp10(double x) nogil
     double xsf_exp2(double x) nogil
-    npy_int xsf_csici(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
-    npy_int xsf_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
-    npy_int xsf_sici(npy_double, npy_double *, npy_double *) nogil
-    npy_int xsf_shichi(npy_double, npy_double *, npy_double *) nogil
+    void xsf_csici(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+    void xsf_cshichi(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+    void xsf_sici(npy_double, npy_double *, npy_double *) nogil
+    void xsf_shichi(npy_double, npy_double *, npy_double *) nogil
 
     double cephes_round(double x) nogil
     double xsf_spence(double x) nogil
@@ -1492,146 +1527,6 @@ cdef extern from r"_ufuncs_defs.h":
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_ellik "ellik"(npy_double, npy_double)nogil
-
-from .orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
-ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_chebyc_double_complex__t *_proto_eval_chebyc_double_complex__t_var = &_func_eval_chebyc[double_complex]
-
-from .orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
-ctypedef double _proto_eval_chebyc_double__t(double, double) noexcept nogil
-cdef _proto_eval_chebyc_double__t *_proto_eval_chebyc_double__t_var = &_func_eval_chebyc[double]
-
-from .orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
-ctypedef double _proto_eval_chebyc_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_chebyc_l_t *_proto_eval_chebyc_l_t_var = &_func_eval_chebyc_l
-
-from .orthogonal_eval cimport eval_chebys as _func_eval_chebys
-ctypedef double complex _proto_eval_chebys_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_chebys_double_complex__t *_proto_eval_chebys_double_complex__t_var = &_func_eval_chebys[double_complex]
-
-from .orthogonal_eval cimport eval_chebys as _func_eval_chebys
-ctypedef double _proto_eval_chebys_double__t(double, double) noexcept nogil
-cdef _proto_eval_chebys_double__t *_proto_eval_chebys_double__t_var = &_func_eval_chebys[double]
-
-from .orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
-ctypedef double _proto_eval_chebys_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_chebys_l_t *_proto_eval_chebys_l_t_var = &_func_eval_chebys_l
-
-from .orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
-ctypedef double complex _proto_eval_chebyt_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_chebyt_double_complex__t *_proto_eval_chebyt_double_complex__t_var = &_func_eval_chebyt[double_complex]
-
-from .orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
-ctypedef double _proto_eval_chebyt_double__t(double, double) noexcept nogil
-cdef _proto_eval_chebyt_double__t *_proto_eval_chebyt_double__t_var = &_func_eval_chebyt[double]
-
-from .orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
-ctypedef double _proto_eval_chebyt_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_chebyt_l_t *_proto_eval_chebyt_l_t_var = &_func_eval_chebyt_l
-
-from .orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
-ctypedef double complex _proto_eval_chebyu_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_chebyu_double_complex__t *_proto_eval_chebyu_double_complex__t_var = &_func_eval_chebyu[double_complex]
-
-from .orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
-ctypedef double _proto_eval_chebyu_double__t(double, double) noexcept nogil
-cdef _proto_eval_chebyu_double__t *_proto_eval_chebyu_double__t_var = &_func_eval_chebyu[double]
-
-from .orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
-ctypedef double _proto_eval_chebyu_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
-
-from .orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
-ctypedef double complex _proto_eval_gegenbauer_double_complex__t(double, double, double complex) noexcept nogil
-cdef _proto_eval_gegenbauer_double_complex__t *_proto_eval_gegenbauer_double_complex__t_var = &_func_eval_gegenbauer[double_complex]
-
-from .orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
-ctypedef double _proto_eval_gegenbauer_double__t(double, double, double) noexcept nogil
-cdef _proto_eval_gegenbauer_double__t *_proto_eval_gegenbauer_double__t_var = &_func_eval_gegenbauer[double]
-
-from .orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
-ctypedef double _proto_eval_gegenbauer_l_t(Py_ssize_t, double, double) noexcept nogil
-cdef _proto_eval_gegenbauer_l_t *_proto_eval_gegenbauer_l_t_var = &_func_eval_gegenbauer_l
-
-from .orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
-ctypedef double complex _proto_eval_genlaguerre_double_complex__t(double, double, double complex) noexcept nogil
-cdef _proto_eval_genlaguerre_double_complex__t *_proto_eval_genlaguerre_double_complex__t_var = &_func_eval_genlaguerre[double_complex]
-
-from .orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
-ctypedef double _proto_eval_genlaguerre_double__t(double, double, double) noexcept nogil
-cdef _proto_eval_genlaguerre_double__t *_proto_eval_genlaguerre_double__t_var = &_func_eval_genlaguerre[double]
-
-from .orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
-ctypedef double _proto_eval_genlaguerre_l_t(Py_ssize_t, double, double) noexcept nogil
-cdef _proto_eval_genlaguerre_l_t *_proto_eval_genlaguerre_l_t_var = &_func_eval_genlaguerre_l
-
-from .orthogonal_eval cimport eval_hermite as _func_eval_hermite
-ctypedef double _proto_eval_hermite_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_hermite_t *_proto_eval_hermite_t_var = &_func_eval_hermite
-
-from .orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
-ctypedef double _proto_eval_hermitenorm_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
-
-from .orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
-ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_laguerre_double_complex__t *_proto_eval_laguerre_double_complex__t_var = &_func_eval_laguerre[double_complex]
-
-from .orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
-ctypedef double _proto_eval_laguerre_double__t(double, double) noexcept nogil
-cdef _proto_eval_laguerre_double__t *_proto_eval_laguerre_double__t_var = &_func_eval_laguerre[double]
-
-from .orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
-ctypedef double _proto_eval_laguerre_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_laguerre_l_t *_proto_eval_laguerre_l_t_var = &_func_eval_laguerre_l
-
-from .orthogonal_eval cimport eval_legendre as _func_eval_legendre
-ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_legendre_double_complex__t *_proto_eval_legendre_double_complex__t_var = &_func_eval_legendre[double_complex]
-
-from .orthogonal_eval cimport eval_legendre as _func_eval_legendre
-ctypedef double _proto_eval_legendre_double__t(double, double) noexcept nogil
-cdef _proto_eval_legendre_double__t *_proto_eval_legendre_double__t_var = &_func_eval_legendre[double]
-
-from .orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
-ctypedef double _proto_eval_legendre_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_legendre_l_t *_proto_eval_legendre_l_t_var = &_func_eval_legendre_l
-
-from .orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
-ctypedef double complex _proto_eval_sh_chebyt_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_sh_chebyt_double_complex__t *_proto_eval_sh_chebyt_double_complex__t_var = &_func_eval_sh_chebyt[double_complex]
-
-from .orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
-ctypedef double _proto_eval_sh_chebyt_double__t(double, double) noexcept nogil
-cdef _proto_eval_sh_chebyt_double__t *_proto_eval_sh_chebyt_double__t_var = &_func_eval_sh_chebyt[double]
-
-from .orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
-ctypedef double _proto_eval_sh_chebyt_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_sh_chebyt_l_t *_proto_eval_sh_chebyt_l_t_var = &_func_eval_sh_chebyt_l
-
-from .orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
-ctypedef double complex _proto_eval_sh_chebyu_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_sh_chebyu_double_complex__t *_proto_eval_sh_chebyu_double_complex__t_var = &_func_eval_sh_chebyu[double_complex]
-
-from .orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
-ctypedef double _proto_eval_sh_chebyu_double__t(double, double) noexcept nogil
-cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_func_eval_sh_chebyu[double]
-
-from .orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
-ctypedef double _proto_eval_sh_chebyu_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-
-from .orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
-ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) noexcept nogil
-cdef _proto_eval_sh_legendre_double_complex__t *_proto_eval_sh_legendre_double_complex__t_var = &_func_eval_sh_legendre[double_complex]
-
-from .orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
-ctypedef double _proto_eval_sh_legendre_double__t(double, double) noexcept nogil
-cdef _proto_eval_sh_legendre_double__t *_proto_eval_sh_legendre_double__t_var = &_func_eval_sh_legendre[double]
-
-from .orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
-ctypedef double _proto_eval_sh_legendre_l_t(Py_ssize_t, double) noexcept nogil
-cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 
 from ._legacy cimport expn_unsafe as _func_expn_unsafe
 ctypedef double _proto_expn_unsafe_t(double, double) noexcept nogil
@@ -2080,76 +1975,88 @@ cpdef df_number_t erfinv(df_number_t x0) noexcept nogil:
 cpdef Dd_number_t eval_chebyc(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyc"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_chebyc[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_chebyc(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_chebyc[double](x0, x1)
+        return xsf_eval_chebyc(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_chebyc_l(x0, x1)
+        return xsf_eval_chebyc_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_chebyc_l(x0, x1)
+        return xsf_eval_chebyc_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_chebys(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebys"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_chebys[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_chebys(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_chebys[double](x0, x1)
+        return xsf_eval_chebys(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_chebys_l(x0, x1)
+        return xsf_eval_chebys_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_chebys_l(x0, x1)
+        return xsf_eval_chebys_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyt"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_chebyt[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_chebyt(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_chebyt[double](x0, x1)
+        return xsf_eval_chebyt(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_chebyt_l(x0, x1)
+        return xsf_eval_chebyt_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_chebyt_l(x0, x1)
+        return xsf_eval_chebyt_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_chebyu"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_chebyu[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_chebyu(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_chebyu[double](x0, x1)
+        return xsf_eval_chebyu(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_chebyu_l(x0, x1)
+        return xsf_eval_chebyu_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_chebyu_l(x0, x1)
+        return xsf_eval_chebyu_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_gegenbauer(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_gegenbauer"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_gegenbauer[double_complex](x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_gegenbauer(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_gegenbauer[double](x0, x1, x2)
+        return xsf_eval_gegenbauer(x0, x1, x2)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_gegenbauer_l(x0, x1, x2)
+        return xsf_eval_gegenbauer_l(<npy_intp>x0, x1, x2)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_gegenbauer_l(x0, x1, x2)
+        return xsf_eval_gegenbauer_l(<npy_intp>x0, x1, x2)
 
 cpdef Dd_number_t eval_genlaguerre(dlp_number_t x0, double x1, Dd_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.eval_genlaguerre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_genlaguerre[double_complex](x0, x1, x2)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_genlaguerre(x0, x1, _complexstuff.npy_cdouble_from_double_complex(x2))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_genlaguerre[double](x0, x1, x2)
+        return xsf_eval_genlaguerre(x0, x1, x2)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_genlaguerre_l(x0, x1, x2)
+        return xsf_eval_genlaguerre_l(<npy_intp>x0, x1, x2)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_genlaguerre_l(x0, x1, x2)
+        return xsf_eval_genlaguerre_l(<npy_intp>x0, x1, x2)
 
 cpdef double eval_hermite(Py_ssize_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.eval_hermite"""
-    return _func_eval_hermite(x0, x1)
+    return xsf_eval_hermite(<npy_intp>x0, x1)
 
 cpdef double eval_hermitenorm(Py_ssize_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.eval_hermitenorm"""
-    return _func_eval_hermitenorm(x0, x1)
+    return xsf_eval_hermitenorm(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_jacobi"""
@@ -2167,46 +2074,54 @@ cpdef Dd_number_t eval_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t
 cpdef Dd_number_t eval_laguerre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_laguerre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_laguerre[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_laguerre(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_laguerre[double](x0, x1)
+        return xsf_eval_laguerre(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_laguerre_l(x0, x1)
+        return xsf_eval_laguerre_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_laguerre_l(x0, x1)
+        return xsf_eval_laguerre_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_legendre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_legendre[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_legendre(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_legendre[double](x0, x1)
+        return xsf_eval_legendre(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_legendre_l(x0, x1)
+        return xsf_eval_legendre_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_legendre_l(x0, x1)
+        return xsf_eval_legendre_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_sh_chebyt(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_chebyt"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_sh_chebyt[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_sh_chebyt(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_sh_chebyt[double](x0, x1)
+        return xsf_eval_sh_chebyt(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_sh_chebyt_l(x0, x1)
+        return xsf_eval_sh_chebyt_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_sh_chebyt_l(x0, x1)
+        return xsf_eval_sh_chebyt_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_sh_chebyu(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_chebyu"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_sh_chebyu[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_sh_chebyu(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_sh_chebyu[double](x0, x1)
+        return xsf_eval_sh_chebyu(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_sh_chebyu_l(x0, x1)
+        return xsf_eval_sh_chebyu_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_sh_chebyu_l(x0, x1)
+        return xsf_eval_sh_chebyu_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_jacobi"""
@@ -2224,13 +2139,15 @@ cpdef Dd_number_t eval_sh_jacobi(dlp_number_t x0, double x1, double x2, Dd_numbe
 cpdef Dd_number_t eval_sh_legendre(dlp_number_t x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.eval_sh_legendre"""
     if dlp_number_t is double and Dd_number_t is double_complex:
-        return _func_eval_sh_legendre[double_complex](x0, x1)
+        return _complexstuff.double_complex_from_npy_cdouble(
+            xsf_ceval_sh_legendre(x0, _complexstuff.npy_cdouble_from_double_complex(x1))
+        )
     elif dlp_number_t is double and Dd_number_t is double:
-        return _func_eval_sh_legendre[double](x0, x1)
+        return xsf_eval_sh_legendre(x0, x1)
     elif dlp_number_t is long and Dd_number_t is double:
-        return _func_eval_sh_legendre_l(x0, x1)
+        return xsf_eval_sh_legendre_l(<npy_intp>x0, x1)
     elif dlp_number_t is Py_ssize_t and Dd_number_t is double:
-        return _func_eval_sh_legendre_l(x0, x1)
+        return xsf_eval_sh_legendre_l(<npy_intp>x0, x1)
 
 cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.exp1"""

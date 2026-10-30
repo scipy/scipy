@@ -10,8 +10,6 @@ from scipy._lib._array_api import (
     make_xp_test_case,
 )
 
-from scipy.conftest import skip_xp_invalid_arg
-
 from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
@@ -20,7 +18,6 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
-from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
 
 
@@ -1105,25 +1102,6 @@ class TestInterpN:
         v1 = interpn((x, y), values, [0.4, 0.7], method=method)
         v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
         xp_assert_close(v1, v2, check_dtype=False)
-
-    @skip_xp_invalid_arg
-    @parametrize_rgi_interp_methods
-    def test_matrix_input(self, method):
-        """np.matrix inputs are allowed for backwards compatibility"""
-        x = np.linspace(0, 2, 6)
-        y = np.linspace(0, 1, 7)
-
-        values = matrix(np.random.rand(6, 7))
-
-        sample = np.random.rand(3, 7, 2)
-
-        v1 = interpn((x, y), values, sample, method=method)
-        v2 = interpn((x, y), np.asarray(values), sample, method=method)
-        if method == "quintic":
-            # https://github.com/scipy/scipy/issues/20472
-            xp_assert_close(v1, v2, atol=5e-5, rtol=2e-6)
-        else:
-            xp_assert_close(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.

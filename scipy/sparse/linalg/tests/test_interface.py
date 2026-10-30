@@ -14,7 +14,7 @@ from numpy.testing import assert_, assert_equal
 
 import numpy as np
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
+    SCIPY_DEVICE, is_torch, xp_assert_close, is_lazy_array,
     xp_assert_equal, xp_ravel, is_numpy, make_xp_pytest_marks, is_jax_array,
 )
 from scipy._external import array_api_extra as xpx
@@ -24,6 +24,7 @@ import scipy.sparse.linalg._interface as interface
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._testutils import mutually_broadcastable_shapes
 
 pytestmark = make_xp_pytest_marks(
     (LinearOperator, "__init__"),
@@ -35,29 +36,6 @@ pytestmark = make_xp_pytest_marks(
     (LinearOperator, "rmatmat"),
     aslinearoperator
 )
-
-def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
-    rng = np.random.default_rng(rng)
-    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like
-    max = np.broadcast_to(max, ndim)
-    batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
-    shapes = np.repeat([batch_shape], nshapes, axis=0)
-
-    # make some elements of some shapes 1 (while preserving overall batch shape)
-    for column in shapes.T:
-        column[rng.integers(1, nshapes):] = 1
-    # permute elements between shapes (while preserving overall batch shape)
-    shapes = list(rng.permuted(shapes, axis=0))
-    # potentially trim preceding 1s from a shape
-    for i in range(len(shapes)):
-        shape = shapes[i]
-        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
-        if rng.random() < 0.25:
-            shapes[i] = shape[rng.integers(j+1):]
-            break
-
-    assert np.broadcast_shapes(*shapes) == batch_shape
-    return [tuple(int(el) for el in shape) for shape in shapes]
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "
@@ -101,14 +79,6 @@ class TestLinearOperator:
             xp_assert_equal(A @ _asarray([[1],[2],[3]]), _asarray([[14],[32]]))
             xp_assert_equal(A.dot(_asarray([1,2,3])), _asarray([14,32]))
             xp_assert_equal(A.dot(_asarray([[1],[2],[3]])), _asarray([[14],[32]]))
-
-            if not SCIPY_ARRAY_API:
-                xp_assert_equal(
-                    A.matvec(matrix([[1],[2],[3]])),
-                    _asarray([[14],[32]]),
-                )
-                xp_assert_equal(A @ matrix([[1],[2],[3]]), _asarray([[14],[32]]))
-                xp_assert_equal(A.dot(matrix([[1],[2],[3]])), _asarray([[14],[32]]))
 
             xp_assert_equal((2*A) @ _asarray([1,1,1]), _asarray([12,30]))
             xp_assert_equal((2 * A).rmatvec(_asarray([1, 1])), _asarray([10, 14, 18]))
@@ -175,11 +145,6 @@ class TestLinearOperator:
             assert isinstance(A @ _asarray([[1],[2],[3]]), array_object)
             assert isinstance(A.dot(_asarray([1,2,3])), array_object)
             assert isinstance(A.dot(_asarray([[1],[2],[3]])), array_object)
-
-            if not SCIPY_ARRAY_API:
-                assert isinstance(A.matvec(matrix([[1],[2],[3]])), array_object)
-                assert isinstance(A @ matrix([[1],[2],[3]]), array_object)
-                assert isinstance(A.dot(matrix([[1],[2],[3]])), array_object)
 
             assert isinstance(2*A, interface._ScaledLinearOperator)
             assert isinstance(2j*A, interface._ScaledLinearOperator)
@@ -408,8 +373,8 @@ class TestDotTests:
         dtype = np.dtype(data_dtype)
         *batch_shape, M, N = op.shape
 
-        u_broadcast, v_broadcast = generate_broadcastable_shapes(
-            2, ndim=3, min=0, max=5, rng=63
+        u_broadcast, v_broadcast = mutually_broadcastable_shapes(
+            2, min_dims=3, max_dims=3, min_side=0, max_side=5, rng=63
         )
 
         for u_shape, v_shape in (
@@ -987,6 +952,29 @@ class TestPickle:
         assert op.dtype == np.dtype(np.float64)
         assert not hasattr(op, "_diagonal")
 
+    def test_setstate_scipy_1_17_pickle(self):
+        # scipy 1.17 pickled a flat `__dict__` with no `_xp` or `ndim`, and
+        # `_AdjointMatrixOperator.dtype` was a property.
+        A = np.arange(9.0).reshape(3, 3)
+        x = np.arange(3.0)
+
+        op = interface.MatrixLinearOperator.__new__(interface.MatrixLinearOperator)
+        op.__setstate__({
+            "A": A, "_MatrixLinearOperator__adj": None, "args": (A,),
+            "dtype": A.dtype, "shape": (3, 3),
+        })
+        assert op.ndim == 2
+        xp_assert_equal(op.matvec(x), A @ x)
+        xp_assert_equal(op.rmatvec(x), A.T @ x)
+
+        cls = interface._AdjointMatrixOperator
+        op = cls.__new__(cls)
+        op.__setstate__({"A": A.T.conj(), "args": (A,), "shape": (3, 3)})
+        assert op.dtype == A.dtype
+        assert op.ndim == 2
+        xp_assert_equal(op.matvec(x), A.T @ x)
+        xp_assert_equal(op.H.matvec(x), A @ x)
+
 
 @pytest.mark.xfail_xp_backends('dask.array', reason=(
     "dask does not support broadcast_shapes(). "
@@ -997,7 +985,7 @@ def test_inheritance(xp):
         pass
 
     with warns(RuntimeWarning, match="should implement at least"):
-        assert_raises(TypeError, Empty)
+        Empty()
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
@@ -1009,6 +997,39 @@ def test_inheritance(xp):
     id3 = Identity(3)
     xp_assert_equal(id3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
     assert_raises(NotImplementedError, id3.rmatvec, xp.asarray([4, 5, 6]))
+
+    class IdentityWithProperties(interface.LinearOperator):
+        def __init__(self, n):
+            super().__init__(xp=xp)
+            self.n = n
+
+        @property
+        def dtype(self):
+            return np.dtype(float)
+
+        @property
+        def shape(self):
+            return (self.n, self.n)
+
+        def _matvec(self, x):
+            return x
+
+    id_wp3 = IdentityWithProperties(3)
+    xp_assert_equal(id_wp3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
+    assert_raises(NotImplementedError, id_wp3.rmatvec, xp.asarray([4, 5, 6]))
+
+    class IdentityManualAttributes(interface.LinearOperator):
+        def __init__(self, n):
+            super().__init__(xp=xp)
+            self.dtype = np.dtype(float)
+            self.shape = (n, n)
+
+        def _matvec(self, x):
+            return x
+
+    id_ma3 = IdentityManualAttributes(3)
+    xp_assert_equal(id_ma3.matvec(xp.asarray([1, 2, 3])), xp.asarray([1, 2, 3]))
+    assert_raises(NotImplementedError, id_ma3.rmatvec, xp.asarray([4, 5, 6]))
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):

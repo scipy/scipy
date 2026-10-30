@@ -364,7 +364,11 @@ class MatFile5Reader(MatFileReader):
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
 
-            shape = self._matrix_reader.shape_from_header(hdr)
+            if hdr.mclass == mxOPAQUE_CLASS:
+                # MATLAB objects (e.g. string, table) store no dims in the header
+                shape = ()
+            else:
+                shape = self._matrix_reader.shape_from_header(hdr)
             if hdr.is_logical:
                 info = 'logical'
             else:
@@ -516,10 +520,12 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
-    mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX
 
     def __init__(self, file_writer):
+        # Per instance, not per class: update_matrix_tag writes the byte count
+        # into it, so a shared array breaks concurrent savemat calls (gh-7260)
+        self.mat_tag = np.zeros((), NDT_TAG_FULL)
+        self.mat_tag['mdtype'] = miMATRIX
         self.file_stream = file_writer.file_stream
         self.unicode_strings = file_writer.unicode_strings
         self.long_field_names = file_writer.long_field_names
