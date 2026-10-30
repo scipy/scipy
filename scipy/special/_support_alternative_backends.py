@@ -2748,20 +2748,21 @@ _FUNC_INFO = {info.name: info for info in _special_funcs}
 # Let __getattr__ resolve polygamma to its backend-aware wrapper.
 del polygamma
 
-__all__ = [name for name, info in _FUNC_INFO.items() if info.public] + ["digamma"]
+_aliases = {"digamma": "psi", "jn": "jv"}
 
+__all__ = [name for name, info in _FUNC_INFO.items() if info.public] + list(_aliases)
 
 @functools.cache
 def get_function(name):
-    if name == "digamma":
-        return get_function("psi")
+    if name in _aliases:
+        return get_function(_aliases[name])
 
     info = _FUNC_INFO[name]
     return info.wrapper
 
 
 def __getattr__(name):
-    if name not in _FUNC_INFO and name != "digamma":
+    if name not in _FUNC_INFO and name not in _aliases:
         raise AttributeError(
             f"module {__name__!r} has no attribute {name!r}"
         )

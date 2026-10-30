@@ -786,17 +786,10 @@ Convenience functions
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
-from . import _ufuncs
-from ._ufuncs import *
+from ._ufuncs import geterr, seterr, errstate
 
 from . import _basic
 from ._basic import *
-
-# Replace some function definitions from _ufuncs and _basic
-# to add Array API support
-from ._support_alternative_backends import *
-
-from ._logsumexp import logsumexp, softmax, log_softmax
 
 from . import _multiufuncs
 from ._multiufuncs import *
@@ -804,53 +797,52 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
-from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
     spherical_in,
-    spherical_kn
+    spherical_kn,
 )
 
-# These functions are generated dynamically and inserted into globals
-# through _support_alternative_backends. This confuses the type checker though
-# so import them when type checking. Importing them in the regular code path
-# breaks test_support_alternative_backends.py due to the vagaries of how
-# those tests are set up. TODO: Do the setup of delegation in scipy.special
-# in a more principled way.
+from ._logsumexp import logsumexp, softmax, log_softmax
+
+
+from . import _support_alternative_backends
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ._mathieu import mathieu_cem, mathieu_sem
-    from ._spfun_stats import poisson_binom_cdf
+    from ._support_alternative_backends import *
 
-# We replace some function definitions from _ufuncs with those from
-# _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
-# so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
-__all__ += [
-    'SpecialFunctionWarning',
-    'SpecialFunctionError',
-    'logsumexp',
-    'softmax',
-    'log_softmax',
-    'multigammaln',  # pyrefly:ignore[bad-dunder-all]
-    'ellip_harm',
-    'ellip_harm_2',
-    'ellip_normal',
-    'lambertw',
-    'spherical_jn',
-    'spherical_yn',
-    'spherical_in',
-    'spherical_kn',
-    'mathieu_cem',
-    'mathieu_sem',
-    'poisson_binom_cdf',
-]
+__all__ = (
+    _support_alternative_backends.__all__
+    + _basic.__all__
+    + _orthogonal.__all__
+    + _multiufuncs.__all__
+    + [
+        'SpecialFunctionWarning',
+        'SpecialFunctionError',
+        "geterr",
+        "seterr",
+        "errstate",
+        'logsumexp',
+        'softmax',
+        'log_softmax',
+        'spherical_jn',
+        'spherical_yn',
+        'spherical_in',
+        'spherical_kn',
+    ]
+)
+
+
+def __getattr__(name):
+    if name in _support_alternative_backends.__all__:
+        return _support_alternative_backends.get_function(name)
+    raise AttributeError(
+        f"module {__name__!r} has no attribute {name!r}"
+    )
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

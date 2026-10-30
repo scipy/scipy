@@ -10,12 +10,14 @@ from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
-from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, gamma, rgamma,
-                      psi, hankel1, hankel2, poch, binom,
-                      _stirling2_inexact)
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_device, xp_result_device
+)
+
+from ._ufuncs import _stirling2_inexact
 from ._support_alternative_backends import (
+    mathieu_a, mathieu_b, iv, gamma, rgamma,
+    hankel1, hankel2, poch, binom,
     _zeta, _riemann_zeta, jv, yv, kv, eval_genlaguerre,
 )
 
@@ -70,7 +72,6 @@ __all__ = [
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
-    'sinc',
     'softplus',
     'stirling2',
     'y0_zeros',
@@ -1079,6 +1080,7 @@ def kvp(v, z, n=1):
         return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
+@xp_capabilities(cpu_only=True)
 def ivp(v, z, n=1):
     """Compute derivatives of modified Bessel functions of the first kind.
 
@@ -1160,6 +1162,7 @@ def ivp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, iv, 1)
 
 
+@xp_capabilities(cpu_only=True)
 def h1vp(v, z, n=1):
     """Compute derivatives of Hankel function H1v(z) with respect to `z`.
 
@@ -1229,6 +1232,7 @@ def h1vp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, hankel1, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def h2vp(v, z, n=1):
     """Compute derivatives of Hankel function H2v(z) with respect to `z`.
 
@@ -1477,6 +1481,7 @@ def riccati_yn(n, x):
     return yn[:(n+1)], ynp[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True)
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
@@ -1517,6 +1522,7 @@ def erf_zeros(nt):
     return _specfun.cerzo(nt)
 
 
+@xp_capabilities(out_of_scope=True)
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of cosine Fresnel integral C(z).
 
@@ -1542,6 +1548,7 @@ def fresnelc_zeros(nt):
     return _specfun.fcszo(1, nt)
 
 
+@xp_capabilities(out_of_scope=True)
 def fresnels_zeros(nt):
     """Compute nt complex zeros of sine Fresnel integral S(z).
 
@@ -1567,6 +1574,7 @@ def fresnels_zeros(nt):
     return _specfun.fcszo(2, nt)
 
 
+@xp_capabilities(out_of_scope=True)
 def fresnel_zeros(nt):
     """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
 
@@ -1887,6 +1895,7 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
+@xp_capabilities(out_of_scope=True, reason="slated for deprecation.")
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
 
@@ -2197,6 +2206,7 @@ def euler(n):
     return _specfun.eulerb(n1)[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="slated for deprecation.")
 def lqn(n, z):
     """Legendre functions of the second kind.
 
