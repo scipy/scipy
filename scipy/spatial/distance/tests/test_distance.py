@@ -60,7 +60,6 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
-from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (
     make_xp_test_case,
     is_lazy_array,
@@ -1303,17 +1302,13 @@ class TestPdist:
         right_y = np.asarray([0.01492537])
         xp_assert_close(pdist_y, right_y, atol=eps)
 
-    @skip_xp_invalid_arg
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
-        class myclass:
-            pass
-
         def _my_metric(x, y):
-            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+            if not isinstance(x[0], np.float32) or not isinstance(y[0], np.float32):
                 raise ValueError("Type has been changed")
             return 1.123
-        data = np.array([[myclass()], [myclass()]], dtype=object)
+        data = np.zeros((2, 2), dtype=np.float32)
         pdist_y = pdist(data, metric=_my_metric)
         right_y = np.asarray([1.123])
         xp_assert_equal(pdist_y, right_y)

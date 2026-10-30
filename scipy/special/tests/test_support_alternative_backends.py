@@ -359,7 +359,7 @@ def test_repr(func):
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
     """xp_capabilities updates the docstring in place.
-    Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
+    Make sure it does so exactly once.
     """
     match = "has support for Python Array API"
     assert func.__doc__.count(match) == 1
@@ -368,7 +368,7 @@ def test_doc(func):
 @pytest.mark.parametrize('nfo', _special_funcs)
 def test_ufunc_kwargs(nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
-    of ufuncs still work when SCIPY_ARRAY_API is set.
+    of ufuncs still work even though ufuncs have been replaced.
     """
     int_only = nfo.int_only
     if not nfo.is_ufunc:

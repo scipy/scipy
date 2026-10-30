@@ -18,7 +18,7 @@ except ImportError:
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
+    SCIPY_DEVICE, array_namespace, default_xp,
     is_cupy, is_dask, is_jax, is_torch, xp_result_device)
 from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
@@ -39,6 +39,7 @@ except Exception:
 # These Cython examples are built and tested separately in CI.
 collect_ignore = ["linalg/tests/_cython_examples"]
 
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
 
 def pytest_configure(config):
     """
@@ -507,8 +508,8 @@ def xp(request):
     You can select all and only the tests that use the `xp` fixture by
     passing `-m array_api_backends` to pytest.
 
-    You can select where individual tests run through the `@skip_xp_backends`,
-    `@xfail_xp_backends`, and `@skip_xp_invalid_arg` pytest markers.
+    You can select where individual tests run through the `@skip_xp_backends` and
+    `@xfail_xp_backends` pytest markers.
 
     Please read: https://docs.scipy.org/doc/scipy/dev/api-dev/array_api.html#adding-tests
     """
@@ -556,11 +557,6 @@ def xp(request):
                 yield xp
     else:
         yield xp
-
-
-skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
-    reason = ('Test involves masked arrays, object arrays, or other types '
-              'that are not valid input when `SCIPY_ARRAY_API` is used.'))
 
 
 def _backends_kwargs_from_request(request, skip_or_xfail):

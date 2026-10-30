@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.linalg import bandwidth, issymmetric, ishermitian
-from scipy.conftest import skip_xp_invalid_arg
 import pytest
 from pytest import raises
 from numpy.testing import assert_equal
@@ -14,7 +13,6 @@ BANDWIDTH_DTYPES = (
 )
 
 
-@skip_xp_invalid_arg
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bandwidth_dtypes():
     n = 5
@@ -65,7 +63,6 @@ def test_bandwidth_square_inputs(T):
     assert_equal(hi, [0, 2, 0, 2, 2])
 
 
-@skip_xp_invalid_arg
 @pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
 def test_bandwidth_rect_inputs(T):
     n, m = 10, 20
@@ -89,13 +86,12 @@ def test_bandwidth_rect_inputs(T):
     assert_equal(hi, [1, 1])
 
 
-@skip_xp_invalid_arg
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_issymetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:
         A = np.zeros([n, n], dtype=t)
-        if t in 'eUVOMm':
+        if t in 'eUVOMmS':
             raises(TypeError, issymmetric, A)
             raises(TypeError, ishermitian, A)
         elif t == 'G':  # No-op test. On win these pass on others fail.

@@ -628,7 +628,7 @@ def _robust_slopes(y, *, x, alpha=None, method, pfun):
         raise ValueError(f"method must be either '{other_method}' or 'separate'. "
                          f"'{method}' is invalid.")
 
-    xp = array_namespace(y, x)
+    xp = array_namespace(y, x, masked_ok=True)
     y, x = xp_promote(y, x, force_floating=True, xp=xp)
     x = (xp.arange(y.shape[-1], dtype=y.dtype, device=xp_device(y))
          if x is None else x)

@@ -1,10 +1,11 @@
+import os
 import re
 
 import numpy as np
 import pytest
 
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_device, xp_promote, xp_result_device,
     xp_result_type, is_torch, xp_copy_to_numpy
 )
@@ -21,8 +22,6 @@ lazy_xp_function(xp_copy)
 
 
 @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
-@pytest.mark.skipif(not SCIPY_ARRAY_API,
-        reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
     def test_array_namespace(self):
@@ -211,6 +210,8 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="array-ness does not match:*"):
                 xp_assert_equal(x, y, **options)
 
+    @pytest.mark.skipif(int(os.environ.get("PYTHONOPTIMIZE", 0)) >= 1,
+                        reason="Removes `assert`s; see data-apis/array-api-extra#1068")
     @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar(self, xp):
         # identity always passes
@@ -242,6 +243,8 @@ class TestArrayAPI:
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
+    @pytest.mark.skipif(int(os.environ.get("PYTHONOPTIMIZE", 0)) >= 1,
+                        reason="Removes `assert`s; see data-apis/array-api-extra#1068")
     @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar_no_0d(self, xp):
         # identity passes, if first argument is not 0d (or check_0d=True)
@@ -260,7 +263,7 @@ class TestArrayAPI:
 
         # Check default convention: 0d-arrays are NOT distinguished from scalars
         xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.))
-        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42))
+        xp_assert_equal_no_0d(xp.int64(42), xp.asarray(42, dtype=xp.int64))
 
         # opt in to 0d-check remains possible
         message = "array-ness does not match:*"
@@ -269,9 +272,11 @@ class TestArrayAPI:
         with pytest.raises(AssertionError, match=message):
             xp_assert_equal_no_0d(xp.float64(0), xp.asarray(0.), check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.asarray(42), xp.int64(0), check_0d=True)
+            xp_assert_equal_no_0d(xp.asarray(42, dtype=xp.int64), xp.int64(0),
+                                  check_0d=True)
         with pytest.raises(AssertionError, match=message):
-            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42), check_0d=True)
+            xp_assert_equal_no_0d(xp.int64(0), xp.asarray(42, dtype=xp.int64),
+                                  check_0d=True)
 
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))

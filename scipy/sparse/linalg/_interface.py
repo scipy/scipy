@@ -51,11 +51,9 @@ import numpy as np
 from scipy import sparse
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API,
     _asarray,
     array_namespace,
     is_array_api_obj,
-    is_pydata_sparse_array,
     np_compat,
     xp_capabilities,
     xp_copy,
@@ -1260,10 +1258,7 @@ def aslinearoperator(A):
     # https://github.com/data-apis/array-api-compat/issues/388
     if is_array_api_obj(A) and not isinstance(A, np.matrix):
         xp = array_namespace(A)
-        if is_pydata_sparse_array(A) and not SCIPY_ARRAY_API:
-            pass  # skip `atleast_nd`, since `xp=np` does not work with `sparse`
-        else:
-            A = xpx.atleast_nd(A, ndim=2, xp=xp)
+        A = xpx.atleast_nd(A, ndim=2, xp=xp)
         return MatrixLinearOperator(A, xp=xp)
 
     if issparse(A):
