@@ -545,6 +545,10 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
+    # Do arithmetic in the requested output dtype so degree accumulation and
+    # diagonal assignment cannot overflow the input dtype before the final cast.
+    m = m.astype(dtype, copy=False)
+
     if symmetrized:
         m += m.T.conj()
     np.fill_diagonal(m, 0)

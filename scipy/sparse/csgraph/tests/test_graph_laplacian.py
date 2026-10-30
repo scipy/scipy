@@ -91,6 +91,22 @@ def test_symmetric_graph_laplacian():
                 _check_symmetric_graph_laplacian(mat, normed, copy)
 
 
+def test_laplacian_dense_wider_dtype_avoids_degree_overflow():
+    graph = np.array([[0, 100, 100], [100, 0, 0], [100, 0, 0]], dtype=np.int8)
+
+    dense_laplacian, degree = csgraph.laplacian(
+        graph, dtype=np.int64, return_diag=True
+    )
+    sparse_laplacian = csgraph.laplacian(
+        sparse.csr_array(graph), dtype=np.int64
+    ).toarray()
+
+    assert dense_laplacian[0, 0] == 200
+    assert degree[0] == 200
+    assert_allclose(dense_laplacian.sum(axis=1), np.zeros(3))
+    assert_allclose(dense_laplacian, sparse_laplacian)
+
+
 def _assert_allclose_sparse(a, b, **kwargs):
     # helper function that can deal with sparse matrices
     if sparse.issparse(a):
