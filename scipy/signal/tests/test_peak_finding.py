@@ -126,6 +126,30 @@ class TestLocalMaxima1d:
             xp_assert_equal(array, np.array([], dtype=np.intp))
             assert array.base is None
 
+    def test_wrap_edges(self):
+        """Test with right and left edges equal."""
+        x = np.array([1., 0, 1])
+        midpoints, left_edges, right_edges = _local_maxima_1d(x, wrap=True)
+        xp_assert_equal(midpoints, np.array([2]), check_dtype=False)
+        xp_assert_equal(left_edges, np.array([2]), check_dtype=False)
+        xp_assert_equal(right_edges, np.array([0]), check_dtype=False)
+
+    def test_wrap_plateu(self):
+        """Test with a plateu that extends over end of an array."""
+        x = np.array([1., 1, 0, 0, 1, 1])
+        midpoints, left_edges, right_edges = _local_maxima_1d(x, wrap=True)
+        xp_assert_equal(midpoints, np.array([5]), check_dtype=False)
+        xp_assert_equal(left_edges, np.array([4]), check_dtype=False)
+        xp_assert_equal(right_edges, np.array([1]), check_dtype=False)
+
+    def test_wrap_nested(self):
+        """Test with a signal with outer and inner maxima."""
+        x = np.array([1., 0, 2, 0, 1])
+        midpoints, left_edges, right_edges = _local_maxima_1d(x, wrap=True)
+        xp_assert_equal(midpoints, np.array([2,4]), check_dtype=False)
+        xp_assert_equal(left_edges, np.array([2,4]), check_dtype=False)
+        xp_assert_equal(right_edges, np.array([2,0]), check_dtype=False)
+
     def test_exceptions(self):
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
