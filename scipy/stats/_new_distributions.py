@@ -804,5 +804,5 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
 # summary portion of the class documentation. All other documentation, including
 # examples, is generated automatically.
 _module = sys.modules[__name__].__dict__
-# for dist_name in __all__:
-#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])

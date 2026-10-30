@@ -2615,11 +2615,11 @@ class TestFullCoverage:
 #     def test_executable(self, dist):
 #         # Test that reprs actually evaluate to proper distribution
 #         # provided relevant imports are made.
-#         from numpy import array  # noqa: F401
-#         from numpy import float32  # noqa: F401
-#         from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
-#         from scipy.stats import Mixture, Normal # noqa: F401
-#         from scipy.stats._new_distributions import Uniform # noqa: F401
+#         from numpy import array
+#         from numpy import float32
+#         from scipy.stats import abs, exp, log, order_statistic, truncate
+#         from scipy.stats import Mixture, Normal
+#         from scipy.stats._new_distributions import Uniform
 #         new_dist = eval(repr(dist))
 #         # A basic check that the distributions are the same
 #         sample1 = dist.sample(shape=10, rng=1234)

@@ -1614,12 +1614,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
             if xp is None and getattr(self, "_xp", None) is None:
                 self._xp = array_namespace(*parameters.values())
             else:
-                xp = xp or self._xp
-                # get array_api_compat version of namespace
-                self._xp = array_namespace(xp.asarray(0))  # skip device check
+                self._xp = xp or self._xp
         except TypeError:
-            # self._xp = np  # need array API version of namespace
-            self._xp = array_namespace(np.asarray(0))
+            self._xp = np
 
         self.tol = tol
         self._dtype = dtype
@@ -2136,7 +2133,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         a, b = self._support(**params) if bounds is None else bounds
         x = xp.real(x)  # logentropy makes dtype complex
-        step = xp.minimum(xp.asarray(0.5, dtype=self._dtype, device=self._device), (b - a)/2)
+        half = xp.asarray(0.5, dtype=self._dtype, device=self._device)
+        step = xp.minimum(half, (b - a)/2)
         direction = -(xp.sign(x - a - step) + xp.sign(x - b + step))
         args = [] if args is None else args
         params = {} if params is None else params
@@ -2149,7 +2147,13 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _quadrature(self, integrand, limits=None, args=(), params=None, log=False):
         # Performs numerical integration/summation between limits or over support.
         xp = self._xp
-        a, b = self._support(**params) if limits is None else limits
+        if limits is None:
+            a, b = self._support(**params)
+        else:
+            # ideally, a and b could be left as floats, but `_tanhsinh` doesn't
+            # know to get device from args/kwargs only
+            a = xp.asarray(limits[0], dtype=self._dtype, device=self._device)
+            b = xp.asarray(limits[1], dtype=self._dtype, device=self._device)
         rtol = None if _isnull(self.tol) else self.tol
 
         # cupy.broadcast_arrays accepts non-arrays but doesn't broadcast them.
