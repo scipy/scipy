@@ -910,11 +910,12 @@ def seuclidean(u, v, V):
     return euclidean(u, v, w=1/V)
 
 
+@xp_capabilities()
 def cityblock(u, v, w=None):
     """
     Compute the City Block (Manhattan) distance.
 
-    Computes the Manhattan distance between two 1-D arrays `u` and `v`,
+    Computes the Manhattan distance between two arrays `u` and `v`,
     which is defined as
 
     .. math::
@@ -923,17 +924,17 @@ def cityblock(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    cityblock : double
+    cityblock : float or array
         The City Block (Manhattan) distance between vectors `u` and `v`.
 
     Examples
@@ -947,13 +948,13 @@ def cityblock(u, v, w=None):
     1
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    l1_diff = abs(u - v)
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
+    l1_diff = xp.abs(u - v)
     if w is not None:
         w = _validate_weights(w)
         l1_diff = w * l1_diff
-    return l1_diff.sum()
+    return xp.sum(l1_diff, axis=-1)
 
 
 def mahalanobis(u, v, VI):

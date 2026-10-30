@@ -51,7 +51,6 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
-# these were missing: chebyshev cityblock
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
@@ -2432,6 +2431,29 @@ class TestJaccard:
         xp_assert_close(np.zeros(10), Y, rtol=eps)
 
 
+@make_xp_test_case(cityblock)
+class TestCityblock:
+    def test_cityblock(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(cityblock(x, y), xp.asarray(3.0))
+
+    def test_cityblock_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(cityblock(x, y), np.asarray(3.0))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(cityblock, x, y)
+        xp_assert_zero_weight(cityblock, x, y)
+        xp_assert_duplication_weight(cityblock, x, y)
+        xp_assert_split_weight(cityblock, x, y)
+        # cityblock is linear in the weights, so not invariant to rescaling
+
+
 class TestChebyshev:
 
     def test_pdist_chebyshev_random(self):
@@ -2507,6 +2529,7 @@ class TestChebyshev:
         make_xp_pytest_param(sqeuclidean, None),
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
+        make_xp_pytest_param(cityblock, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
         (braycurtis, None),
         (yule, None),
