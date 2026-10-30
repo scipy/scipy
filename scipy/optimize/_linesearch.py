@@ -521,6 +521,8 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
+            if denom == 0:
+                return None
             D_00 = dc ** 2
             D_01 = -db ** 2
             D_10 = -dc ** 3
@@ -531,6 +533,8 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             A = (D_00 * v_0 + D_01 * v_1) / denom
             B = (D_10 * v_0 + D_11 * v_1) / denom
             radical = B * B - 3 * A * C
+            if radical < 0:
+                return None
             xmin = a + (-B + math.sqrt(radical)) / (3 * A)
         except (ArithmeticError, ValueError, RuntimeWarning):
             return None
@@ -552,6 +556,8 @@ def _quadmin(a, fa, fpa, b, fb):
             D = fa
             C = fpa
             db = b - a * 1.0
+            if db == 0:
+                return None
             B = (fb - D - C * db) / (db * db)
             xmin = a - C / (2.0 * B)
         except (ArithmeticError, ValueError, RuntimeWarning):
