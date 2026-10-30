@@ -250,6 +250,9 @@ def _binary_erosion(input, structure, iterations, mask, output,
             raise RuntimeError('mask and input must have equal sizes')
     origin = _ni_support._normalize_sequence(origin, num_axes)
     origin = _filters._expand_origin(ndim, axes, origin)
+    for oo, ss in zip(origin, structure.shape):
+        if _filters._invalid_origin(oo, ss):
+            raise ValueError('invalid origin')
     cit = _center_is_true(structure, origin)
     if isinstance(output, np.ndarray):
         if np.iscomplexobj(output):
