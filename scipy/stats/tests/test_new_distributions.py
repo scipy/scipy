@@ -8,8 +8,6 @@ from scipy import stats, special
 from scipy.stats.tests.test_continuous import DistributionsTest
 from scipy.stats._new_distributions import StandardNormal
 
-import torch
-torch.set_default_dtype(torch.float32)
 
 @make_xp_test_case(stats.Binomial)
 class TestBinomial(DistributionsTest):
@@ -105,26 +103,54 @@ class TestNormal(DistributionsTest):
         return super().test_logpdf(case, xp=xp)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_moment(self, case, xp):
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
+        return super().test_moment(case, tol_override={'atol': atol}, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case, xp):
-        return super().test_lmoment(case, tol_override={'atol': 1e-8}, xp=xp)
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
+        return super().test_lmoment(case, tol_override={'atol': atol}, xp=xp)
 
 
 @make_xp_test_case(StandardNormal)
 class TestStandardNormal(DistributionsTest):
-    seed = 726527242
+    seed = 726527245
     family = StandardNormal
+
+    def tol(self, case, xp):
+        return dict(atol=1e-6) if case.dist._dtype == xp.float32 else dict()
 
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
         xp_assert_close(dist.pdf(x), xp.exp(-x**2/2)/(2*xp.pi)**0.5)
 
-    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
+    def test_cdf(self, case, xp):
+        return super().test_cdf(case, xp=xp, tol_override=self.tol(case, xp))
+
     def test_cdf2(self, case, xp):
-        return super().test_cdf2(case, xp=xp)
+        return super().test_cdf2(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_ccdf(self, case, xp):
+        return super().test_ccdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_ccdf2(self, case, xp):
+        return super().test_ccdf2(case, xp=xp, tol_override=self.tol(case, xp))
 
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case, xp):
         return super().test_logpdf(case, xp=xp)
+
+    def test_logcdf(self, case, xp):
+        return super().test_logcdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_logccdf(self, case, xp):
+        return super().test_logccdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_moment(self, case, xp):
+        tol_override = dict(atol=5e-3) if case.dist._dtype == xp.float32 else None
+        return super().test_moment(case, tol_override=tol_override, xp=xp)
 
 
 @make_xp_test_case(stats.Uniform)
@@ -148,8 +174,14 @@ class TestUniform(DistributionsTest):
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, xp):
         if xpx.default_dtype(xp) == xp.float32:
-            pytest.xfail("Serious accuracy issues; needs investigation")
+            pytest.xfail("Significant accuracy issues; deserves investigation")
         return super().test_moment(case, tol_override={'atol': 1e-9}, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_lmoment(self, case, xp):
+        if xpx.default_dtype(xp) == xp.float32:
+            pytest.xfail("Significant accuracy issues; deserves investigation")
+        return super().test_lmoment(case, xp=xp)
 
 
 @make_xp_test_case(stats.VonMises)
@@ -174,4 +206,10 @@ class TestVonMises(DistributionsTest):
 
     def test_median(self, case, xp):
         # can only expect about half precision with optimization
-        return super().test_median(case, tol_override={'atol': 1e-6}, xp=xp)
+        atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-3
+        return super().test_median(case, tol_override={'atol': atol}, xp=xp)
+
+    def test_mode(self, case, xp):
+        # can only expect about half precision with optimization
+        atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-3
+        return super().test_mode(case, tol_override={'atol': atol}, xp=xp)

@@ -5,11 +5,8 @@ import pytest
 import numpy as np
 from scipy import stats, special
 from .test_continuous import DistributionsTest
-# TODO: make this work without array API imports again...
-from scipy._lib._array_api import xp_capabilities, make_xp_test_case
 
 
-@xp_capabilities(np_only=True)
 class MyNormal:
     __make_distribution_version__ = "1.16.0"
     parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': (-1, 1)},
@@ -32,7 +29,6 @@ class MyNormal:
         return np.full_like(u, fill_value=np.log(2*np.pi*np.e*s**2)/2)
 
 
-@make_xp_test_case(MyNormal)
 class TestMyNormal(DistributionsTest):
     family = stats.make_distribution(MyNormal())
     seed = 7694871136

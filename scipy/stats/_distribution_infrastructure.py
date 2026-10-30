@@ -1992,6 +1992,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
                      str_pattern=str_pattern,
                      h=lambda u: xp.sign(u) * xp.abs(u)**(1 / other),
                      dh=lambda u: 1/other * xp.abs(u)**(1/other - 1),
+                     dtype=X._dtype,
                      xp=xp)
 
         return MonotonicTransformedDistribution(X, **funcs, increasing=True)
@@ -2047,7 +2048,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return MonotonicTransformedDistribution(self, **funcs, increasing=False)
 
     def __neg__(self):
-        return self * -1
+        return self * -1.
 
     def __abs__(self):
         return FoldedDistribution(self)
@@ -2135,7 +2136,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         a, b = self._support(**params) if bounds is None else bounds
         x = xp.real(x)  # logentropy makes dtype complex
-        step = xp.minimum(0.5, (b - a)/2)
+        step = xp.minimum(xp.asarray(0.5, dtype=self._dtype, device=self._device), (b - a)/2)
         direction = -(xp.sign(x - a - step) + xp.sign(x - b + step))
         args = [] if args is None else args
         params = {} if params is None else params
@@ -3218,9 +3219,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if isinstance(rng, qmc.QMCEngine):
             uniform = self._qmc_uniform(full_shape, qrng=rng, **params)
         else:
-            dtype = np.float32 if '32' in str(self._dtype) else np.float64
-            uniform = rng.random(size=full_shape, dtype=dtype)
-        return self._icdf_dispatch(xp.asarray(uniform), **params)
+            uniform = rng.random(size=full_shape)
+        uniform = xp.asarray(uniform, dtype=self._dtype, device=self._device)
+        return self._icdf_dispatch(uniform, **params)
 
     def _qmc_uniform(self, full_shape, *, qrng, **params):
         # Generate QMC uniform sample(s) on unit interval with specified shape;
@@ -6233,7 +6234,7 @@ class FoldedDistribution(TransformedDistribution):
     # with the general case; enhance later.
 
     def __init__(self, X, /, *args, **kwargs):
-        super().__init__(X, *args, **kwargs)
+        super().__init__(X, *args, **kwargs, dtype=X._dtype)
         # I think we need to allow `_support` to define whether the endpoints
         # are inclusive or not. In the meantime, it's best to ensure that the lower
         # endpoint (typically 0 for folded distribution) is inclusive so PDF evaluates
