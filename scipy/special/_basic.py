@@ -1657,6 +1657,7 @@ def assoc_laguerre(x, n, k=0.0):
     return eval_genlaguerre(n, k, x)
 
 
+@xp_capabilities(out_of_scope=True)
 def mathieu_even_coef(m, q):
     r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
 
@@ -1766,6 +1767,7 @@ def mathieu_even_coef(m, q):
     return fc[:km]
 
 
+@xp_capabilities(out_of_scope=True)
 def mathieu_odd_coef(m, q):
     r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
@@ -2422,6 +2424,7 @@ def lmbda(v, x):
     return vl[:(n+1)], dl[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbdv_seq(v, x):
     """Parabolic cylinder functions Dv(x) and derivatives.
 
@@ -2459,6 +2462,7 @@ def pbdv_seq(v, x):
     return dv[:n1+1], dp[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbvv_seq(v, x):
     """Parabolic cylinder functions Vv(x) and derivatives.
 
@@ -2496,6 +2500,7 @@ def pbvv_seq(v, x):
     return dv[:n1+1], dp[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbdn_seq(n, z):
     """Parabolic cylinder functions Dn(z) and derivatives.
 
@@ -2532,6 +2537,7 @@ def pbdn_seq(n, z):
     return cpb[:n1+1], cpd[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def ber_zeros(nt):
     """Compute nt zeros of the Kelvin function ber.
 
@@ -2561,6 +2567,7 @@ def ber_zeros(nt):
     return _specfun.klvnzo(nt, 1)
 
 
+@xp_capabilities(out_of_scope=True)
 def bei_zeros(nt):
     """Compute nt zeros of the Kelvin function bei.
 
@@ -2597,6 +2604,7 @@ def bei_zeros(nt):
     return _specfun.klvnzo(nt, 2)
 
 
+@xp_capabilities(out_of_scope=True)
 def ker_zeros(nt):
     """Compute nt zeros of the Kelvin function ker.
 
@@ -2626,6 +2634,7 @@ def ker_zeros(nt):
     return _specfun.klvnzo(nt, 3)
 
 
+@xp_capabilities(out_of_scope=True)
 def kei_zeros(nt):
     """Compute nt zeros of the Kelvin function kei.
 
@@ -2655,6 +2664,7 @@ def kei_zeros(nt):
     return _specfun.klvnzo(nt, 4)
 
 
+@xp_capabilities(out_of_scope=True)
 def berp_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function ber.
 
@@ -2693,6 +2703,7 @@ def berp_zeros(nt):
     return _specfun.klvnzo(nt, 5)
 
 
+@xp_capabilities(out_of_scope=True)
 def beip_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function bei.
 
@@ -2722,6 +2733,7 @@ def beip_zeros(nt):
     return _specfun.klvnzo(nt, 6)
 
 
+@xp_capabilities(out_of_scope=True)
 def kerp_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function ker.
 
@@ -2751,6 +2763,7 @@ def kerp_zeros(nt):
     return _specfun.klvnzo(nt, 7)
 
 
+@xp_capabilities(out_of_scope=True)
 def keip_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function kei.
 
@@ -2780,6 +2793,7 @@ def keip_zeros(nt):
     return _specfun.klvnzo(nt, 8)
 
 
+@xp_capabilities(out_of_scope=True)
 def kelvin_zeros(nt):
     """Compute `nt` zeros of all Kelvin functions.
 
@@ -2813,6 +2827,7 @@ def kelvin_zeros(nt):
             _specfun.klvnzo(nt, 8))
 
 
+@xp_capabilities(out_of_scope=True)
 def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
@@ -2849,6 +2864,7 @@ def pro_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, 1)[1][:maxL]
 
 
+@xp_capabilities(out_of_scope=True)
 def obl_cv_seq(m, n, c):
     """Characteristic values for oblate spheroidal wave functions.
 
