@@ -71,6 +71,7 @@ http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import math
 import os
+import struct
 import time
 import sys
 import zlib
@@ -95,7 +96,7 @@ from ._mio5_utils import VarReader5
 # Constants and helper objects
 from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
-                          miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
+                          miINT32, miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
                           mxDOUBLE_CLASS, mclass_info, mat_struct,
                           mxOPAQUE_CLASS, MatlabOpaque)
@@ -513,19 +514,26 @@ def to_writeable(source):
 
 # Native byte ordered dtypes for convenience for writers
 NDT_FILE_HDR = MDTYPES[native_code]['dtypes']['file_header']
-NDT_TAG_FULL = MDTYPES[native_code]['dtypes']['tag_full']
-NDT_TAG_SMALL = MDTYPES[native_code]['dtypes']['tag_smalldata']
-NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
+# Native byte ordered tags and array flags. Packing these with struct is much
+# cheaper than filling NumPy structured scalars, which matters because every
+# variable, struct field and cell element gets its own header and tags.
+TAG_FULL = struct.Struct('=II')  # mdtype, byte_count
+TAG_SMALL = struct.Struct('=I4s')  # byte_count << 16 | mdtype, data
+ARRAY_FLAGS = struct.Struct('=IIII')  # data_type, byte_count, flags_class, nzmax
+
+
+def _element_bytes(data, mdtype):
+    ''' Tag and data of an element holding bytes `data`, padded to 8 bytes '''
+    byte_count = len(data)
+    if byte_count <= 4:
+        return TAG_SMALL.pack((byte_count << 16) + mdtype, data)
+    return TAG_FULL.pack(mdtype, byte_count) + data + b'\x00' * (-byte_count % 8)
 
 
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
 
     def __init__(self, file_writer):
-        # Per instance, not per class: update_matrix_tag writes the byte count
-        # into it, so a shared array breaks concurrent savemat calls (gh-7260)
-        self.mat_tag = np.zeros((), NDT_TAG_FULL)
-        self.mat_tag['mdtype'] = miMATRIX
         self.file_stream = file_writer.file_stream
         self.unicode_strings = file_writer.unicode_strings
         self.long_field_names = file_writer.long_field_names
@@ -555,18 +563,13 @@ class VarWriter5:
 
     def write_smalldata_element(self, arr, mdtype, byte_count):
         # write tag with embedded data
-        tag = np.zeros((), NDT_TAG_SMALL)
-        tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
         # if arr.tobytes is < 4, the element will be zero-padded as needed.
-        tag['data'] = arr.tobytes(order='F')
-        self.write_bytes(tag)
+        self.file_stream.write(TAG_SMALL.pack((byte_count << 16) + mdtype,
+                                              arr.tobytes(order='F')))
 
     def write_regular_element(self, arr, mdtype, byte_count):
         # write tag, data
-        tag = np.zeros((), NDT_TAG_FULL)
-        tag['mdtype'] = mdtype
-        tag['byte_count'] = byte_count
-        self.write_bytes(tag)
+        self.file_stream.write(TAG_FULL.pack(mdtype, byte_count))
         self.write_bytes(arr)
         # pad to next 64-bit boundary
         bc_mod_8 = byte_count % 8
@@ -593,28 +596,28 @@ class VarWriter5:
         # get name and is_global from one-shot object store
         name = self._var_name
         is_global = self._var_is_global
-        # initialize the top-level matrix tag, store position
+        # initialize the top-level matrix tag, store position; the byte
+        # count is filled in by update_matrix_tag
         self._mat_tag_pos = self.file_stream.tell()
-        self.write_bytes(self.mat_tag)
+        parts = [TAG_FULL.pack(miMATRIX, 0)]
         # write array flags (complex, global, logical, class, nzmax)
-        af = np.zeros((), NDT_ARRAY_FLAGS)
-        af['data_type'] = miUINT32
-        af['byte_count'] = 8
         flags = is_complex << 3 | is_global << 2 | is_logical << 1
-        af['flags_class'] = mclass | flags << 8
-        af['nzmax'] = nzmax
-        self.write_bytes(af)
+        parts.append(ARRAY_FLAGS.pack(miUINT32, 8, mclass | flags << 8, nzmax))
         # shape
         if shape is not None:
-            self.write_element(np.array(shape, dtype='i4'))
+            parts.append(_element_bytes(np.array(shape, dtype='i4').tobytes(),
+                                        miINT32))
         # write name
-        name = np.asarray(name)
-        if name == '' or name == b'':  # empty string zero-terminated
-            self.write_smalldata_element(name, miINT8, 0)
-        else:
-            self.write_element(name, miINT8)
+        if not isinstance(name, bytes):
+            name = np.asarray(name).tobytes()
+        # like NumPy string comparison, ignore trailing NULs
+        if name.rstrip(b'\x00'):
+            parts.append(_element_bytes(name, miINT8))
+        else:  # empty string zero-terminated
+            parts.append(TAG_SMALL.pack(miINT8, b''))
+        self.file_stream.write(b''.join(parts))
         # reset the one-shot store to defaults
-        self._var_name = ''
+        self._var_name = b''
         self._var_is_global = False
 
     def update_matrix_tag(self, start_pos):
@@ -624,8 +627,7 @@ class VarWriter5:
         if byte_count >= 2**32:
             raise MatWriteError("Matrix too large to save with Matlab "
                                 "5 format")
-        self.mat_tag['byte_count'] = byte_count
-        self.write_bytes(self.mat_tag)
+        self.file_stream.write(TAG_FULL.pack(miMATRIX, byte_count))
         self.file_stream.seek(curr_pos)
 
     def write_top(self, arr, name, is_global):
@@ -717,6 +719,16 @@ class VarWriter5:
     def write_char(self, arr, codec='ascii'):
         ''' Write string array `arr` with given `codec`
         '''
+        if arr.size == 1 and arr.dtype.kind == 'U':
+            # Fast path for a single string, e.g. a str in a cell or struct.
+            # Without NUL characters (which are written as spaces below) it
+            # is a char array holding the encoded string.
+            s = arr.item()
+            n_chars = arr.dtype.itemsize // 4
+            if s and len(s) == n_chars and '\x00' not in s:
+                self.write_header((arr.shape or (1,)) + (n_chars,), mxCHAR_CLASS)
+                self.file_stream.write(_element_bytes(s.encode(codec), miUTF8))
+                return
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
             # only empty strings. Matlab cannot distinguish between a
@@ -915,10 +927,7 @@ class MatFile5Writer:
                 self._matrix_writer.file_stream = stream
                 self._matrix_writer.write_top(var, name.encode('latin1'), is_global)
                 out_str = zlib.compress(stream.getvalue())
-                tag = np.empty((), NDT_TAG_FULL)
-                tag['mdtype'] = miCOMPRESSED
-                tag['byte_count'] = len(out_str)
-                self.file_stream.write(tag.tobytes())
+                self.file_stream.write(TAG_FULL.pack(miCOMPRESSED, len(out_str)))
                 self.file_stream.write(out_str)
             else:  # not compressing
                 self._matrix_writer.write_top(var, name.encode('latin1'), is_global)
