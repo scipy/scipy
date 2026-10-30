@@ -66,6 +66,21 @@ class TestInverseErrorFunction:
     def test_domain_bounds(self, f, x, y):
         assert_equal(f(x), y)
 
+    @pytest.mark.parametrize('y, expected', [
+        (5e-324, 27.21329321081295),
+        (1e-323, 27.200563366536258),
+        (1.5e-323, 27.19311412620397),
+        (2**-1022, 26.54325845425098),
+        (2**-1021, 26.530207562276377),
+    ])
+    def test_erfcinv_subnormal(self, y, expected):
+        # Regression test for https://github.com/scipy/xsf/issues/309.
+        # Reference values computed with mpmath:
+        # >>> import mpmath as mp
+        # >>> mp.mp.dps = 50
+        # >>> float(mp.findroot(lambda x: mp.log(mp.erfc(x)) - mp.log(y), 27))
+        assert_allclose(sc.erfcinv(y), expected, rtol=1e-15, atol=0)
+
     def test_erfinv_asympt(self):
         # regression test for gh-12758: erfinv(x) loses precision at small x
         # expected values precomputed with mpmath:
