@@ -1,8 +1,9 @@
 """Test functions for linalg._solve_toeplitz module
 """
 import numpy as np
-from scipy.linalg._solve_toeplitz import levinson
+from scipy.linalg._solve_toeplitz import levinson, levinson_inverse_columns
 from scipy.linalg import solve, toeplitz, solve_toeplitz
+from scipy.linalg._basic import _solve_toeplitz_multiple_rhs
 from numpy.testing import assert_equal, assert_allclose
 from scipy._lib._array_api import xp_assert_close
 
@@ -171,3 +172,90 @@ def test_shape_dtype(dt_c, dt_r, dt_b, n, nrhs):
     res = solve_toeplitz((c, r), b)
 
     xp_assert_close(res, ref, atol=1e-15)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize('n', [1, 2, 3, 10])
+def test_inverse_columns(dtype, n):
+    # levinson_inverse_columns returns the first and last columns of the
+    # inverse of the Toeplitz matrix
+    rng = np.random.default_rng(1234)
+    c = rng.standard_normal(n)
+    r = rng.standard_normal(n)
+    if np.issubdtype(dtype, np.complexfloating):
+        c = c + 1j * rng.standard_normal(n)
+        r = r + 1j * rng.standard_normal(n)
+    c[0] = r[0] = 2 * n
+    vals = np.concatenate((r[-1:0:-1], c)).astype(dtype)
+    x, y = levinson_inverse_columns(vals)
+    assert x.dtype == y.dtype == dtype
+    inv = np.linalg.inv(toeplitz(c, r))
+    rtol = 1e-5 if dtype in (np.float32, np.complex64) else 1e-12
+    assert_allclose(x, inv[:, 0], rtol=rtol)
+    assert_allclose(y, inv[:, -1], rtol=rtol)
+
+
+def test_inverse_columns_singular():
+    # Same failures as Levinson recursion
+    for c in ([0., 1, 2], [2., 2, 1]):
+        c = np.array(c)
+        vals = np.concatenate((c[-1:0:-1], c))
+        assert_raises(np.linalg.LinAlgError, levinson_inverse_columns, vals)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize('n', [1, 2, 3, 300])
+@pytest.mark.parametrize('nrhs', [4, 7])
+@pytest.mark.parametrize('block_size', [1, 2, 256])
+def test_multiple_rhs_inverse_rows(dtype, n, nrhs, block_size):
+    # Several right-hand sides are solved with the rows of the inverse, block
+    # by block, which must match solving each column with Levinson recursion
+    rng = np.random.default_rng(1234)
+    c = rng.standard_normal(n)
+    r = rng.standard_normal(n)
+    b = rng.standard_normal((n, nrhs))
+    if np.issubdtype(dtype, np.complexfloating):
+        c = c + 1j * rng.standard_normal(n)
+        r = r + 1j * rng.standard_normal(n)
+        b = b + 1j * rng.standard_normal((n, nrhs))
+    c[0] = r[0] = 2 * np.sqrt(n)
+    vals = np.concatenate((r[-1:0:-1], c)).astype(dtype)
+    b = b.astype(dtype)
+    x = _solve_toeplitz_multiple_rhs(vals, b, block_size=block_size)
+    assert x.dtype == dtype
+    assert x.shape == b.shape
+    desired = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
+                               for i in range(nrhs)])
+    rtol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-11
+    assert_allclose(x, desired, rtol=rtol, atol=rtol * np.abs(desired).max())
+
+
+def test_multiple_rhs_matches_single_rhs():
+    # Many columns go through the inverse rows, a single one through Levinson
+    # recursion; both must solve the system. The matrix is a positive definite
+    # covariance, as in Gaussian process regression on a regular grid.
+    rng = np.random.default_rng(1234)
+    n = 500
+    c = np.exp(-(np.arange(n) / 10.)**2)
+    c[0] += 1e-6
+    b = rng.standard_normal((n, 20))
+    x = solve_toeplitz(c, b)
+    # The matrix has a condition number of about 2e7, so the two methods
+    # agree to that accuracy in norm rather than element by element.
+    for i in (0, 7, 19):
+        xi = solve_toeplitz(c, b[:, i])
+        assert np.linalg.norm(x[:, i] - xi) <= 1e-8 * np.linalg.norm(xi)
+    xd = solve(toeplitz(c), b, assume_a='pos')
+    assert np.linalg.norm(x - xd) <= 1e-8 * np.linalg.norm(xd)
+
+
+def test_multiple_rhs_batch():
+    # Batches of matrices with enough right-hand sides each to use the rows
+    # of the inverse
+    rng = np.random.default_rng(1234)
+    c = rng.standard_normal((3, 6))
+    c[:, 0] = 10
+    b = rng.standard_normal((3, 6, 30))
+    x = solve_toeplitz(c, b)
+    for k in range(3):
+        assert_allclose(x[k], solve(toeplitz(c[k]), b[k]), rtol=1e-12)
