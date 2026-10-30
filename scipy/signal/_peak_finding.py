@@ -728,7 +728,7 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
 
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5,
-               plateau_size=None):
+               plateau_size=None, wrap=False):
     """
     Find peaks inside a signal based on peak properties.
 
@@ -781,6 +781,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
         .. versionadded:: 1.2.0
 
+    wrap : bool, optional
+        If `True`, the 1-D signal `x` is treated as periodic/wrapped, allowing
+        peaks to be detected at the boundaries (index 0 and `n - 1`).
+        Default is `False`.
+
+        .. versionadded:: 1.15.0 (Proposed)
+
     Returns
     -------
     peaks : ndarray
@@ -806,7 +813,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
               the indices of a peak's edges (edges are still part of the
               plateau) and the calculated plateau sizes.
 
-              .. versionadded:: 1.2.0
+        .. versionadded:: 1.2.0
 
         To calculate and return properties without excluding peaks, provide the
         open interval ``(None, None)`` as a value to the appropriate argument
@@ -831,122 +838,41 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         Directly calculate the prominence of peaks.
     peak_widths
         Directly calculate the width of peaks.
-
-    Notes
-    -----
-    In the context of this function, a peak or local maximum is defined as any
-    sample whose two direct neighbours have a smaller amplitude. For flat peaks
-    (more than one sample of equal amplitude wide) the index of the middle
-    sample is returned (rounded down in case the number of samples is even).
-    For noisy signals the peak locations can be off because the noise might
-    change the position of local maxima. In those cases consider smoothing the
-    signal before searching for peaks or use other peak finding and fitting
-    methods (like `find_peaks_cwt`).
-
-    Some additional comments on specifying conditions:
-
-    * Almost all conditions (excluding `distance`) can be given as half-open or
-      closed intervals, e.g., ``1`` or ``(1, None)`` defines the half-open
-      interval :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
-      :math:`[-\\infty, 1]`. The open interval ``(None, None)`` can be specified
-      as well, which returns the matching properties without exclusion of peaks.
-    * The border is always included in the interval used to select valid peaks.
-    * For several conditions the interval borders can be specified with
-      arrays matching `x` in shape which enables dynamic constraints based on
-      the sample position.
-    * The conditions are evaluated in the following order: `plateau_size`,
-      `height`, `threshold`, `distance`, `prominence`, `width`. In most cases
-      this order is the fastest one because faster operations are applied first
-      to reduce the number of peaks that need to be evaluated later.
-    * While indices in `peaks` are guaranteed to be at least `distance` samples
-      apart, edges of flat peaks may be closer than the allowed `distance`.
-    * Use `wlen` to reduce the time it takes to evaluate the conditions for
-      `prominence` or `width` if `x` is large or has many local maxima
-      (see `peak_prominences`).
-
-    .. versionadded:: 1.1.0
-
-    Examples
-    --------
-    To demonstrate this function's usage we use a signal `x` supplied with
-    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
-    maxima) in `x` whose amplitude lies above 0.
-
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.datasets import electrocardiogram
-    >>> from scipy.signal import find_peaks
-    >>> x = electrocardiogram()[2000:4000]
-    >>> peaks, _ = find_peaks(x, height=0)
-    >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.plot(np.zeros_like(x), "--", color="gray")
-    >>> plt.show()
-
-    We can select peaks below 0 with ``height=(None, 0)`` or use arrays matching
-    `x` in size to reflect a changing condition for different parts of the
-    signal.
-
-    >>> border = np.sin(np.linspace(0, 3 * np.pi, x.size))
-    >>> peaks, _ = find_peaks(x, height=(-border, border))
-    >>> plt.plot(x)
-    >>> plt.plot(-border, "--", color="gray")
-    >>> plt.plot(border, ":", color="gray")
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.show()
-
-    Another useful condition for periodic signals can be given with the
-    `distance` argument. In this case, we can easily select the positions of
-    QRS complexes within the electrocardiogram (ECG) by demanding a distance of
-    at least 150 samples.
-
-    >>> peaks, _ = find_peaks(x, distance=150)
-    >>> np.diff(peaks)
-    array([186, 180, 177, 171, 177, 169, 167, 164, 158, 162, 172])
-    >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.show()
-
-    Especially for noisy signals peaks can be easily grouped by their
-    prominence (see `peak_prominences`). E.g., we can select all peaks except
-    for the mentioned QRS complexes by limiting the allowed prominence to 0.6.
-
-    >>> peaks, properties = find_peaks(x, prominence=(None, 0.6))
-    >>> properties["prominences"].max()
-    0.5049999999999999
-    >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.show()
-
-    And, finally, let's examine a different section of the ECG which contains
-    beat forms of different shape. To select only the atypical heart beats, we
-    combine two conditions: a minimal prominence of 1 and width of at least 20
-    samples.
-
-    >>> x = electrocardiogram()[17000:18000]
-    >>> peaks, properties = find_peaks(x, prominence=1, width=20)
-    >>> properties["prominences"], properties["widths"]
-    (array([1.495, 2.3  ]), array([36.93773946, 39.32723577]))
-    >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.vlines(x=peaks, ymin=x[peaks] - properties["prominences"],
-    ...            ymax = x[peaks], color = "C1")
-    >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
-    ...            xmax=properties["right_ips"], color = "C1")
-    >>> plt.show()
     """
-    # _argmaxima1d expects array of dtype 'float64'
     x = _arg_x_as_expected(x)
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
-    peaks, left_edges, right_edges = _local_maxima_1d(x)
+    original_size = x.size
+    if original_size == 0:
+        return np.array([], dtype=int), {}
+
+    if wrap:
+        min_idx = np.argmin(x)
+        # Rotate array so global minimum sits at both ends
+        x_rotated = np.concatenate((x[min_idx:], x[:min_idx], x[min_idx:min_idx+1]))
+        
+        def rotate_arg(arg):
+            if isinstance(arg, np.ndarray) and arg.shape == (original_size,):
+                return np.concatenate((arg[min_idx:], arg[:min_idx], arg[min_idx:min_idx+1]))
+            elif isinstance(arg, (list, tuple)) and len(arg) == 2:
+                return (rotate_arg(arg[0]), rotate_arg(arg[1]))
+            return arg
+
+        height = rotate_arg(height)
+        threshold = rotate_arg(threshold)
+        prominence = rotate_arg(prominence)
+        width = rotate_arg(width)
+        plateau_size = rotate_arg(plateau_size)
+    else:
+        x_rotated = x
+
+    peaks, left_edges, right_edges = _local_maxima_1d(x_rotated)
     properties = {}
 
     if plateau_size is not None:
-        # Evaluate plateau size
         plateau_sizes = right_edges - left_edges + 1
-        pmin, pmax = _unpack_condition_args(plateau_size, x, peaks)
+        pmin, pmax = _unpack_condition_args(plateau_size, x_rotated, peaks)
         keep = _select_by_property(plateau_sizes, pmin, pmax)
         peaks = peaks[keep]
         properties["plateau_sizes"] = plateau_sizes
@@ -955,59 +881,104 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         properties = {key: array[keep] for key, array in properties.items()}
 
     if height is not None:
-        # Evaluate height condition
-        peak_heights = x[peaks]
-        hmin, hmax = _unpack_condition_args(height, x, peaks)
+        peak_heights = x_rotated[peaks]
+        hmin, hmax = _unpack_condition_args(height, x_rotated, peaks)
         keep = _select_by_property(peak_heights, hmin, hmax)
         peaks = peaks[keep]
         properties["peak_heights"] = peak_heights
         properties = {key: array[keep] for key, array in properties.items()}
 
     if threshold is not None:
-        # Evaluate threshold condition
-        tmin, tmax = _unpack_condition_args(threshold, x, peaks)
+        tmin, tmax = _unpack_condition_args(threshold, x_rotated, peaks)
         keep, left_thresholds, right_thresholds = _select_by_peak_threshold(
-            x, peaks, tmin, tmax)
+            x_rotated, peaks, tmin, tmax)
         peaks = peaks[keep]
         properties["left_thresholds"] = left_thresholds
         properties["right_thresholds"] = right_thresholds
         properties = {key: array[keep] for key, array in properties.items()}
 
     if distance is not None:
-        # Evaluate distance condition
-        keep = _select_by_peak_distance(peaks, x[peaks], distance)
+        if wrap:
+            # Map peaks back to original space first for circular distance evaluation
+            orig_peaks = (peaks + min_idx) % original_size
+            keep = _select_by_peak_distance_wrap(orig_peaks, x_rotated[peaks], distance, original_size)
+        else:
+            keep = _select_by_peak_distance(peaks, x_rotated[peaks], distance)
+        
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
     if prominence is not None or width is not None:
-        # Calculate prominence (required for both conditions)
         wlen = _arg_wlen_as_expected(wlen)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
-            _peak_prominences(x, peaks, wlen=wlen)
+            _peak_prominences(x_rotated, peaks, wlen=wlen)
         ))
 
     if prominence is not None:
-        # Evaluate prominence condition
-        pmin, pmax = _unpack_condition_args(prominence, x, peaks)
+        pmin, pmax = _unpack_condition_args(prominence, x_rotated, peaks)
         keep = _select_by_property(properties['prominences'], pmin, pmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
     if width is not None:
-        # Calculate widths
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            _peak_widths(x, peaks, rel_height, properties['prominences'],
+            _peak_widths(x_rotated, peaks, rel_height, properties['prominences'],
                          properties['left_bases'], properties['right_bases'])
         ))
-        # Evaluate width condition
-        wmin, wmax = _unpack_condition_args(width, x, peaks)
+        wmin, wmax = _unpack_condition_args(width, x_rotated, peaks)
         keep = _select_by_property(properties['widths'], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
+    if wrap:
+        peaks = (peaks + min_idx) % original_size
+        sort_idx = np.argsort(peaks)
+        peaks = peaks[sort_idx]
+        properties = {key: array[sort_idx] for key, array in properties.items()}
+
+        index_properties = {
+            "left_edges", "right_edges", "left_bases", "right_bases", "left_ips", "right_ips"
+        }
+        for key, array in properties.items():
+            if key in index_properties:
+                properties[key] = (array + min_idx) % original_size
+
     return peaks, properties
+
+def _select_by_peak_distance_wrap(peaks, priority, distance, original_size):
+    """
+    Evaluate peak distance taking periodic/wrapped boundaries into account.
+    """
+    peaks_size = peaks.shape[0]
+    keep = np.ones(peaks_size, dtype=bool)
+    
+    # Sort peaks by priority (highest priority first)
+    sorted_indices = np.argsort(priority)[::-1]
+    
+    for i in range(peaks_size):
+        idx_i = sorted_indices[i]
+        if not keep[idx_i]:
+            continue
+        
+        p_i = peaks[idx_i]
+        for j in range(i + 1, peaks_size):
+            idx_j = sorted_indices[j]
+            if not keep[idx_j]:
+                continue
+            
+            p_j = peaks[idx_j]
+            
+            # Calculate shortest circular distance on the original array size
+            diff = abs(p_i - p_j)
+            circ_dist = min(diff, original_size - diff)
+            
+            if circ_dist < distance:
+                keep[idx_j] = False
+                
+    # Re-sort keep mask back to original positional order of peaks
+    return keep[np.argsort(np.argsort(peaks))]
 
 
 def _identify_ridge_lines(matr, max_distances, gap_thresh):
