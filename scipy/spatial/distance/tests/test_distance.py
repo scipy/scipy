@@ -48,6 +48,7 @@ import scipy.spatial.distance
 
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y)
+from scipy.spatial.distance import _distance
 from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
@@ -1720,6 +1721,110 @@ class TestSomeDistanceFunctions:
         for x, y in self.cases:
             dist = mahalanobis(x, y, vi)
             assert math.isclose(dist, math.sqrt(6.0), abs_tol=1.5e-7)
+
+
+class TestMahalanobisXdist:
+    # cdist/pdist whiten the data with a Cholesky factor of VI when that is
+    # cheaper than the pairwise loop (gh-12570); both paths must agree.
+
+    def _VI(self, rng, n):
+        A = rng.standard_normal((n, n))
+        VI = A @ A.T + n * np.eye(n)
+        # only the symmetric part of VI matters
+        S = rng.standard_normal((n, n))
+        return VI + (S - S.T)
+
+    def _ref(self, XA, XB, VI):
+        d = XA[:, None, :] - XB[None, :, :]
+        with np.errstate(invalid='ignore'):
+            return np.sqrt(np.einsum('ijk,kl,ijl->ij', d, VI, d))
+
+    def _whitened(self, n_pairs, n):
+        return _distance._mahalanobis_whitening(np.eye(n), n_pairs) is not None
+
+    @pytest.mark.parametrize("mA, mB, n, whitened",
+                             [(1, 1, 1, False), (2, 3, 2, False),
+                              (20, 15, 5, False), (1, 40, 300, True),
+                              (100, 80, 4, True), (60, 40, 30, True)])
+    def test_cdist(self, mA, mB, n, whitened):
+        assert self._whitened(mA * mB, n) == whitened
+        rng = np.random.default_rng(12570)
+        XA = rng.standard_normal((mA, n)) + 10
+        XB = rng.standard_normal((mB, n)) + 10
+        VI = self._VI(rng, n)
+        res = cdist(XA, XB, 'mahalanobis', VI=VI)
+        xp_assert_close(res, self._ref(XA, XB, VI), rtol=1e-13)
+
+        loop = np.empty((mA, mB))
+        _distance._mahalanobis_cdist_c(XA, XB, loop, VI=VI)
+        xp_assert_close(res, loop, rtol=1e-13)
+
+    @pytest.mark.parametrize("m, n, whitened", [(2, 1, False), (12, 4, False),
+                                                (150, 3, True), (80, 30, True)])
+    def test_pdist(self, m, n, whitened):
+        assert self._whitened(m * (m - 1) // 2, n) == whitened
+        rng = np.random.default_rng(12570)
+        X = rng.standard_normal((m, n)) + 10
+        VI = self._VI(rng, n)
+        res = pdist(X, 'mahalanobis', VI=VI)
+        ref = self._ref(X, X, VI)[np.triu_indices(m, 1)]
+        xp_assert_close(res, ref, rtol=1e-13)
+
+        loop = np.empty(m * (m - 1) // 2)
+        _distance._mahalanobis_pdist_c(X, loop, VI=VI)
+        xp_assert_close(res, loop, rtol=1e-13)
+
+    def test_default_VI(self):
+        rng = np.random.default_rng(12570)
+        XA = rng.standard_normal((150, 6))
+        XB = rng.standard_normal((100, 6))
+        assert self._whitened(100 * 99 // 2, 6)
+        VI = np.linalg.inv(np.cov(np.vstack([XA, XB]).T)).T
+        xp_assert_close(cdist(XA, XB, 'mahalanobis'),
+                        self._ref(XA, XB, VI), rtol=1e-13)
+        VI = np.linalg.inv(np.cov(XA.T)).T
+        xp_assert_close(pdist(XA, 'mahalanobis'),
+                        self._ref(XA, XA, VI)[np.triu_indices(150, 1)],
+                        rtol=1e-13)
+
+    def test_not_positive_definite(self):
+        # The loop is used and gives the same nan as before.
+        rng = np.random.default_rng(12570)
+        X = rng.standard_normal((150, 3))
+        Y = rng.standard_normal((100, 3))
+        assert self._whitened(150 * 149 // 2, 3)
+        for VI in [np.diag([1.0, -1.0, 1.0]), np.zeros((3, 3)),
+                   np.diag([1.0, np.nan, 1.0])]:
+            res = cdist(X, Y, 'mahalanobis', VI=VI)
+            loop = np.empty((150, 100))
+            _distance._mahalanobis_cdist_c(X, Y, loop, VI=VI)
+            xp_assert_equal(res, loop)
+
+            res = pdist(X, 'mahalanobis', VI=VI)
+            loop = np.empty(150 * 149 // 2)
+            _distance._mahalanobis_pdist_c(X, loop, VI=VI)
+            xp_assert_equal(res, loop)
+        assert np.isnan(cdist(X, Y, 'mahalanobis', VI=np.diag([1., -1., 1.]))).any()
+
+    def test_duplicates(self):
+        rng = np.random.default_rng(12570)
+        X = rng.standard_normal((200, 8))
+        X[1::2] = X[::2]
+        D = squareform(pdist(X, 'mahalanobis'))
+        xp_assert_close(D[::2, 1::2].diagonal(), np.zeros(100), atol=1e-14)
+
+    def test_out(self):
+        rng = np.random.default_rng(12570)
+        X = rng.standard_normal((150, 4))
+        Y = rng.standard_normal((100, 4))
+        out = np.empty((150, 100))
+        res = cdist(X, Y, 'mahalanobis', out=out)
+        assert res is out
+        xp_assert_equal(res, cdist(X, Y, 'mahalanobis'))
+        out = np.empty(150 * 149 // 2)
+        res = pdist(X, 'mahalanobis', out=out)
+        assert res is out
+        xp_assert_equal(res, pdist(X, 'mahalanobis'))
 
 
 class TestSquareForm:
