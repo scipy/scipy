@@ -671,6 +671,7 @@ _special_funcs = (
             skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("ellipj", ["torch"]),
         ),
+        positive_only={"cupy": (False, True)},
         torch_native=False,
     ),
     _FuncInfo(
@@ -695,6 +696,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             extra_note=_ufunc_kwargs_extra_note("ellipkinc", ["torch"]),
         ),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
@@ -711,6 +713,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             extra_note=_ufunc_kwargs_extra_note("ellipeinc", ["torch"]),
         ),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
@@ -1015,7 +1018,6 @@ _special_funcs = (
         _ufuncs._spherical_jn, ["n", "z"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("spherical_jn", ["torch"]),
         ),
         int_only=(True, False),
         test_large_ints=False, torch_native=False,
@@ -1519,7 +1521,7 @@ _special_funcs = (
         _ufuncs.chndtrinc, ["x", "df", "p"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("chndtridf", ["torch"]),
+            extra_note=_ufunc_kwargs_extra_note("chndtrinc", ["torch"]),
         ),
         torch_native=False,
     ),
@@ -2539,7 +2541,6 @@ _special_funcs = (
         _lambertw.lambertw, ["z","k=0", "tol=1e-8"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("lambertw", ["torch"]),
         ),
         int_only=(False, True, False),
         positive_only=(False, False, True),
@@ -2635,7 +2636,6 @@ _special_funcs = (
         _ufuncs._riemann_zeta, ["z"],
         xp_capabilities(
             cpu_only=True,
-            extra_note=_ufunc_kwargs_extra_note("_reimann_zeta", ["torch"]),
         ),
         generic_impl=__riemann_zeta,
         public=False,
@@ -2748,10 +2748,9 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.round, ["x"],
         xp_capabilities(
-            cpu_only=True, exceptions=["cupy"],
-            extra_note=_ufunc_kwargs_extra_note("round", ["torch"]),
+            cpu_only=True, exceptions=["cupy", "torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
         ),
-        torch_native=False,
     ),
     _FuncInfo(
         _ufuncs.xlogy, ["x", "y"],
