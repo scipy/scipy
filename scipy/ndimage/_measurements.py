@@ -115,12 +115,27 @@ def label(input, structure=None, output=None):
     entry 2 in the input is connected to 1,
     but 1 is not connected to 2.
 
+    `label` implements the classical two-pass connected-component labeling
+    algorithm [2]_, generalized to N dimensions and to the connectivity
+    defined by `structure`. The first pass scans `input` one line at a time
+    and gives each feature element a provisional label taken from its
+    already-scanned neighbors, which are those in the half of `structure`
+    preceding its center. Provisional labels that turn out to belong to the
+    same feature are recorded as equivalent, using a union-find
+    (disjoint-set) table. The second pass replaces each provisional label
+    with the final, consecutive label of its equivalence class. Because only
+    the preceding half of `structure` is examined, the other half is assumed
+    to mirror it, which is why `structure` must be centrosymmetric.
+
     References
     ----------
     .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
        matrices, their basic properties, eigenvalues, and
        eigenvectors." The American Mathematical Monthly 92.10
        (1985): 711-717.
+    .. [2] A. Rosenfeld and J. L. Pfaltz, "Sequential operations in digital
+       picture processing." Journal of the ACM 13.4 (1966): 471-494.
+       :doi:`10.1145/321356.321357`
 
     Examples
     --------
