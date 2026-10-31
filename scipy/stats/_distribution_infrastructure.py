@@ -253,7 +253,7 @@ class _Interval(_Domain):
         new_symbols = {param.name: param.symbol for param in parameters}
         self.symbols.update(new_symbols)
 
-    def get_numerical_endpoints(self, parameter_values, xp):
+    def get_numerical_endpoints(self, parameter_values, xp, device=None):
         r""" Get the numerical values of the domain endpoints.
 
         Domain endpoints may be defined symbolically or through a callable.
@@ -283,11 +283,11 @@ class _Interval(_Domain):
             if callable(a):
                 a = a(**parameter_values)
             else:
-                a = xp.asarray(parameter_values.get(a, a))
+                a = parameter_values.get(a, a)
             if callable(b):
                 b = b(**parameter_values)
             else:
-                b = xp.asarray(parameter_values.get(b, b))
+                b = parameter_values.get(b, b)
         except TypeError as e:
             message = ("The endpoints of the distribution are defined by "
                        "parameters, but their values were not provided. When "
@@ -297,6 +297,7 @@ class _Interval(_Domain):
             raise TypeError(message) from e
         # Floating point types are used for even integer parameters.
         # Convert to float here to ensure consistency throughout framework.
+        a, b = xp.asarray(a, device=device), xp.asarray(b, device=device)
         a, b = xp_promote(a, b, force_floating=True, xp=xp)
         return a, b
 
@@ -326,8 +327,8 @@ class _Interval(_Domain):
         #     # `contains` to return True when there are invalid (e.g. NaN)
         #     # parameters.
         #     return np.asarray(True)
-
-        a, b = self.get_numerical_endpoints(parameter_values, xp=xp)
+        device = xp_device(item)
+        a, b = self.get_numerical_endpoints(parameter_values, xp=xp, device=device)
         left_inclusive, right_inclusive = self.inclusive
 
         in_left = item >= a if left_inclusive else item > a
@@ -923,12 +924,13 @@ def _set_invalid_nan(f):
             return f(self, x, *args, **kwargs)
 
         method_name = f.__name__
-        x = xp.asarray(x)
+        device = self._device
         dtype = self._dtype
         shape = self._shape
         circular = isinstance(self, CircularDistribution)
         discrete = isinstance(self, DiscreteDistribution)
         discrete_cdflike = discrete and method_name in cdflike
+        x = xp.asarray(x, device=device)
 
         # Ensure that argument is at least as precise as distribution
         # parameters, which are already at least floats. This will avoid issues
@@ -2059,16 +2061,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # Is quite flexible about what is allowed as an integer, and it
         # raises a distribution-specific error message to facilitate
         # identification of the source of the error.
-        xp = self._xp
-
         if self.validation_policy == _SKIP_ALL:
             return order
 
-        order = xp.asarray(order, dtype=self._dtype)[()]
+        # order_array = xp.asarray(order, dtype=self._dtype, device=self._device)[()]
         message = (f"Argument `order` of `{self.__class__.__name__}.{fname}` "
                    f"must be a finite integer greater than or equal to {min_order}.")
         try:
-            order_int = round(order.item())  # not array API, but leave alone for now
+            order_int = round(order)
             # If this fails for any reason (e.g. it's an array, it's infinite)
             # it's not a valid `order`.
         except Exception as e:
@@ -2077,7 +2077,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if order_int < min_order or order_int != order:
             raise ValueError(message)
 
-        return order.item()
+        return order
 
     def _validate_kind(self, kind, kinds):
         message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
@@ -2089,7 +2089,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _preserve_type(self, x):
         xp = self._xp
-        x = xp.asarray(x)
+        x = xp.asarray(x, device=self._device)
         if x.dtype != self._dtype:
             x = xp.astype(x, self._dtype)
         return x[()]
@@ -2332,7 +2332,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _support(self, **params):
         # Computes the support given distribution parameters
         xp = self._xp
-        a, b = self._variable.domain.get_numerical_endpoints(params, xp=xp)
+        a, b = self._variable.domain.get_numerical_endpoints(
+            params, xp=xp, device=self._device)
         if len(params):
             # the parameters should all be of the same dtype and shape at this point
             vals = list(params.values())
@@ -3602,6 +3603,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
+        # shouldn't have to do this; but I need to get tests passing before I dive in
+        order = xp.asarray(order, dtype=self._dtype, device=self._device)
         E = order_statistic(self, r=order-k, n=order).mean()
         bc = xp.astype(special.binom(order-1, k), self._dtype)
         return xp.sum((-1)**k * bc * E, axis=0) / order
@@ -5865,7 +5868,7 @@ class Mixture(_ProbabilityDistribution):
 
     def _full(self, val, *args):
         xp = self._xp
-        args = [xp.asarray(arg) for arg in args]
+        args = [xp.asarray(arg, device=self._device) for arg in args]
         dtype = xp.result_type(self._dtype, *(arg.dtype for arg in args))
         shape = xp.broadcast_shapes(self._shape, *(arg.shape for arg in args))
         return xp.full(shape, val, dtype=dtype, device=self._device)

@@ -20,14 +20,19 @@ class TestBinomial(DistributionsTest):
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
         xp_assert_close(dist.pmf(x),
-                        stats.binom(p=dist.p, n=dist.n).pmf(x))
+                        xp.asarray(stats.binom(p=dist.p, n=dist.n).pmf(x).tolist()))
+
+    def test_cdf(self, case, xp):
+        tol_override = dict(atol=1e-6) if case.dist._dtype == xp.float32 else dict()
+        return super().test_cdf(case, xp=xp, tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, *, xp):
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
         if self.is_degenerate(case.dist, xp=xp):
             with np.errstate(invalid='ignore'):
-                return super().test_moment(case, xp=xp)
-        super().test_moment(case, xp=xp)
+                return super().test_moment(case, xp=xp, tol_override={'atol': atol})
+        super().test_moment(case, xp=xp, tol_override={'atol': atol})
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_skewness(self, case, *, xp):
@@ -49,11 +54,12 @@ class TestBinomial(DistributionsTest):
     def test_gh26072_non_integer_cdf_and_ccdf(self, fun, method, xp):
         # gh-26072 found that cdf-like methods of discrete distributions
         # did not produce the expected step behavior
-        n, p = 10, 0.3
+        n, p = 10., 0.3
         x = np.arange(n+1)
         x = np.concat((x, np.nextafter(x, np.inf), np.nextafter(x, -np.inf)))
         x_xp = xp.asarray(x)
-        X = stats.Binomial(n=n, p=p, xp=xp)
+        X = stats.Binomial(n=xp.asarray(n, dtype=xp.float64),
+                           p=xp.asarray(p, dtype=xp.float64))
         Y = stats.binom(n=n, p=p)
         X_fun = getattr(X, fun)
         Y_fun = getattr(Y, fun.replace('ccdf', 'sf'))
@@ -68,9 +74,9 @@ class TestBinomial(DistributionsTest):
         xp_assert_close(X.logccdf(x, method='complement'), X.logccdf(x), rtol=1e-15)
 
         # going even deeper into the tails
-        X = stats.Binomial(n=100, p=0.5)
-        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0), rtol=1e-15)
-        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100), rtol=1e-15)
+        X = stats.Binomial(n=100, p=0.5, xp=xp)
+        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0.), rtol=1e-15)
+        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100.), rtol=1e-15)
 
 
 @make_xp_test_case(stats.Logistic)

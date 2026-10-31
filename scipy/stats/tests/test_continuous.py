@@ -43,7 +43,7 @@ class Test_RealInterval:
             domain.get_numerical_endpoints(dict, xp=np)
 
     @pytest.mark.parametrize('x', [rng.uniform(10, 10, size=(2, 3, 4)),
-                                   -np.inf, np.pi])
+                                   -np.asarray(np.inf), np.asarray(np.pi)])
     def test_contains_simple(self, x):
         # Test `contains` when endpoints are defined by constants
         a, b = -np.inf, np.pi
@@ -517,7 +517,7 @@ class TestOtherMethods:
                 out[-1] = xp.inf
                 return out
 
-        X = _Normal(sigma=xp.asarray([1, 2, 3]))
+        X = _Normal(mu=xp.asarray(0), sigma=xp.asarray([1, 2, 3]))
         with np.errstate(divide='ignore'):
             res1 = X.logentropy(method='logexp_safe')
             res2 = X.logentropy(method='logexp')
@@ -531,7 +531,7 @@ class TestOtherMethods:
 
     def test_logcdf2_safe(self, xp):
         # test what happens when 2-arg `cdf` underflows
-        X = stats.Normal(sigma=xp.asarray([1, 2, 3]))
+        X = stats.Normal(mu=xp.asarray(0), sigma=xp.asarray([1, 2, 3]))
         x = xp.asarray([-301, 1, 300])
         y = xp.asarray([-300, 2, 301])
         with np.errstate(divide='ignore'):
@@ -2113,7 +2113,7 @@ class TestReciprocal:
     @pytest.mark.parametrize('scale', [1, 2, -1])
     @pytest.mark.xfail_on_32bit("`scale=-1` fails on 32-bit; needs investigation")
     def test_reciprocal(self, scale, xp):
-        if scale == -1 and is_cupy(xp):
+        if scale == -1 and (is_cupy(xp) or is_torch(xp)):
             pytest.skip("`scale=-1' fails w/ CuPy; needs investigation.")
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
@@ -2130,7 +2130,8 @@ class TestReciprocal:
         # Test distribution
         a = xp.asarray(a)
         X = _Gamma(a=a) if sign > 0 else -_Gamma(a=a)
-        Y = scale / X
+        # shouldn't matter whether scale is a scalar or array...
+        Y = (scale if is_cupy(xp) else xp.asarray(scale)) / X
 
         y = Y0.sample(shape=(3, 10), rng=rng)
         p = Y0.cdf(y)

@@ -500,7 +500,8 @@ class Uniform(ContinuousDistribution):
 
     def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
         xp = self._xp
-        return xp.asarray(rng.uniform(0, 1, size=full_shape))*ab + a
+        return xp.asarray(rng.uniform(0, 1, size=full_shape),
+                          dtype=self._dtype, device=self._device)*ab + a
 
 
 class _Gamma(ContinuousDistribution):
@@ -519,7 +520,7 @@ class _Gamma(ContinuousDistribution):
         return x ** (a - 1) * xp.exp(-x) / special.gamma(a)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(np_only=True, exceptions=['torch'])
 class Binomial(DiscreteDistribution):
     r"""Binomial distribution with prescribed success probability and number of trials
 
