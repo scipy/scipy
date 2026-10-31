@@ -511,6 +511,8 @@ jobs:
     # Purpose is to build for a non-default Python interpreter in a Linux distro
     # For such a build config, `python`/`python3` executables may not have
     # build dependencies like Cython or NumPy installed.
+    # Also builds with `-Duse-simd=false` to test the scalar fallbacks of the
+    # runtime-dispatched SIMD kernels.
     name: non-default Python interpreter, fast, py3.12/npMin, pip+pytest
     needs: get_commit_message
     if: >
@@ -545,7 +547,7 @@ jobs:
 
       - name: Build wheel and install
         run: |
-          python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+          python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Csetup-args=-Duse-simd=false
           python3.12 -m pip install dist/*.whl
 
       - name: Ccache performance
