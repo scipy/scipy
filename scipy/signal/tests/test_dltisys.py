@@ -14,7 +14,7 @@ from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           dfreqresp, dbode, BadCoefficients)
 
 
-@make_xp_test_case(dlsim, dstep, dimpulse)
+@make_xp_test_case(dlsim, dstep, dimpulse, dlti)
 class TestDLTI:
 
     def test_dlsim(self, xp):
@@ -27,9 +27,9 @@ class TestDLTI:
 
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
-        u = xp.asarray(np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
-                                  np.full((5, 1), 0.01),
-                                  np.full((5, 1), -0.002))))
+        u = xp.concat((xp.reshape(xp.linspace(0, 4.0, num=5), (-1, 1)),
+                       xp.full((5, 1), 0.01),
+                       xp.full((5, 1), -0.002)), axis=1)
         t_in = xp.linspace(0, 2.0, num=5)
 
         # Define the known result
@@ -220,8 +220,8 @@ class TestDLTI:
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
         xp_assert_equal(tout, xp.arange(float(n)))
         expected = xp.reshape(0.5 ** xp.arange(float(n)), (-1, 1))
-        xp_assert_equal(yout, expected)
-        xp_assert_equal(xout, expected)
+        xp_assert_close(yout, expected)
+        xp_assert_close(xout, expected)
 
     def test_dlsim_simple2d(self, xp):
         lambda1 = 0.5
@@ -241,8 +241,8 @@ class TestDLTI:
         # The analytical solution:
         expected = (xp.asarray([lambda1, lambda2]) **
                                 xp.reshape(xp.arange(float(n)), (-1, 1)))
-        xp_assert_equal(yout, expected)
-        xp_assert_equal(xout, expected)
+        xp_assert_close(yout, expected)
+        xp_assert_close(xout, expected)
 
     def test_more_step_and_impulse(self, xp):
         lambda1 = 0.5
@@ -275,8 +275,11 @@ class TestDLTI:
                             np.arange(-1, n + 1).reshape(-1, 1))
         imp[0, :] = 0.0
         # Analytical solution to impulse response
-        y0 = xp.asarray(imp[:n, 0] + np.dot(imp[1:n + 1, :], [1.0, 1.0]))
-        y1 = xp.asarray(imp[:n, 1] + np.dot(imp[1:n + 1, :], [1.0, 1.0]))
+        dtype = yi[0].dtype
+        y0 = xp.asarray(imp[:n, 0] + np.dot(imp[1:n + 1, :], [1.0, 1.0]),
+                        dtype=dtype)
+        y1 = xp.asarray(imp[:n, 1] + np.dot(imp[1:n + 1, :], [1.0, 1.0]),
+                        dtype=dtype)
 
         xp_assert_close(yi[0][:, 0], y0)
         xp_assert_close(yi[1][:, 0], y1)
@@ -431,15 +434,17 @@ class Test_dfreqresp:
         system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -0.2]),
                                   dt=0.1)
         w = [0.1, 1, 10, 100]
-        w_out, H = dfreqresp(system, w=xp.asarray(w, dtype=xp.float64))
+        w_out, H = dfreqresp(system, w=xp.asarray(w))
         jw = np.exp(np.asarray(w) * 1j)
         y = np.polyval([1.0], jw) / np.polyval([1.0, -0.2], jw)
 
         # test real
-        assert_almost_equal(xp.real(H), xp.asarray(y.real))
+        H_re = xp.real(H)
+        xp_assert_close(H_re, xp.asarray(y.real, dtype=H_re.dtype))
 
         # test imag
-        assert_almost_equal(xp.imag(H), xp.asarray(y.imag))
+        H_im = xp.imag(H)
+        xp_assert_close(H_im, xp.asarray(y.imag, dtype=H_im.dtype))
 
     def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
@@ -448,7 +453,7 @@ class Test_dfreqresp:
         system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -0.2]),
                                   dt=0.1)
         n = 10
-        expected_w = xp.asarray(np.linspace(0, np.pi, 10, endpoint=False))
+        expected_w = xp.linspace(0, xp.pi, 10, endpoint=False)
         w, H = dfreqresp(system, n=n)
         assert_almost_equal(w, expected_w)
 
@@ -537,12 +542,13 @@ class Test_bode:
         y = np.polyval([0.3], jw) / np.polyval([1.0, -0.2], jw)
 
         # Test mag
-        expected_mag = xp.asarray(20.0 * np.log10(abs(y)))
-        assert_almost_equal(mag, expected_mag)
+        expected_mag = xp.asarray(20.0 * np.log10(abs(y)), dtype=mag.dtype)
+        xp_assert_close(mag, expected_mag)
 
         # Test phase
-        expected_phase = xp.asarray(np.rad2deg(np.angle(y)))
-        assert_almost_equal(phase, expected_phase)
+        expected_phase = xp.asarray(np.rad2deg(np.angle(y)),
+                                    dtype=phase.dtype)
+        xp_assert_close(phase, expected_phase)
 
     def test_range(self, xp):
         # Test that bode() finds a reasonable frequency range.
@@ -552,7 +558,7 @@ class Test_bode:
                                   dt=0.1)
         n = 10
         # Expected range is from 0.01 to 10.
-        expected_w = xp.asarray(np.linspace(0, np.pi, n, endpoint=False) / dt)
+        expected_w = xp.linspace(0, xp.pi, n, endpoint=False) / dt
         w, mag, phase = dbode(system, n=n)
         assert_almost_equal(w, expected_w)
 

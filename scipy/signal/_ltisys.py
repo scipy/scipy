@@ -33,7 +33,7 @@ from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                               cont2discrete)
 
-from scipy._lib._array_api import array_namespace, xp_device, xpx
+from scipy._lib._array_api import array_namespace, xp_device, xp_promote, xpx
 
 import numpy as np
 from numpy import (real, atleast_1d, squeeze, asarray, zeros,
@@ -3438,6 +3438,9 @@ def dlsim(system, u, t=None, x0=None):
 
     xp = array_namespace(system.A, u, t, x0)
 
+    A, B, C, D, u = xp_promote(system.A, system.B, system.C, system.D, u,
+                               force_floating=True, xp=xp)
+
     u = xpx.atleast_nd(u, ndim=1, xp=xp)
 
     if u.ndim == 1:
@@ -3451,17 +3454,17 @@ def dlsim(system, u, t=None, x0=None):
         out_samples = int(xp.floor(stoptime / system.dt)) + 1
 
     # Pre-build output arrays
-    device = xp_device(system.A)
-    xout = xp.zeros((out_samples, system.A.shape[0]), device=device)
-    yout = xp.zeros((out_samples, system.C.shape[0]), device=device)
+    device = xp_device(A)
+    xout = xp.zeros((out_samples, A.shape[0]), dtype=A.dtype, device=device)
+    yout = xp.zeros((out_samples, C.shape[0]), dtype=A.dtype, device=device)
     tout = xp.linspace(0.0, stoptime, num=out_samples, device=device)
 
     # Check initial condition
     if x0 is None:
         xout = xpx.at(xout)[0, :].set(
-            xp.zeros((system.A.shape[1],), device=device))
+            xp.zeros((A.shape[1],), dtype=A.dtype, device=device))
     else:
-        xout = xpx.at(xout)[0, :].set(xp.asarray(x0, dtype=xout.dtype))
+        xout = xpx.at(xout)[0, :].set(xp.asarray(x0, dtype=A.dtype))
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
@@ -3470,18 +3473,18 @@ def dlsim(system, u, t=None, x0=None):
         if len(u.shape) == 1:
             u = xpx.atleast_nd(u, ndim=2, xp=xp).T
 
-        u_dt = make_interp_spline(t, u, k=1)(tout)
+        # The spline is computed in float64, cast back to preserve the
+        # working dtype (e.g. float32 torch inputs).
+        u_dt = xp.astype(make_interp_spline(t, u, k=1)(tout), A.dtype)
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout = xpx.at(xout)[i+1, :].set((system.A @ xout[i, :]) +
-                        system.B @ u_dt[i, :])
-        yout = xpx.at(yout)[i, :].set((system.C @ xout[i, :]) +
-                      system.D @ u_dt[i, :])
+        xout = xpx.at(xout)[i+1, :].set((A @ xout[i, :]) + B @ u_dt[i, :])
+        yout = xpx.at(yout)[i, :].set((C @ xout[i, :]) + D @ u_dt[i, :])
 
     # Last point
-    yout = xpx.at(yout)[out_samples-1, :].set((system.C @ xout[out_samples-1, :]) +
-                              system.D @ u_dt[out_samples-1, :])
+    yout = xpx.at(yout)[out_samples-1, :].set((C @ xout[out_samples-1, :]) +
+                              D @ u_dt[out_samples-1, :])
 
     if is_ss_input:
         return tout, yout, xout
