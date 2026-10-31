@@ -253,7 +253,7 @@ class DistributionsTest:
     @pytest.mark.thread_unsafe(reason="looks like an _rng_spawn issue?")
     def test_quasi_random_sample(self, case, *, xp):
         sample_shape, = mutually_broadcastable_shapes(1, max_side=20, rng=case.rng)
-        qrng = qmc.Halton(d=1, seed=case.rng)
+        qrng = qmc.Halton(d=1, rng=case.rng)
         check_sample_shape_NaNs(case.dist, 'sample', sample_shape,
                                 case.result_shape, qrng, xp=xp)
 
@@ -1065,7 +1065,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
         sample_method = dist.sample
 
     if rng_type != np.random.Generator:
-        rng = rng_type(d=1, seed=rng)
+        rng = rng_type(d=1, rng=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 

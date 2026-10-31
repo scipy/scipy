@@ -73,11 +73,11 @@ class KMeans(Benchmark):
     param_names = ['k']
 
     def __init__(self):
-        rnd = np.random.RandomState(0)
-        self.obs = rnd.rand(1000, 5)
+        self.rng = np.random.RandomState(0)
+        self.obs = self.rng.rand(1000, 5)
 
     def time_kmeans(self, k):
-        kmeans(self.obs, k, iter=10)
+        kmeans(self.obs, k, iter=10, rng=self.rng)
 
 
 class KMeans2(Benchmark):
@@ -85,8 +85,8 @@ class KMeans2(Benchmark):
     param_names = ['k', 'init']
 
     def __init__(self):
-        rnd = np.random.RandomState(0)
-        self.obs = rnd.rand(1000, 5)
+        self.rng = np.random.RandomState(0)
+        self.obs = self.rng.rand(1000, 5)
 
     def time_kmeans2(self, k, init):
         with warnings.catch_warnings():
@@ -95,7 +95,7 @@ class KMeans2(Benchmark):
                 ("One of the clusters is empty. Re-run kmeans with a "
                  "different initialization"),
                 UserWarning)
-            kmeans2(self.obs, k, minit=init, iter=10)
+            kmeans2(self.obs, k, minit=init, iter=10, rng=self.rng)
 
 
 class VQ(Benchmark):

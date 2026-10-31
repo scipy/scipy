@@ -1863,11 +1863,12 @@ class RigidTransform:
         >>> from scipy.spatial.transform import RigidTransform as Tf
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
+        >>> rng = np.random.default_rng()
 
         The rotation component is extracted from the transform:
 
         >>> t = np.array([1, 0, 0])
-        >>> r = R.random(3)
+        >>> r = R.random(3, rng=rng)
         >>> tf = Tf.from_components(t, r)
         >>> np.allclose(tf.rotation.as_matrix(), r.as_matrix())
         True
@@ -1897,8 +1898,9 @@ class RigidTransform:
 
         The translation component is extracted from the transform:
 
+        >>> rng = np.random.default_rng()
         >>> t = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
-        >>> r = R.random()
+        >>> r = R.random(rng=rng)
         >>> tf = Tf.from_components(t, r)
         >>> np.allclose(tf.translation, t)
         True

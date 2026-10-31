@@ -684,7 +684,7 @@ class BenchQMCHalton(Benchmark):
         self.rng = np.random.default_rng(1234)
 
     def time_halton(self, d, scramble, n, workers):
-        seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
+        seq = stats.qmc.Halton(d, scramble=scramble, rng=self.rng)
         seq.random(n, workers=workers)
 
 
@@ -697,11 +697,11 @@ class BenchQMCSobol(Benchmark):
 
     def setup(self, d, base2):
         self.rng = np.random.default_rng(168525179735951991038384544)
-        stats.qmc.Sobol(1, bits=32)  # make it load direction numbers
+        stats.qmc.Sobol(1, bits=32, rng=self.rng)  # make it load direction numbers
 
     def time_sobol(self, d, base2):
         # scrambling is happening at init only, not worth checking
-        seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
+        seq = stats.qmc.Sobol(d, scramble=False, bits=32, rng=self.rng)
         seq.random_base2(base2)
 
 class BenchPoissonDisk(Benchmark):
@@ -721,7 +721,7 @@ class BenchPoissonDisk(Benchmark):
 
     def time_poisson_disk(self, d, radius, ncandidates, n):
         seq = stats.qmc.PoissonDisk(d, radius=radius, ncandidates=ncandidates,
-                                    seed=self.rng)
+                                    rng=self.rng)
         seq.random(n)
 
 class DistanceFunctions(Benchmark):
