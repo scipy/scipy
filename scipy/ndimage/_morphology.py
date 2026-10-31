@@ -234,9 +234,8 @@ def _binary_erosion(input, structure, iterations, mask, output,
         structure = generate_binary_structure(num_axes, 1)
     else:
         structure = np.asarray(structure, dtype=bool)
-    if ndim > num_axes:
-        structure = _filters._expand_footprint(ndim, axes, structure,
-                                               footprint_name="structure")
+    structure = _filters._expand_footprint(ndim, axes, structure,
+                                           footprint_name="structure")
 
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have same dimensionality')
