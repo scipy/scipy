@@ -1407,6 +1407,56 @@ def test_gh_17992(tmp_path):
     assert_allclose(new_dict["data"][0][1], array_two)
 
 
+def _matlab_objects():
+    data = loadmat(pjoin(test_data_path, 'testmatlabstring_7_WIN64.mat'))
+    objects = {name: data[name] for name in ('matstring1', 'matstring2')}
+    workspace = data['__function_workspace__']
+    return objects, {**objects, '__function_workspace__': workspace}
+
+
+@pytest.mark.parametrize('do_compression', [False, True])
+def test_write_subsystem_offset(tmp_path, do_compression):
+    # MATLAB finds the data of objects via the subsystem offset in the file
+    # header, which has to point to the function workspace
+    objects, workspace = _matlab_objects()
+    stream = BytesIO()
+    savemat(stream, objects, do_compression=do_compression)
+    expected = len(stream.getvalue())
+    assert stream.getvalue()[116:124] == bytes(8)
+    stream = BytesIO()
+    savemat(stream, workspace, do_compression=do_compression)
+    assert np.frombuffer(stream.getvalue()[116:124], np.int64)[0] == expected
+    savemat(tmp_path / 'file.mat', workspace, do_compression=do_compression)
+    raw = (tmp_path / 'file.mat').read_bytes()
+    assert np.frombuffer(raw[116:124], np.int64)[0] == expected
+
+
+def test_write_subsystem_offset_skipped(tmp_path):
+    # Without a header of its own, or where seeking back to the header is not
+    # safe, the offset is not written and the file stays as before
+    objects, workspace = _matlab_objects()
+    stream = BytesIO()
+    savemat(stream, {'a': 1.0})
+    header = stream.getvalue()[:128]
+    MatFile5Writer(stream, do_compression=True).put_variables(
+        workspace, write_header=False)
+    assert stream.getvalue()[:128] == header
+
+    gzip_buffer = BytesIO()
+    with open(tmp_path / 'append.mat', 'ab') as f:
+        savemat(f, workspace, do_compression=True)
+    with gzip.GzipFile(fileobj=gzip_buffer, mode='wb') as f:
+        savemat(f, workspace, do_compression=True)
+    fd = os.open(tmp_path / 'o_append.mat', os.O_WRONLY | os.O_CREAT | os.O_APPEND)
+    with os.fdopen(fd, 'wb') as f:  # appends although the mode says 'wb'
+        savemat(f, workspace, do_compression=True)
+    for raw in ((tmp_path / 'append.mat').read_bytes(),
+                gzip.decompress(gzip_buffer.getvalue()),
+                (tmp_path / 'o_append.mat').read_bytes()):
+        assert raw[116:124] == bytes(8)
+        assert set(objects) <= set(loadmat(BytesIO(raw)))
+
+
 def test_gh_19659(tmp_path):
     d = {
         "char_array": np.array([list("char"), list("char")], dtype="U1"),

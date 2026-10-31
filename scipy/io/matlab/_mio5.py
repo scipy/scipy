@@ -75,7 +75,7 @@ import time
 import sys
 import zlib
 
-from io import BytesIO
+from io import BufferedRandom, BufferedWriter, BytesIO
 
 import warnings
 
@@ -835,6 +835,20 @@ class VarWriter5:
         self.write(arr['_ObjectMetadata'].item())
 
 
+def _can_patch_header(stream):
+    # Seeking back to the header is only safe for BytesIO and for files opened
+    # by name for writing; pipes, gzip, sockets, os.fdopen(...) are left alone
+    if type(stream) is BytesIO:
+        return True
+    if type(stream) not in (BufferedWriter, BufferedRandom):
+        return False
+    try:
+        name, mode = stream.name, stream.mode
+    except (AttributeError, OSError):
+        return False
+    return 'a' not in mode and isinstance(name, str) and os.path.isfile(name)
+
+
 class MatFile5Writer:
     ''' Class for writing mat5 files '''
 
@@ -898,12 +912,19 @@ class MatFile5Writer:
         # write header if requested, or None and start of file
         if write_header is None:
             write_header = self.file_stream.tell() == 0
+        # MATLAB finds the data of objects via the subsystem offset in the file
+        # header; it is only written where seeking back to byte 116 is safe
+        patch_header = (write_header and _can_patch_header(self.file_stream)
+                        and self.file_stream.tell() == 0)
         if write_header:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
+        subsys_offset = None
         for name, var in mdict.items():
             if name == '__function_workspace__':
                 name = ''
+                if patch_header:
+                    subsys_offset = self.file_stream.tell()
             elif name[0] == '_':
                 msg = (f"Starting field name with a "
                        f"underscore ({name}) is ignored")
@@ -922,3 +943,8 @@ class MatFile5Writer:
                 self.file_stream.write(out_str)
             else:  # not compressing
                 self._matrix_writer.write_top(var, name.encode('latin1'), is_global)
+        if subsys_offset is not None:
+            end_pos = self.file_stream.tell()
+            self.file_stream.seek(116)
+            self.file_stream.write(np.int64(subsys_offset).tobytes())
+            self.file_stream.seek(end_pos)
