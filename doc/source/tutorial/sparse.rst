@@ -219,5 +219,19 @@ To convert an instance to canonical form, use the ``.sum_duplicates()`` method:
 Next steps with sparse arrays 
 -------------------------------
 
-Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficiency in these circumstances. 
+Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficiency in these circumstances.
 
+Loading sparse coefficients from Redis
+--------------------------------------
+
+Sparse row/column/value triples can come from a database query rather than an
+in-memory literal or a file. The external `Redis ADBC driver
+<https://github.com/redis/redis-adbc-driver>`_ can return such Redis SQL results
+as Arrow columns for constructing a COO matrix and converting it to CSR.
+
+The `Redis ADBC SciPy guide
+<https://github.com/redis/redis-adbc-driver/blob/a48432273a0f9978e893bca27057b9f128e7603e/docs/integrations/scipy.md>`_
+includes installation, table ingestion/query, sparse construction and a local
+linear solve with solution and residual checks. Redis must run separately with
+Search enabled. Matrix construction and solving happen in the Python process;
+there is no SciPy computation pushdown or built-in Redis connector.
