@@ -1630,7 +1630,7 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.owens_t, ["h", "a"],
         xp_capabilities(
-            cpu_only=True,
+            cpu_only=True, exceptions=["jax.numpy"],
             extra_note=_ufunc_kwargs_extra_note("owens_t", ["torch"]),
         ),
         torch_native=False,

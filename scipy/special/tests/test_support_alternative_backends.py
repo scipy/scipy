@@ -98,6 +98,11 @@ def _skip_or_tweak_alternative_backends(
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
+    if f_name == "owens_t" and is_jax(xp) and all(
+            dtype == "float32" for dtype in dtypes
+    ):
+        pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
@@ -135,7 +140,7 @@ def _skip_or_tweak_alternative_backends(
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py')))
+                                           'xlog1py', 'beta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -148,6 +153,10 @@ def _skip_or_tweak_alternative_backends(
         # they were float64 when falling back to NumPy/SciPy.
         if not nfo.torch_native:
             pytest.xfail("dtypes do not match")
+
+    if f_name == 'beta' and is_jax(xp):
+        # jax disagree's with scipy when gamma poles are involved.
+        positive_only = [True, True]
 
     return positive_only, dtypes
 
