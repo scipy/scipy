@@ -490,6 +490,9 @@ def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
+    overwrite_ab = overwrite_ab or _datacopied(a1, ab)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
 
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
@@ -506,7 +509,6 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
         dt = solve(np.eye(1, dtype=a1.dtype), np.ones(1, dtype=b1.dtype)).dtype
         return np.empty_like(b1, dtype=dt)
 
-    overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
