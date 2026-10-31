@@ -998,6 +998,14 @@ def test_mat_dtype():
     assert_equal(d['testmatrix'].dtype.kind, 'f')
 
 
+def test_mat_dtype_complex():
+    # gh-17641: mat_dtype=True dropped the imaginary part
+    fname = pjoin(test_data_path, 'testcomplex_7.4_GLNX86.mat')
+    expected = loadmat(fname)['testcomplex']
+    actual = loadmat(fname, mat_dtype=True)['testcomplex']
+    assert_array_equal(actual, expected, strict=True)
+
+
 def test_sparse_in_struct():
     # reproduces bug found by DC where Cython code was insisting on
     # ndarray return type, but getting sparse matrix
