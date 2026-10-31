@@ -2265,6 +2265,7 @@ def squareform(X, force="no", checks=True):
                          f"array. A {len(s)}-dimensional array is not permitted")
 
 
+@xp_capabilities(jax_jit=False, allow_dask_compute=2)
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
     Return True if input array satisfies basic distance matrix properties
@@ -2346,11 +2347,11 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     False
 
     """
-    D = np.asarray(D, order='c')
+    xp = array_namespace(D)
+    D = _asarray(D, order='C', xp=xp)
     valid = True
     try:
-        s = D.shape
-        if len(D.shape) != 2:
+        if D.ndim != 2:
             if name:
                 raise ValueError(f"Distance matrix '{name}' must have shape=2 "
                                  "(i.e. be two-dimensional).")
@@ -2358,25 +2359,25 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                 raise ValueError('Distance matrix must have shape=2 (i.e. '
                                  'be two-dimensional).')
         if tol == 0.0:
-            if not (D == D.T).all():
+            if not xp.all(D == D.T):
                 if name:
                     raise ValueError(f"Distance matrix '{name}' must be symmetric.")
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
-            if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
+            if not xp.all(xp.linalg.diagonal(D) == 0):
                 if name:
                     raise ValueError(f"Distance matrix '{name}' diagonal must be zero.")
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
-            if not (D - D.T <= tol).all():
+            if not xp.all(D - D.T <= tol):
                 if name:
                     raise ValueError(f'Distance matrix \'{name}\' must be '
                                      f'symmetric within tolerance {tol:5.5f}.')
                 else:
                     raise ValueError('Distance matrix must be symmetric within '
                                      f'tolerance {tol:5.5f}.')
-            if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
+            if not xp.all(xp.linalg.diagonal(D) <= tol):
                 if name:
                     raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
                                      f'close to zero within tolerance {tol:5.5f}.')
