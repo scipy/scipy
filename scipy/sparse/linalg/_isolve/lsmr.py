@@ -49,8 +49,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         Damping factor for regularized least-squares. `lsmr` solves
         the regularized least-squares problem::
 
-         min ||(b) - (  A   )x||
-             ||(0)   (damp*I) ||_2
+         min ||(   b    ) - (  A   )x||
+             ||(damp*x0)   (damp*I) ||_2
 
         where damp is a scalar.  If damp is None or 0, the system
         is solved without regularization. Default is 0.
@@ -116,9 +116,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     itn : int
         Number of iterations used.
     normr : float
-        ``norm(b-Ax)``
+        ``sqrt(norm(b-Ax)^2 + damp^2*norm(x - x0)^2)``
     normar : float
-        ``norm(A^H (b - Ax))``
+        ``norm(A^H (b - Ax) - damp^2*(x - x0))``
     norma : float
         ``norm(A)``
     conda : float
