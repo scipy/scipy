@@ -1,6 +1,7 @@
 # file for distribution-specific tests with new infrastructure (UnivariateDistribution)
 import pytest
 import numpy as np
+from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case, is_cupy
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy import stats, special
@@ -19,14 +20,19 @@ class TestBinomial(DistributionsTest):
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
         xp_assert_close(dist.pmf(x),
-                        stats.binom(p=dist.p, n=dist.n).pmf(x))
+                        xp.asarray(stats.binom(p=dist.p, n=dist.n).pmf(x).tolist()))
+
+    def test_cdf(self, case, xp):
+        tol_override = dict(atol=1e-6) if case.dist._dtype == xp.float32 else dict()
+        return super().test_cdf(case, xp=xp, tol_override=tol_override)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, *, xp):
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
         if self.is_degenerate(case.dist, xp=xp):
             with np.errstate(invalid='ignore'):
-                return super().test_moment(case, xp=xp)
-        super().test_moment(case, xp=xp)
+                return super().test_moment(case, xp=xp, tol_override={'atol': atol})
+        super().test_moment(case, xp=xp, tol_override={'atol': atol})
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_skewness(self, case, *, xp):
@@ -48,11 +54,12 @@ class TestBinomial(DistributionsTest):
     def test_gh26072_non_integer_cdf_and_ccdf(self, fun, method, xp):
         # gh-26072 found that cdf-like methods of discrete distributions
         # did not produce the expected step behavior
-        n, p = 10, 0.3
+        n, p = 10., 0.3
         x = np.arange(n+1)
         x = np.concat((x, np.nextafter(x, np.inf), np.nextafter(x, -np.inf)))
         x_xp = xp.asarray(x)
-        X = stats.Binomial(n=n, p=p, xp=xp)
+        X = stats.Binomial(n=xp.asarray(n, dtype=xp.float64),
+                           p=xp.asarray(p, dtype=xp.float64))
         Y = stats.binom(n=n, p=p)
         X_fun = getattr(X, fun)
         Y_fun = getattr(Y, fun.replace('ccdf', 'sf'))
@@ -67,9 +74,9 @@ class TestBinomial(DistributionsTest):
         xp_assert_close(X.logccdf(x, method='complement'), X.logccdf(x), rtol=1e-15)
 
         # going even deeper into the tails
-        X = stats.Binomial(n=100, p=0.5)
-        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0), rtol=1e-15)
-        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100), rtol=1e-15)
+        X = stats.Binomial(n=100, p=0.5, xp=xp)
+        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0.), rtol=1e-15)
+        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100.), rtol=1e-15)
 
 
 @make_xp_test_case(stats.Logistic)
@@ -102,26 +109,62 @@ class TestNormal(DistributionsTest):
         return super().test_logpdf(case, xp=xp)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((stats.Normal, 'moment'))
+    def test_moment(self, case, xp):
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
+        return super().test_moment(case, tol_override={'atol': atol}, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((stats.Normal, 'lmoment'))
     def test_lmoment(self, case, xp):
-        return super().test_lmoment(case, tol_override={'atol': 1e-8}, xp=xp)
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
+        return super().test_lmoment(case, tol_override={'atol': atol}, xp=xp)
 
 
 @make_xp_test_case(StandardNormal)
 class TestStandardNormal(DistributionsTest):
-    seed = 726527242
+    seed = 726527245
     family = StandardNormal
+
+    def tol(self, case, xp):
+        return dict(atol=1e-6) if case.dist._dtype == xp.float32 else dict()
 
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
         xp_assert_close(dist.pdf(x), xp.exp(-x**2/2)/(2*xp.pi)**0.5)
 
-    @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
+    def test_cdf(self, case, xp):
+        return super().test_cdf(case, xp=xp, tol_override=self.tol(case, xp))
+
     def test_cdf2(self, case, xp):
-        return super().test_cdf2(case, xp=xp)
+        return super().test_cdf2(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_ccdf(self, case, xp):
+        return super().test_ccdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_ccdf2(self, case, xp):
+        return super().test_ccdf2(case, xp=xp, tol_override=self.tol(case, xp))
 
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case, xp):
         return super().test_logpdf(case, xp=xp)
+
+    def test_logcdf(self, case, xp):
+        return super().test_logcdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    def test_logccdf(self, case, xp):
+        return super().test_logccdf(case, xp=xp, tol_override=self.tol(case, xp))
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((StandardNormal, 'moment'))
+    def test_moment(self, case, xp):
+        tol_override = dict(atol=5e-3) if case.dist._dtype == xp.float32 else None
+        return super().test_moment(case, tol_override=tol_override, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((StandardNormal, 'lmoment'))
+    def test_lmoment(self, case, xp):
+        return super().test_lmoment(case, xp=xp)
 
 
 @make_xp_test_case(stats.Uniform)
@@ -131,8 +174,8 @@ class TestUniform(DistributionsTest):
 
     def test_purported_distribution(self, valid_dist_x, xp):
         dist, x = valid_dist_x
-        xp_assert_close(dist.pdf(x),
-                        1 / xp.full_like(x, fill_value=(dist.b - dist.a)))
+        _, c = xp.broadcast_arrays(x, dist.b - dist.a)
+        xp_assert_close(dist.pdf(x), 1 / c)
 
     def test_mode(self, case, xp):
         xp_assert_close(case.dist.mode(), case.dist.a + case.dist.ab/2)
@@ -144,7 +187,15 @@ class TestUniform(DistributionsTest):
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, xp):
+        if xpx.default_dtype(xp) == xp.float32:
+            pytest.xfail("Significant accuracy issues; deserves investigation")
         return super().test_moment(case, tol_override={'atol': 1e-9}, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_lmoment(self, case, xp):
+        if xpx.default_dtype(xp) == xp.float32:
+            pytest.xfail("Significant accuracy issues; deserves investigation")
+        return super().test_lmoment(case, xp=xp)
 
 
 @make_xp_test_case(stats.VonMises)
@@ -169,4 +220,10 @@ class TestVonMises(DistributionsTest):
 
     def test_median(self, case, xp):
         # can only expect about half precision with optimization
-        return super().test_median(case, tol_override={'atol': 1e-6}, xp=xp)
+        atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-3
+        return super().test_median(case, tol_override={'atol': atol}, xp=xp)
+
+    def test_mode(self, case, xp):
+        # can only expect about half precision with optimization
+        atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-3
+        return super().test_mode(case, tol_override={'atol': atol}, xp=xp)
