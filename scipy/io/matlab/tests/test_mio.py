@@ -1224,6 +1224,16 @@ def test_empty_sparse():
     assert_equal(hdr.nzmax, 1)
 
 
+def test_spmatrix_default_warns_once():
+    # The default warns once per call, not once per sparse variable
+    stream = BytesIO()
+    savemat(stream, {'a': eye_array(2, format='csc'), 'b': eye_array(3, format='csc')})
+    stream.seek(0)
+    with pytest.deprecated_call(match="The default value for `spmatrix") as record:
+        loadmat(stream)
+    assert len(record) == 1
+
+
 def test_empty_mat_error():
     # Test we get a specific warning for an empty mat file
     sio = BytesIO()
