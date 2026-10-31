@@ -7,6 +7,10 @@
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 
+#include "wrapper_types.hpp"
+#include "blas_calls.hpp"
+#include "lapack_calls.hpp"
+
 #include "scipy_blas_defines.h"
 #include "_npymath.hh"
 #include "_common_array_utils.hh"
@@ -19,6 +23,7 @@
 #include "_linalg_qr.hh"
 #include "_linalg_solve.hh"
 #include "_linalg_svd.hh"
+#include "_linalg_norm.hh"
 
 using namespace sp_linalg;
 
@@ -34,13 +39,13 @@ get_err_mesg(const std::string routine, const std::string func_name, int info);
 
 /*
  * Minimal checks for an input array:
- *   - ndim >= 2
+ *   - ndim >= exp_ndim
  *   - LAPACK-compatible dtype
  *   - aligned
  *
  * Sets an error if any of these is violated (users to bail out immediately).
  */
-int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
+int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func, const int exp_ndim = 2) {
     int typenum = PyArray_TYPE(ap_Am);
     bool dtype_ok = (typenum == NPY_FLOAT32)
                      || (typenum == NPY_FLOAT64)
@@ -53,7 +58,7 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
     }
 
     int ndim = PyArray_NDIM(ap_Am);
-    if (ndim < 2) {
+    if (ndim < exp_ndim) {
         PyErr_Format(PyExc_ValueError, "scipy.linalg.%s: Expected at least a 2D array.", func);
         return 0;
     }
@@ -1052,6 +1057,126 @@ fail:
 }
 
 
+static PyObject*
+_linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_av = NULL;
+    PyArrayObject *ap_res = NULL;
+    CBLAS_INT ord = 2;
+
+    int info = 0;
+    SliceStatusVec vec_status;
+
+    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_av, &ord)) {
+        return NULL;
+    }
+
+    // Sanity check input
+    if (!_check_dtype_and_flags(ap_av, "vector_norm", 1)) {
+        return NULL;
+    }
+
+    if (ord != 2) { // Only `ord == 2` is supported
+        return NULL;
+    }
+
+    // Allocate return object
+    int typenum = PyArray_TYPE(ap_av);
+    npy_intp ndim = PyArray_NDIM(ap_av);
+    npy_intp *shape = PyArray_DIMS(ap_av);
+
+    int res_typenum = typenum;
+    if (typenum == NPY_COMPLEX64) { res_typenum = NPY_FLOAT32; }
+    else if (typenum == NPY_COMPLEX128) { res_typenum = NPY_FLOAT64; }
+    ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, res_typenum);
+
+    // Heavy lifting
+    switch (typenum) {
+        case NPY_FLOAT32:
+            info = _vector_norm<f32>(ap_av, ap_res, ord, vec_status);
+            break;
+        case NPY_FLOAT64 :
+            info = _vector_norm<f64>(ap_av, ap_res, ord, vec_status);
+            break;
+        case NPY_COMPLEX64:
+            info = _vector_norm<c64>(ap_av, ap_res, ord, vec_status);
+            break;
+        case NPY_COMPLEX128:
+            info = _vector_norm<c128>(ap_av, ap_res, ord, vec_status);
+            break;
+    }
+
+    if (info < 0) {
+        // OOM or internal error
+        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.vector_norm");
+        goto fail;
+    }
+
+    return Py_BuildValue("N", PyArray_Return(ap_res));
+
+
+fail:
+    Py_DECREF(ap_res);
+    return NULL;
+}
+
+
+static PyObject *
+_linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_Am = NULL;
+    PyArrayObject *ap_res = NULL;
+    MATRIX_NORM_ORD ord = MATRIX_NORM_ORD::FRO;
+
+    int info = 0;
+
+    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord)) {
+        return NULL;
+    }
+
+    // Sanity check input
+    if (!_check_dtype_and_flags(ap_Am, "matrix_norm", 2)) {
+        return NULL;
+    }
+
+    // Allocate return object
+    int typenum = PyArray_TYPE(ap_Am);
+    npy_intp ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+
+    int res_typenum = typenum;
+    if (typenum == NPY_COMPLEX64) { res_typenum = NPY_FLOAT32; }
+    else if (typenum == NPY_COMPLEX128) { res_typenum = NPY_FLOAT64; }
+    ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, res_typenum);
+
+    // Heavy lifting
+    switch (typenum) {
+        case NPY_FLOAT32:
+            info = _matrix_norm<f32>(ap_Am, ap_res, ord);
+            break;
+        case NPY_FLOAT64:
+            info = _matrix_norm<f64>(ap_Am, ap_res, ord);
+            break;
+        case NPY_COMPLEX64:
+            info = _matrix_norm<c64>(ap_Am, ap_res, ord);
+            break;
+        case NPY_COMPLEX128:
+            info = _matrix_norm<c128>(ap_Am, ap_res, ord);
+            break;
+    }
+
+    if (info < 0) {
+        // OOM or internal error
+        PyErr_SetString(PyExc_RuntimeError, "Memory in scipy.linalg.matrix_norm");
+        goto fail;
+    }
+
+    return Py_BuildValue("N", PyArray_Return(ap_res));
+
+fail:
+    Py_DECREF(ap_res);
+    return NULL;
+}
+
+
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
  */
@@ -1652,6 +1777,8 @@ static char doc_eig[] = ("eigenvalue solver.");
 static char doc_eigh[] = ("eigenvalue solver for symmetric/hermitian matrices.");
 static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
+static char doc_matrix_norm[] = ("Compute the matrix norm along the two trailing axes.");
+static char doc_vector_norm[] = ("Compute the vector norm along the trailing axis.");
 
 static struct PyMethodDef module_methods[] = {
   {"_bandwidth", _linalg_bandwidth, METH_VARARGS, doc_bandwidth},
@@ -1665,6 +1792,8 @@ static struct PyMethodDef module_methods[] = {
   {"_eigh", _linalg_eigh, METH_VARARGS, doc_eigh},
   {"_cholesky", _linalg_cholesky, METH_VARARGS, doc_cholesky},
   {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
+  {"_matrix_norm", _linalg_matrix_norm, METH_VARARGS, doc_matrix_norm},
+  {"_vector_norm", _linalg_vector_norm, METH_VARARGS, doc_vector_norm},
   {NULL, NULL, 0, NULL}
 };
 
