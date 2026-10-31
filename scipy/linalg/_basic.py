@@ -242,7 +242,11 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
-        if a1.item() == 0:
+        if structure in (101, 211):
+            a1 = a1.real
+            if structure == 101 and not (a1.flat[0] > 0):
+                raise LinAlgError("A singular matrix detected.")
+        if a1.flat[0] == 0:
             raise LinAlgError("A singular matrix detected.")
 
         out = b1 / a1

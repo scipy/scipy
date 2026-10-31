@@ -832,6 +832,35 @@ class TestSolve:
         with pytest.raises(LinAlgError):
             solve([[0]], b)
 
+    def test_solve_scalar_assume_a(self):
+        # gh-26580: a 1x1 matrix should honor assume_a='pos' and 'her'
+        b = np.array([1.0])
+
+        # 'pos' with non-positive entry must raise LinAlgError
+        with pytest.raises(LinAlgError, match="singular"):
+            solve(np.array([[-2.0]]), b, assume_a="pos")
+
+        with pytest.raises(LinAlgError, match="singular"):
+            solve(-2.0, 1.0, assume_a="pos")
+
+        with pytest.raises(LinAlgError, match="singular"):
+            solve(np.array([[-2.0 + 5.0j]]), b, assume_a="pos")
+
+        # 'pos' and 'her' with complex entry ignore imaginary part on diagonal
+        res_her = solve(np.array([[2.0 + 5.0j]]), b, assume_a="her")
+        assert_allclose(res_her, [0.5 + 0.0j])
+
+        res_pos = solve(np.array([[2.0 + 5.0j]]), b, assume_a="pos")
+        assert_allclose(res_pos, [0.5 + 0.0j])
+
+        # 'her' with zero real part must raise LinAlgError
+        with pytest.raises(LinAlgError, match="singular"):
+            solve(np.array([[0.0 + 5.0j]]), b, assume_a="her")
+
+        # 'sym' with complex entry keeps complex diagonal
+        res_sym = solve(np.array([[2.0 + 5.0j]]), b, assume_a="sym")
+        assert_allclose(res_sym, [1.0 / (2.0 + 5.0j)])
+
     def test_multiple_rhs(self):
         a = np.eye(2)
         rng = np.random.default_rng(1234)
