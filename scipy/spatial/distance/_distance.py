@@ -39,9 +39,10 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
-                                   is_numpy, xp_promote, xp_capabilities, xp_device)
-from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
+from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
+                                   is_lazy_array, is_numpy, is_numpy_array, np_compat,
+                                   xp_promote, xp_capabilities, xp_device)
+from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable, broadcastable
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -674,9 +675,10 @@ def cosine(u, v, w=None):
     return correlation(u, v, w=w, centered=False)
 
 
+@xp_capabilities()
 def hamming(u, v, w=None):
     """
-    Compute the Hamming distance between two 1-D arrays.
+    Compute the Hamming distance between two arrays.
 
     The Hamming distance between 1-D arrays `u` and `v`, is simply the
     proportion of disagreeing components in `u` and `v`. If `u` and `v` are
@@ -718,18 +720,23 @@ def hamming(u, v, w=None):
     0.33333333333333331
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if u.shape != v.shape:
-        raise ValueError('The 1d arrays must have equal lengths.')
+    try:
+        xp = array_namespace(u, v, w)
+    except TypeError:
+        # String and object arrays have no array API namespace, so we fall back to np
+        if any(is_array_api_obj(x) and not is_numpy_array(x) for x in (u, v, w)):
+            raise
+        xp = np_compat
+    u, v = xp_promote(u, xp=xp), xp_promote(v, xp=xp)
+    if not broadcastable(u.shape, v.shape):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
     u_ne_v = u != v
-    if w is not None:
-        w = _validate_weights(w)
-        if w.shape != u.shape:
-            raise ValueError("'w' should have the same length as 'u' and 'v'.")
-        w = w / w.sum()
-        return np.dot(u_ne_v, w)
-    return np.mean(u_ne_v)
+    if w is None:
+        return xp.mean(xp.astype(u_ne_v, xpx.default_dtype(xp)), axis=-1)
+    w = _validate_weights(w, xp=xp)
+    if not broadcastable(u_ne_v.shape, w.shape):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    return xp.vecdot(xp.astype(u_ne_v, w.dtype), w / xp.sum(w, axis=-1, keepdims=True))
 
 
 @xp_capabilities()
