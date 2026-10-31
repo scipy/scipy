@@ -389,7 +389,7 @@ class Xdist(Benchmark):
 
 
 class XdistMahalanobis(Benchmark):
-    params = [(10, 3), (1000, 10), (2000, 50), (400, 200)]
+    params = [[(10, 3), (1000, 10), (2000, 50), (400, 200)]]
     param_names = ['(num_points, dim)']
 
     def setup(self, mn):
