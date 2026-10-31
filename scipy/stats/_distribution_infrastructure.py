@@ -362,9 +362,6 @@ class _Interval(_Domain):
             The Generator used for drawing random values.
 
         """
-        # this is only used for testing, so we will generate everything with NumPy
-        # and return an array of the desired type at the end. We'll figure out how
-        # to choose the right device later.
         rng = np.random.default_rng(rng)
         dtype = xpx.default_dtype(xp)
         device = xp_result_device(xp_device(min), xp_device(max))
@@ -615,9 +612,10 @@ class _Parameter(ABC):
 
         a, b = domain.get_numerical_endpoints(parameter_values, xp=xp)
         a, b = xp.broadcast_arrays(a, b)
+        xp = array_namespace(a, b)  # ensure array_api_compat version
 
         # work with shapes in NumPy
-        base_shape = tuple(a.shape)
+        base_shape = a.shape
         extended_shape = np.broadcast_shapes(size, base_shape)
         n_extended = np.prod(extended_shape)
         n_base = np.prod(base_shape)
@@ -3548,7 +3546,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
         with np.errstate(invalid='ignore'):  # can happen with infinite moment
-            # TODO: tuple? investigate
             moment_as = self._preserve_type(xp.stack(tuple(moment_as)))
             moment_b = xp.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
@@ -5844,7 +5841,7 @@ class Mixture(_ProbabilityDistribution):
             message = "`weights` must have floating point dtype."
             raise ValueError(message)
 
-          # not array API, but works
+        # not array API, but works
         if not xp.isclose(xp.sum(weights), xp.asarray(1.0, device=self._device)):
             message = "`weights` must sum to 1.0."
             raise ValueError(message)

@@ -116,7 +116,8 @@ class Normal(ContinuousDistribution):
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         xp = self._xp
-        lH0 = xp.asarray(StandardNormal._logentropy_formula(self))
+        lH0 = xp.asarray(StandardNormal._logentropy_formula(self),
+                         dtype=self._dtype, device=self._device)
         with np.errstate(divide='ignore', invalid='ignore'):
             # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf -> divide
             # sigma = NaN -> invalid
