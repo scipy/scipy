@@ -33,6 +33,8 @@ from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                               cont2discrete)
 
+from scipy._lib._array_api import array_namespace, xp_device, xpx
+
 import numpy as np
 from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, linspace)
@@ -853,7 +855,8 @@ class TransferFunction(LinearTimeInvariant):
 
     @num.setter
     def num(self, num):
-        self._num = atleast_1d(num)
+        xp = array_namespace(num)
+        self._num = xpx.atleast_nd(num, ndim=1, xp=xp)
 
         # Update dimensions
         if len(self.num.shape) > 1:
@@ -869,7 +872,8 @@ class TransferFunction(LinearTimeInvariant):
 
     @den.setter
     def den(self, den):
-        self._den = atleast_1d(den)
+        xp = array_namespace(den)
+        self._den = xpx.atleast_nd(den, ndim=1, xp=xp)
 
     def _copy(self, system):
         """
@@ -940,11 +944,14 @@ class TransferFunction(LinearTimeInvariant):
             denominator polynomials, in order of ascending degree of 'z**-1'.
             That is, ``5 + 3 z**-1 + 2 z**-2`` is presented as ``[5, 3, 2]``.
         """
-        diff = len(num) - len(den)
+        xp = array_namespace(num, den)
+        diff = num.shape[0] - den.shape[0]
         if diff > 0:
-            den = np.hstack((np.zeros(diff), den))
+            den = xp.concat(
+                (xp.zeros(diff, dtype=den.dtype, device=xp_device(den)), den))
         elif diff < 0:
-            num = np.hstack((np.zeros(-diff), num))
+            num = xp.concat(
+                (xp.zeros(-diff, dtype=num.dtype, device=xp_device(num)), num))
         return num, den
 
     @staticmethod
@@ -1253,7 +1260,8 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     @zeros.setter
     def zeros(self, zeros):
-        self._zeros = atleast_1d(zeros)
+        xp = array_namespace(zeros)
+        self._zeros = xpx.atleast_nd(zeros, ndim=1, xp=xp)
 
         # Update dimensions
         if len(self.zeros.shape) > 1:
@@ -1269,7 +1277,8 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     @poles.setter
     def poles(self, poles):
-        self._poles = atleast_1d(poles)
+        xp = array_namespace(poles)
+        self._poles = xpx.atleast_nd(poles, ndim=1, xp=xp)
 
     @property
     def gain(self):
@@ -1813,7 +1822,11 @@ class StateSpace(LinearTimeInvariant):
 
     @A.setter
     def A(self, A):
-        self._A = np.atleast_2d(A) if A is not None else None
+        if A is None:
+            self._A = None
+            return
+        xp = array_namespace(A)
+        self._A = xpx.atleast_nd(xp.asarray(A), ndim=2, xp=xp)
 
     @property
     def B(self):
@@ -1822,7 +1835,11 @@ class StateSpace(LinearTimeInvariant):
 
     @B.setter
     def B(self, B):
-        self._B = np.atleast_2d(B) if B is not None else None
+        if B is None:
+            self._B = None
+            return
+        xp = array_namespace(B)
+        self._B = xpx.atleast_nd(xp.asarray(B), ndim=2, xp=xp)
         self.inputs = self.B.shape[-1]
 
     @property
@@ -1832,7 +1849,11 @@ class StateSpace(LinearTimeInvariant):
 
     @C.setter
     def C(self, C):
-        self._C = np.atleast_2d(C) if C is not None else None
+        if C is None:
+            self._C = None
+            return
+        xp = array_namespace(C)
+        self._C = xpx.atleast_nd(xp.asarray(C), ndim=2, xp=xp)
         self.outputs = self.C.shape[0]
 
     @property
@@ -1842,7 +1863,11 @@ class StateSpace(LinearTimeInvariant):
 
     @D.setter
     def D(self, D):
-        self._D = np.atleast_2d(D) if D is not None else None
+        if D is None:
+            self._D = None
+            return
+        xp = array_namespace(D)
+        self._D = xpx.atleast_nd(xp.asarray(D), ndim=2, xp=xp)
 
     def _copy(self, system):
         """
@@ -3411,48 +3436,52 @@ def dlsim(system, u, t=None, x0=None):
     is_ss_input = isinstance(system, StateSpace)
     system = system._as_ss()
 
-    u = np.atleast_1d(u)
+    xp = array_namespace(system.A, u, t, x0)
+
+    u = xpx.atleast_nd(u, ndim=1, xp=xp)
 
     if u.ndim == 1:
-        u = np.atleast_2d(u).T
+        u = xpx.atleast_nd(u, ndim=2, xp=xp).T
 
     if t is None:
-        out_samples = len(u)
+        out_samples = u.shape[0]
         stoptime = (out_samples - 1) * system.dt
     else:
         stoptime = t[-1]
-        out_samples = int(np.floor(stoptime / system.dt)) + 1
+        out_samples = int(xp.floor(stoptime / system.dt)) + 1
 
     # Pre-build output arrays
-    xout = np.zeros((out_samples, system.A.shape[0]))
-    yout = np.zeros((out_samples, system.C.shape[0]))
-    tout = np.linspace(0.0, stoptime, num=out_samples)
+    device = xp_device(system.A)
+    xout = xp.zeros((out_samples, system.A.shape[0]), device=device)
+    yout = xp.zeros((out_samples, system.C.shape[0]), device=device)
+    tout = xp.linspace(0.0, stoptime, num=out_samples, device=device)
 
     # Check initial condition
     if x0 is None:
-        xout[0, :] = np.zeros((system.A.shape[1],))
+        xout = xpx.at(xout)[0, :].set(
+            xp.zeros((system.A.shape[1],), device=device))
     else:
-        xout[0, :] = np.asarray(x0)
+        xout = xpx.at(xout)[0, :].set(xp.asarray(x0, dtype=xout.dtype))
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
         u_dt = u
     else:
         if len(u.shape) == 1:
-            u = u[:, np.newaxis]
+            u = xpx.atleast_nd(u, ndim=2, xp=xp).T
 
         u_dt = make_interp_spline(t, u, k=1)(tout)
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout[i+1, :] = (np.dot(system.A, xout[i, :]) +
-                        np.dot(system.B, u_dt[i, :]))
-        yout[i, :] = (np.dot(system.C, xout[i, :]) +
-                      np.dot(system.D, u_dt[i, :]))
+        xout = xpx.at(xout)[i+1, :].set((system.A @ xout[i, :]) +
+                        system.B @ u_dt[i, :])
+        yout = xpx.at(yout)[i, :].set((system.C @ xout[i, :]) +
+                      system.D @ u_dt[i, :])
 
     # Last point
-    yout[out_samples-1, :] = (np.dot(system.C, xout[out_samples-1, :]) +
-                              np.dot(system.D, u_dt[out_samples-1, :]))
+    yout = xpx.at(yout)[out_samples-1, :].set((system.C @ xout[out_samples-1, :]) +
+                              system.D @ u_dt[out_samples-1, :])
 
     if is_ss_input:
         return tout, yout, xout
@@ -3524,22 +3553,25 @@ def dimpulse(system, x0=None, t=None, n=None):
     else:
         system = dlti(*system[:-1], dt=system[-1])._as_ss()
 
+    xp = array_namespace(system.A, x0, t)
+
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
 
     # If time is not specified, use the number of samples
     # and system dt
+    device = xp_device(system.A)
     if t is None:
-        t = np.linspace(0, n * system.dt, n, endpoint=False)
+        t = xp.linspace(0, n * system.dt, n, endpoint=False, device=device)
     else:
-        t = np.asarray(t)
+        t = xp.asarray(t)
 
     # For each input, implement a step change
     yout = None
     for i in range(0, system.inputs):
-        u = np.zeros((t.shape[0], system.inputs))
-        u[0, i] = 1.0
+        u = xp.zeros((t.shape[0], system.inputs), device=device)
+        u = xpx.at(u)[0, i].set(1.0)
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
@@ -3620,22 +3652,25 @@ def dstep(system, x0=None, t=None, n=None):
     else:
         system = dlti(*system[:-1], dt=system[-1])._as_ss()
 
+    xp = array_namespace(system.A, x0, t)
+
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
 
     # If time is not specified, use the number of samples
     # and system dt
+    device = xp_device(system.A)
     if t is None:
-        t = np.linspace(0, n * system.dt, n, endpoint=False)
+        t = xp.linspace(0, n * system.dt, n, endpoint=False, device=device)
     else:
-        t = np.asarray(t)
+        t = xp.asarray(t)
 
     # For each input, implement a step change
     yout = None
     for i in range(0, system.inputs):
-        u = np.zeros((t.shape[0], system.inputs))
-        u[:, i] = np.ones((t.shape[0],))
+        u = xp.zeros((t.shape[0], system.inputs), device=device)
+        u = xpx.at(u)[:, i].set(xp.ones((t.shape[0],), device=device))
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
@@ -3745,7 +3780,10 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     if isinstance(system, TransferFunction):
         # Convert numerator and denominator from polynomials in the variable
         # 'z' to polynomials in the variable 'z^-1', as freqz expects.
-        num, den = TransferFunction._z_to_zinv(system.num.ravel(), system.den)
+        xp = array_namespace(system.num, system.den, w)
+        num, den = TransferFunction._z_to_zinv(
+            xp.reshape(system.num, (-1,)), system.den
+        )
         w, h = freqz(num, den, worN=worN, whole=whole)
 
     elif isinstance(system, ZerosPolesGain):
@@ -3841,13 +3879,18 @@ def dbode(system, w=None, n=100):
     >>> plt.show()
     """
     w, y = dfreqresp(system, w=w, n=n)
+    xp = array_namespace(y)
 
     if isinstance(system, dlti):
         dt = system.dt
     else:
         dt = system[-1]
 
-    mag = 20.0 * np.log10(abs(y))
-    phase = np.rad2deg(np.unwrap(np.angle(y)))
+    mag = 20.0 * xp.log10(abs(y))
+    angle = xp.atan2(xp.imag(y), xp.real(y))
+    d = angle[1:] - angle[:-1]
+    correction = -2 * xp.pi * xp.round(d / (2 * xp.pi))
+    phase = xp.concat((angle[:1], angle[1:] + xp.cumulative_sum(correction)))
+    phase = phase * 180.0 / xp.pi
 
     return w / dt, mag, phase

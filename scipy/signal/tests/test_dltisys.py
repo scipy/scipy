@@ -6,6 +6,7 @@ import numpy as np
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal, xp_assert_close, xp_assert_equal,
+    make_xp_test_case,
 )
 
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
@@ -13,30 +14,31 @@ from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           dfreqresp, dbode, BadCoefficients)
 
 
+@make_xp_test_case(dlsim, dstep, dimpulse)
 class TestDLTI:
 
-    def test_dlsim(self):
+    def test_dlsim(self, xp):
 
-        a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
-        b = np.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
-        c = np.asarray([[0.1, 0.3]])
-        d = np.asarray([[0.0, -0.1, 0.0]])
+        a = xp.asarray([[0.9, 0.1], [-0.2, 0.9]])
+        b = xp.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
+        c = xp.asarray([[0.1, 0.3]])
+        d = xp.asarray([[0.0, -0.1, 0.0]])
         dt = 0.5
 
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
-        u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
-                       np.full((5, 1), 0.01),
-                       np.full((5, 1), -0.002)))
-        t_in = np.linspace(0, 2.0, num=5)
+        u = xp.asarray(np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
+                                  np.full((5, 1), 0.01),
+                                  np.full((5, 1), -0.002))))
+        t_in = xp.linspace(0, 2.0, num=5)
 
         # Define the known result
-        yout_truth = np.array([[-0.001,
-                                -0.00073,
-                                0.039446,
-                                0.0915387,
-                                0.13195948]]).T
-        xout_truth = np.asarray([[0, 0],
+        yout_truth = xp.asarray([[-0.001,
+                                  -0.00073,
+                                  0.039446,
+                                  0.0915387,
+                                  0.13195948]]).T
+        xout_truth = xp.asarray([[0.0, 0.0],
                                  [0.0012, 0.0005],
                                  [0.40233, 0.00071],
                                  [1.163368, -0.079327],
@@ -53,14 +55,24 @@ class TestDLTI:
 
         # Interpolated control - inputs should have different time steps
         # than the discrete model uses internally
-        u_sparse = u[[0, 4], :]
-        t_sparse = np.asarray([0.0, 2.0])
+        u_sparse = u[::4, :]
+        t_sparse = xp.asarray([0.0, 2.0])
 
         tout, yout, xout = dlsim((a, b, c, d, dt), u_sparse, t_sparse)
 
         assert_array_almost_equal(yout_truth, yout)
         assert_array_almost_equal(xout_truth, xout)
-        assert len(tout) == len(yout)
+        assert tout.shape[0] == yout.shape[0]
+
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dlsim, system, u)
+
+    def test_dlsim_tf_zpk(self):
+        # Transfer function and zpk systems go through tf2ss, which is
+        # numpy-only, so this test does not take the xp fixture.
+        u = np.linspace(0, 4.0, num=5)
+        t_in = np.linspace(0, 2.0, num=5)
 
         # Transfer functions (assume dt = 0.5)
         num = np.asarray([1.0, -0.1])
@@ -71,16 +83,13 @@ class TestDLTI:
                                 -4.77777777777778,
                                 23.0370370370370]]).T
 
-        # Assume use of the first column of the control input built earlier
-        tout, yout = dlsim((num, den, 0.5), u[:, 0], t_in)
+        tout, yout = dlsim((num, den, 0.5), u[:, np.newaxis], t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
 
         # Retest the same with a 1-D input vector
-        uflat = np.asarray(u[:, 0])
-        uflat = uflat.reshape((5,))
-        tout, yout = dlsim((num, den, 0.5), uflat, t_in)
+        tout, yout = dlsim((num, den, 0.5), u, t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
@@ -91,33 +100,29 @@ class TestDLTI:
         k = 1.0
         yout_truth = np.array([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
 
-        tout, yout = dlsim((zd, pd, k, 0.5), u[:, 0], t_in)
+        tout, yout = dlsim((zd, pd, k, 0.5), u, t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
 
-        # Raise an error for continuous-time systems
-        system = lti([1], [1, 1])
-        assert_raises(AttributeError, dlsim, system, u)
+    def test_dstep(self, xp):
 
-    def test_dstep(self):
-
-        a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
-        b = np.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
-        c = np.asarray([[0.1, 0.3]])
-        d = np.asarray([[0.0, -0.1, 0.0]])
+        a = xp.asarray([[0.9, 0.1], [-0.2, 0.9]])
+        b = xp.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
+        c = xp.asarray([[0.1, 0.3]])
+        d = xp.asarray([[0.0, -0.1, 0.0]])
         dt = 0.5
 
         # Because b.shape[1] == 3, dstep should result in a tuple of three
         # result vectors
-        yout_step_truth = (np.asarray([0.0, 0.04, 0.052, 0.0404, 0.00956,
+        yout_step_truth = (xp.asarray([0.0, 0.04, 0.052, 0.0404, 0.00956,
                                        -0.036324, -0.093318, -0.15782348,
                                        -0.226628324, -0.2969374948]),
-                           np.asarray([-0.1, -0.075, -0.058, -0.04815,
+                           xp.asarray([-0.1, -0.075, -0.058, -0.04815,
                                        -0.04453, -0.0461895, -0.0521812,
                                        -0.061588875, -0.073549579,
                                        -0.08727047595]),
-                           np.asarray([0.0, -0.01, -0.013, -0.0101, -0.00239,
+                           xp.asarray([0.0, -0.01, -0.013, -0.0101, -0.00239,
                                        0.009081, 0.0233295, 0.03945587,
                                        0.056657081, 0.0742343737]))
 
@@ -127,41 +132,43 @@ class TestDLTI:
 
         for i in range(0, len(yout)):
             assert yout[i].shape[0] == 10
-            assert_array_almost_equal(yout[i].flatten(), yout_step_truth[i])
-
-        # Check that the other two inputs (tf, zpk) will work as well
-        tfin = ([1.0], [1.0, 1.0], 0.5)
-        yout_tfstep = np.asarray([0.0, 1.0, 0.0])
-        tout, yout = dstep(tfin, n=3)
-        assert len(yout) == 1
-        assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
-
-        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
-        tout, yout = dstep(zpkin, n=3)
-        assert len(yout) == 1
-        assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
+            assert_array_almost_equal(xp.reshape(yout[i], (-1,)),
+                                      yout_step_truth[i])
 
         # Raise an error for continuous-time systems
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dstep, system)
 
-    def test_dimpulse(self):
+    def test_dstep_tf_zpk(self):
+        # tf and zpk systems route through tf2ss, which is numpy-only
+        tfin = ([1.0], [1.0, 1.0], 0.5)
+        yout_tfstep = np.asarray([0.0, 1.0, 0.0])
+        tout, yout = dstep(tfin, n=3)
+        assert len(yout) == 1
+        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfstep)
 
-        a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
-        b = np.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
-        c = np.asarray([[0.1, 0.3]])
-        d = np.asarray([[0.0, -0.1, 0.0]])
+        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
+        tout, yout = dstep(zpkin, n=3)
+        assert len(yout) == 1
+        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfstep)
+
+    def test_dimpulse(self, xp):
+
+        a = xp.asarray([[0.9, 0.1], [-0.2, 0.9]])
+        b = xp.asarray([[0.4, 0.1, -0.1], [0.0, 0.05, 0.0]])
+        c = xp.asarray([[0.1, 0.3]])
+        d = xp.asarray([[0.0, -0.1, 0.0]])
         dt = 0.5
 
         # Because b.shape[1] == 3, dimpulse should result in a tuple of three
         # result vectors
-        yout_imp_truth = (np.asarray([0.0, 0.04, 0.012, -0.0116, -0.03084,
+        yout_imp_truth = (xp.asarray([0.0, 0.04, 0.012, -0.0116, -0.03084,
                                       -0.045884, -0.056994, -0.06450548,
                                       -0.068804844, -0.0703091708]),
-                          np.asarray([-0.1, 0.025, 0.017, 0.00985, 0.00362,
+                          xp.asarray([-0.1, 0.025, 0.017, 0.00985, 0.00362,
                                       -0.0016595, -0.0059917, -0.009407675,
                                       -0.011960704, -0.01372089695]),
-                          np.asarray([0.0, -0.01, -0.003, 0.0029, 0.00771,
+                          xp.asarray([0.0, -0.01, -0.003, 0.0029, 0.00771,
                                       0.011471, 0.0142485, 0.01612637,
                                       0.017201211, 0.0175772927]))
 
@@ -171,79 +178,81 @@ class TestDLTI:
 
         for i in range(0, len(yout)):
             assert yout[i].shape[0] == 10
-            assert_array_almost_equal(yout[i].flatten(), yout_imp_truth[i])
-
-        # Check that the other two inputs (tf, zpk) will work as well
-        tfin = ([1.0], [1.0, 1.0], 0.5)
-        yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
-        tout, yout = dimpulse(tfin, n=3)
-        assert len(yout) == 1
-        assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
-
-        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
-        tout, yout = dimpulse(zpkin, n=3)
-        assert len(yout) == 1
-        assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+            assert_array_almost_equal(xp.reshape(yout[i], (-1,)),
+                                      yout_imp_truth[i])
 
         # Raise an error for continuous-time systems
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dimpulse, system)
 
-    def test_dlsim_trivial(self):
-        a = np.array([[0.0]])
-        b = np.array([[0.0]])
-        c = np.array([[0.0]])
-        d = np.array([[0.0]])
-        n = 5
-        u = np.zeros(n).reshape(-1, 1)
-        tout, yout, xout = dlsim((a, b, c, d, 1), u)
-        xp_assert_equal(tout, np.arange(float(n)))
-        xp_assert_equal(yout, np.zeros((n, 1)))
-        xp_assert_equal(xout, np.zeros((n, 1)))
+    def test_dimpulse_tf_zpk(self):
+        # tf and zpk systems route through tf2ss, which is numpy-only
+        tfin = ([1.0], [1.0, 1.0], 0.5)
+        yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
+        tout, yout = dimpulse(tfin, n=3)
+        assert len(yout) == 1
+        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfimpulse)
 
-    def test_dlsim_simple1d(self):
-        a = np.array([[0.5]])
-        b = np.array([[0.0]])
-        c = np.array([[1.0]])
-        d = np.array([[0.0]])
+        zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
+        tout, yout = dimpulse(zpkin, n=3)
+        assert len(yout) == 1
+        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfimpulse)
+
+    def test_dlsim_trivial(self, xp):
+        a = xp.asarray([[0.0]])
+        b = xp.asarray([[0.0]])
+        c = xp.asarray([[0.0]])
+        d = xp.asarray([[0.0]])
         n = 5
-        u = np.zeros(n).reshape(-1, 1)
+        u = xp.zeros((n, 1))
+        tout, yout, xout = dlsim((a, b, c, d, 1), u)
+        xp_assert_equal(tout, xp.arange(float(n)))
+        xp_assert_equal(yout, xp.zeros((n, 1)))
+        xp_assert_equal(xout, xp.zeros((n, 1)))
+
+    def test_dlsim_simple1d(self, xp):
+        a = xp.asarray([[0.5]])
+        b = xp.asarray([[0.0]])
+        c = xp.asarray([[1.0]])
+        d = xp.asarray([[0.0]])
+        n = 5
+        u = xp.zeros((n, 1))
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
-        xp_assert_equal(tout, np.arange(float(n)))
-        expected = (0.5 ** np.arange(float(n))).reshape(-1, 1)
+        xp_assert_equal(tout, xp.arange(float(n)))
+        expected = xp.reshape(0.5 ** xp.arange(float(n)), (-1, 1))
         xp_assert_equal(yout, expected)
         xp_assert_equal(xout, expected)
 
-    def test_dlsim_simple2d(self):
+    def test_dlsim_simple2d(self, xp):
         lambda1 = 0.5
         lambda2 = 0.25
-        a = np.array([[lambda1, 0.0],
-                      [0.0, lambda2]])
-        b = np.array([[0.0],
-                      [0.0]])
-        c = np.array([[1.0, 0.0],
-                      [0.0, 1.0]])
-        d = np.array([[0.0],
-                      [0.0]])
+        a = xp.asarray([[lambda1, 0.0],
+                        [0.0, lambda2]])
+        b = xp.asarray([[0.0],
+                        [0.0]])
+        c = xp.asarray([[1.0, 0.0],
+                        [0.0, 1.0]])
+        d = xp.asarray([[0.0],
+                        [0.0]])
         n = 5
-        u = np.zeros(n).reshape(-1, 1)
+        u = xp.zeros((n, 1))
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
-        xp_assert_equal(tout, np.arange(float(n)))
+        xp_assert_equal(tout, xp.arange(float(n)))
         # The analytical solution:
-        expected = (np.array([lambda1, lambda2]) **
-                                np.arange(float(n)).reshape(-1, 1))
+        expected = (xp.asarray([lambda1, lambda2]) **
+                                xp.reshape(xp.arange(float(n)), (-1, 1)))
         xp_assert_equal(yout, expected)
         xp_assert_equal(xout, expected)
 
-    def test_more_step_and_impulse(self):
+    def test_more_step_and_impulse(self, xp):
         lambda1 = 0.5
         lambda2 = 0.75
-        a = np.array([[lambda1, 0.0],
-                      [0.0, lambda2]])
-        b = np.array([[1.0, 0.0],
-                      [0.0, 1.0]])
-        c = np.array([[1.0, 1.0]])
-        d = np.array([[0.0, 0.0]])
+        a = xp.asarray([[lambda1, 0.0],
+                        [0.0, lambda2]])
+        b = xp.asarray([[1.0, 0.0],
+                        [0.0, 1.0]])
+        c = xp.asarray([[1.0, 1.0]])
+        d = xp.asarray([[0.0, 0.0]])
 
         n = 10
 
@@ -251,14 +260,14 @@ class TestDLTI:
         ts, ys = dstep((a, b, c, d, 1), n=n)
 
         # Create the exact step response.
-        stp0 = (1.0 / (1 - lambda1)) * (1.0 - lambda1 ** np.arange(n))
-        stp1 = (1.0 / (1 - lambda2)) * (1.0 - lambda2 ** np.arange(n))
+        stp0 = (1.0 / (1 - lambda1)) * (1.0 - lambda1 ** xp.arange(float(n)))
+        stp1 = (1.0 / (1 - lambda2)) * (1.0 - lambda2 ** xp.arange(float(n)))
 
         xp_assert_close(ys[0][:, 0], stp0)
         xp_assert_close(ys[1][:, 0], stp1)
 
         # Check an impulse response with an initial condition.
-        x0 = np.array([1.0, 1.0])
+        x0 = xp.asarray([1.0, 1.0])
         ti, yi = dimpulse((a, b, c, d, 1), n=n, x0=x0)
 
         # Create the exact impulse response.
@@ -266,20 +275,22 @@ class TestDLTI:
                             np.arange(-1, n + 1).reshape(-1, 1))
         imp[0, :] = 0.0
         # Analytical solution to impulse response
-        y0 = imp[:n, 0] + np.dot(imp[1:n + 1, :], x0)
-        y1 = imp[:n, 1] + np.dot(imp[1:n + 1, :], x0)
+        y0 = xp.asarray(imp[:n, 0] + np.dot(imp[1:n + 1, :], [1.0, 1.0]))
+        y1 = xp.asarray(imp[:n, 1] + np.dot(imp[1:n + 1, :], [1.0, 1.0]))
 
         xp_assert_close(yi[0][:, 0], y0)
         xp_assert_close(yi[1][:, 0], y1)
 
+    def test_step_and_impulse_tf_n(self):
         # Check that dt=0.1, n=3 gives 3 time values.
+        # tf systems route through tf2ss, which is numpy-only.
         system = ([1.0], [1.0, -0.5], 0.1)
         t, (y,) = dstep(system, n=3)
-        xp_assert_close(t, [0, 0.1, 0.2])
-        xp_assert_equal(y.T, [[0, 1.0, 1.5]])
+        xp_assert_close(t, np.asarray([0, 0.1, 0.2]))
+        xp_assert_equal(y.T, np.asarray([[0, 1.0, 1.5]]))
         t, (y,) = dimpulse(system, n=3)
-        xp_assert_close(t, [0, 0.1, 0.2])
-        xp_assert_equal(y.T, [[0, 1, 0.5]])
+        xp_assert_close(t, np.asarray([0, 0.1, 0.2]))
+        xp_assert_equal(y.T, np.asarray([[0, 1, 0.5]]))
 
 
 class TestDlti:
@@ -395,54 +406,57 @@ class TestZerosPolesGain:
         assert s.to_zpk() is not s
 
 
+@make_xp_test_case(dfreqresp)
 class Test_dfreqresp:
 
-    def test_manual(self):
+    def test_manual(self, xp):
         # Test dfreqresp() real part calculation (manual sanity check).
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
-        system = TransferFunction(1, [1, -0.2], dt=0.1)
-        w = [0.1, 1, 10]
+        system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -0.2]),
+                                  dt=0.1)
+        w = xp.asarray([0.1, 1.0, 10.0])
         w, H = dfreqresp(system, w=w)
 
         # test real
-        expected_re = [1.2383, 0.4130, -0.7553]
-        assert_almost_equal(H.real, expected_re, decimal=4)
+        expected_re = xp.asarray([1.2383, 0.4130, -0.7553])
+        assert_almost_equal(xp.real(H), expected_re, decimal=4)
 
         # test imag
-        expected_im = [-0.1555, -1.0214, 0.3955]
-        assert_almost_equal(H.imag, expected_im, decimal=4)
+        expected_im = xp.asarray([-0.1555, -1.0214, 0.3955])
+        assert_almost_equal(xp.imag(H), expected_im, decimal=4)
 
-    def test_auto(self):
+    def test_auto(self, xp):
         # Test dfreqresp() real part calculation.
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
-        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -0.2]),
+                                  dt=0.1)
         w = [0.1, 1, 10, 100]
-        w, H = dfreqresp(system, w=w)
-        jw = np.exp(w * 1j)
-        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        w_out, H = dfreqresp(system, w=xp.asarray(w, dtype=xp.float64))
+        jw = np.exp(np.asarray(w) * 1j)
+        y = np.polyval([1.0], jw) / np.polyval([1.0, -0.2], jw)
 
         # test real
-        expected_re = y.real
-        assert_almost_equal(H.real, expected_re)
+        assert_almost_equal(xp.real(H), xp.asarray(y.real))
 
         # test imag
-        expected_im = y.imag
-        assert_almost_equal(H.imag, expected_im)
+        assert_almost_equal(xp.imag(H), xp.asarray(y.imag))
 
-    def test_freq_range(self):
+    def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
         # Expected range is from 0.01 to 10.
-        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -0.2]),
+                                  dt=0.1)
         n = 10
-        expected_w = np.linspace(0, np.pi, 10, endpoint=False)
+        expected_w = xp.asarray(np.linspace(0, np.pi, 10, endpoint=False))
         w, H = dfreqresp(system, n=n)
         assert_almost_equal(w, expected_w)
 
-    def test_pole_one(self):
+    def test_pole_one(self, xp):
         # Test that freqresp() doesn't fail on a system with a pole at 0.
         # integrator, pole at zero: H(s) = 1 / s
-        system = TransferFunction([1], [1, -1], dt=0.1)
+        system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -1.0]),
+                                  dt=0.1)
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "divide by zero", RuntimeWarning)
@@ -457,19 +471,21 @@ class Test_dfreqresp:
         assert_raises(AttributeError, dfreqresp, system)
 
     def test_from_state_space(self):
+        # State-space systems go through ss2tf, which is numpy-only, so
+        # this test does not take the xp fixture.
         # H(z) = 2 / z^3 - 0.5 * z^2
 
-        system_TF = dlti([2], [1, -0.5, 0, 0])
+        system_TF = dlti(np.asarray([2.0]), np.asarray([1.0, -0.5, 0.0, 0.0]))
 
-        A = np.array([[0.5, 0, 0],
-                      [1, 0, 0],
-                      [0, 1, 0]])
-        B = np.array([[1, 0, 0]]).T
-        C = np.array([[0, 0, 2]])
-        D = 0
+        A = np.asarray([[0.5, 0.0, 0.0],
+                        [1.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0]])
+        B = np.asarray([[1.0], [0.0], [0.0]])
+        C = np.asarray([[0.0, 0.0, 2.0]])
+        D = np.asarray([[0.0]])
 
         system_SS = dlti(A, B, C, D)
-        w = 10.0**np.arange(-3,0,.5)
+        w = 10.0**np.arange(-3, 0, .5)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             w1, H1 = dfreqresp(system_TF, w=w)
@@ -477,69 +493,74 @@ class Test_dfreqresp:
 
         assert_almost_equal(H1, H2)
 
-    def test_from_zpk(self):
+    def test_from_zpk(self, xp):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
-        system_ZPK = dlti([],[0.2],0.3)
-        system_TF = dlti(0.3, [1, -0.2])
-        w = [0.1, 1, 10, 100]
+        system_ZPK = dlti(xp.asarray([]), xp.asarray([0.2]), 0.3)
+        system_TF = dlti(xp.asarray([0.3]), xp.asarray([1.0, -0.2]))
+        w = xp.asarray([0.1, 1.0, 10.0, 100.0])
         w1, H1 = dfreqresp(system_ZPK, w=w)
         w2, H2 = dfreqresp(system_TF, w=w)
         assert_almost_equal(H1, H2)
 
 
+@make_xp_test_case(dbode)
 class Test_bode:
 
-    def test_manual(self):
+    def test_manual(self, xp):
         # Test bode() magnitude calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
         dt = 0.1
-        system = TransferFunction(0.3, [1, -0.2], dt=dt)
+        system = TransferFunction(xp.asarray([0.3]), xp.asarray([1.0, -0.2]),
+                                  dt=dt)
         w = [0.1, 0.5, 1, np.pi]
-        w2, mag, phase = dbode(system, w=w)
+        w2, mag, phase = dbode(system, w=xp.asarray(w))
 
         # Test mag
-        expected_mag = [-8.5329, -8.8396, -9.6162, -12.0412]
+        expected_mag = xp.asarray([-8.5329, -8.8396, -9.6162, -12.0412])
         assert_almost_equal(mag, expected_mag, decimal=4)
 
         # Test phase
-        expected_phase = [-7.1575, -35.2814, -67.9809, -180.0000]
+        expected_phase = xp.asarray([-7.1575, -35.2814, -67.9809, -180.0000])
         assert_almost_equal(phase, expected_phase, decimal=4)
 
         # Test frequency
-        xp_assert_equal(np.array(w) / dt, w2)
+        xp_assert_equal(w2, xp.asarray(w) / dt)
 
-    def test_auto(self):
+    def test_auto(self, xp):
         # Test bode() magnitude calculation.
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
-        system = TransferFunction(0.3, [1, -0.2], dt=0.1)
+        system = TransferFunction(xp.asarray([0.3]), xp.asarray([1.0, -0.2]),
+                                  dt=0.1)
         w = np.array([0.1, 0.5, 1, np.pi])
-        w2, mag, phase = dbode(system, w=w)
+        w2, mag, phase = dbode(system, w=xp.asarray(w))
         jw = np.exp(w * 1j)
-        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        y = np.polyval([0.3], jw) / np.polyval([1.0, -0.2], jw)
 
         # Test mag
-        expected_mag = 20.0 * np.log10(abs(y))
+        expected_mag = xp.asarray(20.0 * np.log10(abs(y)))
         assert_almost_equal(mag, expected_mag)
 
         # Test phase
-        expected_phase = np.rad2deg(np.angle(y))
+        expected_phase = xp.asarray(np.rad2deg(np.angle(y)))
         assert_almost_equal(phase, expected_phase)
 
-    def test_range(self):
+    def test_range(self, xp):
         # Test that bode() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
         dt = 0.1
-        system = TransferFunction(0.3, [1, -0.2], dt=0.1)
+        system = TransferFunction(xp.asarray([0.3]), xp.asarray([1.0, -0.2]),
+                                  dt=0.1)
         n = 10
         # Expected range is from 0.01 to 10.
-        expected_w = np.linspace(0, np.pi, n, endpoint=False) / dt
+        expected_w = xp.asarray(np.linspace(0, np.pi, n, endpoint=False) / dt)
         w, mag, phase = dbode(system, n=n)
         assert_almost_equal(w, expected_w)
 
-    def test_pole_one(self):
+    def test_pole_one(self, xp):
         # Test that freqresp() doesn't fail on a system with a pole at 0.
         # integrator, pole at zero: H(s) = 1 / s
-        system = TransferFunction([1], [1, -1], dt=0.1)
+        system = TransferFunction(xp.asarray([1.0]), xp.asarray([1.0, -1.0]),
+                                  dt=0.1)
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "divide by zero", RuntimeWarning)
@@ -548,10 +569,11 @@ class Test_bode:
             w, mag, phase = dbode(system, n=2)
         assert w[0] == 0.  # a fail would give not-a-number
 
-    def test_imaginary(self):
+    def test_imaginary(self, xp):
         # bode() should not fail on a system with pure imaginary poles.
         # The test passes if bode doesn't raise an exception.
-        system = TransferFunction([1], [1, 0, 100], dt=0.1)
+        system = TransferFunction(xp.asarray([1.0]),
+                                  xp.asarray([1.0, 0.0, 100.0]), dt=0.1)
         dbode(system, n=2)
 
     def test_error(self):
@@ -598,4 +620,5 @@ class TestTransferFunctionZConversion:
         num2, den2 = TransferFunction._zinv_to_z(num, den)
         xp_assert_equal(num, num2)
         xp_assert_equal([5.0, 6, 0], den2)
+
 
