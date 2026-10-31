@@ -114,6 +114,47 @@ def _correlation_pdist_wrap(X, dm, **kwargs):
     _distance_wrap.pdist_cosine_double_wrap(X2, dm, **kwargs)
 
 
+def _mahalanobis_whitening(VI, n_pairs):
+    """Return ``L`` with ``VI = L @ L.T``, or None to use the pairwise loop.
+
+    The Mahalanobis distance between ``u`` and ``v`` is then the Euclidean
+    distance between ``u @ L`` and ``v @ L``. The loop takes roughly
+    ``0.3 ns * (n**2 + 16)`` per pair. Whitening has ~15 us of overhead, a
+    Cholesky factorization that costs about as much as the loop over ``n/8``
+    pairs, and is cheap per row (BLAS) and per pair (``O(n)``).
+    """
+    n = VI.shape[0]
+    if (n_pairs * (n**2 + 16) < 2e5 or 8 * n_pairs < n
+            or not np.isfinite(VI).all()):
+        return None
+    try:
+        # Only the symmetric part of VI enters the quadratic form.
+        return np.linalg.cholesky((VI + VI.T) / 2)
+    except np.linalg.LinAlgError:
+        # Not positive definite, keep the old results (e.g. nan).
+        return None
+
+
+def _mahalanobis_cdist_wrap(XA, XB, dm, *, VI):
+    L = _mahalanobis_whitening(VI, XA.shape[0] * XB.shape[0])
+    if L is None:
+        _mahalanobis_cdist_c(XA, XB, dm, VI=VI)
+    else:
+        # Center both sets at the same point, a large common offset would
+        # otherwise cost precision in the differences of the whitened rows.
+        c = XA.mean(axis=0)
+        _distance_pybind.cdist_euclidean((XA - c) @ L, (XB - c) @ L, out=dm)
+
+
+def _mahalanobis_pdist_wrap(X, dm, *, VI):
+    m = X.shape[0]
+    L = _mahalanobis_whitening(VI, m * (m - 1) // 2)
+    if L is None:
+        _mahalanobis_pdist_c(X, dm, VI=VI)
+    else:
+        _distance_pybind.pdist_euclidean((X - X.mean(axis=0)) @ L, out=dm)
+
+
 def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
 
@@ -1536,6 +1577,11 @@ _convert_to_bool = partial(_convert_to_type, out_type=bool)
 # adding python-only wrappers to _distance_wrap module
 _distance_wrap.pdist_correlation_double_wrap = _correlation_pdist_wrap
 _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
+# mahalanobis wraps the C loop, which it falls back on
+_mahalanobis_pdist_c = _distance_wrap.pdist_mahalanobis_double_wrap
+_mahalanobis_cdist_c = _distance_wrap.cdist_mahalanobis_double_wrap
+_distance_wrap.pdist_mahalanobis_double_wrap = _mahalanobis_pdist_wrap
+_distance_wrap.cdist_mahalanobis_double_wrap = _mahalanobis_cdist_wrap
 
 
 @dataclasses.dataclass(frozen=True)

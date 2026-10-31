@@ -388,6 +388,22 @@ class Xdist(Benchmark):
         distance.pdist(self.points, self.metric, **self.kwargs)
 
 
+class XdistMahalanobis(Benchmark):
+    params = [[(10, 3), (1000, 10), (2000, 50), (400, 200)]]
+    param_names = ['(num_points, dim)']
+
+    def setup(self, mn):
+        rng = np.random.default_rng(123)
+        self.XA = rng.random(mn)
+        self.XB = rng.random(mn)
+
+    def time_cdist(self, mn):
+        distance.cdist(self.XA, self.XB, 'mahalanobis')
+
+    def time_pdist(self, mn):
+        distance.pdist(self.XA, 'mahalanobis')
+
+
 class SingleDist(Benchmark):
     params = (['euclidean', 'minkowski', 'cityblock',
                'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
