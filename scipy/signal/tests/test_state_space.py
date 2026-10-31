@@ -124,7 +124,11 @@ class TestCalcSSTFHelper:
 
 @make_xp_test_case(_tran_zeros_reduce)
 class Test_tran_zeros_reduce:
-    """Tests for `_tran_zeros_reduce()`. """
+    """Tests for `_tran_zeros_reduce()`.
+
+    The tests for `_transmission_zeros()` verify the numeric correctness of
+    _tran_zeros_reduce()`. The test here just cover special cases and provide coverage.
+    """
 
     def test_basic(self, xp):
         """Basic test for `_tran_zeros_reduce()`. """
@@ -164,7 +168,6 @@ class Test_tran_zeros_reduce:
         xp_assert_close(C, xp.zeros((0, 0)))
         xp_assert_close(D, xp.zeros((0, 0)))
 
-
     def test_full_rankD(self, xp):
         """Test a system that is already reduced. """
         A0, B0, C0, D0 = xp.eye(4), xp.eye(4), xp.eye(4), xp.eye(4)
@@ -174,38 +177,6 @@ class Test_tran_zeros_reduce:
         xp_assert_close(B, B0)
         xp_assert_close(C, C0)
         xp_assert_close(D, D0)
-
-    def test_harold_example(self, xp):
-        """Test adapted from `harold` unit test `test_model_zeros()`.
-
-        The reference matrices were calculated using harold.
-        """
-        ABCD = _abcd_normalize(  # input matrices
-                A=[[0, 0, 1, 0, 0, 0],
-                   [2, 0, 0, 3, 4, 0],
-                   [0, 0, 5, 0, 0, 6],
-                   [0, 7, 0, 0, 0, 0],
-                   [0, 0, 0, 8, 9, 0],
-                   [0, 0, 0, 0, 0, 0]],
-                B=xp.asarray([[0, 0, 0, 0, 10, 0], [0, 0, 0, 0, 0, 11.]]).T,
-                C=[[0, 12, 0, 0, 13, 0],
-                   [14, 0, 0, 0,  0, 0],
-                   [15, 0, 16, 0, 0, 0]], xp=xp)
-        A_ref, B_ref, C_ref, D_ref = _abcd_normalize(  # reference matrices
-            A=[[ 2.1659393032595453,  5.121995729938409],
-               [-3.243458870436067,  -0.01897444702951336]],
-            B=[[-5.0987775022804085, -1.6077002106289205e-17],
-               [-4.4731261728903835,  3.5115105746855497e-16]],
-            C=[[-1.0670598390454445e-16, -8.091748479810706e-18],
-               [ 0.4633481256232237,    -10.120368412778804]],
-            D=[[-1.3534272083246083e-16, -11.0], [7.34803444627488, 0.0]], xp=xp)
-
-        A, B, C, D = _tran_zeros_reduce(*ABCD, rtol=1e-13, atol=0.)
-
-        xp_assert_close(A, A_ref)
-        xp_assert_close(B, B_ref)
-        xp_assert_close(C, C_ref)
-        xp_assert_close(D, D_ref)
 
 
 @make_xp_test_case(_transmission_zeros)
