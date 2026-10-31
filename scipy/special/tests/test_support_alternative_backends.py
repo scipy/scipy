@@ -125,7 +125,11 @@ def _skip_or_tweak_alternative_backends(
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
-                                          'zeta', 'xlog1py'))
+                                          'zeta', 'xlog1py', 'eval_legendre',
+                                          'eval_chebyt', 'eval_chebyu',
+                                          'eval_laguerre', 'eval_hermite',
+                                          'eval_hermitenorm', 'eval_sh_chebyt',
+                                          'eval_sh_chebyu'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
@@ -152,7 +156,11 @@ def _skip_or_tweak_alternative_backends(
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
 @pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
 @pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
+    'func,nfo', [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs
+        if nfo.public
+    ]
+)
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
     if isinstance(int_only, dict):
@@ -261,7 +269,11 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
 @pytest.mark.parametrize(
     'func, nfo',
-    [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs if i.n_args >= 2])
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs
+        if nfo.n_args >= 2 and nfo.public
+    ]
+)
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
@@ -313,7 +325,11 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
 @given(data=strategies.data())
 @pytest.mark.fail_slow(5)
 @pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs])
+    'func,nfo', [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs
+        if nfo.public
+    ]
+)
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning:dask")

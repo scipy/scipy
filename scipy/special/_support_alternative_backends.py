@@ -640,6 +640,7 @@ _special_funcs = (
         _ufuncs.airy, ["z"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("airy", ["torch"]),
         ),
         torch_native=False,
@@ -648,6 +649,7 @@ _special_funcs = (
         _ufuncs.airye, ["z"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("airye", ["torch"]),
         ),
         torch_native=False,
@@ -656,6 +658,7 @@ _special_funcs = (
         _ufuncs.itairy, ["x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("itairy", ["torch"]),
         ),
         torch_native=False,
@@ -665,6 +668,7 @@ _special_funcs = (
         _ufuncs.ellipj, ["u", "m"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("ellipj", ["torch"]),
         ),
         torch_native=False,
@@ -966,6 +970,7 @@ _special_funcs = (
         _ufuncs.itj0y0, ["x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("itj0y0", ["torch"]),
         ),
         torch_native=False,
@@ -974,6 +979,7 @@ _special_funcs = (
         _ufuncs.it2j0y0, ["x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("it2j0y0", ["torch"]),
         ),
         torch_native=False,
@@ -982,6 +988,7 @@ _special_funcs = (
         _ufuncs.iti0k0, ["x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("iti0k0", ["torch"]),
         ),
         torch_native=False,
@@ -990,6 +997,7 @@ _special_funcs = (
         _ufuncs.it2i0k0, ["x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("it2i0k0", ["torch"]),
         ),
         torch_native=False,
@@ -1898,6 +1906,7 @@ _special_funcs = (
         _ufuncs.fresnel, ["z"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("fresnel", ["torch"]),
         ),
         torch_native=False,
@@ -1906,6 +1915,7 @@ _special_funcs = (
         _ufuncs.modfresnelp, ["z"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("modfresnelp", ["torch"]),
         ),
         torch_native=False,
@@ -1914,6 +1924,7 @@ _special_funcs = (
         _ufuncs.modfresnelm, ["z"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("modfresnelm", ["torch"]),
         ),
         torch_native=False,
@@ -2161,6 +2172,7 @@ _special_funcs = (
         _ufuncs.pbdv, ["v", "x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("pbdv", ["torch"]),
         ),
         test_large_ints=False,
@@ -2170,6 +2182,7 @@ _special_funcs = (
         _ufuncs.pbvv, ["v", "x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("pbvv", ["torch"]),
         ),
         test_large_ints=False,
@@ -2179,6 +2192,7 @@ _special_funcs = (
         _ufuncs.pbwa, ["a", "x"],
         xp_capabilities(
             cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
             extra_note=_ufunc_kwargs_extra_note("pbwa", ["torch"]),
         ),
         test_large_ints=False,
