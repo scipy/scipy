@@ -482,7 +482,7 @@ class TestOtherMethods:
         xp_assert_close(func(x1[0]), p[0], rtol=X.tol)
 
     def test_subtraction_safe(self, xp):
-        X = stats.Normal(xp=xp)
+        X = stats.Normal(mu=0., sigma=1., xp=xp)
         X.tol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
 
         # Regular subtraction is fine in either tail (and of course, across tails)

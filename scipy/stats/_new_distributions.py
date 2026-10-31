@@ -16,7 +16,20 @@ from scipy.stats._distribution_infrastructure import (
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 
+rv_capabilities_w_torch = xp_capabilities(
+    skip_backends=[('array_api_strict', "fancy indexing in EIM"),
+                   ("jax.numpy", 'mutation'),
+                   ('dask.array', 'no attempt')],
+    method_capabilities={
+            "plot": dict(np_only=True),
+            "lmoment": dict(cpu_only=True, exceptions=['cupy']),
+            "moment": dict(cpu_only=True, exceptions=['cupy']),
+    }
+)
+
 rv_capabilities = xp_capabilities(
+    cpu_only=True,
+    exceptions=['cupy'],
     skip_backends=[('array_api_strict', "fancy indexing in EIM"),
                    ("jax.numpy", 'mutation'),
                    ('dask.array', 'no attempt')],
@@ -25,8 +38,7 @@ rv_capabilities = xp_capabilities(
     }
 )
 
-
-@rv_capabilities
+@rv_capabilities_w_torch
 class Normal(ContinuousDistribution):
     r"""Normal distribution with prescribed mean and standard deviation.
 
@@ -154,7 +166,7 @@ def _log_diff(log_p, log_q, xp):
     return special.logsumexp(xp.stack([log_p, log_q+xp.pi*1j]), axis=0)
 
 
-@rv_capabilities
+@rv_capabilities_w_torch
 class StandardNormal(Normal):
     r"""Standard normal distribution.
 
@@ -520,7 +532,7 @@ class _Gamma(ContinuousDistribution):
         return x ** (a - 1) * xp.exp(-x) / special.gamma(a)
 
 
-@xp_capabilities(np_only=True, exceptions=['torch'])
+@xp_capabilities(cpu_only=True, skip_backends=[('cupy', 'needs special functions')])
 class Binomial(DiscreteDistribution):
     r"""Binomial distribution with prescribed success probability and number of trials
 

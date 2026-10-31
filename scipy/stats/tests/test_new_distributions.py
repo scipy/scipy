@@ -109,11 +109,13 @@ class TestNormal(DistributionsTest):
         return super().test_logpdf(case, xp=xp)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((stats.Normal, 'moment'))
     def test_moment(self, case, xp):
         atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
         return super().test_moment(case, tol_override={'atol': atol}, xp=xp)
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((stats.Normal, 'lmoment'))
     def test_lmoment(self, case, xp):
         atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
         return super().test_lmoment(case, tol_override={'atol': atol}, xp=xp)
@@ -154,9 +156,15 @@ class TestStandardNormal(DistributionsTest):
         return super().test_logccdf(case, xp=xp, tol_override=self.tol(case, xp))
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((StandardNormal, 'moment'))
     def test_moment(self, case, xp):
         tol_override = dict(atol=5e-3) if case.dist._dtype == xp.float32 else None
         return super().test_moment(case, tol_override=tol_override, xp=xp)
+
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    @make_xp_test_case((StandardNormal, 'lmoment'))
+    def test_lmoment(self, case, xp):
+        return super().test_lmoment(case, xp=xp)
 
 
 @make_xp_test_case(stats.Uniform)

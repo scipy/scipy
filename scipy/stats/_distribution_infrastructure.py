@@ -24,9 +24,14 @@ from scipy.stats._stats_py import _log1mexp
 from scipy.stats import qmc
 
 rv_capabilities = xp_capabilities(
+    cpu_only=True,
+    exceptions=['cupy'],
     skip_backends=[('array_api_strict', "fancy indexing in EIM"),
                    ("jax.numpy", 'mutation'),
-                   ('dask.array', 'no attempt')]
+                   ('dask.array', 'no attempt')],
+    method_capabilities={
+            "plot": dict(np_only=True),
+    }
 )
 
 # in case we need to distinguish between None and not specified
@@ -362,7 +367,7 @@ class _Interval(_Domain):
         # to choose the right device later.
         rng = np.random.default_rng(rng)
         dtype = xpx.default_dtype(xp)
-        device = xp.__array_namespace_info__().default_device()
+        device = xp_result_device(xp_device(min), xp_device(max))
         ddd = dict(dtype=dtype, device=device)
 
         # def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
@@ -1654,9 +1659,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
         self._size = 1
 
         if not len(self._parameterizations):
-            xp_info = self._xp.__array_namespace_info__()
-            inferred_dtype = xp_info.default_dtypes()['real floating']
-            inferred_device = xp_info.default_device()
+            if np.lib.NumpyVersion(np.__version__) < "2.1.0":
+                xp_info_array = self._xp.asarray(1.)
+                inferred_dtype = xp_info_array.dtype
+                inferred_device = xp_device(xp_info_array)
+            else:
+                xp_info = self._xp.__array_namespace_info__()
+                inferred_dtype = xp_info.default_dtypes()['real floating']
+                inferred_device = xp_info.default_device()
 
             if parameters:
                 message = (f"The `{self.__class__.__name__}` distribution "
@@ -2105,7 +2115,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         """
         rng = np.random.default_rng(rng)
         if len(cls._parameterizations) == 0:
-            return cls(xp=xp)
+            # xpx.default_device may not be the device on which arrays are created;
+            # see gh-26576.
+            return cls(xp=xp, device=xp_device(xp.asarray(0)))
         if i_parameterization is None:
             n = cls._num_parameterizations()
             i_parameterization = rng.integers(0, max(0, n - 1), endpoint=True)
@@ -2113,6 +2125,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         parameterization = cls._parameterizations[i_parameterization]
         parameters = parameterization.draw(sizes, rng, proportions=proportions,
                                            region='typical', xp=xp)
+
         return cls(**parameters, xp=xp)
 
     @classmethod
