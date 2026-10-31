@@ -480,6 +480,18 @@ def test_4_and_long_field_names_incompatible():
                   {'my_struct':my_struct}, format='4', long_field_names=True)
 
 
+def test_savemat_invalid_options_keep_file(tmp_path):
+    # Options are checked before an existing file is opened for writing
+    fname = tmp_path / 'data.mat'
+    savemat(fname, {'a': 1})
+    content = fname.read_bytes()
+    with pytest.raises(ValueError, match="Format should be"):
+        savemat(fname, {'a': 2}, format='7.3')
+    with pytest.raises(ValueError, match="Long field names"):
+        savemat(fname, {'a': 2}, format='4', long_field_names=True)
+    assert fname.read_bytes() == content
+
+
 def test_long_field_names():
     # Test limit for length of field names in structs
     lim = 63
