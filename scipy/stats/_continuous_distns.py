@@ -8665,8 +8665,15 @@ class pearson3_gen(rv_continuous):
             self._preprocess(q, skew))
         ans[mask] = _norm_ppf(q[mask])
         q = q[invmask]
-        q[beta < 0] = 1 - q[beta < 0]  # for negative skew; see gh-17050
-        ans[invmask] = sc.gammaincinv(alpha, q)/beta + zeta
+        # For negative skew (beta < 0), the lower tail of X corresponds to the
+        # upper tail of the underlying gamma variate (see gh-17055). Invert the
+        # complementary incomplete gamma function directly instead of forming
+        # `1 - q`, which loses the accuracy of small q
+        neg = beta < 0
+        g = np.empty_like(q)
+        g[~neg] = sc.gammaincinv(alpha[~neg], q[~neg])
+        g[neg] = sc.gammainccinv(alpha[neg], q[neg])
+        ans[invmask] = g/beta + zeta
         return ans
 
     @_call_super_mom
