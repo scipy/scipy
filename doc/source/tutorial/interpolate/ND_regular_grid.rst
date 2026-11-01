@@ -104,6 +104,46 @@ controlled by the ``fill_value`` keyword parameter:
     numerical artifacts. Consider rescaling the data before interpolating.
 
 
+.. _tutorial-interpolate_RGI_offset:
+
+Data with a large constant offset
+=================================
+
+The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a large
+sparse linear system when the interpolator is created. By default this is done
+with the iterative solver `scipy.sparse.linalg.gcrotmk`, which stops once the
+residual is small relative to the norm of ``values``. If the data have a large
+constant offset compared to how much they vary, the part that varies is solved
+much less accurately, and the interpolant may miss the data points by much more
+than expected.
+
+For example, consider a bump of height 1 on top of a constant 1000:
+
+    >>> x = y = np.linspace(-3, 3, 8)
+    >>> X, Y = np.meshgrid(x, y, indexing="ij")
+    >>> values = 1000 + np.exp(-(X**2 + Y**2) / 2)
+    >>> rgi = RegularGridInterpolator((x, y), values, method="cubic")
+    >>> err = np.abs(rgi((X, Y)) - values).max()
+    >>> print(f"{err:.1e}")
+    1.2e-02  # may vary
+
+That is an error of about 1% of the height of the bump. Subtracting the mean
+before interpolating, and adding it back afterwards, takes the offset out of
+the solve:
+
+    >>> mean = values.mean()
+    >>> rgi_centered = RegularGridInterpolator((x, y), values - mean,
+    ...                                        method="cubic")
+    >>> err_centered = np.abs(rgi_centered((X, Y)) + mean - values).max()
+    >>> print(f"{err_centered:.1e}")
+    1.4e-07  # may vary
+
+Since splines reproduce constants exactly, the centered interpolant is
+otherwise the same. Alternatively, a smaller tolerance in ``solver_args``,
+such as ``solver_args={"rtol": 1e-10}``, or the direct solver
+`scipy.sparse.linalg.spsolve` also help. See the notes on choosing a solver
+in `RegularGridInterpolator` for more details.
+
 
 .. _tutorial-interpolate_RGI_batching:
 
