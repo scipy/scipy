@@ -1648,7 +1648,7 @@ class TestSystematic:
 
         def legenq(n, m, z):
             if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
-                # mpmath has bad performance here
+                # Exclude narrow neighborhood of the unit circle |z| = 1 where lqmn has known limitations
                 return np.nan
             tp = 2 if abs(z) < 1 else 3
             val = exception_to_nan(mpmath.legenq)(n, m, z, type=tp)
@@ -1668,11 +1668,12 @@ class TestSystematic:
 
         def legenq(n, m, z):
             if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
-                # mpmath has bad performance here
+                # Exclude narrow neighborhood of the unit circle |z| = 1 where lqmn has known limitations
                 return np.nan
             tp = 2 if abs(z) < 1 else 3
             val = exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=tp)
-            if tp == 3 and z.real < -1:
+            # Reconcile mpmath type=3 branch with SciPy's sqrt(z^2 - 1) convention in left half-plane
+            if tp == 3 and z.real < 0:
                 val = (-1)**int(m.real) * val
             return val
 
@@ -1681,6 +1682,11 @@ class TestSystematic:
             legenq,
             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
             n=100,
+        )
+        assert_mpmath_equal(
+            lqnm,
+            legenq,
+            [IntArg(0, 20), IntArg(0, 20), FixedArg([-0.5 + 2j, -2.0 + 1j, 2.0 + 1j])],
         )
 
     def test_lgam1p(self):
