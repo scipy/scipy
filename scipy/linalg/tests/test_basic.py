@@ -3027,6 +3027,21 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+class TestSolveScalar:
+    def test_pos_neg_scalar(self):
+        a = np.array([[-2.0]])
+        b = np.array([[1.0]])
+
+        with pytest.raises(LinAlgError):
+            solve(a,b,assume_a='pos')
+
+    def test_her_complex_scalar(self):
+            a = np.array([[2+5j]])
+            b = np.array([[1.0]])
+
+            x = solve(a,b,assume_a='her')
+
+            assert_allclose(x, [[0.5+0j]])
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:

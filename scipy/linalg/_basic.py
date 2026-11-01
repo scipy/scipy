@@ -241,7 +241,7 @@ def solve(a, b, lower=False, overwrite_a=False,
             x = x[..., 0]
         return x
 
-    if a_is_scalar:
+    if a_is_scalar and structure not in (101, 211):
         if a1.item() == 0:
             raise LinAlgError("A singular matrix detected.")
 
