@@ -196,17 +196,18 @@ class _dia_base(_data_matrix):
         other_d = other.data.shape[1]
         # Fast path for a sparsity structure where the final offsets are a
         # permutation of the existing offsets and the diagonal lengths match.
+        dtype = np.result_type(self.data, other.data)
         if self_d == other_d and len(new_offsets) == len(self.offsets):
-            new_data = self.data[_invert_index(self_idx)]
+            new_data = self.data[_invert_index(self_idx)].astype(dtype, copy=False)
             if sub:
                 new_data[other_idx, :] -= other.data
             else:
                 new_data[other_idx, :] += other.data
         elif self_d == other_d and len(new_offsets) == len(other.offsets):
             if sub:
-                new_data = -other.data[_invert_index(other_idx)]
+                new_data = -other.data[_invert_index(other_idx)].astype(dtype, copy=False)
             else:
-                new_data = other.data[_invert_index(other_idx)]
+                new_data = other.data[_invert_index(other_idx)].astype(dtype, copy=False)
             new_data[self_idx, :] += self.data
         else:
             # Maximum diagonal length of the result.
@@ -215,7 +216,7 @@ class _dia_base(_data_matrix):
             # Add all diagonals to a freshly allocated data array.
             new_data = np.zeros(
                 (len(new_offsets), d),
-                dtype=np.result_type(self.data, other.data),
+                dtype=dtype,
             )
             new_data[self_idx, :self_d] += self.data[:, :d]
             if sub:
