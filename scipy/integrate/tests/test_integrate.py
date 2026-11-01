@@ -17,6 +17,7 @@ from scipy.integrate import odeint, ode, complex_ode
 
 
 def test_lsoda_does_not_leak_work_arrays():
+    # gh-26373
     if not hasattr(sys, 'getrefcount'):
         pytest.skip('reference counts are unavailable')
 
