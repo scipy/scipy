@@ -231,7 +231,6 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     T tmp = 0.0;
-    T tmp1 = 0.0;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
     lapack::getri(intn, NULL, intn, NULL, &tmp, lwork, &info);
@@ -244,7 +243,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // also query sytrf
-    lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp1, lwork,  &info);
+    lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
     CBLAS_INT lwork_2 = _calc_lwork(tmp);
