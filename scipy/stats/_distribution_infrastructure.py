@@ -612,7 +612,6 @@ class _Parameter(ABC):
 
         a, b = domain.get_numerical_endpoints(parameter_values, xp=xp)
         a, b = xp.broadcast_arrays(a, b)
-        xp = array_namespace(a, b)  # ensure array_api_compat version
 
         # work with shapes in NumPy
         base_shape = a.shape
