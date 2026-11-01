@@ -241,7 +241,16 @@ def solve(a, b, lower=False, overwrite_a=False,
             x = x[..., 0]
         return x
 
-    if a_is_scalar and structure not in (101, 211):
+    if a_is_scalar:
+        if structure == 101:
+            # positive definite 1x1 matrix must have positive diagonal entry.
+            if a1.item() <= 0:
+                raise LinAlgError("Matrix is not positive definite.")
+        elif structure == 211:
+            # Hermitian matrices have real diagonal entries.
+            a1 = a1.real
+
+        # Checking for singularity before performing scalar division.
         if a1.item() == 0:
             raise LinAlgError("A singular matrix detected.")
 

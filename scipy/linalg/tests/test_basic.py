@@ -1810,6 +1810,25 @@ class TestInv:
         a3inv = inv(a3.astype(complex), overwrite_a=True)
         assert_allclose(a3inv, expected, atol=1e-14)
 
+    def test_pos_neg_scalar(self):
+        # Regression test for https://github.com/scipy/scipy/issues/26580
+        # Positive definite scalar matrices with negative values must raise LinAlgError
+        a = np.array([[-2.0]])
+        b = np.array([[1.0]])
+
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a='pos')
+
+    def test_her_complex_scalar(self):
+            # Regression test for https://github.com/scipy/scipy/issues/26580
+            # Hermitian scalar matrices must use only the real part of the diagonal entry
+            a = np.array([[2+5j]])
+            b = np.array([[1.0]])
+
+            x = solve(a, b, assume_a='her')
+
+            assert_allclose(x, [[0.5+0j]])
+
 
 class TestDet:
     def test_1x1_all_singleton_dims(self):
@@ -3026,22 +3045,6 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
-
-class TestSolveScalar:
-    def test_pos_neg_scalar(self):
-        a = np.array([[-2.0]])
-        b = np.array([[1.0]])
-
-        with pytest.raises(LinAlgError):
-            solve(a,b,assume_a='pos')
-
-    def test_her_complex_scalar(self):
-            a = np.array([[2+5j]])
-            b = np.array([[1.0]])
-
-            x = solve(a,b,assume_a='her')
-
-            assert_allclose(x, [[0.5+0j]])
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:
