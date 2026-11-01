@@ -1811,7 +1811,8 @@ class TestInv:
         assert_allclose(a3inv, expected, atol=1e-14)
 
     def test_pos_neg_scalar(self):
-        # Regression test for https://github.com/scipy/scipy/issues/26580
+        # Regression test for
+        # https://github.com/scipy/scipy/issues/26580
         # Positive definite scalar matrices with negative values must raise LinAlgError
         a = np.array([[-2.0]])
         b = np.array([[1.0]])
@@ -1820,8 +1821,10 @@ class TestInv:
             solve(a, b, assume_a='pos')
 
     def test_her_complex_scalar(self):
-            # Regression test for https://github.com/scipy/scipy/issues/26580
-            # Hermitian scalar matrices must use only the real part of the diagonal entry
+            # Regression test for
+            # https://github.com/scipy/scipy/issues/26580
+            # Hermitian scalar matrices must use only
+            # the real part of the diagonal entry
             a = np.array([[2+5j]])
             b = np.array([[1.0]])
 
