@@ -1,9 +1,7 @@
-/*
- * LAPACK declarations.
- */
 #pragma once
 
 namespace sp_linalg {
+
 
 using wrapper::f32;
 using wrapper::f64;
@@ -12,6 +10,10 @@ using wrapper::c128;
 using wrapper::real_of_t;
 using wrapper::complex_of_t;
 using wrapper::is_complex_v;
+
+
+// `*con` routines need iwork for real flavors and rwork for complex ones.
+template <class T> using irwork_t = typename std::conditional<is_complex_v<T>, real_of_t<T>, CBLAS_INT>::type;
 
 
 // Structure tags; python side maps assume_a strings to these values
@@ -125,9 +127,7 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
     using real_type = real_of_t<T>;
 
     real_type value = std::real(_lwrk) * fudge_factor;
-    if((std::is_same<real_type, f32>::value) ||
-       (std::is_same<real_type, c64>::value)
-    ) {
+    if (std::is_same<real_type, f32>::value) {
         // Single-precision routine -- take next fp value to work
         // around possible truncation in LAPACK code
         value = std::nextafter(value, std::numeric_limits<real_type>::infinity());

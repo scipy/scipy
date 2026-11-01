@@ -8,7 +8,7 @@ namespace sp_linalg {
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline void solve_slice_general(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work,
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, irwork_t<T> *irwork, T *work,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -23,11 +23,7 @@ inline void solve_slice_general(
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
-        if constexpr (!is_complex_v<T>) {
-            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::gecon(norm, N, data, N, anorm, &rcond, work, irwork, &info);
 
         status.rcond = (double)rcond;
         if (info >= 0) {
@@ -48,7 +44,7 @@ inline void solve_slice_general(
 // triangular solve with trtrs
 template<typename T>
 inline void solve_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, void *irwork,
+    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -62,11 +58,7 @@ inline void solve_slice_triangular(
     status.lapack_info = (Py_ssize_t)info;
     status.is_singular  = (info > 0);
     if(info >= 0) {
-        if constexpr (!is_complex_v<T>) {
-            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
@@ -79,7 +71,7 @@ inline void solve_slice_triangular(
 // Cholesky solve with potrf, pocon and potrs
 template<typename T>
 inline void solve_slice_cholesky(
-    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, void *irwork,
+    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -93,11 +85,7 @@ inline void solve_slice_cholesky(
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
-        if constexpr (!is_complex_v<T>) {
-            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::pocon(uplo, N, data, N, anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             status.rcond = (double)rcond;
@@ -118,7 +106,7 @@ inline void solve_slice_cholesky(
 // Symmetric/hermitian solve with sytrf/hetrf and sytrs/hetrs
 template<typename T>
 void solve_slice_sym_herm(
-    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
+    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, CBLAS_INT lwork,
     bool is_symm_not_herm,
     SliceStatus& status
 ) {
@@ -142,7 +130,7 @@ void solve_slice_sym_herm(
     if (info == 0) {
         // {sy,he}trf success
         if constexpr (!is_complex_v<T>) {
-            lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, irwork, &info);
         } else {
             if (is_symm_not_herm) {
                 lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
@@ -180,7 +168,7 @@ template<typename T>
 void solve_slice_tridiag(
     CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, char trans,
     T *b_data,
-    T *work, T *work2, void *irwork,
+    T *work, T *work2, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -195,7 +183,6 @@ void solve_slice_tridiag(
     to_tridiag(data, N, du, d, dl);
 
     CBLAS_INT info;
-    CBLAS_INT *iwork = (CBLAS_INT *)irwork;
     char norm = '1';
     real_type rcond;
     real_type anorm = norm1_tridiag(dl, d, du, work2, (npy_intp)N);
@@ -206,7 +193,7 @@ void solve_slice_tridiag(
     if (info == 0){
         // gttrf success, check the condition number
         if constexpr (!is_complex_v<T>) {
-            lapack::gtcon(norm, N, dl, d, du, du2, ipiv, anorm, &rcond, work2, iwork, &info);
+            lapack::gtcon(norm, N, dl, d, du, du2, ipiv, anorm, &rcond, work2, irwork, &info);
         } else {
             lapack::gtcon(norm, N, dl, d, du, du2, ipiv, anorm, &rcond, work2, &info);
         }
@@ -229,7 +216,7 @@ void solve_slice_tridiag(
 // Banded array solve, assumes the data is fed in in the banded structure `ab` already.
 template<typename T>
 inline void solve_slice_banded(
-    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, void *irwork,
+    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, irwork_t<T> *irwork,
     CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
 ) {
     using real_type = real_of_t<T>;
@@ -245,11 +232,7 @@ inline void solve_slice_banded(
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // gbtrf success, check condition number
-        if constexpr (!is_complex_v<T>) {
-            lapack::gbcon(norm, N, kl, ku, ab, ldab, ipiv, anorm, &rcond, work2, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::gbcon(norm, N, kl, ku, ab, ldab, ipiv, anorm, &rcond, work2, (real_type *)irwork, &info);
-        }
+        lapack::gbcon(norm, N, kl, ku, ab, ldab, ipiv, anorm, &rcond, work2, irwork, &info);
 
         status.rcond = (double)rcond;
         if (info >= 0) {
@@ -346,12 +329,8 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         return int(info);
     }
 
-    void *irwork;
-    if constexpr (is_complex_v<T>) {
-        irwork = PyMem_RawMalloc(intn * sizeof(real_type));
-    } else {
-        irwork = PyMem_RawMalloc(intn * sizeof(CBLAS_INT));
-    }
+    constexpr npy_intp irwork_mult = is_complex_v<T> ? 3 : 1;
+    irwork_t<T> *irwork = static_cast<irwork_t<T> *>(PyMem_RawMalloc(irwork_mult * intn * sizeof(real_type)));
 
     if (irwork == NULL) {
         PyMem_RawFree(ipiv);
@@ -452,8 +431,6 @@ template<typename T>
 int
 _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==c64 etc
-
     char trans = transposed ? 'T' : 'N';
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
@@ -563,12 +540,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     }
 
     // {ge,po,tr}con need rwork or iwork
-    void *irwork;
-    if constexpr (is_complex_v<T>) {
-        irwork = PyMem_RawMalloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
-    } else {
-        irwork = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
-    }
+    constexpr npy_intp irwork_mult = is_complex_v<T> ? 3 : 1;
+    irwork_t<T> *irwork = static_cast<irwork_t<T> *>(PyMem_RawMalloc(irwork_mult * n * sizeof(irwork_t<T>)));
     if (irwork == NULL) {
         PyMem_RawFree(buffer);
         PyMem_RawFree(ipiv);

@@ -8,7 +8,7 @@ namespace sp_linalg {
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
 void invert_slice_general(
-    CBLAS_INT N, T *data, CBLAS_INT *ipiv, void *irwork, T *work, CBLAS_INT lwork,
+    CBLAS_INT N, T *data, CBLAS_INT *ipiv, irwork_t<T> *irwork, T *work, CBLAS_INT lwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -23,11 +23,7 @@ void invert_slice_general(
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
-        if constexpr(!is_complex_v<T>) {
-            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::gecon(norm, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::gecon(norm, N, data, N, anorm, &rcond, work, irwork, &info);
 
         status.rcond = (double)rcond;
         if (info >= 0) {
@@ -50,7 +46,7 @@ void invert_slice_general(
 // Symmetric/hermitian array inversion with potrf, pocon and potri
 template<typename T>
 void invert_slice_cholesky(
-    char uplo, CBLAS_INT N, T *data, T* work, void *irwork,
+    char uplo, CBLAS_INT N, T *data, T* work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -65,11 +61,7 @@ void invert_slice_cholesky(
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
-        if constexpr (!is_complex_v<T>) {
-            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::pocon(uplo, N, data, N, anorm, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::pocon(uplo, N, data, N, anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             status.rcond = (double)rcond;
@@ -89,7 +81,7 @@ void invert_slice_cholesky(
 // Symmetric/hermitian array inversion with sytrf/hetrf and sytri/hetri
 template<typename T>
 void invert_slice_sym_herm(
-    char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
+    char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, CBLAS_INT lwork,
     bool is_symm_not_herm,
     SliceStatus& status
 ) {
@@ -113,7 +105,7 @@ void invert_slice_sym_herm(
     if (info == 0) {
         // {sy,he}trf success
         if constexpr (!is_complex_v<T>) {
-            lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, (CBLAS_INT *)irwork, &info);
+            lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, irwork, &info);
         } else {
             if (is_symm_not_herm) {
                 lapack::sycon(uplo, N, data, N, ipiv, anorm, &rcond, work, &info);
@@ -150,7 +142,7 @@ void invert_slice_sym_herm(
 // triangular array inversion with trtri
 template<typename T>
 void invert_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, T *data, T *work, void *irwork,
+    char uplo, char diag, CBLAS_INT N, T *data, T *work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -164,12 +156,7 @@ void invert_slice_triangular(
 
     status.lapack_info = (Py_ssize_t)info;
     if(info >= 0) {
-
-        if constexpr(!is_complex_v<T>) {
-            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (CBLAS_INT *)irwork, &info);
-        } else {
-            lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, (real_type *)irwork, &info);
-        }
+        lapack::trcon(norm, uplo, diag, N, data, N, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
@@ -218,8 +205,6 @@ template<typename T>
 int
 _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==c64 etc
-
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
@@ -327,12 +312,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // {ge,po,tr}con need rwork or iwork
-    void *irwork;
-    if constexpr(is_complex_v<T>) {
-        irwork = PyMem_RawMalloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
-    } else {
-        irwork = PyMem_RawMalloc(n*sizeof(CBLAS_INT));
-    }
+    constexpr npy_intp irwork_mult = is_complex_v<T> ? 3 : 1;
+    irwork_t<T> *irwork = static_cast<irwork_t<T> *>(PyMem_RawMalloc(irwork_mult * n * sizeof(irwork_t<T>)));
     if (irwork == NULL) {
         PyMem_RawFree(buffer);
         PyMem_RawFree(ipiv);

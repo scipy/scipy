@@ -219,7 +219,7 @@ template<typename T>
 int
 _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==f64 etc
+    using real_type = real_of_t<T>; // f32 if T==c64 etc
     using cmplx_type = complex_of_t<T>;
     SliceStatus slice_status;
 
