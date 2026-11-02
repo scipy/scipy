@@ -164,14 +164,14 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
             # Make sure this works if the user uses the axis keywords
             # to apply the norm to the transpose.
             if ord == 1:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = '1', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = 'i', a.T
             elif ord == np.inf:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = 'i', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = '1', a.T
             if lange_args:
                 lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
