@@ -1389,6 +1389,20 @@ def test_write_multiple_matlab_opaque():
         assert data[name][0]['_ObjectMetadata'][4, 0] == expected_id
 
 
+def test_gh_7752():
+    # Loaded 1-byte values must not share memory with CPython's cached
+    # 1-byte bytes objects
+    stream = BytesIO()
+    savemat(stream, {'x': np.uint8(1)})
+    x = loadmat(BytesIO(stream.getvalue()))['x']
+    try:
+        x[0, 0] = 42
+        assert bytes([1])[0] == 1
+        assert loadmat(BytesIO(stream.getvalue()))['x'][0, 0] == 1
+    finally:
+        x[0, 0] = 1
+
+
 def test_gh_17992(tmp_path):
     rng = np.random.default_rng(12345)
     outfile = tmp_path / "lists.mat"

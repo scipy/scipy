@@ -60,7 +60,6 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     sokalsneath, sqeuclidean, yule)
 from scipy._external import array_api_extra as xpx
 from scipy._lib._util import _apply_over_batch
-from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (
     make_xp_test_case,
     is_lazy_array,
@@ -1303,17 +1302,13 @@ class TestPdist:
         right_y = np.asarray([0.01492537])
         xp_assert_close(pdist_y, right_y, atol=eps)
 
-    @skip_xp_invalid_arg
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
-        class myclass:
-            pass
-
         def _my_metric(x, y):
-            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+            if not isinstance(x[0], np.float32) or not isinstance(y[0], np.float32):
                 raise ValueError("Type has been changed")
             return 1.123
-        data = np.array([[myclass()], [myclass()]], dtype=object)
+        data = np.zeros((2, 2), dtype=np.float32)
         pdist_y = pdist(data, metric=_my_metric)
         right_y = np.asarray([1.123])
         xp_assert_equal(pdist_y, right_y)
@@ -1802,58 +1797,36 @@ class TestSquareForm:
                     assert A[i, j] == 0
 
 
+@make_xp_test_case(num_obs_y)
 class TestNumObsY:
-
-    def test_num_obs_y_multi_matrix(self):
+    def test_num_obs_y_multi_matrix(self, xp):
         for n in range(2, 10):
             X = np.random.rand(n, 4)
-            Y = wpdist_no_const(X)
+            Y = xp.asarray(pdist(X))
             assert num_obs_y(Y) == n
 
-    def test_num_obs_y_1(self):
+    def test_num_obs_y_1(self, xp):
+        rng = np.random.default_rng(905285034985039)
         # Tests num_obs_y(y) on a condensed distance matrix over 1
         # observations. Expecting exception.
         with pytest.raises(ValueError):
-            self.check_y(1)
+            num_obs_y(xp.asarray(rng.random(0)))
 
-    def test_num_obs_y_2(self):
-        # Tests num_obs_y(y) on a condensed distance matrix over 2
-        # observations.
-        assert self.check_y(2)
+    def test_num_obs_y(self, xp):
+        rng = np.random.default_rng(74298759834759837)
+        for i in range(2, 16):
+            n = (i * (i - 1)) // 2
+            assert num_obs_y(xp.asarray(rng.random(n))) == i
 
-    def test_num_obs_y_3(self):
-        assert self.check_y(3)
-
-    def test_num_obs_y_4(self):
-        assert self.check_y(4)
-
-    def test_num_obs_y_5_10(self):
-        for i in range(5, 16):
-            self.minit(i)
-
-    def test_num_obs_y_2_100(self):
+    def test_num_obs_y_2_100(self, xp):
+        rng = np.random.default_rng(89759387598437)
         # Tests num_obs_y(y) on 100 improper condensed distance matrices.
         # Expecting exception.
-        a = set()
-        for n in range(2, 16):
-            a.add(n * (n - 1) / 2)
+        a = {n * (n - 1) / 2 for n in range(2, 16)}
         for i in range(5, 105):
             if i not in a:
                 with pytest.raises(ValueError):
-                    self.bad_y(i)
-
-    def minit(self, n):
-        assert self.check_y(n)
-
-    def bad_y(self, n):
-        y = np.random.rand(n)
-        return num_obs_y(y)
-
-    def check_y(self, n):
-        return num_obs_y(self.make_y(n)) == n
-
-    def make_y(self, n):
-        return np.random.rand((n * (n - 1)) // 2)
+                    num_obs_y(xp.asarray(rng.random(i)))
 
 
 class TestNumObsDM:

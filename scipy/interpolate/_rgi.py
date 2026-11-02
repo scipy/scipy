@@ -166,6 +166,14 @@ class RegularGridInterpolator:
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
 
+    In particular, the default solver stops once the residual is below
+    ``rtol=1e-5`` relative to the norm of `values`. If `values` have a large
+    constant offset compared to how much they vary (say, values near 1000
+    that vary by 1), the interpolant may then miss the data points by much
+    more than expected. Subtracting the mean of `values` before interpolating
+    and adding it back afterwards takes the offset out of the solve; a smaller
+    ``rtol`` in `solver_args`, or the direct solver, also help.
+
     Alternatively, you may instead use the legacy methods, "slinear_legacy",
     "cubic_legacy" and "quintic_legacy". These methods allow faster construction
     but evaluations will be much slower.

@@ -28,7 +28,6 @@ Suppose a longitudinal study is intended to measure some feature of a subject at
 
 ```{code-cell} ipython3
 import os
-os.environ['SCIPY_ARRAY_API'] = '1'
 import numpy as np
 
 # Measurements at each of five times
