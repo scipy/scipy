@@ -200,8 +200,12 @@ class _FuncInfo:
             func.__module__ = module
             func.__qualname__ = self.name
 
-        capabilities = self.xp_capabilities or xp_capabilities()
-        return capabilities(func)
+        if self.public:
+            # Don't apply xp_capabilities to private functions.
+            capabilities = self.xp_capabilities or xp_capabilities()
+            capabilities(func)
+
+        return func
 
 
     @functools.lru_cache(1000)
