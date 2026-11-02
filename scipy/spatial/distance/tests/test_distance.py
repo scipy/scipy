@@ -2410,6 +2410,10 @@ class TestChebyshev:
         xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
         xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
 
+    def test_chebyshev(self):
+        assert wchebyshev([1, 0, 0], [0, 1, 0]) == 1
+        assert wchebyshev([1, 1, 0], [0, 1, 0]) == 1
+
 
 @pytest.mark.parametrize(
     "func,p",
@@ -2421,6 +2425,7 @@ class TestChebyshev:
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
         (braycurtis, None),
+        (chebyshev, None),
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
