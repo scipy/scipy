@@ -43,6 +43,10 @@ if __name__ == "__main__":
     for module_name in PUBLIC_MODULES:
         importlib.import_module(module_name)
 
+    # backend-aware special functions wrappers are constructed lazily,
+    # not materialized when importing `scipy.special`.
+    from scipy.special import *  # noqa: F403
+
     tested_functions = set()
 
     class MarkerCollector:
