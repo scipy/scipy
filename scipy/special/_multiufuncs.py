@@ -49,6 +49,7 @@ class MultiUFunc:
                 raise ValueError("All ufuncs must take the same input types.")
 
         self.__name__ = name
+        self.__qualname__ = name
         self._ufunc_or_ufuncs = ufunc_or_ufuncs
         self.__doc__ = doc
         self.__force_complex_output = force_complex_output
