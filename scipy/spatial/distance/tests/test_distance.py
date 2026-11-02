@@ -2441,6 +2441,13 @@ class TestCityblock:
         x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
         xp_assert_close(cityblock(x, y), np.asarray(3.0))
 
+    def test_cityblock_uint_wraparound(self, xp):
+        # uint8 does not wrap around and produces asymmetric results
+        u = xp.asarray([1], dtype=xp.uint8)
+        v = xp.asarray([0], dtype=xp.uint8)
+        xp_assert_equal(cityblock(u, v), xp.asarray(1.0))
+        xp_assert_equal(cityblock(v, u), xp.asarray(1.0))
+
     @pytest.mark.parametrize("kind", ["real floating", "integral"])
     def test_weight_invariance(self, xp, kind):
         rng = np.random.default_rng(42)
