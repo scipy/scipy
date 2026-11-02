@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/infra/mav.h"
 #include "ducc0/infra/simd.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 constexpr int PSWF_ERROR = 42;
 

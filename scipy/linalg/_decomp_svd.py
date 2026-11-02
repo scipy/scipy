@@ -1,14 +1,14 @@
 """SVD decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 import scipy._external.array_api_extra as xpx
 from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native, HAS_ILP64
+from .lapack import _normalize_lapack_dtype, _ensure_aligned_and_native
 from scipy.linalg.lapack import get_lapack_funcs   # noqa: F401  (backwards compat)
 from ._decomp import _asarray_validated
 
@@ -482,9 +482,10 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+    M, N = A.shape
+    full = M <= N
+    u, s, vh = svd(A, full_matrices=full, overwrite_a=overwrite_a,
                    check_finite=check_finite, lapack_driver=lapack_driver)
-    M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = np.finfo(s.dtype).eps * max(M, N)
     tol = np.amax(s, initial=0.) * rcond

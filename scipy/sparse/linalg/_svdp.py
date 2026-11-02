@@ -1,10 +1,10 @@
 __all__ = ['_svdp']
 
 import numpy as np
-from scipy.linalg.lapack import HAS_ILP64
 
 from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.linalg import LinAlgError
+from scipy._lib._util import HAS_ILP64
 
 from . import _propack
 

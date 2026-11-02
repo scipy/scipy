@@ -757,7 +757,8 @@ def test_dot_nd(a_shape, b_shape):
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
-    exp = np.dot(arr_a.toarray(), arr_b.toarray())
+    axis_b = -2 if arr_b.ndim >= 2 else 0
+    exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=[-1, axis_b])
     # sparse-dense
     res = arr_a.dot(arr_b.toarray())
     assert_equal(res, exp)

@@ -1,13 +1,15 @@
 import functools
 import operator
+import os
+import warnings
 from math import prod
 from types import GenericAlias
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
-from scipy.linalg import (get_lapack_funcs, LinAlgError,
+from scipy.linalg import (get_lapack_funcs, LinAlgError, LinAlgWarning,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded, solveh_banded)
+                          solve, solve_banded)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
@@ -1170,6 +1172,90 @@ class BSpline:
         --------
         splder, splantider
 
+        Notes
+        -----
+        The coefficient array of the returned instance will be padded with
+        ``b.k + 1`` trailing zeros, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
+
+        Examples
+        --------
+        The derivative can be used for finding the local extrema of a curve:
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import make_interp_spline, PPoly
+        >>> x = np.linspace(0, 10, 70)
+        >>> y = np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=4)  # spl is a quartic (degree 4) spline
+
+        Now, differentiate the spline and find the zeros of the derivative.
+        `BSpline` objects do not have a ``roots`` method, so we convert the
+        derivative to a `PPoly`, which represents the same curve as a piecewise
+        polynomial. We fit a spline of degree 4 rather than the default cubic,
+        so that its derivative is smooth enough to locate the extrema
+        accurately: the derivative of a quartic spline is a cubic spline with
+        the same breakpoints, and `PPoly.roots` finds all real roots of each
+        cubic piece directly, without iterating.
+
+        >>> dspl = spl.derivative()
+        >>> xe = PPoly.from_spline(dspl).roots(extrapolate=False)
+        >>> xe / np.pi
+        array([0.50000001, 1.5       , 2.49999998])
+
+        The array holds the locations, in units of :math:`\\pi`, where the
+        derivative vanishes on the data interval :math:`[0, 10]`. This agrees
+        well with roots :math:`\\pi/2 + n\\pi` of :math:`\\cos(x) = \\sin'(x)`.
+
+        A zero of the derivative only tells us that the curve is flat there,
+        which usually means a local extremum. To tell maxima from minima, check
+        the sign of the second derivative: negative at a maximum, positive at a
+        minimum.
+
+        >>> np.sign(spl.derivative(2)(xe))
+        array([-1.,  1., -1.])
+
+        So the curve has maxima at :math:`x \\approx \\pi/2` and
+        :math:`x \\approx 5\\pi/2`, and a minimum at :math:`x \\approx 3\\pi/2`.
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> b = spl.derivative()             # b is a quadratic spline
+        >>> len(b.t), len(b.c), b.k          # knots, coefficients, degree of b
+        (13, 13, 2)
+        >>> b.c[len(b.t) - b.k - 1:]         # zero padding, unused in evaluations
+        array([0., 0., 0.])
+
+        Slice off the padding to get exactly ``len(b.t) - b.k - 1`` coefficients:
+
+        >>> c = b.c[:len(b.t) - b.k - 1]
+        >>> len(c)
+        10
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``b``) and
+        after (``BSpline(b.t, c, b.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(b.t, c, b.k)(xx), b(xx))
+        True
+
         """
         if hasattr(self._delegate_to, "derivative"):
             # NumPy backend class lacks derivative method because it relies on
@@ -1215,6 +1301,76 @@ class BSpline:
         it will be set to False for the returned instance. This is done because
         the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
+
+        The coefficient array of the returned instance will be padded with
+        ``b.k + 1`` trailing entries, so that ``len(b.c) == len(b.t)``. The
+        trailing coefficients never enter evaluations, only the first
+        ``len(b.t) - b.k - 1`` coefficients are used.
+
+        Examples
+        --------
+        Taking the derivative of the antiderivative recovers the original
+        spline, up to floating point error:
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import make_interp_spline
+        >>> x = np.linspace(0, np.pi/2, 70)
+        >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
+        >>> spl = make_interp_spline(x, y)    # spl is a cubic spline
+        >>> spl(1.7), spl.antiderivative().derivative()(1.7)
+        (array(2.15654299), array(2.15654299))
+
+        Antiderivative can be used to evaluate definite integrals:
+
+        >>> ispl = spl.antiderivative()
+        >>> ispl(np.pi/2) - ispl(0)
+        np.float64(2.25720536)
+
+        This is indeed an approximation to the complete elliptic integral
+        :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
+
+        >>> from scipy.special import ellipk
+        >>> ellipk(0.8)
+        np.float64(2.25720533)
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.arange(11)
+        >>> y = x**4 + np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
+
+        A spline of degree ``k`` is built from polynomial pieces of degree
+        ``k``, joined at the knots ``t``. The number of knots, the number of
+        coefficients, and the degree are related by
+        ``len(t) - len(c) == k + 1``. Padded coefficients instead satisfy
+        ``len(c) == len(t)``:
+
+        >>> len(spl.t), len(spl.c), spl.k    # knots, coefficients, degree of spl
+        (15, 11, 3)
+        >>> a = spl.antiderivative()         # a is a quartic spline
+        >>> len(a.t), len(a.c), a.k          # knots, coefficients, degree of a
+        (17, 17, 4)
+        >>> a.c[len(a.t) - a.k - 1:]         # repeat padding, unused in evaluations
+        array([20002.23910041, 20002.23910041, 20002.23910041, 20002.23910041,
+               20002.23910041])
+
+        Slice off the padding to get exactly ``len(a.t) - a.k - 1`` coefficients:
+
+        >>> c = a.c[:len(a.t) - a.k - 1]
+        >>> len(c)
+        12
+
+        The trimmed coefficients define the same spline, since the padding
+        never enters evaluations. Evaluating the spline before (``a``) and
+        after (``BSpline(a.t, c, a.k)``) trimming on a grid of points spanning
+        the data range gives the same values:
+
+        >>> xx = np.linspace(0, 10, 51)
+        >>> np.allclose(BSpline(a.t, c, a.k)(xx), a(xx))
+        True
 
         """
         if hasattr(self._delegate_to, "antiderivative"):
@@ -2608,7 +2764,7 @@ def _lsq_solve_qr_clamp_values(x, y, t, k, w, ci, cf):
 #  Smoothing spline helpers #
 #############################
 
-def _compute_b_inv(A):
+def _compute_b_inv(A, factor=None):
     """
     Inverse 4 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
     ``U`` is a unit upper triangular banded matrix using an algorithm
@@ -2618,6 +2774,11 @@ def _compute_b_inv(A):
     ----------
     A : array, shape (4, n)
         Matrix to inverse, stored in LAPACK banded storage.
+    factor : array, shape (4, n), optional
+        A precomputed Cholesky factor of ``A``, as returned by
+        `scipy.linalg.cholesky_banded`. If given, ``A`` is not factorized
+        again. The factor is scaled in place and must not be reused after
+        this call.
 
     Returns
     -------
@@ -2658,7 +2819,8 @@ def _compute_b_inv(A):
                 rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
             B[-j - 1, i + j] = rng_sum
 
-    U = cholesky_banded(A)
+    # a passed-in factor is scaled in place and must not be reused after
+    U = cholesky_banded(A) if factor is None else factor
     for i in range(2, 5):
         U[-i, i-1:] /= U[-1, :-i+1]
     D = 1. / (U[-1])**2
@@ -3033,12 +3195,13 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
         # the system is rectangular so we can't apply the t=None path's
         # shortcut y - X @ c = lam * W^{-1} @ omega @ c (needs square X),
         # compute the residual directly
-        # TODO: once LAPACK dpbcon is wrapped in scipy.linalg,
-        # use it to estimate rcond of the banded system before solving
+        # skip the rcond estimate during the search, the final solve
+        # at the selected lam checks it and warns
         c, tr = _solve_smoothing_spline_coefficients(
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
+            check_conditioning=False,
         )
-        rss = np.sum(w * np.square(y - X @ c)) / n
+        rss = np.sum(w[:, None] * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
 
     def _gcv_log(s):
@@ -3052,15 +3215,35 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     return lam_hat
 
 def _solve_smoothing_spline_coefficients(XtWX_banded, lam, omega, XtWy,
-                                         compute_trace=False):
+                                         compute_trace=False,
+                                         check_conditioning=True):
     _lhs = XtWX_banded + lam * omega
-    c = solveh_banded(_lhs, XtWy, lower=False)
+    factor = cholesky_banded(_lhs, lower=False)
+    if check_conditioning:
+        lansb, pbcon = get_lapack_funcs(('lansb', 'pbcon'), (_lhs,))
+        kd = _lhs.shape[0] - 1
+        # pbcon needs the 1-norm of the unfactored matrix
+        anorm = lansb(kd, _lhs, norm='1', uplo='U')
+        rcond, info = pbcon(kd, factor, anorm, uplo='U')
+        if info < 0:
+            raise ValueError(
+                f"illegal value in argument {-info} of internal pbcon")
+        if rcond < np.finfo(_lhs.dtype).eps:
+            # show the warning at the user's call site
+            _warn_skips = (os.path.dirname(os.path.dirname(__file__)),)
+            warnings.warn(
+                "The system (X^T W X + lam * Omega) is ill-conditioned "
+                f"(rcond={rcond:.2e} for lam={lam:.2e}), the result may "
+                "not be accurate.",
+                LinAlgWarning, skip_file_prefixes=_warn_skips,
+            )
+    c = cho_solve_banded((factor, False), XtWy)
     if not compute_trace:
         return c, None
     # tr A = tr[(X^T W X + lam*Omega)^{-1} X^T W X]: both factors are
     # 7-banded, so only the central bands of the inverse are needed
     # (Hutchinson & de Hoog, upper-banded storage).
-    b_banded = _compute_b_inv(_lhs)
+    b_banded = _compute_b_inv(_lhs, factor)
     tr = b_banded * XtWX_banded
     tr[:-1] *= 2
     return c, tr.sum()
@@ -3085,10 +3268,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             )
         if lam < 0.:
             raise ValueError('Regularization parameter should be non-negative')
-    if np.ndim(y) > 1:
-        raise NotImplementedError(
-            "batched `y` is not supported with user-provided knots yet; "
-            "`y` must be 1-D")
+    y_shape1 = y.shape[1:]
+    y_flat = y.reshape((y.shape[0], -1))  # flatten trailing dims.
     t = np.ascontiguousarray(t, dtype=float)
     if not np.all(np.isfinite(t)):
         raise ValueError("`t` must not contain infs or nans")
@@ -3140,19 +3321,28 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
 
     omega = _penalty_matrix_banded(t)
     XtWX = X.T @ X.multiply(w[:, None])
-    XtWy = X.T @ (w * y)
+    XtWy = X.T @ (w[:, None] * y_flat)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
     if lam is None:
-        lam = _make_smoothing_spline_user_knots_gcv(
-            XtWX_banded, X, y, w, XtWy, omega)
+        lams = np.empty(y_flat.shape[1])
+        for i in range(y_flat.shape[1]):
+            lams[i] = _make_smoothing_spline_user_knots_gcv(
+                XtWX_banded, X, y_flat[:, i: i+1], w, XtWy[:, i: i+1], omega)
     try:
-        c, _ = _solve_smoothing_spline_coefficients(
-            XtWX_banded, lam, omega, XtWy, compute_trace=False,
-        )
+        if lam is not None:
+            c, _ = _solve_smoothing_spline_coefficients(
+                XtWX_banded, lam, omega, XtWy, compute_trace=False,
+            )
+        else:
+            c = np.empty((m, y_flat.shape[1]))
+            for i in range(y_flat.shape[1]):
+                c[:, i], _ = _solve_smoothing_spline_coefficients(
+                    XtWX_banded, lams[i], omega, XtWy[:, i], compute_trace=False,
+                )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
@@ -3168,6 +3358,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             "proportionally to `lam` (use a smaller `lam`; the fit there is "
             "already indistinguishable from its straight-line limit).") from e
     c = np.ascontiguousarray(c)
+    c = c.reshape((c.shape[0],) + y_shape1)
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, 3, axis=axis)
 
@@ -3232,6 +3423,12 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
         as a solution of the problem of smoothing splines using
         the GCV criteria [1] in case ``lam`` is None, otherwise using the
         given parameter ``lam``.
+
+    Warns
+    -----
+    LinAlgWarning
+        If ``t`` is provided and the linear system is ill-conditioned for
+        the given ``lam``, in which case the result may not be accurate.
 
     Notes
     -----

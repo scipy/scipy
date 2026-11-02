@@ -3448,6 +3448,24 @@ class _TestFancyIndexing:
         B = self.asdense(arange(50).reshape(5,10))
         A = self.spcreator(B)
 
+        class BoolLikeNoNonzero:
+            def __init__(self, data):
+                self._data = np.asarray(data, dtype=bool)
+                self.dtype = self._data.dtype
+                self.shape = self._data.shape
+                self.ndim = self._data.ndim
+
+            def __array__(self, dtype=None, copy=None):
+                return np.asarray(self._data, dtype=dtype, copy=copy)
+
+        class BoolLikeObjectArrayNoNonzero(BoolLikeNoNonzero):
+            def __array__(self, dtype=None, copy=None):
+                if dtype is None:
+                    arr = np.asarray(self._data, dtype=object, copy=copy)
+                else:
+                    arr = np.asarray(self._data, dtype=dtype, copy=copy)
+                return arr
+
         I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
         J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
         X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
@@ -3456,6 +3474,17 @@ class _TestFancyIndexing:
         assert_equal(toarray(A[:, J]), B[:, J])
         assert_equal(toarray(A[X]), B[X])
         assert_equal(toarray(A[B > 9]), B[B > 9])
+
+        row_mask = BoolLikeNoNonzero([True, False, True, False, True])
+        col_mask = BoolLikeNoNonzero([True, False, True, False, True] * 2)
+        row_mask_object = BoolLikeObjectArrayNoNonzero(
+            [True, False, True, False, True]
+        )
+
+        assert_equal(toarray(A[row_mask]), B[row_mask])
+        assert_equal(toarray(A[:, col_mask]), B[:, col_mask])
+        with pytest.raises(IndexError, match='non-boolean dtype'):
+            _ = A[row_mask_object]
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True,

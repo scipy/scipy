@@ -1,13 +1,15 @@
 # Author: Robert T. McGibbon, December 2014
 #
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from numpy import zeros, asarray, complex128, float64
+from numpy import zeros, asarray, complex64, complex128, float32, float64
 from numpy.linalg import LinAlgError
-from numpy cimport complex128_t, float64_t
+from numpy cimport complex64_t, complex128_t, float32_t, float64_t
 
 
 cdef fused dz:
+    float32_t
     float64_t
+    complex64_t
     complex128_t
 
 
@@ -48,8 +50,12 @@ def levinson(const dz[::1] a, const dz[::1] b):
     # http://jblevins.org/mirror/amiller/toeplitz.f90
     # Released under a Public domain declaration.
 
-    if dz is float64_t:
+    if dz is float32_t:
+        dtype = float32
+    elif dz is float64_t:
         dtype = float64
+    elif dz is complex64_t:
+        dtype = complex64
     else:
         dtype = complex128
 
