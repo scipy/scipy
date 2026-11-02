@@ -305,6 +305,55 @@ class TestAnderson:
         #   3.208057
         xp_assert_close(A, xp.asarray(3.208057, dtype=dtype))
 
+    @pytest.mark.parametrize('value', [0, 3, 123.456])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_normal_constant(self, value, dtype, xp):
+        # gh-26573: rounding error can make the standard deviation nonzero
+        # even when all observations are identical.
+        x = xp.full((200,), value, dtype=getattr(xp, dtype))
+        with eager_warns(stats.ConstantInputWarning, match='constant', xp=xp):
+            res = stats.anderson(x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan, dtype=x.dtype))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan, dtype=x.dtype))
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_normal_constant_batch(self, axis, xp):
+        rng = np.random.default_rng(26573)
+        sample = xp.asarray(rng.normal(size=200))
+        ref = stats.anderson(sample)
+        x = xp.stack([xp.full_like(sample, 123.456), sample,
+                      xp.full_like(sample, 3)], axis=axis)
+        with eager_warns(stats.ConstantInputWarning, match='constant', xp=xp):
+            res = stats.anderson(x, axis=1-axis)
+        nan = xp.asarray(xp.nan, dtype=sample.dtype)
+        xp_assert_close(res.statistic, xp.stack([nan, ref.statistic, nan]))
+        xp_assert_close(res.pvalue, xp.stack([nan, ref.pvalue, nan]))
+
+    def test_normal_constant_monte_carlo(self):
+        method = stats.MonteCarloMethod(n_resamples=9)
+        with pytest.warns(stats.ConstantInputWarning, match='constant'):
+            res = stats.anderson(np.full(200, 123.456), method=method)
+        assert_equal(res.statistic, np.nan)
+        assert_equal(res.pvalue, np.nan)
+
+    def test_normal_constant_axis_nan_policy(self):
+        x = np.full((3, 200), 123.456)
+        x[0, 0] = np.nan
+        with pytest.warns(stats.ConstantInputWarning, match='constant'):
+            res = stats.anderson(x, axis=1, nan_policy='omit', keepdims=True)
+        assert_equal(res.statistic, np.full((3, 1), np.nan))
+        assert_equal(res.pvalue, np.full((3, 1), np.nan))
+
+    def test_normal_small_variation(self, xp):
+        # A small but nonzero spread must not be treated as constant.
+        sample = xp.asarray(np.arange(200, dtype=np.float64) * 2**-40)
+        ref = stats.anderson(sample)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            res = stats.anderson(sample + 3)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
+
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_expon(self, xp, dtype):
         rs = RandomState(1234567890)
