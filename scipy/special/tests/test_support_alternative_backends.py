@@ -89,6 +89,9 @@ def _skip_or_tweak_alternative_backends(
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
     if f_name in {'beta'} and is_jax(xp):
+        if any('float' in dtype for dtype in dtypes):
+            # JAX doesn't follow NumPy mixed int/float promotion rules
+            pytest.xfail("dtypes do not match")
         # JAX reports NaN for negative input; SciPy produces inf
         return [positive_only]*nfo.n_args, dtypes
 
@@ -120,11 +123,10 @@ def _skip_or_tweak_alternative_backends(
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
                                           'zeta', 'xlog1py'))
-             # JAX simply doesn't follow NumPy mixed int/float promotion rules
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py', 'beta')))
+                                           'xlog1py')))
     ):
         pytest.xfail("dtypes do not match")
 
