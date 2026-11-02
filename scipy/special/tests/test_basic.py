@@ -199,35 +199,51 @@ class TestCephes:
         assert_equal(cephes.dawsn(0),0.0)
         assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
-    def test_diric(self):
+    @make_xp_test_case(special.diric)
+    def test_diric(self, xp):
         # Test behavior near multiples of 2pi.  Regression test for issue
         # described in gh-4001.
-        n_odd = [1, 5, 25]
-        x = np.array(2*np.pi + 5e-5).astype(np.float32)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-7, rtol=0)
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        x = np.array(2*np.pi + 1e-15).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        if hasattr(np, 'float128'):
-            # No float128 available in 32-bit numpy
-            x = np.array(2*np.pi + 1e-12).astype(np.float128)
-            assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-19, rtol=0)
+        n_odd = xp.asarray([1, 5, 25])
+        x = xp.asarray(2*np.pi + 5e-5, dtype=xp.float32)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-7, rtol=0)
 
-        n_even = [2, 4, 24]
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_even), -1.0, atol=1.5e-15, rtol=0)
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        x = xp.asarray(2*np.pi + 1e-15, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        if hasattr(xp, 'float128'):
+            x = xp.asarray(2*np.pi + 1e-12, dtype=xp.float128)
+            res = special.diric(x, n_odd)
+            xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                            atol=1.5e-19, rtol=0)
+
+        n_even = xp.asarray([2, 4, 24])
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_even)
+        xp_assert_close(res, xp.asarray([-1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
         # Test at some values not near a multiple of pi
-        x = np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi)
+        x = xp.asarray(np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi))
         octave_result = [0.872677996249965, 0.539344662916632,
                          0.127322003750035, -0.206011329583298]
-        assert_allclose(special.diric(x, 3), octave_result, atol=1.5e-15, rtol=0)
+        res = special.diric(x, 3)
+        xp_assert_close(res, xp.asarray(octave_result, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
-    def test_diric_broadcasting(self):
-        x = np.arange(5)
-        n = np.array([1, 3, 7])
-        assert_(special.diric(x[:, np.newaxis], n).shape == (x.size, n.size))
+    @make_xp_test_case(special.diric)
+    def test_diric_broadcasting(self, xp):
+        x = xp.arange(5)
+        n = xp.asarray([1, 3, 7])
+        assert special.diric(x[:, None], n).shape == (x.shape[0], n.shape[0])
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
@@ -1398,6 +1414,35 @@ class TestAssocLaguerre:
         assert_allclose(a2, a1(.2), atol=1.5e-8, rtol=0)
         a2 = special.assoc_laguerre(1,11,1)
         assert_allclose(a2, a1(1), atol=1.5e-8, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # degrees = [0, 1, 2, 3]
+    # points = [0.25, 1.25, 2.5, 5.0]
+    # with mp.workdps(50):
+    #     for k in [0.0, 0.5]:
+    #         values = [
+    #             float(mp.laguerre(n, k, x))
+    #             for n, x in zip(degrees, points)
+    #         ]
+    #         print(f"            ({k!r}, {values!r}),")
+    @pytest.mark.parametrize(
+        "k, expected",
+        [
+            (0.0, [1.0, -0.25, -0.875, 2.6666666666666665]),
+            (0.5, [1.0, 0.25, -1.25, 3.2291666666666665]),
+        ],
+    )
+    @make_xp_test_case(special.assoc_laguerre)
+    def test_assoc_laguerre_alt_backends(self, xp, k, expected):
+        x = xp.asarray([0.25, 1.25, 2.5, 5.0], dtype=xp.float64)
+        n = xp.asarray([0, 1, 2, 3], dtype=xp.float64)
+
+        actual = special.assoc_laguerre(x, n, k=k)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
 
 class TestBesselpoly:
