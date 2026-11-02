@@ -1259,7 +1259,6 @@ class SHGO:
         self.ind_f_min = np.argsort(np.ravel(self.minimizer_pool_F))
         self.minimizer_pool = np.array(self.minimizer_pool)
         self.minimizer_pool = self.minimizer_pool[self.ind_f_min]
-        self.minimizer_pool_F = np.array(self.minimizer_pool_F)
         self.minimizer_pool_F = self.minimizer_pool_F[self.ind_f_min]
         self.X_min = self.X_min[self.ind_f_min]
         return
