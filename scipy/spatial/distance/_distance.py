@@ -956,6 +956,7 @@ def cityblock(u, v, w=None):
     return l1_diff.sum()
 
 
+@xp_capabilities()
 def mahalanobis(u, v, VI):
     """
     Compute the Mahalanobis distance between two 1-D arrays.
@@ -995,12 +996,12 @@ def mahalanobis(u, v, VI):
     1.7320508075688772
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    VI = np.atleast_2d(VI)
+    xp = array_namespace(u, v, VI)
+    u, v, VI = xp_promote(u, v, VI, force_floating=True, xp=xp)
+    VI = xp.atleast_2d(VI)
     delta = u - v
-    m = np.dot(np.dot(delta, VI), delta)
-    return np.sqrt(m)
+    return xp.sqrt(delta @ VI @ delta)
+
 
 
 def chebyshev(u, v, w=None):

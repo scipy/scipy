@@ -1704,22 +1704,32 @@ class TestCosine:
         xp_assert_split_weight(cosine, x, y)
 
 
-class TestSomeDistanceFunctions:
+@make_xp_test_case(mahalanobis)
+class TestMahalanobis:
+    def test_mahalanobis(self, xp):
+        x = xp.asarray([1.0, 2.0, 3.0])
+        y = xp.asarray([1.0, 1.0, 5.0])
+        vi = xp.asarray([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
 
-    def setup_method(self):
-        # 1D arrays
-        x = np.array([1.0, 2.0, 3.0])
-        y = np.array([1.0, 1.0, 5.0])
+    def test_mahalanobis_array_like(self):
+        x = [1.0, 2.0, 3.0]
+        y = [1.0, 1.0, 5.0]
+        vi = [[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]]
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
 
-        self.cases = [(x, y)]
-
-    def test_mahalanobis(self):
-        x = np.array([1.0, 2.0, 3.0])
-        y = np.array([1.0, 1.0, 5.0])
-        vi = np.array([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
-        for x, y in self.cases:
-            dist = mahalanobis(x, y, vi)
-            assert math.isclose(dist, math.sqrt(6.0), abs_tol=1.5e-7)
+    def test_weight_invariance(self, xp):
+        rng = np.random.default_rng(42)
+        x = xp.asarray((rng.random(100) - 0.5) * 100)
+        y = xp.asarray((rng.random(100) - 0.5) * 100)
+        V = xp.diag(xp.asarray((rng.random(100) - 0.5) * 100))
+        xp_assert_ones_weight(mahalanobis, x, y, V)
+        xp_assert_scaling_weight(mahalanobis, x, y, V)
+        xp_assert_zero_weight(mahalanobis, x, y, V)
+        xp_assert_duplication_weight(mahalanobis, x, y, V)
+        xp_assert_split_weight(mahalanobis, x, y, V)
 
 
 class TestSquareForm:
@@ -2481,6 +2491,7 @@ class TestChebyshev:
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        make_xp_pytest_param(mahalanobis, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
