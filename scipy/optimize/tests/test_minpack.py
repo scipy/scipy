@@ -1008,6 +1008,25 @@ class TestCurveFit:
         assert_allclose(popt, [16.0])
         assert_allclose(pcov[0, 0], 0.04938272)
 
+    @pytest.mark.parametrize("method", ["lm", "trf", "dogbox"])
+    def test_curvefit_single_point_scalar_sigma_with_callable_jac(self, method):
+        def fit_f(x, par):
+            return par*x**2
+
+        def jac(x, par):
+            return (x*x)[:, None]
+
+        ys = np.array([144.0])
+        xs = np.array([3.0])
+        p0 = (3.0,)
+
+        popt, pcov = curve_fit(fit_f, xs, ys, p0=p0,
+                               sigma=2.0, jac=jac, method=method,
+                               absolute_sigma=True)
+
+        assert_allclose(popt, [16.0])
+        assert_allclose(pcov[0, 0], 4/81)
+
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
         x = np.arange(-3, 5)
