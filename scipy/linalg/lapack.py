@@ -906,13 +906,8 @@ from .blas import (
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
 
-from scipy.__config__ import CONFIG
+from scipy._lib._util import HAS_LP64, HAS_ILP64
 
-# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
-# keeping `linalg.blas` as LP64.
-HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
-HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
-del CONFIG
 
 if HAS_LP64:
     from scipy.linalg import _flapack

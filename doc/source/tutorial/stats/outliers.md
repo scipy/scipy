@@ -36,7 +36,6 @@ In the past, SciPy has offered several "convenience functions" that combine trim
 
 ```{code-cell} ipython3
 import os
-os.environ['SCIPY_ARRAY_API'] = '1'
 import numpy as np
 from scipy import stats
 np.set_printoptions(linewidth=120)

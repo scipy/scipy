@@ -7,7 +7,7 @@ from types import ModuleType
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
-    is_jax, xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name,
+    is_jax, xp_promote, xp_capabilities, get_native_namespace_name,
     is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
@@ -156,33 +156,29 @@ class _FuncInfo:
             import scipy.special
             return getattr(scipy.special, self.name)
 
-        if SCIPY_ARRAY_API:
-            if self.is_ufunc:
-                def wrapped(*args, **kwargs):
-                    xp = array_namespace(*args)
-                    return self._wrapper_for(xp)(*args, **kwargs)
+        if self.is_ufunc:
+            def wrapped(*args, **kwargs):
+                xp = array_namespace(*args)
+                return self._wrapper_for(xp)(*args, **kwargs)
 
-                func = _make_ufunc_wrapper(
-                    wrapped,
-                    self.func,
-                    self.name,
-                    self.arg_names,
-                    self.func.__doc__,
-                )
-            else:
-                @functools.wraps(self.func)
-                def func(*args, **kwargs):
-                    xp = array_namespace(*args)
-                    return self._wrapper_for(xp)(*args, **kwargs)
-
-                # needed to allow pickling
-                func.__module__ = "scipy.special"
-                func.__qualname__ = self.name
+            func = _make_ufunc_wrapper(
+                wrapped,
+                self.func,
+                self.name,
+                self.arg_names,
+                self.func.__doc__,
+            )
         else:
-            func = self.func
+            @functools.wraps(self.func)
+            def func(*args, **kwargs):
+                xp = array_namespace(*args)
+                return self._wrapper_for(xp)(*args, **kwargs)
+
+            # needed to allow pickling
+            func.__module__ = "scipy.special"
+            func.__qualname__ = self.name
+
         capabilities = self.xp_capabilities or xp_capabilities()
-        # In order to retain a naked ufunc when SCIPY_ARRAY_API is
-        # disabled, xp_capabilities must apply its changes in place.
         cap_func = capabilities(func)
         assert cap_func is func
         return func
@@ -513,6 +509,21 @@ def _stdtrit(xp, spsx):
         return res_root.x
 
     return __stdtrit
+
+
+def _ndtri_exp(xp, spsx):
+    # The difference between this and just using `ndtri`
+    # defined by `get_array_special_func` is that if `ndtri`
+    # isn't found, we don't want to use the SciPy version; we'll
+    # return None here and use the SciPy version of `ndtri_exp`.
+    ndtri = _get_native_func(xp, spsx, 'ndtri')
+    if ndtri is None:
+        return None
+
+    def __ndtri_exp(x):
+        return ndtri(xp.exp(x))  # this is almost all we need
+
+    return __ndtri_exp
 
 
 def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
@@ -1099,6 +1110,12 @@ _special_funcs = (
         _ufuncs.ndtri, ["p"], xp_capabilities(extra_note=_ufunc_kwargs_extra_note())
     ),
     _FuncInfo(
+        _ufuncs.ndtri_exp, ["y"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+        generic_impl=_ndtri_exp, torch_native=False,
+        test_large_ints=False,
+    ),
+    _FuncInfo(
         _ufuncs.pdtr, ["k", "m"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
@@ -1299,8 +1316,6 @@ _special_funcs = (
 )
 
 # Override ufuncs.
-# When SCIPY_ARRAY_API is disabled, this exclusively updates the docstrings in place
-# and populates the xp_capabilities table, while retaining the original ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # digamma is an alias for psi. Define here so it also has alternative backend
 # support. Add noqa because the linter gets confused by the sneaky way psi

@@ -32,7 +32,6 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.linalg.blas import HAS_ILP64
-from scipy.conftest import skip_xp_invalid_arg
 
 from .test_basic import parametrize_overwrite_arg, parametrize_overwrite_b_arg
 
@@ -152,25 +151,27 @@ class TestEig:
             assert_array_almost_equal(a.T @ v[:, i], w[i]*v[:, i])
 
     def test_simple_dtype(self):
-        # Backwards compat: the input matrix is real, eigenvalues have zero
+        # Previous backwards compat: the input matrix is real, eigenvalues have zero
         # imaginary part =>
         #  - eigenvectors are real,
         #  - *but* eigenvalues are still complex-valued!
         # the `a` matrix is from test_simple
+        # This policy was changed in SciPy 2.0.0; check that output dtypes
+        # are consistent.
         a = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, vl, vr = eig(a, left=True, right=True)
         assert w.dtype == np.complex128
         assert (w.imag == 0).all()
-        assert vl.dtype == np.float64
-        assert vr.dtype == np.float64
+        assert vl.dtype == np.complex128
+        assert vr.dtype == np.complex128
 
         # repeat for a generalized eigenvalue problem
         b = np.diag([3, 2, 1])
         w, vl, vr = eig(a, b, left=True, right=True)
         assert w.dtype == np.complex128
         assert (w.imag == 0.).all()
-        assert vl.dtype == np.float64
-        assert vr.dtype == np.float64
+        assert vl.dtype == np.complex128
+        assert vr.dtype == np.complex128
 
     def test_simple_complex_eig(self):
         a = array([[1, 2], [-2, 1]])
@@ -1061,7 +1062,6 @@ class TestEigh:
         w, z = eigh(a)
         w, z = eigh(a, b)
 
-    @skip_xp_invalid_arg
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.

@@ -1379,8 +1379,8 @@ def minimum_phase(h,
         w = (xp.arange(n_fft, dtype=xp.float64, device=xp_device(h))
              * (2 * xp.pi / n_fft * n_half))
         H = xp.real(fft(h, n_fft) * xp.exp(1j * w))
-        dp = max(H) - 1
-        ds = 0 - min(H)
+        dp = xp.max(H) - 1
+        ds = 0 - xp.min(H)
         S = 4. / (xp.sqrt(1+dp+ds) + xp.sqrt(1-dp+ds)) ** 2
         H += ds
         H *= S

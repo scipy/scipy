@@ -439,8 +439,8 @@ def map_coordinates(input, coordinates, output=None, order=3,
     array([  2. , -33.3])
     >>> ndimage.map_coordinates(a, inds, order=1, mode='nearest')
     array([ 2.,  8.])
-    >>> ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
-    array([ True, False], dtype=bool)
+    >>> ndimage.map_coordinates(a, inds, order=1, cval=0, output=np.bool)
+    array([ True, False])
 
     """
     if order < 0 or order > 5:

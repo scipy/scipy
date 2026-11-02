@@ -40,9 +40,9 @@ from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
                         _wrap_callback, _check_unknown_options,
                         _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from scipy.linalg.lapack import HAS_ILP64
 
 from scipy.sparse.linalg import LinearOperator
+from scipy._lib._util import HAS_ILP64
 
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 

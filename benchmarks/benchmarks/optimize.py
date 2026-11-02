@@ -524,7 +524,9 @@ class BenchGlobal(Benchmark):
         _enabled_functions = list(_functions.keys())
 
     params = [
-        _enabled_functions,
+        # asv cannot check a benchmark with no parameter combinations, so keep
+        # one placeholder name when disabled; setup() skips it like the rest
+        _enabled_functions or ["disabled"],
         ["success%", "<nfev>", "average time"],
         ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO', 'biteopt'],
     ]

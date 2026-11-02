@@ -5,7 +5,6 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
-from scipy._lib._array_api import SCIPY_ARRAY_API
 from scipy.linalg import svd, null_space
 from scipy.sparse import csc_array, issparse, dia_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
@@ -131,15 +130,14 @@ class SVDSCommonTests:
     # some of these IV tests could run only once, say with solver=None
 
     _A_empty_msg = "`A` must not be empty."
-    _A_dtype_msg = "`A` must be of numeric data type"
     _A_type_msg = "type not understood"
     _A_ndim_msg = "Only 2-D input"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
         (
             np.array([['a', 'b'], ['c', 'd']], dtype='object'),
-            TypeError if SCIPY_ARRAY_API else ValueError,
-            "only boolean and numerical dtypes" if SCIPY_ARRAY_API else _A_dtype_msg
+            TypeError,
+            "only boolean and numerical dtypes"
         ),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
