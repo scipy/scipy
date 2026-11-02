@@ -588,15 +588,13 @@ class dia_array(_dia_base, sparray):
     * **Sub-diagonals** (``offsets[i] < 0``): Elements are left-aligned
       (padded with zeros on the right).
 
-    Each column of ``data`` corresponds to a diagonal in the resulting matrix.
-
-    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
-    stored in the ``data`` array at row ``i`` and column
-    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
-    in ``offsets``.
-
-    Note that if ``offsets`` is provided in decreasing order, this format
-    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
+    Each row of ``data`` stores one diagonal, identified by the corresponding
+    entry in ``offsets``. Within a row, column ``c`` corresponds to column
+    ``c`` of the matrix. For an element at row ``r`` and column ``c``, the
+    diagonal index ``i`` satisfies ``offsets[i] == c - r``, and the element is
+    stored at ``data[i, c]`` when that column is present. A row of ``data`` may
+    be shorter than the number of matrix columns when trailing zeros are
+    omitted; those positions are implicitly zero.
 
     Examples
     --------
@@ -701,15 +699,13 @@ class dia_matrix(spmatrix, _dia_base):
     * **Sub-diagonals** (``offsets[i] < 0``): Elements are left-aligned
       (padded with zeros on the right).
 
-    Each column of ``data`` corresponds to a diagonal in the resulting matrix.
-
-    Mathematically, the element at row ``r`` and column ``c`` of the matrix is
-    stored in the ``data`` array at row ``i`` and column
-    ``c - max(0, -offsets[i])``, where ``i`` is the index of the diagonal
-    in ``offsets``.
-
-    Note that if ``offsets`` is provided in decreasing order, this format
-    matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
+    Each row of ``data`` stores one diagonal, identified by the corresponding
+    entry in ``offsets``. Within a row, column ``c`` corresponds to column
+    ``c`` of the matrix. For an element at row ``r`` and column ``c``, the
+    diagonal index ``i`` satisfies ``offsets[i] == c - r``, and the element is
+    stored at ``data[i, c]`` when that column is present. A row of ``data`` may
+    be shorter than the number of matrix columns when trailing zeros are
+    omitted; those positions are implicitly zero.
 
     Examples
     --------
