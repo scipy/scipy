@@ -952,7 +952,7 @@ def cityblock(u, v, w=None):
     u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     l1_diff = xp.abs(u - v)
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         l1_diff = w * l1_diff
     return xp.sum(l1_diff, axis=-1)
 
