@@ -204,10 +204,9 @@ class _dia_base(_data_matrix):
             else:
                 new_data[other_idx, :] += other.data
         elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            new_data = other.data[_invert_index(other_idx)].astype(dtype, copy=False)
             if sub:
-                new_data = -other.data[_invert_index(other_idx)].astype(dtype, copy=False)
-            else:
-                new_data = other.data[_invert_index(other_idx)].astype(dtype, copy=False)
+                new_data = -new_data
             new_data[self_idx, :] += self.data
         else:
             # Maximum diagonal length of the result.
