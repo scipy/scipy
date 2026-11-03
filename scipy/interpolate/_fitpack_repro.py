@@ -1150,7 +1150,21 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """  # noqa:E501
+
+    Examples
+    --------
+    >>> from scipy.interpolate import make_splrep
+    >>> import numpy as np
+    >>> x = np.arange(-20, 20)
+    >>> quad = x**2
+    >>> spl = make_splrep(x, quad, s=0)
+    >>> spl(10)
+    array(100.)
+    
+    
+    
+    """
+    # noqa:E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(x, y, w, t)
