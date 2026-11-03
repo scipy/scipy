@@ -43,7 +43,7 @@ from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
                                    is_lazy_array, is_numpy, is_numpy_array, np_compat,
                                    xp_promote, xp_capabilities, xp_device)
 from scipy._lib._array_api_override import _validate_array_cls
-from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable, broadcastable
+from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
