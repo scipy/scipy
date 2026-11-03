@@ -166,6 +166,93 @@ class TestSphericalJnYnCrossProduct:
         xp_assert_close(left, right)
 
 
+import numpy as np
+import pytest
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+from scipy.special import spherical_kn
+
+
+class TestSphericalKn:
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_exact(self, xp):
+        # https://dlmf.nist.gov/10.49.E13
+        x_np = np.array([0.12, 1.23, 12.34, 123.45])
+        x = xp.asarray(x_np)
+        expected = np.pi / 2 * np.exp(-x_np) * (
+            1 / x_np + 3 / x_np**2 + 3 / x_np**3
+        )
+        xp_assert_close(spherical_kn(2, x), xp.asarray(expected))
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_recurrence_real(self, xp):
+        # https://dlmf.nist.gov/10.51.E4
+        n_np = np.array([1, 2, 3, 7, 12])
+        n = xp.asarray(n_np)
+        x_np = 0.12
+        x = xp.asarray(x_np)
+        sign_lower = xp.asarray((-1.0) ** (n_np - 1))
+        sign_upper = xp.asarray((-1.0) ** (n_np + 1))
+        factor = xp.asarray((-1.0) ** n_np * (2 * n_np + 1) / x_np)
+        xp_assert_close(
+            sign_lower * spherical_kn(n - 1, x)
+            - sign_upper * spherical_kn(n + 1, x),
+            factor * spherical_kn(n, x),
+        )
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_recurrence_complex(self, xp):
+        # https://dlmf.nist.gov/10.51.E4
+        n_np = np.array([1, 2, 3, 7, 12])
+        n = xp.asarray(n_np)
+        x_np = 1.1 + 1.5j
+        x = xp.asarray(x_np)
+        sign_lower = xp.asarray((-1.0) ** (n_np - 1))
+        sign_upper = xp.asarray((-1.0) ** (n_np + 1))
+        factor = xp.asarray((-1.0) ** n_np * (2 * n_np + 1) / x_np)
+        xp_assert_close(
+            sign_lower * spherical_kn(n - 1, x)
+            - sign_upper * spherical_kn(n + 1, x),
+            factor * spherical_kn(n, x),
+        )
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_inf_real(self, xp):
+        # https://dlmf.nist.gov/10.52.E6
+        n = 5
+        x = xp.asarray(np.array([-np.inf, np.inf]))
+        expected = xp.asarray(np.array([-np.inf, 0]))
+        xp_assert_close(spherical_kn(n, x), expected)
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_inf_complex(self, xp):
+        # https://dlmf.nist.gov/10.52.E6
+        # The behavior at complex infinity depends on the sign of the real
+        # part: if Re(z) >= 0, then the limit is 0; if Re(z) < 0, then it's
+        # z*inf. This distinction cannot be captured, so we return nan.
+        n = 7
+        x = xp.asarray(np.array([-np.inf + 0j, np.inf + 0j, np.inf * (1 + 1j)]))
+        expected = xp.asarray(np.array([-np.inf, 0, np.nan], dtype=np.complex128))
+        xp_assert_close(spherical_kn(n, x), expected)
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_at_zero(self, xp):
+        # https://dlmf.nist.gov/10.52.E2
+        n_np = np.array([0, 1, 2, 5, 10, 100])
+        n = xp.asarray(n_np)
+        x = xp.asarray(0)
+        expected = xp.asarray(np.full(n_np.shape, np.inf))
+        xp_assert_close(spherical_kn(n, x), expected)
+
+    @make_xp_test_case(spherical_kn)
+    def test_spherical_kn_at_zero_complex(self, xp):
+        # https://dlmf.nist.gov/10.52.E2
+        n_np = np.array([0, 1, 2, 5, 10, 100])
+        n = xp.asarray(n_np)
+        x = xp.asarray(0 + 0j)
+        expected = xp.asarray(np.full(n_np.shape, np.nan, dtype=np.complex128))
+        xp_assert_close(spherical_kn(n, x), expected)
+
+
 @make_xp_test_case(spherical_in)
 class TestSphericalIn:
     def test_spherical_in_exact(self, xp):
