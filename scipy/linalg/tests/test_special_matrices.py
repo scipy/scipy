@@ -237,6 +237,13 @@ class TestHelmert:
                 assert_allclose(U.dot(U.T), C)
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
+    def test_invalid_n(self):
+        for n in [0, -1, -5]:
+            with pytest.raises(ValueError, match="n must be a positive integer"):
+                helmert(n)
+            with pytest.raises(ValueError, match="n must be a positive integer"):
+                helmert(n, full=True)
+
 
 class TestHilbert:
 
