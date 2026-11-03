@@ -172,8 +172,8 @@ from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 from scipy.special import spherical_kn
 
 
+@make_xp_test_case(spherical_kn)
 class TestSphericalKn:
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_exact(self, xp):
         # https://dlmf.nist.gov/10.49.E13
         x_np = np.array([0.12, 1.23, 12.34, 123.45])
@@ -183,7 +183,6 @@ class TestSphericalKn:
         )
         xp_assert_close(spherical_kn(2, x), xp.asarray(expected))
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_recurrence_real(self, xp):
         # https://dlmf.nist.gov/10.51.E4
         n_np = np.array([1, 2, 3, 7, 12])
@@ -199,7 +198,6 @@ class TestSphericalKn:
             factor * spherical_kn(n, x),
         )
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_recurrence_complex(self, xp):
         # https://dlmf.nist.gov/10.51.E4
         n_np = np.array([1, 2, 3, 7, 12])
@@ -215,7 +213,6 @@ class TestSphericalKn:
             factor * spherical_kn(n, x),
         )
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_inf_real(self, xp):
         # https://dlmf.nist.gov/10.52.E6
         n = 5
@@ -223,7 +220,6 @@ class TestSphericalKn:
         expected = xp.asarray(np.array([-np.inf, 0]))
         xp_assert_close(spherical_kn(n, x), expected)
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_inf_complex(self, xp):
         # https://dlmf.nist.gov/10.52.E6
         # The behavior at complex infinity depends on the sign of the real
@@ -234,7 +230,6 @@ class TestSphericalKn:
         expected = xp.asarray(np.array([-np.inf, 0, np.nan], dtype=np.complex128))
         xp_assert_close(spherical_kn(n, x), expected)
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_at_zero(self, xp):
         # https://dlmf.nist.gov/10.52.E2
         n_np = np.array([0, 1, 2, 5, 10, 100])
@@ -243,7 +238,6 @@ class TestSphericalKn:
         expected = xp.asarray(np.full(n_np.shape, np.inf))
         xp_assert_close(spherical_kn(n, x), expected)
 
-    @make_xp_test_case(spherical_kn)
     def test_spherical_kn_at_zero_complex(self, xp):
         # https://dlmf.nist.gov/10.52.E2
         n_np = np.array([0, 1, 2, 5, 10, 100])
