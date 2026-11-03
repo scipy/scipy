@@ -162,10 +162,10 @@ class RegularGridInterpolator:
     product of one-dimensional banded matrices, so by default the system is solved
     with one banded solve per dimension.
 
-    You may instead assemble the system as a large sparse matrix and solve it with
-    an optional `solver` argument, where you may
-    choose between the direct solver (`scipy.sparse.linalg.spsolve`) or
-    iterative solvers from `scipy.sparse.linalg`. You may need to supply
+    You may instead assemble the system as a large sparse matrix and solve it
+    with an optional `solver` argument, where you may choose between the direct
+    solver (`scipy.sparse.linalg.spsolve`) or iterative solvers from
+    `scipy.sparse.linalg`. You may need to supply
     additional parameters via the optional `solver_args` parameter (for instance,
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
