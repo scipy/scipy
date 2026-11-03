@@ -1160,9 +1160,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     >>> spl = make_splrep(x, quad, s=0)
     >>> spl(10)
     array(100.)
-    
-    
-    
     """
     # noqa:E501
     xp = array_namespace(x, y, w, t)
