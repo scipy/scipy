@@ -10,6 +10,9 @@ from ._support_alternative_backends import (
 )
 
 
+_LONG_DTYPE = np.dtype("long").name
+
+
 @xp_capabilities(
     cpu_only=True,
     extra_note=_ufunc_kwargs_extra_note("spherical_jn", ["torch"]),
@@ -99,7 +102,11 @@ def spherical_jn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n), xp.asarray(z)
+    # Casting to something of size np.long preserves existing behavior.
+    # TODO: handle this by adding all needed int dtype loops to underlying
+    # ufuncs.
+    # Casting float n to int seems to be unintended behavior here.
+    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
     if derivative:
         return _spherical_jn_d(n, z)
     else:
@@ -194,7 +201,7 @@ def spherical_yn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n), xp.asarray(z)
+    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
     if derivative:
         return _spherical_yn_d(n, z)
     else:
@@ -288,7 +295,7 @@ def spherical_in(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n), xp.asarray(z)
+    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
     if derivative:
         return _spherical_in_d(n, z)
     else:
@@ -382,7 +389,7 @@ def spherical_kn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n), xp.asarray(z)
+    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
     if derivative:
         return _spherical_kn_d(n, z)
     else:
