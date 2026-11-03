@@ -239,9 +239,15 @@ class TestHelmert:
 
     def test_invalid_n(self):
         for n in [0, -1, -5]:
-            with pytest.raises(ValueError, match="n must be a positive integer"):
+            with pytest.raises(ValueError, match="n must be an integer not less than 1"):
                 helmert(n)
-            with pytest.raises(ValueError, match="n must be a positive integer"):
+            with pytest.raises(ValueError, match="n must be an integer not less than 1"):
+                helmert(n, full=True)
+
+        for n in [2.5, "3"]:
+            with pytest.raises(TypeError, match="n must be an integer"):
+                helmert(n)
+            with pytest.raises(TypeError, match="n must be an integer"):
                 helmert(n, full=True)
 
 

@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _validate_int
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_device
 )
@@ -543,8 +543,7 @@ def helmert(n, full=False):
            [ 0.2236068 ,  0.2236068 ,  0.2236068 ,  0.2236068 , -0.89442719]])
 
     """
-    if n <= 0:
-        raise ValueError("n must be a positive integer.")
+    n = _validate_int(n, 'n', minimum=1)
 
     H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
     d = np.arange(n) * np.arange(1, n+1)
