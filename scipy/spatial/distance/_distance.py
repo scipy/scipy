@@ -42,6 +42,7 @@ import numpy as np
 from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
                                    is_lazy_array, is_numpy, is_numpy_array, np_compat,
                                    xp_promote, xp_capabilities, xp_device)
+from scipy._lib._array_api_override import _validate_array_cls
 from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable, broadcastable
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
@@ -726,6 +727,8 @@ def hamming(u, v, w=None):
         # String and object arrays have no array API namespace, so we fall back to np
         if any(is_array_api_obj(x) and not is_numpy_array(x) for x in (u, v, w)):
             raise
+        for x in (u, v, w):
+            _validate_array_cls(type(x))  # Raise on sparse or masked arrays
         xp = np_compat
     u, v = xp_promote(u, xp=xp), xp_promote(v, xp=xp)
     if not broadcastable(u.shape, v.shape):

@@ -1773,6 +1773,16 @@ class TestHamming:
         with pytest.raises(TypeError):  # Other frameworks throw on string inputs
             hamming(xp.asarray([1, 2]), ["eggs", "spam"])
 
+    def test_hamming_special_arrays(self):
+        x = np.ma.array([1, 0, 1, 1, 0], mask=[0, 0, 1, 0, 0])
+        y = np.ma.array([1, 1, 0, 1, 1], mask=[0, 0, 1, 0, 0])
+        with pytest.raises(TypeError, match="numpy.ma.MaskedArray"):
+            hamming(x, y)
+        x = scipy.sparse.csr_array([1, 0, 1, 1, 0])
+        y = scipy.sparse.csr_array([1, 1, 0, 1, 1])
+        with pytest.raises(ValueError, match="Sparse arrays"):
+            hamming(x, y)
+
 
 class TestSomeDistanceFunctions:
 
