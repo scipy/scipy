@@ -116,7 +116,7 @@ class TestAssocLegendreP:
         m = np.expand_dims(m, axis = (0,) + tuple(range(2, x.ndim + 2)))
         m = xp.asarray(m)
 
-        x = xp.asarray(np.expand_dims(x, axis = (0, 1)))
+        x = xp.asarray(np.expand_dims(x_np, axis = (0, 1)))
         res = assoc_legendre_p(n, m, x, diff_n=2)
         p, p_jac, p_hess = res[0, ...], res[1, ...], res[2, ...]
 
