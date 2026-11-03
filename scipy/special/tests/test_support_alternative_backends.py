@@ -568,3 +568,13 @@ def test_poisson_binom_cdf_axis(xp, axis):
     ref = special.poisson_binom_cdf(k, p, axis=axis)
     res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p), axis=axis)
     xp_assert_close(res, ref)
+
+
+def test_all_ufuncs_registered():
+    exceptions = {"geterr", "seterr", "errstate"}
+
+    missing = set(_ufuncs.__all__) - set(sab.__all__) - exceptions
+    assert not missing, f"Missing backend registrations: {sorted(missing)}"
+
+    missing = set(_ufuncs.__all__) - set(special.__all__)
+    assert not missing, f"Missing public exports: {sorted(missing)}"
