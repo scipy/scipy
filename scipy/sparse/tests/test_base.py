@@ -5628,16 +5628,19 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_dia_add_sub_mixed_dtype(self):
         # gh-26567: check addition and subtraction of dia containers with mixed dtypes
         # (e.g. integer and float) for both fast paths.
-        T = self.dia_container(
+        A_int = self.dia_container(
             ([[1, 1, 0], [2, 2, 2], [0, 1, 1]], [-1, 0, 1]), shape=(3, 3), dtype=int
         )
-        I = self.dia_container(
+        B_float = self.dia_container(
             ([[1.0, 1.0, 1.0]], [0]), shape=(3, 3), dtype=float
         )
-        T_dense = T.toarray()
-        I_dense = I.toarray()
+        A_int_dense = A_int.toarray()
+        B_float_dense = B_float.toarray()
 
-        for a, b, a_d, b_d in [(T, I, T_dense, I_dense), (I, T, I_dense, T_dense)]:
+        for a, b, a_d, b_d in [
+            (A_int, B_float, A_int_dense, B_float_dense),
+            (B_float, A_int, B_float_dense, A_int_dense),
+        ]:
             res_add = a + b
             assert isinstance(res_add, self.dia_container)
             assert res_add.dtype == np.result_type(a.dtype, b.dtype)
