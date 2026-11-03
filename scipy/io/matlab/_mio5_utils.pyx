@@ -17,6 +17,7 @@ from copy import copy as pycopy
 cimport cython
 
 from libc.stdint cimport SIZE_MAX
+from libc.string cimport memcpy
 
 from cpython cimport Py_INCREF
 from cpython cimport PyObject
@@ -57,6 +58,7 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 from . cimport _streams
+from ._pyalloc cimport pyalloc_v
 from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab._mio5_params as mio5p
 from scipy.sparse import csc_array
@@ -355,8 +357,10 @@ cdef class VarReader5:
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
         else: # SDE format, make safer home for data
-            data = tag_data[:byte_count]
-            pp[0] = <char *>data
+            # A new bytes object: CPython shares its 1-byte bytes objects,
+            # so writing to the returned array would change them all
+            data = pyalloc_v(byte_count, pp)
+            memcpy(pp[0], tag_data, byte_count)
         return data
 
     cdef int read_element_into(self,

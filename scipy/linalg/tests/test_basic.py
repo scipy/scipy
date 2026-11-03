@@ -22,7 +22,6 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
-from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -2944,9 +2943,8 @@ class TestSolveCirculant:
 
 class TestMatrix_Balance:
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-    @skip_xp_invalid_arg
     def test_string_arg(self):
-        assert_raises(ValueError, matrix_balance, 'Some string for fail')
+        assert_raises(TypeError, matrix_balance, 'Some string for fail')
 
     def test_infnan_arg(self):
         assert_raises(ValueError, matrix_balance,
