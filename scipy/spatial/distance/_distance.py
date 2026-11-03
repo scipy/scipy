@@ -941,11 +941,11 @@ def cityblock(u, v, w=None):
     --------
     >>> from scipy.spatial import distance
     >>> distance.cityblock([1, 0, 0], [0, 1, 0])
-    2
+    2.0
     >>> distance.cityblock([1, 0, 0], [0, 2, 0])
-    3
+    3.0
     >>> distance.cityblock([1, 0, 0], [1, 1, 0])
-    1
+    1.0
 
     """
     xp = array_namespace(u, v, w)
