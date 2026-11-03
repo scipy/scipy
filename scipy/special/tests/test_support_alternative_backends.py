@@ -423,7 +423,7 @@ def test_ufunc_kwargs(func, nfo):
             "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
     }:
         pytest.skip("input constraints unlikely to be met by random input.")
-    
+
     ufunc = nfo.func
     int_only = nfo.int_only
     if isinstance(int_only, dict):
@@ -505,7 +505,7 @@ def test_ufunc_kwargs(func, nfo):
     dtype = np.float32
     with np.errstate(over="ignore"):
         y = func(*args, dtype=dtype)
-            
+
     if nout == 1:
         assert y.dtype == dtype
     else:

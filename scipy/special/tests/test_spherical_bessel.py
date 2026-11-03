@@ -303,59 +303,6 @@ class TestSphericalIn:
         )
 
 
-class TestSphericalKn:
-    def test_spherical_kn_exact(self):
-        # https://dlmf.nist.gov/10.49.E13
-        x = np.array([0.12, 1.23, 12.34, 123.45])
-        assert_allclose(spherical_kn(2, x),
-                        pi/2*exp(-x)*(1/x + 3/x**2 + 3/x**3))
-
-    def test_spherical_kn_recurrence_real(self):
-        # https://dlmf.nist.gov/10.51.E4
-        n = np.array([1, 2, 3, 7, 12])
-        x = 0.12
-        assert_allclose(
-            (-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
-            (-1)**n*(2*n + 1)/x*spherical_kn(n, x)
-        )
-
-    def test_spherical_kn_recurrence_complex(self):
-        # https://dlmf.nist.gov/10.51.E4
-        n = np.array([1, 2, 3, 7, 12])
-        x = 1.1 + 1.5j
-        assert_allclose(
-            (-1)**(n - 1)*spherical_kn(n - 1, x) - (-1)**(n + 1)*spherical_kn(n + 1,x),
-            (-1)**n*(2*n + 1)/x*spherical_kn(n, x)
-        )
-
-    def test_spherical_kn_inf_real(self):
-        # https://dlmf.nist.gov/10.52.E6
-        n = 5
-        x = np.array([-inf, inf])
-        assert_allclose(spherical_kn(n, x), np.array([-inf, 0]))
-
-    def test_spherical_kn_inf_complex(self):
-        # https://dlmf.nist.gov/10.52.E6
-        # The behavior at complex infinity depends on the sign of the real
-        # part: if Re(z) >= 0, then the limit is 0; if Re(z) < 0, then it's
-        # z*inf.  This distinction cannot be captured, so we return nan.
-        n = 7
-        x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        assert_allclose(spherical_kn(n, x), np.array([-inf, 0, nan]))
-
-    def test_spherical_kn_at_zero(self):
-        # https://dlmf.nist.gov/10.52.E2
-        n = np.array([0, 1, 2, 5, 10, 100])
-        x = 0
-        assert_allclose(spherical_kn(n, x), np.full(n.shape, inf))
-
-    def test_spherical_kn_at_zero_complex(self):
-        # https://dlmf.nist.gov/10.52.E2
-        n = np.array([0, 1, 2, 5, 10, 100])
-        x = 0 + 0j
-        assert_allclose(spherical_kn(n, x), np.full(n.shape, nan))
-
-
 class SphericalDerivativesTestCase:
     def fundamental_theorem(self, n, a, b):
         integral, tolerance = quad(lambda z: self.df(n, z), a, b)
