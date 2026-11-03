@@ -1161,7 +1161,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     >>> spl(10)
     array(100.)
     """
-    # noqa:E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(x, y, w, t)
