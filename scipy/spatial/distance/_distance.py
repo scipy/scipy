@@ -981,7 +981,7 @@ def mahalanobis(u, v, VI):
 
     Returns
     -------
-    mahalanobis : double
+    mahalanobis : float or array
         The Mahalanobis distance between vectors `u` and `v`.
 
     Examples
