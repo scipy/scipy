@@ -166,12 +166,6 @@ class TestSphericalJnYnCrossProduct:
         xp_assert_close(left, right)
 
 
-import numpy as np
-import pytest
-from scipy._lib._array_api import make_xp_test_case, xp_assert_close
-from scipy.special import spherical_kn
-
-
 @make_xp_test_case(spherical_kn)
 class TestSphericalKn:
     def test_spherical_kn_exact(self, xp):

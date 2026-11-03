@@ -7,8 +7,8 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, sqrt, where,
-                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+from numpy import (pi, asarray, floor, isscalar, sqrt, sin,
+                   place, issubdtype, extract, inexact, nan, zeros)
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_device, xp_result_device

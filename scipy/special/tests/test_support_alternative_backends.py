@@ -19,8 +19,6 @@ from scipy._external.array_api_compat import numpy as np
 import scipy._external.array_api_extra as xpx
 
 
-
-
 # Run all tests in this module in the Array API CI, including those without
 # the xp fixture
 pytestmark = pytest.mark.array_api_backends

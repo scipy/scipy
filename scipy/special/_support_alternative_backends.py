@@ -15,7 +15,6 @@ import scipy._external.array_api_extra as xpx
 from . import _ellip_harm
 from . import _lambertw
 from . import _mathieu
-from . import _special_ufuncs
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
