@@ -1331,8 +1331,10 @@ def _dedent_for_py313(s):
     return s if sys.version_info < (3, 13) else textwrap.dedent(s)
 
 
-def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
-    """Check if two shapes are broadcastable."""
-    return all(
-        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
-    )
+def broadcastable(*shapes: tuple[int, ...]) -> bool:
+    """Check if shapes are broadcastable."""
+    try:
+        np.broadcast_shapes(*shapes)
+    except ValueError:
+        return False
+    return True
