@@ -2792,13 +2792,12 @@ _aliases = {"digamma": "psi", "jn": "jv"}
 
 __all__ = [name for name, info in _FUNC_INFO.items() if info.public] + list(_aliases)
 
-@functools.cache
+
 def get_function(name):
     if name in _aliases:
-        return get_function(_aliases[name])
+        name = _aliases[name]
 
-    info = _FUNC_INFO[name]
-    return info.wrapper
+    return _FUNC_INFO[name].wrapper
 
 
 def __getattr__(name):
