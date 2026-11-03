@@ -3,6 +3,7 @@
 import warnings
 
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal, xp_assert_close, xp_assert_equal,
@@ -12,6 +13,8 @@ from scipy._lib._array_api import (
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @make_xp_test_case(dlsim, dstep, dimpulse, dlti)
@@ -64,9 +67,10 @@ class TestDLTI:
         assert_array_almost_equal(xout_truth, xout)
         assert tout.shape[0] == yout.shape[0]
 
+    def test_dlsim_error(self):
         # Raise an error for continuous-time systems
         system = lti([1], [1, 1])
-        assert_raises(AttributeError, dlsim, system, u)
+        assert_raises(AttributeError, dlsim, system, np.zeros((5, 1)))
 
     def test_dlsim_tf_zpk(self):
         # Transfer function and zpk systems go through tf2ss, which is
@@ -412,6 +416,8 @@ class TestZerosPolesGain:
 @make_xp_test_case(dfreqresp)
 class Test_dfreqresp:
 
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
     def test_manual(self, xp):
         # Test dfreqresp() real part calculation (manual sanity check).
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
@@ -428,6 +434,8 @@ class Test_dfreqresp:
         expected_im = xp.asarray([-0.1555, -1.0214, 0.3955])
         assert_almost_equal(xp.imag(H), expected_im, decimal=4)
 
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
     def test_auto(self, xp):
         # Test dfreqresp() real part calculation.
         # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
@@ -498,6 +506,8 @@ class Test_dfreqresp:
 
         assert_almost_equal(H1, H2)
 
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
     def test_from_zpk(self, xp):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
         system_ZPK = dlti(xp.asarray([]), xp.asarray([0.2]), 0.3)
@@ -511,6 +521,8 @@ class Test_dfreqresp:
 @make_xp_test_case(dbode)
 class Test_bode:
 
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
     def test_manual(self, xp):
         # Test bode() magnitude calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
@@ -531,6 +543,8 @@ class Test_bode:
         # Test frequency
         xp_assert_equal(w2, xp.asarray(w) / dt)
 
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
     def test_auto(self, xp):
         # Test bode() magnitude calculation.
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
