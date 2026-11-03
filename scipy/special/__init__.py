@@ -808,9 +808,7 @@ from ._logsumexp import logsumexp, softmax, log_softmax
 
 
 from . import _support_alternative_backends
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from ._support_alternative_backends import *
+from ._support_alternative_backends import *
 
 __all__ = (
     _support_alternative_backends.__all__
@@ -834,17 +832,6 @@ __all__ = (
 )
 
 
-def __getattr__(name):
-    if name in _support_alternative_backends.__all__:
-        return _support_alternative_backends.get_function(name)
-    raise AttributeError(
-        f"module {__name__!r} has no attribute {name!r}"
-    )
-
-def __dir__():
-    return sorted(set(globals()) | set(__all__))
-
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-del TYPE_CHECKING
