@@ -10,8 +10,22 @@ lazy_xp_modules = [sc]
 
 class TestSphHarm:
     @pytest.mark.slow
+    @pytest.mark.parametrize("n, m", [(0, 0), (1, 1), (3, -2), (7, 4)])
+    @make_xp_test_case(sc.sph_harm_y)
+    def test_p(self, xp, n, m):
+        theta_np = np.linspace(0, np.pi, 20)[:, None]
+        phi_np = np.linspace(0, 2 * np.pi, 25)[None, :]
+        theta, phi = xp.asarray(theta_np), xp.asarray(phi_np)
+
+        y_actual = sc.sph_harm_y(n, m, theta, phi)
+
+        p = sc.sph_legendre_p(n, m, theta_np)
+        y_desired = p * np.exp(1j * m * phi_np)
+
+        xp_assert_close(y_actual, xp.asarray(y_desired), rtol=1e-7)
+    @pytest.mark.slow
     @make_xp_test_case(sc.sph_harm_y_all)
-    def test_p(self, xp):
+    def test_p_all(self, xp):
         m_max = 20
         n_max = 10
 
