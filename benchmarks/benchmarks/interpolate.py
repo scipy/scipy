@@ -464,6 +464,37 @@ class RGI_Quintic(Benchmark):
         self.interp(self.xi)
 
 
+class RGI_SplineConstruction(Benchmark):
+    """
+    Benchmark constructing RegularGridInterpolator with spline methods.
+    """
+    param_names = ['shape', 'method']
+    params = [
+        [(10, 10), (200, 200), (30, 30, 30), (60, 40, 50), (10, 10, 10, 10)],
+        ['slinear', 'cubic', 'quintic']
+    ]
+
+    def setup(self, shape, method):
+        rng = np.random.default_rng(314159)
+
+        self.points = [np.linspace(0, 1, n) for n in shape]
+        self.values = rng.random(size=shape)
+
+    def time_rgi_setup_interpolator(self, shape, method):
+        interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def peakmem_rgi_setup_interpolator(self, shape, method):
+        interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+
 class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
     def __init__(self, points, xi, **kwargs):
         # create fake values for initialization
