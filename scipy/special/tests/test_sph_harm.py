@@ -18,7 +18,7 @@ class TestSphHarm:
 
         y_actual = sc.sph_harm_y(n, m, theta, phi)
 
-        p = sc.sph_legendre_p(n, m, theta_np)
+        p = sc.sph_legendre_p(n, m, theta_np)[0]
         y_desired = p * np.exp(1j * m * phi_np)
 
         xp_assert_close(y_actual, xp.asarray(y_desired), rtol=1e-7)
