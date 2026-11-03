@@ -19,6 +19,7 @@ from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
 from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
+from scipy.sparse.linalg import spsolve
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -781,6 +782,55 @@ class TestRegularGridInterpolator:
             RegularGridInterpolator(
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_at_nodes(self, method):
+        # regression test for the default solve being accurate only to a tolerance
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        # a large offset, the default iterative solve used to miss these values
+        values = 1000 + rng.uniform(size=(8, 9, 7))
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        xi = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+        xp_assert_close(interp(xi), values, atol=1e-10, rtol=0)
+        xp_assert_close(interpn(points, values, xi, method=method), values,
+                        atol=1e-10, rtol=0)
+
+        # descending grids are flipped
+        flipped = RegularGridInterpolator((points[0][::-1], points[1], points[2]),
+                                          values[::-1], method=method)
+        xp_assert_close(flipped(xi), values, atol=1e-10, rtol=0)
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_explicit_solver(self, method):
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9))
+        values = rng.uniform(size=(8, 9))
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        default = RegularGridInterpolator(points, values, method=method)
+        direct = RegularGridInterpolator(points, values, method=method,
+                                         solver=spsolve)
+        xp_assert_close(default(xi), direct(xi), atol=1e-11)
+
+        # `solver_args` are still passed on without a `solver`
+        iterative = RegularGridInterpolator(
+            points, values, method=method,
+            solver_args={"rtol": 1e-12, "atol": 1e-14, "maxiter": 10000}
+        )
+        xp_assert_close(default(xi), iterative(xi), atol=1e-8)
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_override(self, method):
+        # a spline for a different method is built at the call
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9))
+        values = rng.uniform(size=(8, 9))
+        xi = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+
+        interp = RegularGridInterpolator(points, values)
+        xp_assert_close(interp(xi, method=method), values, atol=1e-11)
 
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
