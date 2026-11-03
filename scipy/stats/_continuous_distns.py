@@ -4552,6 +4552,13 @@ class halfcauchy_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Half-Cauchy distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Half-Cauchy_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, pp. 317-318.
+
     %(example)s
 
     """
@@ -4775,6 +4782,13 @@ class halfnorm_gen(rv_continuous):
     `halfnorm` is a special case of `chi` with ``df=1``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Half-normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Half-normal_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, pp. 156-160.
 
     %(example)s
 
@@ -10139,6 +10153,13 @@ class triang_gen(rv_continuous):
     The location parameter shifts the start to `loc`.
     The scale parameter changes the width from 1 to `scale`.
 
+    References
+    ----------
+    .. [1] "Triangular distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Triangular_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 2, 2nd ed. John Wiley & Sons, 1995, ch. 26.
+
     %(example)s
 
     """
@@ -11434,6 +11455,13 @@ class wald_gen(invgauss_gen):
     `wald` is a special case of `invgauss` with ``mu=1``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Inverse Gaussian distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, ch. 15.
 
     %(example)s
     """
