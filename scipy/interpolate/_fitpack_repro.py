@@ -1023,7 +1023,8 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np,
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_splrep(x, y, *, w=None, xb=None, xe=None,
                 k=3, s=0, t=None, nest=None, bc_type=None):
-    r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
+    r"""Create a smoothing B-spline function with bounded error, minimizing
+      derivative jumps.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
