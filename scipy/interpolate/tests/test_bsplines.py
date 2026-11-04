@@ -4471,7 +4471,7 @@ class TestMakeND:
         assert spl.c.dtype == np.float64
 
         expected = make_ndbspl(points, values.astype(np.float64), k=3)
-        xp_assert_equal(spl.c, expected.c)
+        xp_assert_close(spl.c, expected.c, rtol=1e-13, atol=1e-13)
 
     def test_separable_does_not_alias_values(self):
         # for k=1 the coefficients are equal to `values`, but not the same array
@@ -4530,7 +4530,10 @@ class TestMakeND:
         spl = make_ndbspl(points, values, k=3, rtol=1e-3, atol=0)
         expected = make_ndbspl(points, values, k=3, solver=ssl.gcrotmk,
                                rtol=1e-3, atol=0)
-        xp_assert_equal(spl.c, expected.c)
+        # not bitwise: two runs differ by rounding with some BLAS
+        xp_assert_close(spl.c, expected.c, rtol=1e-12)
+        separable = make_ndbspl(points, values, k=3)
+        assert not np.allclose(separable.c, expected.c, rtol=1e-12, atol=0)
 
         with assert_raises(TypeError, match="woof"):
             make_ndbspl(points, values, k=3, woof=42)
