@@ -4,14 +4,21 @@ from scipy.sparse import block_array, csc_array, eye_array, issparse
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
+
 try:
     from sksparse import cholmod
-    sksparse_available = True
+    cholmod_available = True
 except ImportError:
-    import warnings
-    sksparse_available = False
+    cholmod_available = False
+
+try:
+    from sksparse.umfpack import UMFPACKSingularMatrixWarning
+    umfpack_available = True
+except ImportError:
+    umfpack_available = False
+
 import numpy as np
-from warnings import warn
+import warnings
 
 __all__ = [
     'orthogonality',
@@ -97,10 +104,15 @@ def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     # TODO: Use a symmetric indefinite factorization
     #       to solve the system twice as fast (because
     #       of the symmetry).
+
+    warning_categories = (UMFPACKSingularMatrixWarning) if umfpack_available else ()
+
     try:
-        solve = scipy.sparse.linalg.factorized(K)
-    except RuntimeError:
-        warn("Singular Jacobian matrix. Using dense SVD decomposition to "
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=warning_categories)
+            solve = scipy.sparse.linalg.factorized(K)
+    except (RuntimeError, *warning_categories):
+        warnings.warn("Singular Jacobian matrix. Using dense SVD decomposition to "
              "perform the factorizations.",
              stacklevel=3)
         return svd_factorization_projections(A.toarray(),
@@ -179,7 +191,7 @@ def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
     Q, R, P = scipy.linalg.qr(A.T, pivoting=True, mode='economic')
 
     if np.linalg.norm(R[-1, :], np.inf) < tol:
-        warn('Singular Jacobian matrix. Using SVD decomposition to ' +
+        warnings.warn('Singular Jacobian matrix. Using SVD decomposition to ' +
              'perform the factorizations.',
              stacklevel=3)
         return svd_factorization_projections(A, m, n,
@@ -375,9 +387,9 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
             method = "AugmentedSystem"
         if method not in ("NormalEquation", "AugmentedSystem"):
             raise ValueError("Method not allowed for sparse array.")
-        if method == "NormalEquation" and not sksparse_available:
+        if method == "NormalEquation" and not cholmod_available:
             warnings.warn("Only accepts 'NormalEquation' option when "
-                          "scikit-sparse is available. Using "
+                          "scikit-sparse cholmod is available. Using "
                           "'AugmentedSystem' option instead.",
                           ImportWarning, stacklevel=3)
             method = 'AugmentedSystem'
