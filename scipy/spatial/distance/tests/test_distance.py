@@ -459,7 +459,6 @@ wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
 wbraycurtis = _weight_checked(braycurtis)
-wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
 wrussellrao = _weight_checked(russellrao)
 
@@ -2011,12 +2010,6 @@ class TestSokalsneath:
         xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
 
 
-def test_canberra():
-    # Regression test for ticket #1430.
-    assert wcanberra([1, 2, 3], [2, 4, 6]) == 1
-    assert wcanberra([1, 1, 0, 0], [1, 0, 1, 0]) == 2
-
-
 class TestBrayCurtis:
     def test_braycurtis(self):
         # Regression test for ticket #1430.
@@ -2024,13 +2017,31 @@ class TestBrayCurtis:
         assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
 
 
-def test_canberra_int64_min():
-    # Regression test for gh-26486: integer inputs at the int64 limit
-    # must not overflow to a negative, asymmetric distance in canberra.
-    u = np.array([np.iinfo(np.int64).min])
-    v = np.array([0])
-    assert canberra(u, v) == 1.0
-    assert canberra(v, u) == 1.0
+@make_xp_test_case(canberra)
+class TestCanberra:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    @pytest.mark.parametrize("u, v, expected", [
+        ([1, 2, 3], [2, 4, 6], 1.0),
+        ([1, 1, 0, 0], [1, 0, 1, 0], 2.0),
+    ])
+    def test_canberra(self, xp, kind, u, v, expected):
+        # Regression test for ticket #1430.
+        dtype = xpx.default_dtype(xp, kind)
+        u, v = xp.asarray(u, dtype=dtype), xp.asarray(v, dtype=dtype)
+        xp_assert_close(canberra(u, v), xp.asarray(expected))
+
+    def test_canberra_array_like(self):
+        xp_assert_close(canberra([1, 2, 3], [2, 4, 6]), np.asarray(1.0))
+
+    def test_canberra_int64_min(self, xp):
+        # Regression test for gh-26486: integer inputs at the int64 limit
+        # must not overflow to a negative, asymmetric distance in canberra.
+        dtype = xpx.default_dtype(xp, "integral")
+        u = xp.asarray([xp.iinfo(dtype).min], dtype=dtype)
+        v = xp.asarray([0], dtype=dtype)
+        xp_assert_equal(canberra(u, v), xp.asarray(1.0))
+        xp_assert_equal(canberra(v, u), xp.asarray(1.0))
 
 
 def test_hamming_unequal_length():
@@ -2481,6 +2492,7 @@ class TestChebyshev:
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        make_xp_pytest_param(canberra, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
