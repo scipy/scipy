@@ -3464,7 +3464,8 @@ def dlsim(system, u, t=None, x0=None):
         xout = xpx.at(xout)[0, :].set(
             xp.zeros((A.shape[1],), dtype=A.dtype, device=device))
     else:
-        xout = xpx.at(xout)[0, :].set(xp.asarray(x0, dtype=A.dtype))
+        xout = xpx.at(xout)[0, :].set(
+            xp.asarray(x0, dtype=A.dtype, device=device))
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
