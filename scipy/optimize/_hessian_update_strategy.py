@@ -5,7 +5,7 @@ from scipy.linalg import get_blas_funcs, issymmetric
 from warnings import warn
 
 
-__all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
+__all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1', 'LBFGS']
 
 
 class HessianUpdateStrategy:
@@ -477,3 +477,255 @@ class SR1(FullHessianUpdateStrategy):
             self.B = self._syr(1/denominator, z_minus_Mw, a=self.B)
         else:
             self.H = self._syr(1/denominator, z_minus_Mw, a=self.H)
+
+
+class LBFGS(HessianUpdateStrategy):
+    """Limited-memory BFGS Hessian update strategy.
+
+    The strategy keeps only the most recent ``memory`` pairs of differences
+    ``(delta_x, delta_grad)`` instead of a dense ``(n, n)`` matrix, which
+    makes it usable for problems with a large number of variables.
+
+    Parameters
+    ----------
+    memory : int, optional
+        Number of update pairs kept in the internal representation.
+        The default is 10.
+    init_scale : {float, 'auto'}, optional
+        Scale of the initial approximation.  When set to 'auto' the heuristic
+        described in [1]_, p.143 is used, otherwise the given float is used.
+        The default is 'auto'.
+
+    Notes
+    -----
+    In the ``'hess'`` mode the approximated Hessian is the scaled identity
+    ``B0 = gamma * I`` updated with the BFGS formula (6.19) of [1]_ for each
+    of the stored pairs, in the order the pairs were received:
+
+    .. math::
+
+        B_j = B_{j-1} + \\frac{y_j y_j^T}{s_j^T y_j}
+              - \\frac{B_{j-1} s_j B_{j-1} s_j^T}{s_j^T B_{j-1} s_j},
+
+    where ``s_j = delta_x`` and ``y_j = delta_grad``.  Writing
+    ``w_j = B_{j-1} s_j`` the operator is applied to a vector ``p`` as
+
+    .. math::
+
+        B p = \\gamma p + \\sum_j \\left(
+            \\frac{y_j^T p}{s_j^T y_j} y_j
+            - \\frac{w_j^T p}{s_j^T w_j} w_j \\right),
+
+    which needs ``O(memory * n)`` memory and work.  In the ``'inv_hess'``
+    mode the inverse of the same approximation is applied instead, using the
+    standard two-loop recursion.
+
+    Pairs that do not satisfy the curvature condition ``s_j^T y_j > 0`` carry
+    no usable curvature information and are discarded.
+
+    References
+    ----------
+    .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
+           Second Edition (2006).
+    """
+
+    def __init__(self, memory=10, init_scale='auto'):
+        self.memory = int(memory)
+        if self.memory < 1:
+            raise ValueError("`memory` must be a positive integer.")
+        if not (isinstance(init_scale, str) and init_scale == 'auto'):
+            init_scale = float(init_scale)
+        self.init_scale = init_scale
+        self.n = None
+        self.approx_type = None
+        self.first_iteration = True
+        # The stored pairs and the vectors w_j = B_{j-1} s_j.
+        self._s = []
+        self._y = []
+        self._w = []
+        self._gamma = 1.0
+
+    def initialize(self, n, approx_type):
+        """Initialize internal memory.
+
+        Allocate internal memory for storing and updating
+        the Hessian or its inverse.
+
+        Parameters
+        ----------
+        n : int
+            Problem dimension.
+        approx_type : {'hess', 'inv_hess'}
+            Selects either the Hessian or the inverse Hessian.
+            When set to 'hess' the Hessian will be stored and updated.
+            When set to 'inv_hess' its inverse will be used instead.
+        """
+        if approx_type not in ('hess', 'inv_hess'):
+            raise ValueError("`approx_type` must be 'hess' or 'inv_hess'.")
+        self.n = n
+        self.approx_type = approx_type
+        self.first_iteration = True
+        self._s = []
+        self._y = []
+        self._w = []
+        self._gamma = 1.0
+
+    def update(self, delta_x, delta_grad):
+        """Update internal representation.
+
+        Update the Hessian approximation (or its inverse) using information
+        about the last evaluated points.
+
+        Parameters
+        ----------
+        delta_x : ndarray
+            The difference between two points the gradient
+            function have been evaluated at: ``delta_x = x2 - x1``.
+        delta_grad : ndarray
+            The difference between the gradients:
+            ``delta_grad = grad(x2) - grad(x1)``.
+        """
+        s = np.asarray(delta_x, dtype=float).ravel()
+        y = np.asarray(delta_grad, dtype=float).ravel()
+        if s.shape != (self.n,) or y.shape != (self.n,):
+            raise ValueError("delta_x and delta_grad must have the problem "
+                             "dimension.")
+        if np.all(s == 0.0):
+            return
+        if np.all(y == 0.0):
+            warn('delta_grad == 0.0. Check if the approximated '
+                 'function is linear. If the function is linear '
+                 'better results can be obtained by defining the '
+                 'Hessian as zero instead of using quasi-Newton '
+                 'approximations.',
+                 UserWarning, stacklevel=2)
+            return
+        if float(y @ s) <= 0.0:
+            # The curvature condition is violated, so the pair does not carry
+            # usable curvature information and is discarded.
+            return
+        if self.first_iteration:
+            self._gamma = self._auto_scale(s, y)
+            self.first_iteration = False
+        # w = B s with B the approximation built from the pairs seen so far.
+        w = self._apply(self._s, self._y, self._w, s)
+        self._s.append(s)
+        self._y.append(y)
+        self._w.append(w)
+        if len(self._s) > min(self.memory, self.n):
+            # The oldest pair is dropped.  Because the BFGS updates are
+            # applied in sequence, the remaining vectors w_j have to be
+            # recomputed.
+            self._s.pop(0)
+            self._y.pop(0)
+            self._w.pop(0)
+            self._rebuild()
+        if float(s @ w) <= 0.0:
+            # Round-off destroyed positive definiteness; start over.
+            self._s = []
+            self._y = []
+            self._w = []
+            self._gamma = self._auto_scale(s, y)
+
+    def dot(self, p):
+        """Compute the product of the internal matrix with the given vector.
+
+        Parameters
+        ----------
+        p : array_like
+            1-D array representing a vector.
+
+        Returns
+        -------
+        Hp : array
+            1-D represents the result of multiplying the approximation matrix
+            by vector p.
+        """
+        p = np.asarray(p, dtype=float).ravel()
+        if self.approx_type == 'inv_hess':
+            return self._apply_inverse(self._s, self._y, p)
+        if not self._s:
+            return self._gamma * p
+        return self._apply(self._s, self._y, self._w, p)
+
+    def get_matrix(self):
+        """Return the current approximation as a dense matrix.
+
+        This materializes an ``(n, n)`` array, which is the reason this
+        strategy exists.  It is only meant for small problems.
+
+        Returns
+        -------
+        M : ndarray, shape (n, n)
+            Dense matrix containing either the Hessian
+            or its inverse (depending on how `approx_type`
+            was defined).
+        """
+        if self.n is None:
+            raise ValueError("The strategy has not been initialized.")
+
+        M = np.empty((self.n, self.n))
+        v = np.zeros(self.n)
+
+        for i in range(self.n):
+            v[:] = 0.0
+            v[i] = 1.0
+            M[:, i] = self.dot(v)
+
+        return M
+
+    def _auto_scale(self, s, y):
+        # Heuristic to scale the initial approximation, described in Nocedal
+        # and Wright "Numerical Optimization" p.143 formula (6.20).
+        s_norm2 = float(s @ s)
+        y_norm2 = float(y @ y)
+        ys = abs(float(y @ s))
+        if ys == 0.0 or y_norm2 == 0.0 or s_norm2 == 0.0:
+            return 1.0
+        if isinstance(self.init_scale, str) and self.init_scale == 'auto':
+            if self.approx_type == 'hess':
+                return y_norm2 / ys
+            return ys / y_norm2
+        return self.init_scale
+
+    def _apply(self, s_list, y_list, w_list, v):
+        """Apply the approximated Hessian to the vector ``v``."""
+        out = self._gamma * v
+        for j in range(len(s_list)):
+            s = s_list[j]
+            y = y_list[j]
+            w = w_list[j]
+            ys = float(y @ s)
+            sBw = float(s @ w)
+            if ys <= 0.0 or sBw <= 0.0:
+                continue
+            out = out + y * (float(y @ v) / ys) - w * (float(w @ v) / sBw)
+        return out
+
+    def _rebuild(self):
+        """Recompute the vectors ``w_j = B_{j-1} s_j`` of the window."""
+        self._w = []
+        for j in range(len(self._s)):
+            self._w.append(
+                self._apply(self._s[:j], self._y[:j], self._w[:j], self._s[j]))
+
+    def _apply_inverse(self, s_list, y_list, v):
+        """Apply the approximated inverse Hessian to the vector ``v``."""
+        m = len(s_list)
+        q = v.copy()
+        alphas = np.zeros(m)
+        rhos = np.zeros(m)
+        for i in range(m - 1, -1, -1):
+            ys = float(y_list[i] @ s_list[i])
+            if ys <= 0.0:
+                # No usable curvature: fall back to the inverse of the
+                # scaled identity, which is self._gamma in 'inv_hess' mode.
+                return self._gamma * v
+            rhos[i] = 1.0 / ys
+            alphas[i] = rhos[i] * float(s_list[i] @ q)
+            q = q - alphas[i] * y_list[i]
+        r = self._gamma * q
+        for i in range(m):
+            beta = rhos[i] * float(y_list[i] @ r)
+            r = r + s_list[i] * (alphas[i] - beta)
+        return r

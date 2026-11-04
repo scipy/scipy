@@ -1,4 +1,6 @@
 import re
+import tracemalloc
+import warnings
 from copy import deepcopy
 
 import numpy as np
@@ -6,7 +8,7 @@ import pytest
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less)
-from scipy.optimize import (BFGS, SR1)
+from scipy.optimize import (BFGS, SR1, LBFGS, minimize)
 
 
 class Rosenbrock:
@@ -298,3 +300,159 @@ def test_matmul_equals_dot(strategy, approx_type):
     H.initialize(2, approx_type)
     v = np.array([1, 2])
     assert_array_equal(H @ v, H.dot(v))
+
+
+class TestLBFGS(TestCase):
+    """Tests for the limited-memory BFGS Hessian update strategy."""
+
+    def _spd(self, n, seed):
+        rng = np.random.RandomState(seed)
+        a = rng.standard_normal((n, n))
+        return a @ a.T + n * np.eye(n)
+
+    def test_secant_condition(self):
+        # The approximation has to satisfy B s = y for the pair it was
+        # updated with.
+        n = 12
+        hessian = self._spd(n, 3)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.RandomState(7)
+        for _ in range(8):
+            s = rng.standard_normal(n)
+            y = hessian @ s
+            hess.update(s, y)
+            assert_array_almost_equal(hess.dot(s), y, decimal=10)
+
+    def test_symmetric_and_positive_definite(self):
+        n = 10
+        hessian = self._spd(n, 5)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.RandomState(11)
+        for _ in range(6):
+            s = rng.standard_normal(n)
+            hess.update(s, hessian @ s)
+        a = rng.standard_normal(n)
+        b = rng.standard_normal(n)
+        assert_array_almost_equal(hess.dot(a) @ b, hess.dot(b) @ a, decimal=10)
+        assert hess.dot(a) @ a > 0
+
+    def test_inverse_hessian(self):
+        # The 'inv_hess' product is the inverse of the 'hess' product.
+        n = 12
+        hessian = self._spd(n, 3)
+        rng = np.random.RandomState(7)
+        pairs = []
+        for _ in range(10):
+            s = rng.standard_normal(n)
+            pairs.append((s, hessian @ s))
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        inv = LBFGS()
+        inv.initialize(n, 'inv_hess')
+        for s, y in pairs:
+            hess.update(s, y)
+            inv.update(s, y)
+        v = np.random.RandomState(1).standard_normal(n)
+        assert_array_almost_equal(inv.dot(v),
+                                  np.linalg.solve(hess.get_matrix(), v),
+                                  decimal=8)
+
+    def test_skip_update(self):
+        # A pair without positive curvature, and a zero step, must not
+        # change the approximation.
+        n = 5
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.RandomState(9)
+        s = rng.standard_normal(n)
+        hess.update(s, 2 * s)
+        B = hess.get_matrix()
+        hess.update(s, -s)
+        hess.update(np.zeros(n), s)
+        assert_array_equal(hess.get_matrix(), B)
+
+    def test_scaled_to_the_problem(self):
+        # The initial approximation is scaled to the problem, so that a
+        # caller does not have to rescale it by hand.
+        n = 6
+        scale = 1e4
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.RandomState(21)
+        s = rng.standard_normal(n)
+        hess.update(s, scale * s)
+        p = rng.standard_normal(n)
+        p = p - s * (p @ s) / (s @ s)
+        ratio = (hess.dot(p) @ p) / (p @ p)
+        assert 0.1 * scale <= ratio <= 10 * scale
+
+    def test_no_dense_matrix(self):
+        # The strategy must not build an (n, n) array.
+        n = 50_000
+        hess = LBFGS()
+        rng = np.random.RandomState(0)
+        tracemalloc.start()
+        try:
+            hess.initialize(n, 'hess')
+            for _ in range(5):
+                s = rng.standard_normal(n)
+                hess.update(s, s + 0.01 * rng.standard_normal(n))
+            hess.dot(rng.standard_normal(n))
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        assert peak < 200e6
+
+    def test_get_matrix(self):
+        # The dense matrix must be the operator that dot() applies.
+        n = 8
+        hessian = self._spd(n, 17)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.RandomState(19)
+        for _ in range(5):
+            s = rng.standard_normal(n)
+            hess.update(s, hessian @ s)
+
+        M = hess.get_matrix()
+        assert_array_almost_equal(M, hess.get_matrix())
+        assert M.shape == (n, n)
+
+        v = rng.standard_normal(n)
+        assert_array_almost_equal(M @ v, hess.dot(v), decimal=10)
+
+        inv = LBFGS()
+        inv.initialize(n, 'inv_hess')
+        for _ in range(5):
+            s = rng.standard_normal(n)
+            inv.update(s, hessian @ s)
+
+        H = inv.get_matrix()
+        assert H.shape == (n, n)
+        assert_array_almost_equal(H @ v, inv.dot(v), decimal=10)
+
+    def test_minimize(self):
+        # The strategy can be used as the 'hess' argument of minimize.
+        n = 20
+        hessian = self._spd(n, 13)
+        linear = np.random.RandomState(6).standard_normal(n)
+        x0 = np.random.RandomState(8).standard_normal(n)
+
+        def fun(x):
+            return 0.5 * x @ hessian @ x + linear @ x
+
+        def jac(x):
+            return hessian @ x + linear
+
+        with warnings.catch_warnings():
+            # The strategies warn when the gradient difference vanishes.
+            warnings.simplefilter("ignore")
+            result = minimize(fun, x0, jac=jac, hess=LBFGS(),
+                              method='trust-constr',
+                              options={'maxiter': 300, 'gtol': 1e-10})
+        optimum = np.linalg.solve(hessian, -linear)
+        expected = 0.5 * optimum @ hessian @ optimum + linear @ optimum
+        assert result.success
+        assert abs(result.fun - expected) <= 1e-6 * max(1.0, abs(expected))
