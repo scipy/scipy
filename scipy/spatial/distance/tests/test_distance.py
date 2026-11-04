@@ -2178,6 +2178,89 @@ def test_validate_weights(xp):
     xp_assert_close(_validate_weights(xp.asarray([1.0, 2.0, 3.0])),
                     xp.asarray([1.0, 2.0, 3.0]))
 
+
+@make_xp_test_case(jensenshannon)
+class TestJensenShannon:
+
+    @pytest.mark.parametrize("p, q, expected", [
+        ([1.0, 0.0], [0.5, 0.5], 0.46450140402245893),
+        ([1.0, 0.0, 0.0], [1.0, 0.0, 0.0], 0.0),
+    ])
+    def test_jensenshannon(self, xp, p, q, expected):
+        p, q = xp.asarray(p), xp.asarray(q)
+        xp_assert_close(jensenshannon(p, q), xp.asarray(expected), atol=1.5e-7)
+
+    def test_jensenshannon_base(self, xp):
+        p, q = xp.asarray([1.0, 0.0, 0.0]), xp.asarray([0.0, 1.0, 0.0])
+        xp_assert_close(jensenshannon(p, q, 2.0), xp.asarray(1.0), atol=1.5e-7)
+
+    @pytest.mark.parametrize("p, q, expected0, expected1", [
+        ([[1.0, 2.0]], [[0.5, 1.5]], [0.0, 0.0], [0.0649045]),
+        (
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
+            [[13, 14, 15, 16], [17, 18, 19, 20], [21, 22, 23, 24]],
+            [0.1954288, 0.1447697, 0.1138377, 0.0927636],
+            [0.1402339, 0.0399106, 0.0201815],
+        ),
+    ])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_jensenshannon_axis(self, xp, p, q, expected0, expected1, axis):
+        p, q = xp.asarray(p), xp.asarray(q)
+        expected = xp.asarray((expected0, expected1)[axis])
+        xp_assert_close(jensenshannon(p, q, axis=axis), expected, atol=1.5e-7)
+        xp_assert_close(jensenshannon(p, q, axis=axis, keepdims=True),
+                        xp.expand_dims(expected, axis=axis), atol=1.5e-7)
+
+    def test_jensenshannon_array_like(self):
+        xp_assert_close(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                        np.asarray(0.46450140402245893), atol=1.5e-7)
+
+    def test_invariance(self, xp):
+        # We cannot test invariance with the standard helpers because jensenshannon
+        # takes no w vector. The entries of p and q act as the weights instead.
+        rng = np.random.default_rng(1)
+        n = 5
+        p, q = rng.random(n), rng.random(n)
+        expected = jensenshannon(xp.asarray(p), xp.asarray(q))
+        # Case 1: Scaled inputs (should get normalized to 1.0)
+        result = jensenshannon(xp.asarray(3 * p), xp.asarray(0.5 * q))
+        xp_assert_close(result, expected)
+        # Case 2: Zero-weighted elements (zero entries in both p and q)
+        _p, _q = np.concat([p, np.zeros(3)]), np.concat([q, np.zeros(3)])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 3: Duplicated elements
+        _p, _q = np.concat([p, p]), np.concat([q, q])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 4: Permuted elements
+        perm = rng.permutation(n)
+        result = jensenshannon(xp.asarray(p[perm]), xp.asarray(q[perm]))
+        xp_assert_close(result, expected)
+        # Case 5: Swapped inputs
+        result = jensenshannon(xp.asarray(q), xp.asarray(p))
+        xp_assert_close(result, expected)
+
+    def test_jensenshannon_nd(self):
+        # We need to test this separate because jensenshannon takes no "w" and
+        # reduces over axis
+        rng = np.random.default_rng(1)
+        ref_func = _apply_over_batch(('p', 1), ('q', 1))(jensenshannon)
+        p = rng.random((5, 2, 4))
+        q = rng.random((2, 4))
+        xp_assert_close(jensenshannon(p, q, axis=-1), ref_func(p, q))
+
+    def test_jensenshannon_nd_invalid_shapes(self, xp):
+        p, q = xp.ones((5, 2, 4)), xp.ones((3, 4))
+        with pytest.raises(ValueError, match="incompatible for broadcasting"):
+            jensenshannon(p, q, axis=-1)
+
+    def test_default_axis_deprecation(self, xp):
+        p, q = xp.ones((2, 3)), xp.ones((2, 3))
+        with pytest.warns(DeprecationWarning, match="default value for `axis`"):
+            jensenshannon(p, q)
+
+
 class TestYule:
     def test_pdist_yule_mtica1(self):
         m = wyule(np.array([1, 0, 1, 1, 0]),
@@ -2212,43 +2295,6 @@ class TestYule:
         u = np.array([[1, 1, 0, 0], [1, 0, 1, 0]], dtype=bool)
         v = np.array([[1, 1, 0, 0], [0, 1, 0, 1]], dtype=bool)
         xp_assert_equal(yule(u, v), np.asarray([0.0, 2.0]))
-
-
-def test_jensenshannon():
-    assert math.isclose(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0), 1.0)
-    assert math.isclose(jensenshannon([1.0, 0.0], [0.5, 0.5]), 0.46450140402245893)
-    assert math.isclose(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
-
-    xp_assert_close(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
-                    np.asarray([0.0, 0.0]), atol=1.5e-7)
-    xp_assert_close(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
-                    np.asarray([0.0649045]), atol=1.5e-7)
-    xp_assert_close(
-        jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0, keepdims=True),
-        np.asarray([[0.0, 0.0]]),
-        atol=1.5e-7
-    )
-    xp_assert_close(
-        jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1, keepdims=True),
-        np.asarray([[0.0649045]]),
-        atol=1.5e-7
-    )
-
-    a = np.array([[1, 2, 3, 4],
-                  [5, 6, 7, 8],
-                  [9, 10, 11, 12]])
-    b = np.array([[13, 14, 15, 16],
-                  [17, 18, 19, 20],
-                  [21, 22, 23, 24]])
-
-    xp_assert_close(
-        jensenshannon(a, b, axis=0),
-        np.asarray([0.1954288, 0.1447697, 0.1138377, 0.0927636]), atol=1.5e-7
-    )
-    xp_assert_close(
-        jensenshannon(a, b, axis=1),
-        np.asarray([0.1402339, 0.0399106, 0.0201815]), atol=1.5e-7
-    )
 
 
 def test_gh_17703():
@@ -2481,6 +2527,7 @@ class TestChebyshev:
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        # jensenshannon takes no w vector. Tested in TestJensenShannon
         (braycurtis, None),
         (yule, None),
         (dice, None),

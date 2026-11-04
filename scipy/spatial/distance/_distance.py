@@ -42,6 +42,7 @@ import numpy as np
 from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
                                    is_numpy, xp_promote, xp_capabilities, xp_device)
 from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
+from scipy._lib.deprecation import _NoValue
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -1166,7 +1167,8 @@ def canberra(u, v, w=None):
     return d
 
 
-def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
+@xp_capabilities()
+def jensenshannon(p, q, base=None, *, axis=_NoValue, keepdims=False):
     """
     Compute the Jensen-Shannon distance (metric) between
     two probability arrays. This is the square root
@@ -1186,9 +1188,9 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
 
     Parameters
     ----------
-    p : (N,) array_like
+    p : (..., N) array_like
         left probability vector
-    q : (N,) array_like
+    q : (..., N) array_like
         right probability vector
     base : double, optional
         the base of the logarithm used to compute the output
@@ -1199,6 +1201,11 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
         is 0.
 
         .. versionadded:: 1.7.0
+
+        .. deprecated:: 2.0.0
+            The default value for `axis` is changing to -1 in v2.2.
+            That means the distances will be computed along the last axis.
+            For 1-D inputs the result does not change.
     keepdims : bool, optional
         If this is set to `True`, the reduced axes are left in the
         result as dimensions with size one. With this option,
@@ -1239,19 +1246,25 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     array([0.1402339, 0.0399106, 0.0201815])
 
     """
-    p = np.asarray(p)
-    q = np.asarray(q)
-    p = p / np.sum(p, axis=axis, keepdims=True)
-    q = q / np.sum(q, axis=axis, keepdims=True)
+    xp = array_namespace(p, q)
+    p, q = xp_promote(p, q, force_floating=True, broadcast=True, xp=xp)
+    if axis is _NoValue:
+        if p.ndim > 1:  # Only relevant if ndim > 1. For 1-D, -1 and 0 are the same
+            msg = ("The default value for `axis` is changing to -1 in v2.2. "
+                   "Pass `axis` explicitly to silence this warning.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        axis = 0
+    p = p / xp.sum(p, axis=axis, keepdims=True)
+    q = q / xp.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
     left = rel_entr(p, m)
     right = rel_entr(q, m)
-    left_sum = np.sum(left, axis=axis, keepdims=keepdims)
-    right_sum = np.sum(right, axis=axis, keepdims=keepdims)
+    left_sum = xp.sum(left, axis=axis, keepdims=keepdims)
+    right_sum = xp.sum(right, axis=axis, keepdims=keepdims)
     js = left_sum + right_sum
     if base is not None:
-        js /= np.log(base)
-    return np.sqrt(js / 2.0)
+        js /= math.log(base)
+    return xp.sqrt(js / 2.0)
 
 
 def yule(u, v, w=None):
