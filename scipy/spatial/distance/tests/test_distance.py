@@ -2444,7 +2444,7 @@ class TestChebyshev:
         x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 1, 5])
         xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
         xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
-    
+
     def test_zero_weight_pdist_cdist(self):
         x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 0, 0])
         xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
