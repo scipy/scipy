@@ -381,6 +381,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
         Possible data classes are: int8, uint8, int16, uint16, int32, uint32,
         int64, uint64, single, double, cell, struct, object, char, sparse,
         function, opaque, logical, unknown.
+        MATLAB objects such as ``string`` or ``table`` are listed as opaque
+        with an empty shape, because their header does not store the shape.
 
     Notes
     -----

@@ -1060,6 +1060,9 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         represent the inverse of the standard deviation of `y`, then a good `s`
         value should be found in the range ``(m-sqrt(2*m), m+sqrt(2*m))`` where
         ``m`` is the number of datapoints in `x`, `y`, and `w`.
+        Scaling `y` with fixed `w` and `s` changes the amount of smoothing;
+        see the :ref:`smoothing spline scaling tutorial
+        <tutorial-make-splrep-scaling>` for an example.
         Default is ``s = 0.0``, i.e. interpolation.
     t : array_like, optional
         The spline knots. If None (default), the knots will be constructed

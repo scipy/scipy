@@ -202,8 +202,9 @@ __nnls(const CBLAS_INT m, const CBLAS_INT n, double* restrict a, double* restric
                 // since determination of alpha guarantees it. If still
                 // there are infeasible ones, they are due to numerical
                 // noise. Any that are nonpositive will be set to zero
-                // and moved from set p to set z.
-                int nobreak = 0;
+                // and moved from set p to set z. If set p is empty, there is
+                // nothing left to check.
+                int nobreak = (indz == 0);
                 for (jj = 0; jj < indz; jj++)
                 {
                     i = indices[jj];

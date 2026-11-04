@@ -16,7 +16,7 @@ static void dsconv(ARNAUD_INT, double*, double*, double, ARNAUD_INT*);
 static void dseigt(double, ARNAUD_INT, double*, ARNAUD_INT, double*, double*, double*, ARNAUD_INT*);
 static void dsaitr(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT, double*, double*, double*, ARNAUD_INT, double*, ARNAUD_INT, ARNAUD_INT*, double*);
 static void dsapps(ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT, double*, double*, ARNAUD_INT, double*, ARNAUD_INT, double*, double* , ARNAUD_INT, double*);
-static void dsgets(struct ARNAUD_state_d*, ARNAUD_INT*, ARNAUD_INT*, double*, double*, double*);
+static void dsgets(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT*, double*, double*, double*);
 static void dgetv0(struct ARNAUD_state_d *, ARNAUD_INT, ARNAUD_INT, ARNAUD_INT, double*, ARNAUD_INT, double*, double*, ARNAUD_INT*, double*);
 static void dsortr(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, double* x1, double* x2);
 static void dsesrt(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, double* x, ARNAUD_INT na, double* a, const ARNAUD_INT lda);
@@ -186,8 +186,7 @@ ARNAUD_dseupd(struct ARNAUD_state_d *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         // accordingly.
 
         np = V->ncv - V->nev;
-        V->shift = 0;
-        dsgets(V, &V->nev, &np, &workl[irz], &workl[bounds], workl);
+        dsgets(V, 0, &V->nev, &np, &workl[irz], &workl[bounds], workl);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -734,7 +733,7 @@ LINE20:
     V->aup2_nev = V->aup2_nev0;
     V->np = V->aup2_np0;
 
-    dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+    dsgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
 
     // Convergence test
 
@@ -905,7 +904,7 @@ LINE20:
 
         if (nevbef < V->aup2_nev)
         {
-            dsgets(V, &V->aup2_nev, &V->np, ritz, bounds, workl);
+            dsgets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds, workl);
         }
     }
 
@@ -1121,14 +1120,14 @@ LINE40:
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
 
-    ARNAUD_BLAS(dcopy)(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
+    ARNAUD_BLAS(dcopy)(&n, resid, &int1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
         temp1 = 1.0 / *rnorm;
-        ARNAUD_BLAS(dscal)(&n, &temp1, &v[ldv*(V->aitr_j)], &int1);
+        ARNAUD_BLAS(dscal)(&n, &temp1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
         ARNAUD_BLAS(dscal)(&n, &temp1, &workd[ipj], &int1);
     } else {
-        ARNAUD_BLAS(dlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*(V->aitr_j)], &n, &infol);
+        ARNAUD_BLAS(dlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[(int64_t)ldv*(V->aitr_j)], &n, &infol);
         ARNAUD_BLAS(dlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
@@ -1136,7 +1135,7 @@ LINE40:
     //  Note that this is not quite yet r_{j}. See STEP 4
 
     V->aitr_step3 = 1;
-    ARNAUD_BLAS(dcopy)(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
+    ARNAUD_BLAS(dcopy)(&n, &v[(int64_t)ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
@@ -1388,7 +1387,7 @@ LINE100:
         h[V->aitr_j] = -h[V->aitr_j];
         if (V->aitr_j < k + np - 1)
         {
-            ARNAUD_BLAS(dscal)(&n, &dblm1, &v[V->aitr_j + 1], &int1);
+            ARNAUD_BLAS(dscal)(&n, &dblm1, &v[(int64_t)ldv*(V->aitr_j + 1)], &int1);
         } else {
             ARNAUD_BLAS(dscal)(&n, &dblm1, resid, &int1);
         }
@@ -1557,7 +1556,7 @@ dsapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shift, double* v, A
     {
         tmp_int = kplusp - i;
         ARNAUD_BLAS(dgemv)("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i-1)], &int1, &dbl0, workd, &int1);
-        ARNAUD_BLAS(dcopy)(&n, workd, &int1, &v[ldv*(kplusp-i-1)], &int1);
+        ARNAUD_BLAS(dcopy)(&n, workd, &int1, &v[(int64_t)ldv*(kplusp-i-1)], &int1);
     }
     // 130
 
@@ -1565,13 +1564,13 @@ dsapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shift, double* v, A
 
     for (i = 0; i < *kev; i++)
     {
-        ARNAUD_BLAS(dcopy)(&n, &v[ldv*(np+i)], &int1, &v[ldv*i], &int1);
+        ARNAUD_BLAS(dcopy)(&n, &v[(int64_t)ldv*(np+i)], &int1, &v[(int64_t)ldv*i], &int1);
     }
     // 140
 
     if (h[*kev] > 0.0)
     {
-        ARNAUD_BLAS(dcopy)(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
+        ARNAUD_BLAS(dcopy)(&n, &workd[n], &int1, &v[(int64_t)ldv*(*kev)], &int1);
     }
 
     // Update the residual vector:
@@ -1583,7 +1582,7 @@ dsapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shift, double* v, A
     ARNAUD_BLAS(dscal)(&n, &q[kplusp-1 + (*kev-1)*ldq], resid, &int1);
     if (h[*kev] > 0.0)
     {
-        ARNAUD_BLAS(daxpy)(&n, &h[*kev], &v[ldv*(*kev)], &int1, resid, &int1);
+        ARNAUD_BLAS(daxpy)(&n, &h[*kev], &v[(int64_t)ldv*(*kev)], &int1, resid, &int1);
     }
 
     return;
@@ -1591,7 +1590,7 @@ dsapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, double* shift, double* v, A
 
 
 void
-dsgets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
+dsgets(struct ARNAUD_state_d *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
        double* bounds, double* shifts)
 {
     ARNAUD_INT kevd2, tmp1, tmp2, int1 = 1;
@@ -1624,7 +1623,7 @@ dsgets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np, double* ritz,
         dsortr(V->which, 1, *kev + *np, ritz, bounds);
     }
 
-    if ((V->shift == 1) && (*np > 0))
+    if ((ishift == 1) && (*np > 0))
     {
 
         // Sort the unwanted Ritz values used as shifts so that
@@ -1780,7 +1779,7 @@ LINE40:
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 5)
+    if (V->getv0_iter <= 5)
     {
 
         //  Perform iterative refinement step

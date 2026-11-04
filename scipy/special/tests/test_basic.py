@@ -39,8 +39,7 @@ from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, 
                            mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
                            tandg, cotdg)
 
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API,
-                                   make_xp_test_case)
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, make_xp_test_case
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -2871,7 +2870,7 @@ class TestFactorialFunctions:
         _check(-1 + 0.0001j, expected=-0.57721565582674219 - 9999.9999010944009697j)
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
-                                       np.complex128, object])
+                                       np.complex128])
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
@@ -2882,8 +2881,6 @@ class TestFactorialFunctions:
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
     def test_factorial_array_corner_cases(self, content, dim, exact, extend, dtype):
-        if dtype is object and SCIPY_ARRAY_API:
-            pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype is np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")

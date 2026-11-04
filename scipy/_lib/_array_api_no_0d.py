@@ -32,18 +32,15 @@ from scipy._lib._array_api import (xp_assert_close as xp_assert_close_base,
 __all__: list[str] = []
 
 
-def _check_scalar(actual, desired, *, xp=None, **kwargs):
+def _check_scalar(actual, _, *, xp=None, **kwargs):
     __tracebackhide__ = True  # Hide traceback for py.test
 
     if xp is None:
         xp = array_namespace(actual)
 
-    # necessary to handle non-numpy scalars, e.g. bare `0.0` has no shape
-    desired = xp.asarray(desired)
-
-    # Only NumPy distinguishes between scalars and arrays;
-    # shape check in xp_assert_* is sufficient except for shape == ()
-    if not (is_numpy(xp) and desired.shape == ()):
+    # For NumPy (only), we want to check that 0d output is either a NumPy
+    # or Python scalar, not a 0D array.
+    if not (is_numpy(xp) and (xp.isscalar(actual) or actual.shape == ())):
         return
 
     _msg = ("Result is a NumPy 0d-array. Many SciPy functions intend to follow "

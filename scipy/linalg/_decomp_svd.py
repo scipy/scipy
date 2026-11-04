@@ -482,9 +482,10 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+    M, N = A.shape
+    full = M <= N
+    u, s, vh = svd(A, full_matrices=full, overwrite_a=overwrite_a,
                    check_finite=check_finite, lapack_driver=lapack_driver)
-    M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = np.finfo(s.dtype).eps * max(M, N)
     tol = np.amax(s, initial=0.) * rcond
