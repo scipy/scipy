@@ -129,10 +129,12 @@ def _mahalanobis_whitening(VI, n_pairs):
         return None
     try:
         # Only the symmetric part of VI enters the quadratic form.
-        return np.linalg.cholesky((VI + VI.T) / 2)
+        L = np.linalg.cholesky((VI + VI.T) / 2)
     except np.linalg.LinAlgError:
         # Not positive definite, keep the old results (e.g. nan).
         return None
+    # On WASM cholesky returns nan instead of raising.
+    return L if np.isfinite(L).all() else None
 
 
 def _mahalanobis_cdist_wrap(XA, XB, dm, *, VI):
