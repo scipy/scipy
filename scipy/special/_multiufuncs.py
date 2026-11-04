@@ -2,16 +2,15 @@ import collections
 import numbers
 import numpy as np
 
+import scipy.special._gufuncs as _gufuncs
+import scipy.special._special_ufuncs as _special_ufuncs
+
 from scipy._lib._array_api import (
     array_namespace, is_numpy, xp_capabilities, xp_result_device
 )
 
 from ._input_validation import _nonneg_int_or_fail
 
-from ._special_ufuncs import (legendre_p, assoc_legendre_p,
-                              sph_legendre_p, sph_harm_y)
-from ._gufuncs import (legendre_p_all, assoc_legendre_p_all,
-                       sph_legendre_p_all, sph_harm_y_all)
 
 __all__ = [
     "assoc_legendre_p",
@@ -151,7 +150,7 @@ class MultiUFunc:
 
 
 sph_legendre_p = MultiUFunc(
-    sph_legendre_p,
+    _special_ufuncs.sph_legendre_p,
     "sph_legendre_p",
     r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
@@ -206,7 +205,7 @@ def _(out):
 
 
 sph_legendre_p_all = MultiUFunc(
-    sph_legendre_p_all,
+    _gufuncs.sph_legendre_p_all,
     "sph_legendre_p_all",
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
@@ -271,7 +270,7 @@ def _(out):
 
 
 assoc_legendre_p = MultiUFunc(
-    assoc_legendre_p,
+    _special_ufuncs.assoc_legendre_p,
     "assoc_legendre_p",
     r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
@@ -363,7 +362,7 @@ def _(out):
 
 
 assoc_legendre_p_all = MultiUFunc(
-    assoc_legendre_p_all,
+    _gufuncs.assoc_legendre_p_all,
     "assoc_legendre_p_all",
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
@@ -449,7 +448,7 @@ def _(out):
 
 
 legendre_p = MultiUFunc(
-    legendre_p,
+    _special_ufuncs.legendre_p,
     "legendre_p",
     """legendre_p(n, z, *, diff_n=0)
 
@@ -518,7 +517,7 @@ def _(out):
 
 
 legendre_p_all = MultiUFunc(
-    legendre_p_all,
+    _gufuncs.legendre_p_all,
     "legendre_p_all",
     """legendre_p_all(n, z, *, diff_n=0)
 
@@ -578,7 +577,7 @@ def _(out):
 
 
 sph_harm_y = MultiUFunc(
-    sph_harm_y,
+    _special_ufuncs.sph_harm_y,
     "sph_harm_y",
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
@@ -672,7 +671,7 @@ def _(out):
 
 
 sph_harm_y_all = MultiUFunc(
-    sph_harm_y_all,
+    _gufuncs.sph_harm_y_all,
     "sph_harm_y_all",
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
