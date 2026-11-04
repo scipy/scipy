@@ -29,10 +29,12 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=1
     Parameters
     ----------
     A : ndarray or sparse array or matrix
-        The square matrix A will be converted into CSC or CSR form
+        The square matrix, ``A``, will be converted into CSC form. As of
+        v2.0.0, input CSR matrices will also be converted to CSC and
+        a ``SparseEfficiencyWarning`` will be raised.
     b : ndarray or sparse array or matrix
         The matrix or vector representing the right hand side of the equation.
-        If a vector, b.shape must be (n,) or (n, 1).
+        If a vector, ``b.shape`` must be (n,) or (n, 1).
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
