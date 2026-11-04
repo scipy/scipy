@@ -51,7 +51,7 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=1
 
         *i.e.*, normal, transposed, and Hermitian conjugate.
 
-        .. versionadded:: 1.18.0
+        .. versionadded:: 2.0.0
 
     use_umfpack : bool, optional
         If True, then use UMFPACK for the solution [3]_, [4]_, [5]_,
@@ -62,7 +62,7 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=1
         memory consumption by converting more columns at a time to dense
         arrays, but may improve runtime.
 
-        .. versionadded:: 1.18.0
+        .. versionadded:: 2.0.0
 
     Returns
     -------
