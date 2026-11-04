@@ -180,9 +180,8 @@ class TestSphericalKn:
     def test_spherical_kn_recurrence_real(self, xp):
         # https://dlmf.nist.gov/10.51.E4
         n_np = np.array([1, 2, 3, 7, 12])
-        n = xp.asarray(n_np)
         x_np = 0.12
-        x = xp.asarray(x_np)
+        x = xp.asarray(x_np, dtype=xp.float64)
         sign_lower = xp.asarray((-1.0) ** (n_np - 1))
         sign_upper = xp.asarray((-1.0) ** (n_np + 1))
         factor = xp.asarray((-1.0) ** n_np * (2 * n_np + 1) / x_np)
@@ -197,7 +196,7 @@ class TestSphericalKn:
         n_np = np.array([1, 2, 3, 7, 12])
         n = xp.asarray(n_np)
         x_np = 1.1 + 1.5j
-        x = xp.asarray(x_np)
+        x = xp.asarray(x_np, dtype=xp.complex128)
         sign_lower = xp.asarray((-1.0) ** (n_np - 1))
         sign_upper = xp.asarray((-1.0) ** (n_np + 1))
         factor = xp.asarray((-1.0) ** n_np * (2 * n_np + 1) / x_np)
@@ -228,7 +227,7 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.52.E2
         n_np = np.array([0, 1, 2, 5, 10, 100])
         n = xp.asarray(n_np)
-        x = xp.asarray(0)
+        x = xp.asarray(0, dtype=xp.float64)
         expected = xp.asarray(np.full(n_np.shape, np.inf))
         xp_assert_close(spherical_kn(n, x), expected)
 
@@ -236,7 +235,7 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.52.E2
         n_np = np.array([0, 1, 2, 5, 10, 100])
         n = xp.asarray(n_np)
-        x = xp.asarray(0 + 0j)
+        x = xp.asarray(0 + 0j, dtype=xp.complex128)
         expected = xp.asarray(np.full(n_np.shape, np.nan, dtype=np.complex128))
         xp_assert_close(spherical_kn(n, x), expected)
 
