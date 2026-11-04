@@ -3,6 +3,7 @@ Generic test utilities.
 
 """
 
+import contextlib
 import inspect
 import os
 import platform
@@ -18,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import scipy
+import tracemalloc
 
 if TYPE_CHECKING:
     import cython
@@ -289,6 +291,32 @@ def _get_mem_available():
             return info['memfree'] + info['cached']
 
     return None
+
+
+@contextlib.contextmanager
+def assert_mem_gain_limit(max_bytes):
+    """Context manager that asserts a specified peak memory gain
+
+    Assert that peak traced memory during the block grows by at most max_bytes.
+
+    Only allocations visible to tracemalloc are counted (Python allocator
+    domains plus NumPy data buffers); native allocations in C/C++ code are not.
+
+    Warning that tests using tracemalloc can be slow. use small examples.
+    """
+    _was_tracing = tracemalloc.is_tracing()
+    if not _was_tracing:
+        tracemalloc.start()
+    tracemalloc.reset_peak()
+
+    try:
+        yield
+        _, peak = tracemalloc.get_traced_memory()
+        assert peak <= max_bytes, f"memory gain {peak} B is above limit {max_bytes} B"
+    finally:
+        if not _was_tracing:
+            tracemalloc.stop()
+
 
 def _test_cython_extension(tmp_path, srcdir):
     """

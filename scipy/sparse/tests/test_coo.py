@@ -9,6 +9,7 @@ from scipy.sparse import (
     coo_array, random_array, SparseEfficiencyWarning, matrix_transpose
 )
 from scipy.sparse._csr import csr_array
+from scipy._lib._testutils import assert_mem_gain_limit
 from .._coo import _block_diag, _extract_block_diag
 
 
@@ -1432,3 +1433,30 @@ def test_bool_set():
     A, D = A_orig.copy(), D_orig.copy()
     D[idxnp] = A[idxnp] = -88
     assert_equal(A.toarray(), D)
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_dense():
+    A = coo_array((100, 100), dtype=np.int8)
+    N = 30
+
+    scale = 7
+    # N x N x (8(int64) x 2 + 1(int8))
+    exp_net_mem_chg = N * N * 17
+
+    rhs = coo_array(np.ones((N, N), dtype=np.int8))
+    index_N = np.arange(40, 40 + N)
+
+    with assert_mem_gain_limit(scale * exp_net_mem_chg + 96):
+        A[index_N[:, None], index_N] = rhs
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_scalar():
+    A = coo_array((100, 100), dtype=np.int8)
+    N = 30
+    index_N = np.arange(40, 40 + N)
+    scale = 8
+    # N x N x (8(int64) x 2 + 1(int8))
+    exp_net_mem_chg = N * N * 17
+
+    with assert_mem_gain_limit(scale * exp_net_mem_chg + 96):
+        A[index_N[:, None], index_N] = 1
