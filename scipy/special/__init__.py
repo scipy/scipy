@@ -806,6 +806,17 @@ from ._spherical_bessel import (
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    # alt-backend aware wrappers for these are dynamically constructed
+    # in _support_alternative_backends.py. These wrappers will not be visible
+    # to the type checker, so directly import these when type checking.
+    from ._ellip_harm import *
+    from ._lambertw import *
+    from ._mathieu import *
+    from ._polygamma import *
+    from ._spfun_stats import *
+    from ._ufuncs import *
 
 from . import _support_alternative_backends
 from ._support_alternative_backends import *
@@ -835,3 +846,4 @@ __all__ = (
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+del TYPE_CHECKING
