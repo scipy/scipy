@@ -197,6 +197,7 @@ python_sources = [
   '_input_validation.py',
   '_lambertw.py',
   '_logsumexp.py',
+  '_polygamma.py',
   '_mptestutils.py',
   '_multiufuncs.py',
   '_orthogonal.py',

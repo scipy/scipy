@@ -14,6 +14,7 @@ from scipy._lib._array_api import (
 import scipy._external.array_api_extra as xpx
 from . import _ellip_harm
 from . import _lambertw
+from . import _polygamma
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
@@ -429,50 +430,6 @@ def _get_native_func(xp, namespace, f_name, *, alt_names_map=None):
         # https://github.com/data-apis/array-api/issues/725
         f = getattr(xp.special, f_name, None)
     return f
-
-
-# This was in ._basic.py, but was moved here to avoid a circular import.
-def polygamma(n, x):
-    r"""Polygamma functions.
-
-    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
-    `digamma` function. See [dlmf]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        The order of the derivative of the digamma function; must be
-        integral
-    x : array_like
-        Real valued input
-
-    Returns
-    -------
-    ndarray
-        Function results
-
-    See Also
-    --------
-    digamma
-
-    References
-    ----------
-    .. [dlmf] NIST, Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/5.15
-
-    Examples
-    --------
-    >>> from scipy import special
-    >>> x = [2, 3, 25.5]
-    >>> special.polygamma(1, x)
-    array([ 0.64493407,  0.39493407,  0.03999467])
-    >>> special.polygamma(0, x) == special.psi(x)
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    n, x = np.asarray(n), np.asarray(x)
-    fac2 = (-1.0)**(n+1) * _ufuncs.gamma(n+1.0) * _ufuncs._zeta(n+1, x)
-    return np.where(n == 0, _ufuncs.psi(x), fac2)
 
 
 def _rel_entr(xp, spsx):
@@ -1826,7 +1783,7 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        polygamma, ["n", "x"],
+        _polygamma.polygamma, ["n", "x"],
         int_only=(True, False), is_ufunc=False,
         scalar_or_0d_only={"torch": (True, False)}, produces_0d=True,
         positive_only={"torch": (True, False), "jax.numpy": True},
@@ -2783,9 +2740,6 @@ _special_funcs = (
 
 
 _FUNC_INFO = {info.name: info for info in _special_funcs}
-
-# Let __getattr__ resolve polygamma to its backend-aware wrapper.
-del polygamma
 
 _aliases = {"digamma": "psi", "jn": "jv"}
 
