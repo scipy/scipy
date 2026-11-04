@@ -182,6 +182,7 @@ class TestSphericalKn:
         n_np = np.array([1, 2, 3, 7, 12])
         x_np = 0.12
         x = xp.asarray(x_np, dtype=xp.float64)
+        n = xp.asarray(n_np)
         sign_lower = xp.asarray((-1.0) ** (n_np - 1))
         sign_upper = xp.asarray((-1.0) ** (n_np + 1))
         factor = xp.asarray((-1.0) ** n_np * (2 * n_np + 1) / x_np)
