@@ -808,9 +808,10 @@ from ._logsumexp import logsumexp, softmax, log_softmax
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # alt-backend aware wrappers for these are dynamically constructed
-    # in _support_alternative_backends.py. These wrappers will not be visible
-    # to the type checker, so directly import these when type checking.
+    # alt-backend aware wrappers for the public contents of these submodules are
+    # dynamically constructed in _support_alternative_backends.py. These wrappers
+    # will not be visible to the type checker so directly import these when type
+    # checking.
     from ._ellip_harm import *
     from ._lambertw import *
     from ._mathieu import *
