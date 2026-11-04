@@ -6,7 +6,7 @@ import numpy as np
 from functools import cached_property
 
 
-from scipy.integrate._rules import NestedFixedRule
+from scipy.integrate._rules._base import NestedFixedRule
 
 
 class GenzMalikCubature(NestedFixedRule):

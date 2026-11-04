@@ -71,7 +71,7 @@ def find_root(f, init, /, *, args=(), kwargs=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
+        Called as ``callback(res)``, where ``res`` is an object
         similar to that returned by `find_root` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -97,7 +97,7 @@ def find_root(f, init, /, *, args=(), kwargs=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -281,7 +281,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     Parameters
     ----------
     f : callable
-        The function whose minimizer is desired. The signature must be::
+        The function whose minimum is desired. The signature must be::
 
             f(xi: array, *argsi) -> array
 
@@ -304,17 +304,17 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
-        If the callable for which the root is desired requires arguments that are
+        If the callable for which the minimum is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
     kwargs : dict of str:array_like, optional
         Additional keyword arguments to be passed to `f`. See `args`.
     tolerances : dictionary of floats, optional
-        Absolute and relative tolerances on the root and function value.
+        Absolute and relative tolerances on the minimizer and function value.
         Valid keys of the dictionary are:
 
-        - ``xatol`` - absolute tolerance on the root
-        - ``xrtol`` - relative tolerance on the root
+        - ``xatol`` - absolute tolerance on the minimizer
+        - ``xrtol`` - relative tolerance on the minimizer
         - ``fatol`` - absolute tolerance on the function value
         - ``frtol`` - relative tolerance on the function value
 
@@ -324,11 +324,11 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
+        Called as ``callback(res)``, where ``res`` is an object
         similar to that returned by `find_minimum` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `find_root` will return a result. `callback` must not mutate
+        `find_minimum` will return a result. `callback` must not mutate
         `res` or its attributes.
     preserve_shape : bool, default: False
         In the following, "arguments of `f`" refers to the array ``xi`` and
@@ -350,7 +350,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -374,7 +374,7 @@ def find_minimum(f, init, /, *, args=(), kwargs=None,
         f_x : float array
             The value of `f` evaluated at `x`.
         nfev : int array
-            The number of abscissae at which `f` was evaluated to find the root.
+            The number of abscissae at which `f` was evaluated to find the minimum.
             This is distinct from the number of times `f` is *called* because the
             the function may evaluated at multiple points in a single call.
         nit : int array
@@ -577,7 +577,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -719,7 +719,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     Parameters
     ----------
     f : callable
-        The function for which the root is to be bracketed. The signature must be::
+        The function for which the minimum is to be bracketed. The signature must be::
 
             f(xi: array, *argsi) -> array
 
@@ -742,7 +742,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         The factor used to grow the bracket. See Notes.
     args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`.
-        If the callable for which the root is desired requires arguments that are
+        If the callable for which the minimum is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
     kwargs : dict of str:array_like, optional
@@ -769,7 +769,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     Returns
     -------
-    res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes. The descriptions are written as though the values will
         be scalars; however, if `f` returns an array, the outputs will be
@@ -796,7 +796,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         f_bracket : 3-tuple of float arrays
             The function value at the left, middle, and right points of the bracket.
         nfev : int array
-            The number of abscissae at which `f` was evaluated to find the root.
+            The number of abscissae at which `f` was evaluated to find the minimum.
             This is distinct from the number of times `f` is *called* because the
             the function may evaluated at multiple points in a single call.
         nit : int array

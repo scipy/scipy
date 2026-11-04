@@ -34,6 +34,50 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
+    @pytest.mark.parametrize('order', [0, 3])
+    @pytest.mark.parametrize('mode, reduced', [
+        ('wrap', [0., 3.]),
+        ('grid-wrap', [0., 0.]),
+        ('mirror', [0., 0.]),
+        ('reflect', [0., -1.]),
+        ('nearest', [100., -100.]),
+        ('constant', [100., -100.]),
+        ('grid-constant', [100., -100.]),
+    ])
+    def test_large_coordinates(self, mode, reduced, order):
+        data = np.arange(1., 5.)
+        kwargs = dict(mode=mode, order=order, cval=-10.)
+        # The floating-point value 1e300 is divisible by all the periods
+        # for this input (3, 4, 6, and 8).
+        coordinates = np.array([[1e300, -1e300]])
+        expected = ndimage.map_coordinates(data, [reduced], **kwargs)
+        actual = ndimage.map_coordinates(data, coordinates, **kwargs)
+        assert_array_almost_equal(actual, expected)
+
+        # shift uses a separate C implementation. At this magnitude, adding
+        # an output index does not change the floating-point coordinate.
+        for coordinate, value in zip(coordinates[0], expected):
+            actual = ndimage.shift(data, -coordinate, **kwargs)
+            assert_array_almost_equal(actual, np.full(data.shape, value))
+
+    @pytest.mark.parametrize('coordinate', [np.nan, np.inf, -np.inf])
+    @pytest.mark.parametrize('mode', [
+        'wrap', 'grid-wrap', 'mirror', 'reflect', 'nearest',
+        'constant', 'grid-constant',
+    ])
+    def test_nonfinite_coordinates(self, coordinate, mode):
+        data = np.arange(4.)
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.map_coordinates(data, [[coordinate]], mode=mode)
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.shift(data, coordinate, mode=mode)
+
+    def test_nonfinite_mapping(self):
+        # An out-of-bounds first axis must not hide a non-finite second axis.
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.geometric_transform(np.ones((4, 4)),
+                                        lambda _: (-1., np.nan))
+
     @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',

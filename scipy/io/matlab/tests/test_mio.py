@@ -31,7 +31,6 @@ import scipy.io.matlab._mio5_params as mio5p
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
-pytestmark = pytest.mark.thread_unsafe
 
 
 def mlarr(*args, **kwargs):
@@ -1328,6 +1327,13 @@ def test_matlab_string_opaque():
     assert data['matstring2'][0]['_ObjectMetadata'][4, 0] == 2
 
 
+def test_whosmat_opaque():
+    # gh-3539: whosmat raised a TypeError on files with MATLAB objects
+    whos = whosmat(pjoin(test_data_path, 'testmatlabstring_7_WIN64.mat'))
+    assert ('matstring1', (), 'opaque') in whos
+    assert ('matstring2', (), 'opaque') in whos
+
+
 def test_write_matlab_opaque():
     """Test that we can write a MatlabOpaque object"""
     stream = BytesIO()
@@ -1381,6 +1387,20 @@ def test_write_multiple_matlab_opaque():
         assert data[name][0]['_TypeSystem'] == "MCOS"
         assert data[name][0]['_ObjectMetadata'].dtype == np.uint32
         assert data[name][0]['_ObjectMetadata'][4, 0] == expected_id
+
+
+def test_gh_7752():
+    # Loaded 1-byte values must not share memory with CPython's cached
+    # 1-byte bytes objects
+    stream = BytesIO()
+    savemat(stream, {'x': np.uint8(1)})
+    x = loadmat(BytesIO(stream.getvalue()))['x']
+    try:
+        x[0, 0] = 42
+        assert bytes([1])[0] == 1
+        assert loadmat(BytesIO(stream.getvalue()))['x'][0, 0] == 1
+    finally:
+        x[0, 0] = 1
 
 
 def test_gh_17992(tmp_path):

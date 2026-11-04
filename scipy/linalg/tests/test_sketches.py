@@ -2,8 +2,9 @@
 
 import numpy as np
 from numpy.testing import assert_, assert_equal
+
 from scipy.linalg import clarkson_woodruff_transform
-from scipy.linalg._sketches import cwt_matrix
+from scipy.linalg._sketches import _cwt_matrix
 from scipy.sparse import issparse, random_array
 from scipy.sparse.linalg import norm
 
@@ -51,11 +52,11 @@ class TestClarksonWoodruffTransform:
 
     def test_seed_returns_identical_transform_matrix(self):
         for seed in self.seeds:
-            S1 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, rng=seed
+            S1 = _cwt_matrix(
+                self.n_sketch_rows, self.n_rows, np.float64, rng=seed
             ).toarray()
-            S2 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, rng=seed
+            S2 = _cwt_matrix(
+                self.n_sketch_rows, self.n_rows, np.float64, rng=seed
             ).toarray()
             assert_equal(S1, S2)
 

@@ -76,7 +76,7 @@ Benchmarks
 Compiled code
 -------------
 - :ref:`adding-cython` extending and compiling Python code with `Cython`_ can significantly improve its performance; this document helps you get started
-- :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy
+- :ref:`other-languages` discusses the use of C and C++ code in SciPy
 - :ref:`public-cython-api` on guidelines on exposing public Cython APIs
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY

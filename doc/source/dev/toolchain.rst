@@ -153,15 +153,14 @@ Currently, SciPy wheels are being built as follows:
  Linux arm                   ``docker-builder-arm64``         GCC 11.3.0                             ``cibuildwheel``
  OSX x86_64 (OpenBLAS)       ``macos-15-intel``               Apple clang 13.1.6                     ``cibuildwheel``
  OSX x86_64 (Accelerate)     ``macos-15-intel``               Apple clang 15.0.0                     ``cibuildwheel``
- OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0                     ``cibuildwheel``
- OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0                     ``cibuildwheel``
- Windows                     ``windows-2025``                 GCC 15.2.0 (`rtools`_)                 ``cibuildwheel``
+ OSX arm64 (OpenBLAS)        ``macos-15``                     Apple clang 15.0.0                     ``cibuildwheel``
+ OSX arm64 (Accelerate)      ``macos-15``                     Apple clang 15.0.0                     ``cibuildwheel``
+ Windows                     ``windows-2025``                 clang-cl 20.1.8                        ``cibuildwheel``
 =========================   ==============================   ====================================   =============================
 
 .. _CI: https://github.com/actions/runner-images
 .. _Base: https://cirrus-ci.org/guide/docker-builder-vm/#under-the-hood
 .. _Images: https://github.com/orgs/cirruslabs/packages?tab=packages&q=macos
-.. _rtools: https://community.chocolatey.org/packages/rtools#versionhistory
 
 Note that the OSX wheels additionally vendor the libgfortran dylib.
 

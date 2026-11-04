@@ -1,4 +1,5 @@
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, eye_array, safely_cast_index_arrays
 from scipy.sparse.linalg import splu
@@ -69,6 +70,7 @@ def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
     return converged, k + 1, y, d
 
 
+@xp_capabilities(np_only=True)
 class BDF(OdeSolver):
     """Implicit method based on backward-differentiation formulas.
 

@@ -4,6 +4,7 @@ import numpy as np
 from scipy.linalg._solve_toeplitz import levinson
 from scipy.linalg import solve, toeplitz, solve_toeplitz
 from numpy.testing import assert_equal, assert_allclose
+from scipy._lib._array_api import xp_assert_close
 
 import pytest
 from pytest import raises as assert_raises
@@ -127,11 +128,46 @@ def test_empty(dt_c, dt_b):
     b = np.array([], dtype=dt_b)
     x = solve_toeplitz(c, b)
     assert x.shape == (0,)
-    assert x.dtype == solve_toeplitz(np.array([2, 1], dtype=dt_c),
-                                      np.ones(2, dtype=dt_b)).dtype
+    if not (dt_b in {np.float32, np.complex64} and dt_c in {np.float32, np.complex64}):
+        # see https://github.com/scipy/scipy/issues/25964#issuecomment-5521651145
+        assert x.dtype == solve_toeplitz(np.array([2, 1], dtype=dt_c),
+                                        np.ones(2, dtype=dt_b)).dtype
 
     b = np.empty((0, 0), dtype=dt_b)
     x1 = solve_toeplitz(c, b)
     assert x1.shape == (0, 0)
     assert x1.dtype == x.dtype
 
+
+_test_dtypes = [np.int64, np.float32, np.float64, np.complex64, np.complex128]
+@pytest.mark.parametrize("dt_c", _test_dtypes)
+@pytest.mark.parametrize("dt_r", _test_dtypes)
+@pytest.mark.parametrize("dt_b", _test_dtypes)
+@pytest.mark.parametrize("n", [0, 5])
+@pytest.mark.parametrize("nrhs", [0, 1, 2])
+def test_shape_dtype(dt_c, dt_r, dt_b, n, nrhs):
+    rng = np.random.default_rng(seed=12345)
+
+    ## Setup
+    c = rng.normal(size=(n,))
+    if np.isdtype(dt_c, "complex floating"):
+        c = c + 1j * rng.normal(size=(n,))
+    c = np.astype(c, dt_c)
+
+    r = rng.normal(size=(n,))
+    if np.isdtype(dt_r, "complex floating"):
+        r = r + 1j * rng.normal(size=(n,))
+    r = np.astype(r, dt_r)
+
+    shape_b = (n,) if nrhs == 0 else (n, nrhs)
+    b = rng.normal(size=shape_b)
+    if np.isdtype(dt_b, "complex floating"):
+        b = b + 1j * rng.normal(size=shape_b)
+    b = np.astype(b, dt_b)
+
+    ## Compute solutions
+    a = toeplitz(c, r)
+    ref = solve(a, b, assume_a="general")
+    res = solve_toeplitz((c, r), b)
+
+    xp_assert_close(res, ref, atol=1e-15)

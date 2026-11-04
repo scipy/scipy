@@ -96,7 +96,7 @@ def whittaker_henderson(signal, *, lamb="reml", order=2, weights=None):
 
     Returns
     -------
-     res : _RichResult
+    res : object
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         following attributes:
 

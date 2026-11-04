@@ -18,10 +18,8 @@ def _validate_fft_args(workers, plan, norm):
 # these functions expect complex input in the fft standard extension
 complex_funcs = {'fft', 'ifft', 'fftn', 'ifftn', 'hfft', 'irfft', 'irfftn'}
 
-# duccfft is used whenever SCIPY_ARRAY_API is not set,
-# or x is a NumPy array or array-like.
-# When SCIPY_ARRAY_API is set, we try to use xp.fft for CuPy arrays,
-# PyTorch arrays and other array API standard supporting objects.
+# duccfft is used whenever x is a NumPy array or array-like. We try to use xp.fft
+# for CuPy arrays, PyTorch arrays and other array API standard supporting objects.
 # If xp.fft does not exist, we attempt to convert to np and back to use duccfft.
 
 def _execute_1D(func_str, duccfft_func, x, n, axis, norm, overwrite_x, workers, plan):

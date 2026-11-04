@@ -67,8 +67,10 @@ if __name__ == "__main__":
 
     with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
         # Suppress output because it is extremely long and not needed.
+        # Collection needs no assertion rewriting, and SciPy dependencies that
+        # provide pytest plugins may already have been imported above.
         pytest.main(
-            ["--collect-only", str(Path(scipy.__file__).parent)],
+            ["--collect-only", "--assert=plain", str(Path(scipy.__file__).parent)],
             plugins=[MarkerCollector()]
         )
 

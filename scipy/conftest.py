@@ -18,7 +18,7 @@ except ImportError:
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
+    SCIPY_DEVICE, array_namespace, default_xp,
     is_cupy, is_dask, is_jax, is_torch, xp_result_device)
 from scipy._lib._testutils import IS_WASM, FPUModeChangeWarning
 from scipy._external.array_api_extra.testing import patch_lazy_xp_functions
@@ -39,6 +39,7 @@ except Exception:
 # These Cython examples are built and tested separately in CI.
 collect_ignore = ["linalg/tests/_cython_examples"]
 
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
 
 def pytest_configure(config):
     """
@@ -223,6 +224,40 @@ def check_fpu_mode(request):
                       category=FPUModeChangeWarning, stacklevel=0)
 
 
+@pytest.fixture
+def mpl_agg():
+    """Run a plotting test on matplotlib's non-interactive Agg backend and
+    switch back to the previously active backend afterwards.
+
+    The plotting tests used to select Agg at import time, which leaked into
+    the calling process: after ``scipy.test()`` a user's plots silently
+    stopped appearing (gh-3588). Function-scoped so each plotting test is
+    self-contained regardless of ordering or an aborted run.
+
+    Notes: the backend that was *resolved* before the test is what gets
+    restored (matplotlib offers no public way to return to the unresolved
+    "auto" state), and all open figures are closed on teardown. Tests that
+    use this fixture should also be marked ``thread_unsafe``: pyplot's global
+    state is not thread-safe.
+    """
+    try:
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except Exception as e:  # ImportError, or ValueError from a bad rc setting
+        pytest.skip(f"matplotlib not usable: {e!r}")
+    prev = matplotlib.get_backend()
+    plt.switch_backend("Agg")
+    yield
+    plt.close("all")
+    try:
+        plt.switch_backend(prev)
+    except Exception:
+        # The previous backend cannot be re-activated (e.g. a GUI backend on a
+        # headless machine); it was unusable before the test as well, so stay
+        # on Agg rather than fail the test run.
+        pass
+
+
 if not PARALLEL_RUN_AVAILABLE:
     @pytest.fixture
     def num_parallel_threads():
@@ -241,7 +276,7 @@ with warnings.catch_warnings():
     _array_api_backends = pytest.mark.array_api_backends
     _thread_unsafe = pytest.mark.thread_unsafe
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
-                     'dask.array'}
+                     'dask.array', 'mparray'}
 xp_available_backends = [
     pytest.param(np, id='numpy', marks=_array_api_backends)
 ]
@@ -263,6 +298,14 @@ if SCIPY_ARRAY_API:
         array_api_strict.set_array_api_strict_flags(
             api_version='2025.12'
         )
+    except ImportError:
+        pass
+
+    try:
+        import mparray  # pyrefly: ignore[missing-import]
+        xp_available_backends.append(
+            pytest.param(mparray, id='mparray',
+                         marks=_array_api_backends))
     except ImportError:
         pass
 
@@ -465,8 +508,8 @@ def xp(request):
     You can select all and only the tests that use the `xp` fixture by
     passing `-m array_api_backends` to pytest.
 
-    You can select where individual tests run through the `@skip_xp_backends`,
-    `@xfail_xp_backends`, and `@skip_xp_invalid_arg` pytest markers.
+    You can select where individual tests run through the `@skip_xp_backends` and
+    `@xfail_xp_backends` pytest markers.
 
     Please read: https://docs.scipy.org/doc/scipy/dev/api-dev/array_api.html#adding-tests
     """
@@ -516,11 +559,6 @@ def xp(request):
         yield xp
 
 
-skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
-    reason = ('Test involves masked arrays, object arrays, or other types '
-              'that are not valid input when `SCIPY_ARRAY_API` is used.'))
-
-
 def _backends_kwargs_from_request(request, skip_or_xfail):
     """A helper for {skip,xfail}_xp_backends.
 
@@ -531,7 +569,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
     for marker in markers:
         invalid_kwargs = set(marker.kwargs) - {
-            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions"}
+            "cpu_only", "np_only", "eager_only", "skip_meta", "reason", "exceptions",
+            "mparray"}
         if invalid_kwargs:
             raise TypeError(f"Invalid kwargs: {invalid_kwargs}")
 

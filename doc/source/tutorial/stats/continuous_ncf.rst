@@ -19,7 +19,7 @@ There are 3 shape parameters: the degrees of freedom :math:`\nu_{1}>0` and
     \begin{eqnarray*}
         f\left(x;\lambda,\nu_{1},\nu_{2}\right)
         & = &
-        \exp\left[\frac{\lambda}{2} +
+        \exp\left[-\frac{\lambda}{2} +
                   \frac{\left(\lambda\nu_{1}x\right)}
                   {2\left(\nu_{1}x+\nu_{2}\right)}
             \right]
@@ -35,7 +35,7 @@ There are 3 shape parameters: the degrees of freedom :math:`\nu_{1}>0` and
               \Gamma\left(\frac{\nu_{1}+\nu_{2}}{2}\right)}
     \end{eqnarray*}
 
-where :math:`L_{\nu_{2}/2}^{\nu_{1}/2-1}(x)` is an associated Laguerre
+where :math:`L_{\nu_{2}/2}^{\nu_{1}/2-1}(x)` is an generalized Laguerre
 polynomial.
 
 If :math:`\lambda=0`, the distribution becomes equivalent to the Fisher

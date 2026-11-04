@@ -10,7 +10,8 @@ density function is given by
 
 .. math::
 
-    f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
+    f(x) = \frac{1}{\pi}\int_0^\infty
+           \exp(-t)\cos(xt + \frac{2t}{\pi}\log t) dt
 
 The differential entropy is 2.37263644000448182, and the moments are undefined.
 

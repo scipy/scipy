@@ -831,7 +831,7 @@ def fast_linkage(const double[:] dists, int n, int method):
 
     cdef linkage_distance_update new_dist = linkage_methods[method]
 
-    cdef int i, k
+    cdef int _i, k
     cdef int x = 0, y = 0, z
     cdef int nx, ny, nz
     cdef int id_x, id_y
@@ -850,7 +850,7 @@ def fast_linkage(const double[:] dists, int n, int method):
         # looks more reliable. The idea that we should find the two closest
         # clusters in no more that n - k (1 for the last iteration) distance
         # updates.
-        for i in range(n - k):
+        for _i in range(n - k):
             pair = min_dist_heap.get_min()
             x, dist = pair.key, pair.value
             y = neighbor[x]

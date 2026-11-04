@@ -17,7 +17,8 @@ complete list of the available functions with a one-line description
 type ``>>> help(special).`` Each function also has its own
 documentation accessible using help.  If you don't see a function you
 need, consider writing it and contributing it to the library. You can
-write the function in either C, Fortran, or Python. Look in the source
+write the function in C++ (most scalar implementations live in the separate
+`xsf library <https://github.com/scipy/xsf>`_) or Python. Look in the source
 code of the library for examples of each of these kinds of functions.
 
 

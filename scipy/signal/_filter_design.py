@@ -4703,7 +4703,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
 
 def buttap(N, *, xp=None, device=None):
-    """Return (z,p,k) for analog prototype of Nth-order Butterworth filter.
+    r"""Return (z, p, k) for analog prototype of Nth-order Butterworth filter.
 
     The filter will have an angular (e.g., rad/s) cutoff frequency of 1.
 
@@ -4718,13 +4718,74 @@ def buttap(N, *, xp=None, device=None):
     z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
     p : ndarray[complex128]
-        Poles of the transfer function.
+        Poles of the transfer function as an ``(N,)`` array.
     k : float
-        Gain of the transfer function.
+        Gain of the transfer function, which is always one.
+
+    Notes
+    -----
+    Here, a cutoff frequency of :math:`\omega_c = 1\,`\ rad/s and a gain of
+    :math:`k=1` are assumed. The transfer function can be expressed as [1]_
+
+    .. math::
+
+        H(s) = k \prod_{l=0}^{N-1} \frac{\omega_c}{s - p_l}
+                 \quad\text{with poles}\quad
+          p_l = -\omega_c\exp\!\left\{ j\pi\frac{2l+1-N}{2N} \right\} \,.
+
+    Hence, this function returns no zeros and `N` poles. Note that the poles are ordered
+    in a way so that the ``l``-th and ``(N-1-l)``-th pole are complex conjugates of each
+    other. Furthermore, if `N` is odd, then the ``(N//2)``-th pole is always :math:`-1`.
+
+    References
+    ----------
+    .. [1] "Butterworth filter", Wikipedia,
+           https://en.wikipedia.org/wiki/Butterworth_filter
 
     See Also
     --------
     butter : Filter design function using this prototype
+
+    Examples
+    --------
+    Compute the zeros, poles, and gain of a 2nd-order Butterworth analog
+    lowpass prototype with a cutoff frequency of 1 rad/s:
+
+    >>> from scipy.signal import buttap
+    >>> z, p, k = buttap(2)
+    >>> z
+    array([], dtype=float64)
+    >>> p
+    array([-0.70710678+0.70710678j, -0.70710678-0.70710678j])
+    >>> k
+    1.0
+
+    Bode plot of the frequency response of a 3rd-order prototype:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk, buttap
+    ...
+    >>> z, p, k = buttap(3)
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, h = freqs_zpk(z, p, k, worN=f)
+    >>> h_db, h_ph = 20 * np.log10(np.abs(h)), np.unwrap(np.angle(h))
+    ...
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
+    ...                              figsize=(6, 4))
+    >>> ax0.set(title='3rd-order Butterworth prototype', ylabel='Magnitude in dB',
+    ...         yticks=[-60, -40, -20, 0])
+    >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
+    >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
+    ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
+    >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
+    >>> for ax_ in (ax0, ax1):
+    ...     ax_.axvline(1.0, color='C5', ls='--', alpha=.5, label='Cutoff frequency')
+    ...     ax_.grid(True, which='both')
+    ...     ax_.legend()
+    >>> plt.show()
 
     """
     if xp is None:
@@ -4740,8 +4801,7 @@ def buttap(N, *, xp=None, device=None):
 
 
 def cheb1ap(N, rp, *, xp=None, device=None):
-    """
-    Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
+    r"""Return (z, p, k) for Nth-order Chebyshev type I analog lowpass filter.
 
     The returned filter prototype has `rp` decibels of ripple in the passband.
 
@@ -4753,7 +4813,8 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     N : int
         The order of the filter
     rp : float
-        The ripple intensity
+        The passband ripple in dB. It constrains the passband gain to the
+        interval [-rp, 0] dB.
     %(xp_device_snippet)s
 
     Returns
@@ -4768,6 +4829,50 @@ def cheb1ap(N, rp, *, xp=None, device=None):
     See Also
     --------
     cheby1 : Filter design function using this prototype
+
+    Examples
+    --------
+    Compute the zeros, poles, and gain of a 3rd-order Chebyshev type I
+    analog lowpass prototype with 1 dB of passband ripple:
+
+    >>> from scipy.signal import cheb1ap
+    >>> z, p, k = cheb1ap(3, 1)
+    >>> z
+    array([], dtype=float64)
+    >>> p
+    array([-0.2470853 +0.96599867j, -0.4941706 +0.j        ,
+           -0.2470853 -0.96599867j])
+    >>> k
+    0.49130668209006784
+
+    Plot of the frequency response of a 3rd-order prototype with a passband ripple
+    of 5 dB:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk, cheb1ap
+    ...
+    >>> z, p, k = cheb1ap(3, rp=5)
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, h = freqs_zpk(z, p, k, worN=f)
+    >>> h_db, h_ph = 20 * np.log10(np.abs(h)), np.unwrap(np.angle(h))
+    ...
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
+    ...                              figsize=(6, 4))
+    >>> ax0.set(title='3rd-order Chebyshev type I prototype', ylim=(-60, 3),
+    ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
+    >>> ax0.fill((0, 0, 1, 1), (0, -5, -5, 0), 'C3', alpha=.3, label="5 dB ripple band")
+    >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
+    >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
+    ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
+    >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
+    >>> for ax_ in (ax0, ax1):
+    ...     ax_.axvline(1.0, color='C5', ls='--', alpha=.5, label='Cutoff frequency')
+    ...     ax_.grid(True, which='both')
+    ...     ax_.legend()
+    >>> plt.show()
 
     """
     if xp is None:
@@ -4800,8 +4905,7 @@ def cheb1ap(N, rp, *, xp=None, device=None):
 
 
 def cheb2ap(N, rs, *, xp=None, device=None):
-    """
-    Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
+    r"""Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
     The returned filter prototype has attenuation of at least ``rs`` decibels
     in the stopband.
@@ -4829,6 +4933,39 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     See Also
     --------
     cheby2 : Filter design function using this prototype
+
+    Examples
+    --------
+    The following plot depicts the frequency response of a 3rd-order prototype with a
+    stopband attenuation of 40 dB:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk, cheb2ap
+    ...
+    >>> z, p, k = cheb2ap(3, rs=40)
+    ...
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, h = freqs_zpk(z, p, k, worN=f)
+    >>> h_db, h_ph = 20 * np.log10(np.abs(h)), np.unwrap(np.angle(h))
+    ...
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
+    ...                              figsize=(6, 4))
+    >>> ax0.set(title='3rd-order Chebyshev type II prototype', ylim=(-60, 3),
+    ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
+    >>> ax0.fill((1, 1, 10, 10), (-40, -60, -60, -40), 'C4', alpha=.3,
+    ...          label="-40 dB stopband")
+    >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
+    >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
+    ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
+    >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
+    >>> for ax_ in (ax0, ax1):
+    ...     ax_.axvline(1.0, color='C5', ls='--', alpha=.5, label='Cutoff frequency')
+    ...     ax_.grid(True, which='both')
+    ...     ax_.legend()
+    >>> plt.show()
 
     """
     if xp is None:
@@ -4996,7 +5133,7 @@ def _arc_jac_sc1(w, m):
 
 
 def ellipap(N, rp, rs, *, xp=None, device=None):
-    """Return (z,p,k) of Nth-order elliptic analog lowpass filter.
+    r"""Return (z,p,k) of Nth-order elliptic analog lowpass filter.
 
     The filter is a normalized prototype that has `rp` decibels of ripple
     in the passband and a stopband `rs` decibels down.
@@ -5035,6 +5172,39 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
            https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
 
+    Examples
+    --------
+    The following plot depicts the response of a 3rd-order prototype with a passband
+    ripple of 5 dB and a stopband attenuation of 20 dB:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk, ellipap
+    ...
+    >>> z, p, k = ellipap(3, rp=5, rs=20)
+    ...
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, h = freqs_zpk(z, p, k, worN=f)
+    >>> h_db, h_ph = 20 * np.log10(np.abs(h)), np.unwrap(np.angle(h))
+    ...
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
+    ...                              figsize=(6, 4))
+    >>> ax0.set(title='3rd-order elliptic filter prototype', ylim=(-60, 3),
+    ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
+    >>> ax0.fill((0, 0, 1, 1), (1, -5, -5, 1), 'C3', alpha=.3, label="5 dB ripple band")
+    >>> ax0.fill((1, 1, 10, 10), (-20, -60, -60, -20), 'C4', alpha=.3,
+    ...          label="-20 dB stopband")
+    >>> ax0.semilogx(f, h_db, 'C0', label='Magnitude')
+    >>> ax1.set(ylabel="Phase in radians", xlabel="Frequency in rad/s",
+    ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5), ylim=(-1.5*np.pi, 0),
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'],
+    ...         xlim=(f[0], f[-1]))
+    >>> ax1.semilogx(f, h_ph, 'C1', label='Phase')
+    >>> for ax_ in (ax0, ax1):
+    ...     ax_.axvline(1.0, color='C5', ls='--', alpha=.5, label='Cutoff frequency')
+    ...     ax_.grid(True, which='both')
+    ...     ax_.legend()
+    >>> plt.show()
     """
     if xp is None:
         xp = np_compat
@@ -5312,8 +5482,7 @@ def _norm_factor(p, k):
 
 
 def besselap(N, norm='phase', *, xp=None, device=None):
-    """
-    Return (z,p,k) for analog prototype of an Nth-order Bessel filter.
+    r"""Return (z,p,k) for analog prototype of an Nth-order Bessel filter.
 
     Parameters
     ----------
@@ -5387,6 +5556,37 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html
 
+    Examples
+    --------
+    The following plot depicts the responses of a 3rd-order prototype with various
+    frequency normalizations:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import freqs_zpk, besselap
+    ...
+    >>> f = np.geomspace(1e-1, 1e1, 200)
+    >>> _, (ax0, ax1) = plt.subplots(2, 1, sharex='all', constrained_layout=True,
+    ...                              figsize=(6, 4))
+    >>> ax0.set(title='3rd-order Bessel prototypes', ylim=(-60, 3),
+    ...         ylabel='Magnitude in dB', yticks=[-60, -40, -20, 0])
+    >>> ax1.set(xlabel="Frequency in rad/s", xlim=(f[0], f[-1]),
+    ...         ylabel="Phase in radians", ylim=(-1.5*np.pi, 0),
+    ...         yticks=np.pi*np.arange(-1.5, 0.5, 0.5),
+    ...         yticklabels=[r'-3$\pi$/2', r'-$\pi$', r'-$\pi$/2', '0'], )
+    ...
+    >>> for c_, nrm_ in enumerate(('delay', 'mag', 'phase')):
+    ...     z, p, k = besselap(3, norm=nrm_)
+    ...
+    ...     _, h = freqs_zpk(z, p, k, worN=f)
+    ...     h_db, h_ph = 20 * np.log10(np.abs(h)), np.unwrap(np.angle(h))
+    ...     ax0.semilogx(f, h_db, f'C{c_}', alpha=.7, label=f"norm='{nrm_}'")
+    ...     ax1.semilogx(f, h_ph, f'C{c_}', alpha=.7, label=f"norm='{nrm_}'")
+    >>> for ax_ in (ax0, ax1):
+    ...     ax_.axvline(1.0, color='C5', ls='--', alpha=.5, label='Cutoff frequency')
+    ...     ax_.grid(True, which='both')
+    ...     ax_.legend()
+    >>> plt.show()
     """
     if xp is None:
         xp = np_compat

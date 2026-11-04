@@ -20,9 +20,6 @@ set -xeo pipefail
 PROJECT_DIR="${1:-$PWD}"
 PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
 
-# cibuildwheel doesn't have a default wheel repair command for Pyodide
-python -m pip install "auditwheel-emscripten==0.2.5"
-
 # for semicolon-lapack to build
 python -m pip install "meson>=1.5.0" "ninja>=1.8.2"
 
@@ -31,7 +28,7 @@ BLIS_REPO="https://github.com/pyodide/blis"
 BLIS_REF="pyodide-2.1"
 
 # semicolon-lapack
-SEMILAPACK_VERSION="0.01.3-pre"
+SEMILAPACK_VERSION="0.01.5-pre"
 SEMILAPACK_URL="https://github.com/ilayn/semicolon-lapack/archive/refs/tags/v${SEMILAPACK_VERSION}.tar.gz"
 
 # To be consumed via PKG_CONFIG_PATH

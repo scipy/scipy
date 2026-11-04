@@ -1159,6 +1159,19 @@ class _TestCommon:
         datsp.sum(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
 
+        # check when out and dtype do not agree. See gh-26149
+        # convert to dtype before summing, then put into out
+        for ax in (1, 0):
+            out_shape = (3,) if self.is_array_test else (3, 1) if ax else (1, 3)
+            dat_out = np.zeros(out_shape)
+            datsp_out = np.zeros(out_shape) if not keep else matrix(np.zeros(out_shape))
+            for dtype in (np.int32, np.float32):
+                ret = (dat * 0.1).sum(axis=ax, dtype=dtype, out=dat_out, keepdims=keep)
+                retsp = (datsp * 0.1).sum(axis=ax, dtype=dtype, out=datsp_out)
+                assert ret is dat_out
+                assert retsp is datsp_out
+                assert_array_almost_equal(dat_out, datsp_out)
+
         # check that wrong shape out parameter raises
         with assert_raises(ValueError, match="output parameter"):
             datsp.sum(out=array([0]))
@@ -3171,6 +3184,58 @@ class _TestSlicingAssign:
         A[1, :] = x
         assert_array_equal(A.toarray(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
+    def test_slice_sparse_assignment(self):
+        rng = np.random.default_rng(42)
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
+
+        cases = [
+            # _set_intXslice_sparse
+            ((2, slice(1, 7)), (1, 6)),
+            ((-1, slice(6, 0, -2)), (1, 3)),
+            # _set_sliceXint_sparse
+            ((slice(1, 5), 3), (4, 1)),
+            ((slice(4, 0, -2), -2), (2, 1)),
+            # _set_sliceXslice_sparse (full)
+            ((slice(None), slice(None)), (6, 8)),
+            # _set_sliceXslice_sparse (contiguous)
+            ((slice(1, 5), slice(2, 7)), (4, 5)),
+            # _set_sliceXslice_sparse (strided)
+            ((slice(0, 6, 2), slice(1, 8, 3)), (3, 3)),
+            # _set_sliceXslice_sparse (reverse contiguous)
+            ((slice(4, 1, -1), slice(6, 1, -1)), (3, 5)),
+            # _set_sliceXslice_sparse (reverse strided)
+            ((slice(5, 0, -2), slice(7, 0, -3)), (3, 3)),
+            # Broadcasting
+            ((slice(1, 4), slice(2, 6)), (1, 4)),
+            ((slice(1, 4), slice(2, 6)), (3, 1)),
+            ((slice(1, 4), slice(2, 5)), (1, 1)),
+        ]
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
+            for key, rhs_shape in cases:
+                ravel_dense = rhs_shape[1] == 1 and not isinstance(key[1], slice)
+                rhs_dense = rng.choice([0.0, 5.0, 9.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
+                rhs_sp = self.csr_container(rhs_dense)
+
+                B = base_dense.copy()
+                A = self.spcreator(B)
+                A[key] = rhs_sp
+                B[key] = rhs_dense.ravel() if ravel_dense else rhs_dense
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
+
+    def test_slice_sparse_assignment_empty_rhs(self):
+        A = self.spcreator(np.ones((4, 5)))
+        B = np.ones((4, 5))
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
+            A[1:3, 1:4] = self.csr_container((2, 3))
+        B[1:3, 1:4] = 0
+        assert_array_equal(A.toarray(), B)
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -3383,6 +3448,24 @@ class _TestFancyIndexing:
         B = self.asdense(arange(50).reshape(5,10))
         A = self.spcreator(B)
 
+        class BoolLikeNoNonzero:
+            def __init__(self, data):
+                self._data = np.asarray(data, dtype=bool)
+                self.dtype = self._data.dtype
+                self.shape = self._data.shape
+                self.ndim = self._data.ndim
+
+            def __array__(self, dtype=None, copy=None):
+                return np.asarray(self._data, dtype=dtype, copy=copy)
+
+        class BoolLikeObjectArrayNoNonzero(BoolLikeNoNonzero):
+            def __array__(self, dtype=None, copy=None):
+                if dtype is None:
+                    arr = np.asarray(self._data, dtype=object, copy=copy)
+                else:
+                    arr = np.asarray(self._data, dtype=dtype, copy=copy)
+                return arr
+
         I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
         J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
         X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
@@ -3391,6 +3474,17 @@ class _TestFancyIndexing:
         assert_equal(toarray(A[:, J]), B[:, J])
         assert_equal(toarray(A[X]), B[X])
         assert_equal(toarray(A[B > 9]), B[B > 9])
+
+        row_mask = BoolLikeNoNonzero([True, False, True, False, True])
+        col_mask = BoolLikeNoNonzero([True, False, True, False, True] * 2)
+        row_mask_object = BoolLikeObjectArrayNoNonzero(
+            [True, False, True, False, True]
+        )
+
+        assert_equal(toarray(A[row_mask]), B[row_mask])
+        assert_equal(toarray(A[:, col_mask]), B[:, col_mask])
+        with pytest.raises(IndexError, match='non-boolean dtype'):
+            _ = A[row_mask_object]
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True,
@@ -3590,6 +3684,45 @@ class _TestFancyIndexingAssign:
         A[J,K] = 42
         assert_equal(toarray(A), B)
 
+    def test_fancy_sparse_assignment(self):
+        rng = np.random.default_rng(43)
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
+
+        cases = [
+            # _set_intXarray_sparse
+            ((2, np.array([1, 4, 6, -1])), (1, 4)),
+            # _set_arrayXint_sparse
+            ((np.array([0, 2, -1]), 3), (1, 3)),
+            # _set_arrayXslice_sparse (contiguous, strided, broadcasted RHS)
+            ((np.array([1, 3, -1]), slice(2, 7)), (3, 5)),
+            ((np.array([0, 4, 2]), slice(6, 0, -2)), (3, 3)),
+            ((np.array([1, 3, 4]), slice(2, 6)), (1, 4)),
+            ((np.array([1, 3, 4]), slice(2, 6)), (3, 1)),
+            # _set_sliceXarray_sparse (contiguous, strided, broadcasted RHS)
+            ((slice(1, 5), np.array([0, 3, 6, -1])), (4, 4)),
+            ((slice(5, 1, -2), np.array([5, 1, 7])), (2, 3)),
+            ((slice(1, 4), np.array([1, 4, 6, 7])), (1, 4)),
+            ((slice(1, 4), np.array([1, 4, 6, 7])), (3, 1)),
+            # _set_arrayXarray_sparse (1D inner indexing)
+            ((np.array([0, 2, 4, -1]), np.array([1, 5, 2, -2])), (1, 4)),
+        ]
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
+            for key, rhs_shape in cases:
+                rhs_dense = rng.choice([0.0, 6.0, 8.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
+                rhs_sp = self.csr_container(rhs_dense)
+
+                B = base_dense.copy()
+                A = self.spcreator(B)
+                ravel_dense = B[key].ndim == 1
+                A[key] = rhs_sp
+                B[key] = rhs_dense.ravel() if ravel_dense else rhs_dense
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
+
 
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
@@ -3727,6 +3860,41 @@ class _TestFancyMultidimAssign:
         C2 = np.arange(5)[:, None]
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C1)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C2)
+
+    def test_fancy_assign_sparse(self):
+        rng = np.random.default_rng(44)
+        base_dense = rng.choice([0.0, 1.0, 2.0, 3.0], size=(6, 8),
+                                p=[0.6, 0.2, 0.1, 0.1])
+
+        cases = [
+            # _set_columnXarray_sparse (outer indexing)
+            ((np.array([[0], [3], [-1]]), np.array([1, 4, 6, -1])), (3, 4)),
+            ((np.array([[1], [4], [2]]), np.array([[5, 0, 3, 7]])), (3, 4)),
+            ((np.array([[0], [3], [-1]]), np.array([[1, 4, 6, -1]])), (1, 4)),
+            ((np.array([[0], [3], [-1]]), np.array([[1, 4, 6, -1]])), (3, 1)),
+            # _set_arrayXarray_sparse (2D inner & broadcasted indexing)
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (2, 3)),
+            ((np.array([[1, 2, 3]]), np.array([[3], [4]])), (2, 3)),
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (1, 3)),
+            ((np.array([[1, 2, 3], [4, 0, 5]]), np.array([[5, 6, 3], [2, 3, 1]])),
+             (2, 1)),
+        ]
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
+            for key, rhs_shape in cases:
+                rhs_dense = rng.choice([0.0, 7.0, 9.0], size=rhs_shape,
+                                       p=[0.5, 0.25, 0.25])
+                rhs_sp = self.csr_container(rhs_dense)
+
+                B = base_dense.copy()
+                A = self.spcreator(B)
+                A[key] = rhs_sp
+                B[key] = rhs_dense
+                assert_array_equal(A.toarray(), B,
+                                   err_msg=f"key={key}, rhs_shape={rhs_shape}")
 
 
 class _TestArithmetic:
@@ -5456,6 +5624,32 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert_array_equal(Csp.offsets, array([-3, 0]))
         assert_array_equal(Csp.data, [[24., 0., 0.],
                                       [27., 6., 14.]])
+
+    def test_dia_add_sub_mixed_dtype(self):
+        # gh-26567: check addition and subtraction of dia containers with mixed dtypes
+        # (e.g. integer and float) for both fast paths.
+        A_int = self.dia_container(
+            ([[1, 1, 0], [2, 2, 2], [0, 1, 1]], [-1, 0, 1]), shape=(3, 3), dtype=int
+        )
+        B_float = self.dia_container(
+            ([[1.0, 1.0, 1.0]], [0]), shape=(3, 3), dtype=float
+        )
+        A_int_dense = A_int.toarray()
+        B_float_dense = B_float.toarray()
+
+        for a, b, a_d, b_d in [
+            (A_int, B_float, A_int_dense, B_float_dense),
+            (B_float, A_int, B_float_dense, A_int_dense),
+        ]:
+            res_add = a + b
+            assert isinstance(res_add, self.dia_container)
+            assert res_add.dtype == np.result_type(a.dtype, b.dtype)
+            assert_array_equal(res_add.toarray(), a_d + b_d)
+
+            res_sub = a - b
+            assert isinstance(res_sub, self.dia_container)
+            assert res_sub.dtype == np.result_type(a.dtype, b.dtype)
+            assert_array_equal(res_sub.toarray(), a_d - b_d)
 
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")

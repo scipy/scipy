@@ -586,6 +586,158 @@ namespace lapack {
             return make_result(u, s, vt, static_cast<long long>(info));
         }
 
+        /* The documented LWORK minimum is smaller than the MINWRK the routine enforces
+         * (INFO = -19 below it).  MINWRK depends on whether ILAENV's crossover sends the
+         * call through a QR/LQ factorization first (paths 1/1t) or not (paths 2/2t), and
+         * that crossover is implementation-defined, so default to the larger of the two:
+         *   real:    path 1 mn*(3mn+20),  path 2 max(mn*(2mn+19), 4mn+mx)
+         *   complex: path 1 mn*(mn+5),    path 2 3mn+mx
+         * This is a safe default for lwork - it might change in the future depending
+         * on the underlying LAPACK routine implementation. */
+        template <class T>
+        static long long gesvdx_default_lwork(CBLAS_INT minmn, CBLAS_INT maxmn) noexcept
+        {
+            if (minmn == 0) { return 1; }
+            return is_complex_v<T>
+                ? std::max(1LL * minmn * (minmn + 5LL), 3LL * minmn + maxmn)
+                : std::max(1LL * minmn * (3LL * minmn + 20), 4LL * minmn + maxmn);
+        }
+
+        template <class T>
+        static PyObject *gesvdx(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {
+                "a", "compute_u", "compute_vh", "range", "vl", "vu",
+                "il", "iu", "lwork", "overwrite_a", nullptr
+            };
+            static constexpr Ctx<T> ctx("gesvdx", "O|OOOOOOOOO", kwlist);
+            PARSE_ARGS();
+
+            using R = real_of_t<T>;
+
+            SCALAR_FLAG(overwrite_a);
+            ARRAY_INOUT(T, a, 2, overwrite_a != 0);
+            const CBLAS_INT m = shape(a, 0);
+            const CBLAS_INT n = shape(a, 1);
+            const CBLAS_INT minmn = std::min(m, n);
+            const CBLAS_INT maxmn = std::max(m, n);
+            const CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
+
+            SCALAR_OPT(CBLAS_INT, compute_u, 1);
+            CHECK(compute_u == 0 || compute_u == 1, compute_u);
+            SCALAR_OPT(CBLAS_INT, compute_vh, 1);
+            CHECK(compute_vh == 0 || compute_vh == 1, compute_vh);
+
+            SCALAR_OPT(char, range, 'A');
+            CHECK(range == 'A' || range == 'V' || range == 'I', range);
+            SCALAR_OPT(R, vl, 0);
+            SCALAR_OPT(R, vu, 0);
+            SCALAR_OPT(CBLAS_INT, il, 1);
+            SCALAR_OPT(CBLAS_INT, iu, minmn);
+
+            if (minmn > 0 && range == 'V') {
+                CHECK(vl >= 0, vl);
+                CHECK(vu > vl, vu);
+            }
+            if (minmn > 0 && range == 'I') {
+                CHECK(il >= 1 && il <= minmn, il);
+                CHECK(iu >= il && iu <= minmn, iu);
+            }
+
+            /* A caller's `lwork` goes to LAPACK as given, as in `gesvd`: LAPACK checks it
+             * against the minimum of the path it takes.  Only `lwork < 1` is refused -- `work`
+             * is not returned, so `-1` would run a workspace query that looks like a result. */
+            CBLAS_INT default_lwork;
+            if (!work_size(gesvdx_default_lwork<T>(minmn, maxmn), &default_lwork)) { return nullptr; }
+            SCALAR_OPT(CBLAS_INT, lwork, default_lwork);
+            CHECK(lwork >= 1, lwork);
+
+            CBLAS_INT u0  = compute_u  ? m : 1,     u1  = compute_u  ? minmn : 1;
+            CBLAS_INT vt0 = compute_vh ? minmn : 1, vt1 = compute_vh ? n : 1;
+            CBLAS_INT ldu = std::max<CBLAS_INT>(1, u0), ldvt = std::max<CBLAS_INT>(1, vt0);
+
+            ARRAY_OUT(R, s, 1, true, ctx.template zeros_as<R>(minmn));
+            ARRAY_OUT(T, u, 2, true, ctx.zeros(u0, u1));
+            ARRAY_OUT(T, vt, 2, true, ctx.zeros(vt0, vt1));
+            ARRAY_HIDDEN(T, work, lwork);
+
+            CBLAS_INT iwork_len;
+            if (!work_size(12LL * minmn, &iwork_len)) {
+                return nullptr;
+            }
+            ARRAY_HIDDEN(CBLAS_INT, iwork, iwork_len);
+
+            const char jobu = compute_u ? 'V' : 'N';
+            const char jobvt = compute_vh ? 'V' : 'N';
+            CBLAS_INT ns = 0;
+            CBLAS_INT info = 0;
+
+            if constexpr (is_complex_v<T>) {
+                /* Documented as 17*mn**2; the reference routine uses up to 2*mn**2 + 17*mn,
+                 * which is the larger of the two at mn == 1. */
+                CBLAS_INT rwork_len;
+                if (!work_size(std::max(17LL * minmn * minmn, 2LL * minmn * minmn + 17LL * minmn),
+                               &rwork_len)) {
+                    return nullptr;
+                }
+                ARRAY_HIDDEN(R, rwork, rwork_len);
+
+                lapack::gesvdx(jobu, jobvt, range, m, n, a.data<T>(), lda,
+                               vl, vu, il, iu, &ns, s.data<R>(),
+                               u.data<T>(), ldu, vt.data<T>(), ldvt,
+                               work.data<T>(), lwork, rwork.data<R>(),
+                               iwork.data<CBLAS_INT>(), &info);
+            }
+            else {
+                lapack::gesvdx(jobu, jobvt, range, m, n, a.data<T>(), lda,
+                               vl, vu, il, iu, &ns, s.data<R>(),
+                               u.data<T>(), ldu, vt.data<T>(), ldvt,
+                               work.data<T>(), lwork,
+                               iwork.data<CBLAS_INT>(), &info);
+            }
+
+            return make_result(u, s, vt, static_cast<long long>(ns), static_cast<long long>(info));
+        }
+
+
+        /**
+         * With `lwork = -1` gesvdx only writes `work[0]`, so every array it is handed is a null
+         * pointer.  The size does not depend on `range`, so the query asks for all of them.
+         */
+        template <class T>
+        static PyObject *gesvdx_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {"m", "n", "compute_u", "compute_vh", nullptr};
+            static constexpr Ctx<T> ctx("gesvdx_lwork", "OO|OO", kwlist);
+            PARSE_ARGS();
+
+            using R = real_of_t<T>;
+            SCALAR_REQ(CBLAS_INT, m);             CHECK(m >= 0, m);
+            SCALAR_REQ(CBLAS_INT, n);             CHECK(n >= 0, n);
+            SCALAR_OPT(CBLAS_INT, compute_u, 1);  CHECK(compute_u == 0 || compute_u == 1, compute_u);
+            SCALAR_OPT(CBLAS_INT, compute_vh, 1); CHECK(compute_vh == 0 || compute_vh == 1, compute_vh);
+
+            CBLAS_INT minmn = std::min(m, n);
+            CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
+            CBLAS_INT ldu = compute_u ? std::max<CBLAS_INT>(1, m) : 1;
+            CBLAS_INT ldvt = compute_vh ? std::max<CBLAS_INT>(1, minmn) : 1;
+            T work{};
+            CBLAS_INT ns = 0, info = 0;
+
+            if constexpr (is_complex_v<T>) {
+                lapack::gesvdx(compute_u ? 'V' : 'N', compute_vh ? 'V' : 'N', 'A', m, n, nullptr, lda,
+                               R(0), R(0), 1, minmn, &ns, nullptr, nullptr, ldu, nullptr, ldvt,
+                               &work, -1, nullptr, nullptr, &info);
+            }
+            else {
+                lapack::gesvdx(compute_u ? 'V' : 'N', compute_vh ? 'V' : 'N', 'A', m, n, nullptr, lda,
+                               R(0), R(0), 1, minmn, &ns, nullptr, nullptr, ldu, nullptr, ldvt,
+                               &work, -1, nullptr, &info);
+            }
+
+            return make_result(work, static_cast<long long>(info));
+        }
+
 
         template <class T>
         static PyObject *gesvd_lwork(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
@@ -1378,6 +1530,8 @@ namespace lapack {
             FAMILY(gesdd),
             FAMILY(gesdd_lwork),
             FAMILY(gesvd),
+            FAMILY(gesvdx),
+            FAMILY(gesvdx_lwork),
             FAMILY(gesvd_lwork),
             FAMILY(gels),
             FAMILY(gels_lwork),
