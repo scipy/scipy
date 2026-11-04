@@ -1108,7 +1108,6 @@ def fiedler_companion(a):
 
 
 def _convolution_matrix_signature(a, n, mode='full'):
-    n = _validate_int(n, 'n', minimum=1)
     if mode == 'full':
         return f"(m)->(m+{n}-1,{n})"
     elif mode == 'same':  # avoid commas in max(m, n), etc..., due to signature parsing
