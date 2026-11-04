@@ -1159,7 +1159,8 @@ def canberra(u, v, w=None):
     abs_uv = xp.abs(u - v)
     abs_u = xp.abs(u)
     abs_v = xp.abs(v)
-    d = abs_uv / (abs_u + abs_v + (abs_u + abs_v == 0))  # Avoid division by zero
+    abs_uv_plus = abs_u + abs_v
+    d = abs_uv / xp.where(abs_uv_plus == 0, 1, abs_uv_plus)  # Avoid division by zero
     if w is not None:
         d = w * d
     return xp.sum(d, axis=-1)

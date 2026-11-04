@@ -2034,6 +2034,18 @@ class TestCanberra:
     def test_canberra_array_like(self):
         xp_assert_close(canberra([1, 2, 3], [2, 4, 6]), np.asarray(1.0))
 
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(canberra, x, y)
+        xp_assert_zero_weight(canberra, x, y)
+        xp_assert_duplication_weight(canberra, x, y)
+        xp_assert_split_weight(canberra, x, y)
+        # canberra is linear in the weights, so not invariant to rescaling
+
     def test_canberra_int64_min(self, xp):
         # Regression test for gh-26486: integer inputs at the int64 limit
         # must not overflow to a negative, asymmetric distance in canberra.
