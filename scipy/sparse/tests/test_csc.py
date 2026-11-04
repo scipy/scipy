@@ -1,10 +1,13 @@
 import operator
 import sys
 import platform
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix, lil_array, csr_array, csc_array
+from scipy.sparse import SparseEfficiencyWarning
+from scipy._lib._testutils import assert_mem_gain_limit
 
 import pytest
 
@@ -117,3 +120,38 @@ def test_compressed_rc_conversion_mixup(op):
     Z_2 = Z.copy()
     # causes timeout error upon large memory alloc only if conversion to CSC occurs
     op(Z_2, Z)
+
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_dense():
+    A = csc_array((100, 100), dtype=np.int8)
+    N = 30
+    rhs = csc_array(np.ones((N, N), dtype=np.int8))
+    index_N = np.arange(40, 40 + N)
+
+    scale = 10
+    # N x N x (8(int64) + 1(int8)) only indices and data change size
+    exp_net_mem_chg = N * N * 9
+
+    warn_msg = "Changing the sparsity structure"
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", warn_msg, SparseEfficiencyWarning)
+        with assert_mem_gain_limit(scale * exp_net_mem_chg + 1096):
+            A[index_N[:, None], index_N] = rhs
+
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_scalar():
+    A = csc_array((100, 100), dtype=np.int8)
+    N = 30
+    index_N = np.arange(40, 40 + N)
+
+    scale = 7
+    # N x N x (8(int64) + 1(int8)) only indices and data change size
+    exp_net_mem_chg = N * N * 9
+
+    warn_msg = "Changing the sparsity structure"
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", warn_msg, SparseEfficiencyWarning)
+        with assert_mem_gain_limit(scale * exp_net_mem_chg + 96):
+            A[index_N[:, None], index_N] = 1

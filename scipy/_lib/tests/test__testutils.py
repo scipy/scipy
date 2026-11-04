@@ -1,5 +1,6 @@
 import sys
-from scipy._lib._testutils import _parse_size, _get_mem_available
+from scipy._lib._testutils import _parse_size, _get_mem_available, assert_mem_gain_limit
+import numpy as np
 import pytest
 
 
@@ -30,6 +31,31 @@ def test__mem_available():
         assert available >= 0
     else:
         assert available is None or available >= 0
+
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is not threadsafe")
+class TestPeakMemoryGain:
+    def test_passes(self):
+        with assert_mem_gain_limit(400_096):  # 500 x 100 x 8 + 96
+            np.zeros((500, 100))
+
+    def test_raises(self):
+        with pytest.raises(KeyError):
+            with assert_mem_gain_limit(400_096):
+                np.zeros((500, 100))
+                raise KeyError()
+
+    def test_fails(self):
+        with pytest.raises(AssertionError, match=".* is above limit "):
+            with assert_mem_gain_limit(400_096):
+                np.zeros((500, 101))
+
+    def test_fails_raises(self):
+        with pytest.raises(KeyError):
+            with pytest.raises(AssertionError, match=".* is above limit "):
+                with assert_mem_gain_limit(400_096):
+                    np.zeros((500, 101))
+                    raise KeyError()
 
 
 def test_pytest_report_header(monkeypatch):
