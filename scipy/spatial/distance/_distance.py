@@ -1061,7 +1061,7 @@ def chebyshev(u, v, w=None):
     u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     if w is not None:
         w = _validate_weights(w, xp=xp)
-        return xp.max((w > 0) * xp.abs(u - v), axis=-1)
+        return xp.max(xp.where(w > 0, xp.abs(u - v), 0), axis=-1)
     return xp.max(xp.abs(u - v), axis=-1)
 
 
