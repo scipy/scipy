@@ -161,6 +161,9 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=1
 
     _validate_int(rhs_block_size, "rhs_block_size", minimum=1)
 
+    if trans not in ('N', 'T', 'H'):
+        raise ValueError(f"trans must be 'N', 'T' or 'H'. Got {trans!r}.")
+
     if use_umfpack:
         # sksparse.umfpack handles 1D and 2D, sparse or dense b
         try:
