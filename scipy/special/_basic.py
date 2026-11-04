@@ -827,7 +827,8 @@ def _bessel_diff_formula(v, z, n, L, phase):
     # L(v, z) = I(v, z) or exp(v*pi*i)K(v, z), phase = 1
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
     xp = array_namespace(v, z)
-    v, z = xp.asarray(v), xp.asarray(z)
+    device = xp_result_device(v, z)
+    v, z = xp.asarray(v, device=device), xp.asarray(z, device=device)
     p = 1.0
     s = L(v-n, z)
     for i in range(1, n+1):
