@@ -27,17 +27,20 @@ lazy_xp_modules = [special]
 
 
 def _fix_ref_dtype(ref, xp, dtypes):
-    # int64 promotes like float32 on torch with default dtype = float32
-    # cast reference if needed
+    # Match PyTorch's float32/complex64 default promotion behavior.
     if (
             is_torch(xp)
             and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
+        def cast(r):
+            dtype = np.complex64 if np.iscomplexobj(r) else np.float32
+            return np.asarray(r, dtype=dtype)
+
         if isinstance(ref, tuple):
-            ref = tuple(np.float32(r) for r in ref)
-        else:
-            ref = np.float32(ref)
+            return tuple(cast(r) for r in ref)
+        return cast(ref)
+
     return ref
 
 
