@@ -1,6 +1,6 @@
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_result_device
 
 from ._support_alternative_backends import (
     _spherical_jn, _spherical_yn, _spherical_in,
@@ -102,11 +102,13 @@ def spherical_jn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
+    device = xp_result_device(n, z)
     # Casting to something of size np.long preserves existing behavior.
     # TODO: handle this by adding all needed int dtype loops to underlying
     # ufuncs.
     # Casting float n to int seems to be unintended behavior here.
-    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
+    n = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE), device=device)
+    z = xp.asarray(z, device=device)
     if derivative:
         return _spherical_jn_d(n, z)
     else:
@@ -201,7 +203,9 @@ def spherical_yn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
+    device = xp_result_device(n, z)
+    n = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE), device=device)
+    z = xp.asarray(z, device=device)
     if derivative:
         return _spherical_yn_d(n, z)
     else:
@@ -295,7 +299,9 @@ def spherical_in(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
+    device = xp_result_device(n, z)
+    n = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE), device=device)
+    z = xp.asarray(z, device=device)
     if derivative:
         return _spherical_in_d(n, z)
     else:
@@ -389,7 +395,9 @@ def spherical_kn(n, z, derivative=False):
 
     """
     xp = array_namespace(n, z)
-    n, z = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE)), xp.asarray(z)
+    device = xp_result_device(n, z)
+    n = xp.asarray(n, dtype=getattr(xp, _LONG_DTYPE), device=device)
+    z = xp.asarray(z, device=device)
     if derivative:
         return _spherical_kn_d(n, z)
     else:
