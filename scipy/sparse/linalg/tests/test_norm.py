@@ -150,3 +150,33 @@ class TestVsNumpyNorm:
                     for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
+                        
+    @pytest.mark.parametrize(
+        "dtype",
+        [np.int8, np.int64, np.float32, np.float64,
+         np.complex64, np.complex128]
+    )
+    def test_output_dtype_matches_numpy(self, dtype):
+        # check that sparse norms preserve NumPy's output dtype
+        M = np.array([[1, 0, 3], [-1, 1, 4]], dtype=dtype)
+
+        for sparse_type in self._sparse_types:
+            S = sparse_type(M)
+
+            # check matrix norms with default and explicit axes
+            for ord in (None, 'fro', np.inf, -np.inf, 1, -1):
+                for axis in (None, (0, 1)):
+                    actual = spnorm(S, ord=ord, axis=axis)
+                    expected = npnorm(M, ord=ord, axis=axis)
+
+                    # verify calculation norm and dtype matches across all ord and axis combinations
+                    assert_equal(actual.dtype, expected.dtype)
+                    assert_allclose(actual, expected)
+
+            for axis in (0, 1):
+                for ord in (None, 2, np.inf, -np.inf, 1, 0.5):
+                    actual = spnorm(S, ord=ord, axis=axis)
+                    expected = npnorm(M, ord=ord, axis=axis)
+
+                    assert_equal(actual.dtype, expected.dtype)
+                    assert_allclose(actual, expected)
