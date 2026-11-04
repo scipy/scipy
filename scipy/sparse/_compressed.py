@@ -1069,9 +1069,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     @has_canonical_format.setter
     def has_canonical_format(self, val: bool):
-        self._has_canonical_format = bool(val)
+        # Set the sorted flag first: changing it invalidates the cached
+        # canonical value (see the `has_sorted_indices` setter), so the
+        # canonical value must be stored afterwards to survive.
         if val:
             self.has_sorted_indices = True
+        self._has_canonical_format = bool(val)
 
     def sum_duplicates(self):
         """Eliminate duplicate entries by adding them together.
@@ -1106,7 +1109,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     @has_sorted_indices.setter
     def has_sorted_indices(self, val: bool):
-        self._has_sorted_indices = bool(val)
+        val = bool(val)
+        if getattr(self, '_has_sorted_indices', None) != val:
+            # Whether the indices are sorted has changed, so a cached
+            # `has_canonical_format` value may now be stale (e.g. a
+            # False cached before `sort_indices` sorted the indices).
+            # Drop it so it is recomputed on next access. gh-19106
+            self.__dict__.pop('_has_canonical_format', None)
+        self._has_sorted_indices = val
 
 
     def sorted_indices(self):
