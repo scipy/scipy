@@ -786,7 +786,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         peaks to be detected at the boundaries (index 0 and `n - 1`).
         Default is `False`.
 
-        .. versionadded:: 1.15.0 (Proposed)
+        .. versionadded:: 2.0.0 (Proposed)
 
     Returns
     -------
@@ -940,7 +940,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if wrap:
         min_idx = np.argmin(x)
         # Rotate array so global minimum sits at both ends
-        x_rotated = np.concatenate((x[min_idx:], x[:min_idx], x[min_idx:min_idx+1]))
+        x_search = np.concatenate((x[min_idx:], x[:min_idx], x[min_idx:min_idx+1]))
         
         def rotate_arg(arg):
             if isinstance(arg, np.ndarray) and arg.shape == (original_size,):
@@ -955,14 +955,14 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         width = rotate_arg(width)
         plateau_size = rotate_arg(plateau_size)
     else:
-        x_rotated = x
+        x_search = x
 
-    peaks, left_edges, right_edges = _local_maxima_1d(x_rotated)
+    peaks, left_edges, right_edges = _local_maxima_1d(x_search)
     properties = {}
 
     if plateau_size is not None:
         plateau_sizes = right_edges - left_edges + 1
-        pmin, pmax = _unpack_condition_args(plateau_size, x_rotated, peaks)
+        pmin, pmax = _unpack_condition_args(plateau_size, x_search, peaks)
         keep = _select_by_property(plateau_sizes, pmin, pmax)
         peaks = peaks[keep]
         properties["plateau_sizes"] = plateau_sizes
@@ -971,17 +971,17 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         properties = {key: array[keep] for key, array in properties.items()}
 
     if height is not None:
-        peak_heights = x_rotated[peaks]
-        hmin, hmax = _unpack_condition_args(height, x_rotated, peaks)
+        peak_heights = x_search[peaks]
+        hmin, hmax = _unpack_condition_args(height, x_search, peaks)
         keep = _select_by_property(peak_heights, hmin, hmax)
         peaks = peaks[keep]
         properties["peak_heights"] = peak_heights
         properties = {key: array[keep] for key, array in properties.items()}
 
     if threshold is not None:
-        tmin, tmax = _unpack_condition_args(threshold, x_rotated, peaks)
+        tmin, tmax = _unpack_condition_args(threshold, x_search, peaks)
         keep, left_thresholds, right_thresholds = _select_by_peak_threshold(
-            x_rotated, peaks, tmin, tmax)
+            x_search, peaks, tmin, tmax)
         peaks = peaks[keep]
         properties["left_thresholds"] = left_thresholds
         properties["right_thresholds"] = right_thresholds
@@ -991,9 +991,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         if wrap:
             # Map peaks back to original space first for circular distance evaluation
             orig_peaks = (peaks + min_idx) % original_size
-            keep = _select_by_peak_distance_wrap(orig_peaks, x_rotated[peaks], distance, original_size)
+            keep = _select_by_peak_distance_wrap(orig_peaks, x_search[peaks], distance, original_size)
         else:
-            keep = _select_by_peak_distance(peaks, x_rotated[peaks], distance)
+            keep = _select_by_peak_distance(peaks, x_search[peaks], distance)
         
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
@@ -1002,11 +1002,11 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         wlen = _arg_wlen_as_expected(wlen)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
-            _peak_prominences(x_rotated, peaks, wlen=wlen)
+            _peak_prominences(x_search, peaks, wlen=wlen)
         ))
 
     if prominence is not None:
-        pmin, pmax = _unpack_condition_args(prominence, x_rotated, peaks)
+        pmin, pmax = _unpack_condition_args(prominence, x_search, peaks)
         keep = _select_by_property(properties['prominences'], pmin, pmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
@@ -1014,10 +1014,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if width is not None:
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            _peak_widths(x_rotated, peaks, rel_height, properties['prominences'],
+            _peak_widths(x_search, peaks, rel_height, properties['prominences'],
                          properties['left_bases'], properties['right_bases'])
         ))
-        wmin, wmax = _unpack_condition_args(width, x_rotated, peaks)
+        wmin, wmax = _unpack_condition_args(width, x_search, peaks)
         keep = _select_by_property(properties['widths'], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
