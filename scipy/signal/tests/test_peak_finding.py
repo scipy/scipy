@@ -871,6 +871,22 @@ class TestFindPeaks:
 
         xp_assert_close(peaks, peaks_readonly)
 
+    def test_wrap_boundary_peaks(self):
+        x = np.array([2, 0, 3, 1, 1])
+        peaks, _ = find_peaks(x, wrap=False)
+        assert_array_equal(peaks, [2])
+        peaks, _ = find_peaks(x, wrap=True)
+        assert_array_equal(peaks, [0, 2])
+
+    def test_wrap_false_matches_default(self):
+        x = np.array([0, 2, 0, 3, 0, 1, 0])
+        assert_array_equal(find_peaks(x)[0], find_peaks(x, wrap=False)[0])
+
+    def test_distance_wrap_keeps_taller(self):
+        x = np.array([2, 0, 3, 1, 1])
+        peaks, _ = find_peaks(x, distance=3, wrap=True)
+        assert_array_equal(peaks, [2])
+
 
 class TestFindPeaksCwt:
 
