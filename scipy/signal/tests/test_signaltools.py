@@ -3176,7 +3176,7 @@ def test_filtfilt_gust_trailing_zeros():
     # An all-zero numerator still gives a zero output.
     y0 = filtfilt([0.0, 0.0], [1.0, -0.5], x, method="gust")
     xp_assert_close(y0, np.zeros_like(x), atol=0)
-    
+
 
 @make_xp_test_case(signal.decimate)
 class TestDecimate:
