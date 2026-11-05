@@ -1224,6 +1224,7 @@ def test_empty_sparse():
     assert_equal(hdr.nzmax, 1)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_spmatrix_default_warns_once():
     # The default warns once per call, not once per sparse variable
     stream = BytesIO()
@@ -1231,7 +1232,8 @@ def test_spmatrix_default_warns_once():
     stream.seek(0)
     with pytest.deprecated_call(match="The default value for `spmatrix") as record:
         loadmat(stream)
-    assert len(record) == 1
+    # Creating the csc_matrix results also warns, so count only this option
+    assert sum("`spmatrix" in str(w.message) for w in record) == 1
 
 
 def test_empty_mat_error():
