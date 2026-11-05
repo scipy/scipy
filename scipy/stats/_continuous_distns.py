@@ -2728,6 +2728,28 @@ class foldnorm_gen(rv_continuous):
     def _sf(self, x, c):
         return _norm_sf(x - c) + _norm_sf(x + c)
 
+    def _isf(self, q, c):
+        def single(q, c):
+            logq = np.log(q)
+            # The normal tails bound x-c between isf(q) and isf(q/2).
+            lo = _norm_isf(q)
+            hi = -sc.ndtri_exp(logq - np.log(2))
+
+            def residual(y):
+                with np.errstate(over='ignore'):
+                    return np.logaddexp(_norm_logsf(y),
+                                       _norm_logsf(y + 2*c)) - logq
+
+            if residual(lo) <= 0:
+                return c + lo
+            if residual(hi) >= 0:
+                return c + hi
+            return c + optimize.brentq(residual, lo, hi, xtol=self.xtol)
+
+        return xpx.apply_where(
+            q <= 0.5, (q, c), np.vectorize(single, otypes='d'),
+            lambda q, c: self._ppf(1-q, c))
+
     def _stats(self, c):
         # Regina C. Elandt, Technometrics 3, 551 (1961)
         # https://www.jstor.org/stable/1266561
