@@ -19,8 +19,9 @@ concurrency:
 jobs:
   test_lint:
     name: Lint
-    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced.
+    # Forks can opt in by setting the repository variable SCIPY_FORK_CI to 'true'.
+    if: "github.repository == 'scipy/scipy' || github.repository == '' || vars.SCIPY_FORK_CI == 'true'"
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
