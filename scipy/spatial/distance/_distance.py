@@ -705,8 +705,8 @@ def hamming(u, v, w=None):
 
     Returns
     -------
-    hamming : double
-        The Hamming distance between vectors `u` and `v`.
+    hamming : double or array
+        The Hamming distance between arrays `u` and `v`.
 
     Examples
     --------
@@ -739,7 +739,8 @@ def hamming(u, v, w=None):
     w = _validate_weights(w, xp=xp)
     if not broadcastable(u_ne_v.shape, w.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
-    return xp.vecdot(xp.astype(u_ne_v, w.dtype), w / xp.sum(w, axis=-1, keepdims=True))
+    u_ne_v, w = xp.broadcast_arrays(xp.astype(u_ne_v, w.dtype), w)
+    return xp.vecdot(u_ne_v, w / xp.sum(w, axis=-1, keepdims=True))
 
 
 @xp_capabilities()

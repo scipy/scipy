@@ -119,6 +119,17 @@ _tdist = np.array([[0, 662, 877, 255, 412, 996],
 
 _ytdist = squareform(_tdist)
 
+# Broadcastable (u, v, w) shapes for batch tests. We test for:
+_broadcast_shapes = [
+    ((5, 2, 4), (2, 4), (3, 1, 1, 4)),  # Regular broadcasting rules
+    ((2, 4), (2, 4), (2, 1)),  # w axis -1 is 1D
+    ((2, 4), (2, 1), (1, 4)),  # v axis -1 is 1D
+    ((2, 1), (1, 4), (2, 4)),  # u axis -1 is 1D
+    ((1, 4), (3, 2, 4), (4,)),  # w.dim < u.dim < v.dim
+    ((4,), (3, 1, 4), (2, 1)),  # u.dim < w.dim < v.dim
+    ((3, 2, 1), (4,), (1,)),  # v and w have ndim == 1, w has shape[-1] == 1
+]
+
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
 # Each test loads inputs and outputs from this dictionary.
@@ -1588,18 +1599,18 @@ class TestSEuclidean:
         x, y, V = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0], [1.0, 0.5, 2.0]
         xp_assert_close(seuclidean(x, y, V), np.asarray(2.0), atol=1.5e-7)
 
-    def test_seuclidean_nd(self):
+    @pytest.mark.parametrize("u_shape, v_shape, V_shape", _broadcast_shapes)
+    def test_seuclidean_nd(self, u_shape, v_shape, V_shape):
         # We need to test this separate from other metrics because seuclidean uses "V"
         rng = np.random.default_rng(6738657865438)
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('V', 1))(seuclidean)
-        u = rng.random((5, 2, 4))
-        v = rng.random((2, 4))
-        V = rng.random((3, 1, 1, 4))
-        xp_assert_close(seuclidean(u, v, V), ref_func(u, v, V))
+        u, v, V = rng.random(u_shape), rng.random(v_shape), rng.random(V_shape)
+        # Broadcast arguments for the reference function
+        xp_assert_close(seuclidean(u, v, V), ref_func(*np.broadcast_arrays(u, v, V)))
         # check error is raised for non-broadcastable inputs
         with pytest.raises(ValueError,
                            match="Array shapes are incompatible for broadcasting."):
-            seuclidean(u, v, rng.random((3, 4)))
+            seuclidean(u, v, rng.random(5))
 
 
 @make_xp_test_case(correlation)
@@ -2368,21 +2379,27 @@ class TestJaccard:
         xp_assert_close(jaccard(x, y, w=xp.asarray([1.0, 2.0, 3.0])),
                         xp.asarray([0.0, 1.0]))
 
+    @pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
     @pytest.mark.parametrize("weights", [True, False])
-    def test_jaccard_nd(self, weights):
+    def test_jaccard_nd(self, weights, u_shape, v_shape, w_shape):
         # We need to test this separate from other metrics because jaccard casts its
         # inputs to bool, which turns the random floats of test_distance_nd all True
         rng = np.random.default_rng(6738657865438)
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('w', 1))(jaccard)
-        u = rng.integers(2, size=(5, 2, 4))
-        v = rng.integers(2, size=(2, 4))
-        w = rng.random((3, 1, 1, 4)) if weights else None
-        xp_assert_close(jaccard(u, v, w=w), ref_func(u, v, w=w))
+        u = rng.integers(2, size=u_shape)
+        v = rng.integers(2, size=v_shape)
+        w = rng.random(w_shape) if weights else None
+        # Broadcast arguments for the reference function
+        if weights:
+            _u, _v, _w = np.broadcast_arrays(u, v, w)
+        else:
+            (_u, _v), _w = np.broadcast_arrays(u, v), None
+        xp_assert_close(jaccard(u, v, w=w), ref_func(_u, _v, w=_w))
         # check error is raised for non-broadcastable inputs
         if weights:
-            w = rng.random((3, 4))
+            w = rng.random((7, 7, 7))
         else:
-            v = rng.integers(2, size=(3, 4))
+            v = rng.integers(5, size=(7, 7, 7))
         with pytest.raises(ValueError,
                            match="Array shapes are incompatible for broadcasting."):
             jaccard(u, v, w=w)
@@ -2526,7 +2543,11 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
-        make_xp_pytest_param(correlation, None),
+        # u or v with shape[-1] == 1 gives zero variance, so the distance is NaN
+        make_xp_pytest_param(
+            correlation, None,
+            additional_marks=pytest.mark.filterwarnings("ignore:invalid value"),
+        ),
         make_xp_pytest_param(cosine, None),
         make_xp_pytest_param(hamming, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
@@ -2538,27 +2559,33 @@ class TestChebyshev:
         (sokalsneath, None),
     ],
 )
+@pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
 @pytest.mark.parametrize("weights", [True, False])
-def test_distance_nd(func, p, weights):
+def test_distance_nd(func, p, weights, u_shape, v_shape, w_shape):
     #  check that inputs broadcast correctly against a reference implementation
     rng = np.random.default_rng(6738657865438)
     ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
 
-    u = rng.random((5, 2, 4))
-    v = rng.random((2, 4))
-    w = rng.random((3, 1, 1, 4)) if weights else None
+    u = rng.random(u_shape)
+    v = rng.random(v_shape)
+    w = rng.random(w_shape) if weights else None
     kwargs = {'w': w} if p is None else {'p': p, 'w': w}
 
     res = func(u, v, **kwargs)
+    # Broadcast arguments for the reference function
+    if weights:
+        u, v, kwargs['w'] = np.broadcast_arrays(u, v, w)
+    else:
+        u, v = np.broadcast_arrays(u, v)
     ref = ref_func(u, v, **kwargs)
 
     xp_assert_close(res, ref)
 
     # check error is raised for non-broadcastable inputs
     if weights:
-        w = rng.random((3, 4))
+        w = rng.random(5)
     else:
-        v = rng.random((3, 4))
+        v = rng.random(5)
 
     with pytest.raises(ValueError,
                        match="Array shapes are incompatible for broadcasting."):
