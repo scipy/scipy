@@ -838,6 +838,96 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         Directly calculate the prominence of peaks.
     peak_widths
         Directly calculate the width of peaks.
+
+    Notes
+    -----
+    In the context of this function, a peak or local maximum is defined as any
+    sample whose two direct neighbours have a smaller amplitude. For flat peaks
+    (more than one sample of equal amplitude wide) the index of the middle
+    sample is returned (rounded down in case the number of samples is even).
+    For noisy signals the peak locations can be off because the noise might
+    change the position of local maxima. In those cases consider smoothing the
+    signal before searching for peaks or use other peak finding and fitting
+    methods (like `find_peaks_cwt`).
+    Some additional comments on specifying conditions:
+    * Almost all conditions (excluding `distance`) can be given as half-open or
+      closed intervals, e.g., ``1`` or ``(1, None)`` defines the half-open
+      interval :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
+      :math:`[-\\infty, 1]`. The open interval ``(None, None)`` can be specified
+      as well, which returns the matching properties without exclusion of peaks.
+    * The border is always included in the interval used to select valid peaks.
+    * For several conditions the interval borders can be specified with
+      arrays matching `x` in shape which enables dynamic constraints based on
+      the sample position.
+    * The conditions are evaluated in the following order: `plateau_size`,
+      `height`, `threshold`, `distance`, `prominence`, `width`. In most cases
+      this order is the fastest one because faster operations are applied first
+      to reduce the number of peaks that need to be evaluated later.
+    * While indices in `peaks` are guaranteed to be at least `distance` samples
+      apart, edges of flat peaks may be closer than the allowed `distance`.
+    * Use `wlen` to reduce the time it takes to evaluate the conditions for
+      `prominence` or `width` if `x` is large or has many local maxima
+      (see `peak_prominences`).
+    .. versionadded:: 1.1.0
+    Examples
+    --------
+    To demonstrate this function's usage we use a signal `x` supplied with
+    SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
+    maxima) in `x` whose amplitude lies above 0.
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.datasets import electrocardiogram
+    >>> from scipy.signal import find_peaks
+    >>> x = electrocardiogram()[2000:4000]
+    >>> peaks, _ = find_peaks(x, height=0)
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.plot(np.zeros_like(x), "--", color="gray")
+    >>> plt.show()
+    We can select peaks below 0 with ``height=(None, 0)`` or use arrays matching
+    `x` in size to reflect a changing condition for different parts of the
+    signal.
+    >>> border = np.sin(np.linspace(0, 3 * np.pi, x.size))
+    >>> peaks, _ = find_peaks(x, height=(-border, border))
+    >>> plt.plot(x)
+    >>> plt.plot(-border, "--", color="gray")
+    >>> plt.plot(border, ":", color="gray")
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+    Another useful condition for periodic signals can be given with the
+    `distance` argument. In this case, we can easily select the positions of
+    QRS complexes within the electrocardiogram (ECG) by demanding a distance of
+    at least 150 samples.
+    >>> peaks, _ = find_peaks(x, distance=150)
+    >>> np.diff(peaks)
+    array([186, 180, 177, 171, 177, 169, 167, 164, 158, 162, 172])
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+    Especially for noisy signals peaks can be easily grouped by their
+    prominence (see `peak_prominences`). E.g., we can select all peaks except
+    for the mentioned QRS complexes by limiting the allowed prominence to 0.6.
+    >>> peaks, properties = find_peaks(x, prominence=(None, 0.6))
+    >>> properties["prominences"].max()
+    0.5049999999999999
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+    And, finally, let's examine a different section of the ECG which contains
+    beat forms of different shape. To select only the atypical heart beats, we
+    combine two conditions: a minimal prominence of 1 and width of at least 20
+    samples.
+    >>> x = electrocardiogram()[17000:18000]
+    >>> peaks, properties = find_peaks(x, prominence=1, width=20)
+    >>> properties["prominences"], properties["widths"]
+    (array([1.495, 2.3  ]), array([36.93773946, 39.32723577]))
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.vlines(x=peaks, ymin=x[peaks] - properties["prominences"],
+    ...            ymax = x[peaks], color = "C1")
+    >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
+    ...            xmax=properties["right_ips"], color = "C1")
+    >>> plt.show()
     """
     x = _arg_x_as_expected(x)
     if distance is not None and distance < 1:
