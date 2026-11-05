@@ -2225,6 +2225,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+    # Trailing zeros do not change the transfer function, but they raise the
+    # order and make the least-squares problem for the initial states
+    # singular (gh-26610). Keep one coefficient if b is all zeros.
+    b = np.trim_zeros(b, 'b') if np.any(b) else b[:1]
+    a = np.trim_zeros(a, 'b')
     x = np.asarray(x)
     if zi is not None:
        zi = np.asarray(zi)
