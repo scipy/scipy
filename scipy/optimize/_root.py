@@ -32,6 +32,12 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     fun : callable
         A vector function to find a root of.
 
+        For all methods but 'lm', `fun` must return an array (or nested
+        sequence) with the same number of elements as `x0`; otherwise a
+        ``ValueError`` is raised. Method 'lm' solves a least-squares problem
+        and so accepts a number of equations that differs from the number of
+        unknowns.
+
         Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
         ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
         Rather than passing ``f0`` as the callable, wrap it to accept
@@ -213,9 +219,27 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         the function has been called.
         """
         _wrapped_fun.nfev += 1
-        return fun(*fargs)
+        f = fun(*fargs)
+        if not _wrapped_fun.checked and meth != 'lm':
+            # On the first evaluation, verify that `fun` returns as many
+            # elements as `x0` (gh-10294). Every method except 'lm', which
+            # solves a least-squares problem, requires this. Reusing the
+            # solver's own first call avoids an extra evaluation and uses
+            # each method's array convention (e.g. hybr flattens `x0`).
+            _wrapped_fun.checked = True
+            resid = f[0] if jac is True else f
+            if np.size(resid) != np.size(fargs[0]):
+                raise ValueError(
+                    f"The number of elements returned by 'fun' "
+                    f"({np.size(resid)}) must equal the number of "
+                    f"elements in 'x0' ({np.size(fargs[0])}). If the "
+                    f"number of outputs is intended to differ from the "
+                    f"number of inputs, use method='lm' (least squares) "
+                    f"instead.")
+        return f
 
     _wrapped_fun.nfev = 0
+    _wrapped_fun.checked = False
 
     if not isinstance(args, tuple):
         args = (args,)
