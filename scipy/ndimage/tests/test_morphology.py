@@ -691,6 +691,61 @@ class TestNdimageMorphology:
             )
 
     @make_xp_test_case(ndimage.generate_binary_structure)
+    @pytest.mark.parametrize('metric', ['euclidean', 'taxicab', 'chessboard'])
+    @pytest.mark.parametrize('return_distances, return_indices',
+                             [(True, True), (True, False), (False, True)])
+    def test_distance_transform_bf_empty(
+            self, xp, metric, return_distances, return_indices):
+        data = xp.ones((3, 3), dtype=int)
+        res = ndimage.distance_transform_bf(
+            data, metric=metric,
+            return_distances=return_distances, return_indices=return_indices)
+        if return_distances:
+            distances = res[0] if return_indices else res
+            inf = {
+                'euclidean': np.inf,
+                'taxicab': np.iinfo(np.uint32).max,
+                'chessboard': np.iinfo(np.uint32).max,
+            }[metric]
+            assert (distances == inf).all()
+        if return_indices:
+            indices = res[1] if return_distances else res
+            assert (indices == 0).all()
+
+    @make_xp_test_case(ndimage.generate_binary_structure)
+    @pytest.mark.parametrize('return_distances, return_indices',
+                             [(True, True), (True, False), (False, True)])
+    def test_distance_transform_edt_empty(
+            self, xp, return_distances, return_indices):
+        data = xp.ones((3, 3), dtype=int)
+        res = ndimage.distance_transform_edt(
+            data,
+            return_distances=return_distances, return_indices=return_indices)
+        if return_distances:
+            distances = res[0] if return_indices else res
+            assert (distances == np.inf).all()
+        if return_indices:
+            indices = res[1] if return_distances else res
+            assert (indices == -1).all()
+
+    @make_xp_test_case(ndimage.generate_binary_structure)
+    @pytest.mark.parametrize('metric', ['chessboard', 'taxicab'])
+    @pytest.mark.parametrize('return_distances, return_indices',
+                             [(True, True), (True, False), (False, True)])
+    def test_distance_transform_cdt_empty(
+            self, xp, metric, return_distances, return_indices):
+        data = xp.ones((3, 3), dtype=int)
+        res = ndimage.distance_transform_cdt(
+            data,
+            return_distances=return_distances, return_indices=return_indices)
+        if return_distances:
+            distances = res[0] if return_indices else res
+            assert (distances == -1).all()
+        if return_indices:
+            indices = res[1] if return_distances else res
+            assert (indices == np.indices(data.shape)).all()
+
+    @make_xp_test_case(ndimage.generate_binary_structure)
     def test_generate_structure01(self, xp):
         struct = ndimage.generate_binary_structure(0, 1)
         assert struct == 1
