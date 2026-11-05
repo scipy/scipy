@@ -43,6 +43,7 @@ ignore-missing-imports = [
     "scipy.optimize._pava_pybind",
     "scipy.optimize._slsqplib",
     "scipy.optimize._zeros",
+    "scipy.ndimage._hampel_1d",
     "scipy.ndimage._nd_image",
     "scipy.ndimage._ni_label",
     "scipy.ndimage._rank_filter_1d",

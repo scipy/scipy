@@ -248,6 +248,10 @@ def percentile_filter_signature(
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
+def hampel_filter_signature(input, size, *args, **kwds):
+    return array_namespace(input)
+
+
 def prewitt_signature(input, axis=-1, output=None, *args, **kwds):
     return array_namespace(input, _skip_if_dtype(output))
 
