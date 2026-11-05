@@ -11,7 +11,8 @@ stats_special_cython_gen = generator(cython,
     _cython_tree,
     _ufuncs_pxi_pxd_sources,
     _stats_pxd,
-    cython_special_pxd])
+    cython_special_pxd,
+    fs.copyfile('_wasserstein_distance.pxi')])
 
 py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
