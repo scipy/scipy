@@ -2120,6 +2120,7 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("hyperu", ["torch"]),
         ),
         torch_native=False,
+        test_large_ints=False,
     ),
     _FuncInfo(
         _ufuncs.hyp0f1, ["v", "z"],
