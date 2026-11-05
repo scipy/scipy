@@ -555,7 +555,33 @@ def _needs_betainc(name):
 
 _special_funcs = (
     # Airy functions
-    # --
+    _FuncInfo(
+        _ufuncs.airy, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("airy", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.airye, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("airye", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.itairy, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("itairy", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     # Elliptic functions and integrals
     _FuncInfo(
         _ufuncs.ellipk, ["m"],
