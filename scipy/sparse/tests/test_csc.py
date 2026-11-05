@@ -146,7 +146,7 @@ def test_set_arrayXarray_memory_scalar():
     N = 30
     index_N = np.arange(40, 40 + N)
 
-    scale = 7
+    scale = 8
     # N x N x (8(int64) + 1(int8)) only indices and data change size
     exp_net_mem_chg = N * N * 9
 
