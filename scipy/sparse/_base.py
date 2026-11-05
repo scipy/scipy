@@ -1783,9 +1783,7 @@ def isspmatrix(x):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
-    >>> isspmatrix(csr_matrix([[5]]))  # doctest: +SKIP
-    True
+    >>> from scipy.sparse import csr_array, isspmatrix
     >>> isspmatrix(csr_array([[5]]))
     False
     >>> isspmatrix(np.array([[5]]))
@@ -1793,6 +1791,4 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
-    from ._matrix import spmatrix
-
-    return isinstance(x, spmatrix)
+    return False

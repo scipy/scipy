@@ -1194,7 +1194,6 @@ def test_logical_sparse():
                         [False, False, False, False]])
 
 
-@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
@@ -1205,12 +1204,8 @@ def test_empty_sparse():
 
     res = loadmat(sio, spmatrix=False)
     assert isinstance(res['x'], sparray)
-    with pytest.deprecated_call(match="The value `spmatrix=True"):
-        res = loadmat(sio, spmatrix=True)
-        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
-    with pytest.deprecated_call(match="The default value for `spmatrix"):
-        res = loadmat(sio)  # chk default
-        assert scipy.sparse.issparse(res['x']) and not isinstance(res['x'], sparray)
+    res = loadmat(sio)  # chk default
+    assert scipy.sparse.issparse(res['x']) and isinstance(res['x'], sparray)
 
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)
