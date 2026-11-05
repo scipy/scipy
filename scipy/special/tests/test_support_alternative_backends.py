@@ -424,7 +424,9 @@ def test_ufunc_kwargs(nfo):
             for shape, dtype in zip(out_shapes, lower_dtypes)
         )
 
-    y = func(*args, out=out)
+    with np.errstate(over="ignore"):
+        # ignore overflow because out may not be representable as float32
+        y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
@@ -446,7 +448,9 @@ def test_ufunc_kwargs(nfo):
         return
 
     # dtype=
-    y = func(*args, dtype=np.float32)
+    with np.errstate(over="ignore"):
+        # ignore overflow because result may not be representable as float32
+        y = func(*args, dtype=np.float32)
     if nout == 1:
         assert y.dtype == np.float32
     else:
