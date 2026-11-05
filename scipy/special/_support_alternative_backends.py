@@ -560,7 +560,6 @@ _special_funcs = (
         _ufuncs.ellipk, ["m"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("ellipk", ["torch"]),
         ),
         torch_native=False,
@@ -569,7 +568,6 @@ _special_funcs = (
         _ufuncs.ellipkm1, ["p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("ellipkm1", ["torch"]),
         ),
         torch_native=False,
@@ -579,7 +577,6 @@ _special_funcs = (
         _ufuncs.yn, ["n", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("yn", ["torch"]),
         ),
         positive_only={"cupy": (True, False)}, int_only=(True, False),
@@ -591,7 +588,6 @@ _special_funcs = (
         _ufuncs.j0, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "bessel_j0"}, test_large_ints=False,
@@ -600,7 +596,6 @@ _special_funcs = (
         _ufuncs.j1, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "bessel_j1"}, test_large_ints=False,
@@ -609,7 +604,6 @@ _special_funcs = (
         _ufuncs.y0, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "bessel_y0"}, test_large_ints=False,
@@ -618,7 +612,6 @@ _special_funcs = (
         _ufuncs.y1, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "bessel_y1"}, test_large_ints=False,
@@ -639,7 +632,6 @@ _special_funcs = (
         _ufuncs.k0, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "modified_bessel_k0"},
@@ -648,7 +640,6 @@ _special_funcs = (
         _ufuncs.k0e, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k0"},
@@ -658,7 +649,6 @@ _special_funcs = (
         _ufuncs.k1, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "modified_bessel_k1"},
@@ -667,7 +657,6 @@ _special_funcs = (
         _ufuncs.k1e, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k1"},
@@ -685,7 +674,6 @@ _special_funcs = (
         _ufuncs.bdtr, ["k", "n", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("bdtr", ["torch"]),
         ),
         int_only=(False, True, False), torch_native=False,
@@ -694,7 +682,6 @@ _special_funcs = (
         _ufuncs.bdtrc, ["k", "n", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("bdtrc", ["torch"]),
         ),
         int_only=(False, True, False), torch_native=False,
@@ -703,7 +690,6 @@ _special_funcs = (
         _ufuncs.bdtri, ["k", "n", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("bdtri", ["torch"]),
         ),
         int_only=(False, True, False), torch_native=False,
@@ -715,7 +701,6 @@ _special_funcs = (
         _ufuncs.fdtr, ["dfn", "dfd", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("fdtr", ["torch"]),
         ),
         torch_native=False,
@@ -724,7 +709,6 @@ _special_funcs = (
         _ufuncs.fdtrc, ["dfn", "dfd", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("fdtrc", ["torch"]),
         ),
         torch_native=False,
@@ -733,7 +717,6 @@ _special_funcs = (
         _ufuncs.fdtri, ["dfn", "dfd", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("fdtri", ["torch"]),
         ),
         torch_native=False,
@@ -743,7 +726,6 @@ _special_funcs = (
         _ufuncs.gdtr, ["a", "b", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("gdtr", ["torch"]),
         ),
         torch_native=False,
@@ -752,7 +734,6 @@ _special_funcs = (
         _ufuncs.gdtrc, ["a", "b", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("gdtrc", ["torch"]),
         ),
         torch_native=False,
@@ -762,7 +743,6 @@ _special_funcs = (
         _ufuncs.nbdtr, ["k", "n", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("nbdtr", ["torch"]),
         ),
         int_only=(True, True, False), positive_only=True,
@@ -772,7 +752,6 @@ _special_funcs = (
         _ufuncs.nbdtrc, ["k", "n", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("nbdtrc", ["torch"]),
         ),
         int_only=(True, True, False), positive_only=True,
@@ -782,7 +761,6 @@ _special_funcs = (
         _ufuncs.nbdtri, ["k", "n", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("nbdtri", ["torch"]),
         ),
         int_only=(True, True, False), positive_only=True,
@@ -814,7 +792,6 @@ _special_funcs = (
         _ufuncs.pdtr, ["k", "m"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("pdtr", ["torch"]),
         ),
         positive_only=True, torch_native=False,
@@ -823,7 +800,6 @@ _special_funcs = (
         _ufuncs.pdtrc, ["k", "m"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("pdtrc", ["torch"]),
         ),
         positive_only=True, torch_native=False,
@@ -832,7 +808,6 @@ _special_funcs = (
         _ufuncs.pdtri, ["k", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("pdtri", ["torch"]),
         ),
         int_only=(True, False), positive_only=True,
@@ -873,7 +848,6 @@ _special_funcs = (
         _ufuncs.chdtri, ["v", "p"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("chdtri", ["torch"]),
         ),
         torch_native=False,
@@ -887,7 +861,6 @@ _special_funcs = (
         _ufuncs.boxcox, ["x", "lmbda"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("boxcox", ["torch"]),
         ),
         torch_native=False,
@@ -896,7 +869,6 @@ _special_funcs = (
         _ufuncs.boxcox1p, ["x", "lmbda"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("boxcox1p", ["torch"]),
         ),
         torch_native=False,
@@ -905,7 +877,6 @@ _special_funcs = (
         _ufuncs.inv_boxcox, ["y", "lmbda"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("inv_boxcox", ["torch"]),
         ),
         torch_native=False,
@@ -914,7 +885,6 @@ _special_funcs = (
         _ufuncs.inv_boxcox1p, ["y", "lmbda"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("inv_boxcox1p", ["torch"]),
         ),
         torch_native=False,
@@ -964,7 +934,6 @@ _special_funcs = (
         _ufuncs.huber, ["delta", "r"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("huber", ["torch"]),
         ),
         torch_native=False,
@@ -973,7 +942,6 @@ _special_funcs = (
         _ufuncs.pseudo_huber, ["delta", "r"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("pseudo_huber", ["torch"]),
         ),
         torch_native=False,
@@ -994,7 +962,6 @@ _special_funcs = (
         _ufuncs.loggamma, ["z"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("loggamma", ["torch"]),
         ),
         torch_native=False,
@@ -1015,7 +982,6 @@ _special_funcs = (
         _ufuncs.gammaincinv, ["a", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("gammaincinv", ["torch"]),
         ),
         torch_native=False,
@@ -1030,7 +996,6 @@ _special_funcs = (
         _ufuncs.gammainccinv, ["a", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("gammainccinv", ["torch"]),
         ),
         torch_native=False,
@@ -1061,7 +1026,6 @@ _special_funcs = (
         _ufuncs.betaincinv, ["a", "b", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("betaincinv", ["torch"]),
         ),
         test_large_ints=False, positive_only=True, torch_native=False,
@@ -1075,7 +1039,6 @@ _special_funcs = (
         _ufuncs.rgamma, ["z"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("rgamma", ["torch"]),
         ),
         torch_native=False,
@@ -1123,7 +1086,6 @@ _special_funcs = (
         _ufuncs.erfcx, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("erfcx", ["torch"]),
         ),
         torch_native=False,
@@ -1136,7 +1098,6 @@ _special_funcs = (
         _ufuncs.lpmv, ["m", "v", "x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("lpmv", ["torch"]),
         ),
         torch_native=False,
@@ -1203,7 +1164,6 @@ _special_funcs = (
         _ufuncs.binom, ["x", "y"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("binom", ["torch"]),
         ),
         torch_native=False,
@@ -1224,7 +1184,6 @@ _special_funcs = (
         _ufuncs.exp1, ["z"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("exp1", ["torch"]),
         ),
         torch_native=False,
@@ -1254,7 +1213,6 @@ _special_funcs = (
         _ufuncs.zetac, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("zetac", ["torch"]),
         ),
         torch_native=False,
@@ -1264,7 +1222,6 @@ _special_funcs = (
         _ufuncs.cbrt, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("cbrt", ["torch"]),
         ),
         torch_native=False,
@@ -1273,7 +1230,6 @@ _special_funcs = (
         _ufuncs.exp10, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("exp10", ["torch"]),
         ),
         torch_native=False,
@@ -1282,7 +1238,6 @@ _special_funcs = (
         _ufuncs.exp2, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("exp2", ["torch"]),
         ),
         torch_native=False,
@@ -1291,7 +1246,6 @@ _special_funcs = (
         _ufuncs.radian, ["d", "m", "s"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("radian", ["torch"]),
         ),
         torch_native=False,
@@ -1300,7 +1254,6 @@ _special_funcs = (
         _ufuncs.cosdg, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("cosdg", ["torch"]),
         ),
         test_large_ints=False, torch_native=False,
@@ -1309,7 +1262,6 @@ _special_funcs = (
         _ufuncs.sindg, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("sindg", ["torch"]),
         ),
         test_large_ints=False, torch_native=False,
@@ -1318,7 +1270,6 @@ _special_funcs = (
         _ufuncs.tandg, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("tandg", ["torch"]),
         ),
         test_large_ints=False, torch_native=False,
@@ -1327,7 +1278,6 @@ _special_funcs = (
         _ufuncs.cotdg, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("cotdg", ["torch"]),
         ),
         torch_native=False,
@@ -1336,7 +1286,6 @@ _special_funcs = (
         _ufuncs.cosm1, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("cosm1", ["torch"]),
         ),
         torch_native=False,
@@ -1354,7 +1303,6 @@ _special_funcs = (
         _ufuncs.exprel, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            jax_jit=True,
             extra_note=_ufunc_kwargs_extra_note("exprel", ["torch"]),
         ),
         torch_native=False,
@@ -1363,7 +1311,6 @@ _special_funcs = (
         _basic.sinc, ["x"],
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            jax_jit=True,
         ),
         is_ufunc=False,
         backends_with_func_in_xp=("jax.numpy",),
