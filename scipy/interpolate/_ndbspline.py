@@ -662,7 +662,7 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
     k : int, optional
-        The spline degree. Must be odd. Default is cubic, k=3
+        The spline degree. Must be positive. Default is cubic, k=3
     solver : a `scipy.sparse.linalg` solver (iterative or direct), optional.
         An iterative solver from `scipy.sparse.linalg` or a direct one,
         `scipy.sparse.linalg.spsolve`.
