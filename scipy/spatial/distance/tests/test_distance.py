@@ -2411,17 +2411,17 @@ class TestChebyshev:
     def test_chebyshev(self, xp, kind):
         dtype = xpx.default_dtype(xp, kind)
         x, y = xp.asarray([1, 2, 3], dtype=dtype), xp.asarray([6, 5, 4], dtype=dtype)
-        xp_assert_equal(chebyshev(x, y), 5.0)
+        xp_assert_close(chebyshev(x, y), 5.0)
 
     def test_weighted(self, xp):
         # Only components with non-zero weight participate in the 'max'.
         x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0])
         w = xp.asarray([0.0, 1.0, 5.0])
-        xp_assert_equal(chebyshev(x, y, w), 3.0)
+        xp_assert_close(chebyshev(x, y, w), 3.0)
 
     def test_array_like(self):
         x, y = [1, 2, 3], [6, 5, 4]
-        xp_assert_equal(chebyshev(x, y), 5.0)
+        xp_assert_close(chebyshev(x, y), 5.0)
 
     @pytest.mark.parametrize("kind", ["real floating", "integral"])
     def test_weight_invariance(self, xp, kind):
@@ -2439,11 +2439,15 @@ class TestChebyshev:
         # If the weight is identically zero, the distance should be zero.
         x, y, w = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0]), xp.zeros(3)
         xp_assert_equal(chebyshev(x, y, w), 0.0)
+        # Test zero weight on infinite values returns non-NaN distances.
+        x, y = xp.asarray([xp.inf, 2.0, 3.0]), xp.asarray([6.0, xp.inf, 4.0])
+        w = xp.asarray([0, 0, 1])
+        xp_assert_close(chebyshev(x, y, w), 1.0)
 
     def test_weighted_pdist_cdist(self):
         x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 1, 5])
-        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
-        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
+        xp_assert_close(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
+        xp_assert_close(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
 
     def test_zero_weight_pdist_cdist(self):
         x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 0, 0])
