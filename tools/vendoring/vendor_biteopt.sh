@@ -1,6 +1,15 @@
-#!/bin/bash
+# /// conda-script
+# channels = ["https://prefix.dev/conda-forge"]
+# entrypoint = "brush -x ${SCRIPT}"
+#
+# [dependencies]
+# brush = "*"
+# uutils-coreutils = "*"
+# /// end-conda-script
 
 # Vendors biteopt from https://github.com/avaneev/biteopt
+# Can be run via `pixi run --script tools/vendoring/vendor_biteopt.sh`
+# Must be run from the repo root
 
 set -o nounset
 set -o errexit
@@ -8,7 +17,6 @@ set -o errexit
 REPO_URL="https://github.com/avaneev/biteopt"
 COMMIT_HASH="9ccb2352443d8472a4675b6e6f92bff2adaeaea7"
 
-# XXX: run this from the repo top level like `./tools/vendoring/vendor_biteopt.sh`
 ROOT_DIR="subprojects/biteopt/biteopt"
 
 # start from a fresh dir
