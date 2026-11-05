@@ -3677,6 +3677,47 @@ const char *rel_entr_doc = R"(
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import rel_entr
+
+    When both inputs are equal and positive, the relative entropy is 0 because
+    :math:`\ln(1) = 0`:
+
+    >>> rel_entr(1, 1)
+    np.float64(0.0)
+
+    When :math:`x = 0` and :math:`y \ge 0`, the function returns 0. This
+    follows the mathematical limit :math:`\lim_{x \to 0^+} x \ln(x/y) = 0` for
+    a fixed :math:`y > 0`:
+
+    >>> rel_entr(0, 1)
+    np.float64(0.0)
+
+    For standard positive inputs, it evaluates the expression (e.g.,
+    :math:`2 \ln(2/4) = 2 \ln(0.5)`):
+
+    >>> rel_entr(2, 4)
+    np.float64(-1.3862943611198906)
+
+    The function handles boundary cases according to the mathematical
+    definition of relative entropy. If :math:`x > 0` but :math:`y = 0`, or if
+    either input is negative, it returns infinity:
+
+    >>> rel_entr(1, 0)
+    np.float64(inf)
+    >>> rel_entr(-1, 1)
+    np.float64(inf)
+
+    Like most SciPy functions, ``rel_entr`` accepts NumPy arrays to perform
+    element-wise calculations. This returns the individual terms.
+
+    >>> p = np.array([0.2, 0.5, 0.3])
+    >>> q = np.array([0.1, 0.4, 0.5])
+    >>> rel_entr(p, q)
+    array([ 0.13862944,  0.11157178, -0.15324769])
+
     )";
 
 const char *gdtr_doc = R"(
