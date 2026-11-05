@@ -105,6 +105,8 @@ Filter design
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
+   invfreqz      -- Digital filter design from frequency response
+                    -- (inverse of freqz).
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given
                     -- the number of taps and the transition width at
                     -- discontinuities in the frequency response.
