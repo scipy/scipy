@@ -1253,20 +1253,48 @@ class burr_gen(rv_continuous):
             lambda x, c, d: np.exp(self._logcdf(x, c, d)))
 
     def _logcdf(self, x, c, d):
-        return -d*xpx.apply_where(
-            x < 1, (x, c),
-            lambda x, c: sc.log1p(x**c) - c*np.log(x),
-            lambda x, c: sc.log1p(x**-c))
+        def right(x, c, d):
+            power = x**-c
+            # Scaling in log space preserves d*x**-c after the power underflows.
+            return xpx.apply_where(
+                power >= np.finfo(float).tiny, (x, c, d, power),
+                lambda x, c, d, power: -d*sc.log1p(power),
+                lambda x, c, d, power: -np.exp(np.log(d) - c*np.log(x)))
+
+        def left(x, c, d):
+            with np.errstate(over='ignore'):
+                logpower = c*np.log(x)
+                return xpx.apply_where(
+                    np.isfinite(logpower), (x, c, d, logpower),
+                    lambda x, c, d, logpower: d*(logpower - sc.log1p(x**c)),
+                    lambda x, c, d, logpower: (d*c)*np.log(x) - d*sc.log1p(x**c))
+
+        with np.errstate(over='ignore'):
+            return xpx.apply_where(x < 1, (x, c, d), left, right)
 
     def _sf(self, x, c, d):
         return -sc.expm1(self._logcdf(x, c, d))
 
     def _logsf(self, x, c, d):
         logcdf = self._logcdf(x, c, d)
+
+        def small(x, c, d, logcdf):
+            # Here log(sf) equals log(-logcdf) to floating-point precision.
+            with np.errstate(over='ignore'):
+                logpower = -c*np.log(x)
+            logterm = xpx.apply_where(
+                logpower < np.log(np.finfo(float).tiny), logpower,
+                lambda z: z, lambda z: np.log(np.logaddexp(0, z)))
+            return np.log(d) + logterm
+
+        def regular(x, c, d, logcdf):
+            return xpx.apply_where(
+                logcdf < -np.log(2), (x, c, d, logcdf),
+                lambda x, c, d, _: sc.log1p(-self._cdf(x, c, d)),
+                lambda x, c, d, logcdf: scu._log1mexp(logcdf))
+
         return xpx.apply_where(
-            logcdf < -np.log(2), (x, c, d, logcdf),
-            lambda x, c, d, _: sc.log1p(-self._cdf(x, c, d)),
-            lambda x, c, d, logcdf: scu._log1mexp(logcdf))
+            logcdf > -np.finfo(float).tiny, (x, c, d, logcdf), small, regular)
 
     def _ppf(self, q, c, d):
         return _burr_quantile(q, np.log(q), c, d, True)
