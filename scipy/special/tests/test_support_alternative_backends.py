@@ -91,6 +91,11 @@ def _skip_or_tweak_alternative_backends(
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
+    if f_name == "owens_t" and is_jax(xp) and all(
+            dtype == "float32" for dtype in dtypes
+    ):
+        pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
