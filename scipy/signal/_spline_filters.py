@@ -722,6 +722,18 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     -------
     output : ndarray
         The filtered signal.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> rng = np.random.default_rng(0)
+    >>> a = np.sin(np.linspace(0, 9, 50)) + rng.normal(0, 0.25, 50)
+    >>> b = signal.symiirorder1(a, 0.25, 0.5)
+    >>> print(np.round(a[:6], 2))
+    [0.03 0.15 0.52 0.55 0.54 0.89]
+    >>> print(np.round(b[:6], 2))
+    [0.2  0.28 0.44 0.55 0.66 0.82]
     """
     xp = array_namespace(signal)
     signal = xp_promote(signal, force_floating=True, xp=xp)
