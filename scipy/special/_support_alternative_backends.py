@@ -783,8 +783,10 @@ _special_funcs = (
     ),
     _FuncInfo(
         _ufuncs.ndtri_exp, ["y"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-        generic_impl=_ndtri_exp, torch_native=False,
+        xp_capabilities(
+            extra_note=_ufunc_kwargs_extra_note("ndtri_exp", ["torch"])
+        ),
+        generic_impl=_ndtri_exp,
         test_large_ints=False,
     ),
     ## Poisson distribution
