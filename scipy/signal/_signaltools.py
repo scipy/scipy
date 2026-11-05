@@ -1829,6 +1829,18 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         A 2-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
+    See Also
+    --------
+    correlate2d : 2-dimensional cross-correlation; does not flip the kernel.
+
+    Notes
+    -----
+    By the mathematical definition of convolution, the second input (often
+    called the kernel) is rotated by 180° before the sliding sum is formed.
+    Some other libraries label a cross-correlation operation as "convolution"
+    and therefore do not perform this rotation. If you want to apply the
+    kernel without rotating it, use `correlate2d`.
+
     Examples
     --------
     Compute the gradient of an image by 2D convolution with a complex Scharr
