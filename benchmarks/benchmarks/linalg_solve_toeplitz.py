@@ -39,3 +39,28 @@ class SolveToeplitz(Benchmark):
             scipy.linalg.solve_toeplitz((self.c, self.r), self.y)
         else:
             scipy.linalg.solve(self.T, self.y)
+
+
+class SolveToeplitzMultipleRHS(Benchmark):
+    params = (
+        ('float64', 'complex128'),
+        (300, 1000, 4000),
+        (10, 100, 1000),
+    )
+    param_names = ('dtype', 'n', 'nrhs')
+
+    def setup(self, dtype, n, nrhs):
+        random = np.random.RandomState(1234)
+
+        # Positive definite covariance of a Gaussian process on a regular grid
+        c = np.exp(-(np.arange(n) / 10.)**2)
+        c[0] += 1e-6
+        y = random.randn(n, nrhs)
+        if dtype == 'complex128':
+            y = y + 1j*random.randn(n, nrhs)
+
+        self.c = c
+        self.y = y
+
+    def time_solve_toeplitz(self, dtype, n, nrhs):
+        scipy.linalg.solve_toeplitz(self.c, self.y)
