@@ -5,6 +5,26 @@ from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
 import functools
 
 
+def _assert_dct1_length(transform, type, shape, axes):
+    """Validate that DCT-I inputs are long enough.
+
+    The DCT-I of a length ``N`` signal is evaluated with a real FFT of length
+    ``2 * (N - 1)``, so ``N`` must be at least 2. Without this check a length
+    of 1 reaches the backend as a zero-length FFT and surfaces as a bare
+    ``RuntimeError``. DST-I is unaffected: it uses a length ``2 * (N + 1)``
+    FFT and is well defined for ``N == 1``.
+    """
+    if type != 1 or transform is not pfft.dct:
+        return
+    for axis in axes:
+        if shape[axis] < 2:
+            raise ValueError(
+                f"invalid number of data points ({shape[axis]}) specified "
+                f"along axis {axis} for DCT type 1, which requires at least "
+                "2 data points"
+            )
+
+
 def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
          overwrite_x=False, workers=None, orthogonalize=None):
     """Forward or backward 1-D DCT/DST
@@ -32,6 +52,8 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
         raise ValueError(f"invalid number of data points ({tmp.shape[axis]}) specified")
+
+    _assert_dct1_length(transform, type, tmp.shape, (axis,))
 
     out = (tmp if overwrite_x else None)
 
@@ -86,6 +108,9 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
 
     norm = _normalization(norm, forward)
     workers = _workers(workers)
+
+    _assert_dct1_length(transform, type, tmp.shape, axes)
+
     out = (tmp if overwrite_x else None)
 
     # For complex input, transform real and imaginary components separably
