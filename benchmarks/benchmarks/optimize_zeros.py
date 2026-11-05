@@ -6,6 +6,7 @@ from .common import Benchmark, safe_import
 # Import testing parameters
 with safe_import():
     from scipy.optimize._tstutils import methods, mstrings, functions, fstrings
+    from scipy.optimize import bisect, bisect_exact
 from scipy.optimize import newton  # newton predates benchmarks
 
 
@@ -25,6 +26,32 @@ class Zeros(Benchmark):
 
     def time_zeros(self, func, meth):
         self.meth(self.func, self.a, self.b)
+
+
+class BisectExtreme(Benchmark):
+    params = [
+        ['small_root', 'big_root', 'big_log'],
+        ['bisect', 'bisect_exact']
+    ]
+    param_names = ['test function', 'solver']
+
+    def setup(self, func, meth):
+        self.meth = {'bisect': bisect, 'bisect_exact': bisect_exact}[meth]
+        if func == 'small_root':
+            self.f = lambda x: x-1e-20
+            self.a = 0
+            self.b = 1
+        if func == 'big_root':
+            self.f = lambda x: x-1e100
+            self.a = 0
+            self.b = 1e200
+        if func == 'big_log':
+            self.f = lambda x: np.log(x) - 200
+            self.a = 1
+            self.b = 1e300
+
+    def time_bisect(self, func, meth):
+        self.meth(self.f, self.a, self.b,xtol=5e-324, maxiter=1000)
 
 
 class Newton(Benchmark):
