@@ -786,7 +786,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         peaks to be detected at the boundaries (index 0 and `n - 1`).
         Default is `False`.
 
-        .. versionadded:: 2.0.0 (Proposed)
+        .. versionadded:: 2.0.0
 
     Returns
     -------
