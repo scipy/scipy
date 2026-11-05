@@ -811,15 +811,15 @@ _special_funcs = (
     ## --
     ## Normal distribution
     _FuncInfo(
-        _ufuncs.log_ndtr, ["x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
-    ),
-    _FuncInfo(
         _ufuncs.ndtr, ["x"],
         xp_capabilities(
             mparray=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
+    ),
+    _FuncInfo(
+        _ufuncs.log_ndtr, ["x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
     ),
     _FuncInfo(
         _ufuncs.ndtri, ["p"],
