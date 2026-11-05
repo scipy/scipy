@@ -584,6 +584,17 @@ _special_funcs = (
     ),
     # Elliptic functions and integrals
     _FuncInfo(
+        _ufuncs.ellipj, ["u", "m"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("ellipj", ["torch"]),
+        ),
+        positive_only={"cupy": (False, True)},
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.ellipk, ["m"],
         xp_capabilities(
             cpu_only=True,
@@ -598,6 +609,74 @@ _special_funcs = (
             cpu_only=True,
             exceptions=["cupy"],
             extra_note=_ufunc_kwargs_extra_note("ellipkm1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ellipkinc, ["phi", "m"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("ellipkinc", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ellipe, ["m"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ellipe", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ellipeinc, ["phi", "m"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("ellipeinc", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.elliprc, ["x", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("elliprc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.elliprd, ["x", "y", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("elliprd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.elliprf, ["x", "y", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("elliprf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.elliprg, ["x", "y", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("elliprg", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.elliprj, ["x", "y", "z", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("elliprj", ["torch"]),
         ),
         torch_native=False,
     ),
