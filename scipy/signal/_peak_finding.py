@@ -978,7 +978,7 @@ def _select_by_peak_distance_wrap(peaks, priority, distance, original_size):
                 keep[idx_j] = False
                 
     # Re-sort keep mask back to original positional order of peaks
-    return keep[np.argsort(np.argsort(peaks))]
+    return keep
 
 
 def _identify_ridge_lines(matr, max_distances, gap_thresh):
