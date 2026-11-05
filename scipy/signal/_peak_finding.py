@@ -849,7 +849,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     change the position of local maxima. In those cases consider smoothing the
     signal before searching for peaks or use other peak finding and fitting
     methods (like `find_peaks_cwt`).
+
     Some additional comments on specifying conditions:
+
     * Almost all conditions (excluding `distance`) can be given as half-open or
       closed intervals, e.g., ``1`` or ``(1, None)`` defines the half-open
       interval :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
@@ -868,7 +870,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
+
     .. versionadded:: 1.1.0
+
     Examples
     --------
     To demonstrate this function's usage we use a signal `x` supplied with
