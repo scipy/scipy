@@ -344,11 +344,14 @@ def savemat(file_name, mdict,
     'label': 'experiment'}
     >>> savemat("matlab_matrix.mat", mdic)
     """
+    if format not in ('4', '5'):
+        raise ValueError("Format should be '4' or '5'")
+    if format == '4' and long_field_names:
+        message = "Long field names are not available for version 4 files"
+        raise ValueError(message)
+
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':
-            if long_field_names:
-                message = "Long field names are not available for version 4 files"
-                raise ValueError(message)
             MW = MatFile4Writer(file_stream, oned_as)
         elif format == '5':
             MW = MatFile5Writer(file_stream,
@@ -356,8 +359,6 @@ def savemat(file_name, mdict,
                                 unicode_strings=True,
                                 long_field_names=long_field_names,
                                 oned_as=oned_as)
-        else:
-            raise ValueError("Format should be '4' or '5'")
         MW.put_variables(mdict)
 
 
