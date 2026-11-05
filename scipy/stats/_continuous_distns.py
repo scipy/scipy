@@ -1147,6 +1147,23 @@ class bradford_gen(rv_continuous):
 bradford = bradford_gen(a=0.0, b=1.0, name='bradford')
 
 
+def _burr_inv(z, c):
+    # expm1(z) overflows for z above about 709.
+    return xpx.apply_where(
+        z < 700, (z, c),
+        lambda z, c: sc.expm1(z)**(-1/c),
+        lambda z, c: np.exp(-(z + scu._log1mexp(-z))/c))
+
+
+def _burr_quantile(p, logp, c, d, exact):
+    z = -logp/d
+    # The power form retains precision when the subtraction is well separated.
+    return xpx.apply_where(
+        exact & (z > np.log(2)) & (z < 700), (p, z, c, d),
+        lambda p, z, c, d: (p**(-1/d) - 1)**(-1/c),
+        lambda p, z, c, d: _burr_inv(z, c))
+
+
 class burr_gen(rv_continuous):
     r"""A Burr (Type III) continuous random variable.
 
@@ -1203,42 +1220,60 @@ class burr_gen(rv_continuous):
         return [ic, id]
 
     def _pdf(self, x, c, d):
-        # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
+        def right(x, c, d):
+            # A subnormal power can lose precision before multiplication by c*d.
+            return xpx.apply_where(
+                (c + 1)*np.log(x) < 708, (x, c, d),
+                lambda x, c, d: c*d*x**(-c-1)*np.exp(-(d+1)*sc.log1p(x**-c)),
+                lambda x, c, d: np.exp(self._logpdf(x, c, d)))
+
         output = xpx.apply_where(
-            x == 0, (x, c, d),
-            lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
-            lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
-                                ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
+            x < 1, (x, c, d),
+            lambda x, c, d: c*d*x**(c*d-1)*np.exp(-(d+1)*sc.log1p(x**c)),
+            right)
         return output[()] if output.ndim == 0 else output
 
     def _logpdf(self, x, c, d):
         output = xpx.apply_where(
-            x == 0, (x, c, d),
-            lambda x_, c_, d_: (np.log(c_) + np.log(d_) + sc.xlogy(c_*d_ - 1, x_)
-                                - (d_+1) * sc.log1p(x_**(c_))),
-            lambda x_, c_, d_: (np.log(c_) + np.log(d_)
-                                + sc.xlogy(-c_ - 1, x_)
-                                - sc.xlog1py(d_+1, x_**(-c_))))
+            x < 1, (x, c, d),
+            lambda x, c, d: (np.log(c) + np.log(d) + sc.xlogy(c*d-1, x)
+                             - (d+1)*sc.log1p(x**c)),
+            lambda x, c, d: (np.log(c) + np.log(d) - (c+1)*np.log(x)
+                             - (d+1)*sc.log1p(x**-c)))
         return output[()] if output.ndim == 0 else output
 
     def _cdf(self, x, c, d):
-        return (1 + x**(-c))**(-d)
+        def power(x, c, d):
+            with np.errstate(over='ignore'):
+                cdf = (1 + x**-c)**-d
+            return np.where(cdf == 0, np.exp(self._logcdf(x, c, d)), cdf)
+
+        return xpx.apply_where(
+            x <= 1, (x, c, d), power,
+            lambda x, c, d: np.exp(self._logcdf(x, c, d)))
 
     def _logcdf(self, x, c, d):
-        return sc.log1p(x**(-c)) * (-d)
+        return -d*xpx.apply_where(
+            x < 1, (x, c),
+            lambda x, c: sc.log1p(x**c) - c*np.log(x),
+            lambda x, c: sc.log1p(x**-c))
 
     def _sf(self, x, c, d):
-        return np.exp(self._logsf(x, c, d))
+        return -sc.expm1(self._logcdf(x, c, d))
 
     def _logsf(self, x, c, d):
-        return np.log1p(- (1 + x**(-c))**(-d))
+        logcdf = self._logcdf(x, c, d)
+        return xpx.apply_where(
+            logcdf < -np.log(2), (x, c, d, logcdf),
+            lambda x, c, d, _: sc.log1p(-self._cdf(x, c, d)),
+            lambda x, c, d, logcdf: scu._log1mexp(logcdf))
 
     def _ppf(self, q, c, d):
-        return (q**(-1.0/d) - 1)**(-1.0/c)
+        return _burr_quantile(q, np.log(q), c, d, True)
 
     def _isf(self, q, c, d):
-        _q = sc.xlog1py(-1.0 / d, -q)
-        return sc.expm1(_q) ** (-1.0 / c)
+        # Subtracting q from 1 is exact when q >= 0.5.
+        return _burr_quantile(1-q, sc.log1p(-q), c, d, q >= 0.5)
 
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
