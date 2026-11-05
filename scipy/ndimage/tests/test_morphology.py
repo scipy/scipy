@@ -2857,6 +2857,53 @@ class TestNdimageMorphology:
             out = func(data, axes=axes, **kwargs)
         xp_assert_close(out, expected)
 
+    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(
+        "cupy", reason="these filters do not yet have axes support in CuPy")
+    @skip_xp_backends(
+        "jax.numpy", reason="these filters are not implemented in JAX.numpy")
+    @pytest.mark.parametrize(
+        'shape, axes',
+        [((6, 8, 12), (0, 2)), ((6, 8, 12), (2, 0)), ((6, 8, 12), (2, 1)),
+         ((6, 8, 12), (1, 0)), ((8, 12), (0, 1)), ((8, 12), (1, 0))]
+    )
+    @pytest.mark.parametrize(
+        'func, kernel_name',
+        [
+            make_xp_pytest_param(ndimage.binary_erosion, 'structure'),
+            make_xp_pytest_param(ndimage.binary_dilation, 'structure'),
+            make_xp_pytest_param(ndimage.grey_erosion, 'footprint'),
+            make_xp_pytest_param(ndimage.grey_dilation, 'footprint'),
+            make_xp_pytest_param(ndimage.grey_erosion, 'structure'),
+            make_xp_pytest_param(ndimage.grey_dilation, 'structure'),
+        ]
+    )
+    def test_axes_order(self, xp, func, kernel_name, shape, axes):
+        rng = np.random.default_rng(22576)
+        kernel = np.tri(3, 5, 1)
+        if func in (ndimage.binary_erosion, ndimage.binary_dilation):
+            data = rng.random(shape) > 0.4
+            kernel = kernel.astype(bool)
+        else:
+            data = rng.integers(0, 10, size=shape)
+            if kernel_name == 'structure':
+                kernel = kernel * rng.integers(1, 5, size=kernel.shape)
+        data = xp.asarray(data)
+        origin = (1, -2)
+        output = func(data, axes=axes, origin=origin,
+                      **{kernel_name: xp.asarray(kernel)})
+
+        other_axes = [ax for ax in range(len(shape)) if ax not in axes]
+        kernel_nd = kernel.reshape(kernel.shape + (1,) * len(other_axes))
+        kernel_nd = np.moveaxis(kernel_nd, range(len(shape)),
+                                list(axes) + other_axes)
+        origin_nd = [0] * len(shape)
+        for o, ax in zip(origin, axes):
+            origin_nd[ax] = o
+        expected = func(data, origin=origin_nd,
+                        **{kernel_name: xp.asarray(kernel_nd)})
+        xp_assert_close(output, expected)
+
     @skip_xp_backends(np_only=True, exceptions=["cupy"],
                       reason="inplace output= is numpy-specific")
     @make_xp_test_case(ndimage.binary_hit_or_miss)
