@@ -878,19 +878,16 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     To demonstrate this function's usage we use a signal `x` supplied with
     SciPy (see `scipy.datasets.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.datasets import electrocardiogram
-    >>> from scipy.signal import find_peaks
-    >>> x = electrocardiogram()[2000:4000]
-    >>> peaks, _ = find_peaks(x, height=0)
-    >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.plot(np.zeros_like(x), "--", color="gray")
+    ...
     >>> plt.show()
+
     We can select peaks below 0 with ``height=(None, 0)`` or use arrays matching
     `x` in size to reflect a changing condition for different parts of the
     signal.
+
     >>> border = np.sin(np.linspace(0, 3 * np.pi, x.size))
     >>> peaks, _ = find_peaks(x, height=(-border, border))
     >>> plt.plot(x)
