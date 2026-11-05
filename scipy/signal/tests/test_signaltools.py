@@ -3165,6 +3165,19 @@ def test_filtfilt_gust():
     check_filtfilt_gust(b, a, (length,), 0, approx_impulse_len)
 
 
+def test_filtfilt_gust_trailing_zeros():
+    # Trailing zeros in b or a do not change the filter (gh-26610).
+    x = np.random.default_rng(0).standard_normal(97)
+    y = filtfilt([1.0], [1.0, -0.5], x, method="gust")
+    y_a = filtfilt([1.0], [1.0, -0.5, 0.0, 0.0], x, method="gust")
+    y_b = filtfilt([1.0, 0.0, 0.0], [1.0, -0.5], x, method="gust")
+    xp_assert_close(y_a, y, rtol=1e-12, atol=1e-12)
+    xp_assert_close(y_b, y, rtol=1e-12, atol=1e-12)
+    # An all-zero numerator still gives a zero output.
+    y0 = filtfilt([0.0, 0.0], [1.0, -0.5], x, method="gust")
+    xp_assert_close(y0, np.zeros_like(x), atol=0)
+    
+
 @make_xp_test_case(signal.decimate)
 class TestDecimate:
     def test_bad_args(self, xp):
