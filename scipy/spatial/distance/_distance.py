@@ -695,15 +695,11 @@ def hamming(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
-        Input array.
-    v : (N,) array_like
-        Input array.
-   u : (...,N) array_like
+    u : (..., N) array_like
        Input array.
-   v : (...,N) array_like
+    v : (..., N) array_like
        Input array.
-   w : (...,N) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
