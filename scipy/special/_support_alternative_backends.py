@@ -685,6 +685,22 @@ _special_funcs = (
     ),
     # Bessel functions
     _FuncInfo(
+        _ufuncs.jv, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("jv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.jve, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("jve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.yn, ["n", "x"],
         xp_capabilities(
             cpu_only=True,
@@ -696,7 +712,115 @@ _special_funcs = (
         test_large_ints=False,
         torch_native=False,
     ),
-    # --
+    _FuncInfo(
+        _ufuncs.yv, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("yv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.yve, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("yve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.iv, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("iv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ive, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ive", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kn, ["n", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kn", ["torch"]),
+        ),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kv, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kve, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hankel1, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hankel1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hankel1e, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hankel1e", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hankel2, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hankel2", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hankel2e, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hankel2e", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.wright_bessel, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("wright_bessel", ["torch"]),
+        ),
+        positive_only=True,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_wright_bessel, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_wright_bessel", ["torch"]),
+        ),
+        positive_only=True,
+        torch_native=False,
+    ),
     # Faster versions of common Bessel functions
     _FuncInfo(
         _ufuncs.j0, ["x"],
