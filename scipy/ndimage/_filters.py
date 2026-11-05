@@ -2013,7 +2013,12 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # to allow the fast path for these corner cases as well,
         # if algorithmic fixes are found.
         lim2 = input.size - ((footprint.size - 1) // 2 - origin)
-        if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
+        # The fast 1-D path only receives footprint.size, not the
+        # footprint itself, so it cannot skip zero entries. Fall back
+        # to the general path when the footprint has gaps, i.e. when
+        # the number of nonzero entries differs from its size (gh-26577).
+        if (input.ndim == 1 and filter_size == footprint.size
+                and ((lim2 >= 0) or (input.size == 1))):
             if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
