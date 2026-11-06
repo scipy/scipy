@@ -1243,13 +1243,21 @@ def test_cut_tree_n_clusters_order(xp):
     # them one at a time
     one_at_a_time = xp.concat([cut_tree(Z, n_clusters=k) for k in range(1, 6)],
                               axis=1)
-    xp_assert_close(cut_tree(Z, n_clusters=list(range(1, 6))), one_at_a_time,
-                    rtol=1e-15)
+    xp_assert_equal(cut_tree(Z, n_clusters=list(range(1, 6))), one_at_a_time)
 
     # ... and the column for `n_clusters=5` must not depend on it being the
     # first entry requested
-    xp_assert_close(cut_tree(Z, n_clusters=[4, 5])[:, [1]],
-                    cut_tree(Z, n_clusters=[5]), rtol=1e-15)
+    xp_assert_equal(cut_tree(Z, n_clusters=[4, 5])[:, [1]],
+                    cut_tree(Z, n_clusters=[5]))
+
+    # repeating `n_clusters=5` must fill every column that requested it
+    xp_assert_equal(cut_tree(Z, n_clusters=[5, 5]),
+                    xp.concat([cut_tree(Z, n_clusters=5)] * 2, axis=1))
+
+    # `height=0` reaches the same all-singletons case through `height`
+    xp_assert_equal(cut_tree(Z, height=[10, 0]),
+                    xp.concat([cut_tree(Z, height=10),
+                               cut_tree(Z, height=0)], axis=1))
 
 
 @make_xp_test_case(optimal_leaf_ordering)
