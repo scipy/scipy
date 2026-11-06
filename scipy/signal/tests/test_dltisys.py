@@ -72,22 +72,20 @@ class TestDLTI:
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dlsim, system, np.zeros((5, 1)))
 
-    def test_dlsim_tf_zpk(self):
-        # Transfer function and zpk systems go through tf2ss, which is
-        # numpy-only, so this test does not take the xp fixture.
-        u = np.linspace(0, 4.0, num=5)
-        t_in = np.linspace(0, 2.0, num=5)
+    def test_dlsim_tf_zpk(self, xp):
+        u = xp.linspace(0, 4.0, num=5)
+        t_in = xp.linspace(0, 2.0, num=5)
 
         # Transfer functions (assume dt = 0.5)
-        num = np.asarray([1.0, -0.1])
-        den = np.asarray([0.3, 1.0, 0.2])
-        yout_truth = np.array([[0.0,
-                                0.0,
-                                3.33333333333333,
-                                -4.77777777777778,
-                                23.0370370370370]]).T
+        num = xp.asarray([1.0, -0.1])
+        den = xp.asarray([0.3, 1.0, 0.2])
+        yout_truth = xp.asarray([[0.0,
+                                  0.0,
+                                  3.33333333333333,
+                                  -4.77777777777778,
+                                  23.0370370370370]]).T
 
-        tout, yout = dlsim((num, den, 0.5), u[:, np.newaxis], t_in)
+        tout, yout = dlsim((num, den, 0.5), u[:, None], t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
@@ -99,10 +97,10 @@ class TestDLTI:
         assert_array_almost_equal(t_in, tout)
 
         # zeros-poles-gain representation
-        zd = np.array([0.5, -0.5])
-        pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
+        zd = xp.asarray([0.5, -0.5])
+        pd = xp.asarray([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
         k = 1.0
-        yout_truth = np.array([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
+        yout_truth = xp.asarray([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
 
         tout, yout = dlsim((zd, pd, k, 0.5), u, t_in)
 
@@ -143,18 +141,17 @@ class TestDLTI:
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dstep, system)
 
-    def test_dstep_tf_zpk(self):
-        # tf and zpk systems route through tf2ss, which is numpy-only
-        tfin = ([1.0], [1.0, 1.0], 0.5)
-        yout_tfstep = np.asarray([0.0, 1.0, 0.0])
+    def test_dstep_tf_zpk(self, xp):
+        tfin = (xp.asarray([1.0]), xp.asarray([1.0, 1.0]), 0.5)
+        yout_tfstep = xp.asarray([0.0, 1.0, 0.0])
         tout, yout = dstep(tfin, n=3)
         assert len(yout) == 1
-        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfstep)
+        assert_array_almost_equal(xp.reshape(yout[0], (-1,)), yout_tfstep)
 
         zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
         tout, yout = dstep(zpkin, n=3)
         assert len(yout) == 1
-        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfstep)
+        assert_array_almost_equal(xp.reshape(yout[0], (-1,)), yout_tfstep)
 
     def test_dimpulse(self, xp):
 
@@ -189,18 +186,17 @@ class TestDLTI:
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dimpulse, system)
 
-    def test_dimpulse_tf_zpk(self):
-        # tf and zpk systems route through tf2ss, which is numpy-only
-        tfin = ([1.0], [1.0, 1.0], 0.5)
-        yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
+    def test_dimpulse_tf_zpk(self, xp):
+        tfin = (xp.asarray([1.0]), xp.asarray([1.0, 1.0]), 0.5)
+        yout_tfimpulse = xp.asarray([0.0, 1.0, -1.0])
         tout, yout = dimpulse(tfin, n=3)
         assert len(yout) == 1
-        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfimpulse)
+        assert_array_almost_equal(xp.reshape(yout[0], (-1,)), yout_tfimpulse)
 
         zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
         tout, yout = dimpulse(zpkin, n=3)
         assert len(yout) == 1
-        assert_array_almost_equal(np.reshape(yout[0], (-1,)), yout_tfimpulse)
+        assert_array_almost_equal(xp.reshape(yout[0], (-1,)), yout_tfimpulse)
 
     def test_dlsim_trivial(self, xp):
         a = xp.asarray([[0.0]])
@@ -288,16 +284,15 @@ class TestDLTI:
         xp_assert_close(yi[0][:, 0], y0)
         xp_assert_close(yi[1][:, 0], y1)
 
-    def test_step_and_impulse_tf_n(self):
+    def test_step_and_impulse_tf_n(self, xp):
         # Check that dt=0.1, n=3 gives 3 time values.
-        # tf systems route through tf2ss, which is numpy-only.
-        system = ([1.0], [1.0, -0.5], 0.1)
+        system = (xp.asarray([1.0]), xp.asarray([1.0, -0.5]), 0.1)
         t, (y,) = dstep(system, n=3)
-        xp_assert_close(t, np.asarray([0, 0.1, 0.2]))
-        xp_assert_equal(y.T, np.asarray([[0, 1.0, 1.5]]))
+        xp_assert_close(t, xp.asarray([0, 0.1, 0.2]))
+        xp_assert_close(y.T, xp.asarray([[0, 1.0, 1.5]]))
         t, (y,) = dimpulse(system, n=3)
-        xp_assert_close(t, np.asarray([0, 0.1, 0.2]))
-        xp_assert_equal(y.T, np.asarray([[0, 1, 0.5]]))
+        xp_assert_close(t, xp.asarray([0, 0.1, 0.2]))
+        xp_assert_close(y.T, xp.asarray([[0, 1, 0.5]]))
 
 
 class TestDlti:
@@ -483,28 +478,29 @@ class Test_dfreqresp:
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dfreqresp, system)
 
-    def test_from_state_space(self):
-        # State-space systems go through ss2tf, which is numpy-only, so
-        # this test does not take the xp fixture.
+    @skip_xp_backends("cupy",
+                      reason="cupyx.scipy.signal does not accept SciPy LTI objects")
+    def test_from_state_space(self, xp):
         # H(z) = 2 / z^3 - 0.5 * z^2
 
-        system_TF = dlti(np.asarray([2.0]), np.asarray([1.0, -0.5, 0.0, 0.0]))
+        system_TF = dlti(xp.asarray([2.0]), xp.asarray([1.0, -0.5, 0.0, 0.0]))
 
-        A = np.asarray([[0.5, 0.0, 0.0],
+        A = xp.asarray([[0.5, 0.0, 0.0],
                         [1.0, 0.0, 0.0],
                         [0.0, 1.0, 0.0]])
-        B = np.asarray([[1.0], [0.0], [0.0]])
-        C = np.asarray([[0.0, 0.0, 2.0]])
-        D = np.asarray([[0.0]])
+        B = xp.asarray([[1.0], [0.0], [0.0]])
+        C = xp.asarray([[0.0, 0.0, 2.0]])
+        D = xp.asarray([[0.0]])
 
         system_SS = dlti(A, B, C, D)
-        w = 10.0**np.arange(-3, 0, .5)
+        w = xp.asarray(10.0**np.arange(-3, 0, .5))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             w1, H1 = dfreqresp(system_TF, w=w)
             w2, H2 = dfreqresp(system_SS, w=w)
 
-        assert_almost_equal(H1, H2)
+        # default rtol: eigvals is noisier in float32
+        xp_assert_close(H1, H2)
 
     @skip_xp_backends("cupy",
                       reason="cupyx.scipy.signal does not accept SciPy LTI objects")
