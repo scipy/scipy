@@ -20,7 +20,6 @@ from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError, USING_ACCELERATE
 from scipy._lib._array_api import make_xp_test_case
-from scipy.conftest import skip_xp_invalid_arg
 
 pytestmark = [
     pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
@@ -1096,7 +1095,6 @@ def test_masked_array_2_sentinel_array():
     assert B_out is B
 
 
-@skip_xp_invalid_arg
 def test_masked_dtype():
     # When _masked_arrays_2_sentinel_arrays was first added, it always
     # upcast the arrays to np.float64. After gh16662, check expected promotion
@@ -1154,7 +1152,6 @@ def test_masked_dtype():
     assert stats.gmean(a).dtype == np.float32
 
 
-@skip_xp_invalid_arg
 def test_masked_stat_1d():
     # basic test of _axis_nan_policy_factory with 1D masked sample
     males = [19, 22, 16, 29, 24]
@@ -1194,7 +1191,6 @@ def test_masked_stat_1d():
 
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
-@skip_xp_invalid_arg
 @pytest.mark.parametrize(("axis"), list(range(-3, 3)))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
@@ -1220,7 +1216,6 @@ def test_masked_stat_3d(axis):
 
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
-@skip_xp_invalid_arg
 def test_mixed_mask_nan_1():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
@@ -1270,7 +1265,6 @@ def test_mixed_mask_nan_1():
 
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
-@skip_xp_invalid_arg
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # check for expected interaction between masks and nans
@@ -1391,7 +1385,6 @@ def test_other_axis_tuples(axis):
 
 @pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
-@skip_xp_invalid_arg
 @pytest.mark.parametrize(
     ("weighted_fun_name, unpacker"),
     [

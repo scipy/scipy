@@ -509,6 +509,9 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
+            # The stable basis below belongs to the scaled pencil, so use its E
+            if e is not None:
+                e = J[:m, :m].copy()
 
     # Deflate the pencil to 2m x 2m ala Ref.1, eq.(55)
     q, r = qr(H[:, -n:])
@@ -726,6 +729,9 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
+            # The stable basis below belongs to the scaled pencil, so use its E
+            if e is not None:
+                e = J[:m, :m].copy()
 
     # Deflate the pencil by the R column ala Ref.1
     q_of_qr, _ = qr(H[:, -n:])
