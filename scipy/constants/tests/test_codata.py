@@ -68,6 +68,22 @@ def test_gh11341():
     assert a == b == c
 
 
+def test_gh26500():
+    # gh-26500 noted that the momentum aliases pointed the current CODATA
+    # keys back at the stale abbreviated keys, so the 2022 values were
+    # silently overwritten by the 2014 ones. Both spellings must resolve
+    # to the current CODATA value.
+    pc = constants.physical_constants
+    for full, abbrev in [('natural unit of momentum',
+                          'natural unit of mom.um'),
+                         ('natural unit of momentum in MeV/c',
+                          'natural unit of mom.um in MeV/c'),
+                         ('atomic unit of momentum',
+                          'atomic unit of mom.um')]:
+        assert pc[full] == pc[abbrev]
+        assert pc[full] == _cd._physical_constants_2022[full]
+
+
 def test_gh14467():
     # gh-14467 noted that some physical constants in CODATA are rounded
     # to only ten significant figures even though they are supposed to be

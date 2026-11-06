@@ -1181,11 +1181,51 @@ class BSpline:
 
         Examples
         --------
+        The derivative can be used for finding the local extrema of a curve:
+
         >>> import numpy as np
+        >>> from scipy.interpolate import make_interp_spline, PPoly
+        >>> x = np.linspace(0, 10, 70)
+        >>> y = np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=4)  # spl is a quartic (degree 4) spline
+
+        Now, differentiate the spline and find the zeros of the derivative.
+        `BSpline` objects do not have a ``roots`` method, so we convert the
+        derivative to a `PPoly`, which represents the same curve as a piecewise
+        polynomial. We fit a spline of degree 4 rather than the default cubic,
+        so that its derivative is smooth enough to locate the extrema
+        accurately: the derivative of a quartic spline is a cubic spline with
+        the same breakpoints, and `PPoly.roots` finds all real roots of each
+        cubic piece directly, without iterating.
+
+        >>> dspl = spl.derivative()
+        >>> xe = PPoly.from_spline(dspl).roots(extrapolate=False)
+        >>> xe / np.pi
+        array([0.50000001, 1.5       , 2.49999998])
+
+        The array holds the locations, in units of :math:`\\pi`, where the
+        derivative vanishes on the data interval :math:`[0, 10]`. This agrees
+        well with roots :math:`\\pi/2 + n\\pi` of :math:`\\cos(x) = \\sin'(x)`.
+
+        A zero of the derivative only tells us that the curve is flat there,
+        which usually means a local extremum. To tell maxima from minima, check
+        the sign of the second derivative: negative at a maximum, positive at a
+        minimum.
+
+        >>> np.sign(spl.derivative(2)(xe))
+        array([-1.,  1., -1.])
+
+        So the curve has maxima at :math:`x \\approx \\pi/2` and
+        :math:`x \\approx 5\\pi/2`, and a minimum at :math:`x \\approx 3\\pi/2`.
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
         >>> from scipy.interpolate import BSpline, make_interp_spline
         >>> x = np.arange(11)
         >>> y = x**4 + np.sin(x)
-        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
 
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
@@ -1269,11 +1309,38 @@ class BSpline:
 
         Examples
         --------
+        Taking the derivative of the antiderivative recovers the original
+        spline, up to floating point error:
+
         >>> import numpy as np
+        >>> from scipy.interpolate import make_interp_spline
+        >>> x = np.linspace(0, np.pi/2, 70)
+        >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
+        >>> spl = make_interp_spline(x, y)    # spl is a cubic spline
+        >>> spl(1.7), spl.antiderivative().derivative()(1.7)
+        (array(2.15654299), array(2.15654299))
+
+        Antiderivative can be used to evaluate definite integrals:
+
+        >>> ispl = spl.antiderivative()
+        >>> ispl(np.pi/2) - ispl(0)
+        np.float64(2.25720536)
+
+        This is indeed an approximation to the complete elliptic integral
+        :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
+
+        >>> from scipy.special import ellipk
+        >>> ellipk(0.8)
+        np.float64(2.25720533)
+
+        The coefficient array of the returned spline is padded with ``k + 1``
+        extra trailing entries, which are not used in evaluations, as the
+        examples below demonstrate:
+
         >>> from scipy.interpolate import BSpline, make_interp_spline
         >>> x = np.arange(11)
         >>> y = x**4 + np.sin(x)
-        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl = make_interp_spline(x, y, k=3)  # spl is a cubic (degree 3) spline
 
         A spline of degree ``k`` is built from polynomial pieces of degree
         ``k``, joined at the knots ``t``. The number of knots, the number of
@@ -3134,7 +3201,7 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
             xtwx_banded, lam, omega, xtwy, compute_trace=True,
             check_conditioning=False,
         )
-        rss = np.sum(w * np.square(y - X @ c)) / n
+        rss = np.sum(w[:, None] * np.square(y - X @ c)) / n
         return rss / (1 - tr / n) ** 2
 
     def _gcv_log(s):
@@ -3201,10 +3268,8 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             )
         if lam < 0.:
             raise ValueError('Regularization parameter should be non-negative')
-    if np.ndim(y) > 1:
-        raise NotImplementedError(
-            "batched `y` is not supported with user-provided knots yet; "
-            "`y` must be 1-D")
+    y_shape1 = y.shape[1:]
+    y_flat = y.reshape((y.shape[0], -1))  # flatten trailing dims.
     t = np.ascontiguousarray(t, dtype=float)
     if not np.all(np.isfinite(t)):
         raise ValueError("`t` must not contain infs or nans")
@@ -3256,19 +3321,28 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
 
     omega = _penalty_matrix_banded(t)
     XtWX = X.T @ X.multiply(w[:, None])
-    XtWy = X.T @ (w * y)
+    XtWy = X.T @ (w[:, None] * y_flat)
     XtWX_banded = np.zeros((4, m))
     for i in range(4):
         # Convert to LAPACK symmetric upper-banded storage,
         # as accepted by solveh_banded.
         XtWX_banded[3 - i, i:] = XtWX.diagonal(i)
     if lam is None:
-        lam = _make_smoothing_spline_user_knots_gcv(
-            XtWX_banded, X, y, w, XtWy, omega)
+        lams = np.empty(y_flat.shape[1])
+        for i in range(y_flat.shape[1]):
+            lams[i] = _make_smoothing_spline_user_knots_gcv(
+                XtWX_banded, X, y_flat[:, i: i+1], w, XtWy[:, i: i+1], omega)
     try:
-        c, _ = _solve_smoothing_spline_coefficients(
-            XtWX_banded, lam, omega, XtWy, compute_trace=False,
-        )
+        if lam is not None:
+            c, _ = _solve_smoothing_spline_coefficients(
+                XtWX_banded, lam, omega, XtWy, compute_trace=False,
+            )
+        else:
+            c = np.empty((m, y_flat.shape[1]))
+            for i in range(y_flat.shape[1]):
+                c[:, i], _ = _solve_smoothing_spline_coefficients(
+                    XtWX_banded, lams[i], omega, XtWy[:, i], compute_trace=False,
+                )
     except LinAlgError as e:
         # why only the two extremes of lam can fail: companion report,
         # Sec. 15 FAQ 1 (link in make_smoothing_spline)
@@ -3284,6 +3358,7 @@ def _make_smoothing_spline_user_knots(x, y, w, lam, t, axis, *, xp, device=None)
             "proportionally to `lam` (use a smaller `lam`; the fit there is "
             "already indistinguishable from its straight-line limit).") from e
     c = np.ascontiguousarray(c)
+    c = c.reshape((c.shape[0],) + y_shape1)
     t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     return BSpline.construct_fast(t, c, 3, axis=axis)
 
