@@ -25,14 +25,14 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from ._optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
-has_umfpack = True
-has_cholmod = True
 try:
     from sksparse import cholmod
+    has_cholmod = True
 except ImportError:
     has_cholmod = False
 try:
-    from sksparse import umfpack
+    from sksparse import umfpack  # noqa: F401
+    has_umfpack = True
 except ImportError:
     has_umfpack = False
 
@@ -93,13 +93,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                     _get_solver.cholmod_factor = cholmod.cho_factor(M, order="default")
                 solve = _get_solver.cholmod_factor.solve
             elif has_umfpack and sym_pos:
-                try:
-                    # Will raise an exception in the first call,
-                    # or when the matrix changes due to a new problem
-                    _get_solver.umfpack_factor.factorize(M)
-                except Exception:
-                    _get_solver.umfpack_factor = umfpack.umf_factor(M)
-                solve = _get_solver.umfpack_factor.solve
+                solve = sps.linalg.factorized(M, use_umfpack=True)
             else:  # factorized doesn't pass permc_spec
                 solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
 
