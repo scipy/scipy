@@ -248,10 +248,13 @@ def solve(a, b, lower=False, overwrite_a=False,
                 raise LinAlgError("Matrix is not positive definite.")
         elif structure == 211:
             # Hermitian matrices have real diagonal entries.
+            # Ignore the imaginary part of the diagonal entry
+            # rather than rejecting the input, ensuring consistent behaviour
+            # for 1x1 and larger matrices.
             a1 = a1.real
 
-        # Checking for singularity before performing scalar division.
         if a1.item() == 0:
+            # Checking for singularity before performing scalar division.
             raise LinAlgError("A singular matrix detected.")
 
         out = b1 / a1
