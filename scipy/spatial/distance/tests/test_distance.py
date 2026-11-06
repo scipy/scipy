@@ -1845,13 +1845,18 @@ class TestMahalanobis:
         result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
         xp_assert_close(result, expected)
 
-    def test_mahalanobis_nd(self):
+    @pytest.mark.parametrize("u_shape, v_shape, VI_shape", [
+        ((5, 2, 4), (2, 4), (3, 1, 1, 4, 4)),
+        ((2, 4), (1, 4), (2, 4, 4)),
+        ((1, 4), (3, 2, 4), (4, 4)),
+        ((4,), (3, 1, 4), (2, 4, 4)),
+    ])
+    def test_mahalanobis_nd(self, u_shape, v_shape, VI_shape):
         # We need to test this separate because mahalanobis uses "VI" instead of "w"
         rng = np.random.default_rng(1)
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('VI', 2))(mahalanobis)
-        u = rng.random((5, 2, 4))
-        v = rng.random((2, 4))
-        A = rng.random((3, 1, 1, 4, 4))
+        u, v = rng.random(u_shape), rng.random(v_shape)
+        A = rng.random(VI_shape)
         VI = A @ A.mT + np.eye(4)  # positive definite
         xp_assert_close(mahalanobis(u, v, VI), ref_func(u, v, VI))
 
@@ -1859,6 +1864,8 @@ class TestMahalanobis:
         ((5, 2, 4), (3, 4), (4, 4), "incompatible for broadcasting"),  # u and v
         ((5, 2, 4), (2, 4), (3, 4, 4), "incompatible for broadcasting"),  # VI batch
         ((5, 2, 4), (2, 4), (3, 3), "VI is not compatible"),  # VI and last axis
+        ((2, 1), (2, 4), (4, 4), "VI is not compatible"),  # u size 1 on last axis
+        ((2, 4), (2, 1), (4, 4), "VI is not compatible"),  # v size 1 on last axis
         ((5, 2, 4), (2, 4), (4, 3), "VI must be a square matrix"),
     ])
     def test_mahalanobis_nd_invalid_shapes(self, xp, u_shape, v_shape, VI_shape,
