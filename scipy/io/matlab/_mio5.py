@@ -720,7 +720,8 @@ class VarWriter5:
         if arr.dtype.kind == 'S' and not arr.tobytes().isascii():
             # MATLAB has no byte strings, so non-ASCII bytes must be text in `codec`
             arr = np.char.decode(arr, codec)
-        if arr.size == 0 or np.all(arr == arr.dtype.type()):
+        # np.asarray: chararray comparisons ignore trailing whitespace
+        if arr.size == 0 or np.all(np.asarray(arr) == arr.dtype.type()):
             # This an empty string array or a string array containing
             # only empty strings. Matlab cannot distinguish between a
             # string array that is empty, and a string array containing

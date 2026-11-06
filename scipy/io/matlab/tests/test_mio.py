@@ -900,6 +900,17 @@ def test_save_bytes(fmt):
     savemat(BytesIO(), {'e': np.empty((0, 3), dtype='S2')}, format=fmt)
 
 
+@pytest.mark.filterwarnings("ignore:The chararray class:DeprecationWarning")
+def test_save_whitespace_chararray():
+    # Whitespace-only strings in a chararray are not empty
+    stream = BytesIO()
+    savemat(stream, {'x': np.char.array([b'  ']), 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
 def test_save_bytes_non_ascii():
     # gh-4146: non-ASCII bytes are decoded with the file codec
     as_bytes, as_str = BytesIO(), BytesIO()
