@@ -1003,6 +1003,7 @@ def mahalanobis(u, v, VI):
     return np.sqrt(m)
 
 
+@xp_capabilities()
 def chebyshev(u, v, w=None):
     r"""
     Compute the Chebyshev distance.
@@ -1029,17 +1030,17 @@ def chebyshev(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like of floats
+    u : (..., N) array_like
         Input vector.
-    v : (N,) array_like of floats
+    v : (..., N) array_like
         Input vector.
-    w : (N,) array_like of floats, optional
+    w : (..., N) array_like, optional
         Weight vector.  Default is ``None``, which gives all pairs
         :math:`(u_i, v_i)` the same weight ``1.0``.
 
     Returns
     -------
-    chebyshev : float
+    chebyshev : float or array
         The Chebyshev distance between vectors `u` and `v`, optionally weighted
         by `w`.
 
@@ -1051,17 +1052,17 @@ def chebyshev(u, v, w=None):
     --------
     >>> from scipy.spatial import distance
     >>> distance.chebyshev([1, 0, 0], [0, 1, 0])
-    1
+    1.0
     >>> distance.chebyshev([1, 1, 0], [0, 1, 0])
-    1
+    1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
     if w is not None:
-        w = _validate_weights(w)
-        return max((w > 0) * abs(u - v))
-    return max(abs(u - v))
+        w = _validate_weights(w, xp=xp)
+        return xp.max(xp.where(w > 0, xp.abs(u - v), 0), axis=-1)
+    return xp.max(xp.abs(u - v), axis=-1)
 
 
 def braycurtis(u, v, w=None):

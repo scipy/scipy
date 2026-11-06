@@ -51,7 +51,7 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
-# these were missing: chebyshev cityblock
+# these were missing: cityblock
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
@@ -457,7 +457,6 @@ wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
-wchebyshev = _weight_checked(chebyshev)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
@@ -2405,7 +2404,55 @@ class TestJaccard:
         xp_assert_close(np.zeros(10), Y, rtol=eps)
 
 
+@make_xp_test_case(chebyshev)
 class TestChebyshev:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_chebyshev(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        x, y = xp.asarray([1, 2, 3], dtype=dtype), xp.asarray([6, 5, 4], dtype=dtype)
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    def test_weighted(self, xp):
+        # Only components with non-zero weight participate in the 'max'.
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0])
+        w = xp.asarray([0.0, 1.0, 5.0])
+        xp_assert_close(chebyshev(x, y, w), 3.0)
+
+    def test_array_like(self):
+        x, y = [1, 2, 3], [6, 5, 4]
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.random(100), dtype=dtype)
+        y = xp.asarray(rng.random(100), dtype=dtype)
+        xp_assert_ones_weight(chebyshev, x, y)
+        xp_assert_scaling_weight(chebyshev, x, y)
+        xp_assert_zero_weight(chebyshev, x, y)
+        xp_assert_duplication_weight(chebyshev, x, y)
+        xp_assert_split_weight(chebyshev, x, y)
+
+    def test_zero_weight(self, xp):
+        # If the weight is identically zero, the distance should be zero.
+        x, y, w = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0]), xp.zeros(3)
+        xp_assert_equal(chebyshev(x, y, w), 0.0)
+        # Test zero weight on infinite values returns non-NaN distances.
+        x, y = xp.asarray([xp.inf, 2.0, 3.0]), xp.asarray([6.0, xp.inf, 4.0])
+        w = xp.asarray([0, 0, 1])
+        xp_assert_close(chebyshev(x, y, w), 1.0)
+
+    def test_weighted_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 1, 5])
+        xp_assert_close(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
+        xp_assert_close(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
+
+    def test_zero_weight_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 0, 0])
+        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
+        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
 
     def test_pdist_chebyshev_random(self):
         eps = 1e-8
@@ -2449,25 +2496,6 @@ class TestChebyshev:
         Y_test2 = pdist(X, 'test_chebyshev')
         xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
-    def test_weighted(self):
-        # Basic test for weighted Chebyshev.  Only components with non-zero
-        # weight participate in the 'max'.
-        x = [1, 2, 3]
-        y = [6, 5, 4]
-        w = [0, 1, 5]
-        xp_assert_equal(chebyshev(x, y, w), 3, check_0d=False)
-        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
-        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
-
-    def test_zero_weight(self):
-        # If the weight is identically zero, the distance should be zero.
-        x = [1, 2, 3]
-        y = [6, 5, 4]
-        w = [0, 0, 0]
-        xp_assert_equal(chebyshev(x, y, w), 0, check_0d=False)
-        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
-        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
-
 
 @pytest.mark.parametrize(
     "func,p",
@@ -2481,6 +2509,7 @@ class TestChebyshev:
         make_xp_pytest_param(correlation, None),
         make_xp_pytest_param(cosine, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        make_xp_pytest_param(chebyshev, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
