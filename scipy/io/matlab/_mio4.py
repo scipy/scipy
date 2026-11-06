@@ -556,6 +556,8 @@ class VarWriter4:
     def write_char(self, arr, name):
         if arr.dtype.type == np.str_ and arr.dtype.itemsize != np.dtype('U1').itemsize:
             arr = arr_to_chars(arr)
+        elif arr.dtype.type == np.bytes_ and arr.dtype.itemsize > 1 and arr.size:
+            arr = arr_to_chars(arr)
         arr = arr_to_2d(arr, self.oned_as)
         dims = arr.shape
         self.write_header(

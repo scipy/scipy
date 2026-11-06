@@ -52,7 +52,7 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
-# these were missing: chebyshev cityblock
+# these were missing: cityblock
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
@@ -119,6 +119,17 @@ _tdist = np.array([[0, 662, 877, 255, 412, 996],
                       [996, 400, 138, 869, 669, 0]], dtype='double')
 
 _ytdist = squareform(_tdist)
+
+# Broadcastable (u, v, w) shapes for batch tests. We test for:
+_broadcast_shapes = [
+    ((5, 2, 4), (2, 4), (3, 1, 1, 4)),  # Regular broadcasting rules
+    ((2, 4), (2, 4), (2, 1)),  # w axis -1 is 1D
+    ((2, 4), (2, 1), (1, 4)),  # v axis -1 is 1D
+    ((2, 1), (1, 4), (2, 4)),  # u axis -1 is 1D
+    ((1, 4), (3, 2, 4), (4,)),  # w.dim < u.dim < v.dim
+    ((4,), (3, 1, 4), (2, 1)),  # u.dim < w.dim < v.dim
+    ((3, 2, 1), (4,), (1,)),  # v and w have ndim == 1, w has shape[-1] == 1
+]
 
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
@@ -454,11 +465,9 @@ wpdist = _weight_checked(pdist, default_axis=1, squeeze=False, n_args=1)
 wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
                                   const_test=False, n_args=1)
 wrogerstanimoto = _weight_checked(rogerstanimoto)
-wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
-wchebyshev = _weight_checked(chebyshev)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
@@ -1269,24 +1278,6 @@ class TestPdist:
         Y_test2 = pdist(X, 'test_jensenshannon')
         xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
-    def test_pdist_matching_mtica1(self):
-        # Test matching(*,*) with mtica example #1 (nums).
-        m = wmatching(np.array([1, 0, 1, 1, 0]),
-                      np.array([1, 1, 0, 1, 1]))
-        m2 = wmatching(np.array([1, 0, 1, 1, 0], dtype=bool),
-                       np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 0.6, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 0.6, rtol=0, atol=1e-10, check_0d=False)
-
-    def test_pdist_matching_mtica2(self):
-        # Test matching(*,*) with mtica example #2.
-        m = wmatching(np.array([1, 0, 1]),
-                     np.array([1, 1, 0]))
-        m2 = wmatching(np.array([1, 0, 1], dtype=bool),
-                      np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10, check_0d=False)
-
     @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1608,18 +1599,18 @@ class TestSEuclidean:
         x, y, V = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0], [1.0, 0.5, 2.0]
         xp_assert_close(seuclidean(x, y, V), np.asarray(2.0), atol=1.5e-7)
 
-    def test_seuclidean_nd(self):
+    @pytest.mark.parametrize("u_shape, v_shape, V_shape", _broadcast_shapes)
+    def test_seuclidean_nd(self, u_shape, v_shape, V_shape):
         # We need to test this separate from other metrics because seuclidean uses "V"
         rng = np.random.default_rng(6738657865438)
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('V', 1))(seuclidean)
-        u = rng.random((5, 2, 4))
-        v = rng.random((2, 4))
-        V = rng.random((3, 1, 1, 4))
-        xp_assert_close(seuclidean(u, v, V), ref_func(u, v, V))
+        u, v, V = rng.random(u_shape), rng.random(v_shape), rng.random(V_shape)
+        # Broadcast arguments for the reference function
+        xp_assert_close(seuclidean(u, v, V), ref_func(*np.broadcast_arrays(u, v, V)))
         # check error is raised for non-broadcastable inputs
         with pytest.raises(ValueError,
                            match="Array shapes are incompatible for broadcasting."):
-            seuclidean(u, v, rng.random((3, 4)))
+            seuclidean(u, v, rng.random(5))
 
 
 @make_xp_test_case(correlation)
@@ -1703,6 +1694,105 @@ class TestCosine:
         xp_assert_zero_weight(cosine, x, y)
         xp_assert_duplication_weight(cosine, x, y)
         xp_assert_split_weight(cosine, x, y)
+
+
+@make_xp_test_case(hamming)
+class TestHamming:
+    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_hamming(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(hamming(x, y), xp.asarray(expected))
+
+    def test_hamming_array_like(self):
+        x, y = [1, 0, 1, 1, 0], [1, 1, 0, 1, 1]
+        xp_assert_close(hamming(x, y), np.asarray(3 / 5))
+
+    def test_weight_invariance(self, xp):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.random(100) > 0.5)
+        y = xp.asarray(rng.random(100) > 0.5)
+        xp_assert_ones_weight(hamming, x, y)
+        xp_assert_scaling_weight(hamming, x, y)
+        xp_assert_zero_weight(hamming, x, y)
+        xp_assert_duplication_weight(hamming, x, y)
+        xp_assert_split_weight(hamming, x, y)
+
+    def test_hamming_unequal_length(self, xp):
+        # Regression test for gh-4290.
+        x, y = xp.asarray([0, 0, 1]), xp.asarray([1, 0, 1, 0])
+        # Used to give an AttributeError from ndarray.mean called on bool
+        with pytest.raises(ValueError):
+            hamming(x, y)
+
+    def test_hamming_unequal_length_with_w(self, xp):
+        u = xp.asarray([0, 0, 1])
+        v = xp.asarray([0, 0, 1])
+        w = xp.asarray([1, 0, 1, 0])
+        with pytest.raises(ValueError, match="Array shapes are incompatible"):
+            hamming(u, v, w)
+
+    @pytest.mark.skip_xp_backends("array_api_strict",
+                                  reason="mixed-kind promotion is undefined")
+    @pytest.mark.parametrize("u, u_dtype, v, v_dtype, expected", [
+        ([1, 2, 3], "int64", [1.0, 2.0, 3.0], "float64", 0.0),
+        ([True, False], "bool", [1, 0], "int64", 0.0),
+    ])
+    def test_hamming_mixed_kinds(self, xp, u, u_dtype, v, v_dtype, expected):
+        u = xp.asarray(u, dtype=getattr(xp, u_dtype))
+        v = xp.asarray(v, dtype=getattr(xp, v_dtype))
+        xp_assert_close(hamming(u, v), xp.asarray(expected))
+
+    def test_hamming_string_array(self):
+        # https://github.com/scikit-learn/scikit-learn/issues/4014
+        a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
+                    'spam', 'spam', 'spam', 'spam', 'eggs', 'eggs', 'spam',
+                    'eggs', 'eggs', 'eggs', 'eggs', 'eggs', 'spam'],
+                    dtype='|S4')
+        b = np.array(['eggs', 'spam', 'spam', 'eggs', 'eggs', 'spam', 'spam',
+                    'spam', 'spam', 'eggs', 'spam', 'eggs', 'spam', 'eggs',
+                    'spam', 'spam', 'eggs', 'spam', 'spam', 'eggs'],
+                    dtype='|S4')
+        desired = 0.45
+        xp_assert_close(hamming(a, b), desired, check_0d=False)
+
+    def test_hamming_string_list(self):
+        u, v = ['eggs', 'spam', 'spam'], ['eggs', 'eggs', 'spam']
+        xp_assert_close(hamming(u, v), np.asarray(1 / 3))
+        xp_assert_close(hamming(u, v, w=[1.0, 2.0, 1.0]), np.asarray(0.5))
+
+    def test_hamming_string_batched(self):
+        u = np.array([['eggs', 'spam', 'spam'], ['eggs', 'spam', 'eggs']])
+        v = np.array(['eggs', 'eggs', 'spam'])
+        xp_assert_close(hamming(u, v), np.asarray([1 / 3, 2 / 3]))
+        xp_assert_close(hamming(u, v, w=[1.0, 2.0, 1.0]), np.asarray([0.5, 0.75]))
+
+    @pytest.mark.parametrize("u, v", [
+        (['eggs', 'spam'], [b'eggs', b'spam']),
+        (np.array(['eggs', 'spam']), np.array([b'eggs', b'spam'])),
+    ])
+    def test_hamming_str_bytes(self, u, v):
+        xp_assert_close(hamming(u, v), np.asarray(1.0))  # str and bytes are not equal
+
+    @pytest.mark.skip_xp_backends("numpy", reason="NumPy arrays accept lists")
+    def test_hamming_foreign_array_with_numpy_input(self, xp):
+        with pytest.raises(TypeError):  # Other frameworks throw on string inputs
+            hamming(xp.asarray([1, 2]), ["eggs", "spam"])
+
+    def test_hamming_special_arrays(self):
+        x = np.ma.array([1, 0, 1, 1, 0], mask=[0, 0, 1, 0, 0])
+        y = np.ma.array([1, 1, 0, 1, 1], mask=[0, 0, 1, 0, 0])
+        with pytest.raises(TypeError, match="numpy.ma.MaskedArray"):
+            hamming(x, y)
+        x = scipy.sparse.csr_array([1, 0, 1, 1, 0])
+        y = scipy.sparse.csr_array([1, 1, 0, 1, 1])
+        with pytest.raises(ValueError, match="Sparse arrays"):
+            hamming(x, y)
 
 
 @make_xp_test_case(mahalanobis)
@@ -2089,38 +2179,6 @@ def test_canberra_int64_min():
     assert canberra(v, u) == 1.0
 
 
-def test_hamming_unequal_length():
-    # Regression test for gh-4290.
-    x = [0, 0, 1]
-    y = [1, 0, 1, 0]
-    # Used to give an AttributeError from ndarray.mean called on bool
-    with pytest.raises(ValueError):
-        whamming(x, y)
-
-
-def test_hamming_unequal_length_with_w():
-    u = [0, 0, 1]
-    v = [0, 0, 1]
-    w = [1, 0, 1, 0]
-    msg = "'w' should have the same length as 'u' and 'v'."
-    with pytest.raises(ValueError, match=msg):
-        whamming(u, v, w)
-
-
-def test_hamming_string_array():
-    # https://github.com/scikit-learn/scikit-learn/issues/4014
-    a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
-                  'spam', 'spam', 'spam', 'spam', 'eggs', 'eggs', 'spam',
-                  'eggs', 'eggs', 'eggs', 'eggs', 'eggs', 'spam'],
-                  dtype='|S4')
-    b = np.array(['eggs', 'spam', 'spam', 'eggs', 'eggs', 'spam', 'spam',
-                  'spam', 'spam', 'eggs', 'spam', 'eggs', 'spam', 'eggs',
-                  'spam', 'spam', 'eggs', 'spam', 'spam', 'eggs'],
-                  dtype='|S4')
-    desired = 0.45
-    xp_assert_close(whamming(a, b), desired, check_0d=False)
-
-
 def test_minkowski_w():
     # Regression test for gh-8142.
     arr_in = np.array([[83.33333333, 100., 83.33333333, 100., 36.,
@@ -2376,21 +2434,27 @@ class TestJaccard:
         xp_assert_close(jaccard(x, y, w=xp.asarray([1.0, 2.0, 3.0])),
                         xp.asarray([0.0, 1.0]))
 
+    @pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
     @pytest.mark.parametrize("weights", [True, False])
-    def test_jaccard_nd(self, weights):
+    def test_jaccard_nd(self, weights, u_shape, v_shape, w_shape):
         # We need to test this separate from other metrics because jaccard casts its
         # inputs to bool, which turns the random floats of test_distance_nd all True
         rng = np.random.default_rng(6738657865438)
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('w', 1))(jaccard)
-        u = rng.integers(2, size=(5, 2, 4))
-        v = rng.integers(2, size=(2, 4))
-        w = rng.random((3, 1, 1, 4)) if weights else None
-        xp_assert_close(jaccard(u, v, w=w), ref_func(u, v, w=w))
+        u = rng.integers(2, size=u_shape)
+        v = rng.integers(2, size=v_shape)
+        w = rng.random(w_shape) if weights else None
+        # Broadcast arguments for the reference function
+        if weights:
+            _u, _v, _w = np.broadcast_arrays(u, v, w)
+        else:
+            (_u, _v), _w = np.broadcast_arrays(u, v), None
+        xp_assert_close(jaccard(u, v, w=w), ref_func(_u, _v, w=_w))
         # check error is raised for non-broadcastable inputs
         if weights:
-            w = rng.random((3, 4))
+            w = rng.random((7, 7, 7))
         else:
-            v = rng.integers(2, size=(3, 4))
+            v = rng.integers(5, size=(7, 7, 7))
         with pytest.raises(ValueError,
                            match="Array shapes are incompatible for broadcasting."):
             jaccard(u, v, w=w)
@@ -2461,7 +2525,55 @@ class TestJaccard:
         xp_assert_close(np.zeros(10), Y, rtol=eps)
 
 
+@make_xp_test_case(chebyshev)
 class TestChebyshev:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_chebyshev(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        x, y = xp.asarray([1, 2, 3], dtype=dtype), xp.asarray([6, 5, 4], dtype=dtype)
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    def test_weighted(self, xp):
+        # Only components with non-zero weight participate in the 'max'.
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0])
+        w = xp.asarray([0.0, 1.0, 5.0])
+        xp_assert_close(chebyshev(x, y, w), 3.0)
+
+    def test_array_like(self):
+        x, y = [1, 2, 3], [6, 5, 4]
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.random(100), dtype=dtype)
+        y = xp.asarray(rng.random(100), dtype=dtype)
+        xp_assert_ones_weight(chebyshev, x, y)
+        xp_assert_scaling_weight(chebyshev, x, y)
+        xp_assert_zero_weight(chebyshev, x, y)
+        xp_assert_duplication_weight(chebyshev, x, y)
+        xp_assert_split_weight(chebyshev, x, y)
+
+    def test_zero_weight(self, xp):
+        # If the weight is identically zero, the distance should be zero.
+        x, y, w = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0]), xp.zeros(3)
+        xp_assert_equal(chebyshev(x, y, w), 0.0)
+        # Test zero weight on infinite values returns non-NaN distances.
+        x, y = xp.asarray([xp.inf, 2.0, 3.0]), xp.asarray([6.0, xp.inf, 4.0])
+        w = xp.asarray([0, 0, 1])
+        xp_assert_close(chebyshev(x, y, w), 1.0)
+
+    def test_weighted_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 1, 5])
+        xp_assert_close(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
+        xp_assert_close(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
+
+    def test_zero_weight_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 0, 0])
+        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
+        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
 
     def test_pdist_chebyshev_random(self):
         eps = 1e-8
@@ -2505,25 +2617,6 @@ class TestChebyshev:
         Y_test2 = pdist(X, 'test_chebyshev')
         xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
 
-    def test_weighted(self):
-        # Basic test for weighted Chebyshev.  Only components with non-zero
-        # weight participate in the 'max'.
-        x = [1, 2, 3]
-        y = [6, 5, 4]
-        w = [0, 1, 5]
-        xp_assert_equal(chebyshev(x, y, w), 3, check_0d=False)
-        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
-        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
-
-    def test_zero_weight(self):
-        # If the weight is identically zero, the distance should be zero.
-        x = [1, 2, 3]
-        y = [6, 5, 4]
-        w = [0, 0, 0]
-        xp_assert_equal(chebyshev(x, y, w), 0, check_0d=False)
-        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
-        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
-
 
 @pytest.mark.parametrize(
     "func,p",
@@ -2534,10 +2627,16 @@ class TestChebyshev:
         make_xp_pytest_param(minkowski, np.inf),
         make_xp_pytest_param(euclidean, None),
         make_xp_pytest_param(sqeuclidean, None),
-        make_xp_pytest_param(correlation, None),
+        # u or v with shape[-1] == 1 gives zero variance, so the distance is NaN
+        make_xp_pytest_param(
+            correlation, None,
+            additional_marks=pytest.mark.filterwarnings("ignore:invalid value"),
+        ),
         make_xp_pytest_param(cosine, None),
+        make_xp_pytest_param(hamming, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
         # mahalanobis uses a VI matrix instead of a w vector. Tested in TestMahalanobis
+        make_xp_pytest_param(chebyshev, None),
         (braycurtis, None),
         (yule, None),
         (dice, None),
@@ -2546,27 +2645,33 @@ class TestChebyshev:
         (sokalsneath, None),
     ],
 )
+@pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
 @pytest.mark.parametrize("weights", [True, False])
-def test_distance_nd(func, p, weights):
+def test_distance_nd(func, p, weights, u_shape, v_shape, w_shape):
     #  check that inputs broadcast correctly against a reference implementation
     rng = np.random.default_rng(6738657865438)
     ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
 
-    u = rng.random((5, 2, 4))
-    v = rng.random((2, 4))
-    w = rng.random((3, 1, 1, 4)) if weights else None
+    u = rng.random(u_shape)
+    v = rng.random(v_shape)
+    w = rng.random(w_shape) if weights else None
     kwargs = {'w': w} if p is None else {'p': p, 'w': w}
 
     res = func(u, v, **kwargs)
+    # Broadcast arguments for the reference function
+    if weights:
+        u, v, kwargs['w'] = np.broadcast_arrays(u, v, w)
+    else:
+        u, v = np.broadcast_arrays(u, v)
     ref = ref_func(u, v, **kwargs)
 
     xp_assert_close(res, ref)
 
     # check error is raised for non-broadcastable inputs
     if weights:
-        w = rng.random((3, 4))
+        w = rng.random(5)
     else:
-        v = rng.random((3, 4))
+        v = rng.random(5)
 
     with pytest.raises(ValueError,
                        match="Array shapes are incompatible for broadcasting."):
