@@ -1173,7 +1173,6 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     >>> plt.plot(x, spl(x), label='Interpolating Spline') # spline that hits every point
     >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red') # smoothing spline
     >>> plt.show()
-    
     """# noqa: E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
