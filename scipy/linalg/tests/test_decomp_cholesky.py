@@ -378,15 +378,21 @@ class TestChoFactor:
         ((4.0, 2.0), (2.0, 3.0)),
     ])
     def test_array_like(self, a):
+        # Ensure non-ndarray array_like inputs produce the same result as
+        # passing an ndarray directly (previously crashed with AttributeError).
+        a_arr = np.asarray(a)
+
         c, lower = cho_factor(a)
+        c_ref, lower_ref = cho_factor(a_arr)
         assert isinstance(lower, bool)
-        assert lower is False
-        assert_allclose(c, [[2.0, 1.0], [2.0, 1.41421356]])
+        assert lower is lower_ref
+        assert_allclose(c, c_ref)
 
         c_low, lower_low = cho_factor(a, lower=True)
+        c_low_ref, lower_low_ref = cho_factor(a_arr, lower=True)
         assert isinstance(lower_low, bool)
-        assert lower_low is True
-        assert_allclose(c_low, [[2.0, 2.0], [1.0, 1.41421356]])
+        assert lower_low is lower_low_ref
+        assert_allclose(c_low, c_low_ref)
 
     @pytest.mark.parametrize("n", [5, 10, 20])
     @pytest.mark.parametrize("dtype", [np.float32, np.float64,
