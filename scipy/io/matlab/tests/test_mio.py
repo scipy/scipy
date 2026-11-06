@@ -911,6 +911,17 @@ def test_save_whitespace_chararray():
     assert_array_equal(vars['after'], np.array([[17]]), strict=True)
 
 
+def test_save_masked_strings():
+    # Masked elements still hold data, so the strings are not empty
+    stream = BytesIO()
+    x = np.ma.array([b'  ', b''], mask=[True, False])
+    savemat(stream, {'x': x, 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ', '  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
 def test_save_bytes_non_ascii():
     # gh-4146: non-ASCII bytes are decoded with the file codec
     as_bytes, as_str = BytesIO(), BytesIO()
