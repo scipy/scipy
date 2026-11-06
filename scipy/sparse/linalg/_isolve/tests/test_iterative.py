@@ -942,3 +942,41 @@ def test_nD(solver, xp):
     b = xp.ones((2, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         solver(A, b)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+@pytest.mark.parametrize("representation", ["dense", "sparse", "operator"])
+def test_cg_true_residual_before_success(dtype, representation):
+    matrix = np.diag([1., 1e10]).astype(dtype)
+    rhs = np.ones(2, dtype=dtype)
+    operator = (matrix if representation == "dense" else csr_array(matrix)
+                if representation == "sparse" else aslinearoperator(matrix))
+    solution, info = cg(operator, rhs, x0=np.full(2, 1e6, dtype=dtype),
+                        rtol=1e-8, atol=0)
+    assert info == 0
+    assert np.linalg.norm(rhs - matrix @ solution) <= 1e-8 * np.linalg.norm(rhs)
+
+
+def test_cg_exact_initial_solution_zero_tolerance():
+    matrix = np.diag([1., 2.])
+    rhs = np.asarray([1., 2.])
+    solution, info = cg(matrix, rhs, x0=np.ones(2), rtol=0, atol=0)
+    assert info == 0
+    assert_allclose(matrix @ solution, rhs, rtol=0, atol=0)
+
+
+def test_cg_exact_solution_zero_tolerance():
+    solution, info = cg(np.eye(2), np.ones(2), rtol=0, atol=0)
+    assert info == 0
+    assert_allclose(solution, np.ones(2), rtol=0, atol=0)
+
+
+def test_cg_true_residual_restart_iteration_budget():
+    matrix = np.diag([1., 1e10])
+    rhs = np.ones(2)
+    calls = []
+    solution, info = cg(matrix, rhs, x0=np.full(2, 1e6), maxiter=2,
+                        rtol=1e-8, atol=0, callback=lambda x: calls.append(x.copy()))
+    assert len(calls) <= 2
+    assert info == 2
+    assert np.linalg.norm(rhs - matrix @ solution) > 1e-8 * np.linalg.norm(rhs)
