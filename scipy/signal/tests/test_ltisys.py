@@ -289,6 +289,7 @@ class TestPlacePoles:
                       (-2+1j,-2-1j,-2+3j,-2-3j), method="KNV0")
 
 
+@make_xp_test_case(tf2ss, ss2tf)
 class TestSS2TF:
 
     def check_matrix_shapes(self, p, q, r):
@@ -303,20 +304,21 @@ class TestSS2TF:
         for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
             self.check_matrix_shapes(p, q, r)
 
-    def test_basic(self):
+    def test_basic(self, xp):
         # Test a round trip through tf2ss and ss2tf.
-        b = np.array([1.0, 3.0, 5.0])
-        a = np.array([1.0, 2.0, 3.0])
+        b = xp.asarray([1.0, 3.0, 5.0])
+        a = xp.asarray([1.0, 2.0, 3.0])
 
         A, B, C, D = tf2ss(b, a)
-        xp_assert_close(A, [[-2., -3], [1, 0]], rtol=1e-13)
-        xp_assert_close(B, [[1.], [0]], rtol=1e-13)
-        xp_assert_close(C, [[1., 2]], rtol=1e-13)
-        xp_assert_close(D, [[1.]], rtol=1e-14)
+        xp_assert_close(A, xp.asarray([[-2., -3], [1, 0]]), rtol=1e-13)
+        xp_assert_close(B, xp.asarray([[1.], [0]]), rtol=1e-13)
+        xp_assert_close(C, xp.asarray([[1., 2]]), rtol=1e-13)
+        xp_assert_close(D, xp.asarray([[1.]]), rtol=1e-14)
 
         bb, aa = ss2tf(A, B, C, D)
-        xp_assert_close(bb[0], b, rtol=1e-13)
-        xp_assert_close(aa, a, rtol=1e-13)
+        # default rtol: eigvals is noisier in float32
+        xp_assert_close(bb[0, ...], b)
+        xp_assert_close(aa, a)
 
     def test_zero_order_round_trip(self):
         # See gh-5760
