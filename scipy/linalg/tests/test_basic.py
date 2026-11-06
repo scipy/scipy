@@ -3049,6 +3049,7 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:
     """Check backwards compatibility for dtypes vs scipy 1.16."""

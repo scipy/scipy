@@ -248,8 +248,8 @@ def solve(a, b, lower=False, overwrite_a=False,
                 raise LinAlgError("Matrix is not positive definite.")
         elif structure == 211:
             # Hermitian matrices have real diagonal entries.
-            # Ignore the imaginary part of the diagonal entry
-            # rather than rejecting the input, ensuring consistent behaviour
+            # Match LAPACK's behavior by discarding the imaginary part of
+            # the scalar diagonal entry, ensuring consistent behavior
             # for 1x1 and larger matrices.
             a1 = a1.real
 
