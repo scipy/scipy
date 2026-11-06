@@ -4882,3 +4882,63 @@ class TestUniqueRoots:
 def test_gh_22684():
     actual = signal.resample_poly(np.arange(2000, dtype=np.complex64), 6, 4)
     assert actual.dtype == np.complex64
+
+
+@pytest.mark.parametrize('dtype, start', [(np.uint8, 0), (np.uint16, 0),
+                                          (np.int8, 96), (np.int16, 32736)])
+@pytest.mark.parametrize('filter_dtype', [np.float32, np.float64])
+@pytest.mark.parametrize('use_sos', [False, True])
+def test_filtfilt_integer_padding(dtype, start, filter_dtype, use_sos):
+    x = np.arange(start, start + 32, dtype=dtype)
+    b = np.array([0.5, 0.5], dtype=filter_dtype)
+    a = np.array([1.0], dtype=filter_dtype)
+    if use_sos:
+        sos = np.array([[0.5, 0.5, 0, 1, 0, 0]], dtype=filter_dtype)
+        actual = sosfiltfilt(sos, x)
+    else:
+        actual = filtfilt(b, a, x)
+    expected = x.astype(np.result_type(x, b, a, 1.0))
+    np.testing.assert_array_equal(actual, expected, strict=True)
+
+
+@pytest.mark.parametrize('dtype', [np.uint8, np.uint16, np.int16])
+@pytest.mark.parametrize('padtype', ['minimum', 'maximum'])
+def test_resample_poly_integer_background(dtype, padtype):
+    x = np.array([100, 90, 80, 90, 100], dtype=dtype)
+    if dtype == np.int16:
+        x = np.array([30000, 0, -30000, 0, 30000], dtype=dtype)
+    window = np.array([0.25, 0.5, 0.25])
+    expected = signal.resample_poly(x.astype(float), 2, 1, window=window,
+                             padtype=padtype)
+    actual = signal.resample_poly(x, 2, 1, window=window, padtype=padtype)
+    np.testing.assert_array_equal(actual, expected, strict=True)
+
+
+@pytest.mark.parametrize('padtype', ['minimum', 'maximum'])
+def test_resample_poly_int64_background_precision(padtype):
+    x = 2**53 + np.arange(16, dtype=np.int64)
+    actual = signal.resample_poly(x, 2, 1, window=np.array([.25, .5, .25]),
+                                  padtype=padtype)
+    assert actual.dtype == np.float64
+    assert actual.shape == (32,)
+    # The exact midpoint is 2**53 + 1.5, which rounds to 2**53 + 2.
+    assert actual[3] == float(2**53 + 2)
+
+
+@pytest.mark.parametrize('dtype', [np.int64, np.uint64])
+@pytest.mark.parametrize('use_sos', [False, True])
+def test_filtfilt_large_integer_padding_precision(dtype, use_sos):
+    x = np.array([2**53 + i % 2 for i in range(32)], dtype=dtype)
+    # Integer reflection preserves the low bit before filtering.
+    padlen = 9
+    extended = np.concatenate((2*x[:1] - x[padlen:0:-1], x,
+                               2*x[-1:] - x[-2:-padlen-2:-1]))
+    if use_sos:
+        sos = [[.1, .2, .7, 1., 0, 0]]
+        actual = sosfiltfilt(sos, x, padlen=padlen)
+        expected = sosfiltfilt(sos, extended.astype(float), padtype=None)
+    else:
+        actual = filtfilt([.1, .2, .7], [1.], x, padlen=padlen)
+        expected = filtfilt([.1, .2, .7], [1.], extended.astype(float),
+                            padtype=None)
+    np.testing.assert_array_equal(actual, expected[padlen:-padlen], strict=True)
