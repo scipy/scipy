@@ -100,6 +100,7 @@ quasi-Newton methods implementing this interface are:
 
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
+   LBFGS - Limited-memory BFGS Hessian update strategy.
 
 .. _global_optimization:
 
@@ -441,7 +442,8 @@ from ._isotonic import isotonic_regression
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
-from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._hessian_update_strategy import (HessianUpdateStrategy, BFGS, SR1,
+                                        LBFGS)
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
