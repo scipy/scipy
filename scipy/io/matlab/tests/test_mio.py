@@ -888,6 +888,52 @@ def test_empty_string():
     stream.close()
 
 
+@pytest.mark.parametrize('fmt', ['4', '5'])
+def test_save_bytes(fmt):
+    # bytes are written like the matching str
+    as_bytes, as_str = BytesIO(), BytesIO()
+    savemat(as_bytes, {'a': np.array([b'ab', b'cd']), 'x': b'xy'}, format=fmt)
+    savemat(as_str, {'a': np.array(['ab', 'cd']), 'x': 'xy'}, format=fmt)
+    d_bytes, d_str = loadmat(as_bytes), loadmat(as_str)
+    for name in ('a', 'x'):
+        assert_array_equal(d_bytes[name], d_str[name], strict=True)
+    savemat(BytesIO(), {'e': np.empty((0, 3), dtype='S2')}, format=fmt)
+
+
+@pytest.mark.filterwarnings("ignore:The chararray class:DeprecationWarning")
+def test_save_whitespace_chararray():
+    # Whitespace-only strings in a chararray are not empty
+    stream = BytesIO()
+    savemat(stream, {'x': np.char.array([b'  ']), 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
+def test_save_masked_strings():
+    # Masked elements still hold data, so the strings are not empty
+    stream = BytesIO()
+    x = np.ma.array([b'  ', b''], mask=[True, False])
+    savemat(stream, {'x': x, 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ', '  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
+def test_save_bytes_non_ascii():
+    # gh-4146: non-ASCII bytes are decoded with the file codec
+    as_bytes, as_str = BytesIO(), BytesIO()
+    savemat(as_bytes, {'u': np.array(['äx'.encode(), b'a']), 'e': b''})
+    savemat(as_str, {'u': np.array(['äx', 'a']), 'e': ''})
+    d_bytes, d_str = loadmat(as_bytes), loadmat(as_str)
+    for name in ('u', 'e'):
+        assert_array_equal(d_bytes[name], d_str[name], strict=True)
+    with pytest.raises(UnicodeDecodeError):
+        savemat(BytesIO(), {'a': b'\xe4x'})
+
+
 def test_corrupted_data():
     import zlib
     for exc, fname in [(ValueError, 'corrupted_zlib_data.mat'),
