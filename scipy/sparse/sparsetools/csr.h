@@ -697,11 +697,11 @@ void csr_matmat(const I n_row,
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <class I, class T, class T2>
 void csr_binop_csr_general(csr_array<const I, const T> A,
                            csr_array<const I, const T> B,
                            csr_array<I, T2> C,
-                           const binary_op& op)
+                           T2 (*binary_op)(T, T))
 {
     //Method that works for duplicate and/or unsorted indices
 
@@ -750,7 +750,7 @@ void csr_binop_csr_general(csr_array<const I, const T> A,
         // scan through columns where A or B has
         // contributed a non-zero entry
         for(I jj = 0; jj < length; jj++){
-            T result = op(A_row[head], B_row[head]);
+            T2 result = binary_op(A_row[head], B_row[head]);
 
             if(result != 0){
                 C.indices[nnz] = head;
@@ -907,13 +907,15 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
+    static_assert(std::is_empty_v<binary_op>, "Stateful binary_op types not allowed.");
     csr_array<const I, const T> A = {n_row, n_col, Ap, Aj, Ax};
     csr_array<const I, const T> B = {n_row, n_col, Bp, Bj, Bx};
     csr_array<I,T2> C = {n_row, n_col, Cp, Cj, Cx};
-    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
+    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj)) {
         csr_binop_csr_canonical(A, B, C, op);
-    else
-        csr_binop_csr_general(A, B, C, op);
+    } else {
+        csr_binop_csr_general(A, B, C, +[](T a, T b) -> T2 { return binary_op()(a, b); });
+    }
 }
 
 /* element-wise binary operations*/
