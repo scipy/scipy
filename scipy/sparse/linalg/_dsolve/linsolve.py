@@ -23,6 +23,94 @@ __all__ = ['spsolve', 'splu', 'spilu', 'factorized',
            'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
+def use_solver(**kwargs):
+    """
+    Select default sparse direct solver to be used.
+
+    .. deprecated:: 2.0.0
+        This function is deprecated and will be removed in SciPy 2.2.0. Use the
+        ``use_umfpack`` argument in ``spsolve`` and ``factorized`` instead. The
+        ``assumeSortedIndices`` argument is no longer supported, since
+        scikit-umfpack automatically detects whether the input matrix has
+        sorted indices.
+
+    Parameters
+    ----------
+    **kwargs
+        The following options may be passed as keyword arguments.
+
+        useUmfpack : bool, optional
+            Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+            if ``scikits.umfpack`` is installed. Default: True
+        assumeSortedIndices : bool, optional
+            Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+            Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+            installed. Default: False
+
+    See Also
+    --------
+    spsolve : Solve a sparse linear system of equations.
+    factorized : Return a function for solving a sparse linear system, with
+        `A` pre-factorized.
+
+    Notes
+    -----
+    The default sparse solver is UMFPACK when available
+    (``scikits.umfpack`` is installed). This can be changed by passing
+    useUmfpack = False, which then causes the always present SuperLU
+    based solver to be used.
+
+    UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
+    sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
+    to gain some speed.
+
+    References
+    ----------
+    .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           :doi:`10.1145/992200.992206`.
+
+    .. [2] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           :doi:`10.1145/992200.992205`.
+
+    .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           :doi:`10.1145/305658.287640`.
+
+    .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           :doi:`10.1137/S0895479894246905T`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.linalg import use_solver, spsolve
+    >>> from scipy.sparse import csc_array
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_array(R)
+    >>> b = np.random.randn(5)
+    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
+    >>> x = spsolve(A, b)
+    >>> np.allclose(A.dot(x), b)
+    True
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
+    """
+    warn(
+        "`use_solver` is deprecated and will be removed in SciPy 2.2.0."
+        " Use the `use_umfpack` argument in `spsolve` and `factorized` instead."
+        " The ``assumeSortedIndices`` argument is no longer supported, since"
+        " scikit-umfpack automatically detects whether the input matrix has"
+        " sorted indices.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
+
 def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_block_size=10):
     r"""Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
