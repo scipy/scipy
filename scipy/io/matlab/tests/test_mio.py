@@ -480,6 +480,18 @@ def test_4_and_long_field_names_incompatible():
                   {'my_struct':my_struct}, format='4', long_field_names=True)
 
 
+def test_savemat_invalid_options_keep_file(tmp_path):
+    # Options are checked before an existing file is opened for writing
+    fname = tmp_path / 'data.mat'
+    savemat(fname, {'a': 1})
+    content = fname.read_bytes()
+    with pytest.raises(ValueError, match="Format should be"):
+        savemat(fname, {'a': 2}, format='7.3')
+    with pytest.raises(ValueError, match="Long field names"):
+        savemat(fname, {'a': 2}, format='4', long_field_names=True)
+    assert fname.read_bytes() == content
+
+
 def test_long_field_names():
     # Test limit for length of field names in structs
     lim = 63
@@ -876,6 +888,52 @@ def test_empty_string():
     stream.close()
 
 
+@pytest.mark.parametrize('fmt', ['4', '5'])
+def test_save_bytes(fmt):
+    # bytes are written like the matching str
+    as_bytes, as_str = BytesIO(), BytesIO()
+    savemat(as_bytes, {'a': np.array([b'ab', b'cd']), 'x': b'xy'}, format=fmt)
+    savemat(as_str, {'a': np.array(['ab', 'cd']), 'x': 'xy'}, format=fmt)
+    d_bytes, d_str = loadmat(as_bytes), loadmat(as_str)
+    for name in ('a', 'x'):
+        assert_array_equal(d_bytes[name], d_str[name], strict=True)
+    savemat(BytesIO(), {'e': np.empty((0, 3), dtype='S2')}, format=fmt)
+
+
+@pytest.mark.filterwarnings("ignore:The chararray class:DeprecationWarning")
+def test_save_whitespace_chararray():
+    # Whitespace-only strings in a chararray are not empty
+    stream = BytesIO()
+    savemat(stream, {'x': np.char.array([b'  ']), 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
+def test_save_masked_strings():
+    # Masked elements still hold data, so the strings are not empty
+    stream = BytesIO()
+    x = np.ma.array([b'  ', b''], mask=[True, False])
+    savemat(stream, {'x': x, 'after': 17})
+    stream.seek(0)
+    vars = loadmat(stream)
+    assert_array_equal(vars['x'], np.array(['  ', '  ']), strict=True)
+    assert_array_equal(vars['after'], np.array([[17]]), strict=True)
+
+
+def test_save_bytes_non_ascii():
+    # gh-4146: non-ASCII bytes are decoded with the file codec
+    as_bytes, as_str = BytesIO(), BytesIO()
+    savemat(as_bytes, {'u': np.array(['äx'.encode(), b'a']), 'e': b''})
+    savemat(as_str, {'u': np.array(['äx', 'a']), 'e': ''})
+    d_bytes, d_str = loadmat(as_bytes), loadmat(as_str)
+    for name in ('u', 'e'):
+        assert_array_equal(d_bytes[name], d_str[name], strict=True)
+    with pytest.raises(UnicodeDecodeError):
+        savemat(BytesIO(), {'a': b'\xe4x'})
+
+
 def test_corrupted_data():
     import zlib
     for exc, fname in [(ValueError, 'corrupted_zlib_data.mat'),
@@ -996,6 +1054,14 @@ def test_mat_dtype():
     d = rdr.get_variables()
     fp.close()
     assert_equal(d['testmatrix'].dtype.kind, 'f')
+
+
+def test_mat_dtype_complex():
+    # gh-17641: mat_dtype=True dropped the imaginary part
+    fname = pjoin(test_data_path, 'testcomplex_7.4_GLNX86.mat')
+    expected = loadmat(fname)['testcomplex']
+    actual = loadmat(fname, mat_dtype=True)['testcomplex']
+    assert_array_equal(actual, expected, strict=True)
 
 
 def test_sparse_in_struct():
@@ -1202,6 +1268,18 @@ def test_empty_sparse():
     reader.read_file_header()
     hdr, _ = reader.read_var_header()
     assert_equal(hdr.nzmax, 1)
+
+
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
+def test_spmatrix_default_warns_once():
+    # The default warns once per call, not once per sparse variable
+    stream = BytesIO()
+    savemat(stream, {'a': eye_array(2, format='csc'), 'b': eye_array(3, format='csc')})
+    stream.seek(0)
+    with pytest.deprecated_call(match="The default value for `spmatrix") as record:
+        loadmat(stream)
+    # Creating the csc_matrix results also warns, so count only this option
+    assert sum("`spmatrix" in str(w.message) for w in record) == 1
 
 
 def test_empty_mat_error():
