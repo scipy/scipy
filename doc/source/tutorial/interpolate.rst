@@ -86,6 +86,7 @@ Smoothing and approximation of data
    interpolate/1D
    interpolate/splines_and_polynomials
    interpolate/smoothing_splines
+   interpolate/ND_lsq_splines
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
    interpolate/extrapolation_examples
