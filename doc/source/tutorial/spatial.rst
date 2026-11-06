@@ -283,6 +283,78 @@ points is closest to this one", and define the regions that way:
 This plot can also be created using `scipy.spatial.voronoi_plot_2d`.
 
 
+Degenerate inputs
+^^^^^^^^^^^^^^^^^
+
+Qhull, like most computational-geometry algorithms, assumes the input
+points are in *general position*. When they are not -- for example
+points on a regular grid or on a common circle or sphere -- the diagram
+is ambiguous, and ``ridge_points`` and ``ridge_vertices`` may be
+incomplete. For a regular grid, the diagonal neighbors of each point
+are missing. Drawing a line between every pair of points that share a
+ridge shows which points are treated as neighbors. For the default
+diagram, each point connects only to its horizontal and vertical
+neighbors:
+
+.. plot::
+   :alt: "A neighbor graph of a 3x3 grid of points, labeled 'default'. Each point is connected only to its horizontal and vertical neighbors, forming a plain grid with no diagonals."
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy.spatial import Voronoi
+   >>> points = np.array([[x, y] for x in range(3) for y in range(3)],
+   ...                   dtype=float)
+   >>> vor = Voronoi(points)
+   >>> len(vor.ridge_points)
+   12
+   >>> fig, ax = plt.subplots()
+   >>> for i, j in vor.ridge_points:
+   ...     _ = ax.plot(points[[i, j], 0], points[[i, j], 1], 'k-', lw=1)
+   >>> _ = ax.plot(points[:, 0], points[:, 1], 'o')
+   >>> _ = ax.set_title("default")
+   >>> _ = ax.set_aspect("equal")
+   >>> plt.show()
+
+Passing the Qhull option ``"QJ"`` joggles the points by a tiny random
+amount to restore general position, which recovers the missing neighbor
+pairs at the cost of a slightly perturbed diagram. The joggle is too
+small to see in the point positions, but the extra diagonal neighbors
+now appear:
+
+.. plot::
+   :alt: "A neighbor graph of the same 3x3 grid of points, labeled 'QJ'. In addition to the horizontal and vertical connections, several diagonal connections now appear, making the graph denser."
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   >>> from scipy.spatial import Voronoi
+   >>> points = np.array([[x, y] for x in range(3) for y in range(3)],
+   ...                   dtype=float)
+   >>> vor = Voronoi(points)
+   >>> vor_jiggled = Voronoi(points, qhull_options="QJ")
+   >>> len(vor_jiggled.ridge_points) > len(vor.ridge_points)
+   True
+
+   Note that ``"QJ"`` only perturbs the diagram that Qhull computes
+   internally; the input points are returned unchanged:
+
+   >>> np.array_equal(vor_jiggled.points, points)
+   True
+
+   >>> fig, ax = plt.subplots()
+   >>> for i, j in vor_jiggled.ridge_points:
+   ...     _ = ax.plot(points[[i, j], 0], points[[i, j], 1], 'k-', lw=1)
+   >>> _ = ax.plot(points[:, 0], points[:, 1], 'o')
+   >>> _ = ax.set_title("QJ")
+   >>> _ = ax.set_aspect("equal")
+   >>> plt.show()
+
+See the `Qhull documentation <http://www.qhull.org/html/qh-impre.htm#joggle>`__
+for details on imprecision and the joggle option.
+
+
+Generative art
+^^^^^^^^^^^^^^
+
 Voronoi diagrams can be used to create interesting generative art.  Try playing
 with the settings of this ``mandala`` function to create your own!
 
