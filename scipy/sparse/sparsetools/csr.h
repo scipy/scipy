@@ -677,6 +677,29 @@ void csr_matmat(const I n_row,
     }
 }
 
+template <class I, class T, class T2, class binary_op>
+I csr_binop_scan_columns(I head, const I length, I nnz, I* next, T* A_row, T* B_row, I* Cj, T2* Cx, const void* raw_op) {
+    const binary_op& op = *static_cast<const binary_op*>(raw_op);
+    // scan through columns where A or B has
+    // contributed a non-zero entry
+    for(I jj = 0; jj < length; jj++){
+        T2 result = op(A_row[head], B_row[head]);
+
+        if(result != 0){
+            Cj[nnz] = head;
+            Cx[nnz] = result;
+            nnz++;
+        }
+
+        I temp = head;
+        head = next[head];
+
+        next[temp]  = -1;
+        A_row[temp] =  0;
+        B_row[temp] =  0;
+    }
+    return nnz;
+}
 
 /*
  * Compute C = A (binary_op) B for CSR matrices that are not
@@ -701,7 +724,8 @@ template <class I, class T, class T2>
 void csr_binop_csr_general(csr_array<const I, const T> A,
                            csr_array<const I, const T> B,
                            csr_array<I, T2> C,
-                           T2 (*binary_op)(T, T))
+                           I (*scan_columns)(I, I, I, I*, T*, T*, I*, T2*, const void*),
+                           const void* op)
 {
     //Method that works for duplicate and/or unsorted indices
 
@@ -746,24 +770,8 @@ void csr_binop_csr_general(csr_array<const I, const T> A,
             }
         }
 
-
-        // scan through columns where A or B has
-        // contributed a non-zero entry
-        for(I jj = 0; jj < length; jj++){
-            T2 result = binary_op(A_row[head], B_row[head]);
-
-            if(result != 0){
-                C.indices[nnz] = head;
-                C.data[nnz] = result;
-                nnz++;
-            }
-
-            I temp = head;
-            head = next[head];
-
-            next[temp]  = -1;
-            A_row[temp] =  0;
-            B_row[temp] =  0;
+        if (length > 0) {
+            nnz = scan_columns(head, length, nnz, &next[0], &A_row[0], &B_row[0], &C.indices[0], &C.data[0], op);
         }
 
         C.indptr[i + 1] = nnz;
@@ -861,7 +869,6 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
     }
 }
 
-
 /*
  * Compute C = A (binary_op) B for CSR matrices A,B where the column
  * indices with the rows of A and B are known to be sorted.
@@ -914,7 +921,7 @@ void csr_binop_csr(const I n_row,
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj)) {
         csr_binop_csr_canonical(A, B, C, op);
     } else {
-        csr_binop_csr_general(A, B, C, +[](T a, T b) -> T2 { return binary_op()(a, b); });
+        csr_binop_csr_general(A, B, C, &csr_binop_scan_columns<I, T, T2, binary_op>, &op);
     }
 }
 
