@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
-from scipy._lib._util import _apply_over_batch
+from scipy._lib._util import _apply_over_batch, _validate_int
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_device
 )
@@ -259,10 +259,8 @@ def hadamard(n, dtype=int):
     # This function is a slightly modified version of the
     # function contributed by Ivo in ticket #675.
 
-    if n < 1:
-        lg2 = 0
-    else:
-        lg2 = int(math.log(n, 2))
+    n = _validate_int(n, 'n', minimum=1)
+    lg2 = int(math.log(n, 2))
     if 2 ** lg2 != n:
         raise ValueError("n must be a positive integer, and n must be "
                          "a power of 2")
@@ -543,6 +541,8 @@ def helmert(n, full=False):
            [ 0.2236068 ,  0.2236068 ,  0.2236068 ,  0.2236068 , -0.89442719]])
 
     """
+    n = _validate_int(n, 'n', minimum=1)
+
     H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
     d = np.arange(n) * np.arange(1, n+1)
     H[0] = 1
@@ -587,6 +587,7 @@ def hilbert(n):
            [ 0.33333333,  0.25      ,  0.2       ]])
 
     """
+    n = _validate_int(n, 'n', minimum=0)
     values = 1.0 / (1.0 + np.arange(2 * n - 1))
     h = hankel(values[:n], r=values[n - 1:])
     return h
@@ -648,6 +649,7 @@ def invhilbert(n, exact=False):
     42475099528537378560
 
     """
+    n = _validate_int(n, 'n', minimum=0)
     from scipy.special import comb
     if exact:
         if n > 14:
@@ -728,7 +730,7 @@ def pascal(n, kind='symmetric', exact=True):
     25477612258980856902730428600
 
     """
-
+    n = _validate_int(n, 'n', minimum=0)
     from scipy.special import comb
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
@@ -827,6 +829,7 @@ def invpascal(n, kind='symmetric', exact=True):
            [ 1., -4.,  6., -4.,  1.]])
 
     """
+    n = _validate_int(n, 'n', minimum=0)
     from scipy.special import comb
 
     if kind not in ['symmetric', 'lower', 'upper']:
@@ -923,6 +926,7 @@ def dft(n, scale=None):
     >>> fft(x)     # Same result as m @ x
     array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
     """
+    n = _validate_int(n, 'n', minimum=0)
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "
                          f"{scale!r} is not valid.")
@@ -1274,8 +1278,7 @@ def convolution_matrix(a, n, mode='full'):
            [ 0, -2,  4, -1,  0],
            [ 0,  0, -2,  4, -1]])
     """
-    if n <= 0:
-        raise ValueError('n must be a positive integer.')
+    n = _validate_int(n, 'n', minimum=1)
 
     a = np.asarray(a)
 
