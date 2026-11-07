@@ -15,6 +15,17 @@ from scipy.stats._distribution_infrastructure import (
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 
+def _normal_standardize(x, mu, sigma, xp):
+    with np.errstate(over='ignore'):
+        difference = x - mu
+    # Divide first only when finite operands overflow during subtraction.
+    return xpx.apply_where(
+        xp.isinf(difference) & xp.isfinite(x) & xp.isfinite(mu),
+        (x, mu, sigma, difference),
+        lambda x, mu, sigma, difference: x/sigma - mu/sigma,
+        lambda x, mu, sigma, difference: difference/sigma, xp=xp)
+
+
 rv_capabilities = xp_capabilities(
     skip_backends=[('array_api_strict', "fancy indexing in EIM"),
                    ('torch', 'no attempt'),
@@ -67,22 +78,28 @@ class Normal(ContinuousDistribution):
 
     def _logpdf_formula(self, x, *, mu, sigma, **kwargs):
         xp = self._xp
-        return StandardNormal._logpdf_formula(self, (x - mu)/sigma) - xp.log(sigma)
+        return StandardNormal._logpdf_formula(
+            self, _normal_standardize(x, mu, sigma, xp)) - xp.log(sigma)
 
     def _pdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._pdf_formula(self, (x - mu)/sigma) / sigma
+        return StandardNormal._pdf_formula(
+            self, _normal_standardize(x, mu, sigma, self._xp)) / sigma
 
     def _logcdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._logcdf_formula(self, (x - mu)/sigma)
+        return StandardNormal._logcdf_formula(
+            self, _normal_standardize(x, mu, sigma, self._xp))
 
     def _cdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._cdf_formula(self, (x - mu)/sigma)
+        return StandardNormal._cdf_formula(
+            self, _normal_standardize(x, mu, sigma, self._xp))
 
     def _logccdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._logccdf_formula(self, (x - mu)/sigma)
+        return StandardNormal._logccdf_formula(
+            self, _normal_standardize(x, mu, sigma, self._xp))
 
     def _ccdf_formula(self, x, *, mu, sigma, **kwargs):
-        return StandardNormal._ccdf_formula(self, (x - mu)/sigma)
+        return StandardNormal._ccdf_formula(
+            self, _normal_standardize(x, mu, sigma, self._xp))
 
     def _icdf_formula(self, x, *, mu, sigma, **kwargs):
         return StandardNormal._icdf_formula(self, x) * sigma + mu
