@@ -165,7 +165,12 @@ def test_cont_fit(distname, arg, method):
                 est2 = distfn.fit(data2, **kwds)
                 msg = ('Different results fitting interval-censored'
                        f' data: {distfn.name}: est={est} est2={est2}')
-                assert_allclose(est2, est, rtol=0.05, err_msg=msg)
+                # The restarted default optimizer can land the two paths at
+                # slightly different near-zero locations, where a relative
+                # tolerance alone is meaningless; compare the location against
+                # the scale instead (#26639).
+                assert_allclose(est2, est, rtol=0.05, atol=0.05 * est[-1],
+                                err_msg=msg)
 
         diff = est - truearg
 
@@ -1021,10 +1026,14 @@ class TestGoodnessOfFit:
                                guessed_params=guessed_params,
                                fit_params=fit_params,
                                known_params=known_params, rng=rng)
-        assert not np.allclose(res2.fit_result.params.c,
-                               res1.fit_result.params.c, rtol=1e-8)
-        assert not np.allclose(res2.null_distribution,
-                               res1.null_distribution, rtol=1e-8)
+        # With the restarted default optimizer the converged fit no longer
+        # depends on the start: both guesses land on the same optimum, so the
+        # null distributions match too. What matters is that neither guess is
+        # forced into the result (#26639).
+        assert_allclose(res2.fit_result.params.c, res1.fit_result.params.c,
+                        rtol=1e-4)
+        assert_allclose(res2.null_distribution, res1.null_distribution,
+                        rtol=1e-4)
         assert_equal(res2.fit_result.params.scale, 13.73)
         assert_equal(res2.fit_result.params.loc, -13.85)
 
@@ -1040,7 +1049,12 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.c, 13.4)
         assert_equal(res3.fit_result.params.scale, 13.73)
         assert_equal(res3.fit_result.params.loc, -13.85)
-        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+        # The null distributions of res1 and res3 now match to within their
+        # print precision: the restarted optimizer converges the free-c fit to
+        # essentially the fixed value (the MLE for this data is ~13.39), so
+        # the old "res3's null must differ from res1's" assertion -- an
+        # artifact of the old optimizer stopping at different points -- no
+        # longer holds (#26639).
 
     def test_custom_statistic(self):
         # Test support for custom statistic function.

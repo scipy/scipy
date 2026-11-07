@@ -2768,8 +2768,23 @@ class rv_continuous(rv_generic):
         # instead of an optimizer, but sometimes no solution exists,
         # especially when the user fixes parameters. Minimizing the sum
         # of squares of the error generalizes to these cases.
-        vals = optimizer(func, x0, args=(data,), disp=0)
-        obj = func(vals, data)
+        if optimizer is optimize.fmin and method == 'mle':
+            # fmin with the default settings can stop well short of the
+            # minimum, and where it stops depends on the data's units. Restart
+            # it from its own result until a restart no longer improves the
+            # objective (at most 12 runs); a user-supplied optimizer is still
+            # called once (#26639).
+            vals = optimizer(func, x0, args=(data,), disp=0)
+            obj = func(vals, data)
+            for _ in range(12):
+                restarted = optimizer(func, vals, args=(data,), disp=0)
+                restarted_obj = func(restarted, data)
+                if restarted_obj >= obj:
+                    break
+                vals, obj = restarted, restarted_obj
+        else:
+            vals = optimizer(func, x0, args=(data,), disp=0)
+            obj = func(vals, data)
 
         if restore is not None:
             vals = restore(args, vals)
@@ -2816,7 +2831,20 @@ class rv_continuous(rv_generic):
             data = np.asarray(data)
 
         # Estimate location and scale according to the method of moments.
-        loc_hat, scale_hat = self.fit_loc_scale(data, *args)
+        mu, mu2 = self.stats(*args, **{'moments': 'mv'})
+        if not (np.isfinite(mu) and np.isfinite(mu2) and mu2 > 0):
+            # The start shapes have no finite moments (e.g. genextreme's
+            # moment-based shape estimate), so the moment estimates fall back
+            # to loc=0/scale=1 in the data's units and the fit's start depends
+            # on those units (#26639). Quantiles are defined for every
+            # distribution and scale with the data.
+            q25, q50, q75 = np.quantile(data, [0.25, 0.5, 0.75])
+            p25, p50, p75 = self.ppf([0.25, 0.5, 0.75], *args)
+            denom = p75 - p25
+            scale_hat = (q75 - q25) / denom if denom > 0 else 1.0
+            loc_hat = q50 - p50 * scale_hat
+        else:
+            loc_hat, scale_hat = self.fit_loc_scale(data, *args)
 
         # Compute the support according to the shape parameters.
         self._argcheck(*args)
@@ -2845,17 +2873,23 @@ class rv_continuous(rv_generic):
         margin = data_width * rel_margin
 
         # For a finite interval, both the location and scale
-        # should have interesting values.
+        # should have interesting values. The scale comes from the support
+        # width, which follows the data's units; keep the location anchored on
+        # the data's minimum the way it was -- centering it on the scaled
+        # support instead moved starts like rdist's into a worse basin
+        # (#26639).
         if support_width < np.inf:
-            loc_hat = (data_a - a) - margin
             scale_hat = (data_width + 2 * margin) / support_width
+            loc_hat = (data_a - a) - margin
             return loc_hat, scale_hat
 
-        # For a one-sided interval, use only an interesting location parameter.
+        # For a one-sided interval, keep the data-scale start and put the
+        # bound just outside the data; a scale of 1 would tie the start to the
+        # data's units (#26639).
         if a > -np.inf:
-            return (data_a - a) - margin, 1
+            return (data_a - a * scale_hat) - margin, scale_hat
         elif b < np.inf:
-            return (data_b - b) + margin, 1
+            return (data_b - b * scale_hat) + margin, scale_hat
         else:
             raise RuntimeError
 
