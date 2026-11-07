@@ -347,13 +347,13 @@ bool is_nonzero_block(const T block[], const I blocksize){
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class bin_op>
+template <class I, class T, class T2>
 void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
                            const I R,      const I C,
                            const I Ap[],   const I Aj[],   const T Ax[],
                            const I Bp[],   const I Bj[],   const T Bx[],
                                  I Cp[],         I Cj[],        T2 Cx[],
-                           const bin_op& op)
+                           T2 (*binary_op)(T, T))
 {
     //Method that works for duplicate and/or unsorted indices
     const npy_intp RC = (npy_intp)R*C;
@@ -399,9 +399,9 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
 
 
         for(I jj = 0; jj < length; jj++){
-            // compute op(block_A, block_B)
+            // compute binary_op(block_A, block_B)
             for(I n = 0; n < RC; n++)
-                Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
+                Cx[RC * nnz + n] = binary_op(A_row[RC*head + n], B_row[RC*head + n]);
 
             // advance counter if block is nonzero
             if( is_nonzero_block(Cx + (RC * nnz), RC) )
@@ -574,6 +574,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                          I Cp[],         I Cj[],        T2 Cx[],
                    const bin_op& op)
 {
+    static_assert(std::is_empty_v<bin_op>, "Stateful binary_op types not allowed.");
     assert( R > 0 && C > 0);
 
     if( R == 1 && C == 1 ){
@@ -586,7 +587,8 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
     }
     else {
         // slower fallback method
-        bsr_binop_bsr_general(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        bsr_binop_bsr_general(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx,
+                              +[](T a, T b) -> T2 { return bin_op()(a, b); });
     }
 }
 
