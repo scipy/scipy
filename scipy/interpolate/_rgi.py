@@ -6,7 +6,6 @@ from types import GenericAlias
 
 import numpy as np
 
-import scipy.sparse.linalg as ssl
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_result_device
 )
@@ -105,12 +104,14 @@ class RegularGridInterpolator:
     solver : callable, optional
         Only used for methods "slinear", "cubic" and "quintic".
         Sparse linear algebra solver for construction of the NdBSpline instance.
-        Default is the iterative solver `scipy.sparse.linalg.gcrotmk`.
+        Default is None: no sparse system is assembled and the spline
+        coefficients are computed with one banded solve per dimension.
 
         .. versionadded:: 1.13
 
     solver_args : dict, optional
         Additional arguments to pass to `solver`, if any.
+        If given without `solver`, `scipy.sparse.linalg.gcrotmk` is used.
 
         .. versionadded:: 1.13
 
@@ -156,17 +157,20 @@ class RegularGridInterpolator:
 
     **Choosing a solver for spline methods**
 
-    Spline methods, "slinear", "cubic" and "quintic" involve solving a
-    large sparse linear system at instantiation time. Depending on data,
-    the default solver may or may not be adequate. When it is not, you may
-    need to experiment with an optional `solver` argument, where you may
-    choose between the direct solver (`scipy.sparse.linalg.spsolve`) or
-    iterative solvers from `scipy.sparse.linalg`. You may need to supply
+    Spline methods, "slinear", "cubic" and "quintic" involve solving a linear
+    system at instantiation time. On a rectilinear grid its matrix is a Kronecker
+    product of one-dimensional banded matrices, so by default the system is solved
+    with one banded solve per dimension.
+
+    You may instead assemble the system as a large sparse matrix and solve it
+    with an optional `solver` argument, where you may choose between the direct
+    solver (`scipy.sparse.linalg.spsolve`) or iterative solvers from
+    `scipy.sparse.linalg`. You may need to supply
     additional parameters via the optional `solver_args` parameter (for instance,
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
 
-    In particular, the default solver stops once the residual is below
+    In particular, `scipy.sparse.linalg.gcrotmk` stops once the residual is below
     ``rtol=1e-5`` relative to the norm of `values`. If `values` have a large
     constant offset compared to how much they vary (say, values near 1000
     that vary by 1), the interpolant may then miss the data points by much
@@ -347,8 +351,6 @@ class RegularGridInterpolator:
                 )
 
     def _construct_spline(self, method, solver=None, **solver_args):
-        if solver is None:
-            solver = ssl.gcrotmk
         spl = make_ndbspl(
                 self._grid, self._values, self._SPLINE_DEGREE_MAP[method],
                 solver=solver, **solver_args

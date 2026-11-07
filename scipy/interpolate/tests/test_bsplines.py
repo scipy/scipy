@@ -4402,6 +4402,152 @@ class TestMakeND:
         with assert_raises(ValueError, match='solver'):
             make_ndbspl((x, y), np.dstack((z, z)), k=3, **solver_args)
 
+    def _get_nonuniform_grid(self, shape, seed=1234):
+        rng = np.random.default_rng(seed)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in shape)
+        return points, rng.uniform(size=shape)
+
+    @pytest.mark.parametrize(
+        'shape, k',
+        [((7, 8), 3), ((6, 7), 5), ((8, 7), (1, 3)), ((6, 7), (5, 1)),
+         ((5, 4, 6), 3), ((6, 7, 8), (3, 1, 5)), ((4, 3, 5), (3, 2, 4)),
+         ((9,), 3), ((4, 4), 3), ((6, 6), 5)]
+    )
+    def test_separable_vs_dense_kronecker(self, shape, k):
+        points, values = self._get_nonuniform_grid(shape)
+        spl = make_ndbspl(points, values, k=k)
+
+        k = (k,)*len(shape) if isinstance(k, int) else k
+        matr = np.ones((1, 1))
+        for x, ti, ki in zip(points, spl.t, k):
+            matr = np.kron(matr, BSpline.design_matrix(x, ti, ki).toarray())
+
+        # the matrix of the full system is indeed a Kronecker product
+        xvals = np.asarray(list(itertools.product(*points)))
+        xp_assert_close(NdBSpline.design_matrix(xvals, spl.t, k).toarray(), matr,
+                        atol=1e-14)
+
+        coef = np.linalg.solve(matr, values.ravel()).reshape(shape)
+        xp_assert_close(spl.c, coef, atol=1e-9, rtol=1e-9)
+        xp_assert_close(spl(xvals), values.ravel(), atol=1e-11)
+
+    def test_separable_knots(self):
+        points, values = self._get_nonuniform_grid((6, 8))
+        k = (3, 5)
+        spl = make_ndbspl(points, values, k=k)
+        for ti, x, ki in zip(spl.t, points, k):
+            xp_assert_close(ti, _not_a_knot(x, ki), atol=1e-15)
+
+    @pytest.mark.parametrize('k', [1, 2, 3, 5, (1, 2, 3), (5, 3, 1)])
+    @pytest.mark.parametrize('trailing', [(), (2,), (3, 2)])
+    def test_separable_at_nodes(self, k, trailing):
+        points, values = self._get_nonuniform_grid((8, 9, 7))
+        rng = np.random.default_rng(4321)
+        values = values.reshape(values.shape + (1,)*len(trailing))
+        values = values + rng.uniform(size=trailing)
+        spl = make_ndbspl(points, values, k=k)
+
+        xvals = np.asarray(list(itertools.product(*points)))
+        xp_assert_close(spl(xvals), values.reshape(xvals.shape[0], *trailing),
+                        atol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [np.complex64, np.complex128])
+    @pytest.mark.parametrize('k', [3, (1, 5)])
+    def test_separable_complex(self, dtype, k):
+        points, values = self._get_nonuniform_grid((8, 9))
+        z = (values + 1j*values[::-1, ::-1]).astype(dtype)
+        spl = make_ndbspl(points, z, k=k)
+        assert spl.c.dtype == np.complex128
+
+        spl_re = make_ndbspl(points, z.real, k=k)
+        spl_im = make_ndbspl(points, z.imag, k=k)
+        xp_assert_close(spl.c, spl_re.c + 1j*spl_im.c, atol=1e-13)
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.int64, np.bool_])
+    def test_separable_real_dtypes(self, dtype):
+        points, values = self._get_nonuniform_grid((6, 7))
+        values = (5*values).astype(dtype)
+        spl = make_ndbspl(points, values, k=3)
+        assert spl.c.dtype == np.float64
+
+        expected = make_ndbspl(points, values.astype(np.float64), k=3)
+        xp_assert_close(spl.c, expected.c, rtol=1e-13, atol=1e-13)
+
+    def test_separable_does_not_alias_values(self):
+        # for k=1 the coefficients are equal to `values`, but not the same array
+        points, values = self._get_nonuniform_grid((6,))
+        spl = make_ndbspl(points, values, k=1)
+        xp_assert_close(spl.c, values, atol=1e-15)
+        assert not np.may_share_memory(spl.c, values)
+
+    def test_separable_bad_values(self):
+        points, values = self._get_nonuniform_grid((6, 7))
+        for bad in [np.nan, np.inf]:
+            values[2, 3] = bad
+            with assert_raises(ValueError):
+                make_ndbspl(points, values, k=3)
+
+        # shape does not match the grid, and neither does the transposed one
+        with assert_raises(ValueError):
+            make_ndbspl(points, np.ones((5, 7)), k=3)
+        with assert_raises(ValueError):
+            make_ndbspl(points, np.ones((7, 6)), k=3)
+
+        # k=0 is not supported, with any solver
+        for solver in [None, ssl.spsolve]:
+            with assert_raises(ValueError):
+                make_ndbspl(points, np.ones((6, 7)), k=(0, 3), solver=solver)
+
+    @pytest.mark.parametrize('k', [3, 5, (1, 3)])
+    @pytest.mark.parametrize('trailing', [(), (2,)])
+    def test_explicit_solver_matches(self, k, trailing):
+        points, values = self._get_nonuniform_grid((8, 9))
+        values = values.reshape(values.shape + (1,)*len(trailing))
+        values = values * np.arange(1, math.prod(trailing) + 1).reshape(trailing)
+        spl = make_ndbspl(points, values, k=k)
+
+        direct = make_ndbspl(points, values, k=k, solver=ssl.spsolve)
+        xp_assert_close(spl.c, direct.c, atol=1e-9, rtol=1e-9)
+
+        iterative = make_ndbspl(points, values, k=k, solver=ssl.gcrotmk,
+                                rtol=1e-12, atol=1e-14, maxiter=10000)
+        xp_assert_close(spl.c, iterative.c, atol=1e-7, rtol=1e-7)
+
+    def test_explicit_solver_is_called(self):
+        points, values = self._get_nonuniform_grid((6, 7))
+        calls = []
+
+        def solver(a, b, **kwds):
+            calls.append((a.shape, kwds))
+            return ssl.gmres(a, b, **kwds)
+
+        make_ndbspl(points, values, k=3, solver=solver, maxiter=1000)
+        assert calls == [((42, 42), {'maxiter': 1000, 'atol': 1e-6})]
+
+    def test_solver_args_without_solver(self):
+        # `solver_args` alone keep selecting `gcrotmk`
+        points, values = self._get_nonuniform_grid((8, 9))
+        spl = make_ndbspl(points, values, k=3, rtol=1e-3, atol=0)
+        expected = make_ndbspl(points, values, k=3, solver=ssl.gcrotmk,
+                               rtol=1e-3, atol=0)
+        # not bitwise: two runs differ by rounding with some BLAS
+        xp_assert_close(spl.c, expected.c, rtol=1e-12)
+        separable = make_ndbspl(points, values, k=3)
+        assert not np.allclose(separable.c, expected.c, rtol=1e-12, atol=0)
+
+        with assert_raises(TypeError, match="woof"):
+            make_ndbspl(points, values, k=3, woof=42)
+
+    def test_quintic_random_grid(self):
+        # gcrotmk does not converge here within its default `maxiter`
+        rng = np.random.default_rng(0)
+        points = tuple(np.sort(rng.random(n)) for n in (12, 9, 8))
+        values = rng.random((12, 9, 8))
+        spl = make_ndbspl(points, values, k=5)
+
+        xvals = np.asarray(list(itertools.product(*points)))
+        xp_assert_close(spl(xvals), values.ravel(), atol=1e-9)
+
 
 class TestFpchec:
     # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
