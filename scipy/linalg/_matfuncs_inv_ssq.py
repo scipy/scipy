@@ -767,9 +767,7 @@ def _logm_triu(T):
     if keep_it_real:
         T0 = T
     else:
-        T0 = T.astype(
-            np.complex64 if T.dtype in [np.float32, np.complex64] else np.complex128
-        )
+        T0 = T.astype(np.result_type(T.dtype, 0j))
 
     # Define bounds given in Table (2.1).
     theta = (None,

@@ -690,8 +690,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
                    signature="(i,i),(i,i),(i,i),(i,i),(i,i),(i,i)->(i,i)")
 def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
-    a, b, q, r, e, s, m, n, res_dt, _ = _are_validate_args(
-                                                     a, b, q, r, e, s, 'dare')
+    a, b, q, r, e, s, m, n, res_dt, _ = _are_validate_args(a, b, q, r, e, s, 'dare')
 
     # Form the matrix pencil
     H = np.zeros((2*m+n, 2*m+n), dtype=res_dt)

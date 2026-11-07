@@ -789,6 +789,7 @@ class TestFractionalMatrixPower:
         b = 0.5
 
         res = fractional_matrix_power(a, b)
+        assert res.dtype == np.float64
         assert_allclose(res, np.diag(np.sqrt(a_diag)))
 
 

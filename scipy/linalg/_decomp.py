@@ -1662,8 +1662,7 @@ def cdf2rdf(w, v):
     wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = zeros(M + (n, n), dtype=np.complex64 if v.dtype in
-              [np.float32, np.complex64] else np.complex128)
+    u = zeros(M + (n, n), dtype=np.result_type(v, 0j))
     u[..., di, di] = 1.0
     u[stack_ind + (j, j)] = 0.5j
     u[stack_ind + (j, k)] = 0.5
