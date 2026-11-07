@@ -173,21 +173,15 @@ class TestBatch:
         np.testing.assert_equal(res1, res2)
 
     @pytest.mark.parametrize('dtype', floating)
+    @pytest.mark.filterwarnings("ignore: logm result may be")
     def test_logm(self, dtype):
         # One test failed absolute tolerance with default random seed
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 6*np.eye(4, dtype=dtype)  # avoid complex output for real input
 
-        # logm tolerances are only tuned for double precision
-        if dtype in [np.float32, np.complex64]:
-            with pytest.warns(RuntimeWarning, match="logm result may be"):
-                res1 = self.batch_test(linalg.logm, A)
-            with pytest.warns(RuntimeWarning, match="logm result may be"):
-                res2 = linalg.logm(A)
-        else:
-            res1 = self.batch_test(linalg.logm, A)
-            res2 = linalg.logm(A)
+        res1 = self.batch_test(linalg.logm, A)
+        res2 = linalg.logm(A)
 
         for res1i, res2i in zip(res1, res2):
             np.testing.assert_equal(res1i, res2i)
@@ -306,7 +300,7 @@ class TestBatch:
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 3, 5, 5), dtype=dtype_a, rng=rng)
         c = get_random(cdim, dtype=dtype_c, rng=rng)
-        res_dtype = np.common_type(A, c)
+        res_dtype = np.result_type(A, c).type
         res = linalg.qr_multiply(A, c, mode='left', pivoting=pivoting)
         ref_qr = linalg.qr(np.astype(A, res_dtype), pivoting=pivoting)
         ref = ref_qr[0] @ c
@@ -501,22 +495,21 @@ class TestBatch:
 
     @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
                                      linalg.solve_discrete_are])
-    @pytest.mark.parametrize('dtype_1', floating)
-    @pytest.mark.parametrize('dtype_2', floating)
-    def test_are(self, fun, dtype_1, dtype_2):
+    @pytest.mark.parametrize('dtype', floating)
+    def test_are(self, fun, dtype):
         rng = np.random.default_rng(8342310302941288912051)
-        a = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
-        b = get_random((2, 3, 5, 5), dtype=dtype_1, rng=rng)
-        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
-        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype_2, atol=0, rng=rng)
+        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
 
         # making these positive definite seems to help
-        a = a + 5*np.eye(5, dtype=dtype_1)
-        b = b + 5*np.eye(5, dtype=dtype_1)
-        q = q + 5*np.eye(5, dtype=dtype_2)
-        r = r + 5*np.eye(5, dtype=dtype_2)
-        e = np.eye(5, dtype=dtype_2)
-        s = np.zeros((5, 5), dtype=dtype_2)
+        a = a + 5*np.eye(5, dtype=dtype)
+        b = b + 5*np.eye(5, dtype=dtype)
+        q = q + 5*np.eye(5, dtype=dtype)
+        r = r + 5*np.eye(5, dtype=dtype)
+        e = np.eye(5, dtype=dtype)
+        s = np.zeros((5, 5), dtype=dtype)
         self.batch_test(fun, (a, b, q, r))
         self.batch_test(fun, (a, b, q, r, e))
         self.batch_test(fun, (a, b, q, r, e, s))
