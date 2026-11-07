@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state, _transition_to_rng
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, hypot, isnan, NAN, pi
+from libc.math cimport sqrt, sin, cos, atan2, isnan, NAN, pi
 
 np.import_array()
 
@@ -137,7 +137,9 @@ cdef inline int _get_angles(
 
     # Step 2
     # Compute second angle...
-    angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+    # Quaternion elements are in [-1, 1], so sqrt of the square is safe and much faster
+    # than hypot
+    angles[1] = 2 * atan2(sqrt(c**2 + d**2), sqrt(a**2 + b**2))
 
     # ... and check if equal to is 0 or pi, causing a singularity
     if abs(angles[1]) <= 1e-7:
