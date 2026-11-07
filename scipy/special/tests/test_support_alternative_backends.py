@@ -96,6 +96,15 @@ def _skip_or_tweak_alternative_backends(
     ):
         pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
 
+    if is_jax(xp) and f_name in {
+            "ncfdtrinc", "nctdtridf", "stdtridf", "chndtridf"
+    }:
+        pytest.xfail(
+            "Random inputs can specify unattainable inverse CDF targets; "
+            "Boost can return spurious results which differ between NumPy"
+            " and JAX due to JAX employing flush to zero for subnormals."
+        )
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
