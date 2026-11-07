@@ -488,8 +488,8 @@ jobs:
       - name: build + test in i686 container
         run: |
           set -exuo pipefail
-          docker pull quay.io/pypa/manylinux_2_28_i686
-          docker run -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_28_i686 /bin/bash -c '
+          docker pull quay.io/pypa/manylinux_2_34_i686
+          docker run --security-opt seccomp=unconfined -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_34_i686 /bin/bash -c '
             set -exuo pipefail
             cd /scipy
             uname -a
