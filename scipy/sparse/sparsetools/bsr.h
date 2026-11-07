@@ -597,7 +597,7 @@ void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op_bool<T>(multi_op_bool<T>::NOT_EQUAL_TO));
 }
 
 template <class I, class T, class T2>
@@ -606,7 +606,7 @@ void bsr_lt_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op_bool<T>(multi_op_bool<T>::LESS));
 }
 
 template <class I, class T, class T2>
@@ -615,7 +615,7 @@ void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op_bool<T>(multi_op_bool<T>::GREATER));
 }
 
 template <class I, class T, class T2>
@@ -624,7 +624,7 @@ void bsr_le_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op_bool<T>(multi_op_bool<T>::LESS_EQ));
 }
 
 template <class I, class T, class T2>
@@ -633,7 +633,7 @@ void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op_bool<T>(multi_op_bool<T>::GREATER_EQ));
 }
 
 template <class I, class T>
@@ -642,7 +642,7 @@ void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op<T>(multi_op<T>::MULTIPLY));
 }
 
 template <class I, class T>
@@ -651,7 +651,7 @@ void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op<T>(multi_op<T>::DIVIDE));
 }
 
 
@@ -680,7 +680,7 @@ void bsr_maximum_bsr(const I n_row, const I n_col, const I R, const I C,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op<T>(multi_op<T>::MAXIMUM));
 }
 
 template <class I, class T>
@@ -689,7 +689,7 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,multi_op<T>(multi_op<T>::MINIMUM));
 }
 
 
