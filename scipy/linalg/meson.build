@@ -157,7 +157,7 @@ py3.extension_module('_batched_linalg',
   [
     'src/_batched_linalg_module.cc',
   ],
-  include_directories: ['src', 'src/wrapper', 'src/blas', 'src/lapack'],
+  include_directories: ['src', 'src/wrapper'],
   cpp_args: simd_args,
   dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,

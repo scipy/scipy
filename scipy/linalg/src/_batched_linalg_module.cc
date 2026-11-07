@@ -8,8 +8,6 @@
 #include "numpy/npy_math.h"
 
 #include "wrapper_types.hpp"
-#include "blas_calls.hpp"
-#include "lapack_calls.hpp"
 
 #include "scipy_blas_defines.h"
 #include "_npymath.hh"
