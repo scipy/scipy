@@ -1531,6 +1531,34 @@ class TestGompertz:
 
 class TestFoldNorm:
 
+    @pytest.mark.parametrize('q, c, ref', [
+        (0.1, 0.0, 1.6448536269514726),
+        (1e-30, 0.0, 11.52388357738025),
+        (1e-300, 0.0, 37.06578788077213),
+        (0.1, 0.1, 1.6530612415555037),
+        (1e-30, 0.1, 11.57204970950601),
+        (1e-300, 0.1, 37.14711221813738),
+        (0.1, 1.0, 2.284468012168675),
+        (1e-30, 1.0, 12.464024688444718),
+        (1e-300, 1.0, 38.0470962993612),
+        (0.1, 10.0, 11.2815515655446),
+        (1e-30, 10.0, 21.464024688443615),
+        (1e-300, 10.0, 47.0470962993612),
+    ])
+    def test_isf(self, q, c, ref):
+        # References use mpmath erfc at 120 decimal digits.
+        assert_allclose(stats.foldnorm.isf(q, c), ref, rtol=3e-15)
+
+    def test_isf_broadcast(self):
+        q = np.array([1e-30, 0.5, 0.9])[:, None]
+        c = np.array([0., 1.])[None, :]
+        result = stats.foldnorm.isf(q, c)
+        assert result.shape == (3, 2)
+        assert_allclose(result[0], [11.52388357738025, 12.464024688444718],
+                        rtol=3e-15)
+        assert_allclose(stats.foldnorm.sf(result[1:], c),
+                        np.broadcast_to(q[1:], (2, 2)), rtol=2e-14)
+
     # reference values were computed with mpmath with 50 digits of precision
     # from mpmath import mp
     # mp.dps = 50
