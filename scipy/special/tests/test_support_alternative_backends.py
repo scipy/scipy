@@ -88,6 +88,13 @@ def _skip_or_tweak_alternative_backends(
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
+    if f_name in {'beta'} and is_jax(xp):
+        if any('float' in dtype for dtype in dtypes):
+            # JAX doesn't follow NumPy mixed int/float promotion rules
+            pytest.xfail("dtypes do not match")
+        # JAX reports NaN for negative input; SciPy produces inf
+        return [positive_only]*nfo.n_args, dtypes
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 

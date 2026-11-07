@@ -1182,7 +1182,7 @@ def nsum(f, a, b, *, step=1, args=(), kwargs=None,
 
     # Define constants
     eps = xp.finfo(dtype).eps
-    zero = xp.asarray(-xp.inf if log else 0, dtype=dtype)[()]
+    zero = xp.asarray(-xp.inf if log else 0, dtype=dtype, device=xp_device(a))[()]
     if rtol is None:
         rtol = 0.5*math.log(eps) if log else eps**0.5
     constants = (dtype, log, eps, zero, rtol, atol, maxterms)
