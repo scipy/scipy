@@ -67,7 +67,7 @@ csr_matmat          v iiIITIIT*I*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
-csr_todense         v iiIIT*T
+csr_todense         v C*T
 csr_matvec          v iiIITT*T
 csr_matvecs         v iiiIITT*T
 csr_elmul_csr       v iiIITIIT*I*I*T
@@ -291,6 +291,8 @@ def parse_routine(name, args, types):
                 args.append(f"({const + I_type}*)a[{j}]")
             elif t == 'T':
                 args.append(f"({const + T_type}*)a[{j}]")
+            elif t == 'C':
+                args.append(f"(csr_array<{const + I_type}, {const + T_type}>*)a[{j}]")
             elif t == 'B':
                 args.append(f"(npy_bool_wrapper*)a[{j}]")
             elif t == 'V':
