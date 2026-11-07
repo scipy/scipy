@@ -25,13 +25,6 @@ cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
     if n1 == 0:
         return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
-    if n1 == 0:
-        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
-    cdef double[:, :] arr = array(shape=(n1, n2),
-        itemsize=sizeof(double), format=b"d")
-    arr[:, :] = 0
-    return arr
 
 # flat implementations of numpy functions
 @cython.boundscheck(False)
@@ -353,39 +346,38 @@ def compose_quat(p, q):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double[:, :] _make_elementary_quat(
-    uchar axis, const double[:] angles
+cdef inline void _set_elementary_quat(
+    double[:] quat, uchar axis, double angle
 ) noexcept:
-    cdef Py_ssize_t n = angles.shape[0]
-    cdef double[:, :] quat = _zeros2(n, 4)
-
-    cdef int axis_ind
-    if axis == b'x':   axis_ind = 0
-    elif axis == b'y': axis_ind = 1
-    elif axis == b'z': axis_ind = 2
-
-    for ind in range(n):
-        quat[ind, 3] = cos(angles[ind] / 2)
-        quat[ind, axis_ind] = sin(angles[ind] / 2)
-    return quat
+    quat[0] = 0
+    quat[1] = 0
+    quat[2] = 0
+    quat[3] = cos(angle / 2)
+    quat[_elementary_basis_index(axis)] = sin(angle / 2)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _elementary_quat_compose(
     const uchar[:] seq, const double[:, :] angles, bint intrinsic=False
 ) noexcept:
-    cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
+    cdef Py_ssize_t num_rotations = angles.shape[0]
     cdef Py_ssize_t seq_len = seq.shape[0]
+    cdef double[:, :] result = _empty2(num_rotations, 4)  # Batched output
+    cdef double[:] elementary = _empty1(4)  # Intermediate for the current rotation
+    cdef double[:] product = _empty1(4)  # Intermediate for accumulated rotations
 
-    for idx in range(1, seq_len):
-        if intrinsic:
-            result = _compose_quat(
-                result,
-                _make_elementary_quat(seq[idx], angles[:, idx]))
-        else:
-            result = _compose_quat(
-                _make_elementary_quat(seq[idx], angles[:, idx]),
-                result)
+    for ind in range(num_rotations):
+        _set_elementary_quat(result[ind], seq[0], angles[ind, 0])
+        for idx in range(1, seq_len):
+            _set_elementary_quat(elementary, seq[idx], angles[ind, idx])
+            if intrinsic:
+                _compose_quat_single(result[ind], elementary, product)
+            else:
+                _compose_quat_single(elementary, result[ind], product)
+            result[ind, 0] = product[0]
+            result[ind, 1] = product[1]
+            result[ind, 2] = product[2]
+            result[ind, 3] = product[3]
     return result
 
 
