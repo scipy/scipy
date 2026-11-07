@@ -22,10 +22,6 @@ class TestBinomial(DistributionsTest):
         xp_assert_close(dist.pmf(x),
                         xp.asarray(stats.binom(p=dist.p, n=dist.n).pmf(x).tolist()))
 
-    def test_cdf(self, case, xp):
-        tol_override = dict(atol=1e-6) if case.dist._dtype == xp.float32 else dict()
-        return super().test_cdf(case, xp=xp, tol_override=tol_override)
-
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_moment(self, case, *, xp):
         atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
@@ -133,27 +129,9 @@ class TestStandardNormal(DistributionsTest):
         dist, x = valid_dist_x
         xp_assert_close(dist.pdf(x), xp.exp(-x**2/2)/(2*xp.pi)**0.5)
 
-    def test_cdf(self, case, xp):
-        return super().test_cdf(case, xp=xp, tol_override=self.tol(case, xp))
-
-    def test_cdf2(self, case, xp):
-        return super().test_cdf2(case, xp=xp, tol_override=self.tol(case, xp))
-
-    def test_ccdf(self, case, xp):
-        return super().test_ccdf(case, xp=xp, tol_override=self.tol(case, xp))
-
-    def test_ccdf2(self, case, xp):
-        return super().test_ccdf2(case, xp=xp, tol_override=self.tol(case, xp))
-
     @pytest.mark.filterwarnings("ignore:divide:RuntimeWarning")
     def test_logpdf(self, case, xp):
         return super().test_logpdf(case, xp=xp)
-
-    def test_logcdf(self, case, xp):
-        return super().test_logcdf(case, xp=xp, tol_override=self.tol(case, xp))
-
-    def test_logccdf(self, case, xp):
-        return super().test_logccdf(case, xp=xp, tol_override=self.tol(case, xp))
 
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     @make_xp_test_case((StandardNormal, 'moment'))

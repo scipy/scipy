@@ -614,8 +614,6 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-    tol_override = {'atol': 0} if tol_override is None else tol_override
-
     args = tuple() if arg is None else (arg,)
     methods = methods.copy()
 
@@ -638,9 +636,13 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
         assert np.isscalar(ref)
 
     for method in methods:
+        atol = 1e-6 if (method in {'complement', 'log/exp'}
+                        and ref.dtype == xp.float32) else 0
+        _tol_override = {'atol': atol} if tol_override is None else tol_override
+
         res = getattr(dist, fname)(*args, method=method)
         if 'log' in fname:
-            xp_assert_close(xp.exp(res), xp.exp(ref), **tol_override)
+            xp_assert_close(xp.exp(res), xp.exp(ref), **_tol_override)
         else:
             if fname in {'median', 'mode'} and isinstance(dist, CircularDistribution):
                 # wrap to center around 0
@@ -648,7 +650,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
                 period = b - a
                 res = xp.where(res > period/2, res - period, res)[()]
                 ref = xp.where(ref > period/2, ref - period, ref)[()]
-            xp_assert_close(res, ref, **tol_override)
+            xp_assert_close(res, ref, **_tol_override)
 
         # for now, make sure dtypes are consistent; later, we can check whether
         # they are correct.
@@ -2583,70 +2585,70 @@ class TestFullCoverage:
         )
 
 
-# class TestReprs:
-#     U = Uniform(a=0, b=1)
-#     V = Uniform(a=np.float32(0.0), b=np.float32(1.0))
-#     X = Normal(mu=-1, sigma=1)
-#     Y = Normal(mu=1, sigma=1)
-#     Z = Normal(mu=np.zeros(1000), sigma=1)
+class TestReprs:
+    U = Uniform(a=0, b=1)
+    V = Uniform(a=np.float32(0.0), b=np.float32(1.0))
+    X = Normal(mu=-1, sigma=1)
+    Y = Normal(mu=1, sigma=1)
+    Z = Normal(mu=np.zeros(1000), sigma=1)
 
-#     @pytest.mark.parametrize(
-#         "dist",
-#         [
-#             U,
-#             U - np.array([1.0, 2.0]),
-#             V,
-#             np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
-#             3*U + 2,
-#             U**4,
-#             (3*U + 2)**4,
-#             (3*U + 2)**3,
-#             2**U,
-#             2**(3*U + 1),
-#             1 / (1 + U),
-#             stats.order_statistic(U, r=3, n=5),
-#             stats.truncate(U, 0.2, 0.8),
-#             stats.Mixture([X, Y], weights=[0.3, 0.7]),
-#             abs(U),
-#             stats.exp(U),
-#             stats.log(1 + U),
-#             np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
-#         ]
-#     )
-#     def test_executable(self, dist):
-#         # Test that reprs actually evaluate to proper distribution
-#         # provided relevant imports are made.
-#         from numpy import array
-#         from numpy import float32
-#         from scipy.stats import abs, exp, log, order_statistic, truncate
-#         from scipy.stats import Mixture, Normal
-#         from scipy.stats._new_distributions import Uniform
-#         new_dist = eval(repr(dist))
-#         # A basic check that the distributions are the same
-#         sample1 = dist.sample(shape=10, rng=1234)
-#         sample2 = new_dist.sample(shape=10, rng=1234)
-#         assert_equal(sample1, sample2)
-#         assert sample1.dtype is sample2.dtype
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            U,
+            U - np.array([1.0, 2.0]),
+            V,
+            np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
+            3*U + 2,
+            U**4,
+            (3*U + 2)**4,
+            (3*U + 2)**3,
+            2**U,
+            2**(3*U + 1),
+            1 / (1 + U),
+            stats.order_statistic(U, r=3, n=5),
+            stats.truncate(U, 0.2, 0.8),
+            stats.Mixture([X, Y], weights=[0.3, 0.7]),
+            abs(U),
+            stats.exp(U),
+            stats.log(1 + U),
+            np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
+        ]
+    )
+    def test_executable(self, dist):
+        # Test that reprs actually evaluate to proper distribution
+        # provided relevant imports are made.
+        from numpy import array  # noqa: F401
+        from numpy import float32  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate  # noqa: F401
+        from scipy.stats import Mixture, Normal  # noqa: F401
+        from scipy.stats._new_distributions import Uniform  # noqa: F401
+        new_dist = eval(repr(dist))
+        # A basic check that the distributions are the same
+        sample1 = dist.sample(shape=10, rng=1234)
+        sample2 = new_dist.sample(shape=10, rng=1234)
+        assert_equal(sample1, sample2)
+        assert sample1.dtype is sample2.dtype
 
-#     @pytest.mark.parametrize(
-#         "dist",
-#         [
-#             Z,
-#             np.full(1000, 2.0) * X + 1.0,
-#             2.0 * X + np.full(1000, 1.0),
-#             np.full(1000, 2.0) * X + 1.0,
-#             stats.truncate(Z, -1, 1),
-#             stats.truncate(Z, -np.ones(1000), np.ones(1000)),
-#             stats.order_statistic(X, r=np.arange(1, 1000), n=1000),
-#             Z**2,
-#             1.0 / (1 + stats.exp(Z)),
-#             2**Z,
-#         ]
-#     )
-#     def test_not_too_long(self, dist):
-#         # Tests that array summarization is working to ensure reprs aren't too long.
-#         # None of the reprs above will be executable.
-#         assert len(repr(dist)) < 250
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            Z,
+            np.full(1000, 2.0) * X + 1.0,
+            2.0 * X + np.full(1000, 1.0),
+            np.full(1000, 2.0) * X + 1.0,
+            stats.truncate(Z, -1, 1),
+            stats.truncate(Z, -np.ones(1000), np.ones(1000)),
+            stats.order_statistic(X, r=np.arange(1, 1000), n=1000),
+            Z**2,
+            1.0 / (1 + stats.exp(Z)),
+            2**Z,
+        ]
+    )
+    def test_not_too_long(self, dist):
+        # Tests that array summarization is working to ensure reprs aren't too long.
+        # None of the reprs above will be executable.
+        assert len(repr(dist)) < 250
 
 
 class MixedDist(ContinuousDistribution):

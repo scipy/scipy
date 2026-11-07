@@ -179,7 +179,7 @@ class StandardNormal(Normal):
 
     """
     _x_support = _RealInterval(endpoints=(-inf, inf))
-    _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1.5, 1.5))
     _variable = _x_param
     _parameterizations = []
     _normalization = 1/math.sqrt(2*math.pi)

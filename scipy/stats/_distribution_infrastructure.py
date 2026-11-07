@@ -1208,7 +1208,6 @@ def _cdf2_input_validation(f):
         if func_name in {'_cdf2', '_ccdf2'}:
             res = xp.clip(res, 0., 1.)
         else:
-            # res = xp.clip(res, None, 0.)  # exp(res) < 1
             res = xp.where(xp.real(res) > 0, 0., res)
 
         # Transform the result to account for swapped argument order
@@ -1620,6 +1619,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._xp = array_namespace(*parameters.values())
             else:
                 self._xp = xp or self._xp
+                self._xp == (array_namespace(np.asarray(0)) if self._xp == np
+                             else self._xp)
         except TypeError:
             self._xp = array_namespace(np.asarray(0))  # need array API version
 
@@ -2067,7 +2068,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if self.validation_policy == _SKIP_ALL:
             return order
 
-        # order_array = xp.asarray(order, dtype=self._dtype, device=self._device)[()]
         message = (f"Argument `order` of `{self.__class__.__name__}.{fname}` "
                    f"must be a finite integer greater than or equal to {min_order}.")
         try:
@@ -2080,7 +2080,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if order_int < min_order or order_int != order:
             raise ValueError(message)
 
-        return order
+        return float(order)
 
     def _validate_kind(self, kind, kinds):
         message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
@@ -2118,7 +2118,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         parameterization = cls._parameterizations[i_parameterization]
         parameters = parameterization.draw(sizes, rng, proportions=proportions,
                                            region='typical', xp=xp)
-
         return cls(**parameters, xp=xp)
 
     @classmethod
@@ -3608,8 +3607,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
-        # shouldn't have to do this; but I need to get tests passing before I dive in
-        order = xp.asarray(order, dtype=self._dtype, device=self._device)
         E = order_statistic(self, r=order-k, n=order).mean()
         bc = xp.astype(special.binom(order-1, k), self._dtype)
         return xp.sum((-1)**k * bc * E, axis=0) / order
@@ -6059,7 +6056,7 @@ class Mixture(_ProbabilityDistribution):
         self._raise_if_method(method)
         return self._invert('logccdf', p)
 
-    def sample(self, shape=(), *, rng=None, method=None):  # TODO: fix for torch
+    def sample(self, shape=(), *, rng=None, method=None):
         xp = self._xp
         self._raise_if_method(method)
         rng = xp.random.default_rng(rng) if is_cupy(xp) else np.random.default_rng(rng)

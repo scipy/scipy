@@ -7,11 +7,6 @@ from scipy import stats, special
 from .test_continuous import DistributionsTest
 
 
-pytestmark = pytest.mark.skipif(
-    np.lib.NumpyVersion(np.__version__) < "2.1.0",
-    reason="Inconvenient to support this and SCIPY_DEVICE=meta"
-)
-
 class MyNormal:
     __make_distribution_version__ = "1.16.0"
     parameters = {'u': {'endpoints': (-np.inf, np.inf), 'typical': (-1, 1)},
@@ -40,6 +35,9 @@ class TestMyNormal(DistributionsTest):
 
     @pytest.fixture
     def xp(self):
+        if np.lib.NumpyVersion(np.__version__) < "2.1.0":
+            from scipy._external.array_api_compat import numpy as np_compat
+            return np_compat
         return np
 
     def test_purported_distribution(self, valid_dist_x):
