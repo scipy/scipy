@@ -50,12 +50,11 @@ class TestBinomial(DistributionsTest):
     def test_gh26072_non_integer_cdf_and_ccdf(self, fun, method, xp):
         # gh-26072 found that cdf-like methods of discrete distributions
         # did not produce the expected step behavior
-        n, p = 10., 0.3
+        n, p = 10, 0.3
         x = np.arange(n+1)
         x = np.concat((x, np.nextafter(x, np.inf), np.nextafter(x, -np.inf)))
         x_xp = xp.asarray(x)
-        X = stats.Binomial(n=xp.asarray(n, dtype=xp.float64),
-                           p=xp.asarray(p, dtype=xp.float64))
+        X = stats.Binomial(n=n, p=p, dtype=xp.float64, xp=xp)
         Y = stats.binom(n=n, p=p)
         X_fun = getattr(X, fun)
         Y_fun = getattr(Y, fun.replace('ccdf', 'sf'))

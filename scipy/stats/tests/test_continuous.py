@@ -456,7 +456,7 @@ class TestOtherMethods:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name, xp):
-        X = stats.Normal(mu=1., sigma=2., xp=xp)
+        X = stats.Normal(mu=1, sigma=2, xp=xp)
         X.tol = xp.finfo(X._dtype).eps * 3e3
         p = xp.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -470,7 +470,7 @@ class TestOtherMethods:
 
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name, xp):
-        X = stats.Normal(mu=1., sigma=2., xp=xp)
+        X = stats.Normal(mu=1, sigma=2, xp=xp)
         X.tol = xp.finfo(X._dtype).eps * 3e3
         p = xp.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
@@ -482,12 +482,12 @@ class TestOtherMethods:
         xp_assert_close(func(x1[0]), p[0], rtol=X.tol)
 
     def test_subtraction_safe(self, xp):
-        X = stats.Normal(mu=0., sigma=1., xp=xp)
+        X = stats.Normal(xp=xp)
         X.tol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
 
         # Regular subtraction is fine in either tail (and of course, across tails)
-        x = xp.asarray([-11., -10., 10., 11.])
-        y = xp.asarray([-10., -11., 11., 10.])
+        x = xp.asarray([-11, -10, 10, 11])
+        y = xp.asarray([-10, -11, 11, 10])
         p0 = X.cdf(x, y, method='quadrature')
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
@@ -517,7 +517,7 @@ class TestOtherMethods:
                 out[-1] = xp.inf
                 return out
 
-        X = _Normal(mu=xp.asarray(0), sigma=xp.asarray([1, 2, 3]))
+        X = _Normal(sigma=xp.asarray([1, 2, 3]))
         with np.errstate(divide='ignore'):
             res1 = X.logentropy(method='logexp_safe')
             res2 = X.logentropy(method='logexp')
@@ -531,7 +531,7 @@ class TestOtherMethods:
 
     def test_logcdf2_safe(self, xp):
         # test what happens when 2-arg `cdf` underflows
-        X = stats.Normal(mu=xp.asarray(0), sigma=xp.asarray([1, 2, 3]))
+        X = stats.Normal(sigma=xp.asarray([1, 2, 3]))
         x = xp.asarray([-301, 1, 300])
         y = xp.asarray([-300, 2, 301])
         with np.errstate(divide='ignore'):
@@ -1211,6 +1211,8 @@ def test_input_validation(xp):
         _p2 = _RealParameter('d', domain=_RealInterval())
         _parameterizations = [_Parameterization(_p1, _p2)]
         _variable = _RealParameter('x', domain=_RealInterval())
+        def __init__(self, *args, **kwargs):
+            return super().__init__(*args, xp=xp, **kwargs)
 
     message = ("The provided parameters `{a}` do not match a supported "
                "parameterization of the `Test2` distribution family.")
@@ -1235,7 +1237,11 @@ def test_input_validation(xp):
 
     message = "Parameter `c` must be of real dtype."
     with pytest.raises(TypeError, match=message):
-        Test2(c=[1, object()], d=[1, 2])
+        Test2(c=[1, 1+0j], d=[1, 2])
+
+    message = "`dtype` must be..."
+    with pytest.raises(ValueError, match=message):
+        Test2(c=1, d=1, dtype=xp.int64)
 
     message = "Parameter `convention` of `Test2.kurtosis` must be one of..."
     with pytest.raises(ValueError, match=message):
@@ -1246,7 +1252,7 @@ def test_input_validation(xp):
 @make_xp_test_case(stats.Uniform)
 def test_rng_deepcopy_pickle(xp):
     # test behavior of `rng` attribute and copy behavior
-    kwargs = dict(a=xp.asarray([-1., 2.]), b=xp.asarray(10.))
+    kwargs = dict(a=[-1, 2], b=10, xp=xp)
     dist1 = Uniform(**kwargs)
     dist2 = deepcopy(dist1)
     dist3 = pickle.loads(pickle.dumps(dist1))
@@ -1340,7 +1346,7 @@ class TestAttributes:
         xp_assert_less(abs(res1 - ref), abs(res2 - ref))
 
     def test_iv_policy(self, xp):
-        X = Uniform(a=0., b=1., xp=xp)
+        X = Uniform(a=0, b=1, xp=xp)
         assert X.pdf(2.) == 0
 
         X.validation_policy = 'skip_all'
@@ -1371,8 +1377,8 @@ class TestAttributes:
             X.validation_policy = "invalid"
 
     def test_shapes(self, xp):
-        X = stats.Normal(mu=1., sigma=2., xp=xp)
-        Y = stats.Normal(mu=[2.], sigma=3., xp=xp)
+        X = stats.Normal(mu=1, sigma=2, xp=xp)
+        Y = stats.Normal(mu=[2], sigma=3, xp=xp)
 
         # Check that attributes are available as expected
         assert X.mu == 1
@@ -1749,7 +1755,7 @@ class TestMakeDistribution:
         xp_assert_close(Y.icdf(p_xp), xp.asarray(Z.icdf(p)))
         xp_assert_close(Y.iccdf(p_xp), xp.asarray(Z.iccdf(p)))
 
-    @pytest.mark.parametrize("n", [10., [10., 11., 12.]])
+    @pytest.mark.parametrize("n", [10, [10., 11., 12.]])
     @pytest.mark.parametrize("p", [0.4, [0.4, 0.5, 0.6]])
     def test_custom_discrete(self, n, p, xp):
         rng = np.random.default_rng(5875373614)
@@ -1837,13 +1843,13 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        assert str(dist(a=2)) == "Gamma(a=2.0)"
-        assert repr(dist(a=2)) == "Gamma(a=np.float64(2.0))"
+        assert str(dist(a=2)) == "Gamma(a=2)"
+        assert repr(dist(a=2)) == "Gamma(a=2)"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
-        assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2)"
+        assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=2)"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
     @pytest.mark.slow  # just in case
@@ -1898,7 +1904,7 @@ class TestMakeDistribution:
 @make_xp_test_case(stats._distribution_infrastructure.TransformedDistribution)
 class TestTransforms:
     def test_ContinuousDistribution_only(self, xp):
-        X = stats.Binomial(n=10., p=0.5, xp=xp)
+        X = stats.Binomial(n=10, p=0.5, xp=xp)
         # This is applied at the top level TransformedDistribution,
         # so testing one subclass is enough
         message = "Transformations are currently supported only for..."
@@ -2204,7 +2210,7 @@ class TestLog:
 class TestMonotonicTransform:
     def test_monotonic_transforms_str(self):
         X = Uniform(a=1, b=2)
-        X_str = "Uniform(a=1.0, b=2.0)"
+        X_str = "Uniform(a=1, b=2)"
 
         assert str(stats.log(X)) == f"log({X_str})"
         assert str(1 / X) == f"1/({X_str})"
@@ -2351,7 +2357,8 @@ class TestOrderStatistic:
     @pytest.mark.fail_slow(20)  # Moments require integration
     def test_order_statistic(self, xp):
         rng = np.random.default_rng(7546349802439582)
-        X = Uniform(a=0, b=1, xp=xp)
+        dtype = xp.float64
+        X = Uniform(a=xp.asarray(0., dtype=dtype), b=xp.asarray(1., dtype=dtype), xp=xp)
         n = 5
         r = np.asarray([[1], [3], [5]])
         Y = stats.order_statistic(X, n=n, r=xp.asarray(r))
@@ -2430,7 +2437,7 @@ class TestOrderStatistic:
         Z1 = stats.order_statistic(Y1, r=r, n=n)
         X2 = TruncatedNormal(a=a, b=b)
         Z2 = stats.order_statistic(X2, r=r, n=n)
-        xp_assert_close(Z1.cdf(xp.asarray(x)), xp.asarray(Z2.cdf(x)))
+        xp_assert_close(Z1.cdf(xp.asarray(x)), xp.asarray(Z2.cdf(x)).tolist())
 
 
 @make_xp_test_case(stats.make_distribution)
@@ -2528,19 +2535,6 @@ class TestFullCoverage:
         with pytest.raises(NotImplementedError):
             _Parameter.validate(None, 1.)
 
-    @pytest.mark.parametrize(("dtype_in", "dtype_out"),
-                              [(np.float16, np.float16),
-                               (np.int16, np.float64)])
-    def test_RealParameter_uncommon_dtypes(self, dtype_in, dtype_out):
-        domain = _RealInterval((-1, 1))
-        parameter = _RealParameter('x', domain=domain)
-
-        x = np.asarray([0.5, 2.5], dtype=dtype_in)
-        arr, dtype, valid = parameter.validate(x, parameter_values={}, xp=np)
-        assert_equal(arr, x)
-        assert dtype == dtype_out
-        assert_equal(valid, [True, False])
-
     def test_ContinuousDistribution_set_invalid_nan(self):
         # Exercise code paths when formula returns wrong shape and dtype
         # We could consider making this raise an error to force authors
@@ -2569,11 +2563,8 @@ class TestFullCoverage:
 
     def test_ContinuousDistribution__repr__(self):
         X = Uniform(a=0, b=1)
-        assert repr(X) == "Uniform(a=np.float64(0.0), b=np.float64(1.0))"
-        assert repr(X*3 + 2) == (
-            "np.float64(3.0)*Uniform(a=np.float64(0.0), b=np.float64(1.0))"
-            " + np.float64(2.0)"
-        )
+        assert repr(X) == "Uniform(a=0, b=1)"
+        assert repr(X*3 + 2) == "np.float64(3.0)*Uniform(a=0, b=1) + np.float64(2.0)"
 
         X = Uniform(a=np.zeros(4), b=1)
         assert repr(X) == "Uniform(a=array([0., 0., 0., 0.]), b=1)"
@@ -2783,7 +2774,7 @@ class TestMixture:
         if is_cupy(xp):
             pytest.skip("`Binomial` incompatible with CuPy.")
 
-        X = stats.Binomial(n=0., p=0., xp=xp)
+        X = stats.Binomial(n=0, p=0, xp=xp)
         Y = stats.Normal(xp=xp)
         Z = stats.Mixture((X, Y))
 

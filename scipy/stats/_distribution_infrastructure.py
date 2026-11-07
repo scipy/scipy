@@ -711,11 +711,6 @@ class _RealParameter(_Parameter):
 
         Returns
         -------
-        arr : ndarray
-            The argument array that has been validated and standardized
-            (converted to an appropriate dtype, if necessary).
-        dtype : NumPy dtype
-            The appropriate floating point dtype of the parameter.
         valid : bool ndarray
             Logical array indicating which elements are valid (True) and
             which are not (False). The arrays of all distribution parameters
@@ -723,27 +718,10 @@ class _RealParameter(_Parameter):
             does not meet the requirements will be replaced with NaN.
 
         """
-        arr = xp.asarray(arr)
-
-        valid_dtype = None
-        # minor optimization - fast track the most common types to avoid
-        # overhead of np.issubdtype. Checking for `in {...}` doesn't work : /
-        if arr.dtype == xp.float64 or arr.dtype == xp.float32:
-            pass
-        elif arr.dtype == xp.int32 or arr.dtype == xp.int64:
-            arr = xp.asarray(arr, dtype=xp.float64)
-        elif xp.isdtype(arr.dtype, "real floating"):
-            pass
-        elif xp.isdtype(arr.dtype, "integral"):
-            arr = xp.asarray(arr, dtype=xp.float64)
-        else:
+        if not xp.isdtype(arr.dtype, 'real floating'):
             message = f"Parameter `{self.name}` must be of real dtype."
             raise TypeError(message)
-
-        valid = self.domain.contains(arr, parameter_values, xp=xp)
-        valid = valid & valid_dtype if valid_dtype is not None else valid
-
-        return arr[()], arr.dtype, valid
+        return self.domain.contains(arr, parameter_values, xp=xp)
 
 
 class _Parameterization:
@@ -818,21 +796,13 @@ class _Parameterization:
         all_valid : ndarray
             Logical array indicating the elements of the broadcasted arrays
             for which all parameter values are valid.
-        dtype : dtype
-            The common dtype of the parameter arrays. This will determine
-            the dtype of the output of distribution methods.
         """
         all_valid = True
-        dtypes = set()  # avoid xp.result_type if there's only one type
         for name, arr in parameter_values.items():
             parameter = self.parameters[name]
-            arr, dtype, valid = parameter.validate(arr, parameter_values, xp=xp)
-            dtypes.add(dtype)
+            valid = parameter.validate(arr, parameter_values, xp=xp)
             all_valid = all_valid & valid
-            parameter_values[name] = arr
-        dtype = arr.dtype if len(dtypes)==1 else xp.result_type(*list(dtypes))
-        device = xp_result_device(*parameter_values.values())
-        return all_valid, dtype, device
+        return all_valid
 
     def __str__(self):
         r"""Returns a string representation of the parameterization."""
@@ -948,7 +918,7 @@ def _set_invalid_nan(f):
                 shape = xp.broadcast_shapes(x.shape, shape)
                 x = xp.broadcast_to(x, shape)
                 # Should we broadcast the distribution parameters to this shape, too?
-            except ValueError as e:
+            except (ValueError, RuntimeError) as e:
                 message = (
                     f"The argument provided to `{self.__class__.__name__}"
                     f".{method_name}` cannot be broadcast to the same "
@@ -1621,6 +1591,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._xp = xp or self._xp
                 self._xp == (array_namespace(np.asarray(0)) if self._xp == np
                              else self._xp)
+            device = xp_result_device(*parameters.values())
         except TypeError:
             self._xp = array_namespace(np.asarray(0))  # need array API version
 
@@ -1648,6 +1619,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             may be modified. Parameters used in alternative parameterizations
             are not accepted.
         """
+        xp = self._xp
         parameters = original_parameters = self._original_parameters.copy()
         parameters.update(**params)
         parameterization = None
@@ -1671,7 +1643,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         elif (validation_policy or self.validation_policy) == _SKIP_ALL:
             parameters = self._process_parameters(**parameters)
             inferred_dtype = xp_result_type(*parameters.values(), force_floating=True,
-                                            xp=self._xp)
+                                            xp=xp)
             inferred_device = xp_result_device(*parameters.values())
 
         else:
@@ -1694,7 +1666,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # optimize this.
 
             parameterization = self._identify_parameterization(parameters)
-            parameters, shape, size, ndim = self._broadcast(parameters)
+            parameters, shape, size, ndim = self._broadcast(
+                parameters, dtype=self._dtype, device=self._device)
             parameters, invalid, any_invalid, dtype, device = (
                 self._validate(parameterization, parameters))
             parameters = self._process_parameters(**parameters)
@@ -1707,11 +1680,17 @@ class UnivariateDistribution(_ProbabilityDistribution):
             inferred_dtype = dtype
             inferred_device = device
 
-        # TODO: we should probably validate user-provided dtype and cast all parameters
-        # Would also be good to allow dtype resolution to be deferred until a method
-        # is called (e.g., if a distribution is passed Python scalar parameters).
         self._dtype = self._dtype or inferred_dtype
         self._device = self._device or inferred_device
+
+        if self._dtype is not None:
+            if not xp.isdtype(self._dtype, 'real floating'):
+                message = "`dtype` must be either `float32` or `float64`."
+                raise ValueError(message)
+            if self._dtype != inferred_dtype:
+                values = (xp.asarray(val, dtype=self._dtype, device=self._device)
+                          for val in parameters.values())
+                parameters = dict(zip(parameters.keys(), values))
 
         self.reset_cache()
         self._parameters = parameters
@@ -1788,7 +1767,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         return parameterization
 
-    def _broadcast(self, parameters):
+    def _broadcast(self, parameters, *, dtype=None, device=None):
         # Broadcast the distribution parameters to the same shape. If the
         # arrays are not broadcastable, raise a meaningful error.
         #
@@ -1804,16 +1783,17 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # It's much faster to check whether broadcasting is necessary than to
         # broadcast when it's not necessary.
         xp = self._xp
-        parameter_vals = [xp.asarray(parameter)
+        parameter_vals = [xp.asarray(parameter, dtype=dtype, device=device)
                           for parameter in parameters.values()]
         parameter_shapes = set(parameter.shape for parameter in parameter_vals)
         if len(parameter_shapes) == 1:
+            parameters = dict(zip(parameters.keys(), parameter_vals))
             return (parameters, parameter_vals[0].shape,
                     xp_size(parameter_vals[0]), parameter_vals[0].ndim)
 
         try:
             parameter_vals = xp.broadcast_arrays(*parameter_vals)
-        except ValueError as e:
+        except (ValueError, RuntimeError) as e:
             parameter_names = self._get_parameter_str(parameters)
             message = (f"The parameters `{parameter_names}` provided to the "
                        f"`{self.__class__.__name__}` distribution family "
@@ -1832,7 +1812,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
         # are invalid (to skip special treatments if none are invalid), and
         # the common dtype.
         xp = self._xp
-        valid, dtype, device = parameterization.validation(parameters, xp=xp)
+        values = xp_promote(*parameters.values(), force_floating=True, xp=xp)
+        values = (values,) if not isinstance(values, tuple) else values
+        device = xp_result_device(*parameters.values())
+        parameters = dict(zip(parameters.keys(), values))
+        valid = parameterization.validation(parameters, xp=xp)
         invalid = ~valid
         any_invalid = invalid if invalid.shape == () else xp.any(invalid)
         # If necessary, make the arrays contiguous and replace invalid with NaN
@@ -1841,7 +1825,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 parameters[parameter_name] = xp_copy(parameters[parameter_name])
                 parameters[parameter_name][invalid] = xp.nan
 
-        return parameters, invalid, any_invalid, dtype, device
+        return parameters, invalid, any_invalid, values[0].dtype, device
 
     def _process_parameters(self, **params):
         r""" Process and cache distribution parameters for reuse.
