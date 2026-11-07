@@ -178,6 +178,9 @@ class _FuncInfo:
             func.__module__ = "scipy.special"
             func.__qualname__ = self.name
 
+        if self.name in {"mathieu_cem", "mathieu_sem"}:
+            # Warn outside backend dispatch and register the public wrapper.
+            func = _mathieu._deprecated_mathieu(func, self.name[:-1])
         capabilities = self.xp_capabilities or xp_capabilities()
         cap_func = capabilities(func)
         assert cap_func is func
@@ -1331,6 +1334,18 @@ _special_funcs = (
     # --
     # Mathieu and related functions
     _FuncInfo(
+        _mathieu.mathieu_ce, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_ce", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        test_large_ints=False,
+        positive_only=(True, False, False),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _mathieu.mathieu_cem, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
@@ -1340,6 +1355,18 @@ _special_funcs = (
         int_only=(True, False, False),
         positive_only=(True, False, False),
         test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_se, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_se", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        test_large_ints=False,
+        positive_only=(True, False, False),
         torch_native=False,
     ),
     _FuncInfo(
