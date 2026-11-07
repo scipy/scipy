@@ -63,12 +63,6 @@ py3.extension_module('_voronoi',
 )
 
 py3.install_sources([
-    'COPYING_QHULL.txt',  # copied from subprojects/qhull_r (see gh-23428)
-  ],
-  subdir: 'scipy/spatial/qhull_src'
-)
-
-py3.install_sources([
     '_qhull.pyi',
     '_voronoi.pyi'
   ],
