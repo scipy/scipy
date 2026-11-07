@@ -537,13 +537,13 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = graph.dtype
 
-    if copy:
-        m = np.array(graph)
+    # Work in a dtype wide enough for the requested output, so that the
+    # degrees written to the diagonal cannot overflow the input dtype.
+    work_dtype = np.promote_types(graph.dtype, dtype)
+    if copy or work_dtype != graph.dtype:
+        m = np.array(graph, dtype=work_dtype)
     else:
         m = np.asarray(graph)
-
-    if dtype is None:
-        dtype = m.dtype
 
     if symmetrized:
         m += m.T.conj()
