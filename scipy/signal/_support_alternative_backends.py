@@ -253,6 +253,10 @@ capabilities_overrides = {
                                reason="firwin2 uses np.interp"),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
+    "freqs_ss": xp_capabilities(skip_backends=[
+        ('jax.numpy', "In-place item assignment and boolean masking are not supported"),
+        ('dask.array',
+         "Needs `mT`, boolean-mask assignment and eager NumPy conversion")]),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "freqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],

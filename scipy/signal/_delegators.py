@@ -177,6 +177,10 @@ def bode_signature(system, w=None, n=100):
 dbode_signature = bode_signature
 
 
+def freqs_ss_signature(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
+    return array_namespace(A, B, C, D)
+
+
 def freqresp_signature(system, w=None, n=10000):
     return array_namespace(*_skip_if_lti(system), w)
 
