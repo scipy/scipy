@@ -1424,6 +1424,16 @@ def test_write_subsystem_offset(tmp_path, do_compression):
     assert np.frombuffer(raw[116:124], np.int64)[0] == expected
 
 
+def test_write_subsystem_last():
+    # Variables after the function workspace are not loaded by MATLAB, as
+    # when a key is added to the dict returned by loadmat
+    objects, workspace = _matlab_objects()
+    added, ordered = BytesIO(), BytesIO()
+    savemat(added, {**workspace, 'a': 1.0})
+    savemat(ordered, {**objects, 'a': 1.0, **workspace})
+    assert added.getvalue()[116:] == ordered.getvalue()[116:]
+
+
 def test_write_subsystem_offset_skipped(tmp_path):
     # Without a header of its own, or where seeking back to the header is not
     # safe, the offset is not written and the file stays as before

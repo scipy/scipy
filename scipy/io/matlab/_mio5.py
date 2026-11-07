@@ -916,7 +916,11 @@ class MatFile5Writer:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         subsys_offset = None
-        for name, var in mdict.items():
+        # MATLAB stops reading variables at the subsystem offset, so the
+        # function workspace goes last
+        items = sorted(mdict.items(),
+                       key=lambda item: item[0] == '__function_workspace__')
+        for name, var in items:
             if name == '__function_workspace__':
                 name = ''
                 if patch_header:
