@@ -475,7 +475,8 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-latest
+    # pin to 24.04 because currently failing with latest==26.04
+    runs-on: ubuntu-24.04
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
@@ -518,6 +519,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
+    # pin to 24.04 because currently failing with latest==26.04
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -580,7 +582,8 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-latest
+    # pin to 24.04 because currently failing with latest==26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
