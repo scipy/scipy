@@ -4858,6 +4858,12 @@ class TestExponpow:
         assert_almost_equal(stats.exponpow.isf(stats.exponpow.sf(5, .8), .8),
                             5)
 
+    def test_logsf_right_tail(self):
+        # sf underflows here, but logsf = -expm1(x**b) is representable.
+        # reference value: float(-mp.expm1(mp.mpf(3)**2))
+        assert_allclose(stats.exponpow.logsf(3, 2), -8102.083927575384,
+                        rtol=1e-14)
+
 
 class TestSkellam:
     def test_pmf(self):

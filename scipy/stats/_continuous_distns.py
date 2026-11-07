@@ -2424,6 +2424,9 @@ class exponpow_gen(rv_continuous):
     def _sf(self, x, b):
         return np.exp(-sc.expm1(x**b))
 
+    def _logsf(self, x, b):
+        return -sc.expm1(x**b)
+
     def _isf(self, x, b):
         return (sc.log1p(-np.log(x)))**(1./b)
 
