@@ -8699,7 +8699,6 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
-    @pytest.mark.xfail(reason="Precision in tail hasn't been fixed in xsf")
     def test_large_argument_ticket_21370(self):
         # Check that survival function goes to 0 as x gets large
         x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
