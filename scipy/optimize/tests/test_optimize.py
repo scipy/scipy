@@ -63,9 +63,10 @@ def test_check_grad():
 
     r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
-    # SPEC-007 leave one call with seed to check it still works
-    r = optimize.check_grad(expit, der_expit, x0,
-                            direction='random', seed=1234)
+    # use `seed` to check that DeprecationWarning is emitted
+    with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+        r = optimize.check_grad(expit, der_expit, x0,
+                                direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
@@ -3596,8 +3597,10 @@ class TestAnnotations:
 
     def test_differential_evolution_annotations(self):
         bounds = [(-5, 5), (-5, 5)]
-        res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
-                                              callback=callable_annotated)
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
+                                                  callback=callable_annotated)
         assert res.success, f"Unexpected error: {res.message}"
 
     def test_curve_fit_annotations(self):
@@ -3640,7 +3643,7 @@ class TestAnnotations:
                                       f_old: float,x_old: _DUMMY_TYPE) -> bool:
             return True
 
-        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, seed=1,
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, rng=1,
                                     accept_test=acceptable_test)
 
         assert res.success, f"Unexpected error: {res.message}"

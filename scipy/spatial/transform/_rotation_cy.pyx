@@ -331,7 +331,7 @@ cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
     cdef Py_ssize_t n = q.shape[0] if p.shape[0] == 1 else p.shape[0]
-         
+
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
@@ -403,7 +403,7 @@ def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint
             quat_mut = np.roll(quat, -1, axis=1)
         elif normalize or copy:
             quat_mut = quat.copy()
-        else:  
+        else:
             # quat is not altered, so we return directly using quat instead of quat_mut
             return np.asarray(quat, dtype=float)
 
@@ -436,7 +436,7 @@ def from_euler(seq, angles, bint degrees=False):
                             "got {}".format(seq))
 
     seq = seq.lower()
-    
+
     angles = np.asarray(angles, dtype=float)
 
     if angles.ndim > 2:  # The backend should never be called with these inputs
@@ -447,7 +447,7 @@ def from_euler(seq, angles, bint degrees=False):
 
     is_single = angles.ndim < 2
     angles = np.atleast_2d(angles)  # Ensure 0, 1 and 2D arrays are 2D
-    
+
     if angles.shape[1] != num_axes:
         raise ValueError("Expected last dimension of `angles` to match number of"
                          f" sequence axes specified, got {angles.shape[1]}.")
@@ -644,7 +644,7 @@ def from_mrp(mrp):
     if is_single:
         return np.asarray(quat, dtype=float)[0]
     return np.asarray(quat, dtype=float)
-    
+
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)

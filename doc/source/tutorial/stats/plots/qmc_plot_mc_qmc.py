@@ -16,7 +16,7 @@ sample = {}
 sample['MC'] = rng.random((n_sample, dim))
 
 # Sobol'
-engine = qmc.Sobol(d=dim, seed=rng)
+engine = qmc.Sobol(d=dim, rng=rng)
 sample["Sobol'"] = engine.random(n_sample)
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))

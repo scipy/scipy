@@ -200,9 +200,9 @@ class SparseMixin:
     def test_sparse_and_LinearOperator(self):
         m = 5000
         n = 1000
-        rng = np.random.RandomState(0)
-        A = random_array((m, n), random_state=rng)
-        b = rng.randn(m)
+        rng = np.random.default_rng(0)
+        A = random_array((m, n), rng=rng)
+        b = rng.standard_normal(m)
         res = lsq_linear(A, b)
         assert_allclose(res.optimality, 0, atol=1e-6)
 
@@ -215,10 +215,10 @@ class SparseMixin:
         m = 5000
         n = 1000
 
-        rng = np.random.RandomState(0)
-        A = random_array((m, n), random_state=rng)
-        b = rng.randn(m)
-        lb = rng.randn(n)
+        rng = np.random.default_rng(0)
+        A = random_array((m, n), rng=rng)
+        b = rng.standard_normal(m)
+        lb = rng.standard_normal(n)
         ub = lb + 1
         res = lsq_linear(A, b, (lb, ub))
         assert_allclose(res.optimality, 0.0, atol=1e-6)

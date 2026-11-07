@@ -215,7 +215,7 @@ class RBFInterpolator:
     >>> from scipy.stats.qmc import Halton
 
     >>> rng = np.random.default_rng()
-    >>> xobs = 2*Halton(2, seed=rng).random(100) - 1
+    >>> xobs = 2*Halton(2, rng=rng).random(100) - 1
     >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
 
     >>> x1 = np.linspace(-1, 1, 50)

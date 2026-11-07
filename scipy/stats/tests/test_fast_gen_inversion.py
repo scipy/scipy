@@ -349,7 +349,7 @@ class TestQRVS:
         with pytest.raises(ValueError, match=match):
             gen.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
 
-    qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
+    qrngs = [None, stats.qmc.Sobol(1, rng=0), stats.qmc.Halton(3, rng=0)]
     # `size=None` should not add anything to the shape, `size=1` should
     sizes = [
         (None, tuple()),
@@ -406,8 +406,8 @@ class TestQRVS:
 
         size = (3, 4)
         d = 5
-        qrng = stats.qmc.Halton(d, seed=0)
-        qrng2 = stats.qmc.Halton(d, seed=0)
+        qrng = stats.qmc.Halton(d, rng=0)
+        qrng2 = stats.qmc.Halton(d, rng=0)
 
         uniform = qrng2.random(np.prod(size))
 
