@@ -1300,6 +1300,28 @@ class TestSolve:
                                [ 0. +0.j ,  0. +0.j ,  1. +0.j ]])
         assert_allclose(soln, expected, atol=1e-14)
 
+    def test_pos_neg_scalar(self):
+            # Regression test for
+            # https://github.com/scipy/scipy/issues/26580
+            # Positive definite scalar matrices with negative values must raise LinAlgError.
+            a = np.array([[-2.0]])
+            b = np.array([[1.0]])
+
+            with pytest.raises(LinAlgError):
+                solve(a, b, assume_a='pos')
+
+    def test_her_complex_scalar(self):
+            # Regression test for
+            # https://github.com/scipy/scipy/issues/26580
+            # Hermitian scalar matrices must use only
+            # the real part of the diagonal entry.
+            a = np.array([[2+5j]])
+            b = np.array([[1.0]])
+
+            x = solve(a, b, assume_a='her')
+
+            assert_allclose(x, [[0.5+0j]])
+
 
 class TestSolveTriangular:
 
