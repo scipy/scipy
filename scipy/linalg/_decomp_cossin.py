@@ -113,7 +113,7 @@ def cossin(X, p=None, q=None, separate=False,
 
     """
 
-    if p or q:
+    if p is not None or q is not None:
         p = 1 if p is None else int(p)
         q = 1 if q is None else int(q)
         X = _asarray_validated(X, check_finite=True)
