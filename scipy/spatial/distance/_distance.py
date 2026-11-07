@@ -967,9 +967,10 @@ def cityblock(u, v, w=None):
     return l1_diff.sum()
 
 
+@xp_capabilities()
 def mahalanobis(u, v, VI):
     """
-    Compute the Mahalanobis distance between two 1-D arrays.
+    Compute the Mahalanobis distance between two arrays.
 
     The Mahalanobis distance between 1-D arrays `u` and `v`, is defined as
 
@@ -982,16 +983,16 @@ def mahalanobis(u, v, VI):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    VI : array_like
+    VI : (..., N, N) array_like
         The inverse of the covariance matrix.
 
     Returns
     -------
-    mahalanobis : double
+    mahalanobis : float or array
         The Mahalanobis distance between vectors `u` and `v`.
 
     Examples
@@ -1006,12 +1007,17 @@ def mahalanobis(u, v, VI):
     1.7320508075688772
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    VI = np.atleast_2d(VI)
+    xp = array_namespace(u, v, VI)
+    u, v, VI = xp_promote(u, v, VI, force_floating=True, xp=xp)
+    VI = xpx.atleast_nd(VI, ndim=2, xp=xp)
+    if not VI.shape[-1] == VI.shape[-2]:
+        raise ValueError("VI must be a square matrix.")
+    if not VI.shape[-1] == u.shape[-1] == v.shape[-1]:
+        raise ValueError("VI is not compatible with the dimensions of u and v.")
+    if not broadcastable(u.shape[:-1], v.shape[:-1], VI.shape[:-2]):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
     delta = u - v
-    m = np.dot(np.dot(delta, VI), delta)
-    return np.sqrt(m)
+    return xp.sqrt(xp.vecdot(delta, (VI @ delta[..., None])[..., 0]))
 
 
 @xp_capabilities()
