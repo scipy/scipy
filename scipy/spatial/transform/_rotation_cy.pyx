@@ -711,10 +711,13 @@ def as_rotvec(double[:, :] quat, bint degrees=False) -> double[:, :]:
     cdef Py_ssize_t num_rotations = len(quat)
     cdef double angle, scale, angle2
     cdef double[:, :] rotvec = _empty2(num_rotations, 3)
-    cdef double[:] quat_single
+    cdef double[:] quat_single = _empty1(4)
 
     for ind in range(num_rotations):
-        quat_single = quat[ind, :].copy()
+        quat_single[0] = quat[ind, 0]
+        quat_single[1] = quat[ind, 1]
+        quat_single[2] = quat[ind, 2]
+        quat_single[3] = quat[ind, 3]
         _quat_canonical_single(quat_single)  # w > 0 ensures that 0 <= angle <= pi
 
         angle = 2 * atan2(_norm3(quat_single), quat_single[3])
@@ -729,10 +732,10 @@ def as_rotvec(double[:, :] quat, bint degrees=False) -> double[:, :]:
         rotvec[ind, 1] = scale * quat_single[1]
         rotvec[ind, 2] = scale * quat_single[2]
 
+    result = np.asarray(rotvec)
     if degrees:
-        rotvec = np.rad2deg(rotvec)
-
-    return np.asarray(rotvec)
+        np.rad2deg(result, out=result)
+    return result
 
 
 @cython.embedsignature(True)
