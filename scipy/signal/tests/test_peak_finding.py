@@ -871,6 +871,59 @@ class TestFindPeaks:
 
         xp_assert_close(peaks, peaks_readonly)
 
+    def test_wrap_boundary_peaks(self):
+        x = np.array([2, 0, 3, 1, 1])
+        peaks, _ = find_peaks(x, wrap=False)
+        assert_array_equal(peaks, [2])
+        peaks, _ = find_peaks(x, wrap=True)
+        assert_array_equal(peaks, [0, 2])
+
+    def test_wrap_false_matches_default(self):
+        x = np.array([0, 2, 0, 3, 0, 1, 0])
+        assert_array_equal(find_peaks(x)[0], find_peaks(x, wrap=False)[0])
+
+    def test_distance_wrap_keeps_taller(self):
+        x = np.array([2, 0, 3, 1, 1])
+        peaks, _ = find_peaks(x, distance=3, wrap=True)
+        assert_array_equal(peaks, [2])
+
+    def test_wrap_threshold(self):
+        # Peak at index 0 has neighbours x[-1]=1 and x[1]=1, so with wrap its
+        # threshold on both sides is 4. Without wrap it is not a peak at all.
+        x = np.array([5, 1, 3, 1, 2, 1])
+        peaks, props = find_peaks(x, threshold=2, wrap=True)
+        assert 0 in peaks
+        assert_array_equal(peaks, [0, 2])
+        peaks, _ = find_peaks(x, threshold=2, wrap=False)
+        assert 0 not in peaks
+
+    def test_wrap_prominence(self):
+        x = np.array([4, 1, 3, 1, 2, 1])
+        peaks, props = find_peaks(x, prominence=(None, None), wrap=True)
+        assert 0 in peaks
+        assert len(props["prominences"]) == len(peaks)
+        # The tallest peak must have the largest prominence
+        assert peaks[np.argmax(props["prominences"])] == 0
+        # Filtering by prominence must keep a subset of the unfiltered peaks
+        filtered, _ = find_peaks(x, prominence=1.5, wrap=True)
+        assert set(filtered) <= set(peaks)
+
+    def test_wrap_width(self):
+        x = np.array([4, 1, 3, 1, 2, 1])
+        peaks, props = find_peaks(x, width=(None, None), wrap=True)
+        assert len(props["widths"]) == len(peaks)
+        assert np.all(props["widths"] > 0)
+        # Index-like properties must be valid positions in the original signal
+        for key in ("left_ips", "right_ips", "left_bases", "right_bases"):
+            assert np.all(props[key] >= 0)
+            assert np.all(props[key] < x.size)
+
+    def test_wrap_properties_aligned_with_peaks(self):
+        x = np.array([4, 1, 3, 1, 2, 1])
+        peaks, props = find_peaks(x, height=0, prominence=0, width=0, wrap=True)
+        for value in props.values():
+            assert len(value) == len(peaks)
+        assert_array_equal(props["peak_heights"], x[peaks])
 
 class TestFindPeaksCwt:
 
