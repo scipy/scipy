@@ -20,6 +20,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           matrix_balance, qr, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy._lib._array_api import xp_assert_close
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
 
@@ -167,22 +168,35 @@ class TestSolveBanded:
         # Values of (l,u) are not compatible with ab.
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
 
-    def test_1x1(self):
+    _test_dtypes = [np.int64, np.float32, np.float64, np.complex64, np.complex128]
+    @pytest.mark.parametrize("dtype_ab", _test_dtypes)
+    @pytest.mark.parametrize("dtype_b", _test_dtypes)
+    def test_1x1(self, dtype_ab, dtype_b):
+        rng = np.random.default_rng(seed=12345)
+        res_dtype = np.result_type(dtype_ab, dtype_b, np.float32)
         # gh-8906 noted that the case of A@x = b with 1x1 A was handled
         # incorrectly; check that this is resolved. Typical case:
         # nupper == nlower == 0
-        # A = [[2]]
-        b = array([[1., 2., 3.]])
-        ref = array([[0.5, 1.0, 1.5]])
-        x = solve_banded((0, 0), [[2]], b)
-        assert_allclose(x, ref, rtol=1e-15)
+
+        ab = rng.normal(size=(1, 1))
+        if np.isdtype(dtype_ab, "complex floating"):
+            ab = ab + 1j * rng.normal(size=ab.shape)
+        ab = np.astype(ab, dtype_ab)
+
+        b = rng.normal(size=(1, 3))
+        if np.isdtype(dtype_b, "complex floating"):
+            b = b + 1j * rng.normal(size=b.shape)
+        b = np.astype(b, dtype_b)
+
+        x = solve_banded((0, 0), ab, b)
+        ref = np.astype(b / ab, res_dtype)
+        xp_assert_close(x, ref)
 
         # However, the user *can* represent the same system with garbage rows
         # in `ab`. Test the case with `nupper == 1, nlower == 1`.
-        x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_allclose(x, ref, rtol=1e-15)
-        assert_equal(x.dtype, np.dtype('f8'))
-        assert_array_equal(b, [[1.0, 2.0, 3.0]])
+        ab_ext = np.array([[0], [ab[0, 0]], [0]], dtype=dtype_ab)
+        x = solve_banded((1, 1), ab_ext, b)
+        xp_assert_close(x, ref)
 
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
