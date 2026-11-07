@@ -4,6 +4,7 @@ from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy._lib._testutils import check_free_memory
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
+from scipy._lib._testutils import assert_mem_gain_limit
 import pytest
 
 
@@ -270,3 +271,38 @@ def test_large_assignments():
 
     # 4: From 46340x46340 region filled, assign sparse to new 300x300 region")
     check(big_info, index_300, rhs_300_sparse)
+
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_dense():
+    A = csr_array((100, 100), dtype=np.int8)
+    N = 30
+    rhs = csr_array(np.ones((N, N), dtype=np.int8))
+    index_N = np.arange(40, 40 + N)
+
+    scale = 10
+    # N x N x (8(int64) + 1(int8)) only indices and data change size
+    exp_net_mem_chg = N * N * 9
+
+    warn_msg = "Changing the sparsity structure"
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
+        with assert_mem_gain_limit(scale * exp_net_mem_chg + 1096):
+            A[index_N[:, None], index_N] = rhs
+
+
+@pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
+def test_set_arrayXarray_memory_scalar():
+    A = csr_array((100, 100), dtype=np.int8)
+    N = 30
+    index_N = np.arange(40, 40 + N)
+
+    scale = 8
+    # N x N x (8(int64) + 1(int8)) only indices and data change size
+    exp_net_mem_chg = N * N * 9
+
+    warn_msg = "Changing the sparsity structure"
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
+        with assert_mem_gain_limit(scale * exp_net_mem_chg + 96):
+            A[index_N[:, None], index_N] = 1
