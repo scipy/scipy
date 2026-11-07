@@ -16,7 +16,6 @@
 #include "numpy/npy_math.h"
 
 #include "scipy_blas_defines.h"
-#include "blas_calls.hpp"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
 #include "_linalg_bandwidth.h"
