@@ -2145,6 +2145,10 @@ class TestCanberra:
         xp_assert_equal(canberra(u, v), xp.asarray(1.0))
         xp_assert_equal(canberra(v, u), xp.asarray(1.0))
 
+    def test_nan_propagates(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(canberra(u, v), xp.asarray(xp.nan))
+
 
 def test_minkowski_w():
     # Regression test for gh-8142.
