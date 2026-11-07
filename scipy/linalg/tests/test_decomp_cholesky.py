@@ -373,6 +373,23 @@ class TestChoFactor:
         xx, lower = cho_factor(np.eye(2, dtype=dt))
         assert x.dtype == xx.dtype
 
+    @pytest.mark.parametrize('a', [
+        [[4.0, 2.0], [2.0, 3.0]],
+        ((4.0, 2.0), (2.0, 3.0)),
+    ])
+    @pytest.mark.parametrize('lower', [False, True])
+    def test_array_like(self, a, lower):
+        # gh-26631: ensure non-ndarray array_like inputs produce the same
+        # result as passing an ndarray directly.
+        a_arr = np.asarray(a)
+
+        c, lower_out = cho_factor(a, lower=lower)
+        c_ref, lower_ref = cho_factor(a_arr, lower=lower)
+
+        assert isinstance(lower_out, bool)
+        assert lower_out is lower_ref
+        assert_allclose(c, c_ref)
+
     @pytest.mark.parametrize("n", [5, 10, 20])
     @pytest.mark.parametrize("dtype", [np.float32, np.float64,
                                 np.complex64, np.complex128])
