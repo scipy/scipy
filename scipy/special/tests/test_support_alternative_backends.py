@@ -88,6 +88,9 @@ def _skip_or_tweak_alternative_backends(
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal"}:
+        pytest.skip("requires dedicated tests due to keyword arguments.")
+
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
