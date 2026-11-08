@@ -810,6 +810,144 @@ class TestCrystalBall:
         sf = stats.crystalball.sf(x, beta=beta, m=m)
         assert_allclose(sf, rootref, rtol=1e-13)
 
+    # Reference values for the tests below were computed with mpmath
+    # (mp.dps = 100) from the closed forms of the distribution:
+    #
+    # def consts(beta, m):
+    #     beta, m = mp.mpf(beta), mp.mpf(m)
+    #     N = 1/((m/beta)*mp.exp(-beta**2/2)/(m - 1)
+    #            + mp.sqrt(2*mp.pi)*mp.ncdf(beta))
+    #     A = (m/beta)**m*mp.exp(-beta**2/2)
+    #     return beta, m, N, A, m/beta - beta
+    #
+    # def pdf(x, beta, m):
+    #     x = mp.mpf(x)
+    #     beta, m, N, A, B = consts(beta, m)
+    #     return N*mp.exp(-x**2/2) if x > -beta else N*A*(B - x)**(-m)
+    #
+    # def cdf(x, beta, m):
+    #     x = mp.mpf(x)
+    #     beta, m, N, A, B = consts(beta, m)
+    #     if x <= -beta:
+    #         return N*A*(B - x)**(1 - m)/(m - 1)
+    #     return 1 - N*mp.sqrt(2*mp.pi)*mp.ncdf(-x)
+    #
+    # logpdf = log(pdf), sf = 1 - cdf. ppf/isf by inverting the closed forms
+    # (power law: x = B - (p*(m - 1)/(N*A))**(1/(1 - m)) for p <= cdf(-beta);
+    # Gaussian: x = -sqrt(2)*erfinv(2*sf/(N*sqrt(2*pi)) - 1)), checked by
+    # evaluating cdf/sf at the result.
+    @pytest.mark.parametrize(
+        'method, x, beta, m, ref, rtol',
+        [# test cases for risk of (m/beta)**m overflow
+         ('pdf', -2.0, 1.0, 150.0, 0.08231975971863677, 5e-15),
+         ('cdf', -2.0, 1.0, 150.0, 0.08342472293633658, 5e-15),
+         ('sf', -2.0, 1.0, 150.0, 0.9165752770636634, 5e-15),
+         ('pdf', -1.0, 1.0, 1000.0, 0.22331134576235845, 5e-15),
+         ('pdf', -1e140, 1e-150, 3.0, 6.666666666e-151, 5e-15),
+         ('cdf', -1e140, 1e-150, 3.0, 0.9999999999333333, 5e-15),
+         ('sf', -1e140, 1e-150, 3.0, 6.666666666333334e-11, 5e-15),
+         ('cdf', -1e200, 1e-150, 3.0, 9e-100, 5e-15),
+         # (B - x)**(-m) could underflow. pdf and cdf ~ (1 + t)**(-m) with
+         # t large, so the rounding error eps of t becomes ~m*eps; hence the
+         # looser rtol
+         ('pdf', -140.0, 1.0, 140.0, 2.6402624657544074e-43, 5e-14),
+         ('cdf', -140.0, 1.0, 140.0, 5.299519625507048e-43, 5e-14),
+         ('pdf', -54.06977288832496, 1.0, 140.0, 6.4008191994632504e-21, 2e-14),
+         ('cdf', -54.06977288832496, 1.0, 140.0, 8.890681360716545e-21, 2e-14),
+         ('pdf', -2511863.4315095823, 2.0, 50.0, 4.238805774333309e-252, 2e-14),
+         ('cdf', -2511863.4315095823, 2.0, 50.0, 2.1729385123167972e-247,
+          2e-14),
+         ('pdf', -15848908.924611142, 2.0, 50.0, 4.238805774333402e-292, 2e-14),
+         # sf = 1 - cdf cancels for small beta and for m close to 1
+         ('sf', -1.0, 1e-10, 2.0, 1.1266570685621474e-10, 5e-15),
+         ('sf', -1e-09, 1e-10, 2.0, 6.266570691184802e-11, 5e-15),
+         ('sf', -2.0, 0.001, 3.0, 0.0021657346829684976, 5e-15),
+         ('sf', -2.0, 0.5, 1.001, 0.0015385495969047586, 5e-15),
+         # m*log(m/beta) - m*log(B - x) cancels for large m
+         ('logpdf', -1.5, 1.0, 1e6, -1.9989648504154947, 5e-15),
+         ('logpdf', -1.000000001, 1.0, 1e6, -1.498964976415453, 5e-15),
+         ('logpdf', -1.5, 1.0, 1000.0, -1.9990633535733158, 5e-15),
+         ('logpdf', -1.5, 1.0, 140.0, -1.9996796410219748, 5e-15),
+         # x**2 overflow avoided by (x/2)*x
+         ('logpdf', 1.5e154, 2.0, 3.0, -1.1250000000000002e+308, 5e-15),
+         # rounding of (m/beta - beta - x)**(-m)
+         ('pdf', -1.000000001, 1.0, 140.0, 0.22300292768129773, 5e-15),
+         # both sides of x = -beta, Gaussian side
+         ('pdf', -1.9999999999, 2.0, 3.0, 0.05304970075325646, 5e-15),
+         ('pdf', -2.0000000001, 2.0, 3.0, 0.05304970073203658, 5e-15),
+         ('cdf', -2.0000000001, 2.0, 3.0, 0.03978727555167992, 5e-15),
+         ('sf', -1.9999999999, 2.0, 3.0, 0.9602127244377101, 5e-15),
+         # far in the Gaussian tail: sf(x) ~ Phi(-x) ~ exp(-x**2/2), so a
+         # relative error eps in x (e.g. rounding x/sqrt(2) inside erfc)
+         # becomes ~x**2 * eps = 900 * eps in sf; hence the looser rtol
+         ('sf', 30.0, 2.0, 3.0, 4.821171434325136e-198, 2e-13),
+         # Gaussian side far out; logpdf = log(N) - x**2/2 is well conditioned
+         ('logpdf', 30.0, 2.0, 3.0, -450.93652605498147, 5e-15)]
+    )
+    def test_extreme_shapes(self, method, x, beta, m, ref, rtol):
+        res = getattr(stats.crystalball, method)(x, beta, m)
+        assert_allclose(res, ref, rtol=rtol)
+
+    @pytest.mark.parametrize(
+        'q, beta, m, ref, rtol',
+        [# (m/beta)**(-m) underflowed, result was -inf
+         (0.1, 1.0, 150.0, -1.8164536051069315, 5e-15),
+         (0.001, 1e-150, 3.0, -9.186832980505138e+151, 5e-15),
+         (1e-300, 1.0, 140.0, -19801.47048966306, 5e-15),
+         (1e-300, 2.0, 50.0, -30797172.66009173, 5e-15),
+         (6.8129206905797616e-251, 2.0, 50.0, -2961426.760601957, 1e-14),
+         # far power-law tail where 1/(1 - m) is exact
+         (1e-300, 10.0, 3.0, -1.019201066819186e+138, 5e-15),
+         (6.8129206905797616e-251, 1e-10, 2.0, -2.9355985350601136e+260,
+          5e-15),
+         # ndtri of a number close to 1 lost accuracy
+         (0.9999999999995953, 1.0, 150.0, 7.148377040565187, 5e-15),
+         (0.9999999999999966, 1.0, 150.0, 7.776293155470988, 5e-15),
+         # the ndtri argument rounded to 0.5, result was 0
+         (0.5, 10.0, 3.0, -4.915554340282728e-24, 5e-14),
+         (0.49999999999999994, 10.0, 3.0, -1.391458261491427e-16, 5e-15),
+         # m close to 1: the condition number is ~1/(m - 1) = 1e3
+         (0.49999999999999994, 0.5, 1.001, -8.046623125845372e+300, 1e-13),
+         # m/beta - beta - (...) cancelled
+         (0.21999999999999997, 1.0, 140.0, -1.0208765072839139, 5e-15),
+         (0.01, 2.0, 50.0, -2.519873607926667, 5e-15),
+         # Gaussian side
+         (0.5, 1.0, 2.0, -0.4196874356056657, 5e-15),
+         (0.9, 2.0, 3.0, 1.2715062128839576, 5e-15),
+         (0.05, 2.0, 3.0, -1.836470349455042, 5e-15)]
+    )
+    def test_ppf(self, q, beta, m, ref, rtol):
+        ppf = stats.crystalball.ppf(q, beta, m)
+        assert_allclose(ppf, ref, rtol=rtol)
+
+    @pytest.mark.parametrize(
+        'q, beta, m, ref, rtol',
+        [# Gaussian side; ppf(1 - q) lost all accuracy for small q
+         (1e-20, 2.0, 3.0, 9.260462484045757, 5e-15),
+         (1e-12, 1.0, 150.0, 7.023107011771303, 5e-15),
+         (1e-5, 1.0, 2.0, 4.201581116585663, 5e-15),
+         (0.5, 1.0, 2.0, -0.4196874356056657, 5e-15),
+         (0.5, 10.0, 3.0, -4.915554340282728e-24, 5e-14),
+         # just above the branch point sf(-beta) = 6.3e-11; comparing
+         # with 1 - cdf(-beta) chose the wrong branch
+         (1e-9, 1e-10, 2.0, -18.746685881509727, 5e-15),
+         # power-law side
+         (0.99, 2.0, 3.0, -3.4920121992267332, 5e-15),
+         (0.999, 1.0, 1.5, -321794.30324784067, 5e-15),
+         (0.5, 1e-10, 2.0, -19999999997.49337, 5e-15),
+         # (m/beta)**(-m) underflowed, result was -inf
+         (0.9, 1.0, 150.0, -1.8164536051069318, 5e-15),
+         (0.999, 1e-150, 3.0, -9.186832980505133e+151, 5e-15),
+         # m/beta - beta - (...) cancelled
+         (0.78, 1.0, 140.0, -1.0208765072839139, 5e-15),
+         (0.99, 2.0, 50.0, -2.5198736079266664, 5e-15),
+         # m close to 1: the condition number is ~1/(m - 1) = 1e3
+         (0.5, 0.5, 1.001, -8.046623125844478e+300, 1e-13)]
+    )
+    def test_isf(self, q, beta, m, ref, rtol):
+        isf = stats.crystalball.isf(q, beta, m)
+        assert_allclose(isf, ref, rtol=rtol)
+
     def test_moments(self):
         """
         All values are calculated using the pdf formula and the integrate function
