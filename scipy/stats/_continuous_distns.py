@@ -11797,8 +11797,40 @@ class crystalball_gen(rv_continuous):
         # Arbitrary, but the default m=1 is not valid
         return super()._fitstart(data, args=(1, 1.5))
 
+    # Notation used in the methods below:
+    #   C = (m/beta) * exp(-beta**2/2) / (m-1),  G = sqrt(2*pi) * Phi(beta),
+    #   N = 1/(C + G),  pbeta = cdf(-beta) = N*C,  sbeta = sf(-beta) = N*G.
+    # On the power-law side (x <= -beta), with t = (-beta - x)*beta/m >= 0,
+    #   B - x = (m/beta) * (1 + t), so that
+    #   pdf(x) = N * exp(-beta**2/2) * (1 + t)**(-m),
+    #   cdf(x) = pbeta * (1 + t)**(1-m).
+    # Using t avoids forming (m/beta)**m and (B - x)**(-m) separately,
+    # which overflow/underflow for large m or small beta.
+    def _consts(self, beta, m):
+        C = m/beta / (m-1) * np.exp(-beta**2 / 2.0)
+        G = _norm_pdf_C * _norm_cdf(beta)
+        return C, G, 1.0 / (C + G)
+
+    def _log_pbeta(self, beta, m):
+        # log(cdf(-beta)), computed from sf(-beta) if cdf(-beta) is close to 1,
+        # and from its factors otherwise (so that it does not underflow).
+        C, G, N = self._consts(beta, m)
+        with np.errstate(divide='ignore'):
+            return np.where(N*C > 0.5, np.log1p(-N*G),
+                            np.log(N) + np.log(m/beta) - beta**2/2
+                            - np.log(m-1))
+
+    def _pow1p(self, t, a):
+        # (1 + t)**a for t >= 0. For small t, so use log1p.
+        # The power is more accurate than exp(a*log1p(t)) when |a*log1p(t)| is large.
+        return np.where(t < 1, np.exp(a*np.log1p(t)), (1 + t)**a)
+
+    def _t(self, x, beta, m):
+        # t = (-beta - x)*beta/m; -beta - x is exact near x = -beta
+        return (-beta - x) * (beta/m)
+
     def _pdf(self, x, beta, m):
-        """
+        r"""
         Return PDF of the crystalball function.
 
                                             --
@@ -11807,49 +11839,47 @@ class crystalball_gen(rv_continuous):
                                            | A * (B - x)**(-m), for x <= -beta
                                             --
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
-                   _norm_pdf_C * _norm_cdf(beta))
-
         def rhs(x, beta, m):
-            return np.exp(-x**2 / 2)
+            _, _, N = self._consts(beta, m)
+            return N * np.exp(-x**2 / 2)
 
         def lhs(x, beta, m):
-            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
-                    (m/beta - beta - x)**(-m))
+            _, _, N = self._consts(beta, m)
+            t = self._t(x, beta, m)
+            return N * np.exp(-beta**2 / 2.0) * self._pow1p(t, -m)
 
-        return N * xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
+        return xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
+
+    def _logpdf_lhs(self, x, beta, m):
+        # logpdf for x <= -beta. Unlike m*log(m/beta) - m*log(B - x), this
+        # does not cancel for large m.
+        _, _, N = self._consts(beta, m)
+        return np.log(N) - beta**2/2 - m*np.log1p(self._t(x, beta, m))
 
     def _logpdf(self, x, beta, m):
         """
         Return the log of the PDF of the crystalball function.
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
-                   _norm_pdf_C * _norm_cdf(beta))
-
         def rhs(x, beta, m):
-            return -x**2/2
+            _, _, N = self._consts(beta, m)
+            # (0.5*x)*x instead of x**2/2 to avoid overflow for very large x
+            return np.log(N) - (0.5*x)*x
 
-        def lhs(x, beta, m):
-            return m*np.log(m/beta) - beta**2/2 - m*np.log(m/beta - beta - x)
-
-        return np.log(N) + xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
+        return xpx.apply_where(x > -beta, (x, beta, m), rhs, self._logpdf_lhs)
 
     def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
-                   _norm_pdf_C * _norm_cdf(beta))
-
         def rhs(x, beta, m):
-            return ((m/beta) * np.exp(-beta**2 / 2.0) / (m-1) +
-                    _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta)))
+            C, G, N = self._consts(beta, m)
+            return N * (C + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta)))
 
         def lhs(x, beta, m):
-            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
-                    (m/beta - beta - x)**(-m+1) / (m-1))
+            C, G, N = self._consts(beta, m)
+            return N*C * self._pow1p(self._t(x, beta, m), 1-m)
 
-        return N * xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
+        return xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
 
     def _sf(self, x, beta, m):
         """
@@ -11857,35 +11887,83 @@ class crystalball_gen(rv_continuous):
         """
 
         def rhs(x, beta, m):
-            # M is the same as 1/N used elsewhere.
-            M = m/beta/(m - 1)*np.exp(-beta**2/2) + _norm_pdf_C*_norm_cdf(beta)
-            return _norm_pdf_C*_norm_sf(x)/M
+            _, _, N = self._consts(beta, m)
+            return N * _norm_pdf_C * _norm_sf(x)
 
         def lhs(x, beta, m):
-            # Default behavior is OK in the left tail of the SF.
-            return 1 - self._cdf(x, beta, m)
+            # sf(x) = sf(-beta) + pbeta * (1 - (1 + t)**(1-m)); unlike
+            # 1 - cdf(x), this does not cancel if cdf(x) is close to 1.
+            C, G, N = self._consts(beta, m)
+            t = self._t(x, beta, m)
+            return N*G - N*C * np.expm1((1-m)*np.log1p(t))
 
         return xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
 
+    def _quantile_power_law(self, p, log_p, p_exact, beta, m):
+        # Solve cdf(x) = p for x <= -beta, given p and log_p = log(p):
+        # (1 + t)**(1-m) = p/pbeta, x = -beta - (m/beta)*t. This avoids
+        # forming (m/beta)**(-m), and expm1 avoids the cancellation in
+        # B - (m/beta)*(1 + t) for small t. For large t (|log(p)| large),
+        # the direct power avoids amplifying the rounding of log(p); it is
+        # only used if p is exact (the rounding of p would be amplified by
+        # 1/(m-1) otherwise).
+        C, G, N = self._consts(beta, m)
+        u = (log_p - self._log_pbeta(beta, m)) / (1-m)
+        with np.errstate(over='ignore'):
+            t = np.where((u < 1) | np.logical_not(p_exact), np.expm1(u),
+                         (p/(N*C))**(1/(1-m)) - 1)
+        return -beta - m/beta * t
+
+    def _quantile_gauss(self, p_half, p_low, q, beta, m):
+        # Solve cdf(x) = p (equivalently sf(x) = q) for x > -beta, where
+        # p_half = p - 1/2 and p_low = p - pbeta. For x > -beta,
+        # cdf(x) = pbeta + s*(Phi(x) - Phi(-beta)) and sf(x) = s*Phi(-x)
+        # with s = N*sqrt(2*pi).
+        C, G, N = self._consts(beta, m)
+        s = N * _norm_pdf_C
+        # d = Phi(x) - 1/2 = (p - 1/2) + q*(Phi(-beta) - C/sqrt(2*pi)),
+        # computed without forming Phi(x): for large beta, Phi(x) rounds to
+        # 1/2 near the median, and ndtri(1/2) = 0 although x != 0.
+        d = p_half + q * (_norm_cdf(-beta) - C/_norm_pdf_C)
+        with np.errstate(invalid='ignore'):
+            x_mid = np.sqrt(2) * sc.erfinv(2*d)
+            # upper part: use the sf (avoid ndtri of a number close to 1)
+            x_upper = _norm_isf(q/s)
+            x_lower = _norm_ppf(_norm_cdf(-beta) + p_low/s)
+        return np.where(np.abs(d) < 0.25, x_mid,
+                        np.where(d > 0, x_upper, x_lower))
+
     def _ppf(self, p, beta, m):
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
-                   _norm_pdf_C * _norm_cdf(beta))
-        pbeta = N * (m/beta) * np.exp(-beta**2/2) / (m - 1)
+        C, G, N = self._consts(beta, m)
+        pbeta = N*C
 
-        def ppf_less(p, beta, m):
-            eb2 = np.exp(-beta**2/2)
-            C = (m/beta) * eb2 / (m-1)
-            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
-            return (m/beta - beta -
-                    ((m - 1)*(m/beta)**(-m)/eb2*p/N)**(1/(1-m)))
+        def ppf_power_law(p, beta, m):
+            return self._quantile_power_law(p, np.log(p), True, beta, m)
 
-        def ppf_greater(p, beta, m):
-            eb2 = np.exp(-beta**2/2)
-            C = (m/beta) * eb2 / (m-1)
-            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
-            return _norm_ppf(_norm_cdf(-beta) + (1/_norm_pdf_C)*(p/N - C))
+        def ppf_gauss(p, beta, m):
+            C, G, N = self._consts(beta, m)
+            return self._quantile_gauss(p - 0.5, p - N*C, 1 - p, beta, m)
 
-        return xpx.apply_where(p < pbeta, (p, beta, m), ppf_less, ppf_greater)
+        return xpx.apply_where(p < pbeta, (p, beta, m),
+                               ppf_power_law, ppf_gauss)
+
+    def _isf(self, q, beta, m):
+        C, G, N = self._consts(beta, m)
+        # compare with sf(-beta) directly; 1 - cdf(-beta) can cancel
+        sbeta = N*G
+
+        def isf_power_law(q, beta, m):
+            # 1 - q is exact for q >= 1/2
+            return self._quantile_power_law(1 - q, np.log1p(-q), q >= 0.5,
+                                            beta, m)
+
+        def isf_gauss(q, beta, m):
+            C, G, N = self._consts(beta, m)
+            # p - pbeta = sf(-beta) - q; 1 - q is not formed
+            return self._quantile_gauss(0.5 - q, N*G - q, q, beta, m)
+
+        return xpx.apply_where(q < sbeta, (q, beta, m),
+                               isf_gauss, isf_power_law)
 
     def _munp(self, n, beta, m):
         """
