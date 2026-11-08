@@ -29,7 +29,7 @@ from scipy._external import array_api_extra as xpx
 from scipy._lib._testutils import mutually_broadcastable_shapes
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (
-    make_xp_test_case, is_numpy, is_cupy, is_torch, xp_copy, array_namespace)
+    make_xp_test_case, is_numpy, is_cupy, is_torch, xp_copy, xp_compat_namespace)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 
 
@@ -1076,7 +1076,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
     if dist_shape and num_parameters == 0:
         pytest.skip("Distribution can't have a shape without parameters.")
 
-    dist = family._draw(dist_shape, rng, xp=array_namespace(np.asarray(0)))
+    dist = family._draw(dist_shape, rng, xp=xp_compat_namespace(np))
 
     n = 1024
     sample_size = (n,) + x_shape

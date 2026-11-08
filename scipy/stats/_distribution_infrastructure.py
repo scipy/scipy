@@ -10,7 +10,8 @@ from math import inf
 
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_promote, xp_size, xp_copy, xp_spacing,
-    is_numpy, is_cupy, xp_device, xp_result_device, xp_result_type
+    is_numpy, is_cupy, is_torch, xp_device, xp_result_device, xp_result_type,
+    xp_compat_namespace
 )
 from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -383,7 +384,7 @@ class _Interval(_Domain):
 
         shape = (n,) + squeezed_base_shape
         if is_numpy(xp) and np.__version__ < "2.1":
-            xp = array_namespace(i)
+            xp = xp_compat_namespace(xp)
 
         if type_ == 'in':
             z = uniform(min_nn, max_nn, size=shape)
@@ -1315,7 +1316,7 @@ def _generate_example(dist_family):
     shapes = [()] * n_parameters
     rng = np.random.default_rng(615681484984984)
     i = 0
-    xp = array_namespace(np.asarray(0))
+    xp = xp_compat_namespace(np)
     dist = dist_family._draw(shapes, rng=rng, i_parameterization=i, xp=xp)
 
     rng = np.random.default_rng(2354873452)
@@ -1589,11 +1590,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._xp = array_namespace(*parameters.values())
             else:
                 self._xp = xp or self._xp
-                self._xp == (array_namespace(np.asarray(0)) if self._xp == np
+                self._xp == (xp_compat_namespace(np) if self._xp == np
                              else self._xp)
-            device = xp_result_device(*parameters.values())
+            device = device or xp_result_device(*parameters.values())
         except TypeError:
-            self._xp = array_namespace(np.asarray(0))  # need array API version
+            self._xp = xp_compat_namespace(np)
 
         self.tol = tol
         self._dtype = dtype
@@ -1632,7 +1633,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if not len(self._parameterizations):
             xp_info = self._xp.__array_namespace_info__()
             inferred_dtype = xp_info.default_dtypes()['real floating']
-            inferred_device = xp_info.default_device()
+            # see data-apis/array-api-compat/issues/489
+            inferred_device = (xp_device(xp.asarray(0)) if is_torch(xp)  # skip device check
+                               else xp_info.default_device())
 
             if parameters:
                 message = (f"The `{self.__class__.__name__}` distribution "
@@ -2093,7 +2096,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         rng = np.random.default_rng(rng)
         if len(cls._parameterizations) == 0:
             # xpx.default_device may not be the device on which arrays are created;
-            # see gh-26576.
+            # see data-apis/array-api-compat/issues/489
             return cls(xp=xp, device=xp_device(xp.asarray(0)))  # skip device check
         if i_parameterization is None:
             n = cls._num_parameterizations()
