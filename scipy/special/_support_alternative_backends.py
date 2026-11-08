@@ -1667,6 +1667,31 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.log_gammainc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammainc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_gammaincc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammaincc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.beta, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("beta", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.betaln, ["a", "b"],
         xp_capabilities(
             cpu_only=True,
@@ -1705,9 +1730,25 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.betainccinv, ["a", "b", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("betainccinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.psi, ["z"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
         alt_names_map={"jax.numpy": "digamma"},
+    ),
+    _FuncInfo(
+        _ufuncs.digammainv, ["y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("digammainv", ["torch"]),
+        ),
+        torch_native=False,
     ),
     _FuncInfo(
         _ufuncs.rgamma, ["z"],
