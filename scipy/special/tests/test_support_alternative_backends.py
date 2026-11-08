@@ -136,7 +136,7 @@ def _skip_or_tweak_alternative_backends(
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py')))
+                                           'xlog1py', 'beta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -149,6 +149,10 @@ def _skip_or_tweak_alternative_backends(
         # they were float64 when falling back to NumPy/SciPy.
         if not nfo.torch_native:
             pytest.xfail("dtypes do not match")
+
+    if f_name == 'beta' and is_jax(xp):
+        # jax disagree's with scipy when gamma poles are involved.
+        positive_only = [True, True]
 
     return positive_only, dtypes
 
