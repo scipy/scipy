@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
 )
 import scipy._external.array_api_extra as xpx
 from . import _basic
+from . import _ellip_harm
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
@@ -1900,6 +1901,30 @@ _special_funcs = (
     ),
     # Ellipsoidal harmonics
     # --
+    _FuncInfo(
+        _ellip_harm.ellip_harm, ["h2", "k2", "n", "p", "s", "signm=1", "signn=1"],
+        xp_capabilities(cpu_only=True),
+        is_ufunc=False,
+        int_only=(False, False, True, True, False, True, True),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ellip_harm.ellip_harm_2, ["h2", "k2", "n", "p", "s"],
+        xp_capabilities(cpu_only=True),
+        is_ufunc=False,
+        int_only=(False, False, True, True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ellip_harm.ellip_normal, ["h2", "k2", "n", "p"],
+        xp_capabilities(cpu_only=True),
+        is_ufunc=False,
+        int_only=(False, False, True, True),
+        test_large_ints=False,
+        torch_native=False,
+    ),
     # Orthogonal polynomials
     # --
     # Hypergeometric functions
