@@ -6661,6 +6661,123 @@ class logistic_gen(rv_continuous):
 logistic = logistic_gen(name='logistic')
 
 
+class logitnorm_gen(rv_continuous):
+    r"""A logit-normal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `logitnorm` is:
+
+    .. math::
+
+        f(x, \mu, \sigma) = \frac{1}{\sigma \sqrt{2\pi}} \frac{1}{x(1-x)}
+                            \exp\left(-\frac{(\operatorname{logit}(x) - \mu)^2}
+                                            {2\sigma^2}\right)
+
+    for :math:`0 < x < 1`, real :math:`\mu`, and :math:`\sigma > 0`, where
+    :math:`\operatorname{logit}(x) = \log(x / (1 - x))`.
+
+    `logitnorm` takes ``mu`` and ``sigma`` as shape parameters for
+    :math:`\mu` and :math:`\sigma`.
+
+    If ``X`` is normally distributed with mean ``mu`` and standard deviation
+    ``sigma``, then ``Y = scipy.special.expit(X)`` follows a logit-normal
+    distribution with the same ``mu`` and ``sigma``. Equivalently,
+    ``scipy.special.logit(Y)`` is normally distributed. Note that ``mu`` and
+    ``sigma`` are the mean and standard deviation of ``logit(Y)``, not of
+    ``Y``; the moments of ``Y`` have no closed form and are computed
+    numerically.
+
+    %(after_notes)s
+
+    .. versionadded:: 2.0.0
+
+    References
+    ----------
+    .. [1] J. Aitchison and S. M. Shen, "Logistic-normal distributions: Some
+           properties and uses", Biometrika, vol. 67, no. 2, pp. 261-272,
+           1980.
+    .. [2] "Logit-normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Logit-normal_distribution
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _argcheck(self, mu, sigma):
+        return np.isfinite(mu) & (sigma > 0) & np.isfinite(sigma)
+
+    def _shape_info(self):
+        imu = _ShapeInfo("mu", False, (-np.inf, np.inf), (False, False))
+        isigma = _ShapeInfo("sigma", False, (0, np.inf), (False, False))
+        return [imu, isigma]
+
+    def _rvs(self, mu, sigma, size=None, random_state=None):
+        return sc.expit(mu + sigma * random_state.standard_normal(size))
+
+    def _z(self, x, mu, sigma):
+        return (sc.logit(x) - mu) / sigma
+
+    def _pdf(self, x, mu, sigma):
+        return np.exp(self._logpdf(x, mu, sigma))
+
+    def _logpdf(self, x, mu, sigma):
+        z = self._z(x, mu, sigma)
+        return _norm_logpdf(z) - np.log(sigma) - np.log(x) - np.log1p(-x)
+
+    def _cdf(self, x, mu, sigma):
+        return _norm_cdf(self._z(x, mu, sigma))
+
+    def _logcdf(self, x, mu, sigma):
+        return _norm_logcdf(self._z(x, mu, sigma))
+
+    def _sf(self, x, mu, sigma):
+        return _norm_sf(self._z(x, mu, sigma))
+
+    def _logsf(self, x, mu, sigma):
+        return _norm_logsf(self._z(x, mu, sigma))
+
+    def _ppf(self, q, mu, sigma):
+        return sc.expit(mu + sigma * _norm_ppf(q))
+
+    def _isf(self, q, mu, sigma):
+        return sc.expit(mu + sigma * _norm_isf(q))
+
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When `method='MLE'` and both `floc` and `fscale` are given, this
+        function uses explicit formulas for the maximum likelihood estimates
+        of the shape parameters: ``mu`` is the mean and ``sigma`` is the
+        (biased) standard deviation of ``logit((data - floc) / fscale)``. In
+        this case, the `optimizer` keyword argument is ignored.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, fmu, fsigma, floc, fscale = _check_fit_input_parameters(
+            self, data, args, kwds)
+
+        if floc is None or fscale is None:
+            return super().fit(data, *args, **kwds)
+
+        y = (data - floc) / fscale
+        if np.any(y <= 0) or np.any(y >= 1):
+            raise FitDataError("logitnorm", lower=0, upper=1)
+
+        z = sc.logit(y)
+        mu = np.mean(z) if fmu is None else fmu
+        sigma = (np.sqrt(np.mean((z - mu)**2)) if fsigma is None
+                 else fsigma)
+        return mu, sigma, floc, fscale
+
+
+logitnorm = logitnorm_gen(a=0.0, b=1.0, name='logitnorm')
+
+
 class loggamma_gen(rv_continuous):
     r"""A log gamma continuous random variable.
 
