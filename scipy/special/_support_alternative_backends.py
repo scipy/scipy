@@ -964,9 +964,48 @@ _special_funcs = (
     # Spherical Bessel functions
     # --
     # Struve functions
-    # --
-    # Raw statistical functions
-    ## Binomial distribution
+    _FuncInfo(
+        _ufuncs.struve, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("struve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.modstruve, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("modstruve", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.itstruve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("itstruve0", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.it2struve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("it2struve0", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.itmodstruve0, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("itmodstruve0", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    # Raw Statistical Functions
+    ## Binomial Distribution
     _FuncInfo(
         _ufuncs.bdtr, ["k", "n", "p"],
         xp_capabilities(
@@ -997,8 +1036,39 @@ _special_funcs = (
         int_only=(False, True, False),
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.bdtrik, ["y", "n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("bdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bdtrin, ["k", "y", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("bdtrin", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Beta Distribution
-    ## --
+    _FuncInfo(
+        _ufuncs.btdtria, ["p", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("btdtria", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.btdtrib, ["a", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("btdtrib", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## F Distribution
     _FuncInfo(
         _ufuncs.fdtr, ["dfn", "dfd", "x"],
@@ -1027,6 +1097,14 @@ _special_funcs = (
         ),
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.fdtridfd, ["dfn", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("fdtridfd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Gamma distribution
     _FuncInfo(
         _ufuncs.gdtr, ["a", "b", "x"],
@@ -1046,7 +1124,31 @@ _special_funcs = (
         ),
         torch_native=False,
     ),
-    ## Negative binomial distribution
+    _FuncInfo(
+        _ufuncs.gdtria, ["p", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtria", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtrib, ["a", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtrib", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.gdtrix, ["a", "b", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("gdtrix", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    ## Negative Binomial Distribution
     _FuncInfo(
         _ufuncs.nbdtr, ["k", "n", "p"],
         xp_capabilities(
@@ -1080,21 +1182,123 @@ _special_funcs = (
         positive_only=True,
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.nbdtrik, ["y", "n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nbdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nbdtrin, ["k", "y", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nbdtrin", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Noncentral F distribution
-    ## --
+    _FuncInfo(
+        _ufuncs.ncfdtr, ["dfn", "dfd", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtridfd, ["dfn", "p", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtridfd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtridfn, ["p", "dfd", "nc", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtridfn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtri, ["dfn", "dfd", "nc", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtri", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ncfdtrinc, ["dfn", "dfd", "p", "f"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ncfdtrinc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Noncentral t distribution
-    ## --
+    _FuncInfo(
+        _ufuncs.nctdtr, ["df", "nc", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtridf, ["p", "nc", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtrit, ["df", "nc", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtrit", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nctdtrinc, ["df", "p", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nctdtrinc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Normal distribution
+    _FuncInfo(
+        _ufuncs.nrdtrimn, ["p", "std", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nrdtrimn", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.nrdtrisd, ["mn", "p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("nrdtrisd", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_ndtr, ["x"],
+        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+    ),
     _FuncInfo(
         _ufuncs.ndtr, ["x"],
         xp_capabilities(
             mparray=True,
             extra_note=_ufunc_kwargs_extra_note(),
         ),
-    ),
-    _FuncInfo(
-        _ufuncs.log_ndtr, ["x"],
-        xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
     ),
     _FuncInfo(
         _ufuncs.ndtri, ["p"],
@@ -1138,6 +1342,14 @@ _special_funcs = (
         positive_only=True,
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.pdtrik, ["p", "m"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("pdtrik", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Student t distribution
     _FuncInfo(
         _ufuncs.stdtr, ["df", "t"],
@@ -1147,6 +1359,14 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("stdtr", ["cupy", "torch"]),
         ),
         generic_impl=_stdtr,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.stdtridf, ["p", "t"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("stdtridf", ["torch"]),
+        ),
         torch_native=False,
     ),
     _FuncInfo(
@@ -1160,7 +1380,7 @@ _special_funcs = (
         generic_impl=_stdtrit,
         torch_native=False,
     ),
-    ## Chi square distribution
+    # Chi square distribution
     _FuncInfo(
         _ufuncs.chdtr, ["v", "x"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note("chdtr", ["torch"])),
@@ -1182,10 +1402,84 @@ _special_funcs = (
         ),
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.chdtriv, ["p", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chdtriv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Non-central chi square distribution
-    ## --
+    _FuncInfo(
+        _ufuncs.chndtr, ["x", "df", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtr", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtridf, ["x", "p", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtridf", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtrinc, ["x", "df", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtrinc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.chndtrix, ["p", "df", "nc"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("chndtrix", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Kolmogorov distribution
-    ## --
+    _FuncInfo(
+        _ufuncs.smirnov, ["n", "d"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("smirnov", ["torch"]),
+        ),
+        int_only=(True, False),
+        positive_only=(True, False),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.smirnovi, ["n", "p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("smirnovi", ["torch"]),
+        ),
+        int_only=(True, False),
+        positive_only=(True, False),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kolmogorov, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kolmogorov", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kolmogi, ["p"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kolmogi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Box-Cox transformation
     _FuncInfo(
         _ufuncs.boxcox, ["x", "lmbda"],
@@ -1232,7 +1526,32 @@ _special_funcs = (
         _ufuncs.expit, ["x"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
     ),
+    _FuncInfo(
+        _ufuncs.log_expit, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_expit", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     ## Miscellaneous
+    _FuncInfo(
+        _ufuncs.tklmbda, ["x", "lmbda"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("tklmbda", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.owens_t, ["h", "a"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("owens_t", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     _FuncInfo(
         _spfun_stats.poisson_binom_cdf, ["k", "p"],
         xp_capabilities(
@@ -1348,6 +1667,31 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.log_gammainc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammainc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.log_gammaincc, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("log_gammaincc", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.beta, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy", "jax.numpy"],
+            extra_note=_ufunc_kwargs_extra_note("beta", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.betaln, ["a", "b"],
         xp_capabilities(
             cpu_only=True,
@@ -1386,9 +1730,25 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.betainccinv, ["a", "b", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("betainccinv", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.psi, ["z"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
         alt_names_map={"jax.numpy": "digamma"},
+    ),
+    _FuncInfo(
+        _ufuncs.digammainv, ["y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("digammainv", ["torch"]),
+        ),
+        torch_native=False,
     ),
     _FuncInfo(
         _ufuncs.rgamma, ["z"],
