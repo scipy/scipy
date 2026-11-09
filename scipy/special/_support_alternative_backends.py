@@ -2542,6 +2542,14 @@ _special_funcs = (
     ),
     # Other special functions
     _FuncInfo(
+        _ufuncs.agm, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("agm", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.binom, ["x", "y"],
         xp_capabilities(
             cpu_only=True,
@@ -2579,6 +2587,26 @@ _special_funcs = (
             cpu_only=True,
             exceptions=["cupy", "jax.numpy"],
             extra_note=_ufunc_kwargs_extra_note("expi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.shichi, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("shichi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.sici, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("sici", ["torch"]),
         ),
         torch_native=False,
     ),
