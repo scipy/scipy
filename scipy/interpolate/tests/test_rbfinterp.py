@@ -660,17 +660,24 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
 
     def test_singular(self):
         # regression test for https://github.com/scipy/scipy/issues/23761
-        # The input is singular in floating-point, make sure the singularity is detected
+        # The input is singular in floating-point. LAPACK only reports this if
+        # the factorization hits an exactly zero pivot, which depends on the
+        # implementation (e.g. Accelerate on macOS 26 does not, see gh-25313).
+        # Either way, the interpolant must not be silently wrong.
         points = np.array(
             [[2.0, 0.0],
              [0.0, 0.0],
              [0.0, 1.0735703551645039e-302],
              [0.5, 3.0]]
         )
-        values = np.array([0.0, 0.0, 0.0, 1.0])
+        values = np.array([0.0, 0.0, 0.0, 1.0]).reshape(-1, 1)
 
-        with pytest.raises(LinAlgError, match="Singular matrix"):
-            RBFInterpolator(points, values.reshape(-1, 1))
+        try:
+            interp = RBFInterpolator(points, values)
+        except LinAlgError as e:
+            assert "Singular matrix" in str(e)
+        else:
+            xp_assert_close(interp(points), values, atol=1e-14)
 
 
 @skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")

@@ -246,8 +246,7 @@ cdef double[:, :] _compute_euler_from_quat(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_davenport_from_quat(
-    np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
-    np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
+    const double[:, :] quat, const double[:] n1, const double[:] n2, const double[:] n3,
     bint extrinsic,
     bint suppress_warnings
 ):
@@ -266,7 +265,7 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef int correct_set = False
     if lamb < 0:
         # alternative set of angles compatible with as_euler implementation
-        n2 = -n2
+        n2 = -np.asarray(n2)
         lamb = -lamb
         n_cross[0] = -n_cross[0]
         n_cross[1] = -n_cross[1]
