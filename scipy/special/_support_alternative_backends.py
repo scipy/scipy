@@ -2711,6 +2711,24 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.log1p, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("log1p", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.expm1, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("expm1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.cosm1, ["x"],
         xp_capabilities(
             cpu_only=True,
@@ -2718,6 +2736,22 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("cosm1", ["torch"]),
         ),
         torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.powm1, ["x", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("powm1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.round, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy", "torch"],
+            extra_note=_ufunc_kwargs_extra_note(),
+        ),
     ),
     _FuncInfo(
         _ufuncs.xlogy, ["x", "y"],
@@ -2738,7 +2772,7 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.sinc, ["x"],
+        np.sinc, ["x"],
         xp_capabilities(
             cpu_only=True,
             exceptions=["cupy", "torch"],
