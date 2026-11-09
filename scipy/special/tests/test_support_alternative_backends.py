@@ -94,7 +94,7 @@ def _skip_or_tweak_alternative_backends(
     }:
         pytest.skip("input constraints unlikely to be met by random input.")
 
-    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal"}:
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal", "lambertw"}:
         pytest.skip("requires dedicated tests due to keyword arguments.")
 
     if f_name in {'betaincinv'} and is_cupy(xp):
