@@ -20,7 +20,6 @@ cdef extern from "cython_special_wrappers.h" nogil:
     double cephes_nbdtrc_wrap(int k, int n, double p)
     double cephes_nbdtr_wrap(int k, int n, double p)
     double cephes_nbdtri_wrap(int k, int n, double p)
-    double cephes_pdtri_wrap(int k, double y)
     double cephes_yn_wrap(int n, double x)
     double cephes_smirnov_wrap(int n, double x)
     double cephes_smirnovc_wrap(int n, double x)
@@ -98,12 +97,6 @@ cdef inline double nbdtri_unsafe(double k, double n, double p) noexcept nogil:
         return NAN
     _legacy_cast_check("nbdtri", k, n)
     return cephes_nbdtri_wrap(<int>k, <int>n, p)
-
-cdef inline double pdtri_unsafe(double k, double y) noexcept nogil:
-    if isnan(k):
-        return k
-    _legacy_cast_check("pdtri", k, 0)
-    return cephes_pdtri_wrap(<int>k, y)
 
 cdef inline double kn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):

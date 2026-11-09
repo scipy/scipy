@@ -67,6 +67,7 @@
 #include <xsf/zeta.h>
 
 #include "boost_special_functions.h"
+#include "legacy.h"
 #include "mathieu.h"
 #include "sf_error.h"
 
@@ -325,6 +326,7 @@ extern const char *pbvv_doc;
 extern const char *pbwa_doc;
 extern const char *pdtr_doc;
 extern const char *pdtrc_doc;
+extern const char *pdtri_doc;
 extern const char *pdtrik_doc;
 extern const char *poch_doc;
 extern const char *powm1_doc;
@@ -1456,6 +1458,15 @@ _special_ufuncs_module_exec(PyObject *module)
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::pdtrc), static_cast<xsf::numpy::dd_d>(xsf::pdtrc)},
                           "pdtrc", pdtrc_doc);
     PyModule_AddObjectRef(module, "pdtrc", pdtrc);
+
+    PyObject *pdtri = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::pd_d>([](std::ptrdiff_t k, double y)
+                                       { return xsf::pdtri(static_cast<int>(k), y); }),
+         static_cast<xsf::numpy::ff_f>([](float k, float y)
+                                       { return static_cast<float>(special::pdtri_unsafe(k, y)); }),
+         static_cast<xsf::numpy::dd_d>(special::pdtri_unsafe)},
+        "pdtri", pdtri_doc);
+    PyModule_AddObjectRef(module, "pdtri", pdtri);
 
     PyObject *pdtrik =
         xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(pdtrik_float),

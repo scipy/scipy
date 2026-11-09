@@ -339,6 +339,7 @@ special_ufuncs = [
     "owens_t",
     "pdtr",
     "pdtrc",
+    "pdtri",
     "pdtrik",
     "pbdv",
     "pbvv",
