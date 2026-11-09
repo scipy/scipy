@@ -3,29 +3,7 @@
 
 #include <stdint.h>
 
-// Complex definitions depending on whether the header is used with C++ or C and/or MSVC.
-#ifndef SCIPY_Z
-    #ifdef __cplusplus
-        #include <complex>
-        #define SCIPY_C std::complex<float>
-        #define SCIPY_Z std::complex<double>
-    #else
-        #include <complex.h>
-        #if defined(_MSC_VER)
-            #define SCIPY_Z _Dcomplex
-            #define SCIPY_C _Fcomplex
-        #else
-            #define SCIPY_Z double complex
-            #define SCIPY_C float complex
-        #endif
-    #endif
-#endif
-
-#ifdef __cplusplus
-    #define SCIPY_RESTRICT
-#else
-    #define SCIPY_RESTRICT restrict
-#endif
+#include "scipy_complex_support.h"   /* scipy_c64, scipy_c128 */
 
 // AVX2 kernels are built whenever the compiler supports __attribute__((target))
 // and __builtin_cpu_supports, regardless of the build machine's CPU; the
@@ -46,7 +24,7 @@
  */
 
 static inline void
-bandwidth_s_scalar(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_s_scalar(const float* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
     int64_t lb = 0, ub = 0;
     for (int64_t r = n-1; r > 0; r--) {
@@ -69,7 +47,7 @@ bandwidth_s_scalar(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64
 
 
 static inline void
-bandwidth_d_scalar(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_d_scalar(const double* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
     int64_t lb = 0, ub = 0;
     for (int64_t r = n-1; r > 0; r--) {
@@ -92,7 +70,7 @@ bandwidth_d_scalar(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int6
 
 
 static inline void
-bandwidth_c_scalar(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_c_scalar(const scipy_c64* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
     float* fdata = (float*)data;
     int64_t lb = 0, ub = 0;
@@ -118,7 +96,7 @@ bandwidth_c_scalar(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
 
 static inline void
-bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_z_scalar(const scipy_c128* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
     double* ddata = (double*)data;
     int64_t lb = 0, ub = 0;
@@ -144,47 +122,6 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
 
 /**
- * Strided scalar bandwidth — C++ only, handles arbitrary strides and all
- * numeric types via templates. Used for non-contiguous arrays and integer types,
- * called from the batched linalg module _bandwidth function.
- */
-
-#ifdef __cplusplus
-
-    template<typename T>
-    inline void
-    bandwidth_strided_scalar(const void *data, int64_t offset,
-                            int64_t n, int64_t m, int64_t s0, int64_t s1,
-                            int64_t *lower_band, int64_t *upper_band)
-    {
-        const T *slice = (const T *)data + offset;
-        const T zero = T(0);
-        int64_t lb = 0, ub = 0;
-
-        for (int64_t r = n - 1; r > 0; r--) {
-            int64_t ncols = r - lb;
-            if (ncols > m) { ncols = m; }
-            for (int64_t c = 0; c < ncols; c++) {
-                if (slice[r * s0 + c * s1] != zero) { lb = r - c; break; }
-            }
-            if (r <= lb) { break; }
-        }
-
-        for (int64_t r = 0; r < n; r++) {
-            for (int64_t c = m - 1; c > r + ub; c--) {
-                if (slice[r * s0 + c * s1] != zero) { ub = c - r; break; }
-            }
-            if (r + ub + 1 > m) { break; }
-        }
-
-        *lower_band = lb;
-        *upper_band = ub;
-    }
-
-#endif /* __cplusplus */
-
-
-/**
  * Bandwidth detection — AVX2 implementations and dynamic dispatch
  */
 
@@ -192,7 +129,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
     __attribute__((target("avx2")))
     static void
-    bandwidth_s_avx2(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+    bandwidth_s_avx2(const float* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
     {
         int64_t lb = 0, ub = 0;
 
@@ -317,7 +254,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
     __attribute__((target("avx2")))
     static void
-    bandwidth_d_avx2(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+    bandwidth_d_avx2(const double* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
     {
         const __m256d zero = _mm256_setzero_pd();
         int64_t lb = 0, ub = 0;
@@ -394,7 +331,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
     __attribute__((target("avx2")))
     static void
-    bandwidth_c_avx2(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+    bandwidth_c_avx2(const scipy_c64* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
     {
         float* fdata = (float*)data;
         const __m256 zero = _mm256_setzero_ps();
@@ -480,7 +417,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
 
     __attribute__((target("avx2")))
     static void
-    bandwidth_z_avx2(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+    bandwidth_z_avx2(const scipy_c128* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
     {
         double* ddata = (double*)data;
         const __m256d zero = _mm256_setzero_pd();
@@ -569,16 +506,16 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
     * Dynamic dispatch — resolved once at load time via constructor
     */
 
-    typedef void (*bandwidth_s_fn)(const float* SCIPY_RESTRICT, int64_t, int64_t, int64_t*, int64_t*);
+    typedef void (*bandwidth_s_fn)(const float*, int64_t, int64_t, int64_t*, int64_t*);
     static bandwidth_s_fn bandwidth_s_impl = 0;
 
-    typedef void (*bandwidth_d_fn)(const double* SCIPY_RESTRICT, int64_t, int64_t, int64_t*, int64_t*);
+    typedef void (*bandwidth_d_fn)(const double*, int64_t, int64_t, int64_t*, int64_t*);
     static bandwidth_d_fn bandwidth_d_impl = 0;
 
-    typedef void (*bandwidth_c_fn)(const SCIPY_C* SCIPY_RESTRICT, int64_t, int64_t, int64_t*, int64_t*);
+    typedef void (*bandwidth_c_fn)(const scipy_c64*, int64_t, int64_t, int64_t*, int64_t*);
     static bandwidth_c_fn bandwidth_c_impl = 0;
 
-    typedef void (*bandwidth_z_fn)(const SCIPY_Z* SCIPY_RESTRICT, int64_t, int64_t, int64_t*, int64_t*);
+    typedef void (*bandwidth_z_fn)(const scipy_c128*, int64_t, int64_t, int64_t*, int64_t*);
     static bandwidth_z_fn bandwidth_z_impl = 0;
 
     __attribute__((constructor))
@@ -605,7 +542,7 @@ bandwidth_z_scalar(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int
  */
 
 static inline void
-bandwidth_s(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_s(const float* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
 #ifdef SCIPY_AVX2_DISPATCH
     bandwidth_s_impl(data, n, m, lower_band, upper_band);
@@ -615,7 +552,7 @@ bandwidth_s(const float* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* low
 }
 
 static inline void
-bandwidth_d(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_d(const double* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
 #ifdef SCIPY_AVX2_DISPATCH
     bandwidth_d_impl(data, n, m, lower_band, upper_band);
@@ -625,7 +562,7 @@ bandwidth_d(const double* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lo
 }
 
 static inline void
-bandwidth_c(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_c(const scipy_c64* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
 #ifdef SCIPY_AVX2_DISPATCH
     bandwidth_c_impl(data, n, m, lower_band, upper_band);
@@ -635,7 +572,7 @@ bandwidth_c(const SCIPY_C* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* l
 }
 
 static inline void
-bandwidth_z(const SCIPY_Z* SCIPY_RESTRICT data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
+bandwidth_z(const scipy_c128* data, int64_t n, int64_t m, int64_t* lower_band, int64_t* upper_band)
 {
 #ifdef SCIPY_AVX2_DISPATCH
     bandwidth_z_impl(data, n, m, lower_band, upper_band);

@@ -15,7 +15,6 @@
 
 #include "_linalg_cholesky.hh"
 #include "_linalg_eig.hh"
-#include "_linalg_bandwidth.h"
 #include "_linalg_inv.hh"
 #include "_linalg_lstsq.hh"
 #include "_linalg_lu_det.hh"
@@ -1382,31 +1381,24 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     npy_intp *shape = PyArray_SHAPE(ap_a);
+    npy_intp *strides = PyArray_STRIDES(ap_a);
     int64_t n = shape[ndim - 2], m = shape[ndim - 1];
+    int64_t s0 = strides[ndim - 2], s1 = strides[ndim - 1];
 
+    // Normalize platform-dependent integer typenums to canonical
+    // case labels. On Windows sizeof(int)==sizeof(long)==4 but
+    // NPY_INT != NPY_LONG, and NPY_INT32 is only one of them.
+    // Map all integer typenums to canonical NPY_INTxx by itemsize.
     int typenum = PyArray_TYPE(ap_a);
-    npy_intp *byte_strides = PyArray_STRIDES(ap_a);
-    npy_intp itemsize = PyArray_ITEMSIZE(ap_a);
-
-    // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
-    bool has_fast_path = (typenum == NPY_FLOAT32) || (typenum == NPY_FLOAT64)
-                          || (typenum == NPY_COMPLEX64) || (typenum == NPY_COMPLEX128);
-
-    // Element strides for all dims
-    int64_t elem_strides[LU_MAX_NDIM];
-    for (int i = 0; i < ndim; i++) {
-        elem_strides[i] = (int64_t)(byte_strides[i] / itemsize);
+    if (PyTypeNum_ISINTEGER(typenum) && !PyTypeNum_ISBOOL(typenum)) {
+        bool is_unsigned = PyTypeNum_ISUNSIGNED(typenum);
+        switch (PyArray_ITEMSIZE(ap_a)) {
+            case 1: typenum = is_unsigned ? NPY_UINT8  : NPY_INT8;  break;
+            case 2: typenum = is_unsigned ? NPY_UINT16 : NPY_INT16; break;
+            case 4: typenum = is_unsigned ? NPY_UINT32 : NPY_INT32; break;
+            case 8: typenum = is_unsigned ? NPY_UINT64 : NPY_INT64; break;
+        }
     }
-
-    // Check if the last two dimensions are C- or F-contiguous
-    // C-contiguous: inner slices are always C-contiguous (any ndim)
-    // F-contiguous: inner slices are only F-contiguous for 2D
-    bool inner_c_contig = PyArray_IS_C_CONTIGUOUS(ap_a);
-    bool inner_f_contig = (ndim == 2) && PyArray_IS_F_CONTIGUOUS(ap_a);
-    bool use_fast_path = has_fast_path && (inner_c_contig || inner_f_contig);
-
-    int64_t n_eff = inner_f_contig ? m : n;
-    int64_t m_eff = inner_f_contig ? n : m;
 
     int batch_ndim = ndim - 2;
     npy_intp num_slices = 1;
@@ -1421,64 +1413,40 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int64_t *lb_data = (int64_t *)PyArray_DATA(ap_lb);
     int64_t *ub_data = (int64_t *)PyArray_DATA(ap_ub);
-    const void *a_data = PyArray_DATA(ap_a);
+    const char *a_data = static_cast<const char *>(PyArray_DATA(ap_a));
 
-    for (npy_intp idx = 0; idx < num_slices; idx++) {
-        // Compute element offset to the idx-th 2D slice
-        int64_t offset = 0;
-        int64_t temp = idx;
-        for (int i = batch_ndim - 1; i >= 0; i--) {
-            offset += (temp % shape[i]) * elem_strides[i];
-            temp /= shape[i];
+    auto each_slice = [&](auto tag) {
+        using T = decltype(tag);
+        for (npy_intp idx = 0; idx < num_slices; idx++) {
+            // byte offset of the idx-th 2D slice
+            int64_t offset = 0, temp = idx;
+            for (int i = batch_ndim - 1; i >= 0; i--) {
+                offset += (temp % shape[i]) * strides[i];
+                temp /= shape[i];
+            }
+            bandwidth_slice(reinterpret_cast<const T *>(a_data + offset), n, m, s0, s1, &lb_data[idx], &ub_data[idx]);
         }
+    };
 
-        if (use_fast_path) {
-            switch (typenum) {
-                case NPY_FLOAT32:    bandwidth_s(&((const f32 *)a_data)[offset],                    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT64:    bandwidth_d(&((const f64 *)a_data)[offset],                    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:  bandwidth_c(&reinterpret_cast<const c64 *>(a_data)[offset],    n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128: bandwidth_z(&reinterpret_cast<const c128 *>(a_data)[offset],   n_eff, m_eff, &lb_data[idx], &ub_data[idx]); break;
-            }
-            if (inner_f_contig) { std::swap(lb_data[idx], ub_data[idx]); }
-        } else {
-            int64_t s0 = elem_strides[ndim - 2];
-            int64_t s1 = elem_strides[ndim - 1];
-
-            // Normalize platform-dependent integer typenums to canonical
-            // case labels. On Windows sizeof(int)==sizeof(long)==4 but
-            // NPY_INT != NPY_LONG, and NPY_INT32 is only one of them.
-            // Map all integer typenums to canonical NPY_INTxx by itemsize.
-            int tn = typenum;
-            if (PyTypeNum_ISINTEGER(tn) && !PyTypeNum_ISBOOL(tn)) {
-                bool is_unsigned = PyTypeNum_ISUNSIGNED(tn);
-                switch (itemsize) {
-                    case 1: tn = is_unsigned ? NPY_UINT8  : NPY_INT8;  break;
-                    case 2: tn = is_unsigned ? NPY_UINT16 : NPY_INT16; break;
-                    case 4: tn = is_unsigned ? NPY_UINT32 : NPY_INT32; break;
-                    case 8: tn = is_unsigned ? NPY_UINT64 : NPY_INT64; break;
-                }
-            }
-
-            switch (tn) {
-                case NPY_BOOL:        bandwidth_strided_scalar<npy_bool>                  (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_INT8:        bandwidth_strided_scalar<npy_int8>                  (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_INT16:       bandwidth_strided_scalar<npy_int16>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_INT32:       bandwidth_strided_scalar<npy_int32>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_INT64:       bandwidth_strided_scalar<npy_int64>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_UINT8:       bandwidth_strided_scalar<npy_uint8>                 (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_UINT16:      bandwidth_strided_scalar<npy_uint16>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_UINT32:      bandwidth_strided_scalar<npy_uint32>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_UINT64:      bandwidth_strided_scalar<npy_uint64>                (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_FLOAT:       bandwidth_strided_scalar<f32>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_DOUBLE:      bandwidth_strided_scalar<f64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX64:   bandwidth_strided_scalar<c64>                       (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                case NPY_COMPLEX128:  bandwidth_strided_scalar<c128>                      (a_data, offset, n, m, s0, s1, &lb_data[idx], &ub_data[idx]); break;
-                default:
-                    Py_DECREF(ap_lb); Py_DECREF(ap_ub);
-                    PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
-                    return NULL;
-            }
-        }
+    // longdouble/clongdouble are rejected by the Python wrapper in _misc.py
+    switch (typenum) {
+        case NPY_BOOL:        each_slice(npy_bool{});   break;
+        case NPY_INT8:        each_slice(npy_int8{});   break;
+        case NPY_INT16:       each_slice(npy_int16{});  break;
+        case NPY_INT32:       each_slice(npy_int32{});  break;
+        case NPY_INT64:       each_slice(npy_int64{});  break;
+        case NPY_UINT8:       each_slice(npy_uint8{});  break;
+        case NPY_UINT16:      each_slice(npy_uint16{}); break;
+        case NPY_UINT32:      each_slice(npy_uint32{}); break;
+        case NPY_UINT64:      each_slice(npy_uint64{}); break;
+        case NPY_FLOAT:       each_slice(f32{});        break;
+        case NPY_DOUBLE:      each_slice(f64{});        break;
+        case NPY_COMPLEX64:   each_slice(c64{});        break;
+        case NPY_COMPLEX128:  each_slice(c128{});       break;
+        default:
+            Py_DECREF(ap_lb); Py_DECREF(ap_ub);
+            PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
+            return NULL;
     }
 
     // 2D: return tuple of int scalars; N-d: return tuple of int64 arrays

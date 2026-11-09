@@ -9,6 +9,8 @@
 #include <new>
 #include <type_traits>
 
+#include "_linalg_bandwidth.h"   /* bandwidth_{s,d,c,z} */
+
 namespace sp_linalg {
 
 
@@ -583,77 +585,92 @@ norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_int
  ***  Structure detection
  ***************************/
 
-template<typename T>
-void
-bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper_band)
-{
-    T zero = T(0.);
-
-    Py_ssize_t lb = 0, ub = 0;
-    for (Py_ssize_t c = 0; c < m-1; c++)
-    {
-        for (Py_ssize_t r = n-1; r > c + lb; r--)
-        {
-            if (data[c*n + r] != zero) { lb = r - c; break; }
-        }
-        if (c + lb + 1 > m) { break; }
-    }
-    for (Py_ssize_t c = m-1; c > 0; c--)
-    {
-        for (Py_ssize_t r = 0; r < c - ub; r++)
-        {
-            if (data[c*n + r] != zero) { ub = c - r; break; }
-
-        }
-        if (c <= ub) { break; }
-    }
-    *lower_band = lb;
-    *upper_band = ub;
-}
-
-
-/*
- * Overload of the original `bandwidth` function that allows to take into
- * account the strides of the matrix to avoid having to explicitly set a
- * flag regarding the ordering of the matrix.
+/**
+ * @brief Lower and upper bandwidth of a strided n-by-m matrix of any numeric type.
  *
- * The addressing is done using `npy_intp` instead of `Py_ssize_t` for
- * consistency.
+ * @param data   First element of the matrix.
+ * @param n      Number of rows.
+ * @param m      Number of columns.
+ * @param s0     Byte stride between consecutive rows; may be negative.
+ * @param s1     Byte stride between consecutive columns; may be negative.
+ * @param lower  Receives the largest r - c over the nonzero entries (r, c), or 0.
+ * @param upper  Receives the largest c - r over the nonzero entries (r, c), or 0.
  */
 template<typename T>
 void
-bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy_intp *lower_band, npy_intp *upper_band)
+bandwidth_strided(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
 {
-    T zero = T(0.);
-
-    // s1, s2 are byte strides: address elements through a char pointer
     const char *base = reinterpret_cast<const char *>(data);
-    auto at = [&](npy_intp r, npy_intp c) { return *reinterpret_cast<const T *>(base + c * s2 + r * s1); };
-    npy_intp lb = 0, ub = 0;
-    for (npy_intp c = 0; c < m-1; c++) {
-        for (npy_intp r = n-1; r > c + lb; r--) {
+    auto at = [&](int64_t r, int64_t c) { return *reinterpret_cast<const T *>(base + r * s0 + c * s1); };
+    const T zero = T(0);
+    int64_t lb = 0, ub = 0;
+
+    for (int64_t r = n - 1; r > 0; r--) {
+        int64_t ncols = r - lb;
+        if (ncols > m) { ncols = m; }
+        for (int64_t c = 0; c < ncols; c++) {
             if (at(r, c) != zero) { lb = r - c; break; }
         }
-        if (c + lb + 1 > m) { break; }
+        if (r <= lb) { break; }
     }
-    for (npy_intp c = m-1; c > 0; c--) {
-        for (npy_intp r = 0; r < c - ub; r++) {
+
+    for (int64_t r = 0; r < n; r++) {
+        for (int64_t c = m - 1; c > r + ub; c--) {
             if (at(r, c) != zero) { ub = c - r; break; }
         }
-        if (c <= ub) { break; }
+        if (r + ub + 1 > m) { break; }
     }
-    *lower_band = lb;
-    *upper_band = ub;
+
+    *lower = lb;
+    *upper = ub;
+}
+
+
+/**
+ * @brief Lower and upper bandwidth of one n-by-m matrix slice.
+ *
+ * float32, float64, complex64 and complex128 slices that are contiguous in C or F order use the
+ * bandwidth_{s,d,c,z} kernels of _linalg_bandwidth.h; every other slice uses bandwidth_strided.
+ *
+ * @param data   First element of the slice.
+ * @param n      Number of rows.
+ * @param m      Number of columns.
+ * @param s0     Byte stride between consecutive rows; may be negative.
+ * @param s1     Byte stride between consecutive columns; may be negative.
+ * @param lower  Receives the largest r - c over the nonzero entries (r, c), or 0.
+ * @param upper  Receives the largest c - r over the nonzero entries (r, c), or 0.
+ */
+template<typename T>
+void
+bandwidth_slice(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
+{
+    if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64> ||
+                  std::is_same_v<T, c64> || std::is_same_v<T, c128>) {
+        constexpr int64_t size = sizeof(T);
+        const bool c_order = (s1 == size) && (s0 == m * size);
+        const bool f_order = (s0 == size) && (s1 == n * size);
+        if (c_order || f_order) {
+            // an F-ordered n-by-m slice is the C-ordered m-by-n transpose: swap the outputs
+            const int64_t rows = c_order ? n : m, cols = c_order ? m : n;
+            int64_t *lo = c_order ? lower : upper, *up = c_order ? upper : lower;
+            if constexpr (std::is_same_v<T, f32>)      { bandwidth_s(data, rows, cols, lo, up); }
+            else if constexpr (std::is_same_v<T, f64>) { bandwidth_d(data, rows, cols, lo, up); }
+            else if constexpr (std::is_same_v<T, c64>) { bandwidth_c(data, rows, cols, lo, up); }
+            else                                       { bandwidth_z(data, rows, cols, lo, up); }
+            return;
+        }
+    }
+    bandwidth_strided(data, n, m, s0, s1, lower, upper);
 }
 
 
 template<typename T>
 void
-detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *ldab_max) {
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, int64_t *kl, int64_t *ku, int64_t *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
 
-        bandwidth_strided(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
+        bandwidth_slice(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
         if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) {
             *ldab_max = 2 * kl[idx] + ku[idx] + 1;
         }

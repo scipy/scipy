@@ -327,14 +327,14 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     if (!checked_mul(2, outer_size, &ks_count) || !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
         return BatchStatus::too_large;
     }
-    auto ks = alloc_workspace<npy_intp>(ks_count);
+    auto ks = alloc_workspace<int64_t>(ks_count);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
     auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);
     if (!ks || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
-    npy_intp ldab_max = 0;
-    npy_intp *kls = ks.get();
-    npy_intp *kus = ks.get() + outer_size;
+    int64_t ldab_max = 0;
+    int64_t *kls = ks.get();
+    int64_t *kus = ks.get() + outer_size;
     detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
     // every slice's ldab = 2*kl + ku + 1 <= ldab_max is passed to LAPACK
@@ -403,7 +403,7 @@ BatchStatus
 _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
     char trans = transposed ? 'T' : 'N';
-    npy_intp lower_band = 0, upper_band = 0;
+    int64_t lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
@@ -531,7 +531,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
         if (slice_structure == St::NONE) {
             // Get the bandwidth of the slice
-            bandwidth(data, n, n, &lower_band, &upper_band);
+            // `data` is the F-ordered copy of the slice
+            bandwidth_slice(data, n, n, (int64_t)sizeof(T), n * (int64_t)sizeof(T), &lower_band, &upper_band);
 
             if ((upper_band == 0) && (lower_band == 0)) {
                 slice_structure = St::DIAGONAL;

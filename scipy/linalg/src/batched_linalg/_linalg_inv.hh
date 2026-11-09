@@ -205,7 +205,7 @@ template<typename T>
 BatchStatus
 _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
 {
-    npy_intp lower_band = 0, upper_band = 0;
+    int64_t lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
     char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
@@ -326,7 +326,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         slice_structure = structure;
         if (slice_structure == St::NONE) {
             // Get the bandwidth of the slice
-            bandwidth(data, n, n, &lower_band, &upper_band);
+            // `data` is the F-ordered copy of the slice
+            bandwidth_slice(data, n, n, (int64_t)sizeof(T), n * (int64_t)sizeof(T), &lower_band, &upper_band);
 
             if ((upper_band == 0) && (lower_band == 0)) {
                 slice_structure = St::DIAGONAL;

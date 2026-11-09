@@ -101,6 +101,22 @@ def test_bandwidth_rect_last_row(T, order):
     assert_equal(hi, [4, 4])
 
 
+@pytest.mark.parametrize('T', BANDWIDTH_DTYPES)
+def test_bandwidth_field_views(T):
+    # Fields of an aligned structured array have byte strides that need not be
+    # multiples of the itemsize (24 bytes for complex128). Compare with copies.
+    rng = np.random.default_rng(1234)
+    dt = np.dtype([('x', T), ('pad', np.float64)], align=True)
+    rec = np.zeros((4, 7, 9), dtype=dt)
+    rec['x'] = (rng.random(rec.shape) < 0.15).astype(T)
+    view = rec['x']
+    for x in (view, view[1], view[::2], view[1].T):
+        lo, hi = bandwidth(x)
+        lo_ref, hi_ref = bandwidth(np.ascontiguousarray(x))
+        assert_equal(lo, lo_ref)
+        assert_equal(hi, hi_ref)
+
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_issymetric_ishermitian_dtypes():
     n = 5
