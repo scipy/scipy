@@ -1593,6 +1593,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._xp == (xp_compat_namespace(np) if self._xp == np
                              else self._xp)
             device = device or xp_result_device(*parameters.values())
+            dtype = dtype or xp_result_type(*parameters.values(),
+                                            getattr(self, '_dtype', None),
+                                            force_floating=True, xp=self._xp)
         except TypeError:
             self._xp = xp_compat_namespace(np)
 
@@ -1634,7 +1637,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             xp_info = self._xp.__array_namespace_info__()
             inferred_dtype = xp_info.default_dtypes()['real floating']
             # see data-apis/array-api-compat/issues/489
-            inferred_device = (xp_device(xp.asarray(0)) if is_torch(xp)  # skip device check
+
+            inferred_device = (xp_device(xp.asarray(0)) if is_torch(xp)  # skip device check # noqa: E501
                                else xp_info.default_device())
 
             if parameters:
