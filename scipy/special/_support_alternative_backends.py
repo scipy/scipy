@@ -2280,6 +2280,172 @@ _special_funcs = (
     ),
     # Spheroidal wave functions
     # --
+    _FuncInfo(
+        _ufuncs.pro_ang1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_ang1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad2, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad2", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_ang1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_ang1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad2, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad2", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_cv, ["m", "n", "c"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("pro_cv", ["torch"]),
+        ),
+        int_only=(True, True, False),
+        positive_only=(True, True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_cv, ["m", "n", "c"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("obl_cv", ["torch"]),
+        ),
+        int_only=(True, True, False),
+        positive_only=(True, True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_ang1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_ang1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad2_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad2_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_ang1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_ang1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad2_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad2_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
     # Kelvin functions
     # --
     # Lambert w and related functions
