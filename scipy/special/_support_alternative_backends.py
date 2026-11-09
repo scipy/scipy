@@ -86,8 +86,11 @@ class _FuncInfo:
     # Handle case where a backend uses an alternative name for a function.
     # Should map backend names to alternative function names.
     alt_names_map: dict[str, str] | None = None
+    # Handle case where a backend has an implementation that takes its
+    # arguments in a different order.
+    alt_arg_orders_map: dict[str, tuple[int, ...]] | None = None
     # Some functions only take integer arrays for some arguments.
-    int_only: tuple[bool, ...] | None = None
+    int_only: tuple[bool, ...] | dict[str, tuple[bool, ...]] | None = None
     # For testing purposes, whether tests should only use positive values
     # for some arguments. If bool and equal to True, restrict to positive
     # values for all arguments. To restrict only some arguments to positive
@@ -199,6 +202,13 @@ class _FuncInfo:
             xp, namespace, self.name, alt_names_map=self.alt_names_map
         )
         if f is not None:
+            order = (self.alt_arg_orders_map or {}).get(get_native_namespace_name(xp))
+            if order is not None:
+                native_f = f
+
+                def f(*args, **kwargs):
+                    return native_f(*(args[i] for i in order), **kwargs)
+
             return f
 
         if in_xp:

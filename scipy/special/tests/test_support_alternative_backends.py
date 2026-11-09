@@ -169,13 +169,14 @@ def _skip_or_tweak_alternative_backends(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get(get_native_namespace_name(xp))
     if int_only is None:
         int_only = (False, ) * nfo.n_args
-        dtypes = (base_dtype, ) * nfo.n_args
-    else:
-        dtypes = tuple(
-            'intp' if needs_int else base_dtype for needs_int in int_only
-        )
+
+    dtypes = tuple(
+        'intp' if needs_int else base_dtype for needs_int in int_only
+    )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, int_only, elementwise_only=True
@@ -389,18 +390,25 @@ def test_doc(func):
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize('nfo', _special_funcs)
-def test_ufunc_kwargs(nfo):
+@pytest.mark.parametrize(
+    'func,nfo',
+    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.is_ufunc],
+)
+def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work even though ufuncs have been replaced.
     """
+    ufunc = nfo.func
     int_only = nfo.int_only
     if not nfo.is_ufunc:
         pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
     func, ufunc = nfo.wrapper, nfo.func
+
+    if isinstance(int_only, dict):
+        int_only = int_only.get("numpy")
     if int_only is None:
-        int_only = (False, ) * nfo.n_args
-    # out=
+        int_only = (False,) * nfo.n_args
+
     args = [
         np.asarray([.1, .2]) if not needs_int
         else np.asarray([1, 2])
