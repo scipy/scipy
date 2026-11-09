@@ -1260,6 +1260,47 @@ def test_cut_tree_n_clusters_order(xp):
                                cut_tree(Z, height=0)], axis=1))
 
 
+@make_xp_test_case(cut_tree)
+def test_cut_tree_non_monotonic(xp):
+    # gh-8063: with inversions in the linkage (centroid/median), a merge was
+    # processed before the merges that formed its children, so fewer clusters
+    # than requested were returned.
+    X = np.array([[0, 0], [2, 0], [1, 1.5]])
+    Z = xp.asarray(centroid(X))
+    assert not is_monotonic(Z)
+
+    xp_assert_equal(cut_tree(Z, n_clusters=2),
+                    xp.asarray([[0], [1], [0]]), check_dtype=False)
+
+    # the full cut tree has exactly one merge per step
+    np.random.seed(23)
+    nobs = 50
+    for method in [centroid, median]:
+        Z = xp.asarray(method(np.random.randn(nobs, 4)))
+        assert not is_monotonic(Z)
+        assert_equal(np.asarray(cut_tree(Z)).max(axis=0),
+                     np.arange(nobs - 1, -1, -1))
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_non_monotonic_height(xp):
+    # gh-8063: on a non-monotonic linkage, `height` is compared against the
+    # monotonized heights, matching `fcluster(..., criterion='distance')`.
+    X = np.array([[0, 0], [2, 0], [1, 1.5]])
+    Z = xp.asarray(centroid(X))
+    # the two merges happen at 1.80 and 1.68
+    xp_assert_equal(cut_tree(Z, height=[1.7, 1.9]),
+                    xp.asarray([[0, 0], [1, 0], [2, 0]]), check_dtype=False)
+
+    np.random.seed(23)
+    Z = centroid(np.random.randn(50, 4))
+    # cut halfway between consecutive merge heights to avoid ties
+    heights = np.unique(maxdists(Z))
+    for h in (heights[:-1] + heights[1:])[::5] / 2:
+        assert is_isomorphic(np.asarray(cut_tree(xp.asarray(Z), height=h))[:, 0],
+                             fcluster(Z, h, criterion='distance'))
+
+
 @make_xp_test_case(optimal_leaf_ordering)
 def test_optimal_leaf_ordering(xp):
     # test with the distance vector y
