@@ -87,6 +87,13 @@ def _skip_or_tweak_alternative_backends(
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
+    if f_name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
     if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal"}:
         pytest.skip("requires dedicated tests due to keyword arguments.")
 
@@ -355,6 +362,13 @@ def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work even though ufuncs have been replaced.
     """
+    if nfo.name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
     ufunc = nfo.func
     int_only = nfo.int_only
     if not nfo.is_ufunc:

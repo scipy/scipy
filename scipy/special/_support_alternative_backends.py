@@ -2279,7 +2279,6 @@ _special_funcs = (
         torch_native=False,
     ),
     # Spheroidal wave functions
-    # --
     _FuncInfo(
         _ufuncs.pro_ang1, ["m", "n", "c", "x"],
         xp_capabilities(
