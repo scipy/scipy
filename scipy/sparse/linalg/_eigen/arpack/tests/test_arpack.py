@@ -15,7 +15,7 @@ from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
-                                              ArpackNoConvergence)
+                                              ArpackNoConvergence, _arpacklib)
 
 
 from scipy._lib._gcutils import assert_deallocated
@@ -727,3 +727,11 @@ def test_nD(func):
     A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
     with pytest.raises(ValueError, match="expected 2-D"):
         func(A)
+
+
+def test_arpacklib_error():
+    # gh-24927: ARPACK, missing exception, never created, causing a segfault
+    # Check that the exception is handled
+    with pytest.raises(_arpacklib.error, match='Missing required field'):
+        _arpacklib.dnaupd_wrap({}, np.zeros(4), np.zeros(4),
+                               np.zeros(14, dtype=np.int32), np.zeros(12), np.zeros(10))
