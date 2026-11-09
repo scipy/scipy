@@ -806,8 +806,10 @@ from ._ellip_harm import (
     ellip_normal
 )
 
-# Replace some function definitions from _ufuncs, _basic and _ellip_harm
-# to add Array API support
+from ._lambertw import lambertw
+
+# Replace some function definitions from _ufuncs, _basic, _ellip_harm
+# and _lambertw to add Array API support
 from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
@@ -818,8 +820,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-
-from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
