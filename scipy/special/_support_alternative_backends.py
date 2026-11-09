@@ -2773,10 +2773,7 @@ _special_funcs = (
     ),
     _FuncInfo(
         np.sinc, ["x"],
-        xp_capabilities(
-            cpu_only=True,
-            exceptions=["cupy", "torch"],
-        ),
+        xp_capabilities(),
         backends_with_func_in_xp=("jax.numpy",),
         is_ufunc=False,
     ),
