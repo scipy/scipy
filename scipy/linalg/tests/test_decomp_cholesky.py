@@ -363,6 +363,15 @@ class TestOverwrite:
 
 
 class TestChoFactor:
+    def test_array_like_input(self):
+        a = [[4.0, 2.0], [2.0, 3.0]]
+        c, lower = cho_factor(a)
+
+        assert isinstance(lower, bool)
+        assert lower is False
+        upper = np.triu(c)
+        assert_allclose(upper.T @ upper, a)
+
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
         a = np.empty((0, 0), dtype=dt)
