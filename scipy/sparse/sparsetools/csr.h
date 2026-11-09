@@ -678,8 +678,8 @@ void csr_matmat(const I n_row,
 }
 
 template <class I, class T, class T2, class binary_op>
-I csr_binop_scan_columns(I head, const I length, I nnz, I* next, T* A_row, T* B_row, I* Cj, T2* Cx, const void* raw_op) {
-    const binary_op& op = *static_cast<const binary_op*>(raw_op);
+I csr_binop_scan_columns(I head, const I length, I nnz, I* next, T* A_row, T* B_row, I* Cj, T2* Cx) {
+    const binary_op op{};
     // scan through columns where A or B has
     // contributed a non-zero entry
     for(I jj = 0; jj < length; jj++){
@@ -724,8 +724,7 @@ template <class I, class T, class T2>
 void csr_binop_csr_general(csr_array<const I, const T> A,
                            csr_array<const I, const T> B,
                            csr_array<I, T2> C,
-                           I (*scan_columns)(I, I, I, I*, T*, T*, I*, T2*, const void*),
-                           const void* op)
+                           I (*scan_columns)(I, I, I, I*, T*, T*, I*, T2*))
 {
     //Method that works for duplicate and/or unsorted indices
 
@@ -771,7 +770,7 @@ void csr_binop_csr_general(csr_array<const I, const T> A,
         }
 
         if (length > 0) {
-            nnz = scan_columns(head, length, nnz, &next[0], &A_row[0], &B_row[0], &C.indices[0], &C.data[0], op);
+            nnz = scan_columns(head, length, nnz, next.data(), A_row.data(), B_row.data(), C.indices, C.data);
         }
 
         C.indptr[i + 1] = nnz;
@@ -921,7 +920,7 @@ void csr_binop_csr(const I n_row,
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj)) {
         csr_binop_csr_canonical(A, B, C, op);
     } else {
-        csr_binop_csr_general(A, B, C, &csr_binop_scan_columns<I, T, T2, binary_op>, &op);
+        csr_binop_csr_general(A, B, C, &csr_binop_scan_columns<I, T, T2, binary_op>);
     }
 }
 
@@ -950,7 +949,8 @@ void csr_gt_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    // Alias: B < A
+    csr_lt_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T, class T2>
@@ -968,7 +968,8 @@ void csr_ge_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    // Alias: B <= A
+    csr_le_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T>
@@ -1734,9 +1735,8 @@ SPTOOLS_FOR_EACH_INDEX_TYPE(SPTOOLS_CSR_EXTERN_INDEX_TEMPLATE)
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::not_equal_to<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::less<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::less_equal<T>& op); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::greater<T>& op); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::greater_equal<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::multiplies<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const safe_divides<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::plus<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::minus<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const maximum<T>& op); \
