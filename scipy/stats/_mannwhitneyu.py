@@ -3,7 +3,8 @@ import numpy as np
 
 from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_size,
                                    xp_device,
-                                   xp_promote, is_lazy_array, is_jax, is_marray,
+                                   xp_promote, xp_result_type, is_lazy_array,
+                                   is_jax, is_marray,
                                    _count_nonmasked)
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy._external.array_api_extra as xpx
@@ -180,7 +181,9 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         raise ValueError('`x` and `y` must not contain NaNs.')
     if xp_size(x) == 0 or xp_size(y) == 0:
         raise ValueError('`x` and `y` must be of nonzero size.')
-    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    # Keep integer inputs exact through ranking. Promoting int64 values to
+    # float64 here can collapse distinct observations above 2**53 into ties.
+    x, y = xp_promote(x, y, xp=xp)
 
     bools = {True, False}
     if use_continuity not in bools:
@@ -482,14 +485,15 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     # axis=-1 and arrays broadcasted due to _axis_nan_policy decorator
     xy = xp.concat((x, y), axis=-1)
+    result_dtype = xp_result_type(x, y, force_floating=True, xp=xp)
 
     n1 = _count_nonmasked(x, axis=-1, xp=xp)
     n2 = _count_nonmasked(y, axis=-1, xp=xp)
 
     # Follows [2]
     ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
-    ranks = xp.astype(ranks, x.dtype, copy=False)
-    t = xp.astype(t, x.dtype, copy=False)
+    ranks = xp.astype(ranks, result_dtype, copy=False)
+    t = xp.astype(t, result_dtype, copy=False)
     # method 2, steps 2 and 3. Subtracting the constant inside the sum keeps the
     # accumulation at the magnitude of U1 rather than that of R1. R1 can be much
     # larger than U1, and in low precision it is represented more coarsely, so
@@ -522,7 +526,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         _mwu_state.s.set_shapes(n1, n2)
         p = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
                            as_numpy=True, dtype=xp.float64)
-        p = xp.astype(p, x.dtype, copy=False) * f
+        p = xp.astype(p, result_dtype, copy=False) * f
     elif method == "asymptotic":
         z = _get_mwu_z(U1, n1, n2, t, continuity=use_continuity,
                        alternative=alternative, xp=xp)

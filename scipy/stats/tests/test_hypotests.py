@@ -537,6 +537,21 @@ class TestMannWhitneyU:
 
     # --- Test Enhancements / Bug Reports ---
 
+    def test_large_int64_values_preserve_ranks(self):
+        offset = 2**53
+        x = np.arange(4, dtype=np.int64) + offset
+        y = np.arange(4, 8, dtype=np.int64) + offset
+
+        expected = mannwhitneyu(
+            np.arange(4, dtype=np.int64),
+            np.arange(4, 8, dtype=np.int64),
+            method="exact",
+        )
+        for method in ("exact", "auto"):
+            result = mannwhitneyu(x, y, method=method)
+            assert_equal(result.statistic, expected.statistic)
+            assert_equal(result.pvalue, expected.pvalue)
+
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method, xp):
         # Test that behavior for broadcastable nd arrays is appropriate:
