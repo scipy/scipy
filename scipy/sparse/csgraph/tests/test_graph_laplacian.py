@@ -368,3 +368,20 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
 def test_format_error_message():
     with pytest.raises(ValueError, match="Invalid form: 'toto'"):
         _ = csgraph.laplacian(np.eye(1), form='toto')
+
+
+@pytest.mark.parametrize("symmetrized", [True, False])
+def test_dense_int_overflow(symmetrized):
+    # The degree (200) does not fit in int8, but fits in the requested int64.
+    A = np.array([[0, 100, 100], [100, 0, 0], [100, 0, 0]], dtype=np.int8)
+    A_orig = A.copy()
+    expected = np.array([[200, -100, -100], [-100, 100, 0], [-100, 0, 100]])
+    if symmetrized:
+        expected = expected * 2
+    L = csgraph.laplacian(A, dtype=np.int64, symmetrized=symmetrized)
+    assert L.dtype == np.int64
+    assert_allclose(L, expected)
+    assert_allclose(L.sum(axis=1), 0)
+    # the input must not be modified, even with copy=False
+    csgraph.laplacian(A, dtype=np.int64, symmetrized=symmetrized, copy=False)
+    assert_allclose(A, A_orig)
