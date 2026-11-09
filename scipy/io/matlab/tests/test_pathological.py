@@ -8,7 +8,8 @@ from os.path import dirname, join as pjoin
 from numpy.testing import assert_
 from pytest import raises as assert_raises
 
-from scipy.io.matlab._mio import loadmat, savemat
+from scipy.io.matlab._mio import loadmat, savemat, whosmat
+from scipy.io.matlab._mio5 import varmats_from_mat
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -35,6 +36,16 @@ def test_duplicate_fieldnames_numbering():
     s = loadmat(BytesIO(contents), squeeze_me=True)['s']
     assert s.dtype.names == ('a', 'b', '_1_a', '_2_a', '_1_b', 'c')
     assert [s[name] for name in s.dtype.names] == [0, 1, 2, 3, 4, 5]
+
+
+def test_nul_padded_variable_names():
+    # Non-MATLAB writers may pad variable names with NULs, MATLAB ends
+    # a name at the first NUL
+    stream = BytesIO()
+    savemat(stream, {'a' + '\x00' * 7: 1.0})
+    assert loadmat(stream, variable_names=['a'])['a'] == 1.0
+    assert whosmat(stream) == [('a', (1, 1), 'double')]
+    assert [name for name, _ in varmats_from_mat(stream)] == ['a']
 
 
 def test_malformed1():

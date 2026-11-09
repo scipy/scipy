@@ -636,19 +636,27 @@ universal functions):
    :toctree: generated/
 
    mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even Mathieu function and its derivative.
-   mathieu_sem     -- Odd Mathieu function and its derivative.
+   mathieu_ce -- Even Mathieu function and its derivative.
+   mathieu_se -- Odd Mathieu function and its derivative.
    mathieu_modcem1 -- Even modified Mathieu function of the first kind and its derivative.
    mathieu_modcem2 -- Even modified Mathieu function of the second kind and its derivative.
    mathieu_modsem1 -- Odd modified Mathieu function of the first kind and its derivative.
    mathieu_modsem2 -- Odd modified Mathieu function of the second kind and its derivative.
+
+The following functions are deprecated in favor of the functions above:
+
+.. autosummary::
+   :toctree: generated/
+
+   mathieu_cem     -- Even Mathieu function and its derivative.
+   mathieu_sem     -- Odd Mathieu function and its derivative.
 
 Spheroidal wave functions
 -------------------------
@@ -825,7 +833,7 @@ from ._spherical_bessel import (
 # in a more principled way.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ._mathieu import mathieu_cem, mathieu_sem
+    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
     from ._spfun_stats import poisson_binom_cdf
 
 # We replace some function definitions from _ufuncs with those from
@@ -847,6 +855,8 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_ce',
+    'mathieu_se',
     'mathieu_cem',
     'mathieu_sem',
     'poisson_binom_cdf',
