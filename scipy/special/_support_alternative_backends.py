@@ -1540,7 +1540,7 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.log_expit, ["x"],
         xp_capabilities(
-            cpu_only=True,
+            cpu_only=True, exceptions=["cupy"],
             extra_note=_ufunc_kwargs_extra_note("log_expit", ["torch"]),
         ),
         torch_native=False,
