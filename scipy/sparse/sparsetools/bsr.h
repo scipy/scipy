@@ -4,6 +4,8 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <numeric>
+#include <type_traits>
 
 #include "csr.h"
 #include "dense.h"
@@ -329,7 +331,7 @@ I bsr_binop_scan_columns(I head, const I length, I nnz, const npy_intp RC,
     const bin_op op{};
     for(I jj = 0; jj < length; jj++){
         // compute binary_op(block_A, block_B)
-        for(I n = 0; n < RC; n++)
+        for(npy_intp n = 0; n < RC; n++)
             Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
 
         // advance counter if block is nonzero
@@ -337,7 +339,7 @@ I bsr_binop_scan_columns(I head, const I length, I nnz, const npy_intp RC,
             Cj[nnz++] = head;
 
         // clear block_A and block_B values
-        for(I n = 0; n < RC; n++){
+        for(npy_intp n = 0; n < RC; n++){
             A_row[RC*head + n] = 0;
             B_row[RC*head + n] = 0;
         }
@@ -662,7 +664,7 @@ void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 

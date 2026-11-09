@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
+#include <type_traits>
 
 #include "util.h"
 #include "dense.h"
@@ -816,7 +817,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
             I B_j = B.indices[B_pos];
 
             if(A_j == B_j){
-                T result = op(A.data[A_pos],B.data[B_pos]);
+                T2 result = op(A.data[A_pos],B.data[B_pos]);
                 if(result != 0){
                     C.indices[nnz] = A_j;
                     C.data[nnz] = result;
@@ -825,7 +826,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
                 A_pos++;
                 B_pos++;
             } else if (A_j < B_j) {
-                T result = op(A.data[A_pos],0);
+                T2 result = op(A.data[A_pos],0);
                 if (result != 0){
                     C.indices[nnz] = A_j;
                     C.data[nnz] = result;
@@ -834,7 +835,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
                 A_pos++;
             } else {
                 //B_j < A_j
-                T result = op(0,B.data[B_pos]);
+                T2 result = op(0,B.data[B_pos]);
                 if (result != 0){
                     C.indices[nnz] = B_j;
                     C.data[nnz] = result;
@@ -846,7 +847,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
 
         //tail
         while(A_pos < A_end){
-            T result = op(A.data[A_pos],0);
+            T2 result = op(A.data[A_pos],0);
             if (result != 0){
                 C.indices[nnz] = A.indices[A_pos];
                 C.data[nnz] = result;
@@ -855,7 +856,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
             A_pos++;
         }
         while(B_pos < B_end){
-            T result = op(0,B.data[B_pos]);
+            T2 result = op(0,B.data[B_pos]);
             if (result != 0){
                 C.indices[nnz] = B.indices[B_pos];
                 C.data[nnz] = result;
