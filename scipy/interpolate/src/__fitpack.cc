@@ -845,14 +845,9 @@ void _compute_residuals(
     auto c = ConstRealArray2D(cptr, nc, ydim2);
 
     *fp = 0.0;
-    double l = k + 2;
     int64_t ind = k;
     std::vector<double> wrk(2*k + 2);
     for( int64_t it = 1; it <= m; it++ ) {
-        if( !(x(it - 1) < t(l - 1) || l > len_t - k - 1) ) {
-            l = l + 1;
-        }
-
         double xval = x(it - 1);
 
         // find the interval
@@ -864,11 +859,8 @@ void _compute_residuals(
         residuals(it - 1) = 0.0;
         for( int64_t yi = 0; yi < ydim2; yi++ ) {
             double term = 0.0;
-            int64_t l0 = l - k - 2;
-
-            for( int64_t j = 1; j <= k + 1; j++ ) {
-                l0 = l0 + 1;
-                term = term + c(l0 - 1, yi) * wrk[j - 1];
+            for( int64_t j = 0; j <= k; j++ ) {
+                term = term + c(ind - k + j, yi) * wrk[j];
             }
             double delta = w(it - 1) * (term - y(it - 1, yi));
             term = delta * delta;

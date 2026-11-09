@@ -5,6 +5,7 @@ py3.install_sources([
     'test_bsplines.py',
     'test_fitpack.py',
     'test_fitpack2.py',
+    'test_fpback_residuals.py',
     'test_gil.py',
     'test_interpnd.py',
     'test_interpolate.py',
