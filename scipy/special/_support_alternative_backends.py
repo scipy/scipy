@@ -2153,6 +2153,36 @@ _special_funcs = (
     ),
     # Parabolic cylinder functions
     # --
+    _FuncInfo(
+        _ufuncs.pbdv, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pbdv", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pbvv, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pbvv", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pbwa, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pbwa", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
     # Mathieu and related functions
     _FuncInfo(
         _mathieu.mathieu_ce, ["m", "q", "x"],
