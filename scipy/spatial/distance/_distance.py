@@ -921,11 +921,12 @@ def seuclidean(u, v, V):
     return euclidean(u, v, w=1/V)
 
 
+@xp_capabilities()
 def cityblock(u, v, w=None):
     """
     Compute the City Block (Manhattan) distance.
 
-    Computes the Manhattan distance between two 1-D arrays `u` and `v`,
+    Computes the Manhattan distance between two arrays `u` and `v`,
     which is defined as
 
     .. math::
@@ -934,37 +935,37 @@ def cityblock(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    cityblock : double
+    cityblock : float or array
         The City Block (Manhattan) distance between vectors `u` and `v`.
 
     Examples
     --------
     >>> from scipy.spatial import distance
     >>> distance.cityblock([1, 0, 0], [0, 1, 0])
-    2
+    2.0
     >>> distance.cityblock([1, 0, 0], [0, 2, 0])
-    3
+    3.0
     >>> distance.cityblock([1, 0, 0], [1, 1, 0])
-    1
+    1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    l1_diff = abs(u - v)
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
+    l1_diff = xp.abs(u - v)
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         l1_diff = w * l1_diff
-    return l1_diff.sum()
+    return xp.sum(l1_diff, axis=-1)
 
 
 def mahalanobis(u, v, VI):
@@ -1123,9 +1124,10 @@ def braycurtis(u, v, w=None):
     return l1_diff.sum(axis=-1) / l1_sum.sum(axis=-1)
 
 
+@xp_capabilities()
 def canberra(u, v, w=None):
     """
-    Compute the Canberra distance between two 1-D arrays.
+    Compute the Canberra distance between two arrays.
 
     The Canberra distance is defined as
 
@@ -1136,17 +1138,17 @@ def canberra(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    canberra : double
+    canberra : float or array
         The Canberra distance between vectors `u` and `v`.
 
     Notes
@@ -1163,19 +1165,18 @@ def canberra(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u, dtype=np.float64)
-    v = _validate_vector(v, dtype=np.float64)
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp)  # TODO: enable float32 for numpy?
     if w is not None:
-        w = _validate_weights(w)
-    with np.errstate(invalid='ignore'):
-        abs_uv = abs(u - v)
-        abs_u = abs(u)
-        abs_v = abs(v)
-        d = abs_uv / (abs_u + abs_v)
-        if w is not None:
-            d = w * d
-        d = np.nansum(d)
-    return d
+        w = _validate_weights(w, xp=xp)
+    abs_uv = xp.abs(u - v)
+    abs_u = xp.abs(u)
+    abs_v = xp.abs(v)
+    abs_uv_plus = abs_u + abs_v
+    d = abs_uv / xp.where(abs_uv_plus == 0, 1, abs_uv_plus)  # Avoid division by zero
+    if w is not None:
+        d = w * d
+    return xp.sum(d, axis=-1)
 
 
 def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):

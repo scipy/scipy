@@ -268,7 +268,9 @@ _lambertw: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_mathieu_ce: np.ufunc
 _mathieu_cem: np.ufunc
+_mathieu_se: np.ufunc
 _mathieu_sem: np.ufunc
 _normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc

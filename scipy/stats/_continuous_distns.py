@@ -7723,6 +7723,9 @@ class moyal_gen(rv_continuous):
     def _ppf(self, x):
         return -np.log(2 * sc.erfcinv(x)**2)
 
+    def _isf(self, q):
+        return -2*np.log(sc.erfinv(q)) - np.log(2)
+
     def _stats(self):
         mu = np.log(2) + np.euler_gamma
         mu2 = np.pi**2 / 2
@@ -8743,6 +8746,9 @@ class powerlaw_gen(rv_continuous):
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
 
+    def _isf(self, q, a):
+        return np.exp(sc.log1p(-q)/a)
+
     def _sf(self, p, a):
         return -sc.powm1(p, a)
 
@@ -9143,6 +9149,10 @@ class rdist_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
+
+    def _isf(self, q, c):
+        # The distribution is symmetric about 0.
+        return -self._ppf(q, c)
 
     def _rvs(self, c, size=None, random_state=None):
         return 2 * random_state.beta(c/2, c/2, size) - 1
@@ -9638,6 +9648,10 @@ class recipinvgauss_gen(rv_continuous):
         isqx = 1.0/np.sqrt(x)
         return _norm_cdf(isqx*trm1) + np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
 
+    def _isf(self, q, mu):
+        # X = 1/Y with Y ~ invgauss(mu), so isf_X(q) = 1/ppf_Y(q).
+        return 1.0/invgauss._ppf(q, mu)
+
     def _rvs(self, mu, size=None, random_state=None):
         return 1.0/random_state.wald(mu, 1.0, size=size)
 
@@ -9690,6 +9704,10 @@ class semicircular_gen(rv_continuous):
 
     def _ppf(self, q):
         return rdist._ppf(q, 3)
+
+    def _isf(self, q):
+        # The distribution is symmetric about 0.
+        return -self._ppf(q)
 
     def _rvs(self, size=None, random_state=None):
         # generate values uniformly distributed on the area under the pdf
