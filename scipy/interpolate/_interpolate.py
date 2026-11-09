@@ -470,6 +470,9 @@ class interp1d(_Interpolator1D):
             ((x_new - x_lo)/(x_hi - x_lo))[:, None] * y_hi
             + ((x_hi - x_new)/(x_hi - x_lo))[:, None] * y_lo
             )
+        # The weights sum to 1 only up to rounding; return equal neighbours
+        # exactly, as ``np.interp`` does, but keep NaN queries as NaN.
+        y_new = np.where((y_lo == y_hi) & ~np.isnan(x_new)[:, None], y_lo, y_new)
 
         return y_new
 

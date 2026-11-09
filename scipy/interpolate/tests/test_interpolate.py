@@ -243,6 +243,22 @@ class TestInterp1D:
         xp_assert_close(yp, y, atol=1e-20)
         assert np.all(yp >= 0) # less stable computations give yp[1,1] = -5e-20
 
+    @pytest.mark.parametrize("shape", [(365,), (2, 365), (2, 3, 365)])
+    @pytest.mark.parametrize("value", [10.0, 0.1, -1/3])
+    def test_linear_constant_data_exact(self, shape, value):
+        # gh-26609: interpolating between equal neighbours must be exact
+        x = np.linspace(1, 366, 365)
+        x_new = np.arange(1, 367)
+        y = np.full(shape, value)
+        yp = interp1d(x, y, kind="linear", axis=-1)(x_new)
+        np.testing.assert_array_equal(yp, value)
+
+    def test_linear_constant_data_nan_query(self):
+        # NaN queries must still give NaN when neighbours are equal
+        yp = interp1d([0, 1, 2.], np.ones((2, 3)), axis=-1)([np.nan, 0.5])
+        assert np.isnan(yp[:, 0]).all()
+        np.testing.assert_array_equal(yp[:, 1], 1.0)
+
     def test_slinear_dtypes(self):
         # regression test for gh-7273: 1D slinear interpolation fails with
         # float32 inputs
