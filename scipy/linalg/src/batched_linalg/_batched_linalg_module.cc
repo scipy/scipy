@@ -10,6 +10,7 @@
 #include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
+#include "wrapper_helpers.hpp"   /* wrapper::py_ref */
 #include "_common_array_utils.hh"
 
 #include "_linalg_cholesky.hh"
@@ -65,16 +66,38 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
 }
 
 
+/**
+ * @brief Raise the Python exception for a failed batched call.
+ *
+ * @param status  The failure; any value except BatchStatus::ok.
+ * @param func    Public function name used in the message, e.g. "solve".
+ * @return NULL, with the exception set.
+ */
+static PyObject*
+set_batch_error(BatchStatus status, const char *func) {
+    switch (status) {
+        case BatchStatus::no_memory:
+            return PyErr_Format(PyExc_MemoryError, "scipy.linalg.%s: could not allocate memory.", func);
+        case BatchStatus::too_large:
+            return PyErr_Format(PyExc_ValueError,
+                "scipy.linalg.%s: the array is too large for the %d-bit integers of the LAPACK "
+                "library; build SciPy with ILP64 support.", func, (int)(8 * sizeof(CBLAS_INT)));
+        case BatchStatus::lapack_query_failed:
+            return PyErr_Format(PyExc_RuntimeError, "scipy.linalg.%s: the LAPACK workspace query failed.", func);
+        default:
+            return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
+    }
+}
+
+
 static PyObject*
 _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject* ap_Am = NULL;
-    PyArrayObject *ap_Ainv = NULL;
-    int info = 0;
     SliceStatusVec vec_status;
     St structure = St::NONE;
-    int overwrite_a;
-    int lower;
+    int overwrite_a = 0;
+    int lower = 0;
 
     // Get the input array
     if (!PyArg_ParseTuple(args, ("O!|npp"), &PyArray_Type, (PyObject **)&ap_Am, &structure, &overwrite_a, &lower)) {
@@ -95,48 +118,25 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    if(!overwrite_a) {
-        /* Allocate the output */
-        ap_Ainv = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum);
-        if(!ap_Ainv) {
-            PyErr_NoMemory();
-            return NULL;
-        }
+    // The output: a new array, or the input array itself when overwriting it
+    wrapper::py_ref ap_Ainv;
+    if (overwrite_a) {
+        Py_INCREF(ap_Am);
+        ap_Ainv = wrapper::py_ref(ap_Am);
     }
     else {
-        /* Reuse the memory buffer of the input array. */
-        ap_Ainv = ap_Am;
-        Py_INCREF(ap_Am);
+        ap_Ainv = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum));
+        if (!ap_Ainv) { return PyErr_NoMemory(); }
     }
 
-    void *buf = PyArray_DATA(ap_Ainv);
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _inverse<f32>(ap_Am, (f32 *)buf, structure, lower, overwrite_a, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _inverse<f64>(ap_Am, (f64 *)buf, structure, lower, overwrite_a, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _inverse<c64>(ap_Am, (c64 *)buf, structure, lower, overwrite_a, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _inverse<c128>(ap_Am, (c128 *)buf, structure, lower, overwrite_a, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            return NULL;
-    }
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _inverse<T>(ap_Am, ap_Ainv.data<T>(), structure, lower, overwrite_a, vec_status);
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "inv"); }
 
-    if (info < 0) {
-        // Either OOM or internal LAPACK error.
-        Py_DECREF(ap_Ainv);
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.inv.");
-        return NULL;
-    }
     PyObject *ret_lst = convert_vec_status(vec_status);
-
-    return Py_BuildValue("NN", PyArray_Return(ap_Ainv), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_Ainv.release()), ret_lst);
 }
 
 
@@ -146,9 +146,6 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_b = NULL;
-
-    PyArrayObject *ap_x = NULL;
-    int info = 0;
     SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a = 0;
@@ -200,48 +197,25 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    if (!overwrite_b) {
-        /* Allocate the output */
-        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum);
-        if(!ap_x) {
-            PyErr_NoMemory();
-            return NULL;
-        }
+    // The output: a new array, or the input array `b` itself when overwriting it
+    wrapper::py_ref ap_x;
+    if (overwrite_b) {
+        Py_INCREF(ap_b);
+        ap_x = wrapper::py_ref(ap_b);
     }
     else {
-        /* Reuse the memory buffer of the input array. */
-        ap_x = ap_b;
-        Py_INCREF(ap_b);
+        ap_x = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum));
+        if (!ap_x) { return PyErr_NoMemory(); }
     }
 
-    void *buf = PyArray_DATA(ap_x);
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _solve<f32>(ap_Am, ap_b, (f32 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _solve<f64>(ap_Am, ap_b, (f64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _solve<c64>(ap_Am, ap_b, (c64 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _solve<c128>(ap_Am, ap_b, (c128 *)buf, structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            return NULL;
-    }
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _solve<T>(ap_Am, ap_b, ap_x.data<T>(), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "solve"); }
 
-    if (info < 0) {
-        // Either OOM error or requested lwork too large.
-        Py_DECREF(ap_x);
-        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.solve.");
-        return NULL;
-    }
     PyObject *ret_lst = convert_vec_status(vec_status);
-
-    return Py_BuildValue("NN", PyArray_Return(ap_x), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_x.release()), ret_lst);
 }
 
 
@@ -1147,7 +1121,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int64_t ctx_strides[LU_MAX_NDIM];
     for (int i = 0; i < ndim; i++) {
         ctx_shape[i] = (int64_t)shape[i];
-        ctx_strides[i] = (int64_t)(byte_strides[i] / elem_size);
+        ctx_strides[i] = (int64_t)byte_strides[i];
     }
 
     // Allocate perm (..., m)
@@ -1317,7 +1291,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int64_t ctx_strides[LU_MAX_NDIM];
     for (int i = 0; i < ndim; i++) {
         ctx_shape[i] = (int64_t)shape[i];
-        ctx_strides[i] = (int64_t)(byte_strides[i] / elem_size);
+        ctx_strides[i] = (int64_t)byte_strides[i];
     }
 
     // Allocate output det array (...,) — batch dimensions only

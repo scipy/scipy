@@ -260,7 +260,7 @@ inline void solve_slice_diagonal(
     T zero(0.), one(1.);
     real_type maxa(0.), maxinva(0.);
 
-    for (CBLAS_INT j=0; j<N; j++) {
+    for (npy_intp j=0; j<N; j++) {
         T ajj = data[j*N + j];
 
         status.is_singular = (ajj == zero);
@@ -270,7 +270,7 @@ inline void solve_slice_diagonal(
         }
 
         T inv_ajj = one / ajj;
-        for (CBLAS_INT i=0; i<NRHS; i++) {
+        for (npy_intp i=0; i<NRHS; i++) {
             b_data[j + i*N] *= inv_ajj;
         }
 
@@ -290,15 +290,9 @@ inline void solve_slice_diagonal(
 // Specific implementation for the case of `solve(..., assume_a=banded)` to avoid
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
-int
+BatchStatus
 _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, int overwrite_a, int overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
-    using real_type = real_of_t<T>;
-
-    CBLAS_INT info;
-    npy_intp *ks = NULL; // For storage of the bandwidths
-    T* buffer = NULL;
-
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
     // --------------------------------------------------------------------
@@ -320,41 +314,32 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
 
-    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs;
-
-    // General allocations
-    CBLAS_INT *ipiv = (CBLAS_INT *)PyMem_RawMalloc(intn * sizeof(CBLAS_INT));
-    if (ipiv == NULL) {
-        info = -102;
-        return int(info);
-    }
-
-    constexpr npy_intp irwork_mult = is_complex_v<T> ? 3 : 1;
-    irwork_t<T> *irwork = static_cast<irwork_t<T> *>(PyMem_RawMalloc(irwork_mult * intn * sizeof(real_type)));
-
-    if (irwork == NULL) {
-        PyMem_RawFree(ipiv);
-        info = -102;
-        return int(info);
+    CBLAS_INT intn, int_nrhs;
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
+        return BatchStatus::too_large;
     }
 
     // Bandwidth detection per slice. Required to first do a pass to find the
     // maximal `kl` and `ku` to find the minimal size the array will need to
     // have. To avoid having to call `bandwidth` twice per slice, the results
-    // are stored in these arrays.
-    npy_intp ldab_max = 0;
-    ks = (npy_intp *)PyMem_RawMalloc(2 * outer_size * sizeof(npy_intp));
-
-    if (ks == NULL) {
-        PyMem_RawFree(ipiv);
-        PyMem_RawFree(irwork);
-        info = -102;
-        return (int)info;
+    // are stored in `ks`: lower bandwidths first, then upper bandwidths.
+    std::size_t ks_count, irwork_count;
+    if (!checked_mul(2, outer_size, &ks_count) || !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
+        return BatchStatus::too_large;
     }
+    auto ks = alloc_workspace<npy_intp>(ks_count);
+    auto ipiv = alloc_workspace<CBLAS_INT>(n);
+    auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);
+    if (!ks || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
-    npy_intp *kls = &ks[0]; // Lower bandwidths
-    npy_intp *kus = &ks[outer_size]; // Upper bandwidths
+    npy_intp ldab_max = 0;
+    npy_intp *kls = ks.get();
+    npy_intp *kus = ks.get() + outer_size;
     detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
+
+    // every slice's ldab = 2*kl + ku + 1 <= ldab_max is passed to LAPACK
+    CBLAS_INT int_ldab_max;
+    if (!checked_narrow<CBLAS_INT>(ldab_max, &int_ldab_max)) { return BatchStatus::too_large; }
 
     /*
      * Chop up buffer in parts:
@@ -368,27 +353,19 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
      * - `work` is needed for `gbcon` (fixed size)
      * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
      */
-    npy_intp b_data_size = overwrite_b ? 0 : n * nrhs;
-    buffer = (T *)PyMem_RawMalloc((ldab_max * n + 3 * n + b_data_size) * sizeof(T));
-
-    if (buffer == NULL) {
-        PyMem_RawFree(ipiv);
-        PyMem_RawFree(irwork);
-        PyMem_RawFree(ks);
-        info = -102;
-        return int(info);
+    std::size_t ab_count, work_count, b_count, buf_count;
+    if (!checked_mul(ldab_max, n, &ab_count) || !checked_mul(3, n, &work_count) ||
+        !checked_mul(overwrite_b ? 0 : n, nrhs, &b_count) ||
+        !checked_add(ab_count, work_count, &buf_count) || !checked_add(buf_count, b_count, &buf_count)) {
+        return BatchStatus::too_large;
     }
+    auto buffer = alloc_workspace<T>(buf_count);
+    if (!buffer) { return BatchStatus::no_memory; }
 
     // Chop up buffer
-    T *ab = &buffer[0];
-    T *work = &buffer[ldab_max * n];
-
-    T *b_data = NULL;
-    if (!overwrite_b) {
-        b_data = &buffer[ldab_max * n + 3 * n];
-    } else {
-        b_data = bm_data;
-    }
+    T *ab = buffer.get();
+    T *work = ab + ab_count;
+    T *b_data = overwrite_b ? bm_data : work + work_count;
 
     // Main loop traversal, taken from `_solve`
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -401,16 +378,16 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
         if (!overwrite_b) {
             T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
-            copy_slice_F(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+            copy_strided_to_f(slice_ptr_b, b_data, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
         // NB. `overwrite_b` is only set when the input is 2D F-ordered, so no copy needed then.
         // A generalization to ndim > 2 will also require computing the pointer here.
 
         // structure is known to be banded
         init_status(slice_status, idx, St::BANDED);
-        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv, b_data, work, irwork, kls[idx], kus[idx], slice_status);
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv.get(), b_data, work, irwork.get(), kls[idx], kus[idx], slice_status);
 
-        if (_detect_problems(slice_status, vec_status) != 0) { goto free_exit_banded; }
+        if (_detect_problems(slice_status, vec_status) != 0) { return BatchStatus::ok; }
 
         if (!overwrite_b) {
             // Put result in C-order in return buffer
@@ -418,17 +395,11 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         } // If `overwrite_b` is true the result is already set.
     }
 
-free_exit_banded:
-    PyMem_RawFree(ipiv);
-    PyMem_RawFree(irwork);
-    PyMem_RawFree(ks);
-    PyMem_RawFree(buffer);
-
-    return 1;
+    return BatchStatus::ok;
 }
 
 template<typename T>
-int
+BatchStatus
 _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
     char trans = transposed ? 'T' : 'N';
@@ -470,84 +441,58 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork=-1, info;
-
-    T tmp = 0.0;
-    lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, lwork, &info);
-    if (info != 0) { info = -100; return (int)info; }
-
-    lwork = _calc_lwork(tmp);
-    if ((lwork < 0) ||
-        (n > std::numeric_limits<CBLAS_INT>::max() / 4)
-    ) {
-        // Too large lwork required - Computation cannot be performed.
-        // if CBLAS_INT is 32-bit, need ILP64; if already using ILP64, we're out of luck.
-        return -99;
+    CBLAS_INT intn, int_nrhs, info;
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
+        return BatchStatus::too_large;
     }
 
+    T tmp = 0.0;
+    lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, -1, &info);
+    if (info != 0) { return BatchStatus::lapack_query_failed; }
+
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
+    CBLAS_INT lwork_sytrf = _calc_lwork(tmp);
+    if (lwork_sytrf < 0) { return BatchStatus::too_large; }
+
     // gecon needs lwork of at least 4*n
-    lwork = (4*n > lwork ? 4*n : lwork);
-
-    CBLAS_INT buf_size_a = overwrite_a ? 0 : n*n;
-    CBLAS_INT buf_size_b = overwrite_b ? 0 : n*nrhs;
-    CBLAS_INT buf_size_trcon = 2*n; // // 2*n for tridiag trcon
-    CBLAS_INT buf_size = 2*buf_size_a + buf_size_b + buf_size_trcon + lwork;
-
-    T* buffer = (T *)PyMem_RawMalloc(buf_size*sizeof(T));
-    if (NULL == buffer) { info = -101; return (int)info; }
+    std::size_t lwork_gecon;
+    CBLAS_INT lwork;
+    if (!checked_mul(4, n, &lwork_gecon) ||
+        !checked_narrow<CBLAS_INT>(std::max(lwork_gecon, (std::size_t)lwork_sytrf), &lwork)) {
+        return BatchStatus::too_large;
+    }
 
     /*
      * Chop the buffer into parts:
      *
-     *    size_a     size_a    size_b     2n     lwork
-     * |----------|---------|----------|------|---------|
-     * ^          ^         ^          ^      ^
-     * scratch    data      data_b     work2  work
+     *    nn       nb        2n      lwork
+     * |--------|--------|--------|---------|
+     * ^        ^        ^        ^
+     * data     data_b   work2    work
      *
-     * - scratch & data are for A (lhs)
-     * - data_b is for b (rhs)
+     * - data is for A (lhs), absent with overwrite_a
+     * - data_b is for b (rhs), absent with overwrite_b
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions
-     *
      */
-
-    T *scratch = NULL, *data = NULL;
-    if (overwrite_a) {
-        data = (T *)Am_data;
-    }
-    else {
-        scratch = &buffer[0];
-        data = &buffer[buf_size_a];
+    std::size_t nn, nb, n2, buf_count, irwork_count;
+    if (!checked_mul(n, n, &nn) || !checked_mul(n, nrhs, &nb) || !checked_mul(2, n, &n2) ||
+        !checked_add(overwrite_a ? 0 : nn, overwrite_b ? 0 : nb, &buf_count) ||
+        !checked_add(buf_count, n2, &buf_count) || !checked_add(buf_count, lwork, &buf_count) ||
+        !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
+        return BatchStatus::too_large;
     }
 
-    T *data_b = NULL;
-    if(overwrite_b) {
-        // work in-place
-        data_b = ret_data;
-    }
-    else {
-        data_b = &buffer[2*buf_size_a];
-    }
+    auto buffer = alloc_workspace<T>(buf_count);
+    auto ipiv = alloc_workspace<CBLAS_INT>(n);
+    auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);   // {ge,po,tr}con need rwork or iwork
+    if (!buffer || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
-    T *work2 = &buffer[2*buf_size_a + buf_size_b]; // 2*n for is for tridiag's trcon; XXX malloc it only if needed?
-    T* work = &buffer[2*buf_size_a + buf_size_b + 2*n];
-
-    CBLAS_INT* ipiv = (CBLAS_INT *)PyMem_RawMalloc(n*sizeof(CBLAS_INT));
-    if (ipiv == NULL) {
-        PyMem_RawFree(buffer);
-        info = -102;
-        return (int)info;
-    }
-
-    // {ge,po,tr}con need rwork or iwork
-    constexpr npy_intp irwork_mult = is_complex_v<T> ? 3 : 1;
-    irwork_t<T> *irwork = static_cast<irwork_t<T> *>(PyMem_RawMalloc(irwork_mult * n * sizeof(irwork_t<T>)));
-    if (irwork == NULL) {
-        PyMem_RawFree(buffer);
-        PyMem_RawFree(ipiv);
-        info = -102;
-        return (int)info;
-    }
+    T *data = Am_data, *data_b = ret_data, *cursor = buffer.get();
+    if (!overwrite_a) { data = cursor; cursor += nn; }
+    if (!overwrite_b) { data_b = cursor; cursor += nb; }
+    T *work2 = cursor;
+    T *work = cursor + n2;
 
     // normalize the structure detection inputs
     if (structure == St::POS_DEF) {
@@ -572,14 +517,13 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
         if (!overwrite_a) {
             // copy the slice
-            copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
-            swap_cf(scratch, data, n, n, n);
+            copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
         }
 
         if (!overwrite_b) {
             // copy the r.h.s, too;
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-            copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+            copy_strided_to_f(slice_ptr_b, data_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
 
         // detect the structure if not given
@@ -635,15 +579,15 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 solve_slice_diagonal(intn, int_nrhs, data, data_b, slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
                     // fail fast and loud
-                    goto free_exit;
+                    return BatchStatus::ok;
                 }
                 break;
             }
             case St::TRIDIAGONAL:
             {
-                solve_slice_tridiag(intn, int_nrhs, data, ipiv, trans, data_b, work, work2, irwork, slice_status);
+                solve_slice_tridiag(intn, int_nrhs, data, ipiv.get(), trans, data_b, work, work2, irwork.get(), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    goto free_exit;
+                    return BatchStatus::ok;
                 }
                 break;
             }
@@ -651,15 +595,15 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             case St::LOWER_TRIANGULAR:
             {
                 char diag = 'N';
-                solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, slice_status);
+                solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork.get(), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    goto free_exit;
+                    return BatchStatus::ok;
                 }
                 break;
             }
             case St::POS_DEF:
             {
-                solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, slice_status);
+                solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork.get(), slice_status);
 
                 if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
                     // success (maybe ill-conditioned)
@@ -671,8 +615,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
-                        swap_cf(scratch, data, n, n, n);
+                        copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
                         init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the general solver
@@ -687,18 +630,18 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             case St::SYM:  // pos def fails, fall through to here
             case St::HER:
             {
-                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, (is_symm && !is_herm), slice_status);
+                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv.get(), work, irwork.get(), lwork, (is_symm && !is_herm), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    goto free_exit;
+                    return BatchStatus::ok;
                 }
                 break;
             }
             default:
             {
                 // general matrix solve
-                solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, slice_status);
+                solve_slice_general(intn, int_nrhs, data, ipiv.get(), data_b, trans, irwork.get(), work, slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    goto free_exit;
+                    return BatchStatus::ok;
                 }
             }
         }
@@ -709,11 +652,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
         }
     }
 
-free_exit:
-    PyMem_RawFree(buffer);
-    PyMem_RawFree(irwork);
-    PyMem_RawFree(ipiv);
-    return 1;
+    return BatchStatus::ok;
 }
 
 

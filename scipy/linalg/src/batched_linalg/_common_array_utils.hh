@@ -1,5 +1,14 @@
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <limits>
+#include <memory>
+#include <new>
+#include <type_traits>
+
 namespace sp_linalg {
 
 
@@ -14,6 +23,136 @@ using wrapper::is_complex_v;
 
 // `*con` routines need iwork for real flavors and rwork for complex ones.
 template <class T> using irwork_t = typename std::conditional<is_complex_v<T>, real_of_t<T>, CBLAS_INT>::type;
+
+
+/**
+ * @brief Outcome of a whole batched call, as opposed to the per-slice SliceStatus.
+ */
+enum class BatchStatus {
+    ok,
+    no_memory,            ///< A workspace allocation failed.
+    too_large,            ///< A size overflows size_t, or a LAPACK argument does not fit CBLAS_INT.
+    lapack_query_failed,  ///< A LAPACK workspace query returned a nonzero info.
+    bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
+};
+
+
+/**
+ * @brief Deleter that returns memory to PyMem_RawFree.
+ */
+struct PyMemRawFree {
+    void operator()(void *p) const noexcept { PyMem_RawFree(p); }
+};
+
+
+/**
+ * @brief Owning pointer to an uninitialized workspace array obtained from PyMem_RawMalloc.
+ */
+template <class T>
+using Workspace = std::unique_ptr<T[], PyMemRawFree>;
+
+
+/**
+ * @brief Allocate an uninitialized workspace array.
+ *
+ * @param count  Number of elements of type T.
+ * @return An owning pointer to the array; empty if `count * sizeof(T)` overflows size_t or the
+ *         allocation fails.
+ */
+template <class T>
+Workspace<T> alloc_workspace(std::size_t count) noexcept
+{
+    if (count > SIZE_MAX / sizeof(T)) { return Workspace<T>(); }
+    return Workspace<T>(static_cast<T *>(PyMem_RawMalloc(count * sizeof(T))));
+}
+
+
+/**
+ * @brief Multiply two element counts, detecting overflow.
+ *
+ * @param a    First factor.
+ * @param b    Second factor.
+ * @param out  Receives `a * b`; written only on success.
+ * @return true if the product fits in size_t.
+ */
+inline bool checked_mul(std::size_t a, std::size_t b, std::size_t *out) noexcept
+{
+    if (b != 0 && a > SIZE_MAX / b) { return false; }
+    *out = a * b;
+    return true;
+}
+
+
+/**
+ * @brief Add two element counts, detecting overflow.
+ *
+ * @param a    First term.
+ * @param b    Second term.
+ * @param out  Receives `a + b`; written only on success.
+ * @return true if the sum fits in size_t.
+ */
+inline bool checked_add(std::size_t a, std::size_t b, std::size_t *out) noexcept
+{
+    if (a > SIZE_MAX - b) { return false; }
+    *out = a + b;
+    return true;
+}
+
+
+/**
+ * @brief Convert a nonnegative size to a narrower integer type, detecting loss.
+ *
+ * @param v    The size; negative values are rejected.
+ * @param out  Receives `v` converted to To; written only on success.
+ * @return true if `v` is nonnegative and representable in To.
+ */
+template <class To, class From>
+bool checked_narrow(From v, To *out) noexcept
+{
+    static_assert(std::is_integral_v<To> && std::is_integral_v<From>);
+    if constexpr (std::is_signed_v<From>) {
+        if (v < 0) { return false; }
+    }
+    using UFrom = std::make_unsigned_t<From>;
+    using UTo = std::make_unsigned_t<To>;
+    if (static_cast<UFrom>(v) > static_cast<UTo>(std::numeric_limits<To>::max())) { return false; }
+    *out = static_cast<To>(v);
+    return true;
+}
+
+
+/**
+ * @brief Call a generic callable with a value of the C++ type matching a NumPy dtype.
+ *
+ * The call runs with the Python thread state detached (Py_BEGIN_ALLOW_THREADS), so @p f must not
+ * use the Python C API.
+ *
+ * @param typenum  NumPy type number; NPY_FLOAT32, NPY_FLOAT64, NPY_COMPLEX64 and NPY_COMPLEX128 are
+ *                 dispatched.
+ * @param f        Callable invoked as `f(f32{})`, `f(f64{})`, `f(c64{})` or `f(c128{})`, returning a
+ *                 BatchStatus.
+ * @return The result of @p f; BatchStatus::bad_dtype for any other @p typenum;
+ *         BatchStatus::no_memory if @p f throws std::bad_alloc.
+ */
+template <class F>
+BatchStatus dispatch_dtype(int typenum, F &&f) noexcept
+{
+    BatchStatus status = BatchStatus::bad_dtype;
+    Py_BEGIN_ALLOW_THREADS
+    try {
+        switch (typenum) {
+            case NPY_FLOAT32:    status = f(f32{});  break;
+            case NPY_FLOAT64:    status = f(f64{});  break;
+            case NPY_COMPLEX64:  status = f(c64{});  break;
+            case NPY_COMPLEX128: status = f(c128{}); break;
+            default:             break;
+        }
+    } catch (const std::bad_alloc &) {
+        status = BatchStatus::no_memory;
+    }
+    Py_END_ALLOW_THREADS
+    return status;
+}
 
 
 // Structure tags; python side maps assume_a strings to these values
@@ -156,8 +295,43 @@ T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, n
         offset += (temp_idx % shape[i]) * strides[i];
         temp_idx /= shape[i];
     }
-    T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
-    return slice_ptr;
+    return reinterpret_cast<T *>(reinterpret_cast<char *>(Am_data) + offset);
+}
+
+
+/**
+ * @brief Copy a strided m-by-n matrix into a column-major buffer.
+ *
+ * @param src  First element of the source matrix.
+ * @param dst  Column-major destination; element (i, j) is written to `dst[i + j*ld]`.
+ * @param m    Number of rows.
+ * @param n    Number of columns.
+ * @param s0   Byte stride between consecutive rows of @p src; may be negative.
+ * @param s1   Byte stride between consecutive columns of @p src; may be negative.
+ * @param ld   Leading dimension of @p dst, at least @p m.
+ */
+template<typename T>
+void copy_strided_to_f(const T *src, T *dst, npy_intp m, npy_intp n, npy_intp s0, npy_intp s1, npy_intp ld) noexcept
+{
+    const char *base = reinterpret_cast<const char *>(src);
+    // walk the source along its smaller stride
+    if (std::abs(s1) <= std::abs(s0)) {
+        for (npy_intp i = 0; i < m; i++) {
+            const char *src_row = base + i * s0;
+            for (npy_intp j = 0; j < n; j++) {
+                dst[i + j * ld] = *reinterpret_cast<const T *>(src_row + j * s1);
+            }
+        }
+    }
+    else {
+        for (npy_intp j = 0; j < n; j++) {
+            const char *src_col = base + j * s1;
+            T *dst_col = dst + j * ld;
+            for (npy_intp i = 0; i < m; i++) {
+                dst_col[i] = *reinterpret_cast<const T *>(src_col + i * s0);
+            }
+        }
+    }
 }
 
 
@@ -452,18 +626,19 @@ bandwidth_strided(T* data, npy_intp n, npy_intp m, npy_intp s1, npy_intp s2, npy
 {
     T zero = T(0.);
 
-    s1 = s1 / sizeof(T);
-    s2 = s2 / sizeof(T);
+    // s1, s2 are byte strides: address elements through a char pointer
+    const char *base = reinterpret_cast<const char *>(data);
+    auto at = [&](npy_intp r, npy_intp c) { return *reinterpret_cast<const T *>(base + c * s2 + r * s1); };
     npy_intp lb = 0, ub = 0;
     for (npy_intp c = 0; c < m-1; c++) {
         for (npy_intp r = n-1; r > c + lb; r--) {
-            if (data[c * s2 + r * s1] != zero) { lb = r - c; break; }
+            if (at(r, c) != zero) { lb = r - c; break; }
         }
         if (c + lb + 1 > m) { break; }
     }
     for (npy_intp c = m-1; c > 0; c--) {
         for (npy_intp r = 0; r < c - ub; r++) {
-            if (data[c * s2 + r * s1] != zero) { ub = c - r; break; }
+            if (at(r, c) != zero) { ub = c - r; break; }
         }
         if (c <= ub) { break; }
     }
@@ -630,26 +805,27 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
 template<typename T>
 inline void
 to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s1, npy_intp s2) {
-    s1 = s1 / sizeof(T);
-    s2 = s2 / sizeof(T);
+    // s1, s2 are byte strides: address elements through a char pointer
+    const char *base = reinterpret_cast<const char *>(data);
+    auto at = [&](npy_intp byte_offset) { return *reinterpret_cast<const T *>(base + byte_offset); };
     npy_intp i, j;
 
     // main diagonal
     for (i = 0; i < n; i++) {
-        ab[(i + 1) * ldab - kl - 1] = data[i * (s1 + s2)];
+        ab[(i + 1) * ldab - kl - 1] = at(i * (s1 + s2));
     }
 
     // lower bands
     for (i = 0; i < kl; i++) {
         for (j = 0; j < n - i - 1; j++) {
-            ab[(j + 1) * ldab - kl + i] = data[(i + 1) * s1 + j * (s1 + s2)];
+            ab[(j + 1) * ldab - kl + i] = at((i + 1) * s1 + j * (s1 + s2));
         }
     }
 
     // upper bands
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
-            ab[(j + 1) * ldab - kl - i - 2] = data[(i + 1) * s2 + (j - i - 1) * (s1 + s2)];
+            ab[(j + 1) * ldab - kl - i - 2] = at((i + 1) * s2 + (j - i - 1) * (s1 + s2));
         }
     }
 }

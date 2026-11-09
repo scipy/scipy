@@ -17,7 +17,7 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, LinAlgWarning)
+                          matrix_balance, qr, lu, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
@@ -3107,3 +3107,41 @@ class TestDTypes:
                 solve(a, b)
         else:
             solve(a, b)
+
+
+class TestFieldViewStrides:
+    # A complex128 field of an aligned structured array has a 24-byte element stride,
+    # which is not a multiple of the 16-byte itemsize. Results must match the same
+    # values in a contiguous array exactly.
+
+    def field_view(self, values):
+        dt = np.dtype([("z", np.complex128), ("pad", np.float64)], align=True)
+        rec = np.zeros(values.shape, dtype=dt)
+        rec["z"] = values
+        view = rec["z"]
+        assert view.strides[-1] == 24
+        return view
+
+    def matrices(self, n=5):
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, n, n)) + 1j*rng.standard_normal((3, n, n))
+        return a + 4*np.eye(n)
+
+    @pytest.mark.parametrize("func", [inv, det])
+    def test_inv_det(self, func):
+        a = self.matrices()
+        assert_equal(func(self.field_view(a)), func(a))
+
+    def test_lu(self):
+        a = self.matrices()
+        for x, y in zip(lu(self.field_view(a)), lu(a)):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("assume_a", [None, "general", "banded", "pos"])
+    def test_solve(self, assume_a):
+        a = self.matrices()
+        if assume_a == "pos":
+            a = a @ a.conj().swapaxes(-1, -2)
+        b = self.matrices()[..., :2]
+        assert_equal(solve(self.field_view(a), self.field_view(b), assume_a=assume_a),
+                     solve(a, b, assume_a=assume_a))

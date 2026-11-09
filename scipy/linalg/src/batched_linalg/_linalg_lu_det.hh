@@ -20,11 +20,11 @@ constexpr int LU_MAX_NDIM = 64;
  * No NumPy types or Python objects cross this boundary; all data
  * pointers are passed separately as template-typed arguments.
  *
- * @note Element strides (not byte strides) are stored in @c strides.
+ * @note Byte strides (not element strides) are stored in @c strides.
  */
 struct LU_Context {
     int64_t*    shape;            ///< Full nD shape of the input array.
-    int64_t*    strides;          ///< Element strides for the input array.
+    int64_t*    strides;          ///< Byte strides for the input array.
     int64_t     num_of_slices;    ///< Product of batch dimensions (shape[0..ndim-3]).
     CBLAS_INT   m, n;             ///< Rows and columns of each 2D slice.
     CBLAS_INT   *perm;            ///< Output permutation buffer, num_of_slices * m elements.
@@ -38,25 +38,6 @@ struct LU_Context {
 // ========================================================================
 // Utility functions
 // ========================================================================
-
-/**
- * @brief Copy a strided m-by-n matrix into a contiguous column-major buffer.
- *
- * @param[in]  src         Source data pointer.
- * @param[out] dst         Destination buffer, at least m*n elements.
- * @param[in]  m           Number of rows.
- * @param[in]  n           Number of columns.
- * @param[in]  stride_row  Row stride in elements (not bytes).
- * @param[in]  stride_col  Column stride in elements (not bytes).
- */
-template<typename T>
-void copy_strided_to_f(const T *src, T *dst, CBLAS_INT m, CBLAS_INT n, CBLAS_INT stride_row, CBLAS_INT stride_col)
-{
-    for (CBLAS_INT i = 0; i < m; i++)
-        for (CBLAS_INT j = 0; j < n; j++)
-            dst[j * m + i] = src[i * stride_row + j * stride_col];
-}
-
 
 /**
  * @brief Convert LAPACK 1-based pivot swap sequence to a 0-based permutation.
@@ -197,8 +178,8 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
     CBLAS_INT m = ctx.m, n = ctx.n;
     CBLAS_INT mn = m < n ? m : n;
 
-    CBLAS_INT s0 = (CBLAS_INT)ctx.strides[ctx.ndim - 2];
-    CBLAS_INT s1 = (CBLAS_INT)ctx.strides[ctx.ndim - 1];
+    int64_t s0 = ctx.strides[ctx.ndim - 2];
+    int64_t s1 = ctx.strides[ctx.ndim - 1];
 
     for (int64_t idx = 0; idx < ctx.num_of_slices; idx++) {
 
@@ -209,7 +190,7 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
             offset += (temp % ctx.shape[i]) * ctx.strides[i];
             temp /= ctx.shape[i];
         }
-        const T *slice_in = a_dat + offset;
+        const T *slice_in = reinterpret_cast<const T *>(reinterpret_cast<const char *>(a_dat) + offset);
 
         // Contiguous output offsets
         T *l_slice = l_out + idx * m * mn;
@@ -222,7 +203,7 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
             // 2D F-contiguous: use input directly (no copy)
             f_buf = const_cast<T*>(slice_in);
         } else {
-            copy_strided_to_f(slice_in, scratch, m, n, s0, s1);
+            copy_strided_to_f(slice_in, scratch, m, n, s0, s1, m);
             f_buf = scratch;
         }
 
@@ -314,8 +295,8 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
 {
     CBLAS_INT n = ctx.n;
 
-    CBLAS_INT s0 = (CBLAS_INT)ctx.strides[ctx.ndim - 2];
-    CBLAS_INT s1 = (CBLAS_INT)ctx.strides[ctx.ndim - 1];
+    int64_t s0 = ctx.strides[ctx.ndim - 2];
+    int64_t s1 = ctx.strides[ctx.ndim - 1];
 
     for (int64_t idx = 0; idx < ctx.num_of_slices; idx++) {
 
@@ -326,14 +307,14 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
             offset += (temp % ctx.shape[i]) * ctx.strides[i];
             temp /= ctx.shape[i];
         }
-        const T *slice_in = a_dat + offset;
+        const T *slice_in = reinterpret_cast<const T *>(reinterpret_cast<const char *>(a_dat) + offset);
 
         // Prepare column-major input for getrf
         T *f_buf;
         if (ctx.overwrite_a) {
             f_buf = const_cast<T*>(slice_in);
         } else {
-            copy_strided_to_f(slice_in, scratch, n, n, s0, s1);
+            copy_strided_to_f(slice_in, scratch, n, n, s0, s1, n);
             f_buf = scratch;
         }
 
