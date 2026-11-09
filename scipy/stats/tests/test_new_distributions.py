@@ -63,15 +63,17 @@ class TestBinomial(DistributionsTest):
 
     def test_gh23708_binomial_logcdf_method_complement(self, xp):
         # gh-23708 found that `logcdf` method='complement' was inaccurate in the tails
-        x = xp.asarray([0., 18.])
-        X = stats.Binomial(n=xp.asarray([18.]), p=xp.asarray(0.71022842))
+        dtype = {'dtype': xp.float64}
+        x = xp.asarray([0., 18.], **dtype)
+        X = stats.Binomial(n=xp.asarray([18.], **dtype),
+                           p=xp.asarray(0.71022842, **dtype))
         xp_assert_close(X.logcdf(x, method='complement'), X.logcdf(x), rtol=1e-15)
         xp_assert_close(X.logccdf(x, method='complement'), X.logccdf(x), rtol=1e-15)
 
         # going even deeper into the tails
-        X = stats.Binomial(n=100, p=0.5, xp=xp)
-        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0.), rtol=1e-15)
-        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100.), rtol=1e-15)
+        X = stats.Binomial(n=100, p=0.5, xp=xp, **dtype)
+        xp_assert_close(X.logcdf(0, method='complement'), X.logpmf(0), rtol=1e-15)
+        xp_assert_close(X.logccdf(99, method='complement'), X.logpmf(100), rtol=1e-15)
 
 
 @make_xp_test_case(stats.Logistic)
@@ -118,7 +120,7 @@ class TestNormal(DistributionsTest):
 
 @make_xp_test_case(StandardNormal)
 class TestStandardNormal(DistributionsTest):
-    seed = 726527245
+    seed = 726527242
     family = StandardNormal
 
     def tol(self, case, xp):

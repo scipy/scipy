@@ -1637,7 +1637,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
             xp_info = self._xp.__array_namespace_info__()
             inferred_dtype = xp_info.default_dtypes()['real floating']
             # see data-apis/array-api-compat/issues/489
-
             inferred_device = (xp_device(xp.asarray(0)) if is_torch(xp)  # skip device check # noqa: E501
                                else xp_info.default_device())
 
@@ -1986,7 +1985,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
                      str_pattern=str_pattern,
                      h=lambda u: xp.sign(u) * xp.abs(u)**(1 / other),
                      dh=lambda u: 1/other * xp.abs(u)**(1/other - 1),
-                     dtype=X._dtype,
                      xp=xp)
 
         return MonotonicTransformedDistribution(X, **funcs, increasing=True)
@@ -2042,7 +2040,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return MonotonicTransformedDistribution(self, **funcs, increasing=False)
 
     def __neg__(self):
-        return self * -1.
+        return self * -1
 
     def __abs__(self):
         return FoldedDistribution(self)
@@ -3554,7 +3552,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return None
 
         if standardize and order >= 3 and lmoment is not None:
-            lscale = self._lmoment_dispatch(2., methods=methods, **self._parameters)
+            lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
             if lscale is None:
                 return None
             lmoment = lmoment / lscale

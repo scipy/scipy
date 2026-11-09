@@ -228,9 +228,8 @@ class StandardNormal(Normal):
 
     def _logentropy_formula(self, **kwargs):
         xp = self._xp
-        pi = xp.asarray(xp.pi, dtype=self._dtype, device=self._device)
-        two = xp.full_like(pi, fill_value=2)
-        return xp.log1p(xp.log(2*pi)) - xp.log(two)
+        two = xp.asarray(2, dtype=self._dtype, device=self._device)
+        return xp.log1p(xp.log(two*xp.pi)) - xp.log(two)
 
     def _median_formula(self, **kwargs):
         return 0

@@ -166,7 +166,7 @@ def draw_distribution_from_family(family, rng, shape_options, proportions=None, 
         n_parameters = family._num_parameters(i)
         shapes = mutually_broadcastable_shapes(num_shapes=n_parameters,
                                                rng=rng, **shape_options)
-        result_shape = tuple(xp.broadcast_shapes(*shapes))
+        result_shape = xp.broadcast_shapes(*shapes)
         dist = family._draw(shapes, rng=rng, proportions=proportions,
                             i_parameterization=i, xp=xp)
     else:
@@ -1252,7 +1252,7 @@ def test_input_validation(xp):
 @make_xp_test_case(stats.Uniform)
 def test_rng_deepcopy_pickle(xp):
     # test behavior of `rng` attribute and copy behavior
-    kwargs = dict(a=[-1, 2], b=10, xp=xp)
+    kwargs = dict(a=xp.asarray([-1, 2]), b=xp.asarray(10))
     dist1 = Uniform(**kwargs)
     dist2 = deepcopy(dist1)
     dist3 = pickle.loads(pickle.dumps(dist1))
@@ -1347,7 +1347,7 @@ class TestAttributes:
 
     def test_iv_policy(self, xp):
         X = Uniform(a=0, b=1, xp=xp)
-        assert X.pdf(2.) == 0
+        assert X.pdf(2) == 0
 
         X.validation_policy = 'skip_all'
         assert X.pdf(xp.asarray(2.)) == 1
@@ -2319,7 +2319,7 @@ class TestPow:
         rng = np.random.default_rng(81345982345826)
 
         dtype = xp.float64  # stats.chi2 doesn't do float32
-        Y = Normal(xp=xp, dtype=dtype)**2.
+        Y = Normal(xp=xp, dtype=dtype)**2
         Y0 = stats.chi2(df=1)
 
         y = Y0.rvs(10, random_state=rng)
@@ -2358,7 +2358,7 @@ class TestOrderStatistic:
     def test_order_statistic(self, xp):
         rng = np.random.default_rng(7546349802439582)
         dtype = xp.float64
-        X = Uniform(a=xp.asarray(0., dtype=dtype), b=xp.asarray(1., dtype=dtype), xp=xp)
+        X = Uniform(a=0, b=1, dtype=dtype, xp=xp)
         n = 5
         r = np.asarray([[1], [3], [5]])
         Y = stats.order_statistic(X, n=n, r=xp.asarray(r))
@@ -2483,8 +2483,8 @@ class TestQuantileDefinedDistribution:
         TukeyLambda2 = stats.make_distribution(stats.tukeylambda)
 
         xp_dtype = xp.float64  # stats.tukeylambda only does float64
-        lam = 5.
-        X = TukeyLambda1(lam=xp.asarray(lam, dtype=xp_dtype), xp=xp)
+        lam = 5
+        X = TukeyLambda1(lam=lam, dtype=xp_dtype, xp=xp)
         Y = TukeyLambda2(lam=lam)
 
         x = np.linspace(-1/lam, 1/lam, 10)
@@ -2611,9 +2611,9 @@ class TestReprs:
         # provided relevant imports are made.
         from numpy import array  # noqa: F401
         from numpy import float32  # noqa: F401
-        from scipy.stats import abs, exp, log, order_statistic, truncate  # noqa: F401
-        from scipy.stats import Mixture, Normal  # noqa: F401
-        from scipy.stats._new_distributions import Uniform  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
+        from scipy.stats import Mixture, Normal # noqa: F401
+        from scipy.stats._new_distributions import Uniform # noqa: F401
         new_dist = eval(repr(dist))
         # A basic check that the distributions are the same
         sample1 = dist.sample(shape=10, rng=1234)
