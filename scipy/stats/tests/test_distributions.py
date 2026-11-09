@@ -832,10 +832,39 @@ class TestCrystalBall:
     #         return N*A*(B - x)**(1 - m)/(m - 1)
     #     return 1 - N*mp.sqrt(2*mp.pi)*mp.ncdf(-x)
     #
-    # logpdf = log(pdf), sf = 1 - cdf. ppf/isf by inverting the closed forms
-    # (power law: x = B - (p*(m - 1)/(N*A))**(1/(1 - m)) for p <= cdf(-beta);
-    # Gaussian: x = -sqrt(2)*erfinv(2*sf/(N*sqrt(2*pi)) - 1)), checked by
-    # evaluating cdf/sf at the result.
+    # def logpdf(x, beta, m):
+    #     x = mp.mpf(x)
+    #     beta, m, N, A, B = _consts(beta, m)
+    #     if x > -beta:
+    #         return mp.log(N) - x**2/2
+    #     return mp.log(N) + mp.log(A) - m*mp.log(B - x)
+    #
+    # def sf(x, beta, m):
+    #     x = mp.mpf(x)
+    #     beta, m, N, A, B = _consts(beta, m)
+    #     if x > -beta:
+    #         return N*mp.sqrt(2*mp.pi)*mp.ncdf(-x)
+    #     return 1 - cdf(x, beta, m)
+    #
+    # def _quantile(p, q, beta, m):
+    #     # p = cdf(x), q = sf(x) = 1 - p (both exact at this precision)
+    #     beta, m, N, A, B = _consts(beta, m)
+    #     pbeta = N*A*(B + beta)**(1 - m)/(m - 1)    # cdf(-beta)
+    #     if p <= pbeta:
+    #         # power law: p = N*A*(B - x)**(1 - m)/(m - 1)
+    #         return B - (p*(m - 1)/(N*A))**(1/(1 - m))
+    #     # Gaussian: q = N*sqrt(2*pi)*Phi(-x)
+    #     u = q/(N*mp.sqrt(2*mp.pi))
+    #     return -mp.sqrt(2)*mp.erfinv(2*u - 1)
+    #
+    # def ppf(p, beta, m):
+    #     p = mp.mpf(p)
+    #     return _quantile(p, 1 - p, beta, m)
+    #
+    # def isf(q, beta, m):
+    #     q = mp.mpf(q)
+    #     return _quantile(1 - q, q, beta, m)
+
     @pytest.mark.parametrize(
         'method, x, beta, m, ref, rtol',
         [# test cases for risk of (m/beta)**m overflow
