@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
 import scipy._external.array_api_extra as xpx
 from . import _basic
 from . import _ellip_harm
+from . import _lambertw
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
@@ -2519,8 +2520,26 @@ _special_funcs = (
         ),
         torch_native=False,
     ),
-    # Lambert w and related functions
-    # --
+    # Lambert W and related functions
+    _FuncInfo(
+        _lambertw.lambertw, ["z","k=0", "tol=1e-8"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+        ),
+        is_ufunc=False,
+        int_only=(False, True, False),
+        positive_only=(False, False, True),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.wrightomega, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("wrightomega", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     # Other special functions
     _FuncInfo(
         _ufuncs.binom, ["x", "y"],
