@@ -746,6 +746,17 @@ class TestMannWhitneyU:
                            method='asymptotic')
         xp_assert_equal(res.statistic, xp.astype(ref.statistic, xp.float32))
 
+    @pytest.mark.parametrize('offset', [0, 2**53])
+    @pytest.mark.parametrize('method', ['exact', 'auto'])
+    def test_gh26658_int64_precision(self, offset, method, xp):
+        # Premature float conversion of large int64 inputs collapsed
+        # distinct observations exceeding 2**53 into artificial ties.
+        x = xp.asarray([offset + i for i in range(4)], dtype=xp.int64)
+        y = xp.asarray([offset + i for i in range(4, 8)], dtype=xp.int64)
+        res = mannwhitneyu(x, y, alternative='two-sided', method=method)
+        xp_assert_equal(res.statistic, xp.asarray(0.0, dtype=xp.float64))
+        xp_assert_close(res.pvalue, xp.asarray(2 / 70, dtype=xp.float64), rtol=1e-14)
+
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative, xp):
         rng = np.random.default_rng(7600451795963068007)
