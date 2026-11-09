@@ -24,17 +24,20 @@ lazy_xp_modules = [special]
 
 
 def _fix_ref_dtype(ref, xp, dtypes):
-    # int64 promotes like float32 on torch with default dtype = float32
-    # cast reference if needed
+    # Match PyTorch's float32/complex64 default promotion behavior.
     if (
             is_torch(xp)
             and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
+        def cast(r):
+            dtype = np.complex64 if np.iscomplexobj(r) else np.float32
+            return np.asarray(r, dtype=dtype)
+
         if isinstance(ref, tuple):
-            ref = tuple(np.float32(r) for r in ref)
-        else:
-            ref = np.float32(ref)
+            return tuple(cast(r) for r in ref)
+        return cast(ref)
+
     return ref
 
 
@@ -383,7 +386,12 @@ def test_ufunc_kwargs(nfo):
         for needs_int in int_only
     ]
 
-    nout = ufunc.nout
+    nin, nout = ufunc.nin, ufunc.nout
+
+    resolved_dtypes = ufunc.resolve_dtypes(
+        tuple(arg.dtype for arg in args) + (None,) * nout
+    )
+    out_dtypes = resolved_dtypes[nin:]
 
     if nfo.is_elementwise:
         out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
@@ -392,18 +400,29 @@ def test_ufunc_kwargs(nfo):
         out_shapes = (shape,) if nout == 1 else shape
 
     if nout == 1:
-        out = np.empty(out_shapes[0])
+        out = np.empty(out_shapes[0], dtype=out_dtypes[0])
     else:
-        out = tuple(np.empty(shape) for shape in out_shapes)
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, out_dtypes)
+        )
 
     y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     # out= with out.dtype != args.dtype
+    lower_dtypes = [
+        np.complex64 if np.issubdtype(dtype, np.complexfloating)
+        else np.float32
+        for dtype in out_dtypes
+    ]
     if nout == 1:
-        out = np.empty(2, dtype=np.float32)
+        out = np.empty(out_shapes[0], dtype=lower_dtypes[0])
     else:
-        out = tuple(np.empty(2, dtype=np.float32) for _ in range(nout))
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, lower_dtypes)
+        )
 
     y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
@@ -416,6 +435,14 @@ def test_ufunc_kwargs(nfo):
 
     if func.__name__ in {"poisson_binom_cdf"}:
         # dtype=np.float32 not available due to mixed integer and floating point inputs.
+        return
+
+    if not any(
+            sig.split("->")[1] == "f" * nout
+            for sig in ufunc.types
+    ):
+        # dtype=np.float32 will not be available if there is no loop
+        # with float32 output.
         return
 
     # dtype=
