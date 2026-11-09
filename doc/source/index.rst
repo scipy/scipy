@@ -106,6 +106,7 @@ science, and engineering.
    Installing <https://scipy.org/install/>
    User Guide <tutorial/index>
    API reference <reference/index>
+   Array API <reference/array_api>
    Building from source <building/index>
    Development <dev/index>
    Release notes <release>
