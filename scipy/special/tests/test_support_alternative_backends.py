@@ -135,7 +135,11 @@ def _skip_or_tweak_alternative_backends(
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
-                                          'zeta', 'xlog1py'))
+                                          'zeta', 'xlog1py', 'eval_legendre',
+                                          'eval_chebyt', 'eval_chebyu',
+                                          'eval_laguerre', 'eval_hermite',
+                                          'eval_hermitenorm', 'eval_sh_chebyt',
+                                          'eval_sh_chebyu'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
