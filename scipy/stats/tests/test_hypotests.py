@@ -303,6 +303,20 @@ class TestMannWhitneyU:
         assert auto.pvalue != exact.pvalue
         assert auto.pvalue == asymptotic.pvalue
 
+    def test_large_int64_values_preserve_ordering(self, xp):
+        """Large exact integers must not be rounded before ranking."""
+        if not is_numpy(xp):
+            pytest.skip("This regression targets NumPy int64 precision.")
+
+        offset = 2**53
+        x = np.arange(offset, offset + 4, dtype=np.int64)
+        y = np.arange(offset + 4, offset + 8, dtype=np.int64)
+
+        for method in ("exact", "auto"):
+            result = mannwhitneyu(x, y, alternative="two-sided", method=method)
+            assert_equal(result.statistic, 0)
+            assert_allclose(result.pvalue, 1 / 35)
+
     # --- Test Basic Functionality ---
 
     x = [210.052110, 110.190630, 307.918612]
