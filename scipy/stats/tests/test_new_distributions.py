@@ -59,7 +59,7 @@ class TestBinomial(DistributionsTest):
         X_fun = getattr(X, fun)
         Y_fun = getattr(Y, fun.replace('ccdf', 'sf'))
         xp_assert_close(X_fun(x_xp, method=method), xp.asarray(Y_fun(x)))
-        xp_assert_close(X_fun(x_xp, method=method), X_fun(np.floor(x)))
+        xp_assert_close(X_fun(x_xp, method=method), X_fun(xp.floor(x_xp)))
 
     def test_gh23708_binomial_logcdf_method_complement(self, xp):
         # gh-23708 found that `logcdf` method='complement' was inaccurate in the tails

@@ -903,15 +903,15 @@ def _set_invalid_nan(f):
         circular = isinstance(self, CircularDistribution)
         discrete = isinstance(self, DiscreteDistribution)
         discrete_cdflike = discrete and method_name in cdflike
-        x = xp.asarray(x, device=device)
 
         # Ensure that argument is at least as precise as distribution
         # parameters, which are already at least floats. This will avoid issues
         # with raising integers to negative integer powers and failure to replace
         # invalid integers with NaNs.
-        if x.dtype != dtype:
+        if hasattr(x, 'dtype') and x.dtype != dtype:
             dtype = xp.result_type(x.dtype, dtype)
-            x = xp.asarray(x, dtype=dtype)
+
+        x = xp.asarray(x, dtype=dtype, device=device)
 
         # Broadcasting is slow. Do it only if necessary.
         if not x.shape == shape:
@@ -1065,7 +1065,9 @@ def _set_invalid_nan_property(f):
             # message could be more appropriate
             raise NotImplementedError(self._not_implemented)
 
-        res = xp.asarray(res)
+        # TODO: this should convert to desired dtype, and only once
+        # In principle, this could lose precision if default dtype is < self._dtype
+        res = xp.asarray(res, device=self._device)
         needs_copy = False
         dtype = res.dtype
 

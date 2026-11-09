@@ -1797,7 +1797,7 @@ class TestMakeDistribution:
         xp_assert_close(X.median(), xp.asarray(Y.median()))
         xp_assert_close(X.logpdf(x_np), xp.asarray(Y.logpdf(x)))
         xp_assert_close(X.pdf(x_np), xp.asarray(Y.pdf(x)))
-        xp_assert_close(X.logpmf(x), xp.asarray(Y.logpmf(x)))
+        xp_assert_close(X.logpmf(x_np), xp.asarray(Y.logpmf(x)))
         xp_assert_close(X.pmf(x_np), xp.asarray(Y.pmf(x)))
         xp_assert_close(X.logcdf(x_np), xp.asarray(Y.logcdf(x)))
         xp_assert_close(X.cdf(x_np), xp.asarray(Y.cdf(x)))
@@ -2380,11 +2380,11 @@ class TestOrderStatistic:
         xp_assert_close(Y.support()[1], xp.asarray(Y0.support()[1]))
         xp_assert_close(Y.pdf(y_xp), xp.asarray(Y0.pdf(y)))
         xp_assert_close(Y.cdf(y_xp, method='formula'),
-                        xp.asarray(Y.cdf(y, method='quadrature')))
+                        xp.asarray(Y.cdf(y_xp, method='quadrature')))
         xp_assert_close(Y.ccdf(y_xp, method='formula'),
-                        xp.asarray(Y.ccdf(y, method='quadrature')))
+                        xp.asarray(Y.ccdf(y_xp, method='quadrature')))
         xp_assert_close(Y.icdf(p_xp, method='formula'),
-                        xp.asarray(Y.icdf(p, method='inversion')))
+                        xp.asarray(Y.icdf(p_xp, method='inversion')))
         if is_numpy(xp):  # CuPy needs betainccinv
             xp_assert_close(Y.iccdf(p_xp, method='formula'),
                             xp.asarray(Y.iccdf(p, method='inversion')))
