@@ -1018,7 +1018,7 @@ cdef class TransformedDensityRejection(Method):
         cond2 = cond0 & cond1
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
-        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef const double[::1] u_view = np.ascontiguousarray(goodu)
         cdef double[::1] goodout = np.empty_like(u_view)
         if cond2.any():
             self._ppf_hat(&u_view[0], &goodout[0], len(goodu))
@@ -1595,7 +1595,7 @@ cdef class NumericalInversePolynomial(Method):
         cond2 = cond0 & cond1
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
-        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef const double[::1] u_view = np.ascontiguousarray(goodu)
         cdef double[::1] goodout = np.empty_like(u_view)
         if cond2.any():
             self._ppf(&u_view[0], &goodout[0], len(goodu))
@@ -2080,7 +2080,7 @@ cdef class NumericalInverseHermite(Method):
         cond2 = cond0 & cond1
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
-        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef const double[::1] u_view = np.ascontiguousarray(goodu)
         cdef double[::1] goodout = np.empty_like(u_view)
         if cond2.any():
             self._ppf(&u_view[0], &goodout[0], len(goodu))
@@ -2792,7 +2792,7 @@ cdef class DiscreteGuideTable(Method):
         goodu = argsreduce(cond2, u)[0]
         out = np.empty_like(u)
 
-        cdef double[::1] u_view = np.ascontiguousarray(goodu)
+        cdef const double[::1] u_view = np.ascontiguousarray(goodu)
         cdef double[::1] goodout = np.empty_like(u_view)
 
         if cond2.any():
