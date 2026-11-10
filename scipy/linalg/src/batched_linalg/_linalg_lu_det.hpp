@@ -99,25 +99,30 @@ CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT 
 }
 
 
+/// The type a determinant of T is computed and returned in: double precision for f32 and c64.
+template<typename T>
+using det_type_t = std::conditional_t<std::is_same_v<T, f32>, f64,
+                   std::conditional_t<std::is_same_v<T, c64>, c128, T>>;
+
+
 /**
  * @brief Determinant of one n-by-n matrix from its LU factorization.
+ *
+ * The product of the diagonal is accumulated and returned in det_type_t<T>, so that single
+ * precision input does not overflow or underflow in the product.
  *
  * @param[in,out] f_buf  Column-major n-by-n input; overwritten by ?getrf.
  * @param[out]    ipiv   Scratch of n elements for the pivot sequence.
  * @param[in]     n      Matrix dimension.
  * @param[out]    info   LAPACK info: 0 success; > 0 exactly singular; < 0 argument error.
- * @return The determinant; T(0) when @p info is nonzero.
+ * @return The determinant; zero when @p info is nonzero.
  */
 template<typename T>
-T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
+det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
 {
+    using acc_type = det_type_t<T>;
     lapack::getrf(n, n, f_buf, n, ipiv, info);
-    if (*info != 0) { return T(0); }
-
-    // Accumulate in double precision so that float32 and complex64 products do not
-    // overflow or underflow prematurely.
-    using acc_type = std::conditional_t<std::is_same_v<T, f32>, f64,
-                     std::conditional_t<std::is_same_v<T, c64>, c128, T>>;
+    if (*info != 0) { return acc_type(0); }
 
     acc_type det = acc_type(1);
     CBLAS_INT swaps = 0;
@@ -125,7 +130,7 @@ T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
         det *= static_cast<acc_type>(f_buf[k * (n + 1)]);  // diagonal entry (k, k), column-major
         if (ipiv[k] != k + 1) { swaps++; }
     }
-    return static_cast<T>((swaps % 2) ? -det : det);
+    return (swaps % 2) ? -det : det;
 }
 
 
@@ -187,7 +192,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
  * @brief Batched determinant, `linalg.det`.
  *
  * @param[in]  ap_a      Input array of shape (..., n, n), any strides.
- * @param[out] det_out   C-contiguous (...) buffer, one determinant per slice.
+ * @param[out] det_out   C-contiguous (...) buffer, one determinant per slice, in det_type_t<T>.
  * @param[in]  in_place  If true, @p ap_a is 2-D, contiguous in either order and writeable,
  *                       and is factored in place; det(A^T) = det(A).
  * @return ok; too_large if n does not fit CBLAS_INT; no_memory; lapack_error if ?getrf
@@ -195,7 +200,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
  */
 template<typename T>
 BatchStatus
-_det(PyArrayObject *ap_a, T *det_out, bool in_place)
+_det(PyArrayObject *ap_a, det_type_t<T> *det_out, bool in_place)
 {
     T *a_data = (T *)PyArray_DATA(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);

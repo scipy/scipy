@@ -1243,14 +1243,9 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
+    # Single precision input gives a double precision determinant, computed in double
+    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not overflow.
     det = _linalg_det(a1, overwrite_a)
-
-    # Promote single precision to double to prevent overflows
-    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    if det.dtype.char == 'f':
-        det = det.astype(np.float64)
-    elif det.dtype.char == 'F':
-        det = det.astype(np.complex128)
 
     # Return scalar for 2D input
     if det.ndim == 0:

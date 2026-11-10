@@ -893,8 +893,9 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // one determinant per slice: the batch dimensions only
-    OwnedArray ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum));
+    // one determinant per slice, so the batch dimensions only; double precision for single precision input
+    int det_typenum = (typenum == NPY_FLOAT32) ? NPY_FLOAT64 : (typenum == NPY_COMPLEX64) ? NPY_COMPLEX128 : typenum;
+    OwnedArray ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, det_typenum));
     if (!ap_det) { return PyErr_NoMemory(); }
 
     // A 2-D contiguous writeable input is the getrf workspace itself; det(A^T) = det(A), so
@@ -906,7 +907,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _det<T>(ap_a, static_cast<T *>(PyArray_DATA(ap_det.get())), in_place);
+        return _det<T>(ap_a, static_cast<det_type_t<T> *>(PyArray_DATA(ap_det.get())), in_place);
     });
     Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }

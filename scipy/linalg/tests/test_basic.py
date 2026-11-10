@@ -1812,6 +1812,17 @@ class TestInv:
 
 
 class TestDet:
+    @pytest.mark.parametrize("value, expected", [(1e38, 1e76), (1e-38, 1e-76)])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex64])
+    def test_single_precision_range(self, value, expected, dtype):
+        # The determinant of single precision input is computed and returned in double
+        # precision, so it neither overflows nor underflows the single precision range.
+        a = np.diag(np.full(2, value, dtype=dtype))
+        for x in (a, np.stack([a, a])):
+            d = det(x)
+            assert np.asarray(d).dtype == np.result_type(dtype, np.float64)
+            assert_allclose(d, expected, rtol=1e-6)
+
     def test_1x1_all_singleton_dims(self):
         a = np.array([[1]])
         deta = det(a)
