@@ -92,12 +92,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
     // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
-    std::size_t lwork_geqp3;
-    CBLAS_INT lwork_geqp3_int;
-    if (pivoting && (!checked_mul(3, N, &lwork_geqp3) || !checked_add(lwork_geqp3, 1, &lwork_geqp3) ||
-                     !checked_narrow<CBLAS_INT>(lwork_geqp3, &lwork_geqp3_int))) {
-        return BatchStatus::too_large;
-    }
+    if (pivoting && (3 * (std::size_t)N + 1 > (std::size_t)CBLAS_INT_MAX)) { return BatchStatus::too_large; }
 
     /*
      * Allocate buffer and slice into parts
@@ -135,25 +130,25 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      *      storing `R`. At the end `Q` is copied into a newly allocated array.
      *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
      */
-    std::size_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
-    std::size_t buf_size = 0, total, rwork_size = 0;
-    bool needs_buffer = !((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE);
-    if ((needs_buffer && !checked_mul(M, (mode == QR_mode::FULL) ? max_dim : N, &buf_size)) ||
-        !checked_add(lwork, tau_size, &total) || !checked_add(total, buf_size, &total) ||
-        ((pivoting && is_complex_v<T>) && !checked_mul(2, N, &rwork_size))) {
-        return BatchStatus::too_large;
-    }
+    // element counts are products of dimensions of existing arrays (A, and Q for mode == FULL),
+    // so they fit size_t
+    const std::size_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
+    const bool needs_buffer = !((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE);
+    const std::size_t buf_size = needs_buffer ? (std::size_t)M * ((mode == QR_mode::FULL) ? max_dim : N) : 0;
+    const std::size_t rwork_size = (pivoting && is_complex_v<T>) ? 2 * (std::size_t)N : 0;
 
-    auto buffer = alloc_workspace<T>(total);
+    auto buffer = alloc_workspace<T>(lwork + tau_size + buf_size);
     auto rwork = alloc_workspace<real_type>(rwork_size);   // `c/zgeqp3` needs rwork
     if (!buffer || !rwork) { return BatchStatus::no_memory; }
 
-    T *work = buffer.get();
-    T *tau_buffer = work + lwork;
-    T *data_A = tau_buffer + tau_size;
+    T *cursor = buffer.get();
+    T *work = cursor;       cursor += lwork;
+    T *tau_buffer = cursor; cursor += tau_size;
+    T *data_A = cursor;
 
     // -------------------------------------------------------------------
     // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     // -------------------------------------------------------------------
     T *slice_ptr_A = NULL, *slice_ptr_Q = NULL, *slice_ptr_R = NULL, *slice_ptr_tau = NULL;
     CBLAS_INT *slice_ptr_jpvt = NULL;
@@ -188,9 +183,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
          * the returned array is in F-order, hence bypassing the buffer avoids two redundant copies.
          */
         if ((!overwrite_a && mode != QR_mode::RAW_MODE) || mode == QR_mode::FULL) {
-            copy_strided_to_f(slice_ptr_A, data_A, M, N, strides[ndim-2], strides[ndim-1], M);
+            copy_strided_to_f(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1], M);
         } else if (!overwrite_a && mode == QR_mode::RAW_MODE) {
-            copy_strided_to_f(slice_ptr_A, slice_ptr_Q, M, N, strides[ndim-2], strides[ndim-1], M);
+            copy_strided_to_f(slice_ptr_Q, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1], M);
             data_A = slice_ptr_Q; // Add alias for easier to read codepaths later on.
         } else if (overwrite_a && (mode == QR_mode::RAW_MODE || mode == QR_mode::R || mode == QR_mode::ECONOMIC)) {
             data_A = slice_ptr_A;

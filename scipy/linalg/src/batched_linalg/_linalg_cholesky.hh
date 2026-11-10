@@ -77,6 +77,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     T *data_a = NULL;
 
     // Main loop over batch
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         // Ensure data is in the correct triangle of the F-ordered input data_a

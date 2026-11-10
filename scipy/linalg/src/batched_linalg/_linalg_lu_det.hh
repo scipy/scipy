@@ -203,7 +203,7 @@ int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS
             // 2D F-contiguous: use input directly (no copy)
             f_buf = const_cast<T*>(slice_in);
         } else {
-            copy_strided_to_f(slice_in, scratch, m, n, s0, s1, m);
+            copy_strided_to_f(scratch, slice_in, m, n, s0, s1, m);
             f_buf = scratch;
         }
 
@@ -314,7 +314,7 @@ int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *s
         if (ctx.overwrite_a) {
             f_buf = const_cast<T*>(slice_in);
         } else {
-            copy_strided_to_f(slice_in, scratch, n, n, s0, s1, n);
+            copy_strided_to_f(scratch, slice_in, n, n, s0, s1, n);
             f_buf = scratch;
         }
 

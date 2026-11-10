@@ -323,13 +323,10 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // maximal `kl` and `ku` to find the minimal size the array will need to
     // have. To avoid having to call `bandwidth` twice per slice, the results
     // are stored in `ks`: lower bandwidths first, then upper bandwidths.
-    std::size_t ks_count, irwork_count;
-    if (!checked_mul(2, outer_size, &ks_count) || !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
-        return BatchStatus::too_large;
-    }
-    auto ks = alloc_workspace<int64_t>(ks_count);
+    // element counts are products of dimensions of existing arrays, so they fit size_t
+    auto ks = alloc_workspace<int64_t>(2 * (std::size_t)outer_size);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);
     if (!ks || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
     int64_t ldab_max = 0;
@@ -338,8 +335,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
     // every slice's ldab = 2*kl + ku + 1 <= ldab_max is passed to LAPACK
-    CBLAS_INT int_ldab_max;
-    if (!checked_narrow<CBLAS_INT>(ldab_max, &int_ldab_max)) { return BatchStatus::too_large; }
+    if (ldab_max > CBLAS_INT_MAX) { return BatchStatus::too_large; }
 
     /*
      * Chop up buffer in parts:
@@ -353,21 +349,20 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
      * - `work` is needed for `gbcon` (fixed size)
      * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
      */
-    std::size_t ab_count, work_count, b_count, buf_count;
-    if (!checked_mul(ldab_max, n, &ab_count) || !checked_mul(3, n, &work_count) ||
-        !checked_mul(overwrite_b ? 0 : n, nrhs, &b_count) ||
-        !checked_add(ab_count, work_count, &buf_count) || !checked_add(buf_count, b_count, &buf_count)) {
-        return BatchStatus::too_large;
-    }
-    auto buffer = alloc_workspace<T>(buf_count);
+    // ldab_max <= 3*n, so these counts are bounded by the size of `a` as well
+    const std::size_t ab_count = (std::size_t)ldab_max * n, work_count = 3 * (std::size_t)n;
+    const std::size_t b_count = overwrite_b ? 0 : (std::size_t)n * nrhs;
+    auto buffer = alloc_workspace<T>(ab_count + work_count + b_count);
     if (!buffer) { return BatchStatus::no_memory; }
 
     // Chop up buffer
-    T *ab = buffer.get();
-    T *work = ab + ab_count;
-    T *b_data = overwrite_b ? bm_data : work + work_count;
+    T *cursor = buffer.get();
+    T *ab = cursor;   cursor += ab_count;
+    T *work = cursor; cursor += work_count;
+    T *b_data = overwrite_b ? bm_data : cursor;
 
     // Main loop traversal, taken from `_solve`
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         T* slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
@@ -378,7 +373,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
         if (!overwrite_b) {
             T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
-            copy_strided_to_f(slice_ptr_b, b_data, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
+            copy_strided_to_f(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
         // NB. `overwrite_b` is only set when the input is 2D F-ordered, so no copy needed then.
         // A generalization to ndim > 2 will also require computing the pointer here.
@@ -455,10 +450,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     if (lwork_sytrf < 0) { return BatchStatus::too_large; }
 
     // gecon needs lwork of at least 4*n
-    std::size_t lwork_gecon;
     CBLAS_INT lwork;
-    if (!checked_mul(4, n, &lwork_gecon) ||
-        !checked_narrow<CBLAS_INT>(std::max(lwork_gecon, (std::size_t)lwork_sytrf), &lwork)) {
+    if (!checked_narrow<CBLAS_INT>(std::max(4 * (std::size_t)n, (std::size_t)lwork_sytrf), &lwork)) {
         return BatchStatus::too_large;
     }
 
@@ -475,24 +468,19 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions
      */
-    std::size_t nn, nb, n2, buf_count, irwork_count;
-    if (!checked_mul(n, n, &nn) || !checked_mul(n, nrhs, &nb) || !checked_mul(2, n, &n2) ||
-        !checked_add(overwrite_a ? 0 : nn, overwrite_b ? 0 : nb, &buf_count) ||
-        !checked_add(buf_count, n2, &buf_count) || !checked_add(buf_count, lwork, &buf_count) ||
-        !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
-        return BatchStatus::too_large;
-    }
-
-    auto buffer = alloc_workspace<T>(buf_count);
+    // element counts are products of dimensions of existing arrays, so they fit size_t
+    const std::size_t nn = (std::size_t)n * n, nb = (std::size_t)n * nrhs, n2 = 2 * (std::size_t)n;
+    auto buffer = alloc_workspace<T>((overwrite_a ? 0 : nn) + (overwrite_b ? 0 : nb) + n2 + lwork);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);   // {ge,po,tr}con need rwork or iwork
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);   // {ge,po,tr}con need rwork or iwork
     if (!buffer || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
-    T *data = Am_data, *data_b = ret_data, *cursor = buffer.get();
+    T *cursor = buffer.get();
+    T *data = Am_data, *data_b = ret_data;
     if (!overwrite_a) { data = cursor; cursor += nn; }
     if (!overwrite_b) { data_b = cursor; cursor += nb; }
-    T *work2 = cursor;
-    T *work = cursor + n2;
+    T *work2 = cursor; cursor += n2;
+    T *work = cursor;
 
     // normalize the structure detection inputs
     if (structure == St::POS_DEF) {
@@ -512,18 +500,19 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     }
 
     // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
         if (!overwrite_a) {
             // copy the slice
-            copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
+            copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
         }
 
         if (!overwrite_b) {
             // copy the r.h.s, too;
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-            copy_strided_to_f(slice_ptr_b, data_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
+            copy_strided_to_f(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
 
         // detect the structure if not given
@@ -616,7 +605,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
+                        copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
                         init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the general solver

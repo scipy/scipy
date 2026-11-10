@@ -10,7 +10,6 @@
 #include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
-#include "wrapper_helpers.hpp"   /* wrapper::py_ref */
 #include "_common_array_utils.hh"
 
 #include "_linalg_cholesky.hh"
@@ -79,13 +78,17 @@ set_batch_error(BatchStatus status, const char *func) {
             return PyErr_Format(PyExc_MemoryError, "scipy.linalg.%s: could not allocate memory.", func);
         case BatchStatus::too_large:
             return PyErr_Format(PyExc_ValueError,
-                "scipy.linalg.%s: the array is too large for the %d-bit integers of the LAPACK "
-                "library; build SciPy with ILP64 support.", func, (int)(8 * sizeof(CBLAS_INT)));
+                "scipy.linalg.%s: a dimension or workspace size exceeds the range of the %d-bit "
+                "integers of the LAPACK library%s.", func, (int)(8 * sizeof(CBLAS_INT)),
+                sizeof(CBLAS_INT) < 8 ? "; SciPy built with ILP64 support can handle it" : "");
         case BatchStatus::lapack_query_failed:
             return PyErr_Format(PyExc_RuntimeError, "scipy.linalg.%s: the LAPACK workspace query failed.", func);
-        default:
+        case BatchStatus::bad_dtype:
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
+        case BatchStatus::ok:
+            break;
     }
+    return PyErr_Format(PyExc_SystemError, "scipy.linalg.%s: no error to report.", func);
 }
 
 
@@ -118,24 +121,27 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // The output: a new array, or the input array itself when overwriting it
-    wrapper::py_ref ap_Ainv;
+    OwnedArray ap_Ainv;
     if (overwrite_a) {
         Py_INCREF(ap_Am);
-        ap_Ainv = wrapper::py_ref(ap_Am);
+        ap_Ainv.reset(ap_Am);
     }
     else {
-        ap_Ainv = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum));
+        ap_Ainv.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum));
         if (!ap_Ainv) { return PyErr_NoMemory(); }
     }
 
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _inverse<T>(ap_Am, ap_Ainv.data<T>(), structure, lower, overwrite_a, vec_status);
+        return _inverse<T>(ap_Am, static_cast<T *>(PyArray_DATA(ap_Ainv.get())), structure, lower, overwrite_a, vec_status);
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "inv"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_Ainv.release()), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return(ap_Ainv.release()), ret_lst);
 }
 
 
@@ -197,24 +203,27 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // The output: a new array, or the input array `b` itself when overwriting it
-    wrapper::py_ref ap_x;
+    OwnedArray ap_x;
     if (overwrite_b) {
         Py_INCREF(ap_b);
-        ap_x = wrapper::py_ref(ap_b);
+        ap_x.reset(ap_b);
     }
     else {
-        ap_x = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum));
+        ap_x.reset((PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum));
         if (!ap_x) { return PyErr_NoMemory(); }
     }
 
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _solve<T>(ap_Am, ap_b, ap_x.data<T>(), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+        return _solve<T>(ap_Am, ap_b, static_cast<T *>(PyArray_DATA(ap_x.get())), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "solve"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_x.release()), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return(ap_x.release()), ret_lst);
 }
 
 
@@ -306,30 +315,30 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
      *
      * - jpvt: only allocated if `pivoting` is set.
      */
-    wrapper::py_ref ap_Q, ap_R, ap_tau, ap_jpvt;
+    OwnedArray ap_Q, ap_R, ap_tau, ap_jpvt;
 
     if (mode != QR_mode::R) {
         if (!overwrite_a || mode == QR_mode::FULL) {
-            ap_Q = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum));
+            ap_Q.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum));
             if (!ap_Q) { return PyErr_NoMemory(); }
         } else {
             Py_INCREF(ap_A);
-            ap_Q = wrapper::py_ref(ap_A);
+            ap_Q.reset(ap_A);
         }
     }
 
     if (mode == QR_mode::RAW_MODE || mode == QR_mode::ECONOMIC || (!overwrite_a && (mode == QR_mode::R || mode == QR_mode::FULL))) {
         // Return C-ordered object, hence `0` flag. Already pre-fill with zeros for efficiency.
-        ap_R = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0));
+        ap_R.reset((PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0));
         if (!ap_R) { return PyErr_NoMemory(); }
     } else {
         Py_INCREF(ap_A);
-        ap_R = wrapper::py_ref(ap_A);
+        ap_R.reset(ap_A);
     }
 
     if (mode == QR_mode::RAW_MODE) {
         shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
-        ap_tau = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum)); // Just a vector, so `ndim-1`.
+        ap_tau.reset((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum)); // Just a vector, so `ndim-1`.
         if (!ap_tau) { return PyErr_NoMemory(); }
 
         /*
@@ -355,21 +364,24 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Allocate a C-ordered array, (hence the `0` magic number).
     if (pivoting) {
         shape_Q[ndim-2] = N;
-        ap_jpvt = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0));
+        ap_jpvt.reset((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0));
         if (!ap_jpvt) { return PyErr_NoMemory(); }
     }
 
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         return _qr<T>(ap_A, ap_Q.get(), ap_R.get(), ap_tau.get(), ap_jpvt.get(), overwrite_a, mode, pivoting, vec_status);
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "qr"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
-    PyObject *ret_Q = (mode != QR_mode::R) ? PyArray_Return((PyArrayObject *)ap_Q.release()) : Py_NewRef(Py_None);
-    PyObject *ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return((PyArrayObject *)ap_tau.release()) : Py_NewRef(Py_None);
-    PyObject *ret_jpvt = pivoting ? PyArray_Return((PyArrayObject *)ap_jpvt.release()) : Py_NewRef(Py_None);
-    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return((PyArrayObject *)ap_R.release()), ret_tau, ret_jpvt, ret_lst);
+    PyObject *ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q.release()) : Py_NewRef(Py_None);
+    PyObject *ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return(ap_tau.release()) : Py_NewRef(Py_None);
+    PyObject *ret_jpvt = pivoting ? PyArray_Return(ap_jpvt.release()) : Py_NewRef(Py_None);
+    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R.release()), ret_tau, ret_jpvt, ret_lst);
 }
 
 
@@ -419,42 +431,45 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
         shape_1[i] = PyArray_DIM(ap_Am, i);
     }
     shape_1[ndim - 2] = k;
-    wrapper::py_ref ap_S((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S));
+    OwnedArray ap_S((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S));
     if (!ap_S) { return PyErr_NoMemory(); }
 
     char jobz = compute_uv ? (full_matrices ? 'A' : 'S') : 'N';
 
     // U.shape = (..., m, m) or (..., m, k) or not referenced (for jobz='N')
     // Vh.shape = (..., n, n) or (..., k, n) or not referenced (for jobz='N')
-    wrapper::py_ref ap_U, ap_Vh;
+    OwnedArray ap_U, ap_Vh;
     if (jobz != 'N') {
         npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
         u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
         shape_1[ndim-2] = u_shape0;
         shape_1[ndim-1] = u_shape1;
-        ap_U = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
+        ap_U.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
         if (!ap_U) { return PyErr_NoMemory(); }
 
         shape_1[ndim-2] = vh_shape0;
         shape_1[ndim-1] = vh_shape1;
-        ap_Vh = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
+        ap_Vh.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
         if (!ap_Vh) { return PyErr_NoMemory(); }
     }
 
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         return _svd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, use_gesdd, overwrite_a, vec_status);
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "svd"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (compute_uv) {
-        return Py_BuildValue("NNNN", PyArray_Return((PyArrayObject *)ap_U.release()),
-                                     PyArray_Return((PyArrayObject *)ap_S.release()),
-                                     PyArray_Return((PyArrayObject *)ap_Vh.release()), ret_lst);
+        return Py_BuildValue("NNNN", PyArray_Return(ap_U.release()),
+                                     PyArray_Return(ap_S.release()),
+                                     PyArray_Return(ap_Vh.release()), ret_lst);
     }
-    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_S.release()), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return(ap_S.release()), ret_lst);
 }
 
 
@@ -909,24 +924,27 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // The output: a new zero-filled C-ordered array, or the input array itself when overwriting it
-    wrapper::py_ref ap_Cm;
+    OwnedArray ap_Cm;
     if (overwrite_a) {
         Py_INCREF(ap_Am);
-        ap_Cm = wrapper::py_ref(ap_Am);
+        ap_Cm.reset(ap_Am);
     }
     else {
-        ap_Cm = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0));
+        ap_Cm.reset((PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0));
         if (!ap_Cm) { return PyErr_NoMemory(); }
     }
 
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         return _cholesky<T>(ap_Am, ap_Cm.get(), lower, overwrite_a, clean, vec_status);
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "cholesky"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_Cm.release()), ret_lst);
+    return Py_BuildValue("NN", PyArray_Return(ap_Cm.release()), ret_lst);
 }
 
 
@@ -1003,12 +1021,11 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
 
     CBLAS_INT m, n;
-    std::size_t scratch_count;
-    if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n) ||
-        !checked_mul(m, n, &scratch_count)) {
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
         return set_batch_error(BatchStatus::too_large, "lu");
     }
     CBLAS_INT minmn = m < n ? m : n;
+    const std::size_t scratch_count = (std::size_t)m * n;   // the size of a slice of `a`
 
     npy_intp num_of_slices = 1;
     for (int i = 0; i < ndim - 2; i++) { num_of_slices *= shape[i]; }
@@ -1021,7 +1038,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // perm (..., m)
-    wrapper::py_ref ap_perm((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32));
+    OwnedArray ap_perm((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32));
     if (!ap_perm) { return PyErr_NoMemory(); }
 
     LU_Context ctx = {};
@@ -1030,12 +1047,12 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ctx.num_of_slices = num_of_slices;
     ctx.m = m;
     ctx.n = n;
-    ctx.perm = ap_perm.data<CBLAS_INT>();
+    ctx.perm = static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get()));
     ctx.ndim = ndim;
     ctx.permute_l = (bool)permute_l;
     ctx.overwrite_a = false;
 
-    wrapper::py_ref ap_l, ap_u;
+    OwnedArray ap_l, ap_u;
     npy_intp l_shape[LU_MAX_NDIM], u_shape[LU_MAX_NDIM];
     std::copy(shape, shape + ndim, l_shape);
     std::copy(shape, shape + ndim, u_shape);
@@ -1047,26 +1064,28 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         Py_INCREF(ap_a);
         if (m > n) {
             // Tall: L (m x n) is large — reuse input. Allocate U (n x n).
-            ap_l = wrapper::py_ref(ap_a);
+            ap_l.reset(ap_a);
             u_shape[ndim - 2] = minmn;
-            ap_u = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
+            ap_u.reset((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
         } else {
             // Fat/square: U (m x n) is large — reuse input. Allocate L (m x m).
-            ap_u = wrapper::py_ref(ap_a);
+            ap_u.reset(ap_a);
             l_shape[ndim - 1] = minmn;
-            ap_l = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
+            ap_l.reset((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
         }
     } else {
         // Allocate output arrays: L (..., m, minmn), U (..., minmn, n)
         l_shape[ndim - 1] = minmn;
         u_shape[ndim - 2] = minmn;
-        ap_l = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
-        ap_u = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
+        ap_l.reset((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
+        ap_u.reset((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
     }
     if (!ap_l || !ap_u) { return PyErr_NoMemory(); }
 
     int info = 0;
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         // slice_info: per-slice getrf info (> 0: exactly singular); not yet surfaced to Python
         auto scratch = alloc_workspace<T>(ctx.overwrite_a ? 0 : scratch_count);
@@ -1074,9 +1093,10 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
         if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
         ctx.ipiv = ipiv.get();
-        info = lu_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), ap_l.data<T>(), ap_u.data<T>(), scratch.get(), slice_info.get());
+        info = lu_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), static_cast<T *>(PyArray_DATA(ap_l.get())), static_cast<T *>(PyArray_DATA(ap_u.get())), scratch.get(), slice_info.get());
         return BatchStatus::ok;
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "lu"); }
     if (info < 0) {
         return PyErr_Format(PyExc_ValueError, "scipy.linalg.lu: internal error, getrf returned info = %d.", info);
@@ -1090,12 +1110,12 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         // always (ndarray, ndarray, ndarray) — avoids Optional in type stubs.
         // int32 since the array has zero elements; no overflow concern.
         npy_intp zero = 0;
-        ap_perm = wrapper::py_ref((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
+        ap_perm.reset((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
         if (!ap_perm) { return PyErr_NoMemory(); }
     }
-    return Py_BuildValue("NNN", PyArray_Return((PyArrayObject *)ap_perm.release()),
-                                PyArray_Return((PyArrayObject *)ap_l.release()),
-                                PyArray_Return((PyArrayObject *)ap_u.release()));
+    return Py_BuildValue("NNN", PyArray_Return(ap_perm.release()),
+                                PyArray_Return(ap_l.release()),
+                                PyArray_Return(ap_u.release()));
 }
 
 
@@ -1134,10 +1154,10 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     CBLAS_INT n;
-    std::size_t scratch_count;
-    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n) || !checked_mul(n, n, &scratch_count)) {
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
         return set_batch_error(BatchStatus::too_large, "det");
     }
+    const std::size_t scratch_count = (std::size_t)n * n;   // the size of a slice of `a`
 
     npy_intp num_of_slices = 1;
     for (int i = 0; i < ndim - 2; i++) { num_of_slices *= shape[i]; }
@@ -1150,7 +1170,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // Allocate output det array (...,) — batch dimensions only
-    wrapper::py_ref ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum));
+    OwnedArray ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum));
     if (!ap_det) { return PyErr_NoMemory(); }
 
     LU_Context ctx = {};
@@ -1172,7 +1192,9 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     int info = 0;
-    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         // slice_info: per-slice getrf info (> 0: exactly singular, so the determinant is exactly
         // zero rather than numerically small); not yet surfaced to Python
@@ -1181,15 +1203,16 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
         if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
         ctx.ipiv = ipiv.get();
-        info = det_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), ap_det.data<T>(), scratch.get(), slice_info.get());
+        info = det_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), static_cast<T *>(PyArray_DATA(ap_det.get())), scratch.get(), slice_info.get());
         return BatchStatus::ok;
     });
+    Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }
     if (info < 0) {
         return PyErr_Format(PyExc_ValueError, "scipy.linalg.det: internal error, getrf returned info = %d.", info);
     }
 
-    return ap_det.release();
+    return (PyObject *)ap_det.release();
 }
 
 
@@ -1235,15 +1258,12 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp num_slices = 1;
     for (int i = 0; i < batch_ndim; i++) { num_slices *= shape[i]; }
 
-    PyArrayObject *ap_lb = (PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64);
-    PyArrayObject *ap_ub = (PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64);
-    if (!ap_lb || !ap_ub) {
-        Py_XDECREF(ap_lb); Py_XDECREF(ap_ub);
-        return PyErr_NoMemory();
-    }
+    OwnedArray ap_lb((PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64));
+    OwnedArray ap_ub((PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64));
+    if (!ap_lb || !ap_ub) { return PyErr_NoMemory(); }
 
-    int64_t *lb_data = (int64_t *)PyArray_DATA(ap_lb);
-    int64_t *ub_data = (int64_t *)PyArray_DATA(ap_ub);
+    int64_t *lb_data = static_cast<int64_t *>(PyArray_DATA(ap_lb.get()));
+    int64_t *ub_data = static_cast<int64_t *>(PyArray_DATA(ap_ub.get()));
     const char *a_data = static_cast<const char *>(PyArray_DATA(ap_a));
 
     auto each_slice = [&](auto tag) {
@@ -1275,7 +1295,6 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         case NPY_COMPLEX64:   each_slice(c64{});        break;
         case NPY_COMPLEX128:  each_slice(c128{});       break;
         default:
-            Py_DECREF(ap_lb); Py_DECREF(ap_ub);
             PyErr_SetString(PyExc_TypeError, "Unsupported dtype.");
             return NULL;
     }
@@ -1285,11 +1304,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         // TODO: use PyLong_FromInt64 from py314+
         PyObject *lb_obj = PyLong_FromSsize_t((Py_ssize_t)lb_data[0]);
         PyObject *ub_obj = PyLong_FromSsize_t((Py_ssize_t)ub_data[0]);
-        Py_DECREF(ap_lb); Py_DECREF(ap_ub);
         return Py_BuildValue("NN", lb_obj, ub_obj);
     }
 
-    return Py_BuildValue("NN", (PyObject *)ap_lb, (PyObject *)ap_ub);
+    return Py_BuildValue("NN", (PyObject *)ap_lb.release(), (PyObject *)ap_ub.release());
 }
 
 

@@ -29,11 +29,13 @@ template <class T> using irwork_t = typename std::conditional<is_complex_v<T>, r
 
 /**
  * @brief Outcome of a whole batched call, as opposed to the per-slice SliceStatus.
+ *
+ * A failing slice does not fail the call: drivers record it in the SliceStatusVec and return ok.
  */
 enum class BatchStatus {
     ok,
     no_memory,            ///< A workspace allocation failed.
-    too_large,            ///< A size overflows size_t, or a LAPACK argument does not fit CBLAS_INT.
+    too_large,            ///< A dimension or workspace size passed to LAPACK does not fit CBLAS_INT.
     lapack_query_failed,  ///< A LAPACK workspace query returned a nonzero info.
     bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
 };
@@ -57,7 +59,7 @@ using Workspace = std::unique_ptr<T[], PyMemRawFree>;
 /**
  * @brief Allocate an uninitialized workspace array.
  *
- * @param count  Number of elements of type T.
+ * @param count  Number of elements of type T; 0 gives a valid pointer to no elements.
  * @return An owning pointer to the array; empty if `count * sizeof(T)` overflows size_t or the
  *         allocation fails.
  */
@@ -70,35 +72,17 @@ Workspace<T> alloc_workspace(std::size_t count) noexcept
 
 
 /**
- * @brief Multiply two element counts, detecting overflow.
- *
- * @param a    First factor.
- * @param b    Second factor.
- * @param out  Receives `a * b`; written only on success.
- * @return true if the product fits in size_t.
+ * @brief Deleter that releases a reference to a NumPy array with Py_XDECREF.
  */
-inline bool checked_mul(std::size_t a, std::size_t b, std::size_t *out) noexcept
-{
-    if (b != 0 && a > SIZE_MAX / b) { return false; }
-    *out = a * b;
-    return true;
-}
+struct PyArrayDecref {
+    void operator()(PyArrayObject *p) const noexcept { Py_XDECREF(p); }
+};
 
 
 /**
- * @brief Add two element counts, detecting overflow.
- *
- * @param a    First term.
- * @param b    Second term.
- * @param out  Receives `a + b`; written only on success.
- * @return true if the sum fits in size_t.
+ * @brief Owning reference to a NumPy array; `release()` hands the reference to the caller.
  */
-inline bool checked_add(std::size_t a, std::size_t b, std::size_t *out) noexcept
-{
-    if (a > SIZE_MAX - b) { return false; }
-    *out = a + b;
-    return true;
-}
+using OwnedArray = std::unique_ptr<PyArrayObject, PyArrayDecref>;
 
 
 /**
@@ -126,8 +110,9 @@ bool checked_narrow(From v, To *out) noexcept
 /**
  * @brief Call a generic callable with a value of the C++ type matching a NumPy dtype.
  *
- * The call runs with the Python thread state detached (Py_BEGIN_ALLOW_THREADS), so @p f must not
- * use the Python C API.
+ * Callers run this with the thread state detached (Py_BEGIN_ALLOW_THREADS), so @p f may read
+ * PyArrayObject fields (PyArray_DATA, PyArray_SHAPE, ...) but must not create objects, change
+ * reference counts or set exceptions.
  *
  * @param typenum  NumPy type number; NPY_FLOAT32, NPY_FLOAT64, NPY_COMPLEX64 and NPY_COMPLEX128 are
  *                 dispatched.
@@ -139,21 +124,17 @@ bool checked_narrow(From v, To *out) noexcept
 template <class F>
 BatchStatus dispatch_dtype(int typenum, F &&f) noexcept
 {
-    BatchStatus status = BatchStatus::bad_dtype;
-    Py_BEGIN_ALLOW_THREADS
     try {
         switch (typenum) {
-            case NPY_FLOAT32:    status = f(f32{});  break;
-            case NPY_FLOAT64:    status = f(f64{});  break;
-            case NPY_COMPLEX64:  status = f(c64{});  break;
-            case NPY_COMPLEX128: status = f(c128{}); break;
-            default:             break;
+            case NPY_FLOAT32:    return f(f32{});
+            case NPY_FLOAT64:    return f(f64{});
+            case NPY_COMPLEX64:  return f(c64{});
+            case NPY_COMPLEX128: return f(c128{});
+            default:             return BatchStatus::bad_dtype;
         }
     } catch (const std::bad_alloc &) {
-        status = BatchStatus::no_memory;
+        return BatchStatus::no_memory;
     }
-    Py_END_ALLOW_THREADS
-    return status;
 }
 
 
@@ -304,8 +285,8 @@ T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, n
 /**
  * @brief Copy a strided m-by-n matrix into a column-major buffer.
  *
- * @param src  First element of the source matrix.
  * @param dst  Column-major destination; element (i, j) is written to `dst[i + j*ld]`.
+ * @param src  First element of the source matrix.
  * @param m    Number of rows.
  * @param n    Number of columns.
  * @param s0   Byte stride between consecutive rows of @p src; may be negative.
@@ -313,7 +294,7 @@ T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, n
  * @param ld   Leading dimension of @p dst, at least @p m.
  */
 template<typename T>
-void copy_strided_to_f(const T *src, T *dst, npy_intp m, npy_intp n, npy_intp s0, npy_intp s1, npy_intp ld) noexcept
+void copy_strided_to_f(T *dst, const T *src, npy_intp m, npy_intp n, npy_intp s0, npy_intp s1, npy_intp ld) noexcept
 {
     const char *base = reinterpret_cast<const char *>(src);
     // walk the source along its smaller stride
@@ -332,20 +313,6 @@ void copy_strided_to_f(const T *src, T *dst, npy_intp m, npy_intp n, npy_intp s0
             for (npy_intp i = 0; i < m; i++) {
                 dst_col[i] = *reinterpret_cast<const T *>(src_col + i * s0);
             }
-        }
-    }
-}
-
-
-/*
- * Copy n-by-m slice from slice_ptr to dst.
- */
-template<typename T>
-void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1) {
-
-    for (npy_intp i = 0; i < n; i++) {
-        for (npy_intp j = 0; j < m; j++) {
-            dst[i * m + j] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));
         }
     }
 }

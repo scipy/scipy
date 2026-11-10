@@ -246,10 +246,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     if ((lwork_getri < 0) || (lwork_sytrf < 0)) { return BatchStatus::too_large; }
 
     // gecon needs lwork of at least 4*n
-    std::size_t lwork_gecon;
     CBLAS_INT lwork;
-    if (!checked_mul(4, n, &lwork_gecon) ||
-        !checked_narrow<CBLAS_INT>(std::max({lwork_gecon, (std::size_t)lwork_getri, (std::size_t)lwork_sytrf}), &lwork)) {
+    if (!checked_narrow<CBLAS_INT>(std::max({4 * (std::size_t)n, (std::size_t)lwork_getri, (std::size_t)lwork_sytrf}), &lwork)) {
         return BatchStatus::too_large;
     }
 
@@ -277,21 +275,18 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      * and `ret_data` will simply contain the result from the LAPACK call.
      *
      */
-    std::size_t nn, buf_count, irwork_count;
-    if (!checked_mul(n, n, &nn) ||
-        !checked_add(overwrite_a ? 0 : nn, lwork, &buf_count) ||
-        !checked_mul(is_complex_v<T> ? 3 : 1, n, &irwork_count)) {
-        return BatchStatus::too_large;
-    }
-
-    auto buffer = alloc_workspace<T>(buf_count);
+    // element counts are products of dimensions of existing arrays, so they fit size_t
+    const std::size_t nn = (std::size_t)n * n;
+    auto buffer = alloc_workspace<T>((overwrite_a ? 0 : nn) + lwork);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>(irwork_count);   // {ge,po,tr}con need rwork or iwork
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);   // {ge,po,tr}con need rwork or iwork
     if (!buffer || !ipiv || !irwork) { return BatchStatus::no_memory; }
 
     // Chop buffer into parts: the slice (unless working in place), then LAPACK's work array
-    T *data = overwrite_a ? ret_data : buffer.get();
-    T *work = overwrite_a ? buffer.get() : buffer.get() + nn;
+    T *cursor = buffer.get();
+    T *data = ret_data;
+    if (!overwrite_a) { data = cursor; cursor += nn; }
+    T *work = cursor;
 
     /*
      * Normalize the structure detection inputs.
@@ -314,12 +309,13 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     /*
      * Main loop to traverse the slices.
+     * A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
      */
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
 
         if (!overwrite_a) {
-            copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
+            copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
         }
 
         // detect the structure if not given
@@ -415,7 +411,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_strided_to_f(slice_ptr, data, n, n, strides[ndim-2], strides[ndim-1], n);
+                        copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
                         init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the symmetric solver

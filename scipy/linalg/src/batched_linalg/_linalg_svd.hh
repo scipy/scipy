@@ -128,48 +128,39 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
-    std::size_t data_size = 0, u_size, vh_size, bufsize;
-    if ((!overwrite_a && !checked_mul(m, n, &data_size)) ||
-        !checked_mul(u_shape0, u_shape1, &u_size) || !checked_mul(vh_shape0, vh_shape1, &vh_size) ||
-        !checked_add(data_size, lwork, &bufsize) || !checked_add(bufsize, u_size, &bufsize) ||
-        !checked_add(bufsize, vh_size, &bufsize)) {
-        return BatchStatus::too_large;
-    }
+    // element counts are products of dimensions of existing arrays (A, U, Vh), so they fit size_t
+    const std::size_t data_size = overwrite_a ? 0 : (std::size_t)m * n;
+    const std::size_t u_size = (std::size_t)u_shape0 * u_shape1, vh_size = (std::size_t)vh_shape0 * vh_shape1;
 
     // gesdd needs iwork of 8*min_mn; complex flavors need rwork, much larger for gesdd
     std::size_t iwork_size = 0, rwork_size = 0;
     if (use_gesdd) {
-        if (!checked_mul(8, min_mn, &iwork_size)) { return BatchStatus::too_large; }
+        iwork_size = 8 * (std::size_t)min_mn;
         if constexpr (is_complex_v<T>) {
-            // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org):
-            // lrwork = max(5*min_mn*min_mn + 5*min_mn, 2*max_mn*min_mn + 2*min_mn*min_mn + min_mn)
-            std::size_t kk, mk, five_k, two_kk, lrwork1, lrwork2;
-            if (!checked_mul(min_mn, min_mn, &kk) || !checked_mul(max_mn, min_mn, &mk) ||
-                !checked_mul(5, min_mn, &five_k) || !checked_mul(2, kk, &two_kk) ||
-                !checked_mul(5, kk, &lrwork1) || !checked_add(lrwork1, five_k, &lrwork1) ||
-                !checked_mul(2, mk, &lrwork2) || !checked_add(lrwork2, two_kk, &lrwork2) ||
-                !checked_add(lrwork2, min_mn, &lrwork2)) {
-                return BatchStatus::too_large;
-            }
-            rwork_size = std::max(lrwork1, lrwork2);
+            // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org); at most about 5*m*n
+            const std::size_t k = min_mn, kmax = max_mn;
+            rwork_size = std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
         }
-    } else if (is_complex_v<T> && !checked_mul(5, min_mn, &rwork_size)) {
-        return BatchStatus::too_large;
+    } else {
+        if constexpr (is_complex_v<T>) { rwork_size = 5 * (std::size_t)min_mn; }
     }
 
-    auto buf = alloc_workspace<T>(bufsize);
+    auto buf = alloc_workspace<T>(lwork + data_size + u_size + vh_size);
     auto iwork = alloc_workspace<CBLAS_INT>(iwork_size);
     auto rwork = alloc_workspace<real_type>(rwork_size);
     if (!buf || !iwork || !rwork) { return BatchStatus::no_memory; }
 
     // partition the workspace
-    T *work = buf.get();
-    T *data = overwrite_a ? Am_data : work + lwork;
-    T *buf_U = (jobz != 'N') ? work + lwork + data_size : NULL;
-    T *buf_Vh = (jobz != 'N') ? buf_U + u_size : NULL;
+    T *cursor = buf.get();
+    T *work = cursor; cursor += lwork;
+    T *data = Am_data;
+    if (!overwrite_a) { data = cursor; cursor += data_size; }
+    T *buf_U = NULL, *buf_Vh = NULL;
+    if (jobz != 'N') { buf_U = cursor; cursor += u_size; buf_Vh = cursor; }
 
     // --------------------------------------------------------------------
     // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     // --------------------------------------------------------------------
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         init_status(slice_status, idx, St::GENERAL);
@@ -177,7 +168,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         if (!overwrite_a) {
             // copy the slice to `data` in F order
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_strided_to_f(slice_ptr, data, m, n, strides[ndim-2], strides[ndim-1], m);
+            copy_strided_to_f(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         // SVD the slice
