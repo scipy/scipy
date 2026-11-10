@@ -1162,7 +1162,10 @@ def _ensure_dtype_cdsz(*arrays):
         dtype = np.complex64 if complex else np.float32
     elif np.finfo(dtype).bits >= 64:
         dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
+    # .char to tell 'g' from 'd' (and 'G' from 'D') where long double is double: there
+    # astype(copy=False) returns the long double array itself, which is not 'd'
+    dtype = np.dtype(dtype)
+    return (array.astype(dtype, copy=array.dtype.char != dtype.char) for array in arrays)
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
