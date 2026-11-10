@@ -888,6 +888,10 @@ class TestFindPeaks:
         xp_assert_equal(find_peaks(x, height=(2, 3), wrap=True)[0], np.array([3]),
                         check_dtype=False)
 
+        # Ensure that array valued height works
+        xp_assert_equal(find_peaks(x, height=np.array([5, 1, 1, 3, 0, 3, 0]), wrap=True)[0], np.array([0, 5]),
+                        check_dtype=False)
+
     def test_threshold_condition_wrap(self):
         """
         Test threshold condition for peaks with wrap enabled.
@@ -919,7 +923,6 @@ class TestFindPeaks:
         # Ensure smaller peaks removed first
         x = [10, -2, 1, -1, 0, -3, -50]
         peaks_subset = find_peaks(x, distance=20, wrap=True)[0]  # use distance > x size
-        print(peaks_subset)
         assert peaks_subset.size == 1 and peaks_subset[0] == 0
 
         # Test multiple removals
