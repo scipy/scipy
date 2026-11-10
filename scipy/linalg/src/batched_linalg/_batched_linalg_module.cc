@@ -444,8 +444,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return use_gesdd ? _svd_gesdd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, overwrite_a, vec_status)
-                         : _svd_gesvd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, overwrite_a, vec_status);
+        return _svd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, use_gesdd, overwrite_a, vec_status);
     });
     if (status != BatchStatus::ok) { return set_batch_error(status, "svd"); }
 
