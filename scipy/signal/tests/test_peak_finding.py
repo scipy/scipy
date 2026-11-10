@@ -945,6 +945,19 @@ class TestFindPeaks:
         peaks, _ = find_peaks(x, prominence=4, wrap=True)
         xp_assert_equal(peaks, np.array([2]), check_dtype=False)
 
+    def test_width_condition_wrap(self):
+        """
+        Test width condition for peaks with wrap enabled.
+        """
+        x = np.array([2, 0, 5, 1, 4, 3])
+        peaks, props = find_peaks(x, width=0, rel_height=0.75, wrap=True)
+
+        xp_assert_equal(peaks, np.array([2, 4]), check_dtype=False)
+        xp_assert_equal(props['width_heights'], np.array([1.25, 1.75]))
+        xp_assert_equal(props['widths'], np.array([1.6875, 2.875]))
+        xp_assert_equal(props['left_ips'], np.array([1.25, 3.25]))
+        xp_assert_equal(props['right_ips'], np.array([2.9375, 0.125]))
+
     def test_properties(self):
         """
         Test returned properties.
