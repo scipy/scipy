@@ -1851,13 +1851,15 @@ class TestMahalanobis:
         ((1, 4), (3, 2, 4), (4, 4)),
         ((4,), (3, 1, 4), (2, 4, 4)),
     ])
-    def test_mahalanobis_nd(self, u_shape, v_shape, VI_shape):
+    def test_mahalanobis_nd(self, xp, u_shape, v_shape, VI_shape):
         # We need to test this separate because mahalanobis uses "VI" instead of "w"
         rng = np.random.default_rng(1)
+        dtype = xpx.default_dtype(xp, "real floating")
         ref_func = _apply_over_batch(('u', 1), ('v', 1), ('VI', 2))(mahalanobis)
-        u, v = rng.random(u_shape), rng.random(v_shape)
+        u = xp.asarray(rng.random(u_shape), dtype=dtype)
+        v = xp.asarray(rng.random(v_shape), dtype=dtype)
         A = rng.random(VI_shape)
-        VI = A @ A.mT + np.eye(4)  # positive definite
+        VI = xp.asarray(A @ A.mT + np.eye(4), dtype=dtype)  # positive definite
         xp_assert_close(mahalanobis(u, v, VI), ref_func(u, v, VI))
 
     @pytest.mark.parametrize("u_shape, v_shape, VI_shape, match", [
