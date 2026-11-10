@@ -2,13 +2,13 @@
 
 void matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info);
 void matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info);
-void matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info);
-void matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info);
+void matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* info);
+void matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* info);
 
 void matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
 void matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
-void matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
-void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
+void matrix_squareroot_c(const PyArrayObject* ap_Am, scipy_c64* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
+void matrix_squareroot_z(const PyArrayObject* ap_Am, scipy_c128* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 
@@ -99,16 +99,16 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX64) {
 
-        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(SCIPY_C));
+        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(scipy_c64));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Memory allocation failed."); }
-        matrix_squareroot_c(ap_Am, (SCIPY_C*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        matrix_squareroot_c(ap_Am, (scipy_c64*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX128) {
 
-        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(SCIPY_Z));
+        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(scipy_c128));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Memory allocation failed."); }
-        matrix_squareroot_z(ap_Am, (SCIPY_Z*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        matrix_squareroot_z(ap_Am, (scipy_c128*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else {
@@ -227,15 +227,15 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
 
     } else if (PyArray_TYPE(ap_a) == NPY_COMPLEX64) {
 
-        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(SCIPY_C));
+        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(scipy_c64));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Memory allocation failed."); }
-        matrix_exponential_c(ap_a, (SCIPY_C*)mem_ret, &info);
+        matrix_exponential_c(ap_a, (scipy_c64*)mem_ret, &info);
 
     } else if (PyArray_TYPE(ap_a) == NPY_COMPLEX128) {
 
-        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(SCIPY_Z));
+        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(scipy_c128));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Memory allocation failed."); }
-        matrix_exponential_z(ap_a, (SCIPY_Z*)mem_ret, &info);
+        matrix_exponential_z(ap_a, (scipy_c128*)mem_ret, &info);
     } else {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Unsupported input data type to C function.");
     }

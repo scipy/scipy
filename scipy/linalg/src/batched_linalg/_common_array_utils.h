@@ -8,10 +8,6 @@
 #include "scipy_blas_defines.h"
 #include "scipy_complex_support.h"
 
-#define SCIPY_Z scipy_c128
-#define SCIPY_C scipy_c64
-#define CPLX_Z(real, imag) CMPLX(real, imag)
-#define CPLX_C(real, imag) CMPLXF(real, imag)
 
 
 // BLAS and LAPACK functions used
@@ -41,31 +37,31 @@ void BLAS_FUNC(dscal)(CBLAS_INT* n, double* sa, double* sx, CBLAS_INT* incx);
 void BLAS_FUNC(dtrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
 // void BLAS_FUNC(dtrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, double* a, CBLAS_INT* lda, double* b, CBLAS_INT* ldb, double* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* iwork, CBLAS_INT* liwork, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
-void BLAS_FUNC(caxpy)(CBLAS_INT* n, SCIPY_C* sa, SCIPY_C* sx, CBLAS_INT* incx, SCIPY_C* sy, CBLAS_INT* incy);
-void BLAS_FUNC(ccopy)(CBLAS_INT* n, SCIPY_C* dx, CBLAS_INT* incx, SCIPY_C* dy, CBLAS_INT* incy);
-void BLAS_FUNC(cgees)(char* jobvs, char* sort, CBLAS_INT (*select)(SCIPY_C*), CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* sdim, SCIPY_C* w, SCIPY_C* vs, CBLAS_INT* ldvs, SCIPY_C* work, CBLAS_INT* lwork, float* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
-void BLAS_FUNC(cgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, SCIPY_C* alpha, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* beta, SCIPY_C* c, CBLAS_INT* ldc);
-void BLAS_FUNC(cgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* alpha, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* x, CBLAS_INT* incx, SCIPY_C* beta, SCIPY_C* y, CBLAS_INT* incy);
-void BLAS_FUNC(cgetrf)(CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
-void BLAS_FUNC(cgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, SCIPY_C* a, CBLAS_INT* lda, CBLAS_INT* ipiv, SCIPY_C* b, CBLAS_INT* ldb, CBLAS_INT* info);
-void BLAS_FUNC(clacn2)(CBLAS_INT* n, SCIPY_C* v, SCIPY_C* x, float* est, CBLAS_INT* kase, CBLAS_INT* isave);
-void BLAS_FUNC(crot)(CBLAS_INT* n, SCIPY_C* cx, CBLAS_INT* incx, SCIPY_C* cy, CBLAS_INT* incy, float* c, SCIPY_C* s);
-void BLAS_FUNC(csscal)(CBLAS_INT* n, float* sa, SCIPY_C* sx, CBLAS_INT* incx);
-void BLAS_FUNC(ctrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale, CBLAS_INT* info);
-// void BLAS_FUNC(ctrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_C* a, CBLAS_INT* lda, SCIPY_C* b, CBLAS_INT* ldb, SCIPY_C* c, CBLAS_INT* ldc, float* scale, float* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
+void BLAS_FUNC(caxpy)(CBLAS_INT* n, scipy_c64* sa, scipy_c64* sx, CBLAS_INT* incx, scipy_c64* sy, CBLAS_INT* incy);
+void BLAS_FUNC(ccopy)(CBLAS_INT* n, scipy_c64* dx, CBLAS_INT* incx, scipy_c64* dy, CBLAS_INT* incy);
+void BLAS_FUNC(cgees)(char* jobvs, char* sort, CBLAS_INT (*select)(scipy_c64*), CBLAS_INT* n, scipy_c64* a, CBLAS_INT* lda, CBLAS_INT* sdim, scipy_c64* w, scipy_c64* vs, CBLAS_INT* ldvs, scipy_c64* work, CBLAS_INT* lwork, float* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(cgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, scipy_c64* alpha, scipy_c64* a, CBLAS_INT* lda, scipy_c64* b, CBLAS_INT* ldb, scipy_c64* beta, scipy_c64* c, CBLAS_INT* ldc);
+void BLAS_FUNC(cgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, scipy_c64* alpha, scipy_c64* a, CBLAS_INT* lda, scipy_c64* x, CBLAS_INT* incx, scipy_c64* beta, scipy_c64* y, CBLAS_INT* incy);
+void BLAS_FUNC(cgetrf)(CBLAS_INT* m, CBLAS_INT* n, scipy_c64* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(cgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, scipy_c64* a, CBLAS_INT* lda, CBLAS_INT* ipiv, scipy_c64* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(clacn2)(CBLAS_INT* n, scipy_c64* v, scipy_c64* x, float* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(crot)(CBLAS_INT* n, scipy_c64* cx, CBLAS_INT* incx, scipy_c64* cy, CBLAS_INT* incy, float* c, scipy_c64* s);
+void BLAS_FUNC(csscal)(CBLAS_INT* n, float* sa, scipy_c64* sx, CBLAS_INT* incx);
+void BLAS_FUNC(ctrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, scipy_c64* a, CBLAS_INT* lda, scipy_c64* b, CBLAS_INT* ldb, scipy_c64* c, CBLAS_INT* ldc, float* scale, CBLAS_INT* info);
+// void BLAS_FUNC(ctrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, scipy_c64* a, CBLAS_INT* lda, scipy_c64* b, CBLAS_INT* ldb, scipy_c64* c, CBLAS_INT* ldc, float* scale, float* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
-void BLAS_FUNC(zaxpy)(CBLAS_INT* n, SCIPY_Z* sa, SCIPY_Z* sx, CBLAS_INT* incx, SCIPY_Z* sy, CBLAS_INT* incy);
-void BLAS_FUNC(zcopy)(CBLAS_INT* n, SCIPY_Z* dx, CBLAS_INT* incx, SCIPY_Z* dy, CBLAS_INT* incy);
-void BLAS_FUNC(zgees)(char* jobvs, char* sort, CBLAS_INT (*select)(SCIPY_Z*), CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* sdim, SCIPY_Z* w, SCIPY_Z* vs, CBLAS_INT* ldvs, SCIPY_Z* work, CBLAS_INT* lwork, double* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
-void BLAS_FUNC(zgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, SCIPY_Z* alpha, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* beta, SCIPY_Z* c, CBLAS_INT* ldc);
-void BLAS_FUNC(zgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* alpha, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* x, CBLAS_INT* incx, SCIPY_Z* beta, SCIPY_Z* y, CBLAS_INT* incy);
-void BLAS_FUNC(zgetrf)(CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
-void BLAS_FUNC(zgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, SCIPY_Z* a, CBLAS_INT* lda, CBLAS_INT* ipiv, SCIPY_Z* b, CBLAS_INT* ldb, CBLAS_INT* info);
-void BLAS_FUNC(zlacn2)(CBLAS_INT* n, SCIPY_Z* v, SCIPY_Z* x, double* est, CBLAS_INT* kase, CBLAS_INT* isave);
-void BLAS_FUNC(zrot)(CBLAS_INT* n, SCIPY_Z* cx, CBLAS_INT* incx, SCIPY_Z* cy, CBLAS_INT* incy, double* c, SCIPY_Z* s);
-void BLAS_FUNC(zdscal)(CBLAS_INT* n, double* sa, SCIPY_Z* sx, CBLAS_INT* incx);
-void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
-// void BLAS_FUNC(ztrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, SCIPY_Z* a, CBLAS_INT* lda, SCIPY_Z* b, CBLAS_INT* ldb, SCIPY_Z* c, CBLAS_INT* ldc, double* scale, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
+void BLAS_FUNC(zaxpy)(CBLAS_INT* n, scipy_c128* sa, scipy_c128* sx, CBLAS_INT* incx, scipy_c128* sy, CBLAS_INT* incy);
+void BLAS_FUNC(zcopy)(CBLAS_INT* n, scipy_c128* dx, CBLAS_INT* incx, scipy_c128* dy, CBLAS_INT* incy);
+void BLAS_FUNC(zgees)(char* jobvs, char* sort, CBLAS_INT (*select)(scipy_c128*), CBLAS_INT* n, scipy_c128* a, CBLAS_INT* lda, CBLAS_INT* sdim, scipy_c128* w, scipy_c128* vs, CBLAS_INT* ldvs, scipy_c128* work, CBLAS_INT* lwork, double* rwork, CBLAS_INT* bwork, CBLAS_INT* info);
+void BLAS_FUNC(zgemm)(char* transa, char* transb, CBLAS_INT* m, CBLAS_INT* n, CBLAS_INT* k, scipy_c128* alpha, scipy_c128* a, CBLAS_INT* lda, scipy_c128* b, CBLAS_INT* ldb, scipy_c128* beta, scipy_c128* c, CBLAS_INT* ldc);
+void BLAS_FUNC(zgemv)(char* trans, CBLAS_INT* m, CBLAS_INT* n, scipy_c128* alpha, scipy_c128* a, CBLAS_INT* lda, scipy_c128* x, CBLAS_INT* incx, scipy_c128* beta, scipy_c128* y, CBLAS_INT* incy);
+void BLAS_FUNC(zgetrf)(CBLAS_INT* m, CBLAS_INT* n, scipy_c128* a, CBLAS_INT* lda, CBLAS_INT* ipiv, CBLAS_INT* info);
+void BLAS_FUNC(zgetrs)(char* trans, CBLAS_INT* n, CBLAS_INT* nrhs, scipy_c128* a, CBLAS_INT* lda, CBLAS_INT* ipiv, scipy_c128* b, CBLAS_INT* ldb, CBLAS_INT* info);
+void BLAS_FUNC(zlacn2)(CBLAS_INT* n, scipy_c128* v, scipy_c128* x, double* est, CBLAS_INT* kase, CBLAS_INT* isave);
+void BLAS_FUNC(zrot)(CBLAS_INT* n, scipy_c128* cx, CBLAS_INT* incx, scipy_c128* cy, CBLAS_INT* incy, double* c, scipy_c128* s);
+void BLAS_FUNC(zdscal)(CBLAS_INT* n, double* sa, scipy_c128* sx, CBLAS_INT* incx);
+void BLAS_FUNC(ztrsyl)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, scipy_c128* a, CBLAS_INT* lda, scipy_c128* b, CBLAS_INT* ldb, scipy_c128* c, CBLAS_INT* ldc, double* scale, CBLAS_INT* info);
+// void BLAS_FUNC(ztrsyl3)(char* trana, char* tranb, CBLAS_INT* isgn, CBLAS_INT* m, CBLAS_INT* n, scipy_c128* a, CBLAS_INT* lda, scipy_c128* b, CBLAS_INT* ldb, scipy_c128* c, CBLAS_INT* ldc, double* scale, double* swork, CBLAS_INT* ldswork, CBLAS_INT* info);
 
 /*
  *  These swap functions are used to convert a C-contiguous n*n array to an F-
@@ -144,11 +140,11 @@ swap_cf_d(double* restrict src, double* restrict dst, const Py_ssize_t r, const 
 
 
 static inline void
-swap_cf_c(SCIPY_C* restrict src, SCIPY_C* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_c(scipy_c64* restrict src, scipy_c64* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    SCIPY_C *bb = dst;
-    SCIPY_C *aa = src;
+    scipy_c64 *bb = dst;
+    scipy_c64 *aa = src;
     if (r < 16) {
         for (j = 0; j < c; j++)
         {
@@ -177,11 +173,11 @@ swap_cf_c(SCIPY_C* restrict src, SCIPY_C* restrict dst, const Py_ssize_t r, cons
 
 
 static inline void
-swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_z(scipy_c128* restrict src, scipy_c128* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    SCIPY_Z *bb = dst;
-    SCIPY_Z *aa = src;
+    scipy_c128 *bb = dst;
+    scipy_c128 *aa = src;
     if (r < 8) {
         for (j = 0; j < c; j++)
         {
