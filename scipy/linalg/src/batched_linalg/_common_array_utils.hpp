@@ -261,7 +261,9 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
     }
 
     CBLAS_INT lwork;
-    if ((value < 0) || !(value <= (real_type)std::numeric_limits<CBLAS_INT>::max())) {
+    // (real_type)CBLAS_INT_MAX rounds up to a power of two in float32 (and for int64 in either
+    // precision), so only values strictly below it convert to CBLAS_INT without overflow
+    if ((value < 0) || !(value < (real_type)std::numeric_limits<CBLAS_INT>::max())) {
         // Too large lwork required - Computation cannot be performed with standard LAPACK
         lwork = -1;
     }
