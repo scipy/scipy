@@ -1824,6 +1824,27 @@ class TestQR:
         assert_array_almost_equal(q.T @ q, eye(3))
         assert_array_almost_equal(q @ r, a)
 
+    @pytest.mark.parametrize('mode', ['full', 'r', 'economic', 'raw'])
+    @pytest.mark.parametrize('pivoting', [False, True])
+    def test_field_view_strides(self, mode, pivoting):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must factor like a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 6, 4)) + 1j*rng.standard_normal((3, 6, 4))
+        dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+        rec = np.zeros(a.shape, dtype=dt)
+        rec['z'] = a
+        view = rec['z']
+        assert view.strides[-1] == 24
+        res = qr(view, mode=mode, pivoting=pivoting)
+        ref = qr(a, mode=mode, pivoting=pivoting)
+        res = res if isinstance(res, tuple) else (res,)
+        ref = ref if isinstance(ref, tuple) else (ref,)
+        for x, y in zip(res, ref):
+            x, y = (x, y) if isinstance(x, tuple) else ((x,), (y,))
+            for p, q in zip(x, y):
+                assert_equal(p, q)
+
     def test_simple_left(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         q, r = qr(a)

@@ -6,7 +6,7 @@
 namespace sp_linalg {
 
 template<typename T>
-int
+BatchStatus
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
 {
     using real_type = real_of_t<T>;
@@ -51,7 +51,10 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // -------------------------------------------------------------------
     // Workspace computation and allocation
     // -------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
+    CBLAS_INT intn, intm, info = 0;
+    if (!checked_narrow<CBLAS_INT>(N, &intn) || !checked_narrow<CBLAS_INT>(M, &intm)) {
+        return BatchStatus::too_large;
+    }
     CBLAS_INT K = std::min(intn, intm), max_dim = std::max(intn, intm);
     CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW_MODE) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
 
@@ -70,7 +73,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
         }
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return BatchStatus::lapack_query_failed; }
 
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -80,18 +83,20 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
         }
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return BatchStatus::lapack_query_failed; }
 
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
     CBLAS_INT lwork_factor = _calc_lwork(tmp_factor);
     CBLAS_INT lwork_or_un_gqr = _calc_lwork(tmp_or_un_gqr);
+    if ((lwork_factor < 0) || (lwork_or_un_gqr < 0)) { return BatchStatus::too_large; }
     lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
-    if ((lwork < 0) || (pivoting && 3 * N + 1 >= std::numeric_limits<CBLAS_INT>::max())) {
-        // Too large lwork required - Computation cannot be performed.
-        // `geqrf` and `or_un_gqr` require an `lwork` of at least N,
-        // `geqp3` requires an `lwork` of at least 3N + 1. The former would not
-        // be detectable, but the latter is.
-        return -99;
+    // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
+    std::size_t lwork_geqp3;
+    CBLAS_INT lwork_geqp3_int;
+    if (pivoting && (!checked_mul(3, N, &lwork_geqp3) || !checked_add(lwork_geqp3, 1, &lwork_geqp3) ||
+                     !checked_narrow<CBLAS_INT>(lwork_geqp3, &lwork_geqp3_int))) {
+        return BatchStatus::too_large;
     }
 
     /*
@@ -130,26 +135,22 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      *      storing `R`. At the end `Q` is copied into a newly allocated array.
      *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
      */
-    CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
-    CBLAS_INT buf_size = ((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE) ? 0 : (mode == QR_mode::FULL) ? M * max_dim : M * N;
-    T *buffer = (T *)PyMem_RawMalloc((lwork + tau_size + buf_size) * sizeof(T));
-    if ( buffer == NULL ) { info = -101; return int(info); }
-
-    T *work = &buffer[0];
-    T *tau_buffer = &buffer[lwork];
-    T *data_A = &buffer[lwork + tau_size];
-
-    // `c/zgeqp3` needs rwork
-    real_type *rwork = NULL;
-    if (pivoting && is_complex_v<T>) {
-        rwork = (real_type *)PyMem_RawMalloc(2 * N * sizeof(real_type));
-
-        if (rwork == NULL) {
-            PyMem_RawFree(buffer);
-            info = -102;
-            return int(info);
-        }
+    std::size_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
+    std::size_t buf_size = 0, total, rwork_size = 0;
+    bool needs_buffer = !((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE);
+    if ((needs_buffer && !checked_mul(M, (mode == QR_mode::FULL) ? max_dim : N, &buf_size)) ||
+        !checked_add(lwork, tau_size, &total) || !checked_add(total, buf_size, &total) ||
+        ((pivoting && is_complex_v<T>) && !checked_mul(2, N, &rwork_size))) {
+        return BatchStatus::too_large;
     }
+
+    auto buffer = alloc_workspace<T>(total);
+    auto rwork = alloc_workspace<real_type>(rwork_size);   // `c/zgeqp3` needs rwork
+    if (!buffer || !rwork) { return BatchStatus::no_memory; }
+
+    T *work = buffer.get();
+    T *tau_buffer = work + lwork;
+    T *data_A = tau_buffer + tau_size;
 
     // -------------------------------------------------------------------
     // Main loop to traverse the slices
@@ -187,9 +188,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
          * the returned array is in F-order, hence bypassing the buffer avoids two redundant copies.
          */
         if ((!overwrite_a && mode != QR_mode::RAW_MODE) || mode == QR_mode::FULL) {
-            copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(slice_ptr_A, data_A, M, N, strides[ndim-2], strides[ndim-1], M);
         } else if (!overwrite_a && mode == QR_mode::RAW_MODE) {
-            copy_slice_F(slice_ptr_Q, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(slice_ptr_A, slice_ptr_Q, M, N, strides[ndim-2], strides[ndim-1], M);
             data_A = slice_ptr_Q; // Add alias for easier to read codepaths later on.
         } else if (overwrite_a && (mode == QR_mode::RAW_MODE || mode == QR_mode::R || mode == QR_mode::ECONOMIC)) {
             data_A = slice_ptr_A;
@@ -208,7 +209,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             if constexpr (!is_complex_v<T>) {
                 lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, &info);
             } else {
-                lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, rwork, &info);
+                lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, rwork.get(), &info);
             }
             for (CBLAS_INT i = 0; i < intn; i++) {
                 slice_ptr_jpvt[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
@@ -219,7 +220,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            goto free_exit;
+            return BatchStatus::ok;
         }
 
         // `R` is always required, the correct shape is ensured by `middle_dim`.
@@ -246,7 +247,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             if (info != 0) {
                 slice_status.lapack_info = (Py_ssize_t)info;
                 vec_status.push_back(slice_status);
-                goto free_exit;
+                return BatchStatus::ok;
             }
 
             if (!overwrite_a || mode == QR_mode::FULL) {
@@ -258,11 +259,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     } // End of batching loop
 
-free_exit:
-    PyMem_RawFree(buffer);
-    PyMem_RawFree(rwork);
-
-    return 1;
+    return BatchStatus::ok;
 }
 
 } // namespace sp_linalg

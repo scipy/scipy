@@ -223,14 +223,10 @@ static PyObject*
 _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_A = NULL;
 
-    int info = 0;
     SliceStatusVec vec_status;
     int overwrite_a = 0;
     QR_mode mode = QR_mode::FULL;
     int pivoting = 0;
-
-    PyArrayObject *ap_Q = NULL, *ap_R = NULL, *ap_tau = NULL, *ap_jpvt = NULL;
-    PyObject *ret_lst = NULL, *ret_Q = NULL, *ret_tau = NULL, *ret_jpvt = NULL;
 
     // Get the input array
     if (!PyArg_ParseTuple(args, "O!|pnp", &PyArray_Type, (PyObject **)&ap_A, &overwrite_a, &mode, &pivoting)) {
@@ -310,38 +306,31 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
      *
      * - jpvt: only allocated if `pivoting` is set.
      */
+    wrapper::py_ref ap_Q, ap_R, ap_tau, ap_jpvt;
+
     if (mode != QR_mode::R) {
         if (!overwrite_a || mode == QR_mode::FULL) {
-            ap_Q = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum);
-            if (!ap_Q) {
-                PyErr_NoMemory();
-                goto fail_qr;
-            }
+            ap_Q = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum));
+            if (!ap_Q) { return PyErr_NoMemory(); }
         } else {
             Py_INCREF(ap_A);
-            ap_Q = ap_A;
+            ap_Q = wrapper::py_ref(ap_A);
         }
     }
 
     if (mode == QR_mode::RAW_MODE || mode == QR_mode::ECONOMIC || (!overwrite_a && (mode == QR_mode::R || mode == QR_mode::FULL))) {
         // Return C-ordered object, hence `0` flag. Already pre-fill with zeros for efficiency.
-        ap_R = (PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0);
-        if (!ap_R) {
-            PyErr_NoMemory();
-            goto fail_qr;
-        }
+        ap_R = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0));
+        if (!ap_R) { return PyErr_NoMemory(); }
     } else {
         Py_INCREF(ap_A);
-        ap_R = ap_A;
+        ap_R = wrapper::py_ref(ap_A);
     }
 
     if (mode == QR_mode::RAW_MODE) {
         shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
-        ap_tau = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum); // Just a vector, so `ndim-1`.
-        if (!ap_tau) {
-            PyErr_NoMemory();
-            goto fail_qr;
-        }
+        ap_tau = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum)); // Just a vector, so `ndim-1`.
+        if (!ap_tau) { return PyErr_NoMemory(); }
 
         /*
          * Since the point of the `Q` returned if `mode="raw"` is mostly to call other LAPACK routines (e.g. `qr_multiply`),
@@ -352,13 +341,13 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
          * Since `overwrite_a` is only enabled when the input has F-ordered slices, this is not necessary in that case.
          */
         if (!overwrite_a) {
-            npy_intp *strides_Q = PyArray_STRIDES(ap_Q);
-            int sizeof_T = PyArray_ITEMSIZE(ap_Q);
+            npy_intp *strides_Q = PyArray_STRIDES(ap_Q.get());
+            int sizeof_T = PyArray_ITEMSIZE(ap_Q.get());
 
             strides_Q[ndim-2] = sizeof_T;
             strides_Q[ndim-1] = M * sizeof_T;
 
-            PyArray_UpdateFlags(ap_Q, NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
+            PyArray_UpdateFlags(ap_Q.get(), NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_F_CONTIGUOUS);
         }
     }
 
@@ -366,50 +355,21 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Allocate a C-ordered array, (hence the `0` magic number).
     if (pivoting) {
         shape_Q[ndim-2] = N;
-        ap_jpvt = (PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0);
-        if (!ap_jpvt) {
-            PyErr_NoMemory();
-            goto fail_qr;
-        }
+        ap_jpvt = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0));
+        if (!ap_jpvt) { return PyErr_NoMemory(); }
     }
 
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _qr<f32>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _qr<f64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _qr<c64>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _qr<c128>(ap_A, ap_Q, ap_R, ap_tau, ap_jpvt, overwrite_a, mode, pivoting, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            return NULL;
-    }
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _qr<T>(ap_A, ap_Q.get(), ap_R.get(), ap_tau.get(), ap_jpvt.get(), overwrite_a, mode, pivoting, vec_status);
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "qr"); }
 
-    if (info < 0) {
-        // Either OOM error or requested lwork too large.
-        PyErr_SetString(PyExc_MemoryError, "Memory error in scipy.linalg.qr.");
-        goto fail_qr;
-    }
-
-    ret_lst = convert_vec_status(vec_status);
-
-    ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q) : Py_None;
-    ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return(ap_tau) : Py_None;
-    ret_jpvt = (pivoting) ? PyArray_Return(ap_jpvt): Py_None;
-    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return(ap_R), ret_tau, ret_jpvt, ret_lst);
-
-fail_qr:
-    Py_XDECREF(ap_Q);
-    Py_XDECREF(ap_R);
-    Py_XDECREF(ap_tau);
-    Py_XDECREF(ap_jpvt);
-    return NULL;
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    PyObject *ret_Q = (mode != QR_mode::R) ? PyArray_Return((PyArrayObject *)ap_Q.release()) : Py_NewRef(Py_None);
+    PyObject *ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return((PyArrayObject *)ap_tau.release()) : Py_NewRef(Py_None);
+    PyObject *ret_jpvt = pivoting ? PyArray_Return((PyArrayObject *)ap_jpvt.release()) : Py_NewRef(Py_None);
+    return Py_BuildValue("NNNNN", ret_Q, PyArray_Return((PyArrayObject *)ap_R.release()), ret_tau, ret_jpvt, ret_lst);
 }
 
 
