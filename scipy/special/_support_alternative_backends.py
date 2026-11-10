@@ -12,10 +12,10 @@ from scipy._lib._array_api import (
     is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
-from . import _basic
 from . import _ellip_harm
 from . import _lambertw
 from . import _mathieu
+from . import _polygamma
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
@@ -1855,7 +1855,7 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.polygamma, ["n", "x"],
+        _polygamma.polygamma, ["n", "x"],
         is_ufunc=False,
         scalar_or_0d_only={"torch": (True, False)},
         produces_0d=True,

@@ -65,7 +65,6 @@ __all__ = [
     'pbdv_seq',
     'pbvv_seq',
     'perm',
-    'polygamma',
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
@@ -1641,49 +1640,6 @@ def assoc_laguerre(x, n, k=0.0):
 
 
 digamma = psi
-
-
-def polygamma(n, x):
-    r"""Polygamma functions.
-
-    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
-    `digamma` function. See [dlmf]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        The order of the derivative of the digamma function; must be
-        integral
-    x : array_like
-        Real valued input
-
-    Returns
-    -------
-    ndarray
-        Function results
-
-    See Also
-    --------
-    digamma
-
-    References
-    ----------
-    .. [dlmf] NIST, Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/5.15
-
-    Examples
-    --------
-    >>> from scipy import special
-    >>> x = [2, 3, 25.5]
-    >>> special.polygamma(1, x)
-    array([ 0.64493407,  0.39493407,  0.03999467])
-    >>> special.polygamma(0, x) == special.psi(x)
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    n, x = asarray(n), asarray(x)
-    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
-    return where(n == 0, psi(x), fac2)
 
 
 def mathieu_even_coef(m, q):

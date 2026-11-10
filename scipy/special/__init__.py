@@ -807,6 +807,7 @@ from ._ellip_harm import (
 )
 
 from ._lambertw import lambertw
+from ._polygamma import polygamma
 
 from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
 from ._spfun_stats import poisson_binom_cdf
@@ -854,6 +855,7 @@ __all__ += [
     'mathieu_cem',
     'mathieu_sem',
     'poisson_binom_cdf',
+    'polygamma',
 ]
 
 from scipy._lib._testutils import PytestTester
