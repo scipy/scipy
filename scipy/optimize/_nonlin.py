@@ -307,7 +307,7 @@ def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
         s, phi1, phi0 = scalar_search_wolfe1(phi, derphi, tmp_phi[0],
                                              xtol=1e-2, amin=smin)
     elif search_type == 'armijo':
-        s, phi1 = scalar_search_armijo(phi, tmp_phi[0], -tmp_phi[0],
+        s, phi1 = scalar_search_armijo(phi, tmp_phi[0], derphi(0),
                                        amin=smin)
 
     if s is None:
