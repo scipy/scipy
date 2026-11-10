@@ -2253,11 +2253,11 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        float* restrict slice_ptr = (float*)(a_data + (offset/sizeof(float)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(float)) + (j*strides[ndim - 1]/sizeof(float)));
+                Am1[i * n + j] = *(const float*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_s(Am1, n, n, &lband, &uband);
@@ -2413,11 +2413,11 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        double* restrict slice_ptr = (double*)(a_data + (offset/sizeof(double)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(double)) + (j*strides[ndim - 1]/sizeof(double)));
+                Am1[i * n + j] = *(const double*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_d(Am1, n, n, &lband, &uband);
@@ -2573,11 +2573,11 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_C* restrict slice_ptr = (SCIPY_C*)(a_data + (offset/sizeof(SCIPY_C)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_C)) + (j*strides[ndim - 1]/sizeof(SCIPY_C)));
+                Am1[i * n + j] = *(const SCIPY_C*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_c(Am1, n, n, &lband, &uband);
@@ -2780,11 +2780,11 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_Z* restrict slice_ptr = (SCIPY_Z*)(a_data + (offset/sizeof(SCIPY_Z)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_Z)) + (j*strides[ndim - 1]/sizeof(SCIPY_Z)));
+                Am1[i * n + j] = *(const SCIPY_Z*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_z(Am1, n, n, &lband, &uband);

@@ -90,11 +90,11 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        float* restrict slice_ptr = (float*)(Am_data + (offset/sizeof(float)));
+        const char* restrict slice_ptr = (const char*)Am_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                data2[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(float)) + (j*strides[ndim - 1]/sizeof(float)));
+                data2[i * n + j] = *(const float*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         swap_cf_s(data2, data, n, n, n);
@@ -354,10 +354,10 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        double* restrict slice_ptr = (double*)(Am_data + (offset/sizeof(double)));
+        const char* restrict slice_ptr = (const char*)Am_data + offset;   // byte offset of the slice
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                data2[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(double)) + (j*strides[ndim - 1]/sizeof(double)));
+                data2[i * n + j] = *(const double*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         swap_cf_d(data2, data, n, n, n);
@@ -543,10 +543,10 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_C* restrict slice_ptr = (SCIPY_C*)(Am_data + (offset/sizeof(SCIPY_C)));
+        const char* restrict slice_ptr = (const char*)Am_data + offset;   // byte offset of the slice
         for (Py_ssize_t i = 0; i < n; i++) {
             for (Py_ssize_t j = 0; j < n; j++) {
-                vs[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_C)) + (j*strides[ndim - 1]/sizeof(SCIPY_C)));
+                vs[i * n + j] = *(const SCIPY_C*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
 
@@ -645,10 +645,10 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_Z* restrict slice_ptr = (SCIPY_Z*)(Am_data + (offset/sizeof(SCIPY_Z)));
+        const char* restrict slice_ptr = (const char*)Am_data + offset;   // byte offset of the slice
         for (Py_ssize_t i = 0; i < n; i++) {
             for (Py_ssize_t j = 0; j < n; j++) {
-                vs[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_Z)) + (j*strides[ndim - 1]/sizeof(SCIPY_Z)));
+                vs[i * n + j] = *(const SCIPY_Z*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
 

@@ -1172,3 +1172,18 @@ class TestKhatriRao:
         b = xp.empty((5, 0))
         res = khatri_rao(a, b)
         xp_assert_close(res, xp.empty((15, 0)))
+
+
+@pytest.mark.parametrize("func", [expm, sqrtm])
+@pytest.mark.parametrize("dtype, pad", [(np.complex128, np.float64), (np.complex64, np.float32)])
+@pytest.mark.parametrize("shape", [(4, 4), (2, 4, 4)])
+def test_field_view_strides(func, dtype, pad, shape):
+    # A complex field of an aligned structured array has an element stride that is not a
+    # multiple of the itemsize (24 and 12 bytes); it must give the result of a copy.
+    rng = np.random.default_rng(1234)
+    a = ((rng.standard_normal(shape) + 1j*rng.standard_normal(shape)) / 4).astype(dtype)
+    rec = np.zeros(shape, dtype=np.dtype([("z", dtype), ("pad", pad)], align=True))
+    rec["z"] = a
+    view = rec["z"]
+    assert view.strides[-1] % view.itemsize != 0
+    xp_assert_equal(func(view), func(a))
