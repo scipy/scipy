@@ -1049,7 +1049,6 @@ get_err_mesg(const std::string routine, const std::string func_name, int info) {
 
 static PyObject*
 _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
-
     // Handle the input and metadata
     PyArrayObject *ap_a = NULL;
     int permute_l = 0;
@@ -1071,21 +1070,17 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    PyArrayObject *ap_l = NULL;
-    PyArrayObject *ap_u = NULL;
-    PyArrayObject *ap_perm = NULL;
-    void *scratch = NULL;
-    CBLAS_INT *ipiv = NULL;
-    int info = 0;
-    CBLAS_INT *slice_info = NULL;
-    LU_Context ctx = {};
-    PyObject *result = NULL;
-
-    npy_intp *shape = PyArray_SHAPE(ap_a);
+    // Output shapes are derived from a copy; the input array's own shape is never modified
+    npy_intp shape[LU_MAX_NDIM];
+    std::copy(PyArray_SHAPE(ap_a), PyArray_SHAPE(ap_a) + ndim, shape);
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
-    npy_intp elem_size = PyArray_ITEMSIZE(ap_a);
-    CBLAS_INT m = (CBLAS_INT)shape[ndim - 2];
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
+
+    CBLAS_INT m, n;
+    std::size_t scratch_count;
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n) ||
+        !checked_mul(m, n, &scratch_count)) {
+        return set_batch_error(BatchStatus::too_large, "lu");
+    }
     CBLAS_INT minmn = m < n ? m : n;
 
     npy_intp num_of_slices = 1;
@@ -1098,118 +1093,82 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         ctx_strides[i] = (int64_t)byte_strides[i];
     }
 
-    // Allocate perm (..., m)
-    ap_perm = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32);
-    if (!ap_perm) { PyErr_NoMemory(); goto fail; }
+    // perm (..., m)
+    wrapper::py_ref ap_perm((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32));
+    if (!ap_perm) { return PyErr_NoMemory(); }
 
-    // Allocate scratch buffers (reused across slices)
-    scratch = PyMem_Malloc((size_t)m * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)minmn * sizeof(CBLAS_INT));
-    slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
-    if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
-
+    LU_Context ctx = {};
     ctx.shape = ctx_shape;
     ctx.strides = ctx_strides;
     ctx.num_of_slices = num_of_slices;
     ctx.m = m;
     ctx.n = n;
-    ctx.perm = (CBLAS_INT*)PyArray_DATA(ap_perm);
-    ctx.ipiv = ipiv;
+    ctx.perm = ap_perm.data<CBLAS_INT>();
     ctx.ndim = ndim;
     ctx.permute_l = (bool)permute_l;
     ctx.overwrite_a = false;
 
+    wrapper::py_ref ap_l, ap_u;
+    npy_intp l_shape[LU_MAX_NDIM], u_shape[LU_MAX_NDIM];
+    std::copy(shape, shape + ndim, l_shape);
+    std::copy(shape, shape + ndim, u_shape);
+
     // Legacy overwrite_a: reuse input as the larger factor (2D + F-contiguous only).
     // Disabled when permute_l is true (permute_rows needs C-ordered data).
     if (overwrite_a && !permute_l && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a)) {
-
         ctx.overwrite_a = true;
-        npy_intp other_shape[LU_MAX_NDIM];
-        for (int i = 0; i < ndim; i++) { other_shape[i] = shape[i]; }
-
+        Py_INCREF(ap_a);
         if (m > n) {
             // Tall: L (m x n) is large — reuse input. Allocate U (n x n).
-            ap_l = ap_a;
-            Py_INCREF(ap_l);
-            other_shape[ndim - 2] = minmn;
-            ap_u = (PyArrayObject *)PyArray_ZEROS(ndim, other_shape, typenum, 0);
-            if (!ap_u) { PyErr_NoMemory(); goto fail; }
+            ap_l = wrapper::py_ref(ap_a);
+            u_shape[ndim - 2] = minmn;
+            ap_u = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
         } else {
             // Fat/square: U (m x n) is large — reuse input. Allocate L (m x m).
-            ap_u = ap_a;
-            Py_INCREF(ap_u);
-            other_shape[ndim - 1] = minmn;
-            ap_l = (PyArrayObject *)PyArray_ZEROS(ndim, other_shape, typenum, 0);
-            if (!ap_l) { PyErr_NoMemory(); goto fail; }
+            ap_u = wrapper::py_ref(ap_a);
+            l_shape[ndim - 1] = minmn;
+            ap_l = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
         }
-
     } else {
-
         // Allocate output arrays: L (..., m, minmn), U (..., minmn, n)
-        shape[ndim - 1] = minmn;
-        ap_l = (PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0);
-        if (!ap_l) { PyErr_NoMemory(); shape[ndim - 1] = n; goto fail; }
-        shape[ndim - 1] = n;
-
-        shape[ndim - 2] = minmn;
-        ap_u = (PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0);
-        if (!ap_u) { PyErr_NoMemory(); shape[ndim - 2] = m; goto fail; }
-        shape[ndim - 2] = m;
+        l_shape[ndim - 1] = minmn;
+        u_shape[ndim - 2] = minmn;
+        ap_l = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
+        ap_u = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
     }
+    if (!ap_l || !ap_u) { return PyErr_NoMemory(); }
 
-    // Dispatch to templated C++ code
-    switch (typenum) {
-        case NPY_FLOAT32:
-            info = lu_dispatch<f32>(ctx, (f32*)PyArray_DATA(ap_a), (f32*)PyArray_DATA(ap_l), (f32*)PyArray_DATA(ap_u), (f32*)scratch, slice_info);
-            break;
-        case NPY_FLOAT64:
-            info = lu_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_l), (f64*)PyArray_DATA(ap_u), (f64*)scratch, slice_info);
-            break;
-        case NPY_COMPLEX64:
-            info = lu_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_l), (c64 *)PyArray_DATA(ap_u), (c64 *)scratch, slice_info);
-            break;
-        case NPY_COMPLEX128:
-            info = lu_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_l), (c128 *)PyArray_DATA(ap_u), (c128 *)scratch, slice_info);
-            break;
-    }
-
+    int info = 0;
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        // slice_info: per-slice getrf info (> 0: exactly singular); not yet surfaced to Python
+        auto scratch = alloc_workspace<T>(ctx.overwrite_a ? 0 : scratch_count);
+        auto ipiv = alloc_workspace<CBLAS_INT>(minmn);
+        auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
+        if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
+        ctx.ipiv = ipiv.get();
+        info = lu_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), ap_l.data<T>(), ap_u.data<T>(), scratch.get(), slice_info.get());
+        return BatchStatus::ok;
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "lu"); }
     if (info < 0) {
-        PyErr_SetString(PyExc_ValueError, get_err_mesg("lu", "getrf", info).c_str());
-        goto fail;
+        return PyErr_Format(PyExc_ValueError, "scipy.linalg.lu: internal error, getrf returned info = %d.", info);
     }
-
-    // Free scratch buffers (no longer needed)
-    PyMem_Free(scratch); scratch = NULL;
-    PyMem_Free(ipiv); ipiv = NULL;
-
-    // NOTE: slice_info contains per-slice LAPACK info (>0 means singular).
-    // Not yet surfaced to Python — singular LU factors are still valid.
-    // The intention is to eventually provide per-slice diagnostics.
-    PyMem_Free(slice_info); slice_info = NULL;
 
     // Always return (P, L, U) with consistent types.
     // When permute_l is true, P is replaced with an empty array since
     // the permutation is already applied to L.
     if (permute_l) {
-        Py_DECREF(ap_perm);
         // Return an empty int32 array instead of None so the return type is
         // always (ndarray, ndarray, ndarray) — avoids Optional in type stubs.
         // int32 since the array has zero elements; no overflow concern.
         npy_intp zero = 0;
-        ap_perm = (PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0);
-        if (!ap_perm) { PyErr_NoMemory(); goto fail; }
+        ap_perm = wrapper::py_ref((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
+        if (!ap_perm) { return PyErr_NoMemory(); }
     }
-    result = Py_BuildValue("NNN", PyArray_Return(ap_perm), PyArray_Return(ap_l), PyArray_Return(ap_u));
-    return result;
-
-fail:
-    PyMem_Free(scratch);
-    PyMem_Free(ipiv);
-    PyMem_Free(slice_info);
-    Py_XDECREF(ap_l);
-    Py_XDECREF(ap_u);
-    Py_XDECREF(ap_perm);
-    return NULL;
+    return Py_BuildValue("NNN", PyArray_Return((PyArrayObject *)ap_perm.release()),
+                                PyArray_Return((PyArrayObject *)ap_l.release()),
+                                PyArray_Return((PyArrayObject *)ap_u.release()));
 }
 
 
@@ -1219,7 +1178,6 @@ fail:
 
 static PyObject*
 _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
-
     // Handle the input and metadata
     PyArrayObject *ap_a = NULL;
     int overwrite_a = 0;
@@ -1242,21 +1200,17 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
-    npy_intp elem_size = PyArray_ITEMSIZE(ap_a);
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
 
     if (shape[ndim - 2] != shape[ndim - 1]) {
         PyErr_SetString(PyExc_ValueError, "scipy.linalg.det: Last two dimensions must be square.");
         return NULL;
     }
 
-    // All variables declared before any goto (C++ initialization rule)
-    PyArrayObject *ap_det = NULL;
-    void *scratch = NULL;
-    CBLAS_INT *ipiv = NULL;
-    CBLAS_INT *slice_info = NULL;
-    LU_Context ctx = {};
-    int info = 0;
+    CBLAS_INT n;
+    std::size_t scratch_count;
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n) || !checked_mul(n, n, &scratch_count)) {
+        return set_batch_error(BatchStatus::too_large, "det");
+    }
 
     npy_intp num_of_slices = 1;
     for (int i = 0; i < ndim - 2; i++) { num_of_slices *= shape[i]; }
@@ -1269,22 +1223,16 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // Allocate output det array (...,) — batch dimensions only
-    ap_det = (PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum);
-    if (!ap_det) { PyErr_NoMemory(); goto fail; }
+    wrapper::py_ref ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum));
+    if (!ap_det) { return PyErr_NoMemory(); }
 
-    // Allocate scratch buffers
-    scratch = PyMem_Malloc((size_t)n * n * elem_size);
-    ipiv = (CBLAS_INT*)PyMem_Malloc((size_t)n * sizeof(CBLAS_INT));
-    slice_info = (CBLAS_INT*)PyMem_Calloc(num_of_slices, sizeof(CBLAS_INT));
-    if (!scratch || !ipiv || !slice_info) { PyErr_NoMemory(); goto fail; }
-
+    LU_Context ctx = {};
     ctx.shape = ctx_shape;
     ctx.strides = ctx_strides;
     ctx.num_of_slices = num_of_slices;
     ctx.m = n;
     ctx.n = n;
     ctx.perm = NULL;
-    ctx.ipiv = ipiv;
     ctx.ndim = ndim;
     ctx.permute_l = false;
     ctx.overwrite_a = false;
@@ -1296,44 +1244,25 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         ctx.overwrite_a = true;
     }
 
-    // Dispatch to templated C++ code
-    switch (typenum) {
-        case NPY_FLOAT32:
-            info = det_dispatch<f32>(ctx, (f32*)PyArray_DATA(ap_a), (f32*)PyArray_DATA(ap_det), (f32*)scratch, slice_info);
-            break;
-        case NPY_FLOAT64:
-            info = det_dispatch<f64>(ctx, (f64*)PyArray_DATA(ap_a), (f64*)PyArray_DATA(ap_det), (f64*)scratch, slice_info);
-            break;
-        case NPY_COMPLEX64:
-            info = det_dispatch<c64>(ctx, (c64 *)PyArray_DATA(ap_a), (c64 *)PyArray_DATA(ap_det), (c64 *)scratch, slice_info);
-            break;
-        case NPY_COMPLEX128:
-            info = det_dispatch<c128>(ctx, (c128 *)PyArray_DATA(ap_a), (c128 *)PyArray_DATA(ap_det), (c128 *)scratch, slice_info);
-            break;
-    }
-
+    int info = 0;
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        // slice_info: per-slice getrf info (> 0: exactly singular, so the determinant is exactly
+        // zero rather than numerically small); not yet surfaced to Python
+        auto scratch = alloc_workspace<T>(ctx.overwrite_a ? 0 : scratch_count);
+        auto ipiv = alloc_workspace<CBLAS_INT>(n);
+        auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
+        if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
+        ctx.ipiv = ipiv.get();
+        info = det_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), ap_det.data<T>(), scratch.get(), slice_info.get());
+        return BatchStatus::ok;
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }
     if (info < 0) {
-        PyErr_SetString(PyExc_ValueError, get_err_mesg("det", "getrf", info).c_str());
-        goto fail;
+        return PyErr_Format(PyExc_ValueError, "scipy.linalg.det: internal error, getrf returned info = %d.", info);
     }
 
-    PyMem_Free(scratch); scratch = NULL;
-    PyMem_Free(ipiv); ipiv = NULL;
-
-    // NOTE: slice_info[idx] > 0 means getrf detected exact singularity at
-    // diagonal position info for that slice — the determinant is exactly zero,
-    // not merely numerically small. This can be used to distinguish exact
-    // singularity from near-singularity in the future.
-    PyMem_Free(slice_info); slice_info = NULL;
-
-    return (PyObject *)ap_det;
-
-fail:
-    PyMem_Free(scratch);
-    PyMem_Free(ipiv);
-    PyMem_Free(slice_info);
-    Py_XDECREF(ap_det);
-    return NULL;
+    return ap_det.release();
 }
 
 
