@@ -70,36 +70,37 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     // query, so the largest of those sizes is computed here first, after Reference-LAPACK.
     // It grows with min(m, n)*nrhs, ldb*nrhs (the comparisons in gelss), the block size times
     // nrhs, the m*m factor of the path that starts with an LQ factorization, and, in the real
-    // workspace of the complex gelsd, 3*smlsiz*nrhs + n*(1 + nrhs).
+    // workspace of the complex gelsd, 3*smlsiz*nrhs + n*(1 + nrhs). The sizes are counted in
+    // uint64_t, which holds them exactly for every CBLAS_INT operand below 2**31.
     {
-        const std::size_t um = m, un = n, unrhs = nrhs, uk = min_mn, umx = max_mn, uldb = ldb;
+        const std::uint64_t um = m, un = n, unrhs = nrhs, uk = min_mn, umx = max_mn, uldb = ldb;
         // ILAENV(1, ...) block size of the routines each driver calls: 64 for the ?TZRZF and ?ORMRZ
         // of gelsy, 32 for the others
-        const std::size_t nb = (driver == LstsqDriver::gelsy) ? 64 : 32;
-        const std::size_t smlsiz = 25;    // ILAENV(9, ...), the size of the subproblems in gelsd
+        const std::uint64_t nb = (driver == LstsqDriver::gelsy) ? 64 : 32;
+        const std::uint64_t smlsiz = 25;    // ILAENV(9, ...), the size of the subproblems in gelsd
         // NLVL = MAX(INT(LOG2(min(m, n) / (smlsiz + 1))) + 1, 0), truncating towards zero
         const long lvl = (uk > 0) ? (long)std::log2(double(uk) / double(smlsiz + 1)) + 1 : 0;
-        const std::size_t nlvl = lvl > 0 ? (std::size_t)lvl : 0;
+        const std::uint64_t nlvl = lvl > 0 ? (std::uint64_t)lvl : 0;
         // n >= MNTHR = ILAENV(6, ...) = INT(1.6 * min(m, n)) selects the LQ path when m < n
-        const bool lq_path = (m < n) && un >= (std::size_t)(float(um) * 1.6f);
+        const bool lq_path = (m < n) && un >= (std::uint64_t)(float(um) * 1.6f);
 
         // the block-size terms: (m + n)*nb from the bidiagonal or QR stage, nrhs*nb from applying
         // the orthogonal factors to b
-        std::size_t need = 3*umx + 2*uk + nb*std::max(um + un + 1, unrhs);
+        std::uint64_t need = 3*umx + 2*uk + nb*std::max(um + un + 1, unrhs);
         if (driver == LstsqDriver::gelsd) {
-            const std::size_t wlalsd = 9*uk + 2*uk*smlsiz + 8*uk*nlvl + uk*unrhs + (smlsiz + 1)*(smlsiz + 1);
+            const std::uint64_t wlalsd = 9*uk + 2*uk*smlsiz + 8*uk*nlvl + uk*unrhs + (smlsiz + 1)*(smlsiz + 1);
             need = std::max(need, 3*uk + wlalsd);
             if (lq_path) { need = std::max(need, um*um + 4*um + std::max(wlalsd, um*unrhs + um)); }
             if constexpr (is_complex_v<T>) {
-                const std::size_t lrwork = 10*uk + 2*uk*smlsiz + 8*uk*nlvl + 3*smlsiz*unrhs +
-                                           std::max((smlsiz + 1)*(smlsiz + 1), un*(1 + unrhs) + 2*unrhs);
+                const std::uint64_t lrwork = 10*uk + 2*uk*smlsiz + 8*uk*nlvl + 3*smlsiz*unrhs +
+                                             std::max((smlsiz + 1)*(smlsiz + 1), un*(1 + unrhs) + 2*unrhs);
                 need = std::max(need, lrwork);
             }
         } else if (driver == LstsqDriver::gelss) {
             need = std::max(need, uldb*unrhs + 4*umx + uk);
             if (lq_path) { need = std::max(need, um*um + 4*um + std::max({um, unrhs, un}) + um*unrhs); }
         }
-        if (need > (std::size_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        if (need > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
     }
 
     // outputs; S is NULL for gelsy
