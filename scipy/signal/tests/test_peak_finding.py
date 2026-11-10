@@ -930,6 +930,21 @@ class TestFindPeaks:
         peaks, _ = find_peaks(x[::-1], distance=6, wrap=True)
         xp_assert_equal(peaks, [14, 27])
 
+    def test_prominence_condition_wrap(self):
+        """
+        Test prominence condition for peaks with wrap enabled.
+        """
+        x = np.array([2, 0, 5, 1, 4, 3])
+
+        peaks, props = find_peaks(x, prominence=0, wrap=True)
+        xp_assert_equal(peaks, np.array([2, 4]), check_dtype=False)
+        xp_assert_equal(props['prominences'], np.array([5., 3.]))
+        xp_assert_equal(props['left_bases'], np.array([1, 3]), check_dtype=False)
+        xp_assert_equal(props['right_bases'], np.array([1, 1]), check_dtype=False)
+
+        peaks, _ = find_peaks(x, prominence=4, wrap=True)
+        xp_assert_equal(peaks, np.array([2]), check_dtype=False)
+
     def test_properties(self):
         """
         Test returned properties.
