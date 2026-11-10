@@ -117,6 +117,44 @@ struct _poisson_binom_cdf_kernel {
     }
 };
 
+template <typename Int, typename T_1d>
+struct _poisson_binom_sf_kernel {
+    using T = typename T_1d::value_type;
+
+    std::vector<T> dist;
+    T* last_p_ptr = nullptr;
+    T operator()(Int k, T_1d p) {
+        if (!last_p_ptr) {
+            dist.resize(p.extent(0) + 1);
+        }
+        if (p.data_handle() != last_p_ptr) {
+            xsf::poisson_binom_sf_all(p, special::as_mdspan(dist));
+            last_p_ptr = p.data_handle();
+        }
+
+        return xsf::take_from_discrete_sf(special::as_mdspan(dist), k);
+    }
+};
+
+template <typename Int, typename T_1d>
+struct _poisson_binom_logsf_kernel {
+    using T = typename T_1d::value_type;
+
+    std::vector<T> dist;
+    T* last_p_ptr = nullptr;
+    T operator()(Int k, T_1d p) {
+        if (!last_p_ptr) {
+            dist.resize(p.extent(0) + 1);
+        }
+        if (p.data_handle() != last_p_ptr) {
+            xsf::poisson_binom_logsf_all(p, special::as_mdspan(dist));
+            last_p_ptr = p.data_handle();
+        }
+
+        return xsf::take_from_discrete_logsf(special::as_mdspan(dist), k);
+    }
+};
+
 
 static int
 _gufuncs_module_exec(PyObject *module)
@@ -321,6 +359,34 @@ _gufuncs_module_exec(PyObject *module)
         _poisson_binom_map_dims
     );
     PyModule_AddObjectRef(module, "_poisson_binom_cdf", _poisson_binom_cdf);
+
+    PyObject *_poisson_binom_sf = xsf::numpy::gufunc(
+        {
+            _poisson_binom_sf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_sf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_sf_kernel<std::int64_t, xsf::numpy::double_1d>{}
+        },
+        1,
+        "_poisson_binom_sf",
+        "Internal function",
+        "(),(i)->()",
+        _poisson_binom_map_dims
+    );
+    PyModule_AddObjectRef(module, "_poisson_binom_sf", _poisson_binom_sf);
+
+    PyObject *_poisson_binom_logsf = xsf::numpy::gufunc(
+        {
+            _poisson_binom_logsf_kernel<std::int32_t, xsf::numpy::float_1d>{},
+            _poisson_binom_logsf_kernel<std::int64_t, xsf::numpy::float_1d>{},
+            _poisson_binom_logsf_kernel<std::int64_t, xsf::numpy::double_1d>{}
+        },
+        1,
+        "_poisson_binom_logsf",
+        "Internal function",
+        "(),(i)->()",
+        _poisson_binom_map_dims
+    );
+    PyModule_AddObjectRef(module, "_poisson_binom_logsf", _poisson_binom_logsf);
 
     return 0;
 }

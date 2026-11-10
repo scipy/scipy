@@ -140,6 +140,24 @@ _poisson_binom_pmf = _with_cache_optimization(
 )
 
 
+_poisson_binom_sf = _with_cache_optimization(
+    name="_poisson_binom_sf",
+    arg_names=["k", "p"],
+    docstring="Returns the survival function of the Poisson binomial distribution.",
+    ufunc=_gufuncs._poisson_binom_sf,
+    cache_arg_indices=[1],
+)
+
+
+_poisson_binom_logsf = _with_cache_optimization(
+    name="_poisson_binom_logsf",
+    arg_names=["k", "p"],
+    docstring="Returns the log survival function of the Poisson binomial distribution.",
+    ufunc=_gufuncs._poisson_binom_logsf,
+    cache_arg_indices=[1],
+)
+
+
 _poisson_binom_cdf_doc = (
     r"""Poisson binomial cumulative distribution function.
 
