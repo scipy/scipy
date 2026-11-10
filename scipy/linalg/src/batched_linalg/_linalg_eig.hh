@@ -155,7 +155,7 @@ _reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArra
         if (!overwrite_a) {
             // copy the slice to `data` in F order
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
         }
         // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
         // will need to adjust the data pointer here, too.
@@ -353,14 +353,14 @@ _gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArra
         if (!overwrite_a) {
             // copy the slice to `data` in F order
             T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
-            copy_slice_F(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1]);
+            copy_strided_to_f(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1], n);
         }
         // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
         // will need to adjust the data pointer here, too.
 
         if (!overwrite_b) {
             T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
-            copy_slice_F(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1]);
+            copy_strided_to_f(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
         }
         // same deal as with overwrite_a
 
@@ -742,11 +742,11 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
 
         if (!overwrite_a) {
             // XXX: can exploit the structure of `A` in some way or the other?
-            copy_slice_F(buff_A, slice_ptr_A, intn, intn, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(buff_A, slice_ptr_A, intn, intn, strides[ndim-2], strides[ndim-1], intn);
         } // NB. if `overwrite_a` is set the data is already in place and pointer was set earlier
 
         if (ap_Bm != NULL && !overwrite_b) {
-            copy_slice_F(buff_B, slice_ptr_B, intn, intn, strides_B[ndim-2], strides_B[ndim-1]);
+            copy_strided_to_f(buff_B, slice_ptr_B, intn, intn, strides_B[ndim-2], strides_B[ndim-1], intn);
         } // NB. similar reasoning as for `a`
 
 

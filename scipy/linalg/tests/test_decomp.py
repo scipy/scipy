@@ -129,6 +129,29 @@ class TestEigVals:
 
 class TestEig:
 
+    @pytest.mark.parametrize('generalized', [False, True])
+    def test_field_view_strides(self, generalized):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        def field_view(values):
+            dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+            rec = np.zeros(values.shape, dtype=dt)
+            rec['z'] = values
+            view = rec['z']
+            assert view.strides[-1] == 24
+            return view
+
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = b @ b.conj().swapaxes(-1, -2) + 5*np.eye(5)
+        args = (a, b) if generalized else (a,)
+        views = tuple(field_view(x) for x in args)
+        res = eig(*views, left=True, right=True)
+        ref = eig(*args, left=True, right=True)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, v = eig(a)
@@ -1001,6 +1024,30 @@ class TestEigTridiagonal:
 
 
 class TestEigh:
+    @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
+    def test_field_view_strides(self, driver):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        def field_view(values):
+            dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+            rec = np.zeros(values.shape, dtype=dt)
+            rec['z'] = values
+            view = rec['z']
+            assert view.strides[-1] == 24
+            return view
+
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        a = a + a.conj().swapaxes(-1, -2)
+        b = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = b @ b.conj().swapaxes(-1, -2) + 5*np.eye(5)
+        args = (a, b) if driver.startswith('g') else (a,)
+        views = tuple(field_view(x) for x in args)
+        res = eigh(*views, driver=driver)
+        ref = eigh(*args, driver=driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_wrong_inputs(self):
         # Nonsquare a
         assert_raises(ValueError, eigh, np.ones([1, 2]))

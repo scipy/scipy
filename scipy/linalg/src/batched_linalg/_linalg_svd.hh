@@ -107,7 +107,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
             lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, NULL, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
     CBLAS_INT lwork = _calc_lwork(tmp);

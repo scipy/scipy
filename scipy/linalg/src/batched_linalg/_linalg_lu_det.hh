@@ -5,56 +5,20 @@
 
 namespace sp_linalg {
 
-
-constexpr int LU_MAX_NDIM = 64;
-
-
-// ========================================================================
-// Context struct
-// ========================================================================
-
 /**
- * @brief Metadata for batched LU decomposition.
+ * @brief Convert a LAPACK 1-based pivot sequence to a 0-based row permutation.
  *
- * Filled by the Python C extension from PyArrayObject metadata.
- * No NumPy types or Python objects cross this boundary; all data
- * pointers are passed separately as template-typed arguments.
+ * On exit, @p perm satisfies P @ A = L @ U: row i of L @ U is row perm[i] of A.
  *
- * @note Byte strides (not element strides) are stored in @c strides.
+ * @param[in]  ipiv  Pivot sequence of length @p mn from ?getrf, 1-based.
+ * @param[out] perm  Permutation of length @p m.
+ * @param[in]  m     Number of rows.
+ * @param[in]  mn    min(m, n), the length of the pivot sequence.
  */
-struct LU_Context {
-    int64_t*    shape;            ///< Full nD shape of the input array.
-    int64_t*    strides;          ///< Byte strides for the input array.
-    int64_t     num_of_slices;    ///< Product of batch dimensions (shape[0..ndim-3]).
-    CBLAS_INT   m, n;             ///< Rows and columns of each 2D slice.
-    CBLAS_INT   *perm;            ///< Output permutation buffer, num_of_slices * m elements.
-    CBLAS_INT   *ipiv;            ///< Pivot scratch buffer, min(m,n) elements (reused across slices).
-    int         ndim;             ///< Number of dimensions in the input array.
-    bool        permute_l;        ///< If true, apply P to L and discard the permutation.
-    bool        overwrite_a;      ///< If true, input buffer is used directly as getrf workspace.
-};
-
-
-// ========================================================================
-// Utility functions
-// ========================================================================
-
-/**
- * @brief Convert LAPACK 1-based pivot swap sequence to a 0-based permutation.
- *
- * On exit, @p perm contains the permutation such that P @ A = L @ U.
- *
- * @param[in,out] ipiv  On entry, length-mn pivot sequence from ?getrf (1-based).
- *                      Used as scratch of length m during inversion. Contents are destroyed.
- * @param[out]    perm  Output permutation array, length m.
- * @param[in]     m     Number of rows.
- * @param[in]     mn    min(m, n) — length of the pivot sequence.
- */
-inline void ipiv_to_perm(CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT mn)
+inline void ipiv_to_perm(const CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT mn)
 {
-    // Apply the swap sequence in reverse to get the inverse permutation
-    // directly, without extra scratch. Forward swaps give P, reverse gives P⁻¹.
-    for (CBLAS_INT i = 0; i < m; i++) perm[i] = i;
+    // Applying the swaps in reverse order yields the inverse permutation directly.
+    for (CBLAS_INT i = 0; i < m; i++) { perm[i] = i; }
     for (CBLAS_INT i = mn - 1; i >= 0; i--) {
         CBLAS_INT tmp = perm[i];
         perm[i] = perm[ipiv[i] - 1];
@@ -64,21 +28,21 @@ inline void ipiv_to_perm(CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_IN
 
 
 /**
- * @brief Permute rows of a C-ordered m-by-ncols matrix in place.
+ * @brief Permute the rows of a C-ordered m-by-ncols matrix in place.
  *
- * On exit, row i of @p data contains original row perm[i].
+ * On exit, row i of @p data is the original row perm[i].
  *
  * @param[in,out] data   Row-major matrix, m * ncols elements.
- * @param[in]     perm   Permutation array, length m.
- * @param[in]     tmp    Scratch buffer, at least m * ncols elements.
+ * @param[in]     perm   Permutation of length @p m.
+ * @param[in]     tmp    Scratch of at least m * ncols elements.
  * @param[in]     m      Number of rows.
  * @param[in]     ncols  Number of columns.
  */
 template<typename T>
-void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, CBLAS_INT m, CBLAS_INT ncols)
+void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, npy_intp m, npy_intp ncols)
 {
-    std::memcpy(tmp, data, (size_t)m * ncols * sizeof(T));
-    for (CBLAS_INT i = 0; i < m; i++) {
+    std::memcpy(tmp, data, (std::size_t)m * ncols * sizeof(T));
+    for (npy_intp i = 0; i < m; i++) {
         if (perm[i] != i) {
             std::memcpy(data + i * ncols, tmp + perm[i] * ncols, ncols * sizeof(T));
         }
@@ -86,247 +50,184 @@ void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, CBLAS_INT m, CBLAS_INT
 }
 
 
-// ========================================================================
-// Single-slice LU decomposition
-// ========================================================================
-
 /**
- * @brief LU decomposition of a single m-by-n matrix.
+ * @brief LU decomposition of one m-by-n matrix.
  *
- * Calls ?getrf on the column-major buffer @p f_buf, then extracts L and U
- * into pre-zeroed row-major output buffers. Optionally permutes L rows so
- * that the caller receives P @ L directly.
+ * ?getrf factors the column-major @p f_buf in place; L and U are then written to the
+ * zero-initialised row-major @p l_out and @p u_out, and the row permutation to @p perm.
  *
- * All buffers are caller-allocated and must satisfy the documented sizes.
- *
- * @param[in,out] f_buf      Column-major m*n buffer. On entry, the input matrix.
- *                           Overwritten by ?getrf. Reused as scratch for permute_rows.
- * @param[out]    l_out      Row-major m*min(m,n) buffer, pre-zeroed by caller.
- * @param[out]    u_out      Row-major min(m,n)*n buffer, pre-zeroed by caller.
- * @param[in,out] ipiv       Scratch buffer, at least min(m,n) elements. Contents destroyed.
- * @param[out]    perm       Output permutation, m elements.
+ * @param[in,out] f_buf      Column-major m-by-n input. Overwritten by ?getrf and, when
+ *                           @p permute_l is set, reused as scratch by permute_rows.
+ * @param[out]    l_out      Row-major m-by-min(m, n) unit lower triangular L, zero on entry.
+ * @param[out]    u_out      Row-major min(m, n)-by-n upper triangular U, zero on entry.
+ * @param[out]    ipiv       Scratch of min(m, n) elements for the pivot sequence.
+ * @param[out]    perm       Row permutation of length m with P @ A = L @ U.
  * @param[in]     m          Number of rows.
  * @param[in]     n          Number of columns.
- * @param[in]     permute_l  If true, apply P to L in place.
- *
- * @return LAPACK info: 0 = success, < 0 = bad argument, > 0 = U(info,info) is zero (singular).
+ * @param[in]     permute_l  If true, @p l_out receives P @ L instead of L.
+ * @return LAPACK info: 0 success; > 0 U(info, info) is exactly zero but the factorization
+ *         is complete; < 0 argument error.
  */
 template<typename T>
 CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT n, bool permute_l)
 {
-    CBLAS_INT mn = m < n ? m : n;
+    const CBLAS_INT mn = m < n ? m : n;
     CBLAS_INT info = 0;
 
     lapack::getrf(m, n, f_buf, m, ipiv, &info);
-
     if (info < 0) { return info; }
 
-    // Extract U (upper triangle + right block) from F-ordered getrf result
-    // into pre-zeroed C-ordered output buffer.
-    for (CBLAS_INT i = 0; i < mn; i++) {
-        for (CBLAS_INT j = i; j < n; j++) {
+    // index arithmetic in npy_intp: a slice may hold more than CBLAS_INT_MAX elements
+    // U: the upper triangle and the right block of the column-major factor
+    for (npy_intp i = 0; i < mn; i++) {
+        for (npy_intp j = i; j < n; j++) {
             u_out[i * n + j] = f_buf[j * m + i];
         }
     }
-
-    // Extract L (below-diagonal elements) and set unit diagonal.
-    for (CBLAS_INT j = 0; j < mn; j++)
-        for (CBLAS_INT i = j + 1; i < m; i++)
+    // L: the strictly lower triangle plus a unit diagonal
+    for (npy_intp j = 0; j < mn; j++) {
+        for (npy_intp i = j + 1; i < m; i++) {
             l_out[i * mn + j] = f_buf[j * m + i];
+        }
+    }
+    for (npy_intp i = 0; i < mn; i++) { l_out[i * mn + i] = T(1); }
 
-    for (CBLAS_INT i = 0; i < mn; i++)
-        l_out[i * mn + i] = T(1);
-
-    // Convert LAPACK pivot swaps to permutation
     ipiv_to_perm(ipiv, perm, m, mn);
-
-    // Optionally permute L rows (f_buf is free to use as scratch)
-    if (permute_l)
-        permute_rows(l_out, perm, f_buf, m, mn);
+    if (permute_l) { permute_rows(l_out, perm, f_buf, m, mn); }   // f_buf is free as scratch
 
     return info;
 }
 
 
-// ========================================================================
-// Batched dispatch
-// ========================================================================
-
 /**
- * @brief Batched LU decomposition over an nD array.
+ * @brief Determinant of one n-by-n matrix from its LU factorization.
  *
- * Iterates over all 2D slices defined by the batch dimensions,
- * copies each strided input slice into the column-major scratch buffer,
- * and calls lu_decompose(). Per-slice LAPACK info is written to
- * @p slice_info for the Python layer to convert to warnings.
- *
- * When @c ctx.overwrite_a is true (2D, F-contiguous input only), the
- * input data is used directly as the ?getrf workspace — no copy is made.
- *
- * @param[in]     ctx         Batch metadata (shape, strides, dimensions, flags).
- * @param[in]     a_dat       Input array data, possibly strided.
- * @param[out]    l_out       Contiguous output buffer for L factors, num_of_slices * m * min(m,n).
- * @param[out]    u_out       Contiguous output buffer for U factors, num_of_slices * min(m,n) * n.
- * @param[in,out] scratch     Column-major work buffer, m * n elements. Unused when overwrite_a is true.
- * @param[out]    slice_info  Per-slice LAPACK info, num_of_slices elements. 0 = success, > 0 = singular.
- *
- * @return 0 on success, < 0 on fatal LAPACK error (processing stops immediately).
- */
-template<typename T>
-int lu_dispatch(LU_Context &ctx, T *a_dat, T *l_out, T *u_out, T *scratch, CBLAS_INT *slice_info)
-{
-    CBLAS_INT m = ctx.m, n = ctx.n;
-    CBLAS_INT mn = m < n ? m : n;
-
-    int64_t s0 = ctx.strides[ctx.ndim - 2];
-    int64_t s1 = ctx.strides[ctx.ndim - 1];
-
-    for (int64_t idx = 0; idx < ctx.num_of_slices; idx++) {
-
-        // Compute strided offset for this slice's input data
-        int64_t offset = 0;
-        int64_t temp = idx;
-        for (int i = ctx.ndim - 3; i >= 0; i--) {
-            offset += (temp % ctx.shape[i]) * ctx.strides[i];
-            temp /= ctx.shape[i];
-        }
-        const T *slice_in = reinterpret_cast<const T *>(reinterpret_cast<const char *>(a_dat) + offset);
-
-        // Contiguous output offsets
-        T *l_slice = l_out + idx * m * mn;
-        T *u_slice = u_out + idx * mn * n;
-        CBLAS_INT *perm_slice = ctx.perm + idx * m;
-
-        // Prepare column-major input for getrf
-        T *f_buf;
-        if (ctx.overwrite_a) {
-            // 2D F-contiguous: use input directly (no copy)
-            f_buf = const_cast<T*>(slice_in);
-        } else {
-            copy_strided_to_f(scratch, slice_in, m, n, s0, s1, m);
-            f_buf = scratch;
-        }
-
-        // Decompose this slice
-        CBLAS_INT info = lu_decompose(f_buf, l_slice, u_slice,
-                                      ctx.ipiv, perm_slice, m, n,
-                                      ctx.permute_l);
-
-        if (info < 0) { return (int)info; }
-        slice_info[idx] = info;
-    }
-
-    return 0;
-}
-
-
-// ========================================================================
-// Single-slice determinant
-// ========================================================================
-
-/**
- * @brief Compute the determinant of a single n-by-n matrix via LU factorization.
- *
- * Calls ?getrf on the column-major buffer @p f_buf, then computes the
- * product of the diagonal of U and adjusts the sign based on the
- * number of row interchanges.
- *
- * @param[in,out] f_buf  Column-major n*n buffer. Overwritten by ?getrf.
- * @param[in,out] ipiv   Scratch buffer, at least n elements. Contents destroyed.
+ * @param[in,out] f_buf  Column-major n-by-n input; overwritten by ?getrf.
+ * @param[out]    ipiv   Scratch of n elements for the pivot sequence.
  * @param[in]     n      Matrix dimension.
- * @param[out]    info   LAPACK info: 0 = success, < 0 = bad arg, > 0 = singular.
- *
- * @return The determinant value. Returns T(0) when singular (info > 0).
+ * @param[out]    info   LAPACK info: 0 success; > 0 exactly singular; < 0 argument error.
+ * @return The determinant; T(0) when @p info is nonzero.
  */
 template<typename T>
 T det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
 {
     lapack::getrf(n, n, f_buf, n, ipiv, info);
+    if (*info != 0) { return T(0); }
 
-    if (*info < 0) { return T(0); }
-    if (*info > 0) { return T(0); }
-
-    // Accumulate in promoted precision to avoid overflow/underflow
-    // for single-precision types (float32 -> float64, complex64 -> complex128).
-    using acc_type = std::conditional_t<
-        std::is_same_v<T, f32>,
-        f64,
-        std::conditional_t<
-            std::is_same_v<T,c64>,
-            c128,
-            T
-        >
-    >;
+    // Accumulate in double precision so that float32 and complex64 products do not
+    // overflow or underflow prematurely.
+    using acc_type = std::conditional_t<std::is_same_v<T, f32>, f64,
+                     std::conditional_t<std::is_same_v<T, c64>, c128, T>>;
 
     acc_type det = acc_type(1);
     CBLAS_INT swaps = 0;
-    for (CBLAS_INT k = 0; k < n; k++) {
-        det *= static_cast<acc_type>(f_buf[k * (n + 1)]);  // diagonal (k,k) in column-major
+    for (npy_intp k = 0; k < n; k++) {
+        det *= static_cast<acc_type>(f_buf[k * (n + 1)]);  // diagonal entry (k, k), column-major
         if (ipiv[k] != k + 1) { swaps++; }
     }
     return static_cast<T>((swaps % 2) ? -det : det);
 }
 
 
-// ========================================================================
-// Batched determinant dispatch
-// ========================================================================
-
 /**
- * @brief Batched determinant computation over an nD array.
+ * @brief Batched LU decomposition, `linalg.lu`.
  *
- * Iterates over all 2D slices defined by the batch dimensions,
- * copies each strided input slice into the column-major scratch buffer,
- * and calls det_from_lu().
- *
- * When @c ctx.overwrite_a is true (2D, F-contiguous input only), the
- * input data is used directly as the ?getrf workspace.
- *
- * @param[in]     ctx         Batch metadata (shape, strides, dimensions, flags).
- * @param[in]     a_dat       Input array data, possibly strided.
- * @param[out]    det_out     Contiguous output buffer, one element per slice.
- * @param[in,out] scratch     Column-major work buffer, n * n elements. Unused when overwrite_a.
- * @param[out]    slice_info  Per-slice LAPACK info, num_of_slices elements.
- *
- * @return 0 on success, < 0 on fatal LAPACK error (processing stops immediately).
+ * @param[in]  ap_a       Input array of shape (..., m, n), any strides.
+ * @param[out] l_out      C-contiguous (..., m, min(m, n)) buffer for L, zero on entry.
+ * @param[out] u_out      C-contiguous (..., min(m, n), n) buffer for U, zero on entry.
+ * @param[out] perm       C-contiguous (..., m) buffer for the row permutations.
+ * @param[in]  permute_l  If true, L receives P @ L; the permutation is still written.
+ * @param[in]  in_place   If true, @p ap_a is 2-D, F-contiguous and writeable, and is factored
+ *                        in place instead of being copied to a workspace.
+ * @return ok; too_large if m or n does not fit CBLAS_INT; no_memory; lapack_error if ?getrf
+ *         rejects an argument. An exactly singular slice is not an error.
  */
 template<typename T>
-int det_dispatch(LU_Context &ctx, T *a_dat, T *det_out, T *scratch, CBLAS_INT *slice_info)
+BatchStatus
+_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bool in_place)
 {
-    CBLAS_INT n = ctx.n;
+    T *a_data = (T *)PyArray_DATA(ap_a);
+    npy_intp ndim = PyArray_NDIM(ap_a);
+    npy_intp *shape = PyArray_SHAPE(ap_a);
+    npy_intp *strides = PyArray_STRIDES(ap_a);
+    npy_intp s0 = strides[ndim - 2], s1 = strides[ndim - 1];
 
-    int64_t s0 = ctx.strides[ctx.ndim - 2];
-    int64_t s1 = ctx.strides[ctx.ndim - 1];
+    npy_intp outer_size = 1;
+    for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
 
-    for (int64_t idx = 0; idx < ctx.num_of_slices; idx++) {
+    CBLAS_INT m, n;
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
+        return BatchStatus::too_large;
+    }
+    const npy_intp mn = m < n ? m : n;
 
-        // Compute strided offset for this slice's input data
-        int64_t offset = 0;
-        int64_t temp = idx;
-        for (int i = ctx.ndim - 3; i >= 0; i--) {
-            offset += (temp % ctx.shape[i]) * ctx.strides[i];
-            temp /= ctx.shape[i];
+    // element counts are dimensions of an existing array, so they fit size_t
+    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::size_t)m * n);
+    auto ipiv = alloc_workspace<CBLAS_INT>(mn);
+    if (!scratch || !ipiv) { return BatchStatus::no_memory; }
+
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
+        T *f_buf = slice_ptr;
+        if (!in_place) {
+            copy_strided_to_f(scratch.get(), slice_ptr, m, n, s0, s1, m);
+            f_buf = scratch.get();
         }
-        const T *slice_in = reinterpret_cast<const T *>(reinterpret_cast<const char *>(a_dat) + offset);
 
-        // Prepare column-major input for getrf
-        T *f_buf;
-        if (ctx.overwrite_a) {
-            f_buf = const_cast<T*>(slice_in);
-        } else {
-            copy_strided_to_f(scratch, slice_in, n, n, s0, s1, n);
-            f_buf = scratch;
+        CBLAS_INT info = lu_decompose(f_buf, l_out + idx * m * mn, u_out + idx * mn * n,
+                                      ipiv.get(), perm + idx * m, m, n, permute_l);
+        if (info < 0) { return BatchStatus::lapack_error; }
+    }
+
+    return BatchStatus::ok;
+}
+
+
+/**
+ * @brief Batched determinant, `linalg.det`.
+ *
+ * @param[in]  ap_a      Input array of shape (..., n, n), any strides.
+ * @param[out] det_out   C-contiguous (...) buffer, one determinant per slice.
+ * @param[in]  in_place  If true, @p ap_a is 2-D, contiguous in either order and writeable,
+ *                       and is factored in place; det(A^T) = det(A).
+ * @return ok; too_large if n does not fit CBLAS_INT; no_memory; lapack_error if ?getrf
+ *         rejects an argument. An exactly singular slice has determinant zero.
+ */
+template<typename T>
+BatchStatus
+_det(PyArrayObject *ap_a, T *det_out, bool in_place)
+{
+    T *a_data = (T *)PyArray_DATA(ap_a);
+    npy_intp ndim = PyArray_NDIM(ap_a);
+    npy_intp *shape = PyArray_SHAPE(ap_a);
+    npy_intp *strides = PyArray_STRIDES(ap_a);
+    npy_intp s0 = strides[ndim - 2], s1 = strides[ndim - 1];
+
+    npy_intp outer_size = 1;
+    for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
+
+    CBLAS_INT n;
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) { return BatchStatus::too_large; }
+
+    // element counts are dimensions of an existing array, so they fit size_t
+    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::size_t)n * n);
+    auto ipiv = alloc_workspace<CBLAS_INT>(n);
+    if (!scratch || !ipiv) { return BatchStatus::no_memory; }
+
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
+        T *f_buf = slice_ptr;
+        if (!in_place) {
+            copy_strided_to_f(scratch.get(), slice_ptr, n, n, s0, s1, n);
+            f_buf = scratch.get();
         }
 
         CBLAS_INT info = 0;
-        det_out[idx] = det_from_lu(f_buf, ctx.ipiv, n, &info);
-
-        if (info < 0) { return (int)info; }
-        slice_info[idx] = info;
+        det_out[idx] = det_from_lu(f_buf, ipiv.get(), n, &info);
+        if (info < 0) { return BatchStatus::lapack_error; }
     }
 
-    return 0;
+    return BatchStatus::ok;
 }
-
 
 } // namespace sp_linalg

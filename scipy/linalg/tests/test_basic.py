@@ -3145,3 +3145,12 @@ class TestFieldViewStrides:
         b = self.matrices()[..., :2]
         assert_equal(solve(self.field_view(a), self.field_view(b), assume_a=assume_a),
                      solve(a, b, assume_a=assume_a))
+
+    @pytest.mark.parametrize("lapack_driver", ["gelsd", "gelsy", "gelss"])
+    def test_lstsq(self, lapack_driver):
+        a = self.matrices()[..., :3]
+        b = self.matrices()[..., :2]
+        res = lstsq(self.field_view(a), self.field_view(b), lapack_driver=lapack_driver)
+        ref = lstsq(a, b, lapack_driver=lapack_driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)

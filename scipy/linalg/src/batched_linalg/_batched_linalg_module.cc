@@ -81,8 +81,10 @@ set_batch_error(BatchStatus status, const char *func) {
                 "scipy.linalg.%s: a dimension or workspace size exceeds the range of the %d-bit "
                 "integers of the LAPACK library%s.", func, (int)(8 * sizeof(CBLAS_INT)),
                 sizeof(CBLAS_INT) < 8 ? "; SciPy built with ILP64 support can handle it" : "");
-        case BatchStatus::lapack_query_failed:
-            return PyErr_Format(PyExc_RuntimeError, "scipy.linalg.%s: the LAPACK workspace query failed.", func);
+        case BatchStatus::lapack_error:
+            return PyErr_Format(PyExc_RuntimeError,
+                "scipy.linalg.%s: a LAPACK routine rejected one of its arguments. This is a bug in "
+                "SciPy, please report it.", func);
         case BatchStatus::bad_dtype:
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
         case BatchStatus::ok:
@@ -141,6 +143,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "inv"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
     return Py_BuildValue("NN", PyArray_Return(ap_Ainv.release()), ret_lst);
 }
 
@@ -223,6 +226,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "solve"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
     return Py_BuildValue("NN", PyArray_Return(ap_x.release()), ret_lst);
 }
 
@@ -364,7 +368,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Allocate a C-ordered array, (hence the `0` magic number).
     if (pivoting) {
         shape_Q[ndim-2] = N;
-        ap_jpvt.reset((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, sizeof(CBLAS_INT) == sizeof(NPY_INT32)? NPY_INT32 : NPY_INT64, 0));
+        ap_jpvt.reset((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32, 0));
         if (!ap_jpvt) { return PyErr_NoMemory(); }
     }
 
@@ -378,6 +382,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "qr"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
     PyObject *ret_Q = (mode != QR_mode::R) ? PyArray_Return(ap_Q.release()) : Py_NewRef(Py_None);
     PyObject *ret_tau = (mode == QR_mode::RAW_MODE) ? PyArray_Return(ap_tau.release()) : Py_NewRef(Py_None);
     PyObject *ret_jpvt = pivoting ? PyArray_Return(ap_jpvt.release()) : Py_NewRef(Py_None);
@@ -464,6 +469,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "svd"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
     if (compute_uv) {
         return Py_BuildValue("NNNN", PyArray_Return(ap_U.release()),
                                      PyArray_Return(ap_S.release()),
@@ -944,6 +950,7 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "cholesky"); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
     return Py_BuildValue("NN", PyArray_Return(ap_Cm.release()), ret_lst);
 }
 
@@ -953,17 +960,11 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
  */
 PyObject*
 convert_vec_status(SliceStatusVec& vec_status) {
-    PyObject *ret_dct = NULL;
     PyObject *ret_lst = PyList_New(0);
+    if (!ret_lst) { return NULL; }
 
-    if (vec_status.empty()) {
-        return ret_lst;
-    }
-
-    // Problems detected in some slices, report.
-    for (size_t i=0; i<vec_status.size(); i++) {
-        SliceStatus status = vec_status[i];
-        ret_dct = Py_BuildValue(
+    for (const SliceStatus &status : vec_status) {
+        PyObject *ret_dct = Py_BuildValue(
             "{s:n,s:n,s:i,s:i,s:d,s:n}",
             "num", status.slice_num,
             "structure", status.structure,
@@ -972,10 +973,13 @@ convert_vec_status(SliceStatusVec& vec_status) {
             "rcond", status.rcond,
             "lapack_info", status.lapack_info
         );
-        PyList_Append(ret_lst, ret_dct);
+        if (!ret_dct || PyList_Append(ret_lst, ret_dct) < 0) {
+            Py_XDECREF(ret_dct);
+            Py_DECREF(ret_lst);
+            return NULL;
+        }
         Py_DECREF(ret_dct);
     }
-
     return ret_lst;
 }
 
@@ -994,7 +998,6 @@ get_err_mesg(const std::string routine, const std::string func_name, int info) {
 
 static PyObject*
 _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
-    // Handle the input and metadata
     PyArrayObject *ap_a = NULL;
     int permute_l = 0;
     int overwrite_a = 0;
@@ -1002,113 +1005,40 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!PyArg_ParseTuple(args, "O!pp", &PyArray_Type, (PyObject **)&ap_a, &permute_l, &overwrite_a)) {
         return NULL;
     }
-
-    // Sanity check the input array
-    if (!_check_dtype_and_flags(ap_a, "lu")) {
-        return NULL;
-    }
+    if (!_check_dtype_and_flags(ap_a, "lu")) { return NULL; }
 
     int typenum = PyArray_TYPE(ap_a);
     int ndim = PyArray_NDIM(ap_a);
-    if (ndim > LU_MAX_NDIM) {
-        PyErr_SetString(PyExc_ValueError, "scipy.linalg.lu: Input array has too many dimensions.");
-        return NULL;
-    }
+    npy_intp *shape = PyArray_SHAPE(ap_a);
+    npy_intp m = shape[ndim - 2], n = shape[ndim - 1], minmn = m < n ? m : n;
 
-    // Output shapes are derived from a copy; the input array's own shape is never modified
-    npy_intp shape[LU_MAX_NDIM];
-    std::copy(PyArray_SHAPE(ap_a), PyArray_SHAPE(ap_a) + ndim, shape);
-    npy_intp *byte_strides = PyArray_STRIDES(ap_a);
-
-    CBLAS_INT m, n;
-    if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
-        return set_batch_error(BatchStatus::too_large, "lu");
-    }
-    CBLAS_INT minmn = m < n ? m : n;
-    const std::size_t scratch_count = (std::size_t)m * n;   // the size of a slice of `a`
-
-    npy_intp num_of_slices = 1;
-    for (int i = 0; i < ndim - 2; i++) { num_of_slices *= shape[i]; }
-
-    int64_t ctx_shape[LU_MAX_NDIM];
-    int64_t ctx_strides[LU_MAX_NDIM];
-    for (int i = 0; i < ndim; i++) {
-        ctx_shape[i] = (int64_t)shape[i];
-        ctx_strides[i] = (int64_t)byte_strides[i];
-    }
-
-    // perm (..., m)
+    // perm (..., m); L (..., m, minmn); U (..., minmn, n)
     OwnedArray ap_perm((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32));
-    if (!ap_perm) { return PyErr_NoMemory(); }
-
-    LU_Context ctx = {};
-    ctx.shape = ctx_shape;
-    ctx.strides = ctx_strides;
-    ctx.num_of_slices = num_of_slices;
-    ctx.m = m;
-    ctx.n = n;
-    ctx.perm = static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get()));
-    ctx.ndim = ndim;
-    ctx.permute_l = (bool)permute_l;
-    ctx.overwrite_a = false;
-
-    OwnedArray ap_l, ap_u;
-    npy_intp l_shape[LU_MAX_NDIM], u_shape[LU_MAX_NDIM];
+    npy_intp l_shape[NPY_MAXDIMS], u_shape[NPY_MAXDIMS];
     std::copy(shape, shape + ndim, l_shape);
     std::copy(shape, shape + ndim, u_shape);
+    l_shape[ndim - 1] = minmn;
+    u_shape[ndim - 2] = minmn;
+    OwnedArray ap_l((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
+    OwnedArray ap_u((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
+    if (!ap_perm || !ap_l || !ap_u) { return PyErr_NoMemory(); }
 
-    // Legacy overwrite_a: reuse input as the larger factor (2D + F-contiguous only).
-    // Disabled when permute_l is true (permute_rows needs C-ordered data).
-    if (overwrite_a && !permute_l && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a)) {
-        ctx.overwrite_a = true;
-        Py_INCREF(ap_a);
-        if (m > n) {
-            // Tall: L (m x n) is large — reuse input. Allocate U (n x n).
-            ap_l.reset(ap_a);
-            u_shape[ndim - 2] = minmn;
-            ap_u.reset((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
-        } else {
-            // Fat/square: U (m x n) is large — reuse input. Allocate L (m x m).
-            ap_u.reset(ap_a);
-            l_shape[ndim - 1] = minmn;
-            ap_l.reset((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
-        }
-    } else {
-        // Allocate output arrays: L (..., m, minmn), U (..., minmn, n)
-        l_shape[ndim - 1] = minmn;
-        u_shape[ndim - 2] = minmn;
-        ap_l.reset((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
-        ap_u.reset((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
-    }
-    if (!ap_l || !ap_u) { return PyErr_NoMemory(); }
+    // A 2-D F-contiguous writeable input is the getrf workspace itself: no copy is made.
+    bool in_place = overwrite_a && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a);
 
-    int info = 0;
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        // slice_info: per-slice getrf info (> 0: exactly singular); not yet surfaced to Python
-        auto scratch = alloc_workspace<T>(ctx.overwrite_a ? 0 : scratch_count);
-        auto ipiv = alloc_workspace<CBLAS_INT>(minmn);
-        auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
-        if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
-        ctx.ipiv = ipiv.get();
-        info = lu_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), static_cast<T *>(PyArray_DATA(ap_l.get())), static_cast<T *>(PyArray_DATA(ap_u.get())), scratch.get(), slice_info.get());
-        return BatchStatus::ok;
+        return _lu<T>(ap_a, static_cast<T *>(PyArray_DATA(ap_l.get())), static_cast<T *>(PyArray_DATA(ap_u.get())),
+                      static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get())), (bool)permute_l, in_place);
     });
     Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "lu"); }
-    if (info < 0) {
-        return PyErr_Format(PyExc_ValueError, "scipy.linalg.lu: internal error, getrf returned info = %d.", info);
-    }
 
-    // Always return (P, L, U) with consistent types.
-    // When permute_l is true, P is replaced with an empty array since
-    // the permutation is already applied to L.
     if (permute_l) {
-        // Return an empty int32 array instead of None so the return type is
-        // always (ndarray, ndarray, ndarray) — avoids Optional in type stubs.
-        // int32 since the array has zero elements; no overflow concern.
+        // P is already applied to L. Return an empty int32 array rather than None so the
+        // return type is always three arrays.
         npy_intp zero = 0;
         ap_perm.reset((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
         if (!ap_perm) { return PyErr_NoMemory(); }
@@ -1125,92 +1055,39 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
 static PyObject*
 _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
-    // Handle the input and metadata
     PyArrayObject *ap_a = NULL;
     int overwrite_a = 0;
 
     if (!PyArg_ParseTuple(args, "O!p", &PyArray_Type, (PyObject **)&ap_a, &overwrite_a)) {
         return NULL;
     }
-
-    // Sanity check the input array
-    if (!_check_dtype_and_flags(ap_a, "det")) {
-        return NULL;
-    }
+    if (!_check_dtype_and_flags(ap_a, "det")) { return NULL; }
 
     int typenum = PyArray_TYPE(ap_a);
     int ndim = PyArray_NDIM(ap_a);
-    if (ndim > LU_MAX_NDIM) {
-        PyErr_SetString(PyExc_ValueError, "scipy.linalg.det: Input array has too many dimensions.");
-        return NULL;
-    }
-
     npy_intp *shape = PyArray_SHAPE(ap_a);
-    npy_intp *byte_strides = PyArray_STRIDES(ap_a);
-
     if (shape[ndim - 2] != shape[ndim - 1]) {
         PyErr_SetString(PyExc_ValueError, "scipy.linalg.det: Last two dimensions must be square.");
         return NULL;
     }
 
-    CBLAS_INT n;
-    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
-        return set_batch_error(BatchStatus::too_large, "det");
-    }
-    const std::size_t scratch_count = (std::size_t)n * n;   // the size of a slice of `a`
-
-    npy_intp num_of_slices = 1;
-    for (int i = 0; i < ndim - 2; i++) { num_of_slices *= shape[i]; }
-
-    int64_t ctx_shape[LU_MAX_NDIM];
-    int64_t ctx_strides[LU_MAX_NDIM];
-    for (int i = 0; i < ndim; i++) {
-        ctx_shape[i] = (int64_t)shape[i];
-        ctx_strides[i] = (int64_t)byte_strides[i];
-    }
-
-    // Allocate output det array (...,) — batch dimensions only
+    // one determinant per slice: the batch dimensions only
     OwnedArray ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, typenum));
     if (!ap_det) { return PyErr_NoMemory(); }
 
-    LU_Context ctx = {};
-    ctx.shape = ctx_shape;
-    ctx.strides = ctx_strides;
-    ctx.num_of_slices = num_of_slices;
-    ctx.m = n;
-    ctx.n = n;
-    ctx.perm = NULL;
-    ctx.ndim = ndim;
-    ctx.permute_l = false;
-    ctx.overwrite_a = false;
+    // A 2-D contiguous writeable input is the getrf workspace itself; det(A^T) = det(A), so
+    // either order works.
+    bool in_place = overwrite_a && (ndim == 2) && PyArray_ISWRITEABLE(ap_a)
+                    && (PyArray_ISFARRAY_RO(ap_a) || PyArray_ISCARRAY_RO(ap_a));
 
-    // Legacy overwrite_a: use input directly (2D + contiguous only).
-    // For det, both C and F order work since det(A^T) = det(A).
-    if (overwrite_a && (ndim == 2) && PyArray_ISWRITEABLE(ap_a)
-        && (PyArray_ISFARRAY_RO(ap_a) || PyArray_ISCARRAY_RO(ap_a))) {
-        ctx.overwrite_a = true;
-    }
-
-    int info = 0;
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        // slice_info: per-slice getrf info (> 0: exactly singular, so the determinant is exactly
-        // zero rather than numerically small); not yet surfaced to Python
-        auto scratch = alloc_workspace<T>(ctx.overwrite_a ? 0 : scratch_count);
-        auto ipiv = alloc_workspace<CBLAS_INT>(n);
-        auto slice_info = alloc_workspace<CBLAS_INT>(num_of_slices);
-        if (!scratch || !ipiv || !slice_info) { return BatchStatus::no_memory; }
-        ctx.ipiv = ipiv.get();
-        info = det_dispatch<T>(ctx, static_cast<T *>(PyArray_DATA(ap_a)), static_cast<T *>(PyArray_DATA(ap_det.get())), scratch.get(), slice_info.get());
-        return BatchStatus::ok;
+        return _det<T>(ap_a, static_cast<T *>(PyArray_DATA(ap_det.get())), in_place);
     });
     Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }
-    if (info < 0) {
-        return PyErr_Format(PyExc_ValueError, "scipy.linalg.det: internal error, getrf returned info = %d.", info);
-    }
 
     return (PyObject *)ap_det.release();
 }
@@ -1269,13 +1146,8 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     auto each_slice = [&](auto tag) {
         using T = decltype(tag);
         for (npy_intp idx = 0; idx < num_slices; idx++) {
-            // byte offset of the idx-th 2D slice
-            int64_t offset = 0, temp = idx;
-            for (int i = batch_ndim - 1; i >= 0; i--) {
-                offset += (temp % shape[i]) * strides[i];
-                temp /= shape[i];
-            }
-            bandwidth_slice(reinterpret_cast<const T *>(a_data + offset), n, m, s0, s1, &lb_data[idx], &ub_data[idx]);
+            const T *slice_ptr = reinterpret_cast<const T *>(compute_slice_ptr(idx, a_data, ndim, shape, strides));
+            bandwidth_slice(slice_ptr, n, m, s0, s1, &lb_data[idx], &ub_data[idx]);
         }
     };
 

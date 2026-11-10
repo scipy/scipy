@@ -125,12 +125,12 @@ _lstsq_gelss(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         // is already in place, so no need to.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         if (!overwrite_b) {
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-            copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
+            copy_strided_to_f(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
         } // NB. gelss needs LDB = max(1, m, n)
 
         // perform the least squares
@@ -296,13 +296,13 @@ _lstsq_gelsd(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyA
         // F-contiguous data, so the input would already be in place.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         if (!overwrite_b) {
             // copy the r.h.s, too; NB: gelsd needs LDB=max(1, m, n)
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-            copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
+            copy_strided_to_f(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
         } // NB. gelsd needs ldb = max(1, m, n)
 
         // perform the least squares
@@ -461,12 +461,12 @@ _lstsq_gelsy(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, PyA
         // inputs, so the data is already in place then.
         if (!overwrite_a) {
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         if (!overwrite_b) {
             T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
-            copy_slice_F(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
+            copy_strided_to_f(data_b, slice_ptr_b, m, nrhs, strides_b[ndim_b-2], strides_b[ndim_b-1], ldb);
         } // NB. gelsy needs ldb = max(1, m, n)
 
         for(npy_intp i=0; i<n; i++) {jpvt[i] = 0;}

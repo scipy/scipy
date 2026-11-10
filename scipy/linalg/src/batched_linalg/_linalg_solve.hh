@@ -380,7 +380,9 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
         // structure is known to be banded
         init_status(slice_status, idx, St::BANDED);
-        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv.get(), b_data, work, irwork.get(), kls[idx], kus[idx], slice_status);
+        // kl, ku <= ldab_max <= CBLAS_INT_MAX, checked above
+        solve_slice_banded(trans, intn, int_nrhs, ab, ipiv.get(), b_data, work, irwork.get(),
+                           (CBLAS_INT)kls[idx], (CBLAS_INT)kus[idx], slice_status);
 
         if (_detect_problems(slice_status, vec_status) != 0) { return BatchStatus::ok; }
 
@@ -443,7 +445,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     T tmp = 0.0;
     lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
     CBLAS_INT lwork_sytrf = _calc_lwork(tmp);

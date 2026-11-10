@@ -1,13 +1,18 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
+#include <complex>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <new>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
 #include "_linalg_bandwidth.h"   /* bandwidth_{s,d,c,z} */
 
@@ -36,7 +41,7 @@ enum class BatchStatus {
     ok,
     no_memory,            ///< A workspace allocation failed.
     too_large,            ///< A dimension or workspace size passed to LAPACK does not fit CBLAS_INT.
-    lapack_query_failed,  ///< A LAPACK workspace query returned a nonzero info.
+    lapack_error,         ///< A LAPACK routine rejected an argument (info < 0): a bug in SciPy, not bad input.
     bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
 };
 
@@ -188,7 +193,7 @@ struct SliceStatus {
 };
 
 
-void init_status(SliceStatus& slice_status, npy_intp idx, St slice_structure) {
+inline void init_status(SliceStatus& slice_status, npy_intp idx, St slice_structure) {
     slice_status.slice_num = idx;
     slice_status.structure = (Py_ssize_t)slice_structure;
     slice_status.is_singular = 0;
@@ -212,7 +217,7 @@ typedef std::vector<SliceStatus> SliceStatusVec;
  * In the first two cases, we record the `status` in `vec_status`.
  * For non-recoverable errors (singularity of non-zero info), we terminate the loop over the slices.
  */
-int
+inline int
 _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
     if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
         vec_status.push_back(slice_status);
@@ -267,18 +272,26 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
 }
 
 
-/*
- * Given an array of ndim >= 2, compute a pointer to the start of the 2D "slice" idx
+/**
+ * @brief Pointer to the first element of the idx-th 2-D slice of an array of ndim >= 2.
+ *
+ * @param idx      Slice index in C order over the leading ndim - 2 dimensions.
+ * @param data     First element of the array; may point to const.
+ * @param ndim     Number of dimensions.
+ * @param shape    Shape of the array.
+ * @param strides  Byte strides of the array.
+ * @return @p data advanced by the byte offset of the slice.
  */
 template<typename T>
-T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, npy_intp *strides) {
+T* compute_slice_ptr(npy_intp idx, T *data, npy_intp ndim, const npy_intp *shape, const npy_intp *strides) {
     npy_intp offset = 0;
     npy_intp temp_idx = idx;
     for (int i = ndim - 3; i >= 0; i--) {
         offset += (temp_idx % shape[i]) * strides[i];
         temp_idx /= shape[i];
     }
-    return reinterpret_cast<T *>(reinterpret_cast<char *>(Am_data) + offset);
+    using byte_t = std::conditional_t<std::is_const_v<T>, const char, char>;
+    return reinterpret_cast<T *>(reinterpret_cast<byte_t *>(data) + offset);
 }
 
 
@@ -313,27 +326,6 @@ void copy_strided_to_f(T *dst, const T *src, npy_intp m, npy_intp n, npy_intp s0
             for (npy_intp i = 0; i < m; i++) {
                 dst_col[i] = *reinterpret_cast<const T *>(src_col + i * s0);
             }
-        }
-    }
-}
-
-
-/*
- * Copy n-by-m C-order slice from slice_ptr to dst in F-order.
- *
- * `src` is n-by-m, strided
- * `dst` is ldb-by-m, F-ordered.
- *
- * The default is to have src and dst of the same size (ldb=-1 means ldb=n).
- */
-template<typename T>
-void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1, npy_intp ldb=-1) {
-
-    if (ldb == -1) {ldb = n;}
-
-    for (npy_intp i = 0; i < n; i++) {
-        for (npy_intp j = 0; j < m; j++) {
-            dst[i + j*ldb] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
         }
     }
 }
@@ -484,10 +476,8 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 template<typename T>
 real_of_t<T>
 norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
-    // NB: transpose for the F order
-    if (uplo == 'U') {return norm1_sym_herm_lower(A, work, n);}
-    else if (uplo == 'L') {return norm1_sym_herm_upper(A, work, n);}
-    else {throw std::runtime_error("uplo at norms");}
+    // NB: transpose for the F order; uplo is 'U' or 'L' by construction
+    return (uplo == 'U') ? norm1_sym_herm_lower(A, work, n) : norm1_sym_herm_upper(A, work, n);
 }
 
 
@@ -668,40 +658,6 @@ is_sym_or_herm(const T *data, npy_intp n) {
         }
     }
     return std::make_tuple(all_sym, all_herm);
-}
-
-
-template<typename T>
-inline void
-swap_cf(T* src, T* dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
-{
-    Py_ssize_t i, j, ith_row, r2, c2;
-    T *bb = dst;
-    T *aa = src;
-    if ((r < 16) && (c < 16)) {
-        for (j = 0; j < c; j++)
-        {
-            ith_row = 0;
-            for (i = 0; i < r; i++) {
-                bb[ith_row] = aa[i];
-                ith_row += n;
-            }
-            aa += n;
-            bb += 1;
-        }
-    } else {
-        // If tall
-        if (r > c)
-        {
-            r2 = r/2;
-            swap_cf(src, dst, r2, c, n);
-            swap_cf(src + r2, dst+(r2)*n, r-r2, c, n);
-        } else {  // Nope
-            c2 = c/2;
-            swap_cf(src, dst, r, c2, n);
-            swap_cf(src+(c2)*n, dst+c2, r, c-c2, n);
-        }
-    }
 }
 
 

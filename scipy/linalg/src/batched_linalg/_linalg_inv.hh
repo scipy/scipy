@@ -235,11 +235,11 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     T tmp = 0.0;
     lapack::getri(intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
     CBLAS_INT lwork_getri = _calc_lwork(tmp, 1.01);
 
     lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
     CBLAS_INT lwork_sytrf = _calc_lwork(tmp);
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
@@ -466,8 +466,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
         } // end of `switch(slice_structure)`
 
         if (!overwrite_a) {
-            // Swap back to original order
-            swap_cf(data, &ret_data[idx*n*n], n, n, n);
+            // transpose the F-ordered result into the C-ordered output slice
+            copy_slice_F_to_C(&ret_data[idx*n*n], data, n, n, n);
         }
     } // end of `for(idx=...)`
 

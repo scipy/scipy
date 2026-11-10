@@ -73,7 +73,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
 
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -83,7 +83,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_query_failed; }
+    if (info != 0) { return BatchStatus::lapack_error; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
     CBLAS_INT lwork_factor = _calc_lwork(tmp_factor);
