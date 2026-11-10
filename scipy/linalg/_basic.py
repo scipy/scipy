@@ -1122,7 +1122,7 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # XXX can relax a1.ndim == 2?
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
+    # keep the numbers in sync with C at `linalg/src/batched_linalg/_common_array_utils.hpp`
     structure = {
         None: -1,
         'general': 0, 'gen': 0,

@@ -10,16 +10,16 @@
 #include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
-#include "_common_array_utils.hh"
+#include "_common_array_utils.hpp"
 
-#include "_linalg_cholesky.hh"
-#include "_linalg_eig.hh"
-#include "_linalg_inv.hh"
-#include "_linalg_lstsq.hh"
-#include "_linalg_lu_det.hh"
-#include "_linalg_qr.hh"
-#include "_linalg_solve.hh"
-#include "_linalg_svd.hh"
+#include "_linalg_cholesky.hpp"
+#include "_linalg_eig.hpp"
+#include "_linalg_inv.hpp"
+#include "_linalg_lstsq.hpp"
+#include "_linalg_lu_det.hpp"
+#include "_linalg_qr.hpp"
+#include "_linalg_solve.hpp"
+#include "_linalg_svd.hpp"
 
 
 using namespace sp_linalg;
