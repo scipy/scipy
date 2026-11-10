@@ -526,28 +526,24 @@ def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
 def _expand_origin(ndim_image, axes, origin):
     num_axes = len(axes)
     origins = _ni_support._normalize_sequence(origin, num_axes)
-    if num_axes < ndim_image:
-        # set origin = 0 for any axes not being filtered
-        origins_temp = [0,] * ndim_image
-        for o, ax in zip(origins, axes):
-            origins_temp[ax] = o
-        origins = origins_temp
-    return origins
+    # set origin = 0 for any axes not being filtered
+    origins_temp = [0,] * ndim_image
+    for o, ax in zip(origins, axes):
+        origins_temp[ax] = o
+    return origins_temp
 
 
 def _expand_footprint(ndim_image, axes, footprint,
                       footprint_name="footprint"):
     num_axes = len(axes)
-    if num_axes < ndim_image:
-        if footprint.ndim != num_axes:
+    if footprint.ndim != num_axes:
+        if num_axes < ndim_image:
             raise RuntimeError(f"{footprint_name}.ndim ({footprint.ndim}) "
                                f"must match len(axes) ({num_axes})")
-
-        footprint = np.expand_dims(
-            footprint,
-            tuple(ax for ax in range(ndim_image) if ax not in axes)
-        )
-    return footprint
+        return footprint
+    other_axes = [ax for ax in range(ndim_image) if ax not in axes]
+    footprint = footprint.reshape(footprint.shape + (1,) * len(other_axes))
+    return np.moveaxis(footprint, range(ndim_image), list(axes) + other_axes)
 
 
 def _expand_mode(ndim_image, axes, mode):
@@ -1820,11 +1816,8 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if structure is not None:
             if len(structure.shape) != num_axes:
                 raise RuntimeError("structure array has incorrect shape")
-            if num_axes != structure.ndim:
-                structure = np.expand_dims(
-                    structure,
-                    tuple(ax for ax in range(structure.ndim) if ax not in axes)
-                )
+            structure = _expand_footprint(input.ndim, axes, structure,
+                                          "structure")
             if not structure.flags.contiguous:
                 structure = structure.copy()
         if not isinstance(mode, str) and isinstance(mode, Iterable):
