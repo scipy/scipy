@@ -556,6 +556,17 @@ def _ndtri_exp(xp, spsx):
     return __ndtri_exp
 
 
+def __riemann_zeta(xp, spsx):
+    zeta = _get_native_func(xp, spsx, "zeta")
+    if zeta is None:
+        return None
+
+    def ___riemann_zeta(z):
+        return zeta(z, 1.0)
+
+    return ___riemann_zeta
+
+
 def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
     # Used to infer out shape for lazy_apply under JAX JIT.
     if kwargs:
@@ -2736,10 +2747,17 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.zeta, ["x", "q=None"],
-        is_ufunc=False,
+        _ufuncs._zeta, ["x", "q"],
+        alt_names_map={"torch": "zeta", "cupy": "zeta", "jax.numpy": "zeta"},
         positive_only={"jax.numpy": True, "torch": (True, False)},
         test_large_ints=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._riemann_zeta, ["z"],
+        xp_capabilities(cpu_only=True),
+        generic_impl=__riemann_zeta,
+        public=False,
     ),
     _FuncInfo(
         _ufuncs.zetac, ["x"],

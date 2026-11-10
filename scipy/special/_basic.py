@@ -15,6 +15,7 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
+from ._support_alternative_backends import _zeta, _riemann_zeta
 
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
@@ -3672,6 +3673,15 @@ def stirling2(N, K, *, exact=False):
     return output
 
 
+zeta_extra_note = (
+    """Currently, only NumPy supports ``q = None`` and evaluation of the
+    Riemann Zeta (``q = 1.0`` or ``q = None``) function off of the real line.
+
+    """
+)
+
+
+@xp_capabilities(extra_note=zeta_extra_note)
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -3748,9 +3758,16 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return _ufuncs._riemann_zeta(x, out)
-    else:
-        return _ufuncs._zeta(x, q, out)
+        if out is None:
+            # Need to avoid forwarding ``out`` since backend may be
+            # JAX which doesn't support ``out``.
+            return _riemann_zeta(x)
+        else:
+            return _riemann_zeta(x, out)
+    elif out is None:
+        # as above, avoid forwarding ``out`` to support JAX.
+        return _zeta(x, q)
+    return _zeta(x, q, out)
 
 
 @xp_capabilities()
