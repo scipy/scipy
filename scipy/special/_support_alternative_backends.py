@@ -141,6 +141,8 @@ class _FuncInfo:
     # available in the `scipy.special` namespace for this backend.
     # One example is `jax.numpy.sinc` being available but not `jax.scipy.special.sinc`.
     backends_with_func_in_xp: tuple[str, ...] = ()
+    # is this part of the public API?
+    public: bool = True
 
     @property
     def name(self):
@@ -165,6 +167,10 @@ class _FuncInfo:
             import scipy.special
             return getattr(scipy.special, self.name)
 
+        module = "scipy.special"
+        if not self.public:
+            module = f"{module}._support_alternative_backends"
+
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
@@ -176,6 +182,7 @@ class _FuncInfo:
                 self.name,
                 self.arg_names,
                 self.func.__doc__,
+                module=module,
             )
         else:
             @functools.wraps(self.func)
@@ -184,15 +191,18 @@ class _FuncInfo:
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             # needed to allow pickling
-            func.__module__ = "scipy.special"
+            func.__module__ = module
             func.__qualname__ = self.name
 
         if self.name in {"mathieu_cem", "mathieu_sem"}:
             # Warn outside backend dispatch and register the public wrapper.
             func = _mathieu._deprecated_mathieu(func, self.name[:-1])
-        capabilities = self.xp_capabilities or xp_capabilities()
-        cap_func = capabilities(func)
-        assert cap_func is func
+
+        if self.public:
+            # Don't apply xp_capabilities to private functions.
+            capabilities = self.xp_capabilities or xp_capabilities()
+            capabilities(func)
+
         return func
 
     @functools.lru_cache(1000)
