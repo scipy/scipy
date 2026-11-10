@@ -1814,11 +1814,13 @@ class TestInv:
 
 
 class TestDet:
-    @pytest.mark.parametrize("value, expected", [(1e38, 1e76), (1e-38, 1e-76)])
+    @pytest.mark.parametrize("value, expected", [(1e38, 1e76), (1e-30, 1e-60)])
     @pytest.mark.parametrize("dtype", [np.float32, np.complex64])
     def test_single_precision_range(self, value, expected, dtype):
         # The determinant of single precision input is computed and returned in double
         # precision, so it neither overflows nor underflows the single precision range.
+        # The entries themselves are normal float32 numbers; a subnormal one such as
+        # 1e-38 tests the LAPACK library instead, and ATLAS ?getrf gets it wrong.
         a = np.diag(np.full(2, value, dtype=dtype))
         for x in (a, np.stack([a, a])):
             d = det(x)
