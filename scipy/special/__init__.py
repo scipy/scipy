@@ -797,9 +797,6 @@ from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 from . import _ufuncs
 from ._ufuncs import *
 
-from . import _basic
-from ._basic import *
-
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -807,14 +804,16 @@ from ._ellip_harm import (
 )
 
 from ._lambertw import lambertw
-from ._polygamma import polygamma
-
 from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
+from ._polygamma import polygamma
 from ._spfun_stats import poisson_binom_cdf
 
-# Replace some function definitions from _ufuncs, _basic, _ellip_harm,
-# _lambertw, _mathieu, and _spfun_stats to add Array API support
+# Replace some function definitions from _ufuncs, _ellip_harm, _lambertw,
+# _mathieu, _polygamma, and _spfun_stats to add Array API support.
 from ._support_alternative_backends import *
+
+from . import _basic
+from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -831,9 +830,11 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-# We replace some function definitions from _ufuncs with those from
+
+# We replace some function definitions from various places with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
-# so there is no need to consider _support_alternative_backends.__all__ here.
+# or explicitly added to __all__ below, so there is presently no need to consider
+# _support_alternative_backends.__all__.
 __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
 __all__ += [
     'SpecialFunctionWarning',

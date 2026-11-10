@@ -2358,6 +2358,30 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _mathieu.mathieu_se, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_sem", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_ce, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_cem", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.mathieu_modcem1, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
@@ -2929,9 +2953,9 @@ if TYPE_CHECKING:
 
 # Override ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
-# digamma is an alias for psi. Define here so it also has alternative backend
-# support. Add noqa because the linter gets confused by the sneaky way psi
-# is inserted into globals above.
+# Define aliases here so they also have alternative backend support.
+# Add noqa because the linter gets confused by the sneaky way functions
+# are inserted into globals above.
 digamma = psi  # type:ignore[name-defined]  # noqa: F821
 jn = jv  # type:ignore[name-defined]  # noqa: F821
 __all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma", "jn"]
