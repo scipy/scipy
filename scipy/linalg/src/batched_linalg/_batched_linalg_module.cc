@@ -30,9 +30,6 @@ static PyObject* _linalg_inv_error;
 PyObject*
 convert_vec_status(SliceStatusVec& vec_status);
 
-std::string
-get_err_mesg(const std::string routine, const std::string func_name, int info);
-
 
 /*
  * Minimal checks for an input array:
@@ -482,143 +479,84 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
 static PyObject*
 _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
-
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_b = NULL;
-    PyArrayObject *ap_S = NULL;
-    PyArrayObject *ap_x = NULL;
-    PyArrayObject *ap_rank = NULL;
-    PyObject *ret_lst = NULL, *s_ret = NULL;
     double rcond;
-    const char *lapack_driver = NULL;
+    const char *driver_name = NULL;
     int overwrite_a = 0;
     int overwrite_b = 0;
-
-    int info = 0;
     SliceStatusVec vec_status;
 
-    // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!ds|pp", &PyArray_Type, (PyObject **)&ap_Am,  &PyArray_Type, (PyObject **)&ap_b, &rcond, &lapack_driver, &overwrite_a, &overwrite_b)) {
+    if (!PyArg_ParseTuple(args, "O!O!ds|pp", &PyArray_Type, (PyObject **)&ap_Am,  &PyArray_Type, (PyObject **)&ap_b, &rcond, &driver_name, &overwrite_a, &overwrite_b)) {
         return NULL;
     }
-
-    // Sanity check the input array
-    if (!_check_dtype_and_flags(ap_Am, "lstsq")) {
-        return NULL;
-    }
-
+    if (!_check_dtype_and_flags(ap_Am, "lstsq")) { return NULL; }
     if (rcond < 0) {
         PyErr_SetString(PyExc_ValueError, "Expected rcond >= 0.");
         return NULL;
     }
 
+    LstsqDriver driver;
+    if (strcmp(driver_name, "gelsd") == 0) { driver = LstsqDriver::gelsd; }
+    else if (strcmp(driver_name, "gelsy") == 0) { driver = LstsqDriver::gelsy; }
+    else if (strcmp(driver_name, "gelss") == 0) { driver = LstsqDriver::gelss; }
+    else { return PyErr_Format(PyExc_ValueError, "scipy.linalg.lstsq: unknown lapack_driver '%s'.", driver_name); }
+
     int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-
-    // At the python call site,
-    // 1) 1D `b` must have been converted into 2D, and
-    // 2) batch dimensions of `a` and `b` have been broadcast
-    // Therefore, if `a.shape == (s, p, r, m, n)`, then `b.shape == (s, p, r, m, nrhs)`
-    // where `nrhs` is the number of right-hand-sides.
-    npy_intp ndim_b = PyArray_NDIM(ap_b);
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
 
-    bool dims_match = ndim_b == ndim;
-    if (dims_match) {
-        for (int i=0; i<ndim-2; i++) {
-            dims_match = dims_match && (shape[i] == shape_b[i]);
-        }
-    }
-    if (!dims_match){
+    // The Python layer made b at least 2-D and broadcast the batch dimensions of a and b, so
+    // a is (..., m, n) and b is (..., m, nrhs) with the same leading dimensions.
+    if (PyArray_NDIM(ap_b) != ndim || !std::equal(shape, shape + ndim - 2, shape_b)) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
         return NULL;
     }
 
-    npy_intp m = shape[ndim - 2];
-    npy_intp n = shape[ndim - 1];
-    npy_intp min_mn = m < n ? m : n;
-    CBLAS_INT max_mn = m > n ? m : n;
-    CBLAS_INT ldb = max_mn > 1 ? max_mn : 1;
-    npy_intp nrhs = PyArray_DIM(ap_b, ndim-1);
+    npy_intp m = shape[ndim - 2], n = shape[ndim - 1], nrhs = shape_b[ndim - 1];
+    npy_intp min_mn = m < n ? m : n, max_mn = m < n ? n : m;
 
-    // Allocate the output(s)
+    // x is (..., max(1, m, n), nrhs): the solvers write x over the first n rows of b
     npy_intp shape_1[NPY_MAXDIMS];
-    for(int i=0; i<PyArray_NDIM(ap_Am); i++) {
-        shape_1[i] = PyArray_DIM(ap_Am, i);
-    }
-
-    // x.shape = (..., N, NRHS)
-    shape_1[ndim-2] = ldb;
-    shape_1[ndim-1] = nrhs;
-    if (!overwrite_b) { // Will only work if m > n, python side should have caught this.
-        ap_x = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (!ap_x) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-    } else {
+    std::copy(shape, shape + ndim, shape_1);
+    shape_1[ndim - 2] = max_mn > 1 ? max_mn : 1;
+    shape_1[ndim - 1] = nrhs;
+    OwnedArray ap_x;
+    if (overwrite_b) {
+        // b is 2-D, F-contiguous with m >= n: the solution is computed in place
         Py_INCREF(ap_b);
-        ap_x = ap_b;
+        ap_x.reset(ap_b);
+    } else {
+        ap_x.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
     }
 
-    // S array is not used by ?gelsy
-    if (strcmp(lapack_driver, "gelsy") != 0) {
-        // S.dtype is real if A.dtype is complex
-        npy_intp typenum_S = typenum;
-        if (typenum_S == NPY_COMPLEX64) { typenum_S = NPY_FLOAT32; }
-        else if (typenum_S == NPY_COMPLEX128) { typenum_S = NPY_FLOAT64; }
-
-        // S.shape = (..., min_mn)
+    // S is real and (..., min(m, n)); gelsy computes no singular values
+    OwnedArray ap_S;
+    if (driver != LstsqDriver::gelsy) {
+        int typenum_S = (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
         shape_1[ndim - 2] = min_mn;
-        ap_S = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S);
-        if (!ap_S) {
-            PyErr_NoMemory();
-            goto fail;
-        }
+        ap_S.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, typenum_S));
+        if (!ap_S) { return PyErr_NoMemory(); }
     }
 
-    // rank.shape = batch_shape
-    ap_rank = (PyArrayObject *)PyArray_SimpleNew(ndim-2, shape_1, NPY_INT64);
-    if (!ap_rank) {
-        PyErr_NoMemory();
-        goto fail;
-    }
+    // rank has the batch shape
+    OwnedArray ap_rank((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape_1, NPY_INT64));
+    if (!ap_x || !ap_rank) { return PyErr_NoMemory(); }
 
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _lstsq<f32>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _lstsq<f64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _lstsq<c64>(ap_Am, ap_b, ap_S, ap_x, ap_rank, (float)rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _lstsq<c128>(ap_Am, ap_b, ap_S, ap_x, ap_rank, rcond, lapack_driver, overwrite_a, overwrite_b, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            goto fail;
-    }
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _lstsq<T>(ap_Am, ap_b, ap_S.get(), ap_x.get(), ap_rank.get(), rcond, driver, overwrite_a, overwrite_b, vec_status);
+    });
+    Py_END_ALLOW_THREADS
+    if (status != BatchStatus::ok) { return set_batch_error(status, "lstsq"); }
 
-    if (info < 0) {
-        // Some fatal error: OOM, LWORK query failed or lwork needed is too large
-        PyErr_SetString(PyExc_MemoryError, get_err_mesg("lstsq", lapack_driver, info).c_str());
-        goto fail;
-    }
-    ret_lst = convert_vec_status(vec_status);
-    // with 'gelsy', we return None for `s`
-    s_ret = ap_S != NULL ? PyArray_Return(ap_S) : Py_None;
-
-    return Py_BuildValue("NNNN", PyArray_Return(ap_x), PyArray_Return(ap_rank), s_ret, ret_lst);
-
-fail:
-    Py_XDECREF(ap_x);
-    Py_XDECREF(ap_rank);
-    Py_XDECREF(ap_S);
-    return NULL;
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
+    PyObject *ret_S = ap_S ? PyArray_Return(ap_S.release()) : Py_NewRef(Py_None);
+    return Py_BuildValue("NNNN", PyArray_Return(ap_x.release()), PyArray_Return(ap_rank.release()), ret_S, ret_lst);
 }
 
 
@@ -983,17 +921,6 @@ convert_vec_status(SliceStatusVec& vec_status) {
     return ret_lst;
 }
 
-
-/*
- * Helper for fatal errors (memory errors, mostly).
- */
-std::string
-get_err_mesg(const std::string routine, const std::string func_name, int info) {
-    std::string mesg;
-    mesg = "Memory error in scipy.linalg." + routine;
-    mesg += " (Internal " + func_name + " returned " + std::to_string(info) + ").";
-    return mesg;
-}
 
 
 static PyObject*
