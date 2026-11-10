@@ -309,6 +309,10 @@ def expm(A):
 
     eA, info = matrix_exponential(a)
     if info != 0:
+        if info == -10:
+            raise ValueError("scipy.linalg.expm: the matrix size exceeds the range of the "
+                             "32-bit integers of the LAPACK library; SciPy built with ILP64 "
+                             "support can handle it.")
         if info <= -11:
             # We raise it from failed mallocs; negative LAPACK codes > -7
             raise MemoryError("scipy.linalg.expm could not allocate "
