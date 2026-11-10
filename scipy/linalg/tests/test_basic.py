@@ -19,6 +19,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
                           cholesky, expm, sqrtm, bandwidth)
+from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
@@ -3257,3 +3258,17 @@ class TestNonNativeInput:
         assert len(res) == len(ref)
         for x, y in zip(res, ref):
             assert_equal(x, y)
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    def test_compiled_entry_points_refuse(self, kind):
+        # The compiled functions refuse such arrays instead of misreading them.
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        a = convert(np.eye(3))
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._det(a, False)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._bandwidth(a)
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.matrix_exponential(a)
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.recursive_schur_sqrtm(a)

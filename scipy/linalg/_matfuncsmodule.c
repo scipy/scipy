@@ -63,6 +63,10 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be an nD-array"
                           "  of type float32, float64, complex64, or complex128.");
     }
+    if (!PyArray_ISBEHAVED_RO(ap_Am))
+    {
+        PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be aligned and in native byte order.");
+    }
 
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
@@ -200,6 +204,10 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Input must be at least a 2D-array"
                           "  of type float32, float64, complex64, or complex128.");
+    }
+    if (!PyArray_ISBEHAVED_RO(ap_a))
+    {
+        PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Input must be aligned and in native byte order.");
     }
     int ndim = PyArray_NDIM(ap_a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_a);      // Array shape

@@ -35,7 +35,7 @@ convert_vec_status(SliceStatusVec& vec_status);
  * Minimal checks for an input array:
  *   - ndim >= 2
  *   - LAPACK-compatible dtype
- *   - aligned
+ *   - aligned, in native byte order
  *
  * Sets an error if any of these is violated (users to bail out immediately).
  */
@@ -46,8 +46,14 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
                      || (typenum == NPY_COMPLEX64)
                      || (typenum == NPY_COMPLEX128);
 
-    if (!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
-        PyErr_Format(PyExc_TypeError, "scipy.linag.%s : Expected a real or complex array.", func);
+    if (!dtype_ok) {
+        PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: Expected an array of float32, float64, "
+                     "complex64 or complex128.", func);
+        return 0;
+    }
+    if (!PyArray_ISBEHAVED_RO(ap_Am)) {
+        PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: Expected an aligned array in native "
+                     "byte order.", func);
         return 0;
     }
 
@@ -931,6 +937,10 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int ndim = PyArray_NDIM(ap_a);
     if (ndim < 2) {
         PyErr_SetString(PyExc_ValueError, "Input array must have at least 2 dimensions.");
+        return NULL;
+    }
+    if (!PyArray_ISBEHAVED_RO(ap_a)) {
+        PyErr_SetString(PyExc_TypeError, "Input array must be aligned and in native byte order.");
         return NULL;
     }
 
