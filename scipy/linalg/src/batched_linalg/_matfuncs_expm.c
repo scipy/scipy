@@ -2214,9 +2214,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     float* restrict a_data = (float*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT; offsets are npy_intp
-    if (shape[ndim - 1] > 0 && shape[ndim - 1] > CBLAS_INT_MAX / shape[ndim - 1]) { *info = -10; return; }
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
     const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
@@ -2377,9 +2376,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     double* restrict a_data = (double*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT; offsets are npy_intp
-    if (shape[ndim - 1] > 0 && shape[ndim - 1] > CBLAS_INT_MAX / shape[ndim - 1]) { *info = -10; return; }
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
     const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
@@ -2540,9 +2538,8 @@ matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* in
     scipy_c64* restrict a_data = (scipy_c64*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT; offsets are npy_intp
-    if (shape[ndim - 1] > 0 && shape[ndim - 1] > CBLAS_INT_MAX / shape[ndim - 1]) { *info = -10; return; }
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
     const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
@@ -2751,9 +2748,8 @@ matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* i
     scipy_c128* restrict a_data = (scipy_c128*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT; offsets are npy_intp
-    if (shape[ndim - 1] > 0 && shape[ndim - 1] > CBLAS_INT_MAX / shape[ndim - 1]) { *info = -10; return; }
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
     const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])

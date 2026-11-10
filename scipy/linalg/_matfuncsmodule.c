@@ -210,6 +210,14 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Last two dimensions of the input must be the same.");
     }
 
+    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT
+    const npy_intp n = shape[ndim - 1];
+    if (n > 0 && n > CBLAS_INT_MAX / n)
+    {
+        Py_INCREF(Py_None);
+        return Py_BuildValue("Nn", Py_None, (Py_ssize_t)-10);
+    }
+
     npy_intp ret_dims = 1;
     for (int i = 0; i < ndim; i++) { ret_dims *= shape[i]; }
 
