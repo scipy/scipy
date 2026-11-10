@@ -261,9 +261,10 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
     }
 
     CBLAS_INT lwork;
-    // (real_type)CBLAS_INT_MAX rounds up to a power of two in float32 (and for int64 in either
-    // precision), so only values strictly below it convert to CBLAS_INT without overflow
-    if ((value < 0) || !(value < (real_type)std::numeric_limits<CBLAS_INT>::max())) {
+    // 2**digits is one above the largest CBLAS_INT and exact in either precision, so the values
+    // strictly below it, and only those, convert to CBLAS_INT without overflow
+    const real_type limit = std::ldexp(real_type(1), std::numeric_limits<CBLAS_INT>::digits);
+    if ((value < 0) || !(value < limit)) {
         // Too large lwork required - Computation cannot be performed with standard LAPACK
         lwork = -1;
     }
