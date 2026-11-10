@@ -229,10 +229,10 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         } else if (mode == QR_mode::FULL && overwrite_a) {
             // The `R` array should be copied back into the `A` array, which is F-ordered, so pretend the transpose got copied.
             // Then zero out the other triangle since the original input data is still in place.
-            copy_triangle_to_C(slice_ptr_A, data_A, intn, intm, intm, 1, 'L');
+            copy_triangle_to_C(slice_ptr_A, data_A, intn, intm, intm * (npy_intp)sizeof(T), (npy_intp)sizeof(T), 'L');
             zero_other_triangle('U', slice_ptr_A, intm, intn, intm);
         } else {
-            copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, 1, intm, 'U'); // F-ordered input to `copy_triangle`, hence `s0 == 1` and `s1 == intm`
+            copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, (npy_intp)sizeof(T), intm * (npy_intp)sizeof(T), 'U'); // F-ordered input to `copy_triangle`, hence `s0 == sizeof(T)` and `s1 == intm * sizeof(T)`
         }
 
         // Construct the Q matrix if required, same handling for both modes; dimensions are set already.

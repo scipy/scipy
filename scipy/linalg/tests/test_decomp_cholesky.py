@@ -21,6 +21,22 @@ class TestCholesky:
         a = c @ c.T
         assert_allclose(cholesky(a, lower=1), c, atol=1e-14)
 
+    @pytest.mark.parametrize('lower', [False, True])
+    def test_field_view_strides(self, lower):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must factor like a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        a = a @ a.conj().swapaxes(-1, -2) + 5*np.eye(5)
+        dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+        rec = np.zeros(a.shape, dtype=dt)
+        rec['z'] = a
+        view = rec['z']
+        assert view.strides[-1] == 24
+        for x in (view, view[1]):
+            np.testing.assert_equal(cholesky(x, lower=lower),
+                                    cholesky(np.ascontiguousarray(x), lower=lower))
+
     def test_check_finite(self):
         a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]
         c = cholesky(a, check_finite=False)

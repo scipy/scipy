@@ -6,7 +6,7 @@
 namespace sp_linalg {
 
 template<typename T>
-int
+BatchStatus
 _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a, int clean, SliceStatusVec &vec_status) {
     St slice_structure = St::NONE;
     SliceStatus slice_status;
@@ -31,12 +31,13 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     //--------------------------------------------------------------------
     // Workspace computation and allocation
     //--------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, info = 0;
+    CBLAS_INT intn, info = 0;
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
 
-    npy_intp sz = (npy_intp)sizeof(T);
-    npy_intp s0 = strides[ndim-2] / sz;
-    npy_intp s1 = strides[ndim-1] / sz;
-    int f_contig = (s0 == 1 && s1 == n);
+    // byte strides of the input slices
+    npy_intp s0 = strides[ndim-2];
+    npy_intp s1 = strides[ndim-1];
+    bool f_contig = (s0 == (npy_intp)sizeof(T)) && (s1 == n * (npy_intp)sizeof(T));
 
     /*
      * LAPACK's potrf interprets data as F-ordered, but scipy's convention
@@ -97,7 +98,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            return 1;
+            return BatchStatus::ok;
         }
 
         if (overwrite_a && clean) {
@@ -106,7 +107,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
 
     } // end of batching loop
 
-    return 1;
+    return BatchStatus::ok;
 }
 
 } // namespace sp_linalg

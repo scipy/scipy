@@ -405,25 +405,29 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
  * triangle specified by `uplo`. The caller is responsible for ensuring
  * that the correct triangle is populated in `src`.
  *
- * Examples (matrix dimension m x n):
- *   C-contiguous src (s0=n, s1=1): src[i*n + j] -> dst[i*n + j]
+ * `s0` and `s1` are the byte strides between rows and between columns of `src`.
+ *
+ * Examples (matrix dimension m x n, element size sz):
+ *   C-contiguous src (s0=n*sz, s1=sz): src[i*n + j] -> dst[i*n + j]
  *      both sequential in the inner loop - effectively a partial memcpy.
- *   F-contiguous src (s0=1, s2=m): src[i + j*m] -> dst[i*n + j],
+ *   F-contiguous src (s0=sz, s1=m*sz): src[i + j*m] -> dst[i*n + j],
  *      column-sequential reads, row-sequential writes.
  */
 template<typename T>
 void copy_triangle_to_C(T *dst, const T *src, const npy_intp m, const npy_intp n, const npy_intp s0, const npy_intp s1, const char uplo) {
+    const char *base = reinterpret_cast<const char *>(src);
+    auto at = [&](npy_intp i, npy_intp j) { return *reinterpret_cast<const T *>(base + i * s0 + j * s1); };
     if (uplo == 'L') {
         for (npy_intp i = 0; i < m; i++) {
             npy_intp stop = std::min(i + 1, n);
             for (npy_intp j = 0; j < stop; j++) {
-                dst[i * n + j] = *(src + i * s0 + j * s1);
+                dst[i * n + j] = at(i, j);
             }
         }
     } else {
         for (npy_intp i = 0; i < m; i++) {
             for (npy_intp j = i; j < n; j++) {
-                dst[i * n + j] = *(src + i * s0 + j * s1);
+                dst[i * n + j] = at(i, j);
             }
         }
     }

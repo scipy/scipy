@@ -959,11 +959,7 @@ fail:
 static PyObject*
 _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
-    PyArrayObject *ap_Cm = NULL;
-    PyObject *ret_lst = NULL;
     int lower=0, overwrite_a=0, clean=1;
-
-    int info = 0;
     SliceStatusVec vec_status;
 
     // Get input
@@ -985,46 +981,25 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    // Allocate the output array if needed
-    if (!overwrite_a) {
-        ap_Cm = (PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0); // 0 to obtain C-ordered input
-        if (ap_Cm == NULL) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-    } else {
+    // The output: a new zero-filled C-ordered array, or the input array itself when overwriting it
+    wrapper::py_ref ap_Cm;
+    if (overwrite_a) {
         Py_INCREF(ap_Am);
-        ap_Cm = ap_Am;
+        ap_Cm = wrapper::py_ref(ap_Am);
+    }
+    else {
+        ap_Cm = wrapper::py_ref((PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0));
+        if (!ap_Cm) { return PyErr_NoMemory(); }
     }
 
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _cholesky<f32>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _cholesky<f64>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _cholesky<c64>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _cholesky<c128>(ap_Am, ap_Cm, lower, overwrite_a, clean, vec_status);
-            break;
-    }
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _cholesky<T>(ap_Am, ap_Cm.get(), lower, overwrite_a, clean, vec_status);
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "cholesky"); }
 
-    if (info < 0) {
-        // Out-of-memory or scipy internal error
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.cholesky.");
-        goto fail;
-    }
-
-    // normal return
-    ret_lst = convert_vec_status(vec_status);
-    return Py_BuildValue("NN", PyArray_Return(ap_Cm), ret_lst);
-
-fail:
-    Py_XDECREF(ap_Cm);
-    return NULL;
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_Cm.release()), ret_lst);
 }
 
 
