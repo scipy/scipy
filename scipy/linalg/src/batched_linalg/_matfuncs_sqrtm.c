@@ -48,8 +48,10 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
     // 2n*n + 2n*n for data and vs for potentially converting to complex if needed
     // n + n for wr, wi (needed for gees calls)
     // lwork for work
-    size_t buffer_size = 4*n*n + 2*n + lwork;
-    float* restrict buffer = PyMem_RawMalloc(buffer_size*sizeof(float));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t buffer_size = 4*(uint64_t)n*n + 2*(uint64_t)n + (uint64_t)lwork;
+    if (buffer_size > SIZE_MAX / sizeof(float)) { *sq_info = -101; return; }
+    float* restrict buffer = PyMem_RawMalloc(sizeof(float)*(size_t)buffer_size);
     if (buffer == NULL) { *sq_info = -101; return; }
 
     // --------------------------------------------------------------------
@@ -334,8 +336,10 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
     BLAS_FUNC(dgees)("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, NULL, &intn, &tmp_float, &lwork, NULL, &info);
     if (info != 0) { *sq_info = -100; return; }
     lwork = (CBLAS_INT)tmp_float;
-    size_t buffer_size = 4*n*n + 2*n + lwork;
-    double* restrict buffer = PyMem_RawMalloc(buffer_size*sizeof(double));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t buffer_size = 4*(uint64_t)n*n + 2*(uint64_t)n + (uint64_t)lwork;
+    if (buffer_size > SIZE_MAX / sizeof(double)) { *sq_info = -101; return; }
+    double* restrict buffer = PyMem_RawMalloc(sizeof(double)*(size_t)buffer_size);
     if (buffer == NULL) { *sq_info = -101; return; }
 
     double* restrict data = &buffer[0];
@@ -525,8 +529,10 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, scipy_c64* restrict ret_data, in
     if (info != 0) { *sq_info = -100; return; }
 
     lwork = (CBLAS_INT)crealf(tmp_float);
-    size_t buffer_size = 2*n*n + 2*n + lwork;
-    scipy_c64* buffer = PyMem_RawMalloc(buffer_size*sizeof(scipy_c64));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t buffer_size = 2*(uint64_t)n*n + 2*(uint64_t)n + (uint64_t)lwork;
+    if (buffer_size > SIZE_MAX / sizeof(scipy_c64)) { *sq_info = -101; return; }
+    scipy_c64* buffer = PyMem_RawMalloc(sizeof(scipy_c64)*(size_t)buffer_size);
     if (buffer == NULL) { *sq_info = -101; return; }
 
 
@@ -627,8 +633,10 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, scipy_c128* restrict ret_data, i
     if (info != 0) { *sq_info = -100; return; }
 
     lwork = (CBLAS_INT)creal(tmp_float);
-    size_t buffer_size = 2*n*n + 2*n + lwork;
-    scipy_c128* buffer = PyMem_RawMalloc(buffer_size*sizeof(scipy_c128));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t buffer_size = 2*(uint64_t)n*n + 2*(uint64_t)n + (uint64_t)lwork;
+    if (buffer_size > SIZE_MAX / sizeof(scipy_c128)) { *sq_info = -101; return; }
+    scipy_c128* buffer = PyMem_RawMalloc(sizeof(scipy_c128)*(size_t)buffer_size);
     if (buffer == NULL) { *sq_info = -101; return; }
 
 

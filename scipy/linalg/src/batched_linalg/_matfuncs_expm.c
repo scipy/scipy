@@ -2231,7 +2231,10 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    float* restrict Am = PyMem_RawMalloc(sizeof(float)*(6*nn + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(float)) { *info = -100; return; }
+    float* restrict Am = PyMem_RawMalloc(sizeof(float)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
@@ -2391,7 +2394,10 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    double* restrict Am = PyMem_RawMalloc(sizeof(double)*(6*nn + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(double)) { *info = -100; return; }
+    double* restrict Am = PyMem_RawMalloc(sizeof(double)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
@@ -2551,7 +2557,10 @@ matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* in
     // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    scipy_c64* restrict Am = PyMem_RawMalloc(sizeof(scipy_c64)*(6*nn + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(scipy_c64)) { *info = -100; return; }
+    scipy_c64* restrict Am = PyMem_RawMalloc(sizeof(scipy_c64)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
@@ -2758,7 +2767,10 @@ matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* i
     // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    scipy_c128* restrict Am = PyMem_RawMalloc(sizeof(scipy_c128)*(6*nn + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(scipy_c128)) { *info = -100; return; }
+    scipy_c128* restrict Am = PyMem_RawMalloc(sizeof(scipy_c128)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
