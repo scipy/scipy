@@ -194,6 +194,7 @@ Multivariate distributions
    uniform_direction      -- Uniform distribution on S(N-1)
    vonmises_fisher        -- Von Mises-Fisher distribution
    matrix_t               -- Matrix variate t distribution
+   hypoexpon              -- Hypoexponential distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -615,6 +616,7 @@ from ._binned_statistic import *
 from ._kde import gaussian_kde
 from . import qmc
 from ._multivariate import *
+from ._hypoexpon import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
