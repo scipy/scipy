@@ -3385,3 +3385,40 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+@pytest.mark.parametrize('samples, mode, size, origin, expected', [
+    ([0.5], "mirror", 3, 0, [0.5]),
+    ([0, 1], "mirror", 5, 0, [0, 1]),
+    ([0, 1], "mirror", 7, 0, [1, 0]),
+    ([0, 1], "reflect", 5, 0, [1, 0]),
+    ([0, 1, 2], "mirror", 7, 0, [1, 1, 1]),
+    ([0, 1, 2], "reflect", 7, 0, [1, 1, 1]),
+    ([0, 1, 2], "wrap", 7, 0, [1, 1, 1]),
+    ([0, 1], "mirror", 5, 1, [1, 0]),
+    ([0, 1], "mirror", 5, -1, [1, 0]),
+    ([0, 1], "reflect", 5, 1, [1, 1]),
+])
+def test_gh_26465(samples, mode, size, origin, expected):
+    # The 1-D fast path used to read uninitialized memory when the
+    # footprint was larger than the input (gh-26465), so results were
+    # nondeterministic garbage (e.g. 1.6e-322) instead of the values
+    # below, verified against the generic implementation.
+    sample_array = np.asarray(samples, dtype=np.float32)
+    expected = np.asarray(expected, dtype=np.float32)
+    filtered_samples = ndimage.median_filter(sample_array, size=size,
+                                             mode=mode, origin=origin)
+    xp_assert_close(filtered_samples, expected, check_shape=True,
+                    check_dtype=True)
+
+
+def test_gh_26465_rank_percentile():
+    # rank_filter and percentile_filter share the same 1-D fast path
+    sample = np.asarray([0, 1, 2], dtype=np.float32)
+    res = ndimage.rank_filter(sample, rank=0, size=7, mode="mirror")
+    xp_assert_close(res, np.asarray([0, 0, 0], dtype=np.float32),
+                    check_shape=True, check_dtype=True)
+    res = ndimage.percentile_filter(sample, percentile=100, size=7,
+                                    mode="reflect")
+    xp_assert_close(res, np.asarray([2, 2, 2], dtype=np.float32),
+                    check_shape=True, check_dtype=True)
