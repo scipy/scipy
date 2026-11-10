@@ -3015,6 +3015,49 @@ class TestPearson3:
         assert_allclose(stats.pearson3.sf(x, skew), ref, rtol=2e-14)
         assert_allclose(stats.pearson3.sf(x, 0), stats.norm.sf(x), rtol=2e-14)
 
+    @pytest.mark.parametrize('q, skew, ref', [
+        (1e-20, -2, -45.051701859880914),
+        (1e-300, -2, -689.7755278982137),
+        (3.4807005884285624e-14, -2, -29.988957709878154),
+        (1e-05, -2, -10.512925464970229),
+        (1e-300, -0.1, -62.6678421759545),
+        (1e-12, -0.1, -7.862158602503196),
+        (1e-10, -0.01, -6.427265711259277),
+        (1e-20, -100, -1732.7870700640706),
+        (1e-10, -100, -629.8777668133503),
+    ])
+    def test_ppf_small_q_negative_skew(self, q, skew, ref):
+
+        # The reference values solve cdf(x) = q with mpmath at 100 digits.
+        # With alpha = 4/skew**2, beta = 2/skew and t = alpha + beta*x, the
+        # cdf for skew < 0 is the regularized upper incomplete gamma function
+        # Q(alpha, t), evaluated directly (not as 1 - P) so that tiny q keeps
+        # full relative accuracy.
+        #
+        #   from mpmath import mp
+        #   mp.dps = 100
+        #   def ppf(q, skew, x0):
+        #       q, skew = mp.mpf(q), mp.mpf(skew)
+        #       alpha, beta = 4/skew**2, 2/skew
+        #       def logcdf(x):
+        #           return mp.log(mp.gammainc(alpha, alpha + beta*x, mp.inf,
+        #                                     regularized=True))
+        #       return mp.findroot(lambda x: logcdf(x) - mp.log(q), x0)
+        #
+        #   float(ppf(1e-20, -2, -40))  # -45.051701859880914
+        assert_allclose(stats.pearson3.ppf(q, skew), ref, rtol=5e-15)
+
+    def test_ppf_mixed_sign_skew(self):
+        # the negative- and positive-skew branches are evaluated with separate
+        # masks
+        q = np.array([1e-20, 1e-5, 0.5])
+        skew = np.array([[-2.], [0.5], [1e-6]])
+        res = stats.pearson3.ppf(q, skew)
+        assert_allclose(res[0], 1 + np.log(q), rtol=5e-15)
+        for i in range(3):
+            assert_allclose(res[i], [stats.pearson3.ppf(qj, skew[i, 0])
+                                     for qj in q], rtol=1e-15)
+
 
 class TestKappa4:
     def test_cdf_genpareto(self):
