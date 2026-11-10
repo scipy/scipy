@@ -152,6 +152,20 @@ class TestEig:
         for x, y in zip(res, ref):
             assert_equal(x, y)
 
+    @pytest.mark.parametrize('generalized', [False, True])
+    def test_overwrite_f_contiguous(self, generalized):
+        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place and must
+        # give the same result as a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((5, 5))
+        b = rng.standard_normal((5, 5))
+        args = (a, b) if generalized else (a,)
+        ref = eig(*args, left=True, right=True)
+        copies = tuple(np.asfortranarray(x) for x in args)
+        res = eig(*copies, left=True, right=True, overwrite_a=True, overwrite_b=True)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, v = eig(a)
@@ -1045,6 +1059,26 @@ class TestEigh:
         views = tuple(field_view(x) for x in args)
         res = eigh(*views, driver=driver)
         ref = eigh(*args, driver=driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
+    @pytest.mark.parametrize('subset', [None, 'index'])
+    def test_overwrite_f_contiguous(self, driver, subset):
+        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place; the
+        # eigenvectors then come back in the input's own buffer and must equal a copy's.
+        if subset and driver in ('ev', 'evd', 'gv', 'gvd'):
+            pytest.skip('driver cannot compute subsets')
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((6, 6)) + 1j*rng.standard_normal((6, 6))
+        a = a + a.conj().T
+        b = rng.standard_normal((6, 6)) + 1j*rng.standard_normal((6, 6))
+        b = b @ b.conj().T + 6*np.eye(6)
+        args = (a, b) if driver.startswith('g') else (a,)
+        kw = dict(driver=driver, subset_by_index=[1, 3] if subset else None)
+        ref = eigh(*args, **kw)
+        copies = tuple(np.asfortranarray(x) for x in args)
+        res = eigh(*copies, overwrite_a=True, overwrite_b=True, **kw)
         for x, y in zip(res, ref):
             assert_equal(x, y)
 

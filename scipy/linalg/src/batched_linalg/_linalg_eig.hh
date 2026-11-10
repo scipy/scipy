@@ -1,32 +1,37 @@
 /*
- * Templated loops for `linalg.eig`
+ * Templated loops for `linalg.eig` and `linalg.eigh`
  */
 #pragma once
 
 namespace sp_linalg {
 
-/*
- * Copy eigenvectors from F-ordered real `v` (ldv, n)-shaped array in the ?GEEV convention
- * into an (n, n)-shaped C-ordered complex array `dst`.
+/**
+ * @brief Expand the eigenvectors of a real ?geev/?ggev call into complex ones.
+ *
+ * Real LAPACK returns a real column for a real eigenvalue and, for a complex conjugate pair
+ * (j, j + 1), the columns Re(u) and Im(u) with u(j) = Re + i Im and u(j + 1) = Re - i Im.
+ *
+ * @param[out] dst  C-ordered n-by-n complex eigenvectors.
+ * @param[in]  v    F-ordered real eigenvectors with leading dimension @p ldv.
+ * @param[in]  ldv  Leading dimension of @p v.
+ * @param[in]  n    Matrix dimension.
+ * @param[in]  wi   Imaginary parts of the eigenvalues; zero marks a real eigenvalue.
  */
-template<typename real_type, typename cmplx_type>
+template<typename real_type>
 void
-transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real_type *wi) {
-    for (CBLAS_INT j=0; j < n; ) {
-        if(wi[j] == 0.) {
-            // If the j-th eigenvalue is real, then u(j) = VL(:,j), the j-th column of VL.
-            for (CBLAS_INT i=0; i<n; i++) {
-                dst[i*n + j] = complex_of_t<real_type>(v[i + j*ldv], real_type(0.));
+transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, npy_intp ldv, npy_intp n, const real_type *wi) {
+    using cmplx_type = complex_of_t<real_type>;
+    for (npy_intp j = 0; j < n; ) {
+        if (wi[j] == real_type(0)) {
+            for (npy_intp i = 0; i < n; i++) {
+                dst[i*n + j] = cmplx_type(v[i + j*ldv], real_type(0));
             }
             j += 1;
-        }
-        else {
-            // If the j-th and (j+1)-st eigenvalues form a complex conjugate pair,
-            // then u(j) = VL(:,j) + i*VL(:,j+1) and u(j+1) = VL(:,j) - i*VL(:,j+1).
-            for (CBLAS_INT i=0; i<n; i++) {
+        } else {
+            for (npy_intp i = 0; i < n; i++) {
                 real_type re = v[i + j*ldv], im = v[i + (j+1)*ldv];
-                dst[i*n + j] = complex_of_t<real_type>(re, im);     // VL(i, j)
-                dst[i*n + j + 1] = complex_of_t<real_type>(re, -im);  // VL(i, j+1)
+                dst[i*n + j] = cmplx_type(re, im);
+                dst[i*n + j + 1] = cmplx_type(re, -im);
             }
             j += 2;
         }
@@ -34,791 +39,158 @@ transform_eigvecs(cmplx_type dst, real_type *v, CBLAS_INT ldv, CBLAS_INT n, real
 }
 
 
+/**
+ * @brief Batched standard or generalized eigenproblem, `linalg.eig`.
+ *
+ * ?geev when @p ap_Bm is NULL, else ?ggev with alpha in @p ap_w and beta in @p ap_beta.
+ *
+ * @param[in]  ap_Am        Input array of shape (..., n, n), any strides.
+ * @param[in]  ap_Bm        Matrices of the shape of @p ap_Am for the generalized problem; NULL
+ *                          otherwise.
+ * @param[out] ap_w         Complex C-contiguous (..., n) eigenvalues, or alpha.
+ * @param[out] ap_beta      C-contiguous (..., n) beta of the generalized problem; NULL otherwise.
+ * @param[out] ap_vl        Complex C-contiguous (..., n, n) left eigenvectors; NULL if not wanted.
+ * @param[out] ap_vr        Complex C-contiguous (..., n, n) right eigenvectors; NULL if not wanted.
+ * @param[in]  overwrite_a  If true, @p ap_Am is 2-D and F-contiguous and is used in place.
+ * @param[in]  overwrite_b  If true, @p ap_Bm is 2-D and F-contiguous and is used in place.
+ * @param[out] vec_status   Receives the status of the first failing slice, if any.
+ * @return ok; too_large if n or the workspace does not fit CBLAS_INT; no_memory; lapack_error
+ *         if the workspace query fails.
+ */
 template<typename T>
-int
-_reg_eig(PyArrayObject* ap_Am, PyArrayObject *ap_w, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, SliceStatusVec& vec_status)
+BatchStatus
+_eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta,
+     PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
 {
-    using real_type = real_of_t<T>; // f32 if T==npy_cf32 etc
+    using real_type = real_of_t<T>;   // f32 if T==c64 etc
     using cmplx_type = complex_of_t<T>;
     SliceStatus slice_status;
 
     // --------------------------------------------------------------------
-    // Input Array Attributes
-    // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
-    int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
-    npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
-    npy_intp n = shape[ndim - 1];
-    npy_intp* strides = PyArray_STRIDES(ap_Am);
-
-    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
-    npy_intp outer_size = 1;
-    if (ndim > 2) {
-        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
-    }
-
-    // Output array pointers
-    cmplx_type *ptr_W = (cmplx_type *)PyArray_DATA(ap_w);
-
-    int compute_vl = (ap_vl != NULL);
-    int compute_vr = (ap_vr != NULL);
-
-    cmplx_type *ptr_vl = compute_vl ? (cmplx_type *)PyArray_DATA(ap_vl) : NULL;
-    cmplx_type *ptr_vr = compute_vr ? (cmplx_type *)PyArray_DATA(ap_vr) : NULL;
-
-    // --------------------------------------------------------------------
-    // Workspace computation and allocation
-    // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = 0.0;
-
-    char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
-    CBLAS_INT lda = n;
-    CBLAS_INT ldvl = n;
-    CBLAS_INT ldvr = n;
-
-    // c- and z variants: lwork query segfaults with rwork=NULL, allocate it straight away
-    real_type *rwork = NULL;
-    if constexpr (is_complex_v<T>) {
-        rwork = (real_type *)PyMem_RawMalloc(2*n*sizeof(real_type));
-        if (rwork == NULL) {
-            return -100;
-        }
-    }
-
-    // query LWORK
-    if constexpr (!is_complex_v<T>) {
-        lapack::geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
-    } else {
-        lapack::geev(jobvl, jobvr, intn, NULL, lda, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
-    }
-    if (info != 0) { PyMem_RawFree(rwork);  return -101; }
-
-    lwork = _calc_lwork(tmp);
-    if (lwork < 0) { PyMem_RawFree(rwork); return -102; }
-
-    /*
-     * Allocate memory and chop the buffer into parts
-     *
-     *     lwork        n      data_size   wi_size
-     * |-----------|---------|-----------|----------|---------|-------|
-     * ^           ^         ^           ^          ^         ^
-     * work        wr        data        wi         buf_vl    buf_vr
-     *
-     * Here
-     *   - data is n*n if overwrite_a is False (and =0 otherwise)
-     *   - wr & wi are eigenvalues;
-     *     wr is always length n; wi is only used for real inputs (s- and d-geev
-     *     have both in `wr` and `wi` arguments, while c- and z-geev only have `wr`)
-     *   - `buf_vl` and `buf_vr` hold eigenvectors if requested via `compute_{vl,vr}`.
-     *
-     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
-     */
-    npy_intp data_size = overwrite_a ? 0 : n*n;
-    npy_intp wi_size = is_complex_v<T>? 0 : n;
-    npy_intp bufsize = data_size + wi_size + lwork + n;
-
-    npy_intp vl_size = compute_vl ? ldvl*n : 0;
-    npy_intp vr_size = compute_vr ? ldvr*n : 0;
-    bufsize += vl_size + vr_size;
-
-    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
-    if (buf == NULL) { PyMem_RawFree(rwork); return -103; }
-
-    // partition the workspace
-    T *work = &buf[0];
-    T *wr = &buf[lwork];
-
-    T *data = NULL;
-    if (overwrite_a) {
-        // work in-place (2D only, ensured at the python call site)
-        data = (T *)Am_data;
-    } else {
-        data = &buf[lwork + n];
-    }
-
-    T *wi = NULL;
-    if(wi_size > 0) { wi = &buf[lwork + n + data_size]; }
-
-    T *buf_vl = NULL;
-    if(vl_size > 0) { buf_vl = &buf[lwork + n + data_size + wi_size]; }
-
-    T *buf_vr = NULL;
-    if(vr_size > 0) { buf_vr = &buf[lwork + n + data_size + wi_size + vl_size]; }
-
-    // --------------------------------------------------------------------
-    // Main loop to traverse the slices
-    // --------------------------------------------------------------------
-    for (npy_intp idx = 0; idx < outer_size; idx++) {
-        init_status(slice_status, idx, St::GENERAL);
-
-        if (!overwrite_a) {
-            // copy the slice to `data` in F order
-            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
-        }
-        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
-        // will need to adjust the data pointer here, too.
-
-        // compute eigenvalues for the slice
-        if constexpr (!is_complex_v<T>) {
-            lapack::geev(jobvl, jobvr, intn, data, lda, wr, wi, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
-        } else {
-            lapack::geev(jobvl, jobvr, intn, data, lda, wr, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
-        }
-
-        if(info != 0) {
-            slice_status.lapack_info = (Py_ssize_t)info;
-            vec_status.push_back(slice_status);
-
-            // cut it short on error in any slice
-            goto done;
-        }
-
-        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (is_complex_v<T>) {
-            memcpy(ptr_W, wr, n*sizeof(T));
-            ptr_W += n;
-
-            if (compute_vl) {
-                copy_slice_F_to_C(ptr_vl, buf_vl, n, n, ldvl);
-                ptr_vl += n*n;
-            }
-            if (compute_vr) {
-                copy_slice_F_to_C(ptr_vr, buf_vr, n, n, ldvr);
-                ptr_vr += n*n;
-            }
-        }
-        else {
-            // convert wr,wi into w
-            for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = complex_of_t<T>(wr[i], wi[i]);
-            }
-            ptr_W += n;
-
-            if (compute_vl) {
-                transform_eigvecs(ptr_vl, buf_vl, ldvl, n, wi);
-                ptr_vl += n*n;
-            }
-            if (compute_vr) {
-                transform_eigvecs(ptr_vr, buf_vr, ldvr, n, wi);
-                ptr_vr += n*n;
-            }
-        }
-    }
-
- done:
-    PyMem_RawFree(buf);
-    PyMem_RawFree(rwork);
-
-    return 0;
-}
-
-
-template<typename T>
-int
-_gen_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta, PyArrayObject *ap_vl, PyArrayObject *ap_vr, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
-{
-    using real_type = real_of_t<T>; // f32 if T==c64 etc
-    using cmplx_type = complex_of_t<T>;
-    SliceStatus slice_status;
-
-    // --------------------------------------------------------------------
-    // Input Array Attributes
-    // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
-    int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
-    npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
-    npy_intp n = shape[ndim - 1];
-    npy_intp *strides_A = PyArray_STRIDES(ap_Am);
-
-    T *Bm_data = (T *)PyArray_DATA(ap_Bm);
-    // shape(B) == shape(A)
-    npy_intp *strides_B = PyArray_STRIDES(ap_Bm);
-
-    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
-    npy_intp outer_size = 1;
-    if (ndim > 2) {
-        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
-    }
-
-    // Output array pointers
-    cmplx_type *ptr_W = (cmplx_type *)PyArray_DATA(ap_w);
-    T *ptr_beta = (T *)PyArray_DATA(ap_beta);
-
-    int compute_vl = (ap_vl != NULL);
-    int compute_vr = (ap_vr != NULL);
-
-    cmplx_type *ptr_vl = compute_vl ? (cmplx_type *)PyArray_DATA(ap_vl) : NULL;
-    cmplx_type *ptr_vr = compute_vr ? (cmplx_type *)PyArray_DATA(ap_vr) : NULL;
-
-    // --------------------------------------------------------------------
-    // Workspace computation and allocation
-    // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
-    T tmp = 0.0;
-
-    char jobvl = compute_vl ? 'V': 'N', jobvr = compute_vr ? 'V' : 'N';
-    CBLAS_INT lda = n;
-    CBLAS_INT ldb = n;
-    CBLAS_INT ldvl = n;
-    CBLAS_INT ldvr = n;
-
-    // similar to geev, allocate rwork right away (not sure if ?ggev segfaults otherwise, too)
-    real_type *rwork = NULL;
-    if constexpr (is_complex_v<T>) {
-        rwork = (real_type *)PyMem_RawMalloc(8*n*sizeof(real_type));
-        if (rwork == NULL) {
-            return -100;
-        }
-    }
-
-    // query LWORK
-    if constexpr (!is_complex_v<T>) {
-        lapack::ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, &info);
-    } else {
-        lapack::ggev(jobvl, jobvr, intn, NULL, lda, NULL, ldb, NULL, NULL, NULL, ldvl, NULL, ldvr, &tmp, lwork, rwork, &info);
-    }
-    if (info != 0) { PyMem_RawFree(rwork);  return -101; }
-
-    lwork = _calc_lwork(tmp);
-    if (lwork < 0) { PyMem_RawFree(rwork); return -102; }
-
-    /*
-     * Allocate memory and chop the buffer into parts
-     *
-     *     lwork        n        n        n/0      n*n/0    n*n/0    n*n/0   n*n/0
-     * |-----------|---------|-------|----------|---------|-------|--------|--------|
-     * ^           ^         ^       ^          ^         ^       ^        ^
-     * work        alphar    beta    alphai     data_A    data_B  buf_vl   buf_vr
-     *
-     * Here
-     *   - A_size & B_size are n*n if overwrite_{a,b} is False (and =0 otherwise)
-     *   - alphar & beta are eigenvalues, size `n` (always allocated)
-     *   - alphai is the imaginary part of eigenvalues, size `n` if real, 0 otherwise
-     *     (s- and d-ggev have both in `alphar` and `alphai` arguments, while c- and
-     *     z-geev only have `alphar`)
-     *   - `buf_vl` and `buf_vr` hold eigenvectors if requested via `compute_{vl,vr}`.
-     *
-     * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
-     */
-    npy_intp alphai_size = is_complex_v<T> ? 0 : n ;
-    npy_intp A_size = overwrite_a ? 0 : n*n;
-    npy_intp B_size = overwrite_b ? 0 : n*n;
-
-    npy_intp vl_size = compute_vl ? ldvl*n : 0;
-    npy_intp vr_size = compute_vr ? ldvr*n : 0;
-
-    npy_intp bufsize = lwork + n + n + alphai_size + A_size + B_size  + vl_size + vr_size;
-
-    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
-    if (buf == NULL) { PyMem_RawFree(rwork); return -103; }
-
-    T *work = &buf[0];
-    T *alphar = &buf[lwork];
-    T *beta = &buf[lwork + n];
-
-    T *alphai = NULL;
-    if(alphai_size > 0) { alphai = &buf[lwork + 2*n]; }
-
-    T *data_A = NULL;
-    if (overwrite_a) {
-        // work in-place (2D only, ensured at the python call site)
-        data_A = (T *)Am_data;
-    } else {
-        data_A = &buf[lwork + 2*n + alphai_size];
-    }
-
-    T *data_B = NULL;
-    if (overwrite_b) {
-        // work in-place (2D only, ensured at the python call site)
-        data_B = (T *)Bm_data;
-    } else {
-        data_B = &buf[lwork + 2*n + alphai_size + A_size];
-    }
-
-    T *buf_vl = NULL;
-    if(vl_size > 0) { buf_vl = &buf[lwork + 2*n + alphai_size + A_size + B_size]; }
-
-    T *buf_vr = NULL;
-    if(vr_size > 0) { buf_vr = &buf[lwork + 2*n + alphai_size + vl_size + A_size + B_size]; }
-
-
-    // --------------------------------------------------------------------
-    // Main loop to traverse the slices
-    // --------------------------------------------------------------------
-    for (npy_intp idx = 0; idx < outer_size; idx++) {
-        init_status(slice_status, idx, St::GENERAL);
-
-        if (!overwrite_a) {
-            // copy the slice to `data` in F order
-            T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides_A);
-            copy_strided_to_f(data_A, slice_ptr_A, n, n, strides_A[ndim-2], strides_A[ndim-1], n);
-        }
-        // NB: overwrite_a is for 2D F-ordered input only; if it is ever generalized to ndim>2,
-        // will need to adjust the data pointer here, too.
-
-        if (!overwrite_b) {
-            T *slice_ptr_B = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
-            copy_strided_to_f(data_B, slice_ptr_B, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
-        }
-        // same deal as with overwrite_a
-
-
-        // compute eigenvalues for the slice
-        if constexpr (!is_complex_v<T>) {
-            lapack::ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, alphai, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, &info);
-        } else {
-            lapack::ggev(jobvl, jobvr, intn, data_A, lda, data_B, ldb, alphar, beta, buf_vl, ldvl, buf_vr, ldvr, work, lwork, rwork, &info);
-        }
-
-        if(info != 0) {
-            slice_status.lapack_info = (Py_ssize_t)info;
-            vec_status.push_back(slice_status);
-
-            // cut it short on error in any slice
-            goto done;
-        }
-
-        // copy-and-transpose W, VR and VL slices from temp buffers to the output;
-        if constexpr (is_complex_v<T>) {
-            // alphar and beta are complex and compatible with the W array
-            memcpy(ptr_W, alphar, n*sizeof(T));
-            ptr_W += n;
-
-            memcpy(ptr_beta, beta, n*sizeof(T));
-            ptr_beta += n;
-
-            if (compute_vl) {
-                copy_slice_F_to_C(ptr_vl, buf_vl, n, n, ldvl);
-                ptr_vl += n*n;
-            }
-            if (compute_vr) {
-                copy_slice_F_to_C(ptr_vr, buf_vr, n, n, ldvr);
-                ptr_vr += n*n;
-            }
-        }
-        else {
-            // convert alphar,alphai,beta into w
-            for(npy_intp i=0; i<n; i++) {
-                ptr_W[i] = complex_of_t<T>(alphar[i], alphai[i]);
-            }
-            ptr_W += n;
-
-            memcpy(ptr_beta, beta, n*sizeof(T));
-            ptr_beta += n;
-
-            if (compute_vl) {
-                transform_eigvecs(ptr_vl, buf_vl, ldvl, n, alphai);
-                ptr_vl += n*n;
-            }
-            if (compute_vr) {
-                transform_eigvecs(ptr_vr, buf_vr, ldvr, n, alphai);
-                ptr_vr += n*n;
-            }
-        }
-    }
-
-
- done:
-    PyMem_RawFree(buf);
-    PyMem_RawFree(rwork);
-
-    return 0;
-}
-
-template<typename T>
-int
-_eig(PyArrayObject* ap_Am, PyArrayObject *ap_Bm,
-     PyArrayObject *ap_w, PyArrayObject *ap_beta,
-     PyArrayObject *ap_vl, PyArrayObject *ap_vr,
-     int overwrite_a, int overwrite_b,
-     SliceStatusVec& vec_status
-) {
-    int info;
-    if (ap_Bm == NULL) {
-        // sanity check: B and beta are either both NULL or both not NULL (for a generalized eig problem)
-        if (ap_beta != NULL) { return -222; }
-
-        info = _reg_eig<T>(ap_Am, ap_w, ap_vl, ap_vr, overwrite_a, vec_status);
-    }
-    else {
-        if (ap_beta == NULL) {return -223; }
-
-        info = _gen_eig<T>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
-    }
-    return info;
-}
-
-
-
-template<typename T>
-int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_Z,
-        int *intp_M, int overwrite_a, int overwrite_b, int itype, char jobz, char range, char uplo,
-        f64 vl, f64 vu, int il, int iu, Eigh_driver lapack_driver, SliceStatusVec& vec_status)
-{
-    using real_type = real_of_t<T>;
-    SliceStatus slice_status;
-
-    // -------------------------------------------------------------------
     // Input array attributes
-    // -------------------------------------------------------------------
-    T *A_data = (T *)PyArray_DATA(ap_Am);
+    // --------------------------------------------------------------------
+    T *Am_data = (T *)PyArray_DATA(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
-    npy_intp N = shape[ndim - 1];
-    npy_intp M = *intp_M;
+    npy_intp n = shape[ndim - 1];
 
-    T *B_data = NULL;
-    npy_intp *strides_B = NULL;
-    if (ap_Bm != NULL) {
-        B_data =  (T *)PyArray_DATA(ap_Bm);
-        strides_B = PyArray_STRIDES(ap_Bm);
-    }
-
-    real_type *w_data = (real_type *)PyArray_DATA(ap_w);
-    npy_intp *strides_w = PyArray_STRIDES(ap_w);
-
-    T *Z_data = NULL;
-    npy_intp *strides_Z = NULL;
-    if (jobz != 'N') {
-        Z_data = (T *)PyArray_DATA(ap_Z);
-        strides_Z = PyArray_STRIDES(ap_Z);
-    }
+    const bool generalized = (ap_Bm != NULL);
+    T *Bm_data = generalized ? (T *)PyArray_DATA(ap_Bm) : NULL;
+    npy_intp *strides_B = generalized ? PyArray_STRIDES(ap_Bm) : NULL;
 
     npy_intp outer_size = 1;
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
 
-    // -------------------------------------------------------------------
+    // outputs are complex and C-contiguous
+    cmplx_type *ptr_W = (cmplx_type *)PyArray_DATA(ap_w);
+    T *ptr_beta = generalized ? (T *)PyArray_DATA(ap_beta) : NULL;
+    cmplx_type *ptr_vl = ap_vl ? (cmplx_type *)PyArray_DATA(ap_vl) : NULL;
+    cmplx_type *ptr_vr = ap_vr ? (cmplx_type *)PyArray_DATA(ap_vr) : NULL;
+    const char jobvl = ptr_vl ? 'V' : 'N', jobvr = ptr_vr ? 'V' : 'N';
+
+    CBLAS_INT intn, info = 0;
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
+
+    // --------------------------------------------------------------------
     // Workspace computation and allocation
-    //
-    // NB. Zero-sized arrays handled at python side, so the `max(1, ...)`
-    // from the LAPACK documentation is not needed.
-    // -------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
-    real_type r_vl = (real_type)vl, r_vu = (real_type)vu; // Cast to `real_type` to deal with potential single-precision requirements for f32 and c64
-    CBLAS_INT int_il = il + 1; // Deal with Fortran being 1-indexed
-    CBLAS_INT int_iu = iu + 1;
-    CBLAS_INT int_itype = (CBLAS_INT)itype;
-    real_type abstol = 0.0;
+    // --------------------------------------------------------------------
+    // the complex flavors read rwork already during the workspace query: 2n for geev, 8n for ggev
+    std::size_t rwork_size = 0;
+    if constexpr (is_complex_v<T>) { rwork_size = (generalized ? 8 : 2) * (std::size_t)n; }
+    auto rwork = alloc_workspace<real_type>(rwork_size);
+    if (!rwork) { return BatchStatus::no_memory; }
 
-    T tmp_work = 0.0;
-    real_type tmp_rwork = 0.0;
-    CBLAS_INT tmp_iwork = 0;
-
-    CBLAS_INT lwork = -1, lrwork = -1, liwork = -1;
-
-    // lwork probe
-    switch (lapack_driver) {
-        case Eigh_driver::EV : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
-            } else {
-                lapack::heev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
-            }
-            break;
+    // query lwork
+    T tmp = 0.0;
+    if (generalized) {
+        if constexpr (!is_complex_v<T>) {
+            lapack::ggev(jobvl, jobvr, intn, NULL, intn, NULL, intn, NULL, NULL, NULL, NULL, intn, NULL, intn, &tmp, -1, &info);
+        } else {
+            lapack::ggev(jobvl, jobvr, intn, NULL, intn, NULL, intn, NULL, NULL, NULL, intn, NULL, intn, &tmp, -1, rwork.get(), &info);
         }
-
-        case Eigh_driver::EVD : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
-            } else {
-                lapack::heevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
-            }
-            break;
-        }
-
-        case Eigh_driver::EVR : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
-            } else {
-                lapack::heevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
-            }
-            break;
-        }
-
-        case Eigh_driver::EVX : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
-            } else {
-                lapack::heevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
-            }
-            break;
-        }
-
-        case Eigh_driver::GV : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &info);
-            } else {
-                lapack::hegv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, &info);
-            }
-            break;
-        }
-
-        case Eigh_driver::GVD : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_iwork, liwork, &info);
-            } else {
-                lapack::hegvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, lwork, &tmp_rwork, lrwork, &tmp_iwork, liwork, &info);
-            }
-            break;
-        }
-
-        case Eigh_driver::GVX : {
-            if constexpr (!is_complex_v<T>) {
-                lapack::sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_iwork, NULL, &info);
-            } else {
-                lapack::hegvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, lwork, &tmp_rwork, &tmp_iwork, NULL, &info);
-            }
-            break;
-        }
-
-        default : { // Unknown driver
-            return -105;
-        }
-    }
-    if (info != 0) { info = -101; return (int)info; }
-
-
-    // process `lwork` probe
-    lwork = _calc_lwork(tmp_work);
-
-    // process `lrwork` probe
-    if constexpr (!is_complex_v<T>) {
-        lrwork = 0;  // for real numbers LAPACK does not require `rwork`, hence set corresponding buffer size to 0.
     } else {
-        if (lapack_driver == Eigh_driver::EV || lapack_driver == Eigh_driver::GV) {
-            lrwork = 3 * intn - 2; // See https://www.netlib.org/lapack/explore-html/d8/d1c/group__heev_gabba143a47eee873cbdb00d685fca08a3.html#gabba143a47eee873cbdb00d685fca08a3
-        } else if (lapack_driver == Eigh_driver::EVD || lapack_driver == Eigh_driver::EVR || lapack_driver == Eigh_driver::GVD) {
-            lrwork = _calc_lwork(tmp_rwork);
-        } else if (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) {
-            lrwork = 7 * intn; // See https://www.netlib.org/lapack/explore-html/d4/de0/group__heevx_ga08ec091a756fdf774ef02cae086f76cb.html#ga08ec091a756fdf774ef02cae086f76cb
+        if constexpr (!is_complex_v<T>) {
+            lapack::geev(jobvl, jobvr, intn, NULL, intn, NULL, NULL, NULL, intn, NULL, intn, &tmp, -1, &info);
+        } else {
+            lapack::geev(jobvl, jobvr, intn, NULL, intn, NULL, NULL, intn, NULL, intn, &tmp, -1, rwork.get(), &info);
         }
     }
+    if (info != 0) { return BatchStatus::lapack_error; }
 
-    // Process `liwork` probe, already integer so no need to use `_calc_lwork()`.
-    liwork = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? 5 * intn : tmp_iwork;
-
-
-    if ((lwork < 0) || (lrwork < 0) || (liwork < 0) ||
-        (3 * N + 2 >= std::numeric_limits<CBLAS_INT>::max() && (lapack_driver == Eigh_driver::EV || lapack_driver == Eigh_driver::GV)) ||
-        (((jobz == 'N' && N + 1 >= std::numeric_limits<CBLAS_INT>::max()) || (jobz == 'V' && 2 * N * N + 5 * N + 1 >= std::numeric_limits<CBLAS_INT>::max())) && (lapack_driver == Eigh_driver::EVD || lapack_driver == Eigh_driver::GVD)) ||
-        (24 * N >= std::numeric_limits<CBLAS_INT>::max() && lapack_driver == Eigh_driver::EVR) ||
-        (7 * N >= std::numeric_limits<CBLAS_INT>::max() && (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX))
-    ) {
-        // Too large lwork required, computation would overflow
-        // XXX: what about the buffer size, especially `buff_A`
-        return -101;
-    }
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
+    CBLAS_INT lwork = _calc_lwork(tmp);
+    if (lwork < 0) { return BatchStatus::too_large; }
 
     /*
-     * Allocate buffer and slice into parts
-     *   lwork   Z_size   A_size   B_size
-     * |-------|--------|--------|--------|
-     * ^       ^        ^        ^
-     * work    buff_Z   buff_A   buff_B
+     * Allocate memory and chop the buffer into parts
      *
-     * - `work` is a work area, always allocated, size `lwork`
-     * - `buff_Z` contains the eigenvectors returned by LAPACK, size N * M, only allocated if `jobz != 'N'`
-     * - `buff_A` contains a buffer for the data of `A`, size N * N, only allocated if `overwrite_a` is set
-     */
-    CBLAS_INT Z_size = (jobz != 'N') ? N * M : 0;
-    CBLAS_INT A_size = (!overwrite_a) ? N * N : 0;
-    CBLAS_INT B_size = (ap_Bm != NULL && !overwrite_b) ? N * N : 0;
-    T *buffer = (T *)PyMem_RawMalloc((lwork + Z_size + A_size + B_size) * sizeof(T));
-    if (buffer == NULL) { info = -102; return int(info); }
-
-    T *work = &buffer[0];
-    T *buff_Z = &buffer[lwork];
-    T *buff_A = NULL;
-    T *buff_B = NULL;
-    if (!overwrite_a) {
-        buff_A = &buffer[lwork + Z_size];
-    } else {
-        buff_A = A_data;
-    } // NB. `overwrite_a` only enabled if input array is 2D
-
-    if (ap_Bm != NULL && !overwrite_b) {
-        buff_B = &buffer[lwork + Z_size + A_size];
-    } else {
-        buff_B = B_data;
-    } // NB. `overwrite_b` only enabled if input array is 2D
-
-    /*
-     * Integer work areas:
+     *    lwork      n      n/0     n/0     n*n/0    n*n/0    n*n/0    n*n/0
+     * |----------|------|-------|-------|--------|--------|--------|--------|
+     * ^          ^      ^       ^       ^        ^        ^        ^
+     * work       wr     wi      beta    data_A   data_B   buf_vl   buf_vr
      *
-     * - All LAPACK routines except `EV` and `GV` require an `iwork` argument.
-     * - `EVR` requires an integer return array for `isuppz` indicating the valid range of the eigenvectors.
-     * - `EVX`/`GVX` require an integer return array for `ifail` indicating the eigenvalues where it failed to converge.
+     * - wr holds the eigenvalues (alpha for the generalized problem); the real flavors return
+     *   the imaginary parts separately in wi
+     * - beta is written by the generalized problem only
+     * - data_A and data_B are the F-ordered copies of the slices unless they are used in place
+     * - buf_vl and buf_vr hold the eigenvectors when they are requested
      */
-    CBLAS_INT *ibuffer = NULL;
-    CBLAS_INT *iwork = NULL;
-    CBLAS_INT *isuppz = NULL;
-    CBLAS_INT *ifail = NULL;
+    // element counts are products of dimensions of existing arrays, so they fit size_t
+    const std::size_t nn = (std::size_t)n * n;
+    const std::size_t wi_size = is_complex_v<T> ? 0 : (std::size_t)n;
+    const std::size_t beta_size = generalized ? (std::size_t)n : 0;
+    const std::size_t a_size = overwrite_a ? 0 : nn;
+    const std::size_t b_size = (generalized && !overwrite_b) ? nn : 0;
+    const std::size_t vl_size = ptr_vl ? nn : 0, vr_size = ptr_vr ? nn : 0;
 
-    CBLAS_INT iwork_size = (lapack_driver != Eigh_driver::EV && lapack_driver != Eigh_driver::GV) ? liwork : 0;
-    CBLAS_INT isuppz_size = (lapack_driver == Eigh_driver::EVR) ? 2 * M : 0;
-    CBLAS_INT ifail_size = (lapack_driver == Eigh_driver::EVX || lapack_driver == Eigh_driver::GVX) ? N : 0;
-    CBLAS_INT ibuffer_size = iwork_size + isuppz_size + ifail_size;
+    auto buf = alloc_workspace<T>(lwork + n + wi_size + beta_size + a_size + b_size + vl_size + vr_size);
+    if (!buf) { return BatchStatus::no_memory; }
 
-    if (ibuffer_size > 0) {
-        ibuffer = (CBLAS_INT *)PyMem_RawMalloc(ibuffer_size * sizeof(CBLAS_INT));
-        if(ibuffer == NULL) {
-            PyMem_RawFree(buffer);
-            info = -103;
-            return int(info);
-        }
+    // partition the workspace; overwrite_x inputs are 2-D F-contiguous and already in place
+    T *cursor = buf.get();
+    T *work = cursor; cursor += lwork;
+    T *wr = cursor; cursor += n;
+    T *wi = NULL;
+    if (wi_size) { wi = cursor; cursor += wi_size; }
+    T *beta = NULL;
+    if (beta_size) { beta = cursor; cursor += beta_size; }
+    T *data_A = Am_data;
+    if (!overwrite_a) { data_A = cursor; cursor += a_size; }
+    T *data_B = Bm_data;
+    if (b_size) { data_B = cursor; cursor += b_size; }
+    T *buf_vl = NULL;
+    if (vl_size) { buf_vl = cursor; cursor += vl_size; }
+    T *buf_vr = NULL;
+    if (vr_size) { buf_vr = cursor; }
 
-        iwork = &ibuffer[0];
-        isuppz = &ibuffer[liwork];
-        ifail = &ibuffer[liwork + isuppz_size];
-    }
-
-    /*
-     * Some LAPACK routines require a real work area `rwork` for complex inputs.
-     * In case the input is not complex `lrwork` was already set to 0 during the
-     * "process `lrwork` probe" stage above.
-     *
-     * In addition, when `range == 'I'`, the allocated array for the eigenvalues
-     * is of size (M,) whereas the corresponding LAPACK routines always require
-     * a buffer of size (N,) for the eigenvalues. Therefore, when `M < N`, a new
-     * array is allocated to hand to the LAPACK call after which the relevant
-     * arguments can be copied over to the return object. This buffer is called
-     * `buff_w`.
-     */
-    real_type *rbuffer = NULL;
-    real_type *buff_w = NULL;
-    real_type *rwork = NULL;
-
-    CBLAS_INT w_size = (range == 'I' && M < N) ? N : 0;
-    CBLAS_INT rbuffer_size = w_size + lrwork;
-    if (rbuffer_size > 0) {
-        rbuffer = (real_type *)PyMem_RawMalloc(rbuffer_size * sizeof(real_type));
-        if (rbuffer == NULL) {
-            PyMem_RawFree(buffer);
-
-            if (ibuffer != NULL) {
-                PyMem_RawFree(ibuffer);
-            }
-
-            info = -104;
-            return int(info);
-        }
-
-        buff_w = &rbuffer[0];
-        rwork = &rbuffer[w_size];
-    }
-
-    // -------------------------------------------------------------------
-    // Main batching loop
-    // -------------------------------------------------------------------
-    T *slice_ptr_A = NULL, *slice_ptr_Z = NULL, *slice_ptr_B = NULL;
-    real_type *slice_ptr_w = NULL;
-
+    // --------------------------------------------------------------------
+    // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
+    // --------------------------------------------------------------------
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-
-        /*
-         * `w` is a vector, but should still traverse the same number of dimensions
-         * and the batch shape is the same for all arrays, so make use of `shape` and
-         * `ndim` for all slices.
-         */
-        slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
-        slice_ptr_w = compute_slice_ptr(idx, w_data, ndim, shape, strides_w);
-        if (jobz != 'N') {
-            slice_ptr_Z = compute_slice_ptr(idx, Z_data, ndim, shape, strides_Z);
-        }
-
-        if (ap_Bm != NULL) {
-            slice_ptr_B = compute_slice_ptr(idx, B_data, ndim, shape, strides_B);
-        }
-
-        /*
-         * Cfr. comment above: when `range == 'I`` and `M < N`, the allocated return
-         * object is not large enough for the LAPACK call, hence use an intermediate
-         * buffer and copy over the relevant `M` eigenvalues afterwards.
-         */
-        real_type *lapack_w = (range == 'I' && M < N) ? buff_w : slice_ptr_w;
-
-        if (!overwrite_a) {
-            // XXX: can exploit the structure of `A` in some way or the other?
-            copy_strided_to_f(buff_A, slice_ptr_A, intn, intn, strides[ndim-2], strides[ndim-1], intn);
-        } // NB. if `overwrite_a` is set the data is already in place and pointer was set earlier
-
-        if (ap_Bm != NULL && !overwrite_b) {
-            copy_strided_to_f(buff_B, slice_ptr_B, intn, intn, strides_B[ndim-2], strides_B[ndim-1], intn);
-        } // NB. similar reasoning as for `a`
-
-
         init_status(slice_status, idx, St::GENERAL);
 
-        // Actual LAPACK call
-        switch (lapack_driver) {
-            case Eigh_driver::EV : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::syev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, &info);
-                } else {
-                    lapack::heev(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, &info);
-                }
-                break;
-            }
+        if (!overwrite_a) {
+            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            copy_strided_to_f(data_A, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
+        }
+        if (b_size) {
+            T *slice_ptr = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
+            copy_strided_to_f(data_B, slice_ptr, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
+        }
 
-            case Eigh_driver::EVD : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::syevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, iwork, liwork, &info);
-                } else {
-                    lapack::heevd(jobz, uplo, intn, buff_A, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
-                }
-                break;
+        if (generalized) {
+            if constexpr (!is_complex_v<T>) {
+                lapack::ggev(jobvl, jobvr, intn, data_A, intn, data_B, intn, wr, wi, beta, buf_vl, intn, buf_vr, intn, work, lwork, &info);
+            } else {
+                lapack::ggev(jobvl, jobvr, intn, data_A, intn, data_B, intn, wr, beta, buf_vl, intn, buf_vr, intn, work, lwork, rwork.get(), &info);
             }
-
-            case Eigh_driver::EVR : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::syevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, iwork, liwork, &info);
-                } else {
-                    lapack::heevr(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, isuppz, work, lwork, rwork, lrwork, iwork, liwork, &info);
-                }
-                break;
-            }
-
-            case Eigh_driver::EVX : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::syevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
-                } else {
-                    lapack::heevx(jobz, range, uplo, intn, buff_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
-                }
-                break;
-            }
-
-            case Eigh_driver::GV : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::sygv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, &info);
-                } else {
-                    lapack::hegv(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, &info);
-                }
-                break;
-            }
-
-            case Eigh_driver::GVD : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::sygvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, iwork, liwork, &info);
-                } else {
-                    lapack::hegvd(int_itype, jobz, uplo, intn, buff_A, intn, buff_B, intn, lapack_w, work, lwork, rwork, lrwork, iwork, liwork, &info);
-                }
-                break;
-            }
-
-            case Eigh_driver::GVX : {
-                if constexpr (!is_complex_v<T>) {
-                    lapack::sygvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, iwork, ifail, &info);
-                } else {
-                    lapack::hegvx(int_itype, jobz, range, uplo, intn, buff_A, intn, buff_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, lapack_w, buff_Z, intn, work, lwork, rwork, iwork, ifail, &info);
-                }
-                break;
-            }
-
-            default : { // Unknown driver
-                return -105;
+        } else {
+            if constexpr (!is_complex_v<T>) {
+                lapack::geev(jobvl, jobvr, intn, data_A, intn, wr, wi, buf_vl, intn, buf_vr, intn, work, lwork, &info);
+            } else {
+                lapack::geev(jobvl, jobvr, intn, data_A, intn, wr, buf_vl, intn, buf_vr, intn, work, lwork, rwork.get(), &info);
             }
         }
 
@@ -826,79 +198,331 @@ int _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArr
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            goto free_exit;
+            // cut it short on error in any slice
+            return BatchStatus::ok;
         }
 
-        if (range == 'I' && M < N) {
-            memcpy(slice_ptr_w, buff_w, M * sizeof(real_type));
-        } // If condition violated the eigenvalues are already in place, cfr. previous comments.
+        // eigenvalues, beta and the transposed eigenvectors go to the C-contiguous outputs
+        if constexpr (is_complex_v<T>) {
+            std::copy_n(wr, n, ptr_W);
+            if (buf_vl) { copy_slice_F_to_C(ptr_vl, buf_vl, n, n, n); ptr_vl += nn; }
+            if (buf_vr) { copy_slice_F_to_C(ptr_vr, buf_vr, n, n, n); ptr_vr += nn; }
+        } else {
+            // the real flavors return (wr, wi) and real eigenvector columns in the ?geev convention
+            for (npy_intp i = 0; i < n; i++) { ptr_W[i] = cmplx_type(wr[i], wi[i]); }
+            if (buf_vl) { transform_eigvecs(ptr_vl, buf_vl, n, n, wi); ptr_vl += nn; }
+            if (buf_vr) { transform_eigvecs(ptr_vr, buf_vr, n, n, wi); ptr_vr += nn; }
+        }
+        ptr_W += n;
+        if (beta) { std::copy_n(beta, n, ptr_beta); ptr_beta += n; }
+    }
 
-        if (jobz != 'N') {
-            // Copy back eigenvectors
-            switch (lapack_driver) {
-                case Eigh_driver::EV :
-                    [[fallthrough]];
+    return BatchStatus::ok;
+}
 
-                case Eigh_driver::EVD :
-                    [[fallthrough]];
 
-                case Eigh_driver::GV :
-                    [[fallthrough]];
+/**
+ * @brief Batched symmetric or Hermitian eigenproblem, `linalg.eigh`.
+ *
+ * @param[in]  ap_Am        Input array of shape (..., n, n), any strides; the @p uplo triangle is
+ *                          read.
+ * @param[in]  ap_Bm        Positive definite matrices of the shape of @p ap_Am for the generalized
+ *                          drivers gv, gvd and gvx; NULL for the others.
+ * @param[out] ap_w         Real C-contiguous (..., m) eigenvalues, m = iu - il + 1 for range 'I'
+ *                          and n otherwise.
+ * @param[out] ap_Z         C-contiguous (..., n, m) eigenvectors for @p jobz 'V', NULL for 'N'.
+ *                          With @p overwrite_a this is @p ap_Am itself and receives them in F order.
+ * @param[out] m_found      Receives the number of eigenvalues found, less than m only for range 'V'.
+ * @param[in]  overwrite_a  If true, @p ap_Am is 2-D and F-contiguous and is used in place.
+ * @param[in]  overwrite_b  If true, @p ap_Bm is 2-D and F-contiguous and is used in place.
+ * @param[in]  itype        Generalized problem type 1, 2 or 3.
+ * @param[in]  jobz         'N' for eigenvalues only, 'V' for eigenvectors too.
+ * @param[in]  range        'A' all eigenvalues, 'V' those in (vl, vu], 'I' the il-th to iu-th.
+ * @param[in]  uplo         'L' or 'U', the triangle that holds the data.
+ * @param[in]  vl           Lower bound for range 'V'.
+ * @param[in]  vu           Upper bound for range 'V'.
+ * @param[in]  il           First 0-based index for range 'I'.
+ * @param[in]  iu           Last 0-based index for range 'I'.
+ * @param[in]  driver       The LAPACK routine.
+ * @param[out] vec_status   Receives the status of the first failing slice, if any.
+ * @return ok; too_large if n or a workspace size does not fit CBLAS_INT; no_memory; lapack_error
+ *         if the workspace query fails.
+ */
+template<typename T>
+BatchStatus
+_eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_Z, npy_intp *m_found,
+      int overwrite_a, int overwrite_b, int itype, char jobz, char range, char uplo,
+      f64 vl, f64 vu, int il, int iu, Eigh_driver driver, SliceStatusVec& vec_status)
+{
+    using real_type = real_of_t<T>;
+    SliceStatus slice_status;
 
-                case Eigh_driver::GVD : {
-                    if (!overwrite_a) {
-                        copy_slice_F_to_C(slice_ptr_Z, buff_A, N, N);
-                    } // NB. else the eigenvectors are already in place
-                    break;
+    // --------------------------------------------------------------------
+    // Input array attributes
+    // --------------------------------------------------------------------
+    T *A_data = (T *)PyArray_DATA(ap_Am);
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+    npy_intp *strides = PyArray_STRIDES(ap_Am);
+    npy_intp n = shape[ndim - 1];
+    const npy_intp m = (range == 'I') ? iu - il + 1 : n;   // eigenvalues per slice in the outputs
+
+    const bool generalized = (ap_Bm != NULL);
+    T *B_data = generalized ? (T *)PyArray_DATA(ap_Bm) : NULL;
+    npy_intp *strides_B = generalized ? PyArray_STRIDES(ap_Bm) : NULL;
+
+    npy_intp outer_size = 1;
+    for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
+
+    // outputs; w is (..., m) and Z is (..., n, m), both C-contiguous, unless Z is A in place
+    real_type *ptr_w = (real_type *)PyArray_DATA(ap_w);
+    T *ptr_Z = (jobz != 'N') ? (T *)PyArray_DATA(ap_Z) : NULL;
+
+    CBLAS_INT intn, intm, info = 0;
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm)) { return BatchStatus::too_large; }
+    const CBLAS_INT int_itype = itype, int_il = il + 1, int_iu = iu + 1;   // LAPACK indices are 1-based
+    const real_type r_vl = (real_type)vl, r_vu = (real_type)vu, abstol = 0;
+
+    // ev, evd, gv and gvd leave the eigenvectors in A; evr, evx and gvx write them to Z
+    const bool vectors_in_a = (driver == Eigh_driver::EV || driver == Eigh_driver::EVD ||
+                               driver == Eigh_driver::GV || driver == Eigh_driver::GVD);
+    const bool expert = (driver == Eigh_driver::EVX || driver == Eigh_driver::GVX);
+
+    // --------------------------------------------------------------------
+    // Workspace computation and allocation
+    // --------------------------------------------------------------------
+    // With eigenvectors, ?syevd/?sygvd need lwork >= 1 + 6n + 2n^2, and ?heevd/?hegvd need
+    // lwork >= 2n + n^2 and lrwork >= 1 + 5n + 2n^2. LAPACK evaluates these in CBLAS_INT; when
+    // they overflow, the workspace query returns a value too small to run with instead of
+    // failing, so they are checked here first.
+    if ((driver == Eigh_driver::EVD || driver == Eigh_driver::GVD) && jobz == 'V') {
+        const std::size_t un = n, lwmin = is_complex_v<T> ? un * un + 2 * un : 2 * un * un + 6 * un + 1;
+        const std::size_t lrwmin = is_complex_v<T> ? 2 * un * un + 5 * un + 1 : 0;
+        if (lwmin > (std::size_t)CBLAS_INT_MAX || lrwmin > (std::size_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+    }
+
+    // query lwork; the divide-and-conquer and RRR drivers also report lrwork and liwork
+    T tmp_work = 0.0;
+    real_type tmp_rwork = 0.0;
+    CBLAS_INT tmp_iwork = 0;
+    switch (driver) {
+        case Eigh_driver::EV:
+            if constexpr (!is_complex_v<T>) {
+                lapack::syev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, -1, &info);
+            } else {
+                lapack::heev(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_rwork, &info);
+            }
+            break;
+        case Eigh_driver::EVD:
+            if constexpr (!is_complex_v<T>) {
+                lapack::syevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_iwork, -1, &info);
+            } else {
+                lapack::heevd(jobz, uplo, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_rwork, -1, &tmp_iwork, -1, &info);
+            }
+            break;
+        case Eigh_driver::EVR:
+            if constexpr (!is_complex_v<T>) {
+                lapack::syevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, -1, &tmp_iwork, -1, &info);
+            } else {
+                lapack::heevr(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, NULL, &tmp_work, -1, &tmp_rwork, -1, &tmp_iwork, -1, &info);
+            }
+            break;
+        case Eigh_driver::EVX:
+            if constexpr (!is_complex_v<T>) {
+                lapack::syevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, -1, &tmp_iwork, NULL, &info);
+            } else {
+                lapack::heevx(jobz, range, uplo, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, -1, &tmp_rwork, &tmp_iwork, NULL, &info);
+            }
+            break;
+        case Eigh_driver::GV:
+            if constexpr (!is_complex_v<T>) {
+                lapack::sygv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, -1, &info);
+            } else {
+                lapack::hegv(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_rwork, &info);
+            }
+            break;
+        case Eigh_driver::GVD:
+            if constexpr (!is_complex_v<T>) {
+                lapack::sygvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_iwork, -1, &info);
+            } else {
+                lapack::hegvd(int_itype, jobz, uplo, intn, NULL, intn, NULL, intn, NULL, &tmp_work, -1, &tmp_rwork, -1, &tmp_iwork, -1, &info);
+            }
+            break;
+        case Eigh_driver::GVX:
+            if constexpr (!is_complex_v<T>) {
+                lapack::sygvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, -1, &tmp_iwork, NULL, &info);
+            } else {
+                lapack::hegvx(int_itype, jobz, range, uplo, intn, NULL, intn, NULL, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, NULL, NULL, intn, &tmp_work, -1, &tmp_rwork, &tmp_iwork, NULL, &info);
+            }
+            break;
+    }
+    if (info != 0) { return BatchStatus::lapack_error; }
+
+    // _calc_lwork returns -1 when the queried size does not fit CBLAS_INT
+    CBLAS_INT lwork = _calc_lwork(tmp_work);
+    if (lwork < 0) { return BatchStatus::too_large; }
+
+    // real work, complex flavors only: fixed for ev/gv (3n - 2) and evx/gvx (7n), queried otherwise
+    std::size_t lrwork = 0;
+    if constexpr (is_complex_v<T>) {
+        if (driver == Eigh_driver::EV || driver == Eigh_driver::GV) {
+            lrwork = 3 * (std::size_t)n - 2;
+        } else if (expert) {
+            lrwork = 7 * (std::size_t)n;
+        } else {
+            CBLAS_INT queried = _calc_lwork(tmp_rwork);
+            if (queried < 0) { return BatchStatus::too_large; }
+            lrwork = queried;
+        }
+    }
+    // integer work: none for ev/gv, 5n plus an n-long ifail for evx/gvx, queried otherwise; evr also
+    // needs 2m for isuppz
+    std::size_t liwork = 0, isuppz_size = 0, ifail_size = 0;
+    if (driver == Eigh_driver::EVD || driver == Eigh_driver::GVD || driver == Eigh_driver::EVR) { liwork = tmp_iwork; }
+    if (expert) { liwork = 5 * (std::size_t)n; ifail_size = n; }
+    if (driver == Eigh_driver::EVR) { isuppz_size = 2 * (std::size_t)m; }
+
+    CBLAS_INT int_lrwork, int_liwork;
+    if (!checked_narrow<CBLAS_INT>(lrwork, &int_lrwork) || !checked_narrow<CBLAS_INT>(liwork, &int_liwork)) {
+        return BatchStatus::too_large;
+    }
+
+    /*
+     * Three buffers, chopped into parts:
+     *
+     *   T:          work (lwork) | Z (n*m, evr/evx/gvx) | A (n*n unless in place) | B (n*n, generalized unless in place)
+     *   real_type:  w (n, when range 'I' wants fewer than n values: LAPACK still writes n) | rwork (lrwork)
+     *   CBLAS_INT:  iwork (liwork) | isuppz (2m, evr) | ifail (n, evx/gvx)
+     */
+    // element counts are products of dimensions of existing arrays, so they fit size_t
+    const std::size_t nn = (std::size_t)n * n;
+    const std::size_t z_size = (ptr_Z && !vectors_in_a) ? (std::size_t)n * m : 0;
+    const std::size_t a_size = overwrite_a ? 0 : nn;
+    const std::size_t b_size = (generalized && !overwrite_b) ? nn : 0;
+    const std::size_t w_size = (m < n) ? (std::size_t)n : 0;
+
+    auto buf = alloc_workspace<T>(lwork + z_size + a_size + b_size);
+    auto rbuf = alloc_workspace<real_type>(w_size + lrwork);
+    auto ibuf = alloc_workspace<CBLAS_INT>(liwork + isuppz_size + ifail_size);
+    if (!buf || !rbuf || !ibuf) { return BatchStatus::no_memory; }
+
+    // partition the workspaces; overwrite_x inputs are 2-D F-contiguous and already in place
+    T *cursor = buf.get();
+    T *work = cursor; cursor += lwork;
+    T *buf_Z = NULL;
+    if (z_size) { buf_Z = cursor; cursor += z_size; }
+    T *buf_A = A_data;
+    if (!overwrite_a) { buf_A = cursor; cursor += a_size; }
+    T *buf_B = B_data;
+    if (b_size) { buf_B = cursor; }
+
+    real_type *rcursor = rbuf.get();
+    real_type *buf_w = NULL;
+    if (w_size) { buf_w = rcursor; rcursor += w_size; }
+    real_type *rwork = rcursor;
+
+    CBLAS_INT *icursor = ibuf.get();
+    CBLAS_INT *iwork = icursor; icursor += liwork;
+    CBLAS_INT *isuppz = icursor; icursor += isuppz_size;
+    CBLAS_INT *ifail = icursor;
+
+    // --------------------------------------------------------------------
+    // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
+    // --------------------------------------------------------------------
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        init_status(slice_status, idx, St::GENERAL);
+
+        if (!overwrite_a) {
+            T *slice_ptr = compute_slice_ptr(idx, A_data, ndim, shape, strides);
+            copy_strided_to_f(buf_A, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
+        }
+        if (b_size) {
+            T *slice_ptr = compute_slice_ptr(idx, B_data, ndim, shape, strides_B);
+            copy_strided_to_f(buf_B, slice_ptr, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
+        }
+        real_type *w = buf_w ? buf_w : ptr_w;   // LAPACK writes n eigenvalues; the output holds m
+
+        switch (driver) {
+            case Eigh_driver::EV:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::syev(jobz, uplo, intn, buf_A, intn, w, work, lwork, &info);
+                } else {
+                    lapack::heev(jobz, uplo, intn, buf_A, intn, w, work, lwork, rwork, &info);
                 }
-
-                case Eigh_driver::EVR : {
-                    // XXX: `isuppz` is currently being ignored due to issues at low precision.
-                    if (!overwrite_a) {
-                        copy_slice_F_to_C(slice_ptr_Z, buff_Z, N, M);
-                    } else {
-                        memcpy(slice_ptr_Z, buff_Z, intn * intm * sizeof(T)); // NB. data should remain in F-order, but switches buffers
-                    }
-                    break;
+                break;
+            case Eigh_driver::EVD:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::syevd(jobz, uplo, intn, buf_A, intn, w, work, lwork, iwork, int_liwork, &info);
+                } else {
+                    lapack::heevd(jobz, uplo, intn, buf_A, intn, w, work, lwork, rwork, int_lrwork, iwork, int_liwork, &info);
                 }
-
-                case Eigh_driver::EVX :
-                    [[fallthrough]];
-
-                case Eigh_driver::GVX : {
-                    if (!overwrite_a) {
-                        copy_slice_F_to_C(slice_ptr_Z, buff_Z, N, M);
-                    } else {
-                        memcpy(slice_ptr_Z, buff_Z, intn * intm * sizeof(T)); // NB. data should remain in F-order, but switches buffers
-                    }
-                    break;
+                break;
+            case Eigh_driver::EVR:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::syevr(jobz, range, uplo, intn, buf_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, isuppz, work, lwork, iwork, int_liwork, &info);
+                } else {
+                    lapack::heevr(jobz, range, uplo, intn, buf_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, isuppz, work, lwork, rwork, int_lrwork, iwork, int_liwork, &info);
                 }
-                // NB. when copying to C-order, always use `M` since that is the size of the array, otherwise translation won't work due to size of buffer.
-                // XXX: write new copy function that allows to only copy relevant columns?
-
-                default : { // Unknown driver
-                    return -105;
+                break;
+            case Eigh_driver::EVX:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::syevx(jobz, range, uplo, intn, buf_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, work, lwork, iwork, ifail, &info);
+                } else {
+                    lapack::heevx(jobz, range, uplo, intn, buf_A, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, work, lwork, rwork, iwork, ifail, &info);
                 }
+                break;
+            case Eigh_driver::GV:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::sygv(int_itype, jobz, uplo, intn, buf_A, intn, buf_B, intn, w, work, lwork, &info);
+                } else {
+                    lapack::hegv(int_itype, jobz, uplo, intn, buf_A, intn, buf_B, intn, w, work, lwork, rwork, &info);
+                }
+                break;
+            case Eigh_driver::GVD:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::sygvd(int_itype, jobz, uplo, intn, buf_A, intn, buf_B, intn, w, work, lwork, iwork, int_liwork, &info);
+                } else {
+                    lapack::hegvd(int_itype, jobz, uplo, intn, buf_A, intn, buf_B, intn, w, work, lwork, rwork, int_lrwork, iwork, int_liwork, &info);
+                }
+                break;
+            case Eigh_driver::GVX:
+                if constexpr (!is_complex_v<T>) {
+                    lapack::sygvx(int_itype, jobz, range, uplo, intn, buf_A, intn, buf_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, work, lwork, iwork, ifail, &info);
+                } else {
+                    lapack::hegvx(int_itype, jobz, range, uplo, intn, buf_A, intn, buf_B, intn, r_vl, r_vu, int_il, int_iu, abstol, &intm, w, buf_Z, intn, work, lwork, rwork, iwork, ifail, &info);
+                }
+                break;
+        }
+
+        if (info != 0) {
+            slice_status.lapack_info = (Py_ssize_t)info;
+            vec_status.push_back(slice_status);
+
+            // cut it short on error in any slice
+            return BatchStatus::ok;
+        }
+
+        if (buf_w) { std::copy_n(buf_w, m, ptr_w); }
+        ptr_w += m;
+
+        if (ptr_Z) {
+            T *vectors = vectors_in_a ? buf_A : buf_Z;
+            if (overwrite_a) {
+                // Z is the F-contiguous input itself: it already holds the vectors, or receives
+                // the first m columns from the Z buffer
+                if (!vectors_in_a) { std::copy_n(buf_Z, z_size, ptr_Z); }
+            } else {
+                copy_slice_F_to_C(ptr_Z, vectors, n, m, n);
+                ptr_Z += (npy_intp)n * m;
             }
         }
 
-        // Update the relevant number of eigenvalues to return to python side for slicing of arrays in case of `range == 'V'`
-        *intp_M = intm;
-
-    } // End of batching loop
-
-free_exit:
-    PyMem_RawFree(buffer);
-
-    if (ibuffer != NULL) {
-        PyMem_RawFree(ibuffer);
+        // range 'V' finds an unknown number of eigenvalues; the Python layer slices with it
+        *m_found = intm;
     }
 
-    if (rbuffer != NULL) {
-        PyMem_RawFree(rbuffer);
-    }
-
-    return 1;
+    return BatchStatus::ok;
 }
 
 } // namespace sp_linalg

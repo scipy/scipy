@@ -565,25 +565,12 @@ static PyObject*
 _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_Bm = NULL;
-    PyArrayObject *ap_w = NULL;
-    PyArrayObject *ap_beta = NULL;
-    PyArrayObject *ap_vr = NULL;
-    PyArrayObject *ap_vl = NULL;
-    int compute_vl=0;
-    int compute_vr=1;
-    int overwrite_a=0;
-    int overwrite_b=0;
-
-    int info = 0;
+    int compute_vl = 0;
+    int compute_vr = 1;
+    int overwrite_a = 0;
+    int overwrite_b = 0;
     SliceStatusVec vec_status;
 
-    // return values
-    PyObject *ret_lst = NULL;
-    PyObject *vl_ret = NULL;
-    PyObject *vr_ret = NULL;
-    PyObject *beta_ret = NULL;
-
-    // Get the input array
     if (!PyArg_ParseTuple(args, "O!pppp|O!",
             &PyArray_Type, (PyObject **)&ap_Am,
             &compute_vl, &compute_vr,
@@ -592,102 +579,49 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     ) {
         return NULL;
     }
-
-    // Sanity check the input array
-    if (!_check_dtype_and_flags(ap_Am, "eig")) {
-        return NULL;
-    }
+    if (!_check_dtype_and_flags(ap_Am, "eig")) { return NULL; }
+    if (ap_Bm && !_check_dtype_and_flags(ap_Bm, "eig")) { return NULL; }
 
     int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-
     npy_intp n = shape[ndim - 1];
-
-    if (PyArray_DIM(ap_Am, ndim-2) != n) {
+    if (shape[ndim - 2] != n) {
         PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
         return NULL;
     }
-
-    // Allocate the output(s)
-    // NB: we always allocate/return complex eigvalues/eigvecs even if
-    // eigenvalues happen to be on the real axis (and then the python wrapper will
-    // cast them to reals for backwards compat.
-
-    npy_intp shape_1[NPY_MAXDIMS];
-    for(int i=0; i<ndim; i++) {shape_1[i] = shape[i]; }
-
-    // eigenvalues
-    int w_typenum = typenum;
-    if (typenum == NPY_FLOAT32) { w_typenum = NPY_COMPLEX64; }
-    else if (typenum == NPY_FLOAT64) { w_typenum = NPY_COMPLEX128; }
-
-    ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, w_typenum);
-    if (ap_w == NULL) {
-        PyErr_NoMemory();
+    // the Python layer broadcast a and b to a common shape and dtype
+    if (ap_Bm && (PyArray_TYPE(ap_Bm) != typenum || PyArray_NDIM(ap_Bm) != ndim
+                  || !std::equal(shape, shape + ndim, PyArray_SHAPE(ap_Bm)))) {
+        PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same shape and dtype.");
         return NULL;
     }
 
-    if (ap_Bm != NULL) {
+    // Eigenvalues and eigenvectors are complex even for real input; the Python wrapper casts
+    // them back to real when every eigenvalue is real. w and beta are (..., n), vl and vr (..., n, n).
+    int w_typenum = (typenum == NPY_FLOAT32) ? NPY_COMPLEX64 : (typenum == NPY_FLOAT64) ? NPY_COMPLEX128 : typenum;
+    OwnedArray ap_w((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, w_typenum));
+    OwnedArray ap_beta, ap_vl, ap_vr;
+    if (ap_Bm) { ap_beta.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, typenum)); }
+    if (compute_vl) { ap_vl.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
+    if (compute_vr) { ap_vr.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
+    if (!ap_w || (ap_Bm && !ap_beta) || (compute_vl && !ap_vl) || (compute_vr && !ap_vr)) { return PyErr_NoMemory(); }
 
-        // Sanity check the input array
-        if (!_check_dtype_and_flags(ap_Bm, "eig")) {
-            return NULL;
-        }
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _eig<T>(ap_Am, ap_Bm, ap_w.get(), ap_beta.get(), ap_vl.get(), ap_vr.get(), overwrite_a, overwrite_b, vec_status);
+    });
+    Py_END_ALLOW_THREADS
+    if (status != BatchStatus::ok) { return set_batch_error(status, "eig"); }
 
-        ap_beta = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum);
-        if (ap_beta == NULL) { PyErr_NoMemory(); goto fail; }
-    }
-
-    if (compute_vl) {
-        ap_vl = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
-        if (ap_vl == NULL) { PyErr_NoMemory(); goto fail; }
-    }
-
-    if (compute_vr) {
-        ap_vr = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum);
-        if (ap_vr == NULL) { PyErr_NoMemory(); goto fail; }
-    }
-
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _eig<f32>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _eig<f64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _eig<c64>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _eig<c128>(ap_Am, ap_Bm, ap_w, ap_beta, ap_vl, ap_vr, overwrite_a, overwrite_b, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            goto fail;
-    }
-
-    if (info < 0) {
-        // Either OOM or internal LAPACK error.
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.eig.");
-        goto fail;
-    }
-
-    // normal return
-    ret_lst = convert_vec_status(vec_status);
-
-    vl_ret = (ap_vl == NULL) ? Py_None : PyArray_Return(ap_vl);
-    vr_ret = (ap_vr == NULL) ? Py_None : PyArray_Return(ap_vr);
-    beta_ret = (ap_beta == NULL) ? Py_None : PyArray_Return(ap_beta);
-
-    return Py_BuildValue("NNNNN", PyArray_Return(ap_w), beta_ret, vl_ret, vr_ret, ret_lst);
-
-fail:
-    Py_DECREF(ap_w);
-    Py_XDECREF(ap_beta);
-    Py_XDECREF(ap_vl);
-    Py_XDECREF(ap_vr);
-    return NULL;
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
+    PyObject *ret_beta = ap_beta ? PyArray_Return(ap_beta.release()) : Py_NewRef(Py_None);
+    PyObject *ret_vl = ap_vl ? PyArray_Return(ap_vl.release()) : Py_NewRef(Py_None);
+    PyObject *ret_vr = ap_vr ? PyArray_Return(ap_vr.release()) : Py_NewRef(Py_None);
+    return Py_BuildValue("NNNNN", PyArray_Return(ap_w.release()), ret_beta, ret_vl, ret_vr, ret_lst);
 }
 
 
@@ -696,8 +630,6 @@ static PyObject*
 _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_Bm = NULL;
-    PyArrayObject *ap_w = NULL;
-    PyArrayObject *ap_Z = NULL;
     int overwrite_a = 0;
     int overwrite_b = 0;
     int eigvals_only = 0;
@@ -707,137 +639,100 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     double vu = std::numeric_limits<double>::infinity();
     int il = -1;
     int iu = -1;
-    Eigh_driver lapack_driver;
+    Py_ssize_t driver_index = 0;
     int itype = 1;
-
-    int info = 0;
     SliceStatusVec vec_status;
-
-    // Return objects
-    PyObject *ret_w;
-    PyObject *ret_Z;
-    PyObject *ret_lst;
 
     if (!PyArg_ParseTuple(args, "O!ppipddiin|O!pi",
         &PyArray_Type, (PyObject **)&ap_Am, &overwrite_a,
         &eigvals_only, &vals_range, &lower,
-        &vl, &vu, &il, &iu, &lapack_driver,
-        &PyArray_Type, (PyArrayObject **)&ap_Bm, &overwrite_b, &itype)
+        &vl, &vu, &il, &iu, &driver_index,
+        &PyArray_Type, (PyObject **)&ap_Bm, &overwrite_b, &itype)
     ) {
         return NULL;
     }
 
-    /*
-     * Convert int input to char for LAPACK
-     *
-     * - `uplo`: what triangular part of the matrix to use
-     * - `jobz`: whether to compute eigenvectors, always applicable
-     * - `range`: for drivers `evr`, `evx` and `gvx` what eigenvalues to compute:
-     *      - 'A':  all eigenvalues, `N` in total, are returned unconditionally,
-     *              `il`, `iu`, `vl` and `vu` are still sentinel values
-     *      - 'V':  only eigenvalues `w_i` satisfying `vl < w_i <= vu` are returned, since the
-     *              number of eigenvalues satisfying this condition is unknown beforehand,
-     *              space for all `N` eigenvalues has to be allocated.
-     *              `il` and `iu` remain sentinel values.
-     *      - 'I':  when sorted in ascending order, return indices `il` to `iu` (inclusive),
-     *              not yet accounted for Fortran indexing, the number of eigenvalues is known
-     *              beforehand to be `iu - il + 1`, hence only that size should be allocated.
-     *              `vl` and `vu` remain sentinels
-     *
-     * The number of eigenvalues/eigenvectors to be found is denoted with `M`. In order to be
-     * able to return a properly sized array this is also returned to the python side.
-     */
-    char uplo = lower ? 'L' : 'U';
-    char jobz = eigvals_only ? 'N' : 'V';
-    char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I';
-
-    // Sanity check `a`
-    if (!_check_dtype_and_flags(ap_Am, "eigh")) {
+    Eigh_driver driver = (Eigh_driver)driver_index;
+    bool generalized;
+    switch (driver) {
+        case Eigh_driver::EV: case Eigh_driver::EVD: case Eigh_driver::EVR: case Eigh_driver::EVX:
+            generalized = false; break;
+        case Eigh_driver::GV: case Eigh_driver::GVD: case Eigh_driver::GVX:
+            generalized = true; break;
+        default:
+            return PyErr_Format(PyExc_ValueError, "scipy.linalg.eigh: unknown driver index %zd.", driver_index);
+    }
+    if (generalized != (ap_Bm != NULL)) {
+        PyErr_SetString(PyExc_ValueError, "scipy.linalg.eigh: the gv, gvd and gvx drivers need `b` and the others take none.");
         return NULL;
     }
 
-
     /*
-     * Allocation of return objects
-     *
-     * - `w` contains eigenvalues, always present, size (N,) per slice
-     * - `Z` contains eigenvectors, only required when `jobz == 'V'`, size (N, M) per slice
+     * - `uplo`: the triangle of the matrix to use
+     * - `jobz`: whether to compute eigenvectors
+     * - `range`, for the evr, evx and gvx drivers:
+     *      - 'A': all n eigenvalues; il, iu, vl and vu are sentinels
+     *      - 'V': the eigenvalues w_i with vl < w_i <= vu; their number is unknown beforehand, so
+     *             room for all n is allocated and the number found, m, is returned to Python
+     *      - 'I': in ascending order, the 0-based indices il to iu inclusive, m = iu - il + 1
      */
+    const char uplo = lower ? 'L' : 'U';
+    const char jobz = eigvals_only ? 'N' : 'V';
+    const char range = (vals_range == 0) ? 'A' : (vals_range == 1) ? 'V' : 'I';
+
+    if (!_check_dtype_and_flags(ap_Am, "eigh")) { return NULL; }
+    if (ap_Bm && !_check_dtype_and_flags(ap_Bm, "eigh")) { return NULL; }
+
     int typenum = PyArray_TYPE(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
-    npy_intp N = shape[ndim - 1];
-    if (shape[ndim - 2] != N) {
+    npy_intp n = shape[ndim - 1];
+    if (shape[ndim - 2] != n) {
         PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
         return NULL;
     }
-
-    // `evr` does not return in place, so a new output array is always needed for `Z`
-    int w_typenum = typenum;
-    if (typenum == NPY_COMPLEX64) { w_typenum = NPY_FLOAT32; }
-    if (typenum == NPY_COMPLEX128) { w_typenum = NPY_FLOAT64; }
-
-    npy_intp shape_1[NPY_MAXDIMS];
-    for (int i = 0; i < ndim ; i++) { shape_1[i] = shape[i]; }
-
-    int M = (range == 'I') ? iu + 1 - il : N;
-    shape_1[ndim - 2] = M;
-    ap_w = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, w_typenum);
-    if (ap_w == NULL) {
-        PyErr_NoMemory();
-        goto fail;
+    // the Python layer broadcast a and b to a common shape and dtype
+    if (ap_Bm && (PyArray_TYPE(ap_Bm) != typenum || PyArray_NDIM(ap_Bm) != ndim
+                  || !std::equal(shape, shape + ndim, PyArray_SHAPE(ap_Bm)))) {
+        PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same shape and dtype.");
+        return NULL;
     }
 
+    // w is real and (..., m); Z is (..., n, m), or the F-contiguous input itself when overwriting
+    int w_typenum = (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
+    npy_intp m = (range == 'I') ? iu + 1 - il : n;
+    npy_intp shape_1[NPY_MAXDIMS];
+    std::copy(shape, shape + ndim, shape_1);
+    shape_1[ndim - 2] = m;
+    OwnedArray ap_w((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, w_typenum));
+    OwnedArray ap_Z;
     if (jobz != 'N') {
         if (overwrite_a) {
             Py_INCREF(ap_Am);
-            ap_Z = ap_Am;
+            ap_Z.reset(ap_Am);
         } else {
-            shape_1[ndim - 2] = N;
-            shape_1[ndim - 1] = M;
-
-            ap_Z = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-            if (ap_Z == NULL) {
-                PyErr_NoMemory();
-                goto fail;
-            }
+            shape_1[ndim - 2] = n;
+            shape_1[ndim - 1] = m;
+            ap_Z.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
         }
     }
+    if (!ap_w || (jobz != 'N' && !ap_Z)) { return PyErr_NoMemory(); }
 
-    // Dispatch to actual implementation
-    // Pass in pointer to `M` to be able to return to python side
-    switch (typenum) {
-        case NPY_FLOAT32:
-            info = _eigh<f32>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
-            break;
-        case NPY_FLOAT64:
-            info = _eigh<f64>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
-            break;
-        case NPY_COMPLEX64:
-            info = _eigh<c64>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
-            break;
-        case NPY_COMPLEX128:
-            info = _eigh<c128>(ap_Am, ap_Bm, ap_w, ap_Z, &M, overwrite_a, overwrite_b, itype, jobz, range, uplo, vl, vu, il, iu, lapack_driver, vec_status);
-            break;
-    }
+    npy_intp m_found = m;
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _eigh<T>(ap_Am, ap_Bm, ap_w.get(), ap_Z.get(), &m_found, overwrite_a, overwrite_b, itype,
+                        jobz, range, uplo, vl, vu, il, iu, driver, vec_status);
+    });
+    Py_END_ALLOW_THREADS
+    if (status != BatchStatus::ok) { return set_batch_error(status, "eigh"); }
 
-    if (info < 0) {
-        // Out-of-memory or scipy internal error
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.eigh.");
-        goto fail;
-    }
-
-    // regular return
-    ret_w = PyArray_Return(ap_w);
-    ret_Z = (jobz == 'V') ? PyArray_Return(ap_Z) : Py_None;
-    ret_lst = convert_vec_status(vec_status);
-
-    return Py_BuildValue("NNnN", ret_w, ret_Z, (Py_ssize_t)M, ret_lst);
-
-fail:
-    Py_XDECREF(ap_w);
-    Py_XDECREF(ap_Z);
-    return NULL;
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    if (!ret_lst) { return NULL; }
+    PyObject *ret_Z = ap_Z ? PyArray_Return(ap_Z.release()) : Py_NewRef(Py_None);
+    return Py_BuildValue("NNnN", PyArray_Return(ap_w.release()), ret_Z, (Py_ssize_t)m_found, ret_lst);
 }
 
 
