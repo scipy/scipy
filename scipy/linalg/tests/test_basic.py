@@ -17,7 +17,8 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, lu, LinAlgWarning)
+                          matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
+                          cholesky, expm, sqrtm, bandwidth)
 
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
@@ -3186,5 +3187,73 @@ class TestFieldViewStrides:
         b = self.matrices()[..., :2]
         res = lstsq(self.field_view(a), self.field_view(b), lapack_driver=lapack_driver)
         ref = lstsq(a, b, lapack_driver=lapack_driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+
+class TestNonNativeInput:
+    # Byte-swapped and misaligned arrays are copied into aligned arrays in native byte
+    # order before they reach the compiled code, so the results must match those of
+    # the native arrays exactly.
+
+    def byteswapped(self, x):
+        y = x.astype(x.dtype.newbyteorder())
+        assert not y.dtype.isnative
+        return y
+
+    def misaligned(self, x):
+        buf = np.zeros(x.nbytes + 1, dtype=np.uint8)
+        y = np.frombuffer(buf.data, dtype=x.dtype, count=x.size, offset=1)
+        y = y.reshape(x.shape)
+        y[...] = x
+        assert not y.flags.aligned
+        return y
+
+    def inputs(self, dtype):
+        rng = np.random.default_rng(1234)
+        xy = rng.standard_normal((2, 2, 4, 4)) / 2
+        r = rng.standard_normal((2, 4, 3))
+        if np.issubdtype(dtype, np.complexfloating):
+            xy = xy + 1j*rng.standard_normal((2, 2, 4, 4)) / 2
+            r = r + 1j*rng.standard_normal((2, 4, 3))
+        x, y = xy
+        # a and b Hermitian positive definite, r right-hand sides, t upper
+        # triangular with a -0.0 below the diagonal, which counts as zero
+        a = x @ x.conj().swapaxes(-1, -2) + np.eye(4)
+        b = y @ y.conj().swapaxes(-1, -2) + np.eye(4)
+        t = np.triu(a)
+        t[..., 3, 0] = -0.0
+        return {k: v.astype(dtype) for k, v in dict(a=a, b=b, r=r, t=t).items()}
+
+    funcs = {
+        "solve": lambda a, b, r, t: solve(a, r),
+        "inv": lambda a, b, r, t: inv(a),
+        "det": lambda a, b, r, t: det(a),
+        "lstsq": lambda a, b, r, t: lstsq(a, r),
+        "lu": lambda a, b, r, t: lu(a),
+        "qr": lambda a, b, r, t: qr(a),
+        "svd": lambda a, b, r, t: svd(a),
+        "eig": lambda a, b, r, t: eig(a),
+        "eig_generalized": lambda a, b, r, t: eig(a, b),
+        "eigh": lambda a, b, r, t: eigh(a),
+        "eigh_generalized": lambda a, b, r, t: eigh(a, b),
+        "cholesky": lambda a, b, r, t: cholesky(a),
+        "expm": lambda a, b, r, t: expm(a),
+        "sqrtm": lambda a, b, r, t: sqrtm(a),
+        "bandwidth": lambda a, b, r, t: bandwidth(t),
+    }
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_matches_native(self, func, dtype, kind):
+        native = self.inputs(dtype)
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        converted = {k: convert(v) for k, v in native.items()}
+        res = self.funcs[func](**converted)
+        ref = self.funcs[func](**native)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        assert len(res) == len(ref)
         for x, y in zip(res, ref):
             assert_equal(x, y)

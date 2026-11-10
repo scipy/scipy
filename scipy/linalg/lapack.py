@@ -1166,9 +1166,10 @@ def _ensure_dtype_cdsz(*arrays):
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
-    """Make sure an input array is aligned and not byteswapped, copy otherwise.
+    """Make sure an input array is aligned and in native byte order, copy otherwise.
     """
-    if not (a.flags['ALIGNED'] and a.dtype.byteorder == '='):
+    if not (a.flags['ALIGNED'] and a.dtype.isnative):
         overwrite_a = True
-        a = a.copy()
+        # astype, unlike copy, also converts the byte order
+        a = a.astype(a.dtype.newbyteorder('='), order='C')
     return a, overwrite_a

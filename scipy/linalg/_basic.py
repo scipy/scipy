@@ -1224,6 +1224,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
