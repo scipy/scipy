@@ -46,6 +46,32 @@ u_vh_shapes(npy_intp m, npy_intp n, char jobz,
 }
 
 
+/**
+ * @brief Minimum lwork of real ?gesdd for an m-by-n input, on the path ?gesdd takes for it.
+ *
+ * Mirrors MINWRK in LAPACK's sgesdd/dgesdd. A ?gesdd workspace query reports at least this value.
+ *
+ * @tparam real_type  f32 or f64; the precision ?gesdd evaluates its path threshold in.
+ * @param m     Number of rows.
+ * @param n     Number of columns.
+ * @param jobz  'N', 'S' or 'A'.
+ * @return The minimum lwork, evaluated without overflow.
+ */
+template<typename real_type>
+std::size_t
+gesdd_min_lwork(std::size_t m, std::size_t n, char jobz)
+{
+    const std::size_t k = std::min(m, n), kmax = std::max(m, n);
+    const std::size_t bdspac = (jobz == 'N') ? 7*k : 3*k*k + 4*k;
+    // the paths that start with a QR or LQ factorization (MNTHR in ?gesdd)
+    const bool tall = kmax >= (std::size_t)(real_type(k) * real_type(11) / real_type(6));
+    if (!tall) { return 3*k + std::max(kmax, bdspac); }
+    if (jobz == 'N') { return bdspac + k; }
+    if (jobz == 'S') { return bdspac + k*k + 3*k; }
+    return k*k + std::max(3*k + bdspac, k + kmax);
+}
+
+
 template<typename T>
 BatchStatus
 _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, bool use_gesdd, int overwrite_a, SliceStatusVec& vec_status)
@@ -91,6 +117,27 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
+    // gesdd needs iwork of 8*min(m, n); the complex flavors need rwork, quadratic in min(m, n) for
+    // gesdd with vectors
+    const std::size_t k = min_mn, kmax = max_mn;
+    std::size_t iwork_size = 0, rwork_size = 0;
+    if (use_gesdd) {
+        iwork_size = 8 * k;
+        // ?gesdd evaluates its workspace in CBLAS_INT, already in the workspace query; with
+        // vectors the largest of those sizes is the minimum of its path, quadratic in min(m, n)
+        if constexpr (!is_complex_v<T>) {
+            if (gesdd_min_lwork<real_type>(m, n, jobz) > (std::size_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        }
+        if constexpr (is_complex_v<T>) {
+            // without vectors LAPACK <= 3.6 needs 7*min(m, n), later versions 5*min(m, n)
+            rwork_size = (jobz == 'N') ? 7 * k : std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
+            // ?gesdd addresses rwork with CBLAS_INT offsets
+            if (rwork_size > (std::size_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        }
+    } else {
+        if constexpr (is_complex_v<T>) { rwork_size = 5 * k; }
+    }
+
     T tmp = 0.0;
 
     // query LWORK
@@ -131,19 +178,6 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     // element counts are products of dimensions of existing arrays (A, U, Vh), so they fit size_t
     const std::size_t data_size = overwrite_a ? 0 : (std::size_t)m * n;
     const std::size_t u_size = (std::size_t)u_shape0 * u_shape1, vh_size = (std::size_t)vh_shape0 * vh_shape1;
-
-    // gesdd needs iwork of 8*min_mn; complex flavors need rwork, much larger for gesdd
-    std::size_t iwork_size = 0, rwork_size = 0;
-    if (use_gesdd) {
-        iwork_size = 8 * (std::size_t)min_mn;
-        if constexpr (is_complex_v<T>) {
-            // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org); at most about 5*m*n
-            const std::size_t k = min_mn, kmax = max_mn;
-            rwork_size = std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
-        }
-    } else {
-        if constexpr (is_complex_v<T>) { rwork_size = 5 * (std::size_t)min_mn; }
-    }
 
     auto buf = alloc_workspace<T>(lwork + data_size + u_size + vh_size);
     auto iwork = alloc_workspace<CBLAS_INT>(iwork_size);

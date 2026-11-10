@@ -20,7 +20,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           matrix_balance, qr, lu, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._testutils import check_free_memory, IS_MUSL
+from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
 from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
@@ -1976,6 +1976,29 @@ def direct_lstsq(a, b, cmplx=0):
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
+
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    @pytest.mark.parametrize("lapack_driver, m, n, nrhs, dtype", [
+        ("gelsd", 1000, 1000, 2_147_400, np.float32),    # min(m, n)*nrhs
+        ("gelss", 1000, 1000, 2_147_484, np.float32),    # ldb*nrhs
+        ("gelsd", 46341, 74200, 1, np.float32),          # m*m, on the path for n >= 1.6*m
+        ("gelss", 46341, 74200, 1, np.float32),
+        ("gelsd", 2, 2, 55_000_000, np.complex64),       # 3*smlsiz*nrhs in the real workspace
+    ])
+    def test_lp64_workspace_overflow(self, lapack_driver, m, n, nrhs, dtype):
+        # gelsd and gelss evaluate their workspace in LAPACK integers; with 32-bit integers
+        # these sizes overflow, and the call must be refused rather than run with a workspace
+        # that is too small. The inputs have zero strides and nothing is computed; the
+        # solution is allocated but never touched.
+        itemsize = np.dtype(dtype).itemsize
+        check_free_memory(free_mb=max(m, n) * nrhs * itemsize // 2**20 + 1000)
+        a = np.broadcast_to(np.ones((), dtype=dtype), (m, n))
+        b = np.broadcast_to(np.ones((), dtype=dtype), (m, nrhs))
+        with pytest.raises(ValueError, match="ILP64"):
+            lstsq(a, b, lapack_driver=lapack_driver, check_finite=False)
 
     def test_simple_exact(self):
         for dtype in REAL_DTYPES:

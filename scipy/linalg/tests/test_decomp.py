@@ -1062,6 +1062,22 @@ class TestEigh:
         for x, y in zip(res, ref):
             assert_equal(x, y)
 
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    @pytest.mark.parametrize('driver', ['evd', 'gvd'])
+    def test_lp64_workspace_overflow(self, driver):
+        # With eigenvectors, ?syevd and ?sygvd need a workspace of 1 + 6n + 2n**2, which
+        # overflows 32-bit LAPACK integers from n = 32767. The call must be refused rather
+        # than run with a workspace that is too small. The inputs have zero strides and
+        # nothing is computed; the eigenvectors are allocated but never touched.
+        check_free_memory(free_mb=6000)
+        a = np.broadcast_to(np.float32(1), (32767, 32767))
+        args = (a, a) if driver == 'gvd' else (a,)
+        with pytest.raises(ValueError, match="ILP64"):
+            eigh(*args, driver=driver, check_finite=False)
+
     @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
     @pytest.mark.parametrize('subset', [None, 'index'])
     def test_overwrite_f_contiguous(self, driver, subset):
@@ -1836,6 +1852,22 @@ def test_svd_gesdd_nosegfault():
     df=np.ones((4799, 53130), dtype=np.float64)
     with assert_raises(ValueError):
         svd(df)
+
+
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+@pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+@pytest.mark.slow
+@pytest.mark.parametrize("n, dtype", [(26754, np.float32), (20724, np.complex64)])
+def test_svd_gesdd_lp64_workspace_overflow(n, dtype):
+    # ?gesdd evaluates its workspace in LAPACK integers: with 32-bit integers the real
+    # workspace overflows from n = 26754, and the one of the complex flavors from n = 20724.
+    # The call must be refused rather than run with a workspace that is too small. The input
+    # has zero strides and nothing is computed; U and Vh are allocated but never touched.
+    check_free_memory(free_mb=8000)
+    a = np.broadcast_to(np.ones((), dtype=dtype), (n, n))
+    with pytest.raises(ValueError, match="ILP64"):
+        svd(a, lapack_driver="gesdd", check_finite=False)
 
 
 def test_gesdd_nan_error_message():
