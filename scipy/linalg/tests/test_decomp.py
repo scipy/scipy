@@ -1472,6 +1472,25 @@ class TestSVD_GESDD:
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
+    @pytest.mark.parametrize('compute_uv, full_matrices',
+                             [(False, True), (True, True), (True, False)])
+    def test_field_view_strides(self, compute_uv, full_matrices):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 6, 4)) + 1j*rng.standard_normal((3, 6, 4))
+        dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+        rec = np.zeros(a.shape, dtype=dt)
+        rec['z'] = a
+        view = rec['z']
+        assert view.strides[-1] == 24
+        kw = dict(compute_uv=compute_uv, full_matrices=full_matrices,
+                  lapack_driver=self.lapack_driver)
+        res, ref = svd(view, **kw), svd(a, **kw)
+        res, ref = (res, ref) if compute_uv else ((res,), (ref,))
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_simple(self):
         a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
         for full_matrices in (True, False):

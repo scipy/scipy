@@ -5,11 +5,18 @@
 
 namespace sp_linalg {
 
-/*
- * SVD size helper: if A.shape == (m, n),
- * U is either (m, m) or (m, k) and Vh is either (n, n) or (k, n)
+/**
+ * @brief Shapes of U and Vh for an m-by-n input: U is (m, m) or (m, k), Vh is (n, n) or (k, n).
+ *
+ * @param m          Number of rows of the input.
+ * @param n          Number of columns of the input.
+ * @param jobz       'N' (no U, Vh), 'A' (full U, Vh) or 'S' (economic U, Vh).
+ * @param u_shape0   Receives the number of rows of U, 0 for 'N'.
+ * @param u_shape1   Receives the number of columns of U, 0 for 'N'.
+ * @param vh_shape0  Receives the number of rows of Vh, 0 for 'N'.
+ * @param vh_shape1  Receives the number of columns of Vh, 0 for 'N'.
  */
-int
+inline void
 u_vh_shapes(npy_intp m, npy_intp n, char jobz,
             npy_intp *u_shape0, npy_intp *u_shape1,
             npy_intp *vh_shape0, npy_intp *vh_shape1
@@ -29,21 +36,18 @@ u_vh_shapes(npy_intp m, npy_intp n, char jobz,
             *vh_shape0 = n;
             *vh_shape1 = n;
             break;
-        case('S'):
+        default:  // 'S'
             *u_shape0 = m;
             *u_shape1 = k;
             *vh_shape0 = k;
             *vh_shape1 = n;
             break;
-        default:
-            return 0;  // error
     }
-    return 1;
 }
 
 
 template<typename T>
-int
+BatchStatus
 _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
@@ -71,12 +75,14 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     // U, Vh shapes ( =0 if compute_uv=False)
     npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
-    if(!u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1)) {
-        return -101; // unknown value for jobz, bail out
-    }
+    u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
-    CBLAS_INT ldu = (CBLAS_INT)(u_shape0 == 0 ? 1 : u_shape0);
-    CBLAS_INT ldvh = (CBLAS_INT)(vh_shape0 == 0 ? 1 : vh_shape0);
+    CBLAS_INT intn, intm, ldu, ldvh, info;
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm) ||
+        !checked_narrow<CBLAS_INT>(u_shape0 == 0 ? 1 : u_shape0, &ldu) ||
+        !checked_narrow<CBLAS_INT>(vh_shape0 == 0 ? 1 : vh_shape0, &ldvh)) {
+        return BatchStatus::too_large;
+    }
 
     T *ptr_U = u_shape0 > 0 ? (T *)PyArray_DATA(ap_U) : NULL;
     T *ptr_Vh = vh_shape0 > 0 ? (T *)PyArray_DATA(ap_Vh) : NULL;
@@ -85,19 +91,19 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, intm = (CBLAS_INT)m, lwork = -1, info;
     T tmp = 0.0;
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
+        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, NULL, &info);
     } else {
-        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, NULL, &info);
+        lapack::gesdd(jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, NULL, NULL, &info);
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return BatchStatus::lapack_query_failed; }
 
-    lwork = (CBLAS_INT)(std::real(tmp));
-    if(lwork == 0) { lwork = 1; }
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
+    CBLAS_INT lwork = _calc_lwork(tmp);
+    if (lwork < 0) { return BatchStatus::too_large; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -114,56 +120,37 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
-    npy_intp data_size = overwrite_a ? 0 : m*n;
-    npy_intp bufsize = data_size + lwork;
-    if (jobz != 'N') {
-        bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
+    std::size_t data_size = 0, u_size, vh_size, bufsize, iwork_size, rwork_size = 0;
+    if ((!overwrite_a && !checked_mul(m, n, &data_size)) ||
+        !checked_mul(u_shape0, u_shape1, &u_size) || !checked_mul(vh_shape0, vh_shape1, &vh_size) ||
+        !checked_add(data_size, lwork, &bufsize) || !checked_add(bufsize, u_size, &bufsize) ||
+        !checked_add(bufsize, vh_size, &bufsize) || !checked_mul(8, min_mn, &iwork_size)) {
+        return BatchStatus::too_large;
+    }
+    if constexpr (is_complex_v<T>) {
+        // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org):
+        // lrwork = max(5*min_mn*min_mn + 5*min_mn, 2*max_mn*min_mn + 2*min_mn*min_mn + min_mn)
+        std::size_t kk, mk, five_k, two_kk, lrwork1, lrwork2;
+        if (!checked_mul(min_mn, min_mn, &kk) || !checked_mul(max_mn, min_mn, &mk) ||
+            !checked_mul(5, min_mn, &five_k) || !checked_mul(2, kk, &two_kk) ||
+            !checked_mul(5, kk, &lrwork1) || !checked_add(lrwork1, five_k, &lrwork1) ||
+            !checked_mul(2, mk, &lrwork2) || !checked_add(lrwork2, two_kk, &lrwork2) ||
+            !checked_add(lrwork2, min_mn, &lrwork2)) {
+            return BatchStatus::too_large;
+        }
+        rwork_size = std::max(lrwork1, lrwork2);
     }
 
-    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
-    if (buf == NULL) { info = -101; return (int)info; }
+    auto buf = alloc_workspace<T>(bufsize);
+    auto iwork = alloc_workspace<CBLAS_INT>(iwork_size);
+    auto rwork = alloc_workspace<real_type>(rwork_size);
+    if (!buf || !iwork || !rwork) { return BatchStatus::no_memory; }
 
     // partition the workspace
-    T *work = &buf[0];
-    T *data;
-    if (overwrite_a) {
-        data = (T *)Am_data;
-    } else {
-        data = &buf[lwork];
-    }
-
-    T *buf_U = NULL;
-    T *buf_Vh = NULL;
-    if (jobz != 'N') {
-        buf_U = &buf[data_size + lwork];
-        buf_Vh = &buf[data_size + lwork + u_shape0*u_shape1];
-    }
-
-    CBLAS_INT *iwork = NULL;
-    real_type *rwork = NULL;
-    // iwork
-    iwork = (CBLAS_INT *)PyMem_RawMalloc(8*min_mn*sizeof(CBLAS_INT));
-    if (iwork == NULL) {
-        PyMem_RawFree(buf);
-        info = -102;
-        return (int)info;
-    }
-
-    // rwork
-    if constexpr (is_complex_v<T>) {
-        // assume LAPACK > 3.6 (cf LAPACK docs on netlib.org)
-        npy_intp lrwork = std::max(
-            5*min_mn*min_mn + 5*min_mn,
-            2*max_mn*min_mn + 2*min_mn*min_mn + min_mn
-        );
-        rwork = (real_type *)PyMem_RawMalloc(lrwork * sizeof(real_type));
-        if (rwork == NULL) {
-            PyMem_RawFree(buf);
-            PyMem_RawFree(iwork);
-            info = -103;
-            return (int)info;
-        }
-    }
+    T *work = buf.get();
+    T *data = overwrite_a ? Am_data : work + lwork;
+    T *buf_U = (jobz != 'N') ? work + lwork + data_size : NULL;
+    T *buf_Vh = (jobz != 'N') ? buf_U + u_size : NULL;
 
     // --------------------------------------------------------------------
     // Main loop to traverse the slices
@@ -174,14 +161,14 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         if (!overwrite_a) {
             // copy the slice to `data` in F order
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(slice_ptr, data, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         // SVD the slice
         if constexpr (!is_complex_v<T>) {
-            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, iwork, &info);
+            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, iwork.get(), &info);
         } else {
-            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, iwork, &info);
+            lapack::gesdd(jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork.get(), iwork.get(), &info);
         }
 
         if(info != 0) {
@@ -189,7 +176,7 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            goto done;
+            return BatchStatus::ok;
         }
 
         // copy-and-transpose U and Vh slices from temp buffers to the output;
@@ -206,16 +193,12 @@ _svd_gesdd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         ptr_S += min_mn;
     }
 
- done:
-    PyMem_RawFree(buf);
-    PyMem_RawFree(iwork);
-    PyMem_RawFree(rwork);
-    return 0;
+    return BatchStatus::ok;
 }
 
 
 template<typename T>
-int
+BatchStatus
 _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
@@ -242,12 +225,14 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
 
     // U, Vh shapes ( =0 if compute_uv=False)
     npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
-    if(!u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1)) {
-        return -101; // unknown value for jobz, bail out
-    }
+    u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
-    CBLAS_INT ldu = (CBLAS_INT)(u_shape0 == 0 ? 1 : u_shape0);
-    CBLAS_INT ldvh = (CBLAS_INT)(vh_shape0 == 0 ? 1 : vh_shape0);
+    CBLAS_INT intn, intm, ldu, ldvh, info;
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm) ||
+        !checked_narrow<CBLAS_INT>(u_shape0 == 0 ? 1 : u_shape0, &ldu) ||
+        !checked_narrow<CBLAS_INT>(vh_shape0 == 0 ? 1 : vh_shape0, &ldvh)) {
+        return BatchStatus::too_large;
+    }
 
     T *ptr_U = u_shape0 > 0 ? (T *)PyArray_DATA(ap_U) : NULL;
     T *ptr_Vh = vh_shape0 > 0 ? (T *)PyArray_DATA(ap_Vh) : NULL;
@@ -256,19 +241,19 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, intm = (CBLAS_INT)m, lwork = -1, info;
     T tmp = 0.0;
 
     // query LWORK
     if constexpr (!is_complex_v<T>) {
-        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, &info);
+        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, &info);
     } else {
-        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, lwork, NULL, &info);
+        lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, NULL, &info);
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return BatchStatus::lapack_query_failed; }
 
-    lwork = (CBLAS_INT)(std::real(tmp));
-    if(lwork == 0) { lwork = 1; }
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
+    CBLAS_INT lwork = _calc_lwork(tmp);
+    if (lwork < 0) { return BatchStatus::too_large; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -285,40 +270,24 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
-    npy_intp data_size = overwrite_a ? 0 : m*n;
-    npy_intp bufsize = data_size + lwork;
-    if (jobz != 'N') {
-        bufsize += u_shape0 * u_shape1 + vh_shape0 * vh_shape1;    // U and Vh, if referenced
+    std::size_t data_size = 0, u_size, vh_size, bufsize, rwork_size = 0;
+    if ((!overwrite_a && !checked_mul(m, n, &data_size)) ||
+        !checked_mul(u_shape0, u_shape1, &u_size) || !checked_mul(vh_shape0, vh_shape1, &vh_size) ||
+        !checked_add(data_size, lwork, &bufsize) || !checked_add(bufsize, u_size, &bufsize) ||
+        !checked_add(bufsize, vh_size, &bufsize) ||
+        (is_complex_v<T> && !checked_mul(5, min_mn, &rwork_size))) {
+        return BatchStatus::too_large;
     }
 
-    T *buf = (T *)PyMem_RawMalloc(bufsize*sizeof(T));
-    if (buf == NULL) { info = -101; return (int)info; }
+    auto buf = alloc_workspace<T>(bufsize);
+    auto rwork = alloc_workspace<real_type>(rwork_size);
+    if (!buf || !rwork) { return BatchStatus::no_memory; }
 
     // partition the workspace
-    T *work = &buf[0];
-    T *data;
-    if (overwrite_a) {
-        data = (T *)Am_data;
-    } else {
-        data = &buf[lwork];
-    }
-
-    T *buf_U = NULL;
-    T *buf_Vh = NULL;
-    if (jobz != 'N') {
-        buf_U = &buf[data_size + lwork];
-        buf_Vh = &buf[data_size + lwork + u_shape0*u_shape1];
-    }
-
-    real_type *rwork = NULL;
-    if constexpr (is_complex_v<T>) {
-        rwork = (real_type *)PyMem_RawMalloc(5*min_mn*sizeof(real_type));
-        if (rwork == NULL) {
-            PyMem_RawFree(buf);
-            info = -103;
-            return (int)info;
-        }
-    }
+    T *work = buf.get();
+    T *data = overwrite_a ? Am_data : work + lwork;
+    T *buf_U = (jobz != 'N') ? work + lwork + data_size : NULL;
+    T *buf_Vh = (jobz != 'N') ? buf_U + u_size : NULL;
 
     // --------------------------------------------------------------------
     // Main loop to traverse the slices
@@ -329,14 +298,14 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         if (!overwrite_a) {
             // copy the slice to `data` in F order
             T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
-            copy_slice_F(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(slice_ptr, data, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 
         // SVD the slice
         if constexpr (!is_complex_v<T>) {
             lapack::gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, &info);
         } else {
-            lapack::gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork, &info);
+            lapack::gesvd(jobz, jobz, intm, intn, data, intm, ptr_S, buf_U, ldu, buf_Vh, ldvh, work, lwork, rwork.get(), &info);
         }
 
         if(info != 0) {
@@ -344,7 +313,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            goto done;
+            return BatchStatus::ok;
         }
 
         // copy-and-transpose U and Vh slices from temp buffers to the output;
@@ -361,29 +330,7 @@ _svd_gesvd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArr
         ptr_S += min_mn;
     }
 
- done:
-    PyMem_RawFree(buf);
-    PyMem_RawFree(rwork);
-    return 0;
-}
-
-
-template<typename T>
-int
-_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, const char * lapack_driver, int overwrite_a, SliceStatusVec& vec_status)
-{
-    int info;
-    if (strcmp(lapack_driver, "gesdd") == 0) {
-        info = _svd_gesdd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, overwrite_a, vec_status);
-    }
-    else if (strcmp(lapack_driver, "gesvd") == 0) {
-        info = _svd_gesvd<T>(ap_Am, ap_U, ap_S, ap_Vh, jobz, overwrite_a, vec_status);
-    }
-    else {
-        // should have been validated at call site, really
-        info = -110;
-    }
-    return info;
+    return BatchStatus::ok;
 }
 
 } // namespace sp_linalg

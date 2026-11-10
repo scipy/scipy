@@ -381,10 +381,6 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int compute_uv = 1;
     int full_matrices = 1;
     int overwrite_a = 0;
-    PyArrayObject *ap_S = NULL, *ap_U = NULL, *ap_Vh = NULL;
-    PyObject *ret_lst;
-
-    int info = 0;
     SliceStatusVec vec_status;
 
     // Get the input array
@@ -395,6 +391,11 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Sanity check the input array
     if (!_check_dtype_and_flags(ap_Am, "svd")) {
         return NULL;
+    }
+
+    bool use_gesdd = (strcmp(lapack_driver, "gesdd") == 0);
+    if (!use_gesdd && (strcmp(lapack_driver, "gesvd") != 0)) {
+        return PyErr_Format(PyExc_ValueError, "scipy.linalg.svd: unknown lapack_driver '%s'.", lapack_driver);
     }
 
     int typenum = PyArray_TYPE(ap_Am);
@@ -418,76 +419,43 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
         shape_1[i] = PyArray_DIM(ap_Am, i);
     }
     shape_1[ndim - 2] = k;
-    ap_S = (PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S);
-    if(!ap_S) {
-        PyErr_NoMemory();
-        return NULL;
-    }
+    wrapper::py_ref ap_S((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S));
+    if (!ap_S) { return PyErr_NoMemory(); }
 
     char jobz = compute_uv ? (full_matrices ? 'A' : 'S') : 'N';
 
     // U.shape = (..., m, m) or (..., m, k) or not referenced (for jobz='N')
     // Vh.shape = (..., n, n) or (..., k, n) or not referenced (for jobz='N')
+    wrapper::py_ref ap_U, ap_Vh;
     if (jobz != 'N') {
         npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
         u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
         shape_1[ndim-2] = u_shape0;
         shape_1[ndim-1] = u_shape1;
-
-        ap_U = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (!ap_U) {
-            PyErr_NoMemory();
-            goto fail;
-        }
+        ap_U = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
+        if (!ap_U) { return PyErr_NoMemory(); }
 
         shape_1[ndim-2] = vh_shape0;
         shape_1[ndim-1] = vh_shape1;
-
-        ap_Vh = (PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum);
-        if (!ap_Vh) {
-            PyErr_NoMemory();
-            goto fail;
-        }
+        ap_Vh = wrapper::py_ref((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
+        if (!ap_Vh) { return PyErr_NoMemory(); }
     }
 
-    switch(typenum) {
-        case(NPY_FLOAT32):
-            info = _svd<f32>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
-            break;
-        case(NPY_FLOAT64):
-            info = _svd<f64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
-            break;
-        case(NPY_COMPLEX64):
-            info = _svd<c64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
-            break;
-        case(NPY_COMPLEX128):
-            info = _svd<c128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, overwrite_a, vec_status);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");
-            goto fail;
+    BatchStatus status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return use_gesdd ? _svd_gesdd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, overwrite_a, vec_status)
+                         : _svd_gesvd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, overwrite_a, vec_status);
+    });
+    if (status != BatchStatus::ok) { return set_batch_error(status, "svd"); }
+
+    PyObject *ret_lst = convert_vec_status(vec_status);
+    if (compute_uv) {
+        return Py_BuildValue("NNNN", PyArray_Return((PyArrayObject *)ap_U.release()),
+                                     PyArray_Return((PyArrayObject *)ap_S.release()),
+                                     PyArray_Return((PyArrayObject *)ap_Vh.release()), ret_lst);
     }
-
-    if (info < 0) {
-        // Either OOM or internal LAPACK error.
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.svd.");
-        goto fail;
-    }
-
-    ret_lst = convert_vec_status(vec_status);
-
-    if (compute_uv){
-        return Py_BuildValue("NNNN", PyArray_Return(ap_U), PyArray_Return(ap_S), PyArray_Return(ap_Vh), ret_lst);
-    } else {
-        return Py_BuildValue("NN", PyArray_Return(ap_S), ret_lst);
-    }
-
-fail:
-    Py_DECREF(ap_S);
-    Py_XDECREF(ap_U);
-    Py_XDECREF(ap_Vh);
-    return NULL;
+    return Py_BuildValue("NN", PyArray_Return((PyArrayObject *)ap_S.release()), ret_lst);
 }
 
 
