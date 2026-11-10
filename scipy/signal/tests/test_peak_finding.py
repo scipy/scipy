@@ -904,6 +904,31 @@ class TestFindPeaks:
         xp_assert_equal(find_peaks(x, threshold=(3, 5), wrap=True)[0],
                         np.array([3], dtype=int), check_dtype=False)
 
+    def test_distance_condition_wrap(self):
+        """
+        Test distance condition for peaks.
+        """
+        x = np.array([2., 0., 3., 1., 1.])
+
+        # Peaks 0 and 2 are distance 2 apart
+        xp_assert_equal(find_peaks(x, distance=2, wrap=True)[0], np.array([0, 2]), check_dtype=False)
+        # Filter out the smaller peak at index 0 since distance between it and index 2 is < 3
+        xp_assert_equal(find_peaks(x, distance=3, wrap=True)[0], np.array([2]),
+                        check_dtype=False)
+
+        # Ensure smaller peaks removed first
+        x = [10, -2, 1, -1, 0, -3, -50]
+        peaks_subset = find_peaks(x, distance=20, wrap=True)[0]  # use distance > x size
+        print(peaks_subset)
+        assert peaks_subset.size == 1 and peaks_subset[0] == 0
+
+        # Test multiple removals
+        x = np.zeros(30)
+        x[[2, 5, 12, 15, 18, 27, 29]] = [9, 2, 3, 8, 4, 5, 1]
+        peaks, _ = find_peaks(x, distance=6, wrap=True)
+        xp_assert_equal(peaks, [2, 15])
+        peaks, _ = find_peaks(x[::-1], distance=6, wrap=True)
+        xp_assert_equal(peaks, [14, 27])
 
     def test_properties(self):
         """
