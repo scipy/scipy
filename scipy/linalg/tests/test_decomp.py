@@ -154,8 +154,8 @@ class TestEig:
 
     @pytest.mark.parametrize('generalized', [False, True])
     def test_overwrite_f_contiguous(self, generalized):
-        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place and must
-        # give the same result as a copy.
+        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place and
+        # must give the same result as a copy.
         rng = np.random.default_rng(1234)
         a = rng.standard_normal((5, 5))
         b = rng.standard_normal((5, 5))
@@ -1069,9 +1069,10 @@ class TestEigh:
     @pytest.mark.parametrize('driver', ['evd', 'gvd'])
     def test_lp64_workspace_overflow(self, driver):
         # With eigenvectors, ?syevd and ?sygvd need a workspace of 1 + 6n + 2n**2, which
-        # overflows 32-bit LAPACK integers from n = 32767. The call must be refused rather
-        # than run with a workspace that is too small. The inputs have zero strides and
-        # nothing is computed; the eigenvectors are allocated but never touched.
+        # overflows 32-bit LAPACK integers from n = 32767. The call must be refused
+        # rather than run with a workspace that is too small. The inputs have zero
+        # strides and nothing is computed; the eigenvectors are allocated but never
+        # touched.
         check_free_memory(free_mb=6000)
         a = np.broadcast_to(np.float32(1), (32767, 32767))
         args = (a, a) if driver == 'gvd' else (a,)
@@ -1861,9 +1862,10 @@ def test_svd_gesdd_nosegfault():
 @pytest.mark.parametrize("n, dtype", [(26754, np.float32), (20724, np.complex64)])
 def test_svd_gesdd_lp64_workspace_overflow(n, dtype):
     # ?gesdd evaluates its workspace in LAPACK integers: with 32-bit integers the real
-    # workspace overflows from n = 26754, and the one of the complex flavors from n = 20724.
-    # The call must be refused rather than run with a workspace that is too small. The input
-    # has zero strides and nothing is computed; U and Vh are allocated but never touched.
+    # workspace overflows from n = 26754, and the one of the complex flavors from n =
+    # 20724. The call must be refused rather than run with a workspace that is too
+    # small. The input has zero strides and nothing is computed; U and Vh are allocated
+    # but never touched.
     check_free_memory(free_mb=8000)
     a = np.broadcast_to(np.ones((), dtype=dtype), (n, n))
     with pytest.raises(ValueError, match="ILP64"):

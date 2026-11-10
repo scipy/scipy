@@ -1995,17 +1995,17 @@ class TestLstsq:
     @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
     @pytest.mark.slow
     @pytest.mark.parametrize("lapack_driver, m, n, nrhs, dtype", [
-        ("gelsd", 1000, 1000, 2_147_400, np.float32),    # min(m, n)*nrhs
-        ("gelss", 1000, 1000, 2_147_484, np.float32),    # ldb*nrhs
-        ("gelsd", 46341, 74200, 1, np.float32),          # m*m, on the path for n >= 1.6*m
+        ("gelsd", 1000, 1000, 2_147_400, np.float32),  # min(m, n)*nrhs
+        ("gelss", 1000, 1000, 2_147_484, np.float32),  # ldb*nrhs
+        ("gelsd", 46341, 74200, 1, np.float32),        # m*m, on the path for n >= 1.6*m
         ("gelss", 46341, 74200, 1, np.float32),
-        ("gelsd", 2, 2, 55_000_000, np.complex64),       # 3*smlsiz*nrhs in the real workspace
+        ("gelsd", 2, 2, 55_000_000, np.complex64),     # 3*smlsiz*nrhs in rwork
     ])
     def test_lp64_workspace_overflow(self, lapack_driver, m, n, nrhs, dtype):
-        # gelsd and gelss evaluate their workspace in LAPACK integers; with 32-bit integers
-        # these sizes overflow, and the call must be refused rather than run with a workspace
-        # that is too small. The inputs have zero strides and nothing is computed; the
-        # solution is allocated but never touched.
+        # gelsd and gelss evaluate their workspace in LAPACK integers; with 32-bit
+        # integers these sizes overflow, and the call must be refused rather than run
+        # with a workspace that is too small. The inputs have zero strides and nothing
+        # is computed; the solution is allocated but never touched.
         itemsize = np.dtype(dtype).itemsize
         check_free_memory(free_mb=max(m, n) * nrhs * itemsize // 2**20 + 1000)
         a = np.broadcast_to(np.ones((), dtype=dtype), (m, n))

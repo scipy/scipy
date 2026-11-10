@@ -793,8 +793,8 @@ class TestExpM:
     @pytest.mark.slow
     def test_lp64_size_limit(self):
         # n*n is passed to BLAS as an element count, so with 32-bit LAPACK integers expm
-        # must refuse n = 46341 rather than overflow. The input has zero strides and nothing
-        # is computed.
+        # must refuse n = 46341 rather than overflow. The input has zero strides and
+        # nothing is computed.
         check_free_memory(free_mb=10000)
         a = np.broadcast_to(np.float32(1), (46341, 46341))
         with pytest.raises(ValueError, match="ILP64"):
@@ -1175,7 +1175,8 @@ class TestKhatriRao:
 
 
 @pytest.mark.parametrize("func", [expm, sqrtm])
-@pytest.mark.parametrize("dtype, pad", [(np.complex128, np.float64), (np.complex64, np.float32)])
+@pytest.mark.parametrize("dtype, pad", [(np.complex128, np.float64),
+                                        (np.complex64, np.float32)])
 @pytest.mark.parametrize("shape", [(4, 4), (2, 4, 4)])
 def test_field_view_strides(func, dtype, pad, shape):
     # A complex field of an aligned structured array has an element stride that is not a

@@ -1122,7 +1122,8 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # XXX can relax a1.ndim == 2?
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # keep the numbers in sync with C at `linalg/src/batched_linalg/_common_array_utils.hpp`
+    # keep the numbers in sync with C at
+    # `linalg/src/batched_linalg/_common_array_utils.hpp`
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
@@ -1245,7 +1246,8 @@ def det(a, overwrite_a=False, check_finite=True):
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
     # Single precision input gives a double precision determinant, computed in double
-    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not overflow.
+    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not
+    # overflow.
     det = _linalg_det(a1, overwrite_a)
 
     # Return scalar for 2D input
