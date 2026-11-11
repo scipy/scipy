@@ -2849,11 +2849,12 @@ class TestMatrixNorms:
         assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
-    @pytest.mark.parametrize("ord", ["fro", 1, np.inf])
+    @pytest.mark.parametrize("ord", ["fro", 1, -1, np.inf, -np.inf])
     @pytest.mark.parametrize("keepdims", [True, False])
     @pytest.mark.parametrize("n", [0, 5])
     def test_shape_dtype(self, dtype, ord, keepdims, n):
         rng = np.random.default_rng(seed=123456)
+        res_dtype = np.finfo(dtype).dtype if dtype != np.int64 else np.dtype("float64")
 
         a = rng.normal(size=(n, n))
         if np.isdtype(dtype, "complex floating"):
@@ -2866,8 +2867,18 @@ class TestMatrixNorms:
             ref = np.sqrt(np.sum(np.abs(a) ** 2))
         elif ord == 1:
             ref = np.max(np.sum(np.abs(a), axis=0), initial=0)
+        elif ord == -1:
+            ref = np.min(
+                np.sum(np.abs(a), axis=0),
+                initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+            ) if n != 0 else res_dtype.type(0.0)
         elif ord == np.inf:
             ref = np.max(np.sum(np.abs(a), axis=1), initial=0)
+        elif ord == -np.inf:
+            ref = np.min(
+                np.sum(np.abs(a), axis=1),
+                initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+            ) if n != 0 else res_dtype.type(0.0)
 
         if keepdims:
             ref = ref.reshape((1, 1))

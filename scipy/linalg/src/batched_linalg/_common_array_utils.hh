@@ -55,9 +55,11 @@ enum Eigh_driver : Py_ssize_t
 // Which matrix norm to compute; python side maps to these values
 enum MATRIX_NORM_ORD : Py_ssize_t
 {
-    FRO = 0,
-    ONE = 1,
-    INF = 2,
+    FRO     = 0,
+    ONE     = 1,
+    NEG_ONE = 2,
+    INF     = 3,
+    NEG_INF = 4,
 };
 
 

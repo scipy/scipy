@@ -8,7 +8,13 @@ namespace sp_linalg {
 
 
 /*
- * `s2` denote strides along the rows, `s1` denote strides along the columns.
+ * @brief compute the Frobenius norm of a matrix.
+ *
+ * @param data  Pointer to the data.
+ * @param m     The number of rows in the matrix.
+ * @param n     The number of columns in the matrix.
+ * @param s2    The strides along the row dimension, in elements.
+ * @param s1    The strides along the column dimension, in elements.
  */
 template<typename T> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
     real_of_t<T> res = 0.0;
@@ -28,8 +34,23 @@ template<typename T> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT
 }
 
 
-template<typename T> inline real_of_t<T> _matrix_norm_1(T *data, CBLAS_INT m, CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
-    real_of_t<T> res = 0.0;
+/**
+ * @brief compute the +-1 norm of a matrix. This can also be used for the infinity norm by swapping row and column dimensions and strides.
+ *
+ * @param data  Pointer to the data.
+ * @param m     The number of rows in the matrix.
+ * @param n     The number of columns.
+ * @param s2    Strides along the row dimension in elements.
+ * @param s1    Strides along the column dimension in elements.
+ * @param neg   Whether the compute the +1 or -1 norm.
+ */
+template<typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
+    real_of_t<T> res;
+    if constexpr (neg) {
+        res = std::numeric_limits<real_of_t<T>>::infinity();
+    } else {
+        res = 0.0;
+    }
 
     for (CBLAS_INT i = 0; i < n; i++) {
         real_of_t<T> tmp = 0.0;
@@ -38,7 +59,11 @@ template<typename T> inline real_of_t<T> _matrix_norm_1(T *data, CBLAS_INT m, CB
             tmp += std::abs(data[i * s1 + j * s2]);
         }
 
-        if (tmp > res) { res = tmp; }
+        if constexpr (neg) {
+            if (tmp < res) { res = tmp; }
+        } else {
+            if (tmp > res) { res = tmp; }
+        }
     }
 
     return res;
@@ -114,11 +139,17 @@ template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_r
                 *res_ptr = _matrix_norm_F(slice_ptr_A, intm, intn, s2, s1);
                 break;
             case MATRIX_NORM_ORD::ONE:
-                *res_ptr = _matrix_norm_1(slice_ptr_A, intm, intn, s2, s1);
+                *res_ptr = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s2, s1);
+                break;
+            case MATRIX_NORM_ORD::NEG_ONE:
+                *res_ptr = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s2, s1);
                 break;
             case MATRIX_NORM_ORD::INF:
                 // Effectively transpose to iterate over rows instead of columns
-                *res_ptr = _matrix_norm_1(slice_ptr_A, intn, intm, s1, s2);
+                *res_ptr = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s2);
+                break;
+            case MATRIX_NORM_ORD::NEG_INF:
+                *res_ptr = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s2);
                 break;
             default:
                 return -102;
