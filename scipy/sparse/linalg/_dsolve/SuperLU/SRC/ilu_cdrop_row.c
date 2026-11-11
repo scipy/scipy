@@ -247,8 +247,8 @@ int ilu_cdrop_row(
                         }
 		}
 		lsub[xlsub_first + i] = lsub[xlsub_first + m1];
-		m1--;
 		temp[i] = temp[m1];
+		m1--;
 
 		continue;
 	    }

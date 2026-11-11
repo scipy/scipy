@@ -20,5 +20,21 @@ typedef int64_t int_t;
 typedef int int_t; /* default */
 #endif
 
+#ifndef SLU_BLASINT_TYPE_DEFINED
+#define SLU_BLASINT_TYPE_DEFINED
+/*! \brief Integer type used in the Fortran BLAS/LAPACK calling convention.
+ *  Defaults to `int` (LP64 BLAS); redefine to a 64-bit integer type before
+ *  including this header to link against an ILP64 BLAS/LAPACK. It links against
+ *  ILP64 BLAS when building with `-Duse_ilp64=true`.
+ */
+#ifndef slu_blasint
+#if defined(use_ilp64) && (use_ilp64==true)
+typedef int64_t slu_blasint;
+#else
+typedef int slu_blasint;
+#endif
+#endif
+#endif
+
 #endif /* SUPERLU_CONFIG_H */
 

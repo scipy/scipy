@@ -412,7 +412,7 @@ spanel_bmod (
 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr],
 			   &nsupr, tempv, &incx );
 #endif
-		    
+
 		    luptr += segsze;	/* Dense matrix-vector */
 		    tempv1 = &tempv[segsze];
                     alpha = one;

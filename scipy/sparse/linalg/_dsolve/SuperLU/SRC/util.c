@@ -607,7 +607,7 @@ void check_perm(const char *what, int n, const int *perm)
     for (i = 0; i < n; ++i) marker[i] = 0;
 
     for (i = 0; i < n; ++i) {
-	if ( marker[perm[i]] == 1 || perm[i] >= n ) {
+	if ( perm[i] < 0 || perm[i] >= n || marker[perm[i]] == 1 ) {
 	    printf("%s: Not a valid PERM[%d] = %d\n", what, i, perm[i]);
 	    ABORT("check_perm");
 	} else {

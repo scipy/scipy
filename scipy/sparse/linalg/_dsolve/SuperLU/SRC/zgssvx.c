@@ -545,6 +545,12 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	
 	if ( lwork == -1 ) {
 	    mem_usage->total_needed = *info - A->ncol;
+	    // cleanup prior to returning
+	    Destroy_CompCol_Permuted(&AC);
+	    if ( A->Stype == SLU_NR ) {
+		Destroy_SuperMatrix_Store(AA);
+		SUPERLU_FREE(AA);
+	    }
 	    return;
 	}
     }
@@ -555,6 +561,14 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	       rank-deficient (*info) columns of A. */
 	    *recip_pivot_growth = zPivotGrowth(*info, AA, perm_c, L, U);
         }
+        // cleanup prior to returning
+	if ( nofact ) {
+	    Destroy_CompCol_Permuted(&AC);
+	}
+	if ( A->Stype == SLU_NR ) {
+	    Destroy_SuperMatrix_Store(AA);
+	    SUPERLU_FREE(AA);
+	}
 	return;
     }
 

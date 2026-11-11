@@ -367,7 +367,7 @@ typedef struct {
 extern "C" {
 #endif
 
-extern int     input_error(char *, int *);
+extern void    input_error(char *, int *);
 
 extern void    Destroy_SuperMatrix_Store(SuperMatrix *);
 extern void    Destroy_CompCol_Matrix(SuperMatrix *);
