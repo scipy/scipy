@@ -1,0 +1,22 @@
+#ifndef HCONFIG_H_
+#define HCONFIG_H_
+
+#cmakedefine FAST_BUILD
+#cmakedefine ZLIB_FOUND
+#cmakedefine CUPDLP_CPU
+#cmakedefine CUPDLP_GPU
+#cmakedefine HIPO
+#cmakedefine HIGHS_SHARED_EXTRAS_LIBRARY
+#cmakedefine CMAKE_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#cmakedefine HIGHSINT64
+#cmakedefine HIGHS_NO_DEFAULT_THREADS
+#cmakedefine HIGHS_HAVE_MM_PAUSE
+#cmakedefine HIGHS_HAVE_BUILTIN_CLZ
+#cmakedefine HIGHS_HAVE_BITSCAN_REVERSE
+
+#define HIGHS_GITHASH "@GITHASH@"
+#define HIGHS_VERSION_MAJOR @HIGHS_VERSION_MAJOR@
+#define HIGHS_VERSION_MINOR @HIGHS_VERSION_MINOR@
+#define HIGHS_VERSION_PATCH @HIGHS_VERSION_PATCH@
+
+#endif /* HCONFIG_H_ */

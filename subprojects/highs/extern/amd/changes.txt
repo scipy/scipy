@@ -1,0 +1,8 @@
+This code has been downloaded from 
+https://github.com/DrTimothyAldenDavis/SuiteSparse
+Available under BSD 3-clause license.
+
+Changes:
+- The name of the custom types and of some #define has been changed, to avoid conflicts.
+- Any function that is not needed to use amd_order has been removed.
+- The code is compiled using a single integer type, controlled by HIGHSINT64.

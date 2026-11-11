@@ -1,0 +1,7 @@
+meld cupdlp.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp.h
+meld glbopts.h /home/jajhall/cuPDLP-C/cupdlp/glbopts.h
+meld cupdlp_defs.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_defs.h
+meld cupdlp_step.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_step.c
+meld cupdlp_utils.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_utils.c
+meld cupdlp_linalg.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_linalg.h
+meld cupdlp_linalg.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_linalg.c
