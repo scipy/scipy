@@ -19,7 +19,7 @@ namespace sp_linalg {
  */
 template<typename real_type>
 void
-transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, npy_intp ldv, npy_intp n, const real_type *wi) {
+transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, const npy_intp ldv, const npy_intp n, const real_type *wi) {
     using cmplx_type = complex_of_t<real_type>;
     for (npy_intp j = 0; j < n; ) {
         if (wi[j] == real_type(0)) {
@@ -61,7 +61,7 @@ transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, npy_intp ldv
 template<typename T>
 BatchStatus
 _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_beta,
-     PyArrayObject *ap_vl, PyArrayObject *ap_vr, bool overwrite_a, bool overwrite_b, SliceStatusVec& vec_status)
+     PyArrayObject *ap_vl, PyArrayObject *ap_vr, const bool overwrite_a, const bool overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>;   // f32 if T==c64 etc
     using cmplx_type = complex_of_t<T>;
@@ -251,8 +251,8 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
 template<typename T>
 BatchStatus
 _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObject *ap_Z, npy_intp *m_found,
-      bool overwrite_a, bool overwrite_b, int itype, char jobz, char range, char uplo,
-      f64 vl, f64 vu, int il, int iu, Eigh_driver driver, SliceStatusVec& vec_status)
+      const bool overwrite_a, const bool overwrite_b, const int itype, const char jobz, const char range, const char uplo,
+      const f64 vl, const f64 vu, const int il, const int iu, const Eigh_driver driver, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>;
     SliceStatus slice_status;

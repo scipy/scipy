@@ -7,7 +7,7 @@ namespace sp_linalg {
 
 template<typename T>
 BatchStatus
-_cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, bool lower, bool overwrite_a, bool clean, SliceStatusVec &vec_status) {
+_cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, const bool lower, const bool overwrite_a, const bool clean, SliceStatusVec &vec_status) {
     St slice_structure = St::NONE;
     SliceStatus slice_status;
 

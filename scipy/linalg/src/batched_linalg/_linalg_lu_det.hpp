@@ -15,7 +15,7 @@ namespace sp_linalg {
  * @param[in]  m     Number of rows.
  * @param[in]  mn    min(m, n), the length of the pivot sequence.
  */
-inline void ipiv_to_perm(const CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT mn)
+inline void ipiv_to_perm(const CBLAS_INT *ipiv, CBLAS_INT *perm, const CBLAS_INT m, const CBLAS_INT mn)
 {
     // Applying the swaps in reverse order yields the inverse permutation directly.
     for (CBLAS_INT i = 0; i < m; i++) { perm[i] = i; }
@@ -39,7 +39,7 @@ inline void ipiv_to_perm(const CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CB
  * @param[in]     ncols  Number of columns.
  */
 template<typename T>
-void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, npy_intp m, npy_intp ncols)
+void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, const npy_intp m, const npy_intp ncols)
 {
     std::memcpy(tmp, data, (std::size_t)m * ncols * sizeof(T));
     for (npy_intp i = 0; i < m; i++) {
@@ -69,7 +69,7 @@ void permute_rows(T *data, const CBLAS_INT *perm, T *tmp, npy_intp m, npy_intp n
  *         is complete; < 0 argument error.
  */
 template<typename T>
-CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT *perm, CBLAS_INT m, CBLAS_INT n, bool permute_l)
+CBLAS_INT lu_decompose(T *f_buf, T *l_out, T *u_out, CBLAS_INT *ipiv, CBLAS_INT *perm, const CBLAS_INT m, const CBLAS_INT n, const bool permute_l)
 {
     const CBLAS_INT mn = m < n ? m : n;
     CBLAS_INT info = 0;
@@ -118,7 +118,7 @@ using det_type_t = std::conditional_t<std::is_same_v<T, f32>, f64,
  * @return The determinant; zero when @p info is nonzero.
  */
 template<typename T>
-det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *info)
+det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, const CBLAS_INT n, CBLAS_INT *info)
 {
     using acc_type = det_type_t<T>;
     lapack::getrf(n, n, f_buf, n, ipiv, info);
@@ -150,7 +150,7 @@ det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *inf
  */
 template<typename T>
 BatchStatus
-_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bool in_place)
+_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute_l, const bool in_place)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
@@ -201,7 +201,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
  */
 template<typename T>
 BatchStatus
-_det(PyArrayObject *ap_a, det_type_t<T> *det_out, bool in_place)
+_det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool in_place)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);

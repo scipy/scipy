@@ -84,7 +84,7 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
  * @return NULL, with the exception set.
  */
 static PyObject*
-set_batch_error(BatchStatus status, const char *func) {
+set_batch_error(const BatchStatus status, const char *func) {
     switch (status) {
         case BatchStatus::no_memory:
             return PyErr_Format(PyExc_MemoryError, "scipy.linalg.%s: could not allocate memory.", func);

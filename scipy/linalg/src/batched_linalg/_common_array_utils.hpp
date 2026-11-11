@@ -50,7 +50,7 @@ using Workspace = std::unique_ptr<T[], WorkspaceDeleter>;
  * @throws std::bad_alloc if `count * sizeof(T)` exceeds SIZE_MAX or the allocation fails.
  */
 template <class T>
-Workspace<T> alloc_workspace(std::uint64_t count)
+Workspace<T> alloc_workspace(const std::uint64_t count)
 {
     if (count > SIZE_MAX / sizeof(T)) { throw std::bad_alloc(); }
     T *p = static_cast<T *>(PyMem_RawMalloc(static_cast<std::size_t>(count) * sizeof(T)));
@@ -81,7 +81,7 @@ using OwnedArray = std::unique_ptr<PyArrayObject, OwnedArrayDeleter>;
  * @return true if `v` is nonnegative and representable in To.
  */
 template <class To, class From>
-bool checked_narrow(From v, To *out) noexcept
+bool checked_narrow(const From v, To *out) noexcept
 {
     static_assert(std::is_integral_v<To> && std::is_integral_v<From>);
     if constexpr (std::is_signed_v<From>) {
@@ -110,7 +110,7 @@ bool checked_narrow(From v, To *out) noexcept
  *         BatchStatus::no_memory if @p f throws std::bad_alloc.
  */
 template <class F>
-BatchStatus dispatch_dtype(int typenum, F &&f) noexcept
+BatchStatus dispatch_dtype(const int typenum, F &&f) noexcept
 {
     try {
         switch (typenum) {
@@ -176,7 +176,7 @@ struct SliceStatus {
 };
 
 
-inline void init_status(SliceStatus& slice_status, npy_intp idx, St slice_structure) {
+inline void init_status(SliceStatus& slice_status, const npy_intp idx, const St slice_structure) {
     slice_status.slice_num = idx;
     slice_status.structure = (Py_ssize_t)slice_structure;
     slice_status.is_singular = 0;
@@ -233,7 +233,7 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  *  to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
  */
 template<typename T>
-CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
+CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0) {
     using real_type = real_of_t<T>;
 
     real_type value = std::real(_lwrk) * fudge_factor;
@@ -270,7 +270,7 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
  * @return @p data advanced by the byte offset of the slice, as a pointer to T.
  */
 template<typename T>
-T* compute_slice_ptr(npy_intp idx, char *data, npy_intp ndim, const npy_intp *shape, const npy_intp *strides) {
+T* compute_slice_ptr(const npy_intp idx, char *data, const npy_intp ndim, const npy_intp *shape, const npy_intp *strides) {
     npy_intp offset = 0;
     npy_intp temp_idx = idx;
     for (int i = ndim - 3; i >= 0; i--) {
@@ -293,7 +293,7 @@ T* compute_slice_ptr(npy_intp idx, char *data, npy_intp ndim, const npy_intp *sh
  * @param ld   Leading dimension of @p dst, at least @p m.
  */
 template<typename T>
-void copy_strided_to_f(T *dst, const T *src, npy_intp m, npy_intp n, npy_intp s0, npy_intp s1, npy_intp ld) noexcept
+void copy_strided_to_f(T *dst, const T *src, const npy_intp m, const npy_intp n, const npy_intp s0, const npy_intp s1, const npy_intp ld) noexcept
 {
     const char *base = reinterpret_cast<const char *>(src);
     // Walk the source along its smaller stride. The magnitudes are unsigned: NumPy accepts any
@@ -464,7 +464,7 @@ norm1_sym_herm_lower(T* A, T* work, const npy_intp n)
 
 template<typename T>
 real_of_t<T>
-norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
+norm1_sym_herm(const char uplo, T *A, T *work, const npy_intp n) {
     // NB: transpose for the F order; uplo is 'U' or 'L' by construction
     return (uplo == 'U') ? norm1_sym_herm_lower(A, work, n) : norm1_sym_herm_upper(A, work, n);
 }
@@ -548,7 +548,7 @@ norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_int
  */
 template<typename T>
 void
-bandwidth_strided(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
+bandwidth_strided(const T *data, const int64_t m, const int64_t n, const int64_t s0, const int64_t s1, int64_t *lower, int64_t *upper) noexcept
 {
     const char *base = reinterpret_cast<const char *>(data);
     auto at = [&](int64_t r, int64_t c) { return *reinterpret_cast<const T *>(base + r * s0 + c * s1); };
@@ -592,7 +592,7 @@ bandwidth_strided(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, i
  */
 template<typename T>
 void
-bandwidth_slice(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
+bandwidth_slice(const T *data, const int64_t m, const int64_t n, const int64_t s0, const int64_t s1, int64_t *lower, int64_t *upper) noexcept
 {
     if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64> ||
                   std::is_same_v<T, c64> || std::is_same_v<T, c128>) {
@@ -616,7 +616,7 @@ bandwidth_slice(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, int
 
 template<typename T>
 void
-detect_bandwidths(char *data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, int64_t *kl, int64_t *ku, int64_t *ldab_max) {
+detect_bandwidths(char *data, const npy_intp ndim, const npy_intp outer_size, npy_intp *shape, npy_intp *strides, int64_t *kl, int64_t *ku, int64_t *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T* slice_ptr = compute_slice_ptr<T>(idx, data, ndim, shape, strides);
 
@@ -630,7 +630,7 @@ detect_bandwidths(char *data, npy_intp ndim, npy_intp outer_size, npy_intp *shap
 
 template<typename T>
 std::tuple<bool, bool>
-is_sym_or_herm(const T *data, npy_intp n) {
+is_sym_or_herm(const T *data, const npy_intp n) {
     // Return a pair of (is_symmetric, is_hermitian)
     bool all_sym = true, all_herm = true;
 
@@ -657,7 +657,7 @@ is_sym_or_herm(const T *data, npy_intp n) {
 // fill np.triu(a) from np.tril(a) or np.tril(a) from np.triu(a)
 template<typename T>
 inline void
-fill_other_triangle(char uplo, T *data, npy_intp n) {
+fill_other_triangle(const char uplo, T *data, const npy_intp n) {
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<n; j++){
@@ -684,7 +684,7 @@ fill_other_triangle(char uplo, T *data, npy_intp n) {
 // XXX deduplicate (conj or noconj)
 template<typename T>
 inline void
-fill_other_triangle_noconj(char uplo, T *data, npy_intp n) {
+fill_other_triangle_noconj(const char uplo, T *data, const npy_intp n) {
     if (uplo == 'U') {
         for (npy_intp i=0; i<n; i++) {
             for (npy_intp j=i+1; j<n; j++){
@@ -711,7 +711,7 @@ fill_other_triangle_noconj(char uplo, T *data, npy_intp n) {
  */
 template<typename T>
 inline void
-to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
+to_tridiag(const T *data, const npy_intp N, T *du, T *d, T *dl) {
     for (npy_intp i=0; i<N; i++) {
         d[i] = data[i + i*N];
     }
@@ -737,7 +737,7 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
  */
 template<typename T>
 inline void
-to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s0, npy_intp s1) {
+to_banded(const T *data, const npy_intp n, const npy_intp kl, const npy_intp ku, const npy_intp ldab, T *ab, const npy_intp s0, const npy_intp s1) {
     // s0, s1 are byte strides: address elements through a char pointer
     const char *base = reinterpret_cast<const char *>(data);
     auto at = [&](npy_intp byte_offset) { return *reinterpret_cast<const T *>(base + byte_offset); };
@@ -766,7 +766,7 @@ to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T 
 
 template<typename T>
 inline void
-zero_other_triangle(char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_intp lda = -1) {
+zero_other_triangle(const char uplo, T *data, const npy_intp m, npy_intp n = -1, npy_intp lda = -1) {
     if (n == -1) { n = m; }
     if (lda == -1) { lda = m; }
 

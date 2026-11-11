@@ -33,7 +33,7 @@ enum class LstsqDriver { gelsd, gelsy, gelss };
 template<typename T>
 BatchStatus
 _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayObject *ap_x, PyArrayObject *ap_rank,
-       f64 rcond, LstsqDriver driver, bool overwrite_a, bool overwrite_b, SliceStatusVec& vec_status)
+       const f64 rcond, const LstsqDriver driver, const bool overwrite_a, const bool overwrite_b, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;

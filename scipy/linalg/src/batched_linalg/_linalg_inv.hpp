@@ -8,7 +8,7 @@ namespace sp_linalg {
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
 void invert_slice_general(
-    CBLAS_INT N, T *data, CBLAS_INT *ipiv, irwork_t<T> *irwork, T *work, CBLAS_INT lwork,
+    const CBLAS_INT N, T *data, CBLAS_INT *ipiv, irwork_t<T> *irwork, T *work, const CBLAS_INT lwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -46,7 +46,7 @@ void invert_slice_general(
 // Symmetric/hermitian array inversion with potrf, pocon and potri
 template<typename T>
 void invert_slice_cholesky(
-    char uplo, CBLAS_INT N, T *data, T* work, irwork_t<T> *irwork,
+    const char uplo, const CBLAS_INT N, T *data, T* work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -81,8 +81,8 @@ void invert_slice_cholesky(
 // Symmetric/hermitian array inversion with sytrf/hetrf and sytri/hetri
 template<typename T>
 void invert_slice_sym_herm(
-    char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, CBLAS_INT lwork,
-    bool is_symm_not_herm,
+    const char uplo, const CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, const CBLAS_INT lwork,
+    const bool is_symm_not_herm,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -142,7 +142,7 @@ void invert_slice_sym_herm(
 // triangular array inversion with trtri
 template<typename T>
 void invert_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, T *data, T *work, irwork_t<T> *irwork,
+    const char uplo, const char diag, const CBLAS_INT N, T *data, T *work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -169,7 +169,7 @@ void invert_slice_triangular(
 // Diagonal array inversion
 template<typename T>
 inline void invert_slice_diagonal(
-    CBLAS_INT N, T *data, SliceStatus& status
+    const CBLAS_INT N, T *data, SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
 
@@ -203,7 +203,7 @@ inline void invert_slice_diagonal(
 
 template<typename T>
 BatchStatus
-_inverse(PyArrayObject* ap_Am, T* ret_data, St structure, bool lower, bool overwrite_a, SliceStatusVec& vec_status)
+_inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower, const bool overwrite_a, SliceStatusVec& vec_status)
 {
     int64_t lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;

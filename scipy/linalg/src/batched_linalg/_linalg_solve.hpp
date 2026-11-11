@@ -8,7 +8,7 @@ namespace sp_linalg {
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline void solve_slice_general(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, irwork_t<T> *irwork, T *work,
+    const CBLAS_INT N, const CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, const char trans, irwork_t<T> *irwork, T *work,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -44,7 +44,7 @@ inline void solve_slice_general(
 // triangular solve with trtrs
 template<typename T>
 inline void solve_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, irwork_t<T> *irwork,
+    const char uplo, const char diag, const CBLAS_INT N, const CBLAS_INT NRHS, T *data,  T *b_data, const char trans, T *work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -71,7 +71,7 @@ inline void solve_slice_triangular(
 // Cholesky solve with potrf, pocon and potrs
 template<typename T>
 inline void solve_slice_cholesky(
-    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, irwork_t<T> *irwork,
+    const char uplo, const CBLAS_INT N, const CBLAS_INT NRHS, T *data, T *b_data, T* work, irwork_t<T> *irwork,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -106,8 +106,8 @@ inline void solve_slice_cholesky(
 // Symmetric/hermitian solve with sytrf/hetrf and sytrs/hetrs
 template<typename T>
 void solve_slice_sym_herm(
-    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, CBLAS_INT lwork,
-    bool is_symm_not_herm,
+    const char uplo, const CBLAS_INT N, const CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, irwork_t<T> *irwork, const CBLAS_INT lwork,
+    const bool is_symm_not_herm,
     SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
@@ -166,7 +166,7 @@ void solve_slice_sym_herm(
 
 template<typename T>
 void solve_slice_tridiag(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, char trans,
+    const CBLAS_INT N, const CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, const char trans,
     T *b_data,
     T *work, T *work2, irwork_t<T> *irwork,
     SliceStatus& status
@@ -216,8 +216,8 @@ void solve_slice_tridiag(
 // Banded array solve, assumes the data is fed in in the banded structure `ab` already.
 template<typename T>
 inline void solve_slice_banded(
-    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, irwork_t<T> *irwork,
-    CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
+    const char trans, const CBLAS_INT N, const CBLAS_INT NRHS, T *ab, CBLAS_INT *ipiv, T *b_data, T *work2, irwork_t<T> *irwork,
+    const CBLAS_INT kl, const CBLAS_INT ku, SliceStatus &status
 ) {
     using real_type = real_of_t<T>;
 
@@ -253,7 +253,7 @@ inline void solve_slice_banded(
 // Diagonal array solve
 template<typename T>
 inline void solve_slice_diagonal(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, SliceStatus& status
+    const CBLAS_INT N, const CBLAS_INT NRHS, T *data, T *b_data, SliceStatus& status
 ) {
     using real_type = real_of_t<T>;
 
@@ -291,7 +291,7 @@ inline void solve_slice_diagonal(
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 BatchStatus
-_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, bool overwrite_a, bool overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
+_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, const char trans, const bool overwrite_a, const bool overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
@@ -395,7 +395,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
 template<typename T>
 BatchStatus
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, bool lower, bool transposed, bool overwrite_a, bool overwrite_b, SliceStatusVec& vec_status)
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structure, const bool lower, const bool transposed, const bool overwrite_a, const bool overwrite_b, SliceStatusVec& vec_status)
 {
     char trans = transposed ? 'T' : 'N';
     int64_t lower_band = 0, upper_band = 0;

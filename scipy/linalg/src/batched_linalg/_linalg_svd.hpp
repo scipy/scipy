@@ -17,7 +17,7 @@ namespace sp_linalg {
  * @param vh_shape1  Receives the number of columns of Vh, 0 for 'N'.
  */
 inline void
-u_vh_shapes(npy_intp m, npy_intp n, char jobz,
+u_vh_shapes(const npy_intp m, const npy_intp n, const char jobz,
             npy_intp *u_shape0, npy_intp *u_shape1,
             npy_intp *vh_shape0, npy_intp *vh_shape1
 ){
@@ -59,7 +59,7 @@ u_vh_shapes(npy_intp m, npy_intp n, char jobz,
  */
 template<typename real_type>
 std::uint64_t
-gesdd_min_lwork(std::uint64_t m, std::uint64_t n, char jobz)
+gesdd_min_lwork(const std::uint64_t m, const std::uint64_t n, const char jobz)
 {
     const std::uint64_t k = std::min(m, n), kmax = std::max(m, n);
     const std::uint64_t bdspac = (jobz == 'N') ? 7*k : 3*k*k + 4*k;
@@ -74,7 +74,7 @@ gesdd_min_lwork(std::uint64_t m, std::uint64_t n, char jobz)
 
 template<typename T>
 BatchStatus
-_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, bool use_gesdd, bool overwrite_a, SliceStatusVec& vec_status)
+_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, const char jobz, const bool use_gesdd, const bool overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
