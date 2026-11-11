@@ -46,8 +46,7 @@ superlu_c_args += cc.get_supported_arguments(
   '-Wno-maybe-uninitialized',
 )
 
-# `.` provides both our config headers (source dir) and the generated
-# `superlu_config.h` (build dir).
+# include "superlu_config.h", which is generated in this directory
 superlu_inc = include_directories('.', 'superlu/SRC')
 
 superlu_sources = [
