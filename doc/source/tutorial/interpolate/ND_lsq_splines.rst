@@ -3,9 +3,10 @@
 Least-squares tensor-product splines
 ====================================
 
-`make_lsq_ndbspline` fits a tensor-product B-spline to scattered data in
-one or more dimensions. It returns an `NdBSpline`, which can then be evaluated
-at new coordinate points. The fit and evaluation are separate operations:
+`make_lsq_ndbspline` fits a tensor-product B-spline to scattered or gridded
+data in one or more dimensions. It returns an `NdBSpline`, which can then be
+evaluated at new coordinate points. The fit and evaluation are separate
+operations:
 
 .. code-block:: python
 
@@ -117,12 +118,11 @@ Data on a rectilinear grid
 --------------------------
 
 For values sampled on a complete rectilinear grid,
-`make_lsq_ndbspline_from_grid` accepts the one-dimensional grid axes directly.
-There is no need to construct the coordinate rows manually:
+`make_lsq_ndbspline` accepts the one-dimensional grid axes directly when
+``grid=True``. There is no need to construct the coordinate rows manually:
 
 .. code-block:: python
 
-    >>> from scipy.interpolate import make_lsq_ndbspline_from_grid
     >>> points = (np.linspace(0.0, 1.0, 8), np.linspace(-1.0, 1.0, 9))
     >>> x0, x1 = np.meshgrid(*points, indexing="ij")
     >>> values = np.sin(np.pi*x0) + x1
@@ -130,14 +130,14 @@ There is no need to construct the coordinate rows manually:
     ...     np.array([0.0, 0.0, 0.5, 1.0, 1.0]),
     ...     np.array([-1.0, -1.0, 0.0, 1.0, 1.0]),
     ... )
-    >>> spl_grid = make_lsq_ndbspline_from_grid(
-    ...     points, values, t_grid, k=1
+    >>> spl_grid = make_lsq_ndbspline(
+    ...     points, values, t_grid, k=1, grid=True
     ... )
     >>> spl_grid([[0.25, 0.5]]).shape
     (1,)
 
 In ``N`` dimensions, ``points`` contains ``N`` one-dimensional arrays and
-``values.shape[:N]`` must match their lengths. Both constructors also accept
-trailing dimensions in the data values, allowing several outputs to be fitted
-with the same coordinates and basis. For example, values with shape
-``(m1, ..., mN, 2)`` fit two outputs on the same grid.
+``values.shape[:N]`` must match their lengths. Both scattered and gridded
+input accept trailing dimensions in the data values, allowing several outputs
+to be fitted with the same coordinates and basis. For example, values with
+shape ``(m1, ..., mN, 2)`` fit two outputs on the same grid.

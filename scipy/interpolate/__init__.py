@@ -68,7 +68,6 @@ Multivariate interpolation
    :toctree: generated/
 
    make_lsq_ndbspline
-   make_lsq_ndbspline_from_grid
 
 
 **Low-level data structures for tensor product polynomials and splines:**
@@ -222,7 +221,6 @@ from ._rgi import *
 from ._ndbspline import (
     NdBSpline,
     make_lsq_ndbspline,
-    make_lsq_ndbspline_from_grid,
 )
 
 from ._bary_rational import *

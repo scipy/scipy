@@ -22,7 +22,7 @@ from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
         CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
-        make_lsq_ndbspline, make_lsq_ndbspline_from_grid,
+        make_lsq_ndbspline,
 )
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
@@ -4088,12 +4088,13 @@ class TestMakeLSQNdBSplinePublicAPI:
         points, _, _, values, t, w_grid, x_eval, expected = data
         w = w_grid if weighted else None
 
-        spl = make_lsq_ndbspline_from_grid(
+        spl = make_lsq_ndbspline(
             points,
             values,
             t,
             k=k,
             w=w,
+            grid=True,
             solver=solver,
             **solver_args,
         )
