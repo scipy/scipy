@@ -28,6 +28,7 @@ for name in [dist_root / d for d in (
     'subprojects/highs/check',
     'subprojects/highs/docs',
     'subprojects/highs/examples',
+    'subprojects/highs/extern/metis',
     'subprojects/highs/highspy/tests',
     'subprojects/highs/highspy-extras',
     'subprojects/highs/nuget',
