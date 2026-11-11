@@ -1,15 +1,24 @@
 #include "Python.h"
 
-#include <cstring>
+#include <algorithm>
+#include <cmath>
 #include <complex>
-#include <vector>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <new>
 #include <tuple>
+#include <type_traits>
+#include <vector>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 
 #include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
 #include "wrapper_types.hpp"
+#include "_linalg_bandwidth.h"
 #include "_common_array_utils.hpp"
 
 #include "_linalg_cholesky.hpp"

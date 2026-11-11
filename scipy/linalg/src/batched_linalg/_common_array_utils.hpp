@@ -1,21 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
-#include <complex>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <limits>
-#include <memory>
-#include <new>
-#include <tuple>
-#include <type_traits>
-#include <vector>
-
-#include "_linalg_bandwidth.h"   /* bandwidth_{s,d,c,z} */
-
 namespace sp_linalg {
 
 
