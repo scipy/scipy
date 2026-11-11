@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pyport.h"
 namespace sp_linalg {
 
 
@@ -52,14 +53,26 @@ enum Eigh_driver : Py_ssize_t
     GVX = 12
 };
 
-// Which matrix norm to compute; python side maps to these values
-enum MATRIX_NORM_ORD : Py_ssize_t
+// Which vector norm to compute; python side maps to these values
+enum Vector_norm_ord : Py_ssize_t
 {
-    FRO     = 0,
-    ONE     = 1,
-    NEG_ONE = 2,
-    INF     = 3,
-    NEG_INF = 4,
+    V_ZERO      = 0,
+    V_ONE       = 1,
+    V_NEG_ONE   = 2,
+    V_TWO       = 3,
+    V_NEG_TWO   = 4,
+    V_INF       = 5,
+    V_NEG_INF   = 6,
+};
+
+// Which matrix norm to compute; python side maps to these values
+enum Matrix_norm_ord : Py_ssize_t
+{
+    M_FRO       = 0,
+    M_ONE       = 1,
+    M_NEG_ONE   = 2,
+    M_INF       = 3,
+    M_NEG_INF   = 4,
 };
 
 

@@ -2755,20 +2755,46 @@ class TestVectorNorms:
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
     @pytest.mark.parametrize("n", [0, 5])
+    @pytest.mark.parametrize("ord", [0, 1, -1, 2, -2, np.inf, -np.inf])
     @pytest.mark.parametrize("keepdims", [True, False])
-    def test_shape_dtype(self, dtype, n, keepdims):
+    def test_shape_dtype(self, dtype, n, ord, keepdims):
         rng = np.random.default_rng(seed=123456789)
+        res_dtype = np.finfo(dtype).dtype if dtype != np.int64 else np.dtype("float64")
 
-        a = rng.normal(size=(n, n))
-        if np.isdtype(dtype, "complex floating"):
-            a = a + 1j * rng.normal(size=(n, n))
+        if dtype != np.int64:
+            a = rng.normal(size=(n, n))
+            if np.isdtype(dtype, "complex floating"):
+                a = a + 1j * rng.normal(size=(n, n))
+        else:
+            a = rng.integers(-100, 100, size=(n, n))
         a = np.astype(a, dtype)
 
-        res = vector_norm(a, keepdims=keepdims)
+        res = vector_norm(a, ord=ord, keepdims=keepdims)
 
-        ref = np.sqrt(np.sum(np.abs(a) ** 2))
-        if keepdims:
-            ref = ref.reshape((1, 1))
+        if n == 0:
+            ref = np.zeros((1, 1), dtype=res_dtype) if keepdims else res_dtype.type(0.0)
+        else:
+            if ord == 0:
+                ref = np.sum(a != 0, keepdims=keepdims)
+            elif ord == 1:
+                ref = np.sum(np.abs(a), keepdims=keepdims)
+            elif ord == -1:
+                ref = 1 / np.sum(1 / np.abs(a), keepdims=keepdims)
+            elif ord == 2:
+                ref = np.sqrt(np.sum(np.abs(a) ** 2, keepdims=keepdims))
+            elif ord == -2:
+                ref = 1 / np.sqrt(np.sum(1 / np.abs(a) ** 2, keepdims=keepdims))
+            elif ord == np.inf:
+                ref = np.max(np.abs(a), keepdims=keepdims, initial=0)
+            elif ord == -np.inf:
+                ref = np.min(
+                    np.abs(a),
+                    initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+                    keepdims=keepdims,
+                ) if n != 0 else res_dtype.type(0.0)
+
+        if dtype == np.int64 and ord != 0:
+            ref = np.astype(ref, np.float64)
 
         xp_assert_close(res, ref)
 

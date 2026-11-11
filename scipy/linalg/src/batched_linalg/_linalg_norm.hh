@@ -6,6 +6,54 @@
 namespace sp_linalg {
 
 
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
+    real_of_t<T> res = 0.0;
+
+    for (CBLAS_INT i = 0; i < n; i++) {
+        T data_ij = data[i * incx];
+
+        if constexpr (neg) {
+            res += 1 / std::abs(data_ij);
+        } else {
+            res += std::abs(data_ij);
+        }
+
+    }
+
+    if constexpr (neg) {
+        return 1 / res;
+    } else {
+        return res;
+    }
+}
+
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
+    real_of_t<T> res = 0.0;
+
+    for (CBLAS_INT i = 0; i < n; i++) {
+        T data_ij = data[i * incx];
+        real_of_t<T> data_ij_squared;
+
+        if constexpr (is_complex_v<T>) {
+            data_ij_squared = std::real(data_ij) * std::real(data_ij) + std::imag(data_ij) * std::imag(data_ij);
+        } else {
+            data_ij_squared = data_ij * data_ij;
+        }
+
+        if constexpr (neg) {
+            res += 1 / data_ij_squared;
+        } else {
+            res += data_ij_squared;
+        }
+
+    }
+
+    if constexpr (neg) {
+        return 1 / std::sqrt(res);
+    } else {
+        return std::sqrt(res);
+    }
+}
 
 /*
  * @brief compute the Frobenius norm of a matrix.
@@ -15,17 +63,26 @@ namespace sp_linalg {
  * @param n     The number of columns in the matrix.
  * @param s2    The strides along the row dimension, in elements.
  * @param s1    The strides along the column dimension, in elements.
+ * @param neg   Whether to compute the positive or negative norm.
  */
-template<typename T> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
+template <typename T, bool neg> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
         for (CBLAS_INT j = 0; j < m; j++) {
             T data_ij = data[i * s1 + j * s2];
+            real_of_t<T> data_ij_squared;
+
             if constexpr (is_complex_v<T>) {
-                res += std::real(data_ij) * std::real(data_ij) + std::imag(data_ij) * std::imag(data_ij);
+                data_ij_squared = std::real(data_ij) * std::real(data_ij) + std::imag(data_ij) * std::imag(data_ij);
             } else {
-                res += data_ij * data_ij;
+                data_ij_squared = data_ij * data_ij;
+            }
+
+            if constexpr (neg) {
+                res += 1 / data_ij_squared;
+            } else {
+                res += data_ij_squared;
             }
         }
     }
@@ -44,7 +101,7 @@ template<typename T> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT
  * @param s1    Strides along the column dimension in elements.
  * @param neg   Whether the compute the +1 or -1 norm.
  */
-template<typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
+template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
     real_of_t<T> res;
     if constexpr (neg) {
         res = std::numeric_limits<real_of_t<T>>::infinity();
@@ -70,7 +127,7 @@ template<typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, const
 }
 
 
-template<typename T> int _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, int ord, SliceStatusVec &vec_status) {
+template <typename T> int _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, int ord, SliceStatusVec &vec_status) {
     using real_type = real_of_t<T>;
     int info = 0;
 
@@ -96,15 +153,37 @@ template<typename T> int _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_re
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         // The slices are vectors and `compute_slice_ptr` assumes matrices
         slice_ptr_a = compute_slice_ptr(idx, A_data, ndim + 1, shape, strides);
-        res_data[idx] = _matrix_norm_F(slice_ptr_a, intn, 1, incx, 0);
+
+        switch (ord) {
+            case Vector_norm_ord::V_ONE:
+                res_data[idx] = _vector_norm_1<T, false>(slice_ptr_a, intn, incx);
+                break;
+            case Vector_norm_ord::V_NEG_ONE:
+                res_data[idx] = _vector_norm_1<T, true>(slice_ptr_a, intn, incx);
+                break;
+            case Vector_norm_ord::V_TWO:
+                res_data[idx] = _vector_norm_2<T, false>(slice_ptr_a, intn, incx);
+                break;
+            case Vector_norm_ord::V_NEG_TWO:
+                res_data[idx] = _vector_norm_2<T, true>(slice_ptr_a, intn, incx);
+                break;
+            case Vector_norm_ord::V_INF:
+                res_data[idx] = _matrix_norm_1<T, false>(slice_ptr_a, 1, intn, 0, incx);
+                break;
+            case Vector_norm_ord::V_NEG_INF:
+                res_data[idx] = _matrix_norm_1<T, true>(slice_ptr_a, 1, intn, 0, incx);
+                break;
+            default:
+                return -102;
+        }
+
     }
 
     return info;
 }
 
 
-
-template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_res, MATRIX_NORM_ORD ord) {
+template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_res, Matrix_norm_ord ord) {
     using real_type = real_of_t<T>;
     int info = 0;
 
@@ -135,28 +214,26 @@ template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_r
         slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
 
         switch (ord) {
-            case MATRIX_NORM_ORD::FRO:
-                *res_ptr = _matrix_norm_F(slice_ptr_A, intm, intn, s2, s1);
+            case Matrix_norm_ord::M_FRO:
+                res_ptr[idx] = _matrix_norm_F<T, false>(slice_ptr_A, intm, intn, s2, s1);
                 break;
-            case MATRIX_NORM_ORD::ONE:
-                *res_ptr = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s2, s1);
+            case Matrix_norm_ord::M_ONE:
+                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s2, s1);
                 break;
-            case MATRIX_NORM_ORD::NEG_ONE:
-                *res_ptr = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s2, s1);
+            case Matrix_norm_ord::M_NEG_ONE:
+                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s2, s1);
                 break;
-            case MATRIX_NORM_ORD::INF:
+            case Matrix_norm_ord::M_INF:
                 // Effectively transpose to iterate over rows instead of columns
-                *res_ptr = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s2);
+                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s2);
                 break;
-            case MATRIX_NORM_ORD::NEG_INF:
-                *res_ptr = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s2);
+            case Matrix_norm_ord::M_NEG_INF:
+                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s2);
                 break;
             default:
                 return -102;
         }
 
-        // `res_ptr` is C-ordered by construction and just contains scalars.
-        res_ptr += 1;
     }
 
     return info;
