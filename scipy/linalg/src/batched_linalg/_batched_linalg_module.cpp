@@ -79,26 +79,46 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
 /**
  * @brief Raise the Python exception for a failed batched call.
  *
- * @param status  The failure; any value except BatchStatus::ok.
- * @param func    Public function name used in the message, e.g. "solve".
+ * @param status   The failure; any code except BatchCode::ok.
+ * @param func     Public function name used in the message, e.g. "solve".
+ * @param typenum  NumPy type number of the input; selects the s/d/c/z prefix of the routine.
  * @return NULL, with the exception set.
  */
 static PyObject*
-set_batch_error(const BatchStatus status, const char *func) {
-    switch (status) {
-        case BatchStatus::no_memory:
+set_batch_error(const BatchStatus status, const char *func, const int typenum) {
+    const char flavor = (typenum == NPY_FLOAT32) ? 's' : (typenum == NPY_FLOAT64) ? 'd' :
+                        (typenum == NPY_COMPLEX64) ? 'c' : 'z';
+    const int bits = (int)(8 * sizeof(CBLAS_INT));
+    const char *ilp64 = sizeof(CBLAS_INT) < 8 ? ", hence an ILP64-enabled LAPACK is required" : "";
+    switch (status.code) {
+        case BatchCode::no_memory:
             return PyErr_Format(PyExc_MemoryError, "scipy.linalg.%s: could not allocate memory.", func);
-        case BatchStatus::too_large:
+        case BatchCode::too_large:
+            if (status.routine && status.value < 0) {
+                return PyErr_Format(PyExc_ValueError,
+                    "scipy.linalg.%s: the workspace of %c%s exceeds the range of the %d-bit integers "
+                    "of the LAPACK library%s.", func, flavor, status.routine, bits, ilp64);
+            }
+            if (status.routine) {
+                return PyErr_Format(PyExc_ValueError,
+                    "scipy.linalg.%s: the %lld-element workspace of %c%s exceeds the range of the "
+                    "%d-bit integers of the LAPACK library%s.", func, (long long)status.value, flavor,
+                    status.routine, bits, ilp64);
+            }
             return PyErr_Format(PyExc_ValueError,
-                "scipy.linalg.%s: a dimension or workspace size exceeds the range of the %d-bit "
-                "integers of the LAPACK library%s.", func, (int)(8 * sizeof(CBLAS_INT)),
-                sizeof(CBLAS_INT) < 8 ? ", hence an ILP64-enabled LAPACK is required" : "");
-        case BatchStatus::lapack_error:
+                "scipy.linalg.%s: the dimension %lld exceeds the range of the %d-bit integers of the "
+                "LAPACK library%s.", func, (long long)status.value, bits, ilp64);
+        case BatchCode::lapack_error:
+            if (status.routine) {
+                return PyErr_Format(PyExc_RuntimeError,
+                    "scipy.linalg.%s: the LAPACK routine %c%s rejected its argument %lld.", func, flavor,
+                    status.routine, -(long long)status.value);
+            }
             return PyErr_Format(PyExc_RuntimeError,
                 "scipy.linalg.%s: a LAPACK routine rejected one of its arguments.", func);
-        case BatchStatus::bad_dtype:
+        case BatchCode::bad_dtype:
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
-        case BatchStatus::ok:
+        case BatchCode::ok:
             break;
     }
     return PyErr_Format(PyExc_SystemError, "scipy.linalg.%s: no error to report.", func);
@@ -151,7 +171,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _inverse<T>(ap_Am, static_cast<T *>(PyArray_DATA(ap_Ainv.get())), structure, lower, overwrite_a, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "inv"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "inv", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -239,7 +259,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _solve<T>(ap_Am, ap_b, static_cast<T *>(PyArray_DATA(ap_x.get())), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "solve"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "solve", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -392,7 +412,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _qr<T>(ap_A, ap_Q.get(), ap_R.get(), ap_tau.get(), ap_jpvt.get(), overwrite_a, mode, pivoting, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "qr"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "qr", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -479,7 +499,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _svd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, use_gesdd, overwrite_a, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "svd"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "svd", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -572,7 +592,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _lstsq<T>(ap_Am, ap_b, ap_S.get(), ap_x.get(), ap_rank.get(), rcond, driver, overwrite_a, overwrite_b, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "lstsq"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "lstsq", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -635,7 +655,7 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _eig<T>(ap_Am, ap_Bm, ap_w.get(), ap_beta.get(), ap_vl.get(), ap_vr.get(), overwrite_a, overwrite_b, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "eig"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "eig", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -748,7 +768,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
                         jobz, range, uplo, vl, vu, il, iu, driver, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "eigh"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "eigh", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -801,7 +821,7 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _cholesky<T>(ap_Am, ap_Cm.get(), lower, overwrite_a, clean, vec_status);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "cholesky"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "cholesky", typenum); }
 
     PyObject *ret_lst = convert_vec_status(vec_status);
     if (!ret_lst) { return NULL; }
@@ -877,7 +897,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
                       static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get())), (bool)permute_l, in_place);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "lu"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "lu", typenum); }
 
     if (permute_l) {
         // P is already applied to L. Return an empty array of the same integer type rather
@@ -931,7 +951,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return _det<T>(ap_a, static_cast<det_type_t<T> *>(PyArray_DATA(ap_det.get())), in_place);
     });
     Py_END_ALLOW_THREADS
-    if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "det", typenum); }
 
     return PyArray_Return(ap_det.release());
 }

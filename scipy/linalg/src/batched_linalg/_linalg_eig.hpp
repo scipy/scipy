@@ -91,7 +91,8 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
     const char jobvl = ptr_vl ? 'V' : 'N', jobvr = ptr_vr ? 'V' : 'N';
 
     CBLAS_INT intn, info = 0;
-    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
+    const char *routine = generalized ? "ggev" : "geev";
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
@@ -116,11 +117,12 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
             lapack::geev(jobvl, jobvr, intn, NULL, intn, NULL, NULL, intn, NULL, intn, &tmp, -1, rwork.get(), &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, routine, info}; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
-    CBLAS_INT lwork = _calc_lwork(tmp);
-    if (lwork < 0) { return BatchStatus::too_large; }
+    int64_t size = 0;
+    CBLAS_INT lwork = _calc_lwork(tmp, 1.0, &size);
+    if (lwork < 0) { return {BatchCode::too_large, routine, size}; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -198,7 +200,7 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            return BatchStatus::ok;
+            return {};
         }
 
         // eigenvalues, beta and the transposed eigenvectors go to the C-contiguous outputs
@@ -216,7 +218,7 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
         if (beta) { std::copy_n(beta, n, ptr_beta); ptr_beta += n; }
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 
@@ -279,7 +281,9 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     T *ptr_Z = (jobz != 'N') ? (T *)PyArray_DATA(ap_Z) : NULL;
 
     CBLAS_INT intn, intm, info = 0;
-    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm)) { return BatchStatus::too_large; }
+    if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm)) {
+        return {BatchCode::too_large, nullptr, std::max(n, m)};
+    }
     const CBLAS_INT int_itype = itype, int_il = il + 1, int_iu = iu + 1;   // LAPACK indices are 1-based
     const real_type r_vl = (real_type)vl, r_vu = (real_type)vu, abstol = 0;
 
@@ -287,6 +291,16 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     const bool vectors_in_a = (driver == Eigh_driver::EV || driver == Eigh_driver::EVD ||
                                driver == Eigh_driver::GV || driver == Eigh_driver::GVD);
     const bool expert = (driver == Eigh_driver::EVX || driver == Eigh_driver::GVX);
+    const char *routine = nullptr;
+    switch (driver) {
+        case Eigh_driver::EV:  routine = is_complex_v<T> ? "heev"  : "syev";  break;
+        case Eigh_driver::EVD: routine = is_complex_v<T> ? "heevd" : "syevd"; break;
+        case Eigh_driver::EVR: routine = is_complex_v<T> ? "heevr" : "syevr"; break;
+        case Eigh_driver::EVX: routine = is_complex_v<T> ? "heevx" : "syevx"; break;
+        case Eigh_driver::GV:  routine = is_complex_v<T> ? "hegv"  : "sygv";  break;
+        case Eigh_driver::GVD: routine = is_complex_v<T> ? "hegvd" : "sygvd"; break;
+        case Eigh_driver::GVX: routine = is_complex_v<T> ? "hegvx" : "sygvx"; break;
+    }
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
@@ -298,7 +312,9 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     if ((driver == Eigh_driver::EVD || driver == Eigh_driver::GVD) && jobz == 'V') {
         const std::uint64_t un = n, lwmin = is_complex_v<T> ? un * un + 2 * un : 2 * un * un + 6 * un + 1;
         const std::uint64_t lrwmin = is_complex_v<T> ? 2 * un * un + 5 * un + 1 : 0;
-        if (lwmin > (std::uint64_t)CBLAS_INT_MAX || lrwmin > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        if (lwmin > (std::uint64_t)CBLAS_INT_MAX || lrwmin > (std::uint64_t)CBLAS_INT_MAX) {
+            return {BatchCode::too_large, routine, static_cast<int64_t>(std::max(lwmin, lrwmin))};
+        }
     }
 
     // query lwork; the divide-and-conquer and RRR drivers also report lrwork and liwork
@@ -356,11 +372,12 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
             }
             break;
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, routine, info}; }
 
     // _calc_lwork returns -1 when the queried size does not fit CBLAS_INT
-    CBLAS_INT lwork = _calc_lwork(tmp_work);
-    if (lwork < 0) { return BatchStatus::too_large; }
+    int64_t size = 0;
+    CBLAS_INT lwork = _calc_lwork(tmp_work, 1.0, &size);
+    if (lwork < 0) { return {BatchCode::too_large, routine, size}; }
 
     // real work, complex flavors only: fixed for ev/gv (3n - 2) and evx/gvx (7n), queried otherwise
     std::uint64_t lrwork = 0;
@@ -370,8 +387,8 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
         } else if (expert) {
             lrwork = 7 * (std::uint64_t)n;
         } else {
-            CBLAS_INT queried = _calc_lwork(tmp_rwork);
-            if (queried < 0) { return BatchStatus::too_large; }
+            CBLAS_INT queried = _calc_lwork(tmp_rwork, 1.0, &size);
+            if (queried < 0) { return {BatchCode::too_large, routine, size}; }
             lrwork = queried;
         }
     }
@@ -384,7 +401,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
 
     CBLAS_INT int_lrwork, int_liwork;
     if (!checked_narrow<CBLAS_INT>(lrwork, &int_lrwork) || !checked_narrow<CBLAS_INT>(liwork, &int_liwork)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, routine, static_cast<int64_t>(std::max(lrwork, liwork))};
     }
 
     /*
@@ -499,7 +516,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            return BatchStatus::ok;
+            return {};
         }
 
         if (buf_w) { std::copy_n(buf_w, m, ptr_w); }
@@ -521,7 +538,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
         *m_found = intm;
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

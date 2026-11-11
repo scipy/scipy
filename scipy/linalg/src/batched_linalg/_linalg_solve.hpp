@@ -316,7 +316,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
 
     CBLAS_INT intn, int_nrhs;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, nullptr, std::max(n, nrhs)};
     }
 
     // Bandwidth detection per slice. Required to first do a pass to find the
@@ -334,7 +334,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
     detect_bandwidths<T>(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
     // every slice's ldab = 2*kl + ku + 1 <= ldab_max is passed to LAPACK
-    if (ldab_max > CBLAS_INT_MAX) { return BatchStatus::too_large; }
+    if (ldab_max > CBLAS_INT_MAX) { return {BatchCode::too_large, nullptr, ldab_max}; }
 
     /*
      * Chop up buffer in parts:
@@ -382,7 +382,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
         solve_slice_banded(trans, intn, int_nrhs, ab, ipiv.get(), b_data, work, irwork.get(),
                            (CBLAS_INT)kls[idx], (CBLAS_INT)kus[idx], slice_status);
 
-        if (_detect_problems(slice_status, vec_status) != 0) { return BatchStatus::ok; }
+        if (_detect_problems(slice_status, vec_status) != 0) { return {}; }
 
         if (!overwrite_b) {
             // Put result in C-order in return buffer
@@ -390,7 +390,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
         } // If `overwrite_b` is true the result is already set.
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 template<typename T>
@@ -438,21 +438,22 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
     // --------------------------------------------------------------------
     CBLAS_INT intn, int_nrhs, info = 0;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, nullptr, std::max(n, nrhs)};
     }
 
     T tmp = 0.0;
     lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, "sytrf", info}; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
-    CBLAS_INT lwork_sytrf = _calc_lwork(tmp);
-    if (lwork_sytrf < 0) { return BatchStatus::too_large; }
+    int64_t size_sytrf = 0;
+    CBLAS_INT lwork_sytrf = _calc_lwork(tmp, 1.0, &size_sytrf);
+    if (lwork_sytrf < 0) { return {BatchCode::too_large, "sytrf", size_sytrf}; }
 
-    // gecon needs lwork of at least 4*n
+    // gecon needs lwork of at least 4*n; the queried size fits, so only that can fail here
     CBLAS_INT lwork;
     if (!checked_narrow<CBLAS_INT>(std::max(4 * (std::uint64_t)n, (std::uint64_t)lwork_sytrf), &lwork)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, "gecon", 4 * (int64_t)n};
     }
 
     /*
@@ -568,7 +569,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
                 solve_slice_diagonal(intn, int_nrhs, data, data_b, slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
                     // fail fast and loud
-                    return BatchStatus::ok;
+                    return {};
                 }
                 break;
             }
@@ -576,7 +577,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
             {
                 solve_slice_tridiag(intn, int_nrhs, data, ipiv.get(), trans, data_b, work, work2, irwork.get(), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
                 break;
             }
@@ -586,7 +587,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
                 char diag = 'N';
                 solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork.get(), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
                 break;
             }
@@ -621,7 +622,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
             {
                 solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv.get(), work, irwork.get(), lwork, (is_symm && !is_herm), slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
                 break;
             }
@@ -630,7 +631,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
                 // general matrix solve
                 solve_slice_general(intn, int_nrhs, data, ipiv.get(), data_b, trans, irwork.get(), work, slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
             }
         }
@@ -641,7 +642,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
         }
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 

@@ -231,24 +231,28 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     CBLAS_INT intn, info = 0;
-    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
 
     T tmp = 0.0;
+    int64_t size_getri = 0, size_sytrf = 0;
     lapack::getri(intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_error; }
-    CBLAS_INT lwork_getri = _calc_lwork(tmp, 1.01);
+    if (info != 0) { return {BatchCode::lapack_error, "getri", info}; }
+    CBLAS_INT lwork_getri = _calc_lwork(tmp, 1.01, &size_getri);
 
     lapack::sytrf(uplo, intn, NULL, intn, NULL, &tmp, -1, &info);
-    if (info != 0) { return BatchStatus::lapack_error; }
-    CBLAS_INT lwork_sytrf = _calc_lwork(tmp);
+    if (info != 0) { return {BatchCode::lapack_error, "sytrf", info}; }
+    CBLAS_INT lwork_sytrf = _calc_lwork(tmp, 1.0, &size_sytrf);
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
-    if ((lwork_getri < 0) || (lwork_sytrf < 0)) { return BatchStatus::too_large; }
+    if ((lwork_getri < 0) || (lwork_sytrf < 0)) {
+        const bool getri = lwork_getri < 0;
+        return {BatchCode::too_large, getri ? "getri" : "sytrf", getri ? size_getri : size_sytrf};
+    }
 
-    // gecon needs lwork of at least 4*n
+    // gecon needs lwork of at least 4*n; the queried sizes fit, so only that can fail here
     CBLAS_INT lwork;
     if (!checked_narrow<CBLAS_INT>(std::max({4 * (std::uint64_t)n, (std::uint64_t)lwork_getri, (std::uint64_t)lwork_sytrf}), &lwork)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, "gecon", 4 * (int64_t)n};
     }
 
     /*
@@ -379,7 +383,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
                 invert_slice_diagonal(intn, data, slice_status);
                 if (_detect_problems(slice_status, vec_status) != 0) {
                     // fail fast and loud
-                    return BatchStatus::ok;
+                    return {};
                 }
                 break;
             }
@@ -390,7 +394,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
                 invert_slice_triangular(uplo, diag, intn, data, work, irwork.get(), slice_status);
 
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
                 zero_other_triangle(uplo, data, intn);
                 break;
@@ -435,7 +439,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
                 }
 
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
 
                 if constexpr (!is_complex_v<T>) {
@@ -459,7 +463,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
                 invert_slice_general(intn, data, ipiv.get(), irwork.get(), work, lwork, slice_status);
 
                 if (_detect_problems(slice_status, vec_status) != 0) {
-                    return BatchStatus::ok;
+                    return {};
                 }
             }
         } // end of `switch(slice_structure)`
@@ -470,7 +474,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
         }
     } // end of `for(idx=...)`
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

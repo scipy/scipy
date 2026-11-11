@@ -163,7 +163,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
 
     CBLAS_INT m, n;
     if (!checked_narrow<CBLAS_INT>(shape[ndim - 2], &m) || !checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, nullptr, std::max(shape[ndim - 2], shape[ndim - 1])};
     }
     const npy_intp mn = m < n ? m : n;
 
@@ -181,10 +181,10 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
 
         CBLAS_INT info = lu_decompose(f_buf, l_out + idx * m * mn, u_out + idx * mn * n,
                                       ipiv.get(), perm + idx * m, m, n, permute_l);
-        if (info < 0) { return BatchStatus::lapack_error; }
+        if (info < 0) { return {BatchCode::lapack_error, "getrf", info}; }
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 
@@ -213,7 +213,7 @@ _det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool in_place)
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
 
     CBLAS_INT n;
-    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) { return BatchStatus::too_large; }
+    if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) { return {BatchCode::too_large, nullptr, shape[ndim - 1]}; }
 
     // the count is bounded by an existing array, so it is exact in 64 bits
     auto scratch = alloc_workspace<T>(in_place ? 0 : (std::uint64_t)n * n);
@@ -229,10 +229,10 @@ _det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool in_place)
 
         CBLAS_INT info = 0;
         det_out[idx] = det_from_lu(f_buf, ipiv.get(), n, &info);
-        if (info < 0) { return BatchStatus::lapack_error; }
+        if (info < 0) { return {BatchCode::lapack_error, "getrf", info}; }
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

@@ -32,7 +32,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, const bool lower, const bo
     // Workspace computation and allocation
     //--------------------------------------------------------------------
     CBLAS_INT intn, info = 0;
-    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
 
     // byte strides of the input slices
     npy_intp s0 = strides[ndim-2];
@@ -99,7 +99,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, const bool lower, const bo
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            return BatchStatus::ok;
+            return {};
         }
 
         if (overwrite_a && clean) {
@@ -108,7 +108,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, const bool lower, const bo
 
     } // end of batching loop
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

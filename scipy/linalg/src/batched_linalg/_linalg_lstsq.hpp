@@ -61,8 +61,9 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     CBLAS_INT intm, intn, int_nrhs, ldb;
     if (!checked_narrow<CBLAS_INT>(m, &intm) || !checked_narrow<CBLAS_INT>(n, &intn) ||
         !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs) || !checked_narrow<CBLAS_INT>(max_mn > 1 ? max_mn : 1, &ldb)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, nullptr, std::max(max_mn, nrhs)};
     }
+    const char *routine = (driver == LstsqDriver::gelsd) ? "gelsd" : (driver == LstsqDriver::gelsy) ? "gelsy" : "gelss";
     const CBLAS_INT lda = intm > 1 ? intm : 1;
     const real_type r_rcond = (real_type)rcond;
     CBLAS_INT rank = 0, info = 0;
@@ -101,7 +102,7 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
             need = std::max(need, uldb*unrhs + 4*umx + uk);
             if (lq_path) { need = std::max(need, um*um + 4*um + std::max({um, unrhs, un}) + um*unrhs); }
         }
-        if (need > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        if (need > (std::uint64_t)CBLAS_INT_MAX) { return {BatchCode::too_large, routine, static_cast<int64_t>(need)}; }
     }
 
     // outputs; S is NULL for gelsy
@@ -139,18 +140,19 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
             }
             break;
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, routine, info}; }
 
     // _calc_lwork returns -1 when the queried size does not fit CBLAS_INT
-    CBLAS_INT lwork = _calc_lwork(tmp);
-    if (lwork < 0) { return BatchStatus::too_large; }
+    int64_t size = 0;
+    CBLAS_INT lwork = _calc_lwork(tmp, 1.0, &size);
+    if (lwork < 0) { return {BatchCode::too_large, routine, size}; }
 
     // real work for the complex flavors: gelsd reports it, gelsy needs 2n and gelss 5 min(m, n)
     std::uint64_t rwork_size = 0;
     if constexpr (is_complex_v<T>) {
         if (driver == LstsqDriver::gelsd) {
-            CBLAS_INT lrwork = _calc_lwork(tmp_rwork);
-            if (lrwork < 0) { return BatchStatus::too_large; }
+            CBLAS_INT lrwork = _calc_lwork(tmp_rwork, 1.0, &size);
+            if (lrwork < 0) { return {BatchCode::too_large, routine, size}; }
             rwork_size = lrwork;
         } else {
             rwork_size = (driver == LstsqDriver::gelsy) ? 2 * (std::uint64_t)n : 5 * (std::uint64_t)min_mn;
@@ -234,7 +236,7 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            return BatchStatus::ok;
+            return {};
         }
 
         // the F-ordered solution goes to the C-ordered output unless it was computed in place in b
@@ -247,7 +249,7 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
         ptr_rank += 1;
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

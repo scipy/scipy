@@ -107,8 +107,10 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm) ||
         !checked_narrow<CBLAS_INT>(u_shape0 == 0 ? 1 : u_shape0, &ldu) ||
         !checked_narrow<CBLAS_INT>(vh_shape0 == 0 ? 1 : vh_shape0, &ldvh)) {
-        return BatchStatus::too_large;
+        // ldu <= m and ldvh <= n
+        return {BatchCode::too_large, nullptr, max_mn};
     }
+    const char *routine = use_gesdd ? "gesdd" : "gesvd";
 
     T *ptr_U = u_shape0 > 0 ? (T *)PyArray_DATA(ap_U) : NULL;
     T *ptr_Vh = vh_shape0 > 0 ? (T *)PyArray_DATA(ap_Vh) : NULL;
@@ -126,13 +128,18 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         // ?gesdd evaluates its workspace in CBLAS_INT, already in the workspace query; with
         // vectors the largest of those sizes is the minimum of its path, quadratic in min(m, n)
         if constexpr (!is_complex_v<T>) {
-            if (gesdd_min_lwork<real_type>(m, n, jobz) > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+            const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, jobz);
+            if (min_lwork > (std::uint64_t)CBLAS_INT_MAX) {
+                return {BatchCode::too_large, routine, static_cast<int64_t>(min_lwork)};
+            }
         }
         if constexpr (is_complex_v<T>) {
             // without vectors LAPACK <= 3.6 needs 7*min(m, n), later versions 5*min(m, n)
             rwork_size = (jobz == 'N') ? 7 * k : std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
             // ?gesdd addresses rwork with CBLAS_INT offsets
-            if (rwork_size > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+            if (rwork_size > (std::uint64_t)CBLAS_INT_MAX) {
+                return {BatchCode::too_large, routine, static_cast<int64_t>(rwork_size)};
+            }
         }
     } else {
         if constexpr (is_complex_v<T>) { rwork_size = 5 * k; }
@@ -154,11 +161,12 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
             lapack::gesvd(jobz, jobz, intm, intn, NULL, intm, NULL, NULL, ldu, NULL, ldvh, &tmp, -1, NULL, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, routine, info}; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
-    CBLAS_INT lwork = _calc_lwork(tmp);
-    if (lwork < 0) { return BatchStatus::too_large; }
+    int64_t size = 0;
+    CBLAS_INT lwork = _calc_lwork(tmp, 1.0, &size);
+    if (lwork < 0) { return {BatchCode::too_large, routine, size}; }
 
     /*
      * Allocate memory and chop the buffer into parts
@@ -224,7 +232,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
             vec_status.push_back(slice_status);
 
             // cut it short on error in any slice
-            return BatchStatus::ok;
+            return {};
         }
 
         // copy-and-transpose U and Vh slices from temp buffers to the output;
@@ -241,7 +249,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         ptr_S += min_mn;
     }
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg

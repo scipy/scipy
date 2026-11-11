@@ -14,16 +14,26 @@ using lapack::irwork_t;
 
 
 /**
- * @brief Outcome of a whole batched call, as opposed to the per-slice SliceStatus.
- *
- * A failing slice does not fail the call: drivers record it in the SliceStatusVec and return ok.
+ * @brief Kind of failure of a whole batched call.
  */
-enum class BatchStatus {
+enum class BatchCode {
     ok,
     no_memory,            ///< A workspace allocation failed.
     too_large,            ///< A dimension or workspace size passed to LAPACK does not fit CBLAS_INT.
     lapack_error,         ///< A LAPACK routine rejected an argument (info < 0).
     bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
+};
+
+
+/**
+ * @brief Outcome of a whole batched call, as opposed to the per-slice SliceStatus.
+ *
+ * A failing slice does not fail the call: drivers record it in the SliceStatusVec and return ok.
+ */
+struct BatchStatus {
+    BatchCode code = BatchCode::ok;
+    const char *routine = nullptr;   ///< LAPACK routine without its s/d/c/z prefix; nullptr for a dimension.
+    int64_t value = 0;               ///< too_large: the size that does not fit, -1 if unknown; lapack_error: info.
 };
 
 
@@ -106,8 +116,8 @@ bool checked_narrow(const From v, To *out) noexcept
  *                 dispatched.
  * @param f        Callable invoked as `f(f32{})`, `f(f64{})`, `f(c64{})` or `f(c128{})`, returning a
  *                 BatchStatus; it may throw std::bad_alloc, e.g. from alloc_workspace.
- * @return The result of @p f; BatchStatus::bad_dtype for any other @p typenum;
- *         BatchStatus::no_memory if @p f throws std::bad_alloc.
+ * @return The result of @p f; BatchCode::bad_dtype for any other @p typenum;
+ *         BatchCode::no_memory if @p f throws std::bad_alloc.
  */
 template <class F>
 BatchStatus dispatch_dtype(const int typenum, F &&f) noexcept
@@ -118,10 +128,10 @@ BatchStatus dispatch_dtype(const int typenum, F &&f) noexcept
             case NPY_FLOAT64:    return f(f64{});
             case NPY_COMPLEX64:  return f(c64{});
             case NPY_COMPLEX128: return f(c128{});
-            default:             return BatchStatus::bad_dtype;
+            default:             return {BatchCode::bad_dtype};
         }
     } catch (const std::bad_alloc &) {
-        return BatchStatus::no_memory;
+        return {BatchCode::no_memory};
     }
 }
 
@@ -231,9 +241,13 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  *
  *  A fudge factor of 1% was added in commit https://github.com/scipy/scipy/commit/dfb543c147c
  *  to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
+ *
+ *  Returns -1 when the size does not fit CBLAS_INT. If `size` is not null it then receives the
+ *  refused size: INT64_MAX for values beyond it, -1 for NaN or negative values, whose size is
+ *  unknown.
  */
 template<typename T>
-CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0) {
+CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0, int64_t *size=nullptr) {
     // 2**digits is one above the largest CBLAS_INT and exact in either precision, so the values
     // strictly below it, and only those, convert to CBLAS_INT without overflow
     const f64 limit = std::ldexp(1.0, std::numeric_limits<CBLAS_INT>::digits);
@@ -241,13 +255,16 @@ CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0) {
     // In double, so that the fudge factor cannot push a float out of range. Every value outside
     // [0, limit), NaN and infinities included, is refused before any conversion.
     f64 value = static_cast<f64>(std::real(_lwrk)) * fudge_factor;
-    if (!(value >= 0 && value < limit)) { return -1; }
-
     if constexpr (std::is_same_v<real_of_t<T>, f32>) {
         // Single-precision routine -- take next fp value to work
         // around possible truncation in LAPACK code
-        value = std::nextafter(static_cast<f32>(value), std::numeric_limits<f32>::infinity());
-        if (!(value < limit)) { return -1; }
+        if (value >= 0 && value < limit) {
+            value = std::nextafter(static_cast<f32>(value), std::numeric_limits<f32>::infinity());
+        }
+    }
+    if (!(value >= 0 && value < limit)) {
+        if (size) { *size = !(value >= 0) ? -1 : (value < 0x1p63) ? static_cast<int64_t>(value) : INT64_MAX; }
+        return -1;
     }
     return value > 0 ? static_cast<CBLAS_INT>(value) : 1;
 }

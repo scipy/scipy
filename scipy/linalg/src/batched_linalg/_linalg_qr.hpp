@@ -52,13 +52,15 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // -------------------------------------------------------------------
     CBLAS_INT intn, intm, info = 0;
     if (!checked_narrow<CBLAS_INT>(N, &intn) || !checked_narrow<CBLAS_INT>(M, &intm)) {
-        return BatchStatus::too_large;
+        return {BatchCode::too_large, nullptr, std::max(N, M)};
     }
     CBLAS_INT K = std::min(intn, intm), max_dim = std::max(intn, intm);
     CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW_MODE) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
+    const char *factor_routine = pivoting ? "geqp3" : "geqrf";
+    const char *gqr_routine = is_complex_v<T> ? "ungqr" : "orgqr";
     T tmp_factor = 0.0;
     T tmp_or_un_gqr = 0.0;
     CBLAS_INT lwork = -1;
@@ -72,7 +74,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, factor_routine, info}; }
 
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -82,16 +84,22 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
         }
     }
-    if (info != 0) { return BatchStatus::lapack_error; }
+    if (info != 0) { return {BatchCode::lapack_error, gqr_routine, info}; }
 
     // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
-    CBLAS_INT lwork_factor = _calc_lwork(tmp_factor);
-    CBLAS_INT lwork_or_un_gqr = _calc_lwork(tmp_or_un_gqr);
-    if ((lwork_factor < 0) || (lwork_or_un_gqr < 0)) { return BatchStatus::too_large; }
+    int64_t size_factor = 0, size_or_un_gqr = 0;
+    CBLAS_INT lwork_factor = _calc_lwork(tmp_factor, 1.0, &size_factor);
+    CBLAS_INT lwork_or_un_gqr = _calc_lwork(tmp_or_un_gqr, 1.0, &size_or_un_gqr);
+    if ((lwork_factor < 0) || (lwork_or_un_gqr < 0)) {
+        const bool factor = lwork_factor < 0;
+        return {BatchCode::too_large, factor ? factor_routine : gqr_routine, factor ? size_factor : size_or_un_gqr};
+    }
     lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
     // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
-    if (pivoting && (3 * (std::uint64_t)N + 1 > (std::uint64_t)CBLAS_INT_MAX)) { return BatchStatus::too_large; }
+    if (pivoting && (3 * (std::uint64_t)N + 1 > (std::uint64_t)CBLAS_INT_MAX)) {
+        return {BatchCode::too_large, "geqp3", 3 * (int64_t)N + 1};
+    }
 
     /*
      * Allocate buffer and slice into parts
@@ -213,7 +221,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            return BatchStatus::ok;
+            return {};
         }
 
         // `R` is always required, the correct shape is ensured by `middle_dim`.
@@ -240,7 +248,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             if (info != 0) {
                 slice_status.lapack_info = (Py_ssize_t)info;
                 vec_status.push_back(slice_status);
-                return BatchStatus::ok;
+                return {};
             }
 
             if (!overwrite_a || mode == QR_mode::FULL) {
@@ -252,7 +260,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     } // End of batching loop
 
-    return BatchStatus::ok;
+    return {};
 }
 
 } // namespace sp_linalg
