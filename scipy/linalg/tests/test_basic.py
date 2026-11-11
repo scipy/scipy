@@ -3274,3 +3274,27 @@ class TestNonNativeInput:
             _internal_matfuncs.matrix_exponential(a)
         with pytest.raises(_internal_matfuncs.error, match="native byte order"):
             _internal_matfuncs.recursive_schur_sqrtm(a)
+
+
+@pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")
+@pytest.mark.parametrize("func", ["inv", "det", "cholesky", "lu", "qr", "svd", "eig",
+                                  "eigh", "solve", "lstsq"])
+def test_output_allocation_error_from_numpy(func):
+    # The 2**55 x 2 x 2 output cannot be allocated; NumPy's MemoryError, which states
+    # the requested size, reaches the caller unchanged.
+    a = np.broadcast_to(np.eye(2), (2**55, 2, 2))
+    b = np.broadcast_to(np.ones((2, 1)), (2**55, 2, 1))
+    calls = {
+        "inv": lambda: inv(a, check_finite=False),
+        "det": lambda: det(a, check_finite=False),
+        "cholesky": lambda: cholesky(a, check_finite=False),
+        "lu": lambda: lu(a, check_finite=False),
+        "qr": lambda: qr(a, check_finite=False),
+        "svd": lambda: svd(a, check_finite=False),
+        "eig": lambda: eig(a, check_finite=False),
+        "eigh": lambda: eigh(a, check_finite=False),
+        "solve": lambda: solve(a, b, check_finite=False),
+        "lstsq": lambda: lstsq(a, b, check_finite=False),
+    }
+    with pytest.raises(MemoryError, match="Unable to allocate"):
+        calls[func]()

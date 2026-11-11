@@ -82,12 +82,10 @@ set_batch_error(BatchStatus status, const char *func) {
         case BatchStatus::too_large:
             return PyErr_Format(PyExc_ValueError,
                 "scipy.linalg.%s: a dimension or workspace size exceeds the range of the %d-bit "
-                "integers of the LAPACK library%s.", func, (int)(8 * sizeof(CBLAS_INT)),
-                sizeof(CBLAS_INT) < 8 ? "; SciPy built with ILP64 support can handle it" : "");
+                "integers of the LAPACK library.", func, (int)(8 * sizeof(CBLAS_INT)));
         case BatchStatus::lapack_error:
             return PyErr_Format(PyExc_RuntimeError,
-                "scipy.linalg.%s: a LAPACK routine rejected one of its arguments. This is a bug in "
-                "SciPy, please report it.", func);
+                "scipy.linalg.%s: a LAPACK routine rejected one of its arguments.", func);
         case BatchStatus::bad_dtype:
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
         case BatchStatus::ok:
@@ -133,7 +131,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
     else {
         ap_Ainv.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, typenum));
-        if (!ap_Ainv) { return PyErr_NoMemory(); }
+        if (!ap_Ainv) { return NULL; }
     }
 
     BatchStatus status;
@@ -216,7 +214,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
     else {
         ap_x.reset((PyArrayObject *)PyArray_SimpleNew(ndim_b, shape_b, typenum));
-        if (!ap_x) { return PyErr_NoMemory(); }
+        if (!ap_x) { return NULL; }
     }
 
     BatchStatus status;
@@ -327,7 +325,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (mode != QR_mode::R) {
         if (!overwrite_a || mode == QR_mode::FULL) {
             ap_Q.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_Q, typenum));
-            if (!ap_Q) { return PyErr_NoMemory(); }
+            if (!ap_Q) { return NULL; }
         } else {
             Py_INCREF(ap_A);
             ap_Q.reset(ap_A);
@@ -337,7 +335,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (mode == QR_mode::RAW_MODE || mode == QR_mode::ECONOMIC || (!overwrite_a && (mode == QR_mode::R || mode == QR_mode::FULL))) {
         // Return C-ordered object, hence `0` flag. Already pre-fill with zeros for efficiency.
         ap_R.reset((PyArrayObject *)PyArray_ZEROS(ndim, shape_R, typenum, 0));
-        if (!ap_R) { return PyErr_NoMemory(); }
+        if (!ap_R) { return NULL; }
     } else {
         Py_INCREF(ap_A);
         ap_R.reset(ap_A);
@@ -346,7 +344,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (mode == QR_mode::RAW_MODE) {
         shape_Q[ndim-2] = K; // Just reuse `shape_Q`; not used any longer.
         ap_tau.reset((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_Q, typenum)); // Just a vector, so `ndim-1`.
-        if (!ap_tau) { return PyErr_NoMemory(); }
+        if (!ap_tau) { return NULL; }
 
         /*
          * Since the point of the `Q` returned if `mode="raw"` is mostly to call other LAPACK routines (e.g. `qr_multiply`),
@@ -372,7 +370,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (pivoting) {
         shape_Q[ndim-2] = N;
         ap_jpvt.reset((PyArrayObject *)PyArray_ZEROS(ndim-1, shape_Q, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32, 0));
-        if (!ap_jpvt) { return PyErr_NoMemory(); }
+        if (!ap_jpvt) { return NULL; }
     }
 
     BatchStatus status;
@@ -440,7 +438,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
     shape_1[ndim - 2] = k;
     OwnedArray ap_S((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S));
-    if (!ap_S) { return PyErr_NoMemory(); }
+    if (!ap_S) { return NULL; }
 
     char jobz = compute_uv ? (full_matrices ? 'A' : 'S') : 'N';
 
@@ -454,12 +452,12 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
         shape_1[ndim-2] = u_shape0;
         shape_1[ndim-1] = u_shape1;
         ap_U.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
-        if (!ap_U) { return PyErr_NoMemory(); }
+        if (!ap_U) { return NULL; }
 
         shape_1[ndim-2] = vh_shape0;
         shape_1[ndim-1] = vh_shape1;
         ap_Vh.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
-        if (!ap_Vh) { return PyErr_NoMemory(); }
+        if (!ap_Vh) { return NULL; }
     }
 
     BatchStatus status;
@@ -543,12 +541,12 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         int typenum_S = (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
         shape_1[ndim - 2] = min_mn;
         ap_S.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, typenum_S));
-        if (!ap_S) { return PyErr_NoMemory(); }
+        if (!ap_S) { return NULL; }
     }
 
     // rank has the batch shape
     OwnedArray ap_rank((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape_1, NPY_INT64));
-    if (!ap_x || !ap_rank) { return PyErr_NoMemory(); }
+    if (!ap_x || !ap_rank) { return NULL; }
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
@@ -611,7 +609,7 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (ap_Bm) { ap_beta.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, typenum)); }
     if (compute_vl) { ap_vl.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
     if (compute_vr) { ap_vr.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
-    if (!ap_w || (ap_Bm && !ap_beta) || (compute_vl && !ap_vl) || (compute_vr && !ap_vr)) { return PyErr_NoMemory(); }
+    if (!ap_w || (ap_Bm && !ap_beta) || (compute_vl && !ap_vl) || (compute_vr && !ap_vr)) { return NULL; }
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
@@ -722,7 +720,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
             ap_Z.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
         }
     }
-    if (!ap_w || (jobz != 'N' && !ap_Z)) { return PyErr_NoMemory(); }
+    if (!ap_w || (jobz != 'N' && !ap_Z)) { return NULL; }
 
     npy_intp m_found = m;
     BatchStatus status;
@@ -776,7 +774,7 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
     else {
         ap_Cm.reset((PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0));
-        if (!ap_Cm) { return PyErr_NoMemory(); }
+        if (!ap_Cm) { return NULL; }
     }
 
     BatchStatus status;
@@ -849,7 +847,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     u_shape[ndim - 2] = minmn;
     OwnedArray ap_l((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
     OwnedArray ap_u((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
-    if (!ap_perm || !ap_l || !ap_u) { return PyErr_NoMemory(); }
+    if (!ap_perm || !ap_l || !ap_u) { return NULL; }
 
     // A 2-D F-contiguous writeable input is the getrf workspace itself: no copy is made.
     bool in_place = overwrite_a && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a);
@@ -869,7 +867,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
         // return type is always three arrays.
         npy_intp zero = 0;
         ap_perm.reset((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
-        if (!ap_perm) { return PyErr_NoMemory(); }
+        if (!ap_perm) { return NULL; }
     }
     return Py_BuildValue("NNN", PyArray_Return(ap_perm.release()),
                                 PyArray_Return(ap_l.release()),
@@ -902,7 +900,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // one determinant per slice, so the batch dimensions only; double precision for single precision input
     int det_typenum = (typenum == NPY_FLOAT32) ? NPY_FLOAT64 : (typenum == NPY_COMPLEX64) ? NPY_COMPLEX128 : typenum;
     OwnedArray ap_det((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, det_typenum));
-    if (!ap_det) { return PyErr_NoMemory(); }
+    if (!ap_det) { return NULL; }
 
     // A 2-D contiguous writeable input is the getrf workspace itself; det(A^T) = det(A), so
     // either order works.
@@ -970,7 +968,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     OwnedArray ap_lb((PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64));
     OwnedArray ap_ub((PyArrayObject *)PyArray_SimpleNew(batch_ndim, shape, NPY_INT64));
-    if (!ap_lb || !ap_ub) { return PyErr_NoMemory(); }
+    if (!ap_lb || !ap_ub) { return NULL; }
 
     int64_t *lb_data = static_cast<int64_t *>(PyArray_DATA(ap_lb.get()));
     int64_t *ub_data = static_cast<int64_t *>(PyArray_DATA(ap_ub.get()));

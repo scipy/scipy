@@ -41,7 +41,7 @@ enum class BatchStatus {
     ok,
     no_memory,            ///< A workspace allocation failed.
     too_large,            ///< A dimension or workspace size passed to LAPACK does not fit CBLAS_INT.
-    lapack_error,         ///< A LAPACK routine rejected an argument (info < 0): a bug in SciPy, not bad input.
+    lapack_error,         ///< A LAPACK routine rejected an argument (info < 0).
     bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
 };
 
