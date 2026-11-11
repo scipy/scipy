@@ -553,8 +553,11 @@ class LinprogCommonTests:
             [8, 10, 4, 0, 0, -1]]
         b = [185, 155, 600]
         maxiter = 3
-        res = linprog(c, A_eq=A, b_eq=b, method=self.method,
-                      options={"maxiter": maxiter})
+        options = {"maxiter": maxiter}
+        if self.method.startswith("highs"):
+            # HiGHS presolve can reduce the problem to < maxiter iterations
+            options["presolve"] = False
+        res = linprog(c, A_eq=A, b_eq=b, method=self.method, options=options)
         _assert_iteration_limit_reached(res, maxiter)
         assert_equal(res.nit, maxiter)
 
