@@ -30,6 +30,11 @@ namespace lapack {
     using wrapper::c64;
     using wrapper::c128;
 
+    /* Element type of the `irwork` array that the ?con, ?rfs and expert-driver routines take:
+     * an integer IWORK in the real flavors, a real RWORK in the complex ones. */
+    template <class T>
+    using irwork_t = std::conditional_t<wrapper::is_complex_v<T>, wrapper::real_of_t<T>, CBLAS_INT>;
+
     extern "C" {
         void BLAS_FUNC(sgees)(char *, char *, CBLAS_INT (*)(f32 *, f32 *), CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, f32 *, f32 *, f32 *, CBLAS_INT *, f32 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);
         void BLAS_FUNC(dgees)(char *, char *, CBLAS_INT (*)(f64 *, f64 *), CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, f64 *, f64 *, f64 *, CBLAS_INT *, f64 *, CBLAS_INT *, CBLAS_INT *, CBLAS_INT *);

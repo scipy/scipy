@@ -10,10 +10,7 @@ using wrapper::c128;
 using wrapper::real_of_t;
 using wrapper::complex_of_t;
 using wrapper::is_complex_v;
-
-
-// `*con` routines need iwork for real flavors and rwork for complex ones.
-template <class T> using irwork_t = typename std::conditional<is_complex_v<T>, real_of_t<T>, CBLAS_INT>::type;
+using lapack::irwork_t;
 
 
 /**
