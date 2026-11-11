@@ -289,7 +289,9 @@ def matrix_norm(a, keepdims=False, ord="fro", check_finite=True):
     order = {
         "fro"   : 0,
         1       : 1,
-        np.inf  : 2,
+        -1      : 2,
+        np.inf  : 3,
+        -np.inf : 4,
     }.get(ord, None)
 
     a1 = _asarray_validated(a, check_finite=check_finite)

@@ -723,7 +723,7 @@ class TestBatch:
             linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
 
     @pytest.mark.parametrize("dtype", floating)
-    @pytest.mark.parametrize("ord", ["fro", 1, np.inf])
+    @pytest.mark.parametrize("ord", ["fro", 1, -1, np.inf, -np.inf])
     @pytest.mark.parametrize("keepdims", [True, False])
     def test_matrix_norm(self, dtype, ord, keepdims):
         rng = np.random.default_rng(8342310302941288912051)
