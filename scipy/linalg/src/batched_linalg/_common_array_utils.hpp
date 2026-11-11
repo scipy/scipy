@@ -234,27 +234,22 @@ _detect_problems(const SliceStatus& slice_status, SliceStatusVec& vec_status) {
  */
 template<typename T>
 CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0) {
-    using real_type = real_of_t<T>;
-
-    real_type value = std::real(_lwrk) * fudge_factor;
-    if (std::is_same<real_type, f32>::value) {
-        // Single-precision routine -- take next fp value to work
-        // around possible truncation in LAPACK code
-        value = std::nextafter(value, std::numeric_limits<real_type>::infinity());
-    }
-
-    CBLAS_INT lwork;
     // 2**digits is one above the largest CBLAS_INT and exact in either precision, so the values
     // strictly below it, and only those, convert to CBLAS_INT without overflow
-    const real_type limit = std::ldexp(real_type(1), std::numeric_limits<CBLAS_INT>::digits);
-    if ((value < 0) || !(value < limit)) {
-        // Too large lwork required - Computation cannot be performed with standard LAPACK
-        lwork = -1;
+    const f64 limit = std::ldexp(1.0, std::numeric_limits<CBLAS_INT>::digits);
+
+    // In double, so that the fudge factor cannot push a float out of range. Every value outside
+    // [0, limit), NaN and infinities included, is refused before any conversion.
+    f64 value = static_cast<f64>(std::real(_lwrk)) * fudge_factor;
+    if (!(value >= 0 && value < limit)) { return -1; }
+
+    if constexpr (std::is_same_v<real_of_t<T>, f32>) {
+        // Single-precision routine -- take next fp value to work
+        // around possible truncation in LAPACK code
+        value = std::nextafter(static_cast<f32>(value), std::numeric_limits<f32>::infinity());
+        if (!(value < limit)) { return -1; }
     }
-    else {
-        lwork = value > 0 ? (CBLAS_INT)value : 1;
-    }
-    return lwork;
+    return value > 0 ? static_cast<CBLAS_INT>(value) : 1;
 }
 
 
