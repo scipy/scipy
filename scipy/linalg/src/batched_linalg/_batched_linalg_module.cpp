@@ -991,12 +991,12 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int64_t *lb_data = static_cast<int64_t *>(PyArray_DATA(ap_lb.get()));
     int64_t *ub_data = static_cast<int64_t *>(PyArray_DATA(ap_ub.get()));
-    const char *a_data = static_cast<const char *>(PyArray_DATA(ap_a));
+    char *a_data = PyArray_BYTES(ap_a);
 
     auto each_slice = [&](auto tag) {
         using T = decltype(tag);
         for (npy_intp idx = 0; idx < num_slices; idx++) {
-            const T *slice_ptr = reinterpret_cast<const T *>(compute_slice_ptr(idx, a_data, ndim, shape, strides));
+            const T *slice_ptr = compute_slice_ptr<const T>(idx, a_data, ndim, shape, strides);
             bandwidth_slice(slice_ptr, n, m, s0, s1, &lb_data[idx], &ub_data[idx]);
         }
     };

@@ -264,23 +264,23 @@ CBLAS_INT _calc_lwork(T _lwrk, f64 fudge_factor=1.0) {
 /**
  * @brief Pointer to the first element of the idx-th 2-D slice of an array of ndim >= 2.
  *
+ * @tparam T       Element type; may be const.
  * @param idx      Slice index in C order over the leading ndim - 2 dimensions.
- * @param data     First element of the array; may point to const.
+ * @param data     The array's PyArray_BYTES.
  * @param ndim     Number of dimensions.
  * @param shape    Shape of the array.
  * @param strides  Byte strides of the array.
- * @return @p data advanced by the byte offset of the slice.
+ * @return @p data advanced by the byte offset of the slice, as a pointer to T.
  */
 template<typename T>
-T* compute_slice_ptr(npy_intp idx, T *data, npy_intp ndim, const npy_intp *shape, const npy_intp *strides) {
+T* compute_slice_ptr(npy_intp idx, char *data, npy_intp ndim, const npy_intp *shape, const npy_intp *strides) {
     npy_intp offset = 0;
     npy_intp temp_idx = idx;
     for (int i = ndim - 3; i >= 0; i--) {
         offset += (temp_idx % shape[i]) * strides[i];
         temp_idx /= shape[i];
     }
-    using byte_t = std::conditional_t<std::is_const_v<T>, const char, char>;
-    return reinterpret_cast<T *>(reinterpret_cast<byte_t *>(data) + offset);
+    return reinterpret_cast<T *>(data + offset);
 }
 
 
@@ -619,9 +619,9 @@ bandwidth_slice(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int
 
 template<typename T>
 void
-detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, int64_t *kl, int64_t *ku, int64_t *ldab_max) {
+detect_bandwidths(char *data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, int64_t *kl, int64_t *ku, int64_t *ldab_max) {
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        T* slice_ptr = compute_slice_ptr(idx, data, ndim, shape, strides);
+        T* slice_ptr = compute_slice_ptr<T>(idx, data, ndim, shape, strides);
 
         bandwidth_slice(slice_ptr, shape[ndim-2], shape[ndim-1], strides[ndim-2], strides[ndim-1], &kl[idx], &ku[idx]);
         if (2 * kl[idx] + ku[idx] + 1 > *ldab_max) {

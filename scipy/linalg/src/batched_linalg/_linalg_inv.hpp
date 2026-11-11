@@ -215,7 +215,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
@@ -311,7 +311,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      * A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
      */
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+        T *slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
 
         if (!overwrite_a) {
             copy_strided_to_f(data, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);

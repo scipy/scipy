@@ -14,7 +14,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     //-------------------------------------------------------------------
     // Input array attributes
     //-------------------------------------------------------------------
-    T *Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     npy_intp ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
@@ -83,10 +83,10 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
         // Ensure data is in the correct triangle of the F-ordered input data_a
         if (!overwrite_a) {
             data_a = &ret_data[idx * n * n];
-            T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            T *slice_ptr_A = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
             copy_triangle_to_C(data_a, slice_ptr_A, n, n, s0, s1, lower ? 'L' : 'U');
         } else {
-            data_a = Am_data;
+            data_a = static_cast<T *>(PyArray_DATA(ap_Am));
         }
         // NB. `overwrite_a` is only enabled when the input is 2D contiguous so
         // data is already correctly ordered in input array. If generalized to

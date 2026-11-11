@@ -82,7 +82,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp m = shape[ndim - 2];                // Slice size
@@ -186,7 +186,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     // partition the workspace
     T *cursor = buf.get();
     T *work = cursor; cursor += lwork;
-    T *data = Am_data;
+    T *data = static_cast<T *>(PyArray_DATA(ap_Am));
     if (!overwrite_a) { data = cursor; cursor += data_size; }
     T *buf_U = NULL, *buf_Vh = NULL;
     if (jobz != 'N') { buf_U = cursor; cursor += u_size; buf_Vh = cursor; }
@@ -200,7 +200,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
 
         if (!overwrite_a) {
             // copy the slice to `data` in F order
-            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            T *slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
             copy_strided_to_f(data, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
 

@@ -296,7 +296,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
     // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
@@ -308,7 +308,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    T *bm_data = (T *)PyArray_DATA(ap_b);
+    char *bm_data = PyArray_BYTES(ap_b);
     npy_intp ndim_b = PyArray_NDIM(ap_b);
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
@@ -331,7 +331,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     int64_t ldab_max = 0;
     int64_t *kls = ks.get();
     int64_t *kus = ks.get() + outer_size;
-    detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
+    detect_bandwidths<T>(Am_data, ndim, outer_size, shape, strides, kls, kus, &ldab_max);
 
     // every slice's ldab = 2*kl + ku + 1 <= ldab_max is passed to LAPACK
     if (ldab_max > CBLAS_INT_MAX) { return BatchStatus::too_large; }
@@ -357,20 +357,20 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     T *cursor = buffer.get();
     T *ab = cursor;   cursor += ab_count;
     T *work = cursor; cursor += work_count;
-    T *b_data = overwrite_b ? bm_data : cursor;
+    T *b_data = overwrite_b ? static_cast<T *>(PyArray_DATA(ap_b)) : cursor;
 
     // Main loop traversal, taken from `_solve`
     // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
-        T* slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+        T* slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
 
         // Directly take into banded storage
         npy_intp ldab = 2 * kls[idx] + kus[idx] + 1;
         to_banded(slice_ptr, n, kls[idx], kus[idx], ldab, ab, strides[ndim-2], strides[ndim-1]);
 
         if (!overwrite_b) {
-            T* slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
+            T* slice_ptr_b = compute_slice_ptr<T>(idx, bm_data, ndim, shape_b, strides_b);
             copy_strided_to_f(b_data, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
         // NB. `overwrite_b` is only set when the input is 2D F-ordered, so no copy needed then.
@@ -414,7 +414,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
-    T* Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
@@ -426,7 +426,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    T *bm_data = (T *)PyArray_DATA(ap_b);
+    char *bm_data = PyArray_BYTES(ap_b);
     npy_intp ndim_b = PyArray_NDIM(ap_b);
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
@@ -475,7 +475,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::uint64_t)n);   // {ge,po,tr}con need rwork or iwork
 
     T *cursor = buffer.get();
-    T *data = Am_data, *data_b = ret_data;
+    T *data = static_cast<T *>(PyArray_DATA(ap_Am)), *data_b = ret_data;
     if (!overwrite_a) { data = cursor; cursor += nn; }
     if (!overwrite_b) { data_b = cursor; cursor += nb; }
     T *work2 = cursor; cursor += n2;
@@ -501,7 +501,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // Main loop to traverse the slices
     // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+        T *slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
 
         if (!overwrite_a) {
             // copy the slice
@@ -510,7 +510,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
         if (!overwrite_b) {
             // copy the r.h.s, too;
-            T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim_b, shape_b, strides_b);
+            T *slice_ptr_b = compute_slice_ptr<T>(idx, bm_data, ndim_b, shape_b, strides_b);
             copy_strided_to_f(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1], n);
         }
 

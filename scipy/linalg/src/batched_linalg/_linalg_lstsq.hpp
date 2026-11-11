@@ -41,14 +41,14 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     // --------------------------------------------------------------------
     // Input array attributes
     // --------------------------------------------------------------------
-    T *Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp m = shape[ndim - 2], n = shape[ndim - 1];
 
     // the entry point checked that a and b share ndim and the batch shape
-    T *bm_data = (T *)PyArray_DATA(ap_b);
+    char *bm_data = PyArray_BYTES(ap_b);
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = shape_b[ndim - 1];
@@ -182,9 +182,9 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     // partition the workspace; overwrite_x inputs are 2-D F-contiguous and already in place
     T *cursor = buf.get();
     T *work = cursor; cursor += lwork;
-    T *data_a = Am_data;
+    T *data_a = static_cast<T *>(PyArray_DATA(ap_Am));
     if (!overwrite_a) { data_a = cursor; cursor += data_a_size; }
-    T *data_b = bm_data;
+    T *data_b = static_cast<T *>(PyArray_DATA(ap_b));
     if (!overwrite_b) { data_b = cursor; }
 
     // --------------------------------------------------------------------
@@ -195,12 +195,12 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
         init_status(slice_status, idx, St::GENERAL);
 
         if (!overwrite_a) {
-            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            T *slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
             copy_strided_to_f(data_a, slice_ptr, m, n, strides[ndim-2], strides[ndim-1], m);
         }
         if (!overwrite_b) {
             // the solvers need ldb = max(1, m, n): b fills the first m rows, x the first n
-            T *slice_ptr_b = compute_slice_ptr(idx, bm_data, ndim, shape_b, strides_b);
+            T *slice_ptr_b = compute_slice_ptr<T>(idx, bm_data, ndim, shape_b, strides_b);
             copy_strided_to_f(data_b, slice_ptr_b, m, nrhs, strides_b[ndim-2], strides_b[ndim-1], ldb);
         }
 

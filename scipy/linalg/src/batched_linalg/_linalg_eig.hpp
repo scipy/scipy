@@ -70,14 +70,14 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
     // --------------------------------------------------------------------
     // Input array attributes
     // --------------------------------------------------------------------
-    T *Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp n = shape[ndim - 1];
 
     const bool generalized = (ap_Bm != NULL);
-    T *Bm_data = generalized ? (T *)PyArray_DATA(ap_Bm) : NULL;
+    char *Bm_data = generalized ? PyArray_BYTES(ap_Bm) : NULL;
     npy_intp *strides_B = generalized ? PyArray_STRIDES(ap_Bm) : NULL;
 
     npy_intp outer_size = 1;
@@ -154,9 +154,9 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
     if (wi_size) { wi = cursor; cursor += wi_size; }
     T *beta = NULL;
     if (beta_size) { beta = cursor; cursor += beta_size; }
-    T *data_A = Am_data;
+    T *data_A = static_cast<T *>(PyArray_DATA(ap_Am));
     if (!overwrite_a) { data_A = cursor; cursor += a_size; }
-    T *data_B = Bm_data;
+    T *data_B = generalized ? static_cast<T *>(PyArray_DATA(ap_Bm)) : NULL;
     if (b_size) { data_B = cursor; cursor += b_size; }
     T *buf_vl = NULL;
     if (vl_size) { buf_vl = cursor; cursor += vl_size; }
@@ -171,11 +171,11 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
         init_status(slice_status, idx, St::GENERAL);
 
         if (!overwrite_a) {
-            T *slice_ptr = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            T *slice_ptr = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
             copy_strided_to_f(data_A, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
         }
         if (b_size) {
-            T *slice_ptr = compute_slice_ptr(idx, Bm_data, ndim, shape, strides_B);
+            T *slice_ptr = compute_slice_ptr<T>(idx, Bm_data, ndim, shape, strides_B);
             copy_strided_to_f(data_B, slice_ptr, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
         }
 
@@ -260,7 +260,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     // --------------------------------------------------------------------
     // Input array attributes
     // --------------------------------------------------------------------
-    T *A_data = (T *)PyArray_DATA(ap_Am);
+    char *A_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
@@ -268,7 +268,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     const npy_intp m = (range == 'I') ? iu - il + 1 : n;   // eigenvalues per slice in the outputs
 
     const bool generalized = (ap_Bm != NULL);
-    T *B_data = generalized ? (T *)PyArray_DATA(ap_Bm) : NULL;
+    char *B_data = generalized ? PyArray_BYTES(ap_Bm) : NULL;
     npy_intp *strides_B = generalized ? PyArray_STRIDES(ap_Bm) : NULL;
 
     npy_intp outer_size = 1;
@@ -410,9 +410,9 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     T *work = cursor; cursor += lwork;
     T *buf_Z = NULL;
     if (z_size) { buf_Z = cursor; cursor += z_size; }
-    T *buf_A = A_data;
+    T *buf_A = static_cast<T *>(PyArray_DATA(ap_Am));
     if (!overwrite_a) { buf_A = cursor; cursor += a_size; }
-    T *buf_B = B_data;
+    T *buf_B = generalized ? static_cast<T *>(PyArray_DATA(ap_Bm)) : NULL;
     if (b_size) { buf_B = cursor; }
 
     real_type *rcursor = rbuf.get();
@@ -433,11 +433,11 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
         init_status(slice_status, idx, St::GENERAL);
 
         if (!overwrite_a) {
-            T *slice_ptr = compute_slice_ptr(idx, A_data, ndim, shape, strides);
+            T *slice_ptr = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
             copy_strided_to_f(buf_A, slice_ptr, n, n, strides[ndim-2], strides[ndim-1], n);
         }
         if (b_size) {
-            T *slice_ptr = compute_slice_ptr(idx, B_data, ndim, shape, strides_B);
+            T *slice_ptr = compute_slice_ptr<T>(idx, B_data, ndim, shape, strides_B);
             copy_strided_to_f(buf_B, slice_ptr, n, n, strides_B[ndim-2], strides_B[ndim-1], n);
         }
         real_type *w = buf_w ? buf_w : ptr_w;   // LAPACK writes n eigenvalues; the output holds m

@@ -152,7 +152,7 @@ template<typename T>
 BatchStatus
 _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bool in_place)
 {
-    T *a_data = (T *)PyArray_DATA(ap_a);
+    char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *strides = PyArray_STRIDES(ap_a);
@@ -172,7 +172,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
     auto ipiv = alloc_workspace<CBLAS_INT>(mn);
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
+        T *slice_ptr = compute_slice_ptr<T>(idx, a_data, ndim, shape, strides);
         T *f_buf = slice_ptr;
         if (!in_place) {
             copy_strided_to_f(scratch.get(), slice_ptr, m, n, s0, s1, m);
@@ -203,7 +203,7 @@ template<typename T>
 BatchStatus
 _det(PyArrayObject *ap_a, det_type_t<T> *det_out, bool in_place)
 {
-    T *a_data = (T *)PyArray_DATA(ap_a);
+    char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *strides = PyArray_STRIDES(ap_a);
@@ -220,7 +220,7 @@ _det(PyArrayObject *ap_a, det_type_t<T> *det_out, bool in_place)
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
+        T *slice_ptr = compute_slice_ptr<T>(idx, a_data, ndim, shape, strides);
         T *f_buf = slice_ptr;
         if (!in_place) {
             copy_strided_to_f(scratch.get(), slice_ptr, n, n, s0, s1, n);

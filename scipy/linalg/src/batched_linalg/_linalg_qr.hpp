@@ -15,33 +15,32 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // ------------------------------------------------------------------------
     // Input array attributes, some bookkeeping due to conditional allocations
     // ------------------------------------------------------------------------
-    T *A_data = (T *)PyArray_DATA(ap_Am);
+    char *A_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp M = shape[ndim-2];
     npy_intp N = shape[ndim-1];
 
-    T *R_data = (T *)PyArray_DATA(ap_R);
+    char *R_data = PyArray_BYTES(ap_R);
     npy_intp *strides_R = PyArray_STRIDES(ap_R);
 
     // Conditional allocations based on the mode; not all data is always available.
-    T *Q_data = NULL, *tau_data = NULL;
-    CBLAS_INT *jpvt_data = NULL;
+    char *Q_data = NULL, *tau_data = NULL, *jpvt_data = NULL;
     npy_intp *strides_Q = NULL, *strides_tau = NULL, *strides_jpvt = NULL;
 
     if (mode != QR_mode::R) {
-        Q_data = (T *)PyArray_DATA(ap_Q);
+        Q_data = PyArray_BYTES(ap_Q);
         strides_Q = PyArray_STRIDES(ap_Q);
     }
 
     if (mode == QR_mode::RAW_MODE) {
-        tau_data = (T *)PyArray_DATA(ap_tau);
+        tau_data = PyArray_BYTES(ap_tau);
         strides_tau = PyArray_STRIDES(ap_tau);
     }
 
     if (pivoting) {
-        jpvt_data = (CBLAS_INT *)PyArray_DATA(ap_jpvt);
+        jpvt_data = PyArray_BYTES(ap_jpvt);
         strides_jpvt = PyArray_STRIDES(ap_jpvt);
     }
 
@@ -157,21 +156,21 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // less, however, the looping to compute the slices should traverse the same number of dimensions.
         // Hence, the use of `ndim` instead of `ndim-1`. Similarly, the shapes of `Q` and `R` might differ,
         // but only the batching ones are relevant, which are identical.
-        slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
+        slice_ptr_A = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
         if (!(mode == QR_mode::R && overwrite_a)) {
-            slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
+            slice_ptr_R = compute_slice_ptr<T>(idx, R_data, ndim, shape, strides_R);
         } // NB. if the condition is true the relevant buffer is already in place and no copy back is needed either.
 
         if (mode != QR_mode::R) {
-            slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
+            slice_ptr_Q = compute_slice_ptr<T>(idx, Q_data, ndim, shape, strides_Q);
         }
         if (mode == QR_mode::RAW_MODE) {
-            slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
+            slice_ptr_tau = compute_slice_ptr<T>(idx, tau_data, ndim, shape, strides_tau);
         } else { // `tau` might still be required for computation of `Q`, but should not be returned, so the temporary buffer is sufficient.
             slice_ptr_tau = tau_buffer;
         }
         if (pivoting) {
-            slice_ptr_jpvt = compute_slice_ptr(idx, jpvt_data, ndim, shape, strides_jpvt);
+            slice_ptr_jpvt = compute_slice_ptr<CBLAS_INT>(idx, jpvt_data, ndim, shape, strides_jpvt);
         }
 
         /*
