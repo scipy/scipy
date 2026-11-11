@@ -186,6 +186,37 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
 
 def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
+    """
+    Specialized implementation of vector norm.
+
+    Parameters
+    ----------
+    a : array_like
+        The input array.
+
+    axis : {int, tuple of ints, None}, optional
+        The axes to treat as one single vector. None implies the entire array is
+        treated as a single vector.
+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one. With this option the result will
+        broadcast correctly against the original `a`.
+
+    ord : {inf, -inf, int, float}, optional
+        Which order of the norm to compute.
+
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    n : float or ndarray
+        Vector norm of the input array, dimensions of the output are determined by
+        the option keepdims.
+    """
     a1 = _asarray_validated(a, check_finite=check_finite)
     _deprecate_dtypes("vector_norm", a1)
     a1, _ = _normalize_lapack_dtype(a1, False)
@@ -227,6 +258,33 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
 
 
 def matrix_norm(a, keepdims=False, ord="fro", check_finite=True):
+    """
+    Specialized implementation of matrix norm.
+
+    Parameters
+    ----------
+    a : array_like
+        The input array.
+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one. With this option the result will
+        broadcast correctly against the original `a`.
+
+    ord : {inf, -inf, int, float, "fro", "nuc"}, optional
+        Which order of the norm to compute.
+
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    n : float or ndarray
+        Vector norm of the input array, dimensions of the output are determined by
+        the option keepdims.
+    """
     # keep in sync with the C++ side
     order = {
         "fro"   : 0,
