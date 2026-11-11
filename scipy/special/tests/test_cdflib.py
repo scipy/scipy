@@ -972,7 +972,12 @@ class TestStudentT:
         (10, -8.109742389861548e+29, 1.0000000001178707e-295)
     ])
     def test_gh25968(self, df, t, cdf_ref):
+        # gh25968 reported wrong quantiles in the extreme left tail
         assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-6)
+
+    def test_gh25667(self):
+        # gh25667 reported incorrect cdf values for very small t with df=1
+        assert_allclose(sp.stdtr(1, 1e-10), 0.50000000003183099, rtol=1e-14)
 
 
 @pytest.mark.parametrize("a, b, p, ref", [
