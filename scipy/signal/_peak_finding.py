@@ -728,7 +728,7 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
 
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5,
-               plateau_size=None):
+               plateau_size=None, wrap=False):
     """
     Find peaks inside a signal based on peak properties.
 
@@ -780,6 +780,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         if supplied as the maximal required plateau size.
 
         .. versionadded:: 1.2.0
+    wrap : bool, optional
+        If True, treat `x` as if it were arranged in a circle.
+        Use for signals with periodic boundary conditions or
+        when peaks are at beginning or end of the array.
+
+        .. versionadded:: 2.0.0
 
     Returns
     -------
@@ -940,6 +946,23 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
+    x_size = x.size
+    if wrap:
+        min_idx = np.argmin(x) # Find index of global minimum
+        idx = np.arange(x_size)
+        # Rotate indicies of array so global min is at the start and end of array
+        rotated_idx = (np.arange(x_size + 1) + min_idx) % x_size
+
+        # Rotate array-valued conditions
+        conditions = [height, threshold, prominence, width, plateau_size]
+        for i, c in enumerate(conditions):
+            if c is not None:
+                conditions[i] = _unpack_condition_args(c, x, rotated_idx)
+        height, threshold, prominence, width, plateau_size = conditions
+
+        # Rotate original array via indicies
+        x = x[rotated_idx]
+
     peaks, left_edges, right_edges = _local_maxima_1d(x)
     properties = {}
 
@@ -975,7 +998,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if distance is not None:
         # Evaluate distance condition
-        keep = _select_by_peak_distance(peaks, x[peaks], distance)
+        keep = _select_by_peak_distance(peaks, x[peaks], distance, x_size, wrap)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
@@ -1006,6 +1029,19 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         keep = _select_by_property(properties['widths'], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
+
+    if wrap:
+        # Calculate original peaks from rotated indices
+        peaks = (peaks + min_idx) % x_size
+        for key in ("left_edges", "right_edges", "left_bases",
+                    "right_bases", "left_ips", "right_ips"):
+                if key in properties:
+                    properties[key] = (properties[key] + min_idx) % x_size
+
+        # Rotate peaks and properties back to original order
+        order = np.argsort(peaks)
+        peaks = peaks[order]
+        properties = {key: val[order] for key, val in properties.items()}
 
     return peaks, properties
 
