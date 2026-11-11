@@ -728,6 +728,16 @@ class TestNoncentralTFunctions:
             atol=1e-11, rtol=0
         )
 
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (36927.726327192555, 22.657510627430774, -1.9600282275330887,
+         4.1656076955530763e-134),
+        (24661.95794984711, 19.630953694774004, -1.9600601807012346,
+         1.1113682575781306e-103),
+        (1000, 23, -1, 1.6147146123955216e-127)
+    ])
+    def test_gh25470(self, df, nc, x, expected_cdf):
+        assert_allclose(sp.nctdtr(df, nc, x), expected_cdf, rtol=1e-13)
+
 
 class TestNegativeBinomialFunctions:
 
