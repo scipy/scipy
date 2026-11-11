@@ -91,7 +91,8 @@ set_batch_error(const BatchStatus status, const char *func) {
         case BatchStatus::too_large:
             return PyErr_Format(PyExc_ValueError,
                 "scipy.linalg.%s: a dimension or workspace size exceeds the range of the %d-bit "
-                "integers of the LAPACK library.", func, (int)(8 * sizeof(CBLAS_INT)));
+                "integers of the LAPACK library%s.", func, (int)(8 * sizeof(CBLAS_INT)),
+                sizeof(CBLAS_INT) < 8 ? ", hence an ILP64-enabled LAPACK is required" : "");
         case BatchStatus::lapack_error:
             return PyErr_Format(PyExc_RuntimeError,
                 "scipy.linalg.%s: a LAPACK routine rejected one of its arguments.", func);

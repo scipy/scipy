@@ -313,7 +313,8 @@ def expm(A):
     if info != 0:
         if info == -10:
             raise ValueError("scipy.linalg.expm: the matrix size exceeds the range "
-                             "of the 32-bit integers of the LAPACK library.")
+                             "of the 32-bit integers of the LAPACK library, hence "
+                             "an ILP64-enabled LAPACK is required.")
         if info <= -11:
             # We raise it from failed mallocs; negative LAPACK codes > -7
             raise MemoryError("scipy.linalg.expm could not allocate "
