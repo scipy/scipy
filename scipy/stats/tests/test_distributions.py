@@ -5179,6 +5179,14 @@ class TestBeta:
                           Beta(a=a[3], b=b[3]).entropy()])
         assert_allclose(res, ref)
 
+    @pytest.mark.parametrize("q, a, b, ref",
+                             [(1e-09, 0.5, 2, 4.444444444444445e-19),
+                              (1e-16, 0.5, 3, 2.8444444444444443e-33),
+                              (1e-120, 2, 10, 1.3483997249264842e-61),
+                              (1e-300, 2, 1e6, 1.4142128552668442e-156),
+                              (1e-200, 5, 2, 6.9882711877157924e-41)])
+    def test_gh26531(self, q, a, b, ref):
+        assert_allclose(stats.beta(a, b).ppf(q), ref, rtol=1e-13)
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
