@@ -889,8 +889,8 @@ class TestFindPeaks:
                         check_dtype=False)
 
         # Ensure that array valued height works
-        xp_assert_equal(find_peaks(x, height=np.array([5, 1, 1, 3, 0, 3, 0]), wrap=True)[0], np.array([0, 5]),
-                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=np.array([5, 1, 1, 3, 0, 3, 0]),
+                        wrap=True)[0], np.array([0, 5]), check_dtype=False)
 
     def test_threshold_condition_wrap(self):
         """
@@ -915,8 +915,9 @@ class TestFindPeaks:
         x = np.array([2., 0., 3., 1., 1.])
 
         # Peaks 0 and 2 are distance 2 apart
-        xp_assert_equal(find_peaks(x, distance=2, wrap=True)[0], np.array([0, 2]), check_dtype=False)
-        # Filter out the smaller peak at index 0 since distance between it and index 2 is < 3
+        xp_assert_equal(find_peaks(x, distance=2, wrap=True)[0], np.array([0, 2]),
+                        check_dtype=False)
+        # Filter out the smaller peak at index 0
         xp_assert_equal(find_peaks(x, distance=3, wrap=True)[0], np.array([2]),
                         check_dtype=False)
 

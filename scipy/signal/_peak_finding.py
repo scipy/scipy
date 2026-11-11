@@ -949,7 +949,6 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     x_size = x.size
     if wrap:
         min_idx = np.argmin(x) # Find index of global minimum
-        idx = np.arange(x_size)
         # Rotate indicies of array so global min is at the start and end of array
         rotated_idx = (np.arange(x_size + 1) + min_idx) % x_size
 
