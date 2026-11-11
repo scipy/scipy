@@ -1,0 +1,2 @@
+merge cupdlp.h glbopts.h cupdlp_defs.h cupdlp_step.c cupdlp_utils.c cupdlp_linalg.h cupdlp_linalg.c > merge.c
+merge /home/jajhall/cuPDLP-C/cupdlp/cupdlp.h /home/jajhall/cuPDLP-C/cupdlp/glbopts.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_defs.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_step.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_utils.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_linalg.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_linalg.c > cuPDLP-C_merge.c
