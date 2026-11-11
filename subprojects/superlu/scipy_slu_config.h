@@ -4,7 +4,10 @@
 #include <stdlib.h>
 
 /*
- * Support routines
+ * Support routines: route SuperLU's allocation and abort through Python.
+ * These are implemented by the `_superlu` extension module, in
+ * `scipy/sparse/linalg/_dsolve/_superlu_utils.c`, and resolved when it links
+ * against this library.
  */
 void superlu_python_module_abort(char *msg);
 void *superlu_python_module_malloc(size_t size);

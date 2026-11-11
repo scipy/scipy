@@ -17,7 +17,7 @@
 #include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
-#include "SuperLU/SRC/superlu_enum_consts.h"
+#include "superlu_enum_consts.h"
 
 
 /*
