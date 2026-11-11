@@ -313,8 +313,11 @@ template<typename T>
 void copy_strided_to_f(T *dst, const T *src, npy_intp m, npy_intp n, npy_intp s0, npy_intp s1, npy_intp ld) noexcept
 {
     const char *base = reinterpret_cast<const char *>(src);
-    // walk the source along its smaller stride
-    if (std::abs(s1) <= std::abs(s0)) {
+    // Walk the source along its smaller stride. The magnitudes are unsigned: NumPy accepts any
+    // stride for a dimension of length 1, INT64_MIN included, and std::abs of it is undefined.
+    std::uint64_t abs_s0 = s0 < 0 ? 0 - static_cast<std::uint64_t>(s0) : static_cast<std::uint64_t>(s0);
+    std::uint64_t abs_s1 = s1 < 0 ? 0 - static_cast<std::uint64_t>(s1) : static_cast<std::uint64_t>(s1);
+    if (abs_s1 <= abs_s0) {
         for (npy_intp i = 0; i < m; i++) {
             const char *src_row = base + i * s0;
             for (npy_intp j = 0; j < n; j++) {
