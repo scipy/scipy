@@ -1,0 +1,12 @@
+diff cupdlp_restart.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_restart.h
+diff cupdlp_restart.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_restart.c
+diff cupdlp_proj.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_proj.h
+diff cupdlp_proj.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_proj.c
+diff cupdlp_cs.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_cs.h
+diff cupdlp_cs.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_cs.c
+diff cupdlp_scaling_cuda.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_scaling_cuda.h
+diff cupdlp_scaling_cuda.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_scaling_cuda.c
+diff cupdlp_solver.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_solver.h
+diff cupdlp_solver.c /home/jajhall/cuPDLP-C/cupdlp/cupdlp_solver.c
+diff cupdlp_utils.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_utils.h
+diff cupdlp_step.h /home/jajhall/cuPDLP-C/cupdlp/cupdlp_step.h
