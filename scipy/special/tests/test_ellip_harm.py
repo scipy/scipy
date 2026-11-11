@@ -2,6 +2,7 @@
 # Tests for the Ellipsoidal Harmonic Function,
 # Distributed under the same license as SciPy itself.
 #
+import pytest
 import warnings
 
 import numpy as np
@@ -9,6 +10,8 @@ from numpy.testing import assert_equal, assert_allclose, assert_
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
 from scipy.integrate import IntegrationWarning
+from scipy._lib._array_api import make_xp_pytest_param, xp_assert_close
+
 from numpy import sqrt, pi
 
 
@@ -283,3 +286,35 @@ def test_ellip_harm_invalid_p():
     p = 2*n + 2
     result = ellip_harm(0.5, 2.0, n, p, 0.2)
     assert np.isnan(result)
+
+
+@pytest.mark.parametrize(
+    "func, has_s",
+    [
+        make_xp_pytest_param(ellip_harm, True),
+        make_xp_pytest_param(ellip_harm_2, True),
+        make_xp_pytest_param(ellip_normal, False),
+    ],
+)
+@pytest.mark.skip_xp_backends("dask.array", reason="fails to find correct output shape")
+def test_support_alternative_backends(xp, func, has_s):
+    h2 = np.array([[5.0], [6.0]])
+    k2 = np.array(8.0)
+    n = np.array([[1, 2, 2]], dtype=np.int32)
+    p = np.array([[1, 2, 3]], dtype=np.int32)
+    s = np.array([[10.0], [11.0]])
+
+    args = (h2, k2, n, p)
+    if has_s:
+        args += (s,)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The occurrence of roundoff error", IntegrationWarning
+        )
+        expected = func(*args)
+        xp_args = [xp.asarray(a) for a in args]
+        result = func(*xp_args)
+
+    expected = xp.asarray(expected)
+    xp_assert_close(result, expected, rtol=1e-12)
