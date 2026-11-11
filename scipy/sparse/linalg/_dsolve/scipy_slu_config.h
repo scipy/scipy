@@ -33,21 +33,4 @@ void superlu_python_module_free(void *ptr);
 #endif
 #endif
 
-/*
- * Fortran configuration
- */
-#if defined(NO_APPEND_FORTRAN)
-#if defined(UPPERCASE_FORTRAN)
-#define UpCase 1
-#else
-#define NoChange 1
-#endif
-#else
-#if defined(UPPERCASE_FORTRAN)
-#error Uppercase and trailing slash in Fortran names not supported
-#else
-#define Add_ 1
-#endif
-#endif
-
 #endif
