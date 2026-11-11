@@ -2,17 +2,9 @@ This directory contains a bundled version of SuperLU from
 https://github.com/xiaoyeli/superlu at
 commit a8d2543611ba38b129b619751ca2a7284e624a07.
 We use all .c and .h files except `mc64ad.c` which is license
-incompatible from the SRC folder and applied
-the patches from `scipychanges.patch` and `scipychanges_blas.patch`.
+incompatible from the SRC folder.
 
-To verify that the patch file is up-to-date, copy over the clean
-upstream sources, remove any files that aren't present upstream at all,
-and then apply it:
-
-```
-cp ~/code/tmp/superlu/SRC/* scipy/sparse/linalg/_dsolve/SuperLU/SRC/
-patch -p1 < scipy/sparse/linalg/_dsolve/SuperLU/scipychanges.patch
-patch -p1 < scipy/sparse/linalg/_dsolve/SuperLU/scipychanges_blas.patch
-```
-
-After that, `git diff` should show nothing changed.
+SciPy-specific configuration (allocators, BLAS integer type and BLAS symbol
+renaming) is injected via `../scipy_superlu_config.h`, which meson copies to
+`superlu_config.h` in the build directory in place of the header SuperLU would
+normally generate from `superlu_config.h.in`.
