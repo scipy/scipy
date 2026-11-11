@@ -839,7 +839,7 @@ static PyObject*
 _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_av = NULL;
     PyArrayObject *ap_res = NULL;
-    CBLAS_INT ord = 2;
+    Vector_norm_ord ord = Vector_norm_ord::V_TWO;
 
     int info = 0;
     SliceStatusVec vec_status;
@@ -850,10 +850,6 @@ _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Sanity check input
     if (!_check_dtype_and_flags(ap_av, "vector_norm", 1)) {
-        return NULL;
-    }
-
-    if (ord != 2) { // Only `ord == 2` is supported
         return NULL;
     }
 
@@ -902,7 +898,7 @@ static PyObject *
 _linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
     PyArrayObject *ap_res = NULL;
-    MATRIX_NORM_ORD ord = MATRIX_NORM_ORD::FRO;
+    Matrix_norm_ord ord = Matrix_norm_ord::M_FRO;
 
     int info = 0;
 
