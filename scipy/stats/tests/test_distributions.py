@@ -9752,7 +9752,6 @@ class TestNonCentralF:
         calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
         assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
 
-
     def test_ncf_variance(self):
         # Regression test for gh-10658 (incorrect variance formula for ncf).
         # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
@@ -9763,7 +9762,6 @@ class TestNonCentralF:
         v = stats.ncf.var(2, 6, 4)
         assert_allclose(v, 42.75, rtol=1e-14)
 
-
     def test_ncf_cdf_spotcheck(self):
         # Regression test for gh-15582 testing against values from R/MATLAB
         # Generate check_val from R or MATLAB as follows:
@@ -9773,7 +9771,6 @@ class TestNonCentralF:
         check_val = 0.998921
         assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
-
     def test_ncf_ppf_issue_17026(self):
         # Regression test for gh-17026
         x = np.linspace(0, 1, 600)
@@ -9782,6 +9779,13 @@ class TestNonCentralF:
         q = stats.ncf.ppf(x, *par)
         q0 = [stats.ncf.ppf(xi, *par) for xi in x]
         assert_allclose(q, q0)
+
+    def test_gh26188(self):
+        ncf_dist = stats.ncf(dfn=2, dfd=6, nc=0)
+        f_dist = stats.f(dfn=2, dfd=6)
+        x = np.logspace(-2, 10, 10)
+        assert_allclose(ncf_dist.sf(x), f_dist.sf(x), rtol=1e-13)
+        assert_allclose(ncf_dist.cdf(x), f_dist.cdf(x), rtol=1e-13)
 
 
 class TestHistogram:
