@@ -20,6 +20,7 @@ at the top-level directory.
  * </pre>
  */
 #include <math.h>
+#include "superlu_config.h"
 #include "slu_Cnames.h"
 #include "slu_dcomplex.h"
 

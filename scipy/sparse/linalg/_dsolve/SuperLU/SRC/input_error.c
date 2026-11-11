@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,39 +8,26 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
+/*
+ -- SuperLU routine (version 4.4) --
+ Lawrence Berkeley National Lab, Univ. of California Berkeley.
+ November 20, 2012
+*/
+
 #include <stdio.h>
 #include "slu_Cnames.h"
 
 /*! @file input_error.c
  * \brief Error handler for input parameters.
- *
- * <pre>
- * -- SuperLU routine (version 4.4) --
- * Lawrence Berkeley National Lab, Univ. of California Berkeley.
- * November 20, 2012
- * </pre>
  */
 
-/*! \brief
+/*! \brief Error handler for input parameters.
  *
- * <pre>
- * Purpose   
- * =======   
- *
- * INPUT_ERROR is called if an input parameter has an   
- * invalid value.  A message is printed and execution stops.   
- *
- * Arguments   
- * =========   
- *
- * srname  (input) character*6
- *         The name of the routine which called INPUT_ERROR.
- *
- * info    (input) int
- *         The position of the invalid parameter in the parameter list   
- *         of the calling routine.
- *
- * </pre>
+ * It is called if an input parameter has an
+ * invalid value.
+ * \param[in] srname Six characters, the name of the routine which called input_error.
+ * \param[in] info   The position of the invalid parameter in the parameter list
+ *                   of the calling routine.
  */
 void input_error(char *srname, int *info)
 {

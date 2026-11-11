@@ -20,6 +20,7 @@ at the top-level directory.
  * </pre>
  */
 #include <math.h>
+#include "superlu_config.h"
 #include "slu_Cnames.h"
 
 /*! \brief
@@ -107,11 +108,10 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
     extern float sasum_(slu_blasint *, float *, slu_blasint *);
     extern void scopy_(slu_blasint *, float *, slu_blasint *, float *, slu_blasint *);
 #endif
+    slu_blasint n_blas = *n;
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \
 	( a>=0 ? floor(a+.5) : -floor(.5-a) ) /* Round to nearest integer */
-
-    slu_blasint n_blas = *n;
 
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {

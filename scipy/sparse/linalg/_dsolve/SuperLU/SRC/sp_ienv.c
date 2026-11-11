@@ -70,7 +70,7 @@ int
 sp_ienv(int ispec)
 {
     int i;
-    extern int input_error(char *, int *);
+    extern void input_error(char *, int *);
 
     switch (ispec) {
 	case 1: return (20);

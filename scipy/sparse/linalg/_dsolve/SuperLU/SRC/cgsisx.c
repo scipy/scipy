@@ -625,6 +625,13 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
 	if ( lwork == -1 ) {
 	    mem_usage->total_needed = *info - A->ncol;
+	    // cleanup prior to returning
+	    if ( perm ) SUPERLU_FREE(perm);
+	    Destroy_CompCol_Permuted(&AC);
+	    if ( A->Stype == SLU_NR ) {
+		Destroy_SuperMatrix_Store(AA);
+		SUPERLU_FREE(AA);
+	    }
 	    return;
 	}
 
@@ -650,7 +657,17 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
 
     if ( options->PivotGrowth ) {
-	if ( *info > 0 ) return;
+	if ( *info > 0 ) {
+	    // cleanup prior to returning
+	    if ( nofact ) {
+		Destroy_CompCol_Permuted(&AC);
+	    }
+	    if ( A->Stype == SLU_NR ) {
+		Destroy_SuperMatrix_Store(AA);
+		SUPERLU_FREE(AA);
+	    }
+	    return;
+	}
 
 	/* Compute the reciprocal pivot growth factor *recip_pivot_growth. */
 	*recip_pivot_growth = cPivotGrowth(A->ncol, AA, perm_c, L, U);

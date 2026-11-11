@@ -191,7 +191,7 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
 	  int panel_size, double fill_ratio, SuperMatrix *L, SuperMatrix *U,
           GlobalLU_t *Glu, int **iwork, double **dwork)
 {
-    int      info, iword, dword;
+    int      info, iword, liword, dword;
     SCformat *Lstore;
     NCformat *Ustore;
     int      *xsup, *supno;
@@ -203,6 +203,7 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
     int_t    nzlmax, nzumax, nzlumax;
     
     iword     = sizeof(int);
+    liword    = sizeof(int_t);
     dword     = sizeof(double);
     Glu->n    = n;
     Glu->num_expansions = 0;
@@ -217,8 +218,9 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
 	//nzlmax = SUPERLU_MAX(1, fill_ratio/4.) * annz;
 
 	if ( lwork == -1 ) {
-	    return ( GluIntArray(n) * iword + TempSpace(m, panel_size)
-		    + (nzlmax+nzumax)*iword + (nzlumax+nzumax)*dword + n );
+	    return ( 2 * (n+1) * iword + 3 * (n+1) * liword
+		    + TempSpace(m, panel_size)
+		    + (nzlmax+nzumax)*liword + (nzlumax+nzumax)*dword + n );
         } else {
 	    dSetupSpace(work, lwork, Glu);
 	}
@@ -239,9 +241,9 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
 	} else {
 	    xsup   = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
 	    supno  = (int *)duser_malloc((n+1) * iword, HEAD, Glu);
-	    xlsub  = duser_malloc((n+1) * iword, HEAD, Glu);
-	    xlusup = duser_malloc((n+1) * iword, HEAD, Glu);
-	    xusub  = duser_malloc((n+1) * iword, HEAD, Glu);
+	    xlsub  = duser_malloc((n+1) * liword, HEAD, Glu);
+	    xlusup = duser_malloc((n+1) * liword, HEAD, Glu);
+	    xusub  = duser_malloc((n+1) * liword, HEAD, Glu);
 	}
 
 	lusup = (double *) dexpand( &nzlumax, LUSUP, 0, 0, Glu );
@@ -256,7 +258,7 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
 		SUPERLU_FREE(lsub); 
 		SUPERLU_FREE(usub);
 	    } else {
-		duser_free((nzlumax+nzumax)*dword+(nzlmax+nzumax)*iword,
+		duser_free((nzlumax+nzumax)*dword+(nzlmax+nzumax)*liword,
                             HEAD, Glu);
 	    }
 	    nzlumax /= 2;
@@ -291,8 +293,9 @@ dLUMemInit(fact_t fact, void *work, int_t lwork, int m, int n, int_t annz,
 	nzlumax  = Glu->nzlumax;
 	
 	if ( lwork == -1 ) {
-	    return ( GluIntArray(n) * iword + TempSpace(m, panel_size)
-		    + (nzlmax+nzumax)*iword + (nzlumax+nzumax)*dword + n );
+	    return ( 2 * (n+1) * iword + 3 * (n+1) * liword
+		    + TempSpace(m, panel_size)
+		    + (nzlmax+nzumax)*liword + (nzlumax+nzumax)*dword + n );
         } else if ( lwork == 0 ) {
 	    Glu->MemModel = SYSTEM;
 	} else {
@@ -479,6 +482,10 @@ dLUMemXpand(int jcol,
 }
 
 
+/*! \brief Deprecated: unused within SuperLU, use memmove() instead.
+ *
+ * This function will be removed in a future version.
+ */
 void
 copy_mem_double(int_t howmany, void *old, void *new)
 {
@@ -534,9 +541,9 @@ void
 		}
 	    }
 	    if ( type == LSUB || type == USUB ) {
-		copy_mem_int(len_to_copy, expanders[type].mem, new_mem);
+		memmove(new_mem, expanders[type].mem, (size_t)len_to_copy * sizeof(int_t));
 	    } else {
-		copy_mem_double(len_to_copy, expanders[type].mem, new_mem);
+		memmove(new_mem, expanders[type].mem, (size_t)len_to_copy * sizeof(double));
 	    }
 	    SUPERLU_FREE (expanders[type].mem);
 	}
@@ -584,7 +591,7 @@ void
 		new_mem = (void*)((char*)expanders[type + 1].mem + extra);
 		bytes_to_copy = (char*)Glu->stack.array + Glu->stack.top1
 		    - (char*)expanders[type + 1].mem;
-		user_bcopy(expanders[type+1].mem, new_mem, bytes_to_copy);
+		memmove(new_mem, expanders[type+1].mem, (size_t)bytes_to_copy);
 
 		if ( type < USUB ) {
 		    Glu->usub = expanders[USUB].mem =
@@ -624,14 +631,14 @@ void
 void
 dStackCompress(GlobalLU_t *Glu)
 {
-    register int iword, dword, ndim;
+    register int liword, dword, ndim;
     char     *last, *fragment;
     int_t    *ifrom, *ito;
     double   *dfrom, *dto;
     int_t    *xlsub, *lsub, *xusub, *usub, *xlusup;
     double   *ucol, *lusup;
     
-    iword = sizeof(int);
+    liword = sizeof(int_t);
     dword = sizeof(double);
     ndim = Glu->n;
 
@@ -645,20 +652,20 @@ dStackCompress(GlobalLU_t *Glu)
     
     dfrom = ucol;
     dto = (double *)((char*)lusup + xlusup[ndim] * dword);
-    copy_mem_double(xusub[ndim], dfrom, dto);
+    memmove(dto, dfrom, (size_t)xusub[ndim] * sizeof(double));
     ucol = dto;
 
     ifrom = lsub;
-    ito = (int_t *) ((char*)ucol + xusub[ndim] * iword);
-    copy_mem_int(xlsub[ndim], ifrom, ito);
+    ito = (int_t *) ((char*)ucol + xusub[ndim] * dword);
+    memmove(ito, ifrom, (size_t)xlsub[ndim] * sizeof(int_t));
     lsub = ito;
     
     ifrom = usub;
-    ito = (int_t *) ((char*)lsub + xlsub[ndim] * iword);
-    copy_mem_int(xusub[ndim], ifrom, ito);
+    ito = (int_t *) ((char*)lsub + xlsub[ndim] * liword);
+    memmove(ito, ifrom, (size_t)xusub[ndim] * sizeof(int_t));
     usub = ito;
     
-    last = (char*)usub + xusub[ndim] * iword;
+    last = (char*)usub + xusub[ndim] * liword;
     fragment = (char*) (((char*)Glu->stack.array + Glu->stack.top1) - last);
     Glu->stack.used -= (int_t)(intptr_t) fragment;
     Glu->stack.top1 -= (int_t)(intptr_t) fragment;
