@@ -1165,7 +1165,8 @@ def _ensure_dtype_cdsz(*arrays):
     # .char to tell 'g' from 'd' (and 'G' from 'D') where long double is double: there
     # astype(copy=False) returns the long double array itself, which is not 'd'
     dtype = np.dtype(dtype)
-    return (array.astype(dtype, copy=array.dtype.char != dtype.char) for array in arrays)
+    return (array.astype(dtype, copy=array.dtype.char != dtype.char)
+            for array in arrays)
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
