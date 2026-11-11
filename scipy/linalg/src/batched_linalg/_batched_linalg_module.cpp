@@ -278,11 +278,8 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     npy_intp shape_Q[NPY_MAXDIMS];
     npy_intp shape_R[NPY_MAXDIMS];
-
-    for (npy_intp i = 0; i < ndim; i++) {
-        shape_Q[i] = shape[i];
-        shape_R[i] = shape[i];
-    }
+    std::copy(shape, shape + ndim, shape_Q);
+    std::copy(shape, shape + ndim, shape_R);
 
     switch (mode) {
         case QR_mode::FULL:
