@@ -963,7 +963,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *strides = PyArray_STRIDES(ap_a);
-    int64_t n = shape[ndim - 2], m = shape[ndim - 1];
+    int64_t m = shape[ndim - 2], n = shape[ndim - 1];
     int64_t s0 = strides[ndim - 2], s1 = strides[ndim - 1];
 
     // Normalize platform-dependent integer typenums to canonical
@@ -997,7 +997,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         using T = decltype(tag);
         for (npy_intp idx = 0; idx < num_slices; idx++) {
             const T *slice_ptr = compute_slice_ptr<const T>(idx, a_data, ndim, shape, strides);
-            bandwidth_slice(slice_ptr, n, m, s0, s1, &lb_data[idx], &ub_data[idx]);
+            bandwidth_slice(slice_ptr, m, n, s0, s1, &lb_data[idx], &ub_data[idx]);
         }
     };
 

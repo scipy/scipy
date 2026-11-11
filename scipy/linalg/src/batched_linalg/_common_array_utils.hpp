@@ -324,21 +324,21 @@ void copy_strided_to_f(T *dst, const T *src, npy_intp m, npy_intp n, npy_intp s0
 
 
 /*
- * Copy n-by-m F-ordered `src` to C-ordered `dst`.
+ * Copy m-by-n F-ordered `src` to C-ordered `dst`.
  *
- * `src` is ldb-by-m, F-ordered
- * `dst` is n-by-m, C-ordered
+ * `src` is ldb-by-n, F-ordered
+ * `dst` is m-by-n, C-ordered
  *
- * The default is to have src and dst of the same size (ldb=-1 means ldb=n)
+ * The default is to have src and dst of the same size (ldb=-1 means ldb=m)
  */
 template<typename T>
-void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m, npy_intp ldb=-1) {
+void copy_slice_F_to_C(T* dst, const T* src, const npy_intp m, const npy_intp n, npy_intp ldb=-1) {
 
-    if (ldb == -1) {ldb = n;}
+    if (ldb == -1) {ldb = m;}
 
-    for (npy_intp i = 0; i < n; i++) {
-        for (npy_intp j = 0; j < m; j++) {
-            dst[i*m + j] = src[i + j*ldb];
+    for (npy_intp i = 0; i < m; i++) {
+        for (npy_intp j = 0; j < n; j++) {
+            dst[i*n + j] = src[i + j*ldb];
         }
     }
 }
@@ -539,11 +539,11 @@ norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_int
  ***************************/
 
 /**
- * @brief Lower and upper bandwidth of a strided n-by-m matrix of any numeric type.
+ * @brief Lower and upper bandwidth of a strided m-by-n matrix of any numeric type.
  *
  * @param data   First element of the matrix.
- * @param n      Number of rows.
- * @param m      Number of columns.
+ * @param m      Number of rows.
+ * @param n      Number of columns.
  * @param s0     Byte stride between consecutive rows; may be negative.
  * @param s1     Byte stride between consecutive columns; may be negative.
  * @param lower  Receives the largest r - c over the nonzero entries (r, c), or 0.
@@ -551,27 +551,27 @@ norm1_banded(T* ab, const npy_intp kl, const npy_intp ku, T* work, const npy_int
  */
 template<typename T>
 void
-bandwidth_strided(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
+bandwidth_strided(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
 {
     const char *base = reinterpret_cast<const char *>(data);
     auto at = [&](int64_t r, int64_t c) { return *reinterpret_cast<const T *>(base + r * s0 + c * s1); };
     const T zero = T(0);
     int64_t lb = 0, ub = 0;
 
-    for (int64_t r = n - 1; r > 0; r--) {
+    for (int64_t r = m - 1; r > 0; r--) {
         int64_t ncols = r - lb;
-        if (ncols > m) { ncols = m; }
+        if (ncols > n) { ncols = n; }
         for (int64_t c = 0; c < ncols; c++) {
             if (at(r, c) != zero) { lb = r - c; break; }
         }
         if (r <= lb) { break; }
     }
 
-    for (int64_t r = 0; r < n; r++) {
-        for (int64_t c = m - 1; c > r + ub; c--) {
+    for (int64_t r = 0; r < m; r++) {
+        for (int64_t c = n - 1; c > r + ub; c--) {
             if (at(r, c) != zero) { ub = c - r; break; }
         }
-        if (r + ub + 1 > m) { break; }
+        if (r + ub + 1 > n) { break; }
     }
 
     *lower = lb;
@@ -580,14 +580,14 @@ bandwidth_strided(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, i
 
 
 /**
- * @brief Lower and upper bandwidth of one n-by-m matrix slice.
+ * @brief Lower and upper bandwidth of one m-by-n matrix slice.
  *
  * float32, float64, complex64 and complex128 slices that are contiguous in C or F order use the
  * bandwidth_{s,d,c,z} kernels of _linalg_bandwidth.h; every other slice uses bandwidth_strided.
  *
  * @param data   First element of the slice.
- * @param n      Number of rows.
- * @param m      Number of columns.
+ * @param m      Number of rows.
+ * @param n      Number of columns.
  * @param s0     Byte stride between consecutive rows; may be negative.
  * @param s1     Byte stride between consecutive columns; may be negative.
  * @param lower  Receives the largest r - c over the nonzero entries (r, c), or 0.
@@ -595,16 +595,16 @@ bandwidth_strided(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, i
  */
 template<typename T>
 void
-bandwidth_slice(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
+bandwidth_slice(const T *data, int64_t m, int64_t n, int64_t s0, int64_t s1, int64_t *lower, int64_t *upper) noexcept
 {
     if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64> ||
                   std::is_same_v<T, c64> || std::is_same_v<T, c128>) {
         constexpr int64_t size = sizeof(T);
-        const bool c_order = (s1 == size) && (s0 == m * size);
-        const bool f_order = (s0 == size) && (s1 == n * size);
+        const bool c_order = (s1 == size) && (s0 == n * size);
+        const bool f_order = (s0 == size) && (s1 == m * size);
         if (c_order || f_order) {
-            // an F-ordered n-by-m slice is the C-ordered m-by-n transpose: swap the outputs
-            const int64_t rows = c_order ? n : m, cols = c_order ? m : n;
+            // an F-ordered m-by-n slice is the C-ordered n-by-m transpose: swap the outputs
+            const int64_t rows = c_order ? m : n, cols = c_order ? n : m;
             int64_t *lo = c_order ? lower : upper, *up = c_order ? upper : lower;
             if constexpr (std::is_same_v<T, f32>)      { bandwidth_s(data, rows, cols, lo, up); }
             else if constexpr (std::is_same_v<T, f64>) { bandwidth_d(data, rows, cols, lo, up); }
@@ -613,7 +613,7 @@ bandwidth_slice(const T *data, int64_t n, int64_t m, int64_t s0, int64_t s1, int
             return;
         }
     }
-    bandwidth_strided(data, n, m, s0, s1, lower, upper);
+    bandwidth_strided(data, m, n, s0, s1, lower, upper);
 }
 
 
@@ -729,7 +729,7 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
 
 /*
  * Helper function for reshuffling a banded slice into the appropriate
- * structure for ?gbcon and ?gbtrf. `s1` and `s2` contain the strides in
+ * structure for ?gbcon and ?gbtrf. `s0` and `s1` contain the strides in
  * the column and row direction (`ndim` - 2 and `ndim` - 1, respectively).
  * The result is stored in `ab` in Fortran order.
  *
@@ -740,28 +740,28 @@ to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
  */
 template<typename T>
 inline void
-to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s1, npy_intp s2) {
-    // s1, s2 are byte strides: address elements through a char pointer
+to_banded(const T *data, npy_intp n, npy_intp kl, npy_intp ku, npy_intp ldab, T *ab, npy_intp s0, npy_intp s1) {
+    // s0, s1 are byte strides: address elements through a char pointer
     const char *base = reinterpret_cast<const char *>(data);
     auto at = [&](npy_intp byte_offset) { return *reinterpret_cast<const T *>(base + byte_offset); };
     npy_intp i, j;
 
     // main diagonal
     for (i = 0; i < n; i++) {
-        ab[(i + 1) * ldab - kl - 1] = at(i * (s1 + s2));
+        ab[(i + 1) * ldab - kl - 1] = at(i * (s0 + s1));
     }
 
     // lower bands
     for (i = 0; i < kl; i++) {
         for (j = 0; j < n - i - 1; j++) {
-            ab[(j + 1) * ldab - kl + i] = at((i + 1) * s1 + j * (s1 + s2));
+            ab[(j + 1) * ldab - kl + i] = at((i + 1) * s0 + j * (s0 + s1));
         }
     }
 
     // upper bands
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
-            ab[(j + 1) * ldab - kl - i - 2] = at((i + 1) * s2 + (j - i - 1) * (s1 + s2));
+            ab[(j + 1) * ldab - kl - i - 2] = at((i + 1) * s1 + (j - i - 1) * (s0 + s1));
         }
     }
 }
