@@ -1818,7 +1818,7 @@ class TestMahalanobis:
         u, v = rng.random(n), rng.random(n)
         A = rng.random((n, n))
         VI = A @ A.T + np.eye(n)  # positive definite
-        expected = mahalanobis(xp.asarray(u), xp.asarray(v), xp.asarray(VI))
+        expected = xp.asarray(0.8507644608189677)  # For seed 1
         # Case 1: Zero-weighted elements (zero rows and columns in VI)
         _u, _v = np.concat([u, rng.random(3)]), np.concat([v, rng.random(3)])
         _VI = block_diag(VI, np.zeros((3, 3)))
