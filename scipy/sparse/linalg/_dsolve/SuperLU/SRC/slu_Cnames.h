@@ -29,7 +29,6 @@ at the top-level directory.
 #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
 #define __SUPERLU_CNAMES
 
-#include "scipy_slu_config.h"
 
 #define ADD_       0
 #define ADD__      1
@@ -451,10 +450,6 @@ at the top-level directory.
 #define c_fortran_cgssv_ c_fortran_cgssv
 #define c_fortran_zgssv_ c_fortran_zgssv
 #endif
-
-
-/* BLAS symbol renaming (SciPy-specific, kept outside vendored SRC/) */
-#include "scipy_slu_blas_config.h"
 
 
 #endif /* __SUPERLU_CNAMES */

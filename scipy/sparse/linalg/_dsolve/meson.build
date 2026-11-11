@@ -1,9 +1,20 @@
-superlu_config = configure_file(
-  input: 'SuperLU/SRC/superlu_config.h.in',
-  output: 'superlu_config.h',
-  format: 'cmake@',
-  configuration: configuration_data(),
-)
+# SuperLU sources include "superlu_config.h".
+# We generate that header, injecting SciPy-specific configuration,
+# and include the upstream template's output.
+# This lets us vendor the SuperLU sources unmodified.
+superlu_config = [
+  configure_file(
+    input: 'SuperLU/SRC/superlu_config.h.in',
+    output: 'superlu_config_upstream.h',
+    format: 'cmake@',
+    configuration: configuration_data(),
+  ),
+  configure_file(
+    input: 'scipy_superlu_config.h',
+    output: 'superlu_config.h',
+    copy: true,
+  ),
+]
 
 _superlu_lib_c_args = ['-DUSE_VENDOR_BLAS=1']
 if is_windows
