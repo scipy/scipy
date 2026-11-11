@@ -247,7 +247,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     // gecon needs lwork of at least 4*n
     CBLAS_INT lwork;
-    if (!checked_narrow<CBLAS_INT>(std::max({4 * (std::size_t)n, (std::size_t)lwork_getri, (std::size_t)lwork_sytrf}), &lwork)) {
+    if (!checked_narrow<CBLAS_INT>(std::max({4 * (std::uint64_t)n, (std::uint64_t)lwork_getri, (std::uint64_t)lwork_sytrf}), &lwork)) {
         return BatchStatus::too_large;
     }
 
@@ -275,12 +275,11 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      * and `ret_data` will simply contain the result from the LAPACK call.
      *
      */
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    const std::size_t nn = (std::size_t)n * n;
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    const std::uint64_t nn = (std::uint64_t)n * n;
     auto buffer = alloc_workspace<T>((overwrite_a ? 0 : nn) + lwork);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);   // {ge,po,tr}con need rwork or iwork
-    if (!buffer || !ipiv || !irwork) { return BatchStatus::no_memory; }
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::uint64_t)n);   // {ge,po,tr}con need rwork or iwork
 
     // Chop buffer into parts: the slice (unless working in place), then LAPACK's work array
     T *cursor = buffer.get();

@@ -26,8 +26,9 @@ enum class LstsqDriver { gelsd, gelsy, gelss };
  * @param[in]  overwrite_b  If true, @p ap_b is 2-D and F-contiguous with m >= n and receives
  *                          the solution in place.
  * @param[out] vec_status   Receives the status of the first failing slice, if any.
- * @return ok; too_large if a dimension or workspace size does not fit CBLAS_INT; no_memory;
- *         lapack_error if the workspace query fails.
+ * @return ok; too_large if a dimension or workspace size does not fit CBLAS_INT; lapack_error
+ *         if the workspace query fails.
+ * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
@@ -145,18 +146,18 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     if (lwork < 0) { return BatchStatus::too_large; }
 
     // real work for the complex flavors: gelsd reports it, gelsy needs 2n and gelss 5 min(m, n)
-    std::size_t rwork_size = 0;
+    std::uint64_t rwork_size = 0;
     if constexpr (is_complex_v<T>) {
         if (driver == LstsqDriver::gelsd) {
             CBLAS_INT lrwork = _calc_lwork(tmp_rwork);
             if (lrwork < 0) { return BatchStatus::too_large; }
             rwork_size = lrwork;
         } else {
-            rwork_size = (driver == LstsqDriver::gelsy) ? 2 * (std::size_t)n : 5 * (std::size_t)min_mn;
+            rwork_size = (driver == LstsqDriver::gelsy) ? 2 * (std::uint64_t)n : 5 * (std::uint64_t)min_mn;
         }
     }
     // integer work: iwork for gelsd, jpvt for gelsy
-    std::size_t iwork_size = 0;
+    std::uint64_t iwork_size = 0;
     if (driver == LstsqDriver::gelsd) { iwork_size = liwork; }
     if (driver == LstsqDriver::gelsy) { iwork_size = n; }
 
@@ -170,14 +171,13 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
      *
      * data_a is m*n unless overwrite_a, data_b is ldb*nrhs unless overwrite_b (then both = 0)
      */
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    const std::size_t data_a_size = overwrite_a ? 0 : (std::size_t)m * n;
-    const std::size_t data_b_size = overwrite_b ? 0 : (std::size_t)ldb * nrhs;
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    const std::uint64_t data_a_size = overwrite_a ? 0 : (std::uint64_t)m * n;
+    const std::uint64_t data_b_size = overwrite_b ? 0 : (std::uint64_t)ldb * nrhs;
 
     auto buf = alloc_workspace<T>(lwork + data_a_size + data_b_size);
     auto rwork = alloc_workspace<real_type>(rwork_size);
     auto iwork = alloc_workspace<CBLAS_INT>(iwork_size);
-    if (!buf || !rwork || !iwork) { return BatchStatus::no_memory; }
 
     // partition the workspace; overwrite_x inputs are 2-D F-contiguous and already in place
     T *cursor = buf.get();

@@ -323,11 +323,10 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
     // maximal `kl` and `ku` to find the minimal size the array will need to
     // have. To avoid having to call `bandwidth` twice per slice, the results
     // are stored in `ks`: lower bandwidths first, then upper bandwidths.
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    auto ks = alloc_workspace<int64_t>(2 * (std::size_t)outer_size);
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    auto ks = alloc_workspace<int64_t>(2 * (std::uint64_t)outer_size);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);
-    if (!ks || !ipiv || !irwork) { return BatchStatus::no_memory; }
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::uint64_t)n);
 
     int64_t ldab_max = 0;
     int64_t *kls = ks.get();
@@ -350,10 +349,9 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
      * - `b_data` is a buffer for the rhs of the system, not needed if `overwrite_b` is set (size = 0 then)
      */
     // ldab_max <= 3*n, so these counts are bounded by the size of `a` as well
-    const std::size_t ab_count = (std::size_t)ldab_max * n, work_count = 3 * (std::size_t)n;
-    const std::size_t b_count = overwrite_b ? 0 : (std::size_t)n * nrhs;
+    const std::uint64_t ab_count = (std::uint64_t)ldab_max * n, work_count = 3 * (std::uint64_t)n;
+    const std::uint64_t b_count = overwrite_b ? 0 : (std::uint64_t)n * nrhs;
     auto buffer = alloc_workspace<T>(ab_count + work_count + b_count);
-    if (!buffer) { return BatchStatus::no_memory; }
 
     // Chop up buffer
     T *cursor = buffer.get();
@@ -453,7 +451,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     // gecon needs lwork of at least 4*n
     CBLAS_INT lwork;
-    if (!checked_narrow<CBLAS_INT>(std::max(4 * (std::size_t)n, (std::size_t)lwork_sytrf), &lwork)) {
+    if (!checked_narrow<CBLAS_INT>(std::max(4 * (std::uint64_t)n, (std::uint64_t)lwork_sytrf), &lwork)) {
         return BatchStatus::too_large;
     }
 
@@ -470,12 +468,11 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
      * - work2 is for the tridiag solver, trcon's work array
      * - work is for all other LAPACK functions
      */
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    const std::size_t nn = (std::size_t)n * n, nb = (std::size_t)n * nrhs, n2 = 2 * (std::size_t)n;
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    const std::uint64_t nn = (std::uint64_t)n * n, nb = (std::uint64_t)n * nrhs, n2 = 2 * (std::uint64_t)n;
     auto buffer = alloc_workspace<T>((overwrite_a ? 0 : nn) + (overwrite_b ? 0 : nb) + n2 + lwork);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::size_t)n);   // {ge,po,tr}con need rwork or iwork
-    if (!buffer || !ipiv || !irwork) { return BatchStatus::no_memory; }
+    auto irwork = alloc_workspace<irwork_t<T>>((is_complex_v<T> ? 3 : 1) * (std::uint64_t)n);   // {ge,po,tr}con need rwork or iwork
 
     T *cursor = buffer.get();
     T *data = Am_data, *data_b = ret_data;

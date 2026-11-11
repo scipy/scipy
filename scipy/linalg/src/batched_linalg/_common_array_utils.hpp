@@ -31,9 +31,9 @@ enum class BatchStatus {
 
 
 /**
- * @brief Deleter that returns memory to PyMem_RawFree.
+ * @brief The deleter of Workspace: returns the memory with PyMem_RawFree.
  */
-struct PyMemRawFree {
+struct WorkspaceDeleter {
     void operator()(void *p) const noexcept { PyMem_RawFree(p); }
 };
 
@@ -42,28 +42,30 @@ struct PyMemRawFree {
  * @brief Owning pointer to an uninitialized workspace array obtained from PyMem_RawMalloc.
  */
 template <class T>
-using Workspace = std::unique_ptr<T[], PyMemRawFree>;
+using Workspace = std::unique_ptr<T[], WorkspaceDeleter>;
 
 
 /**
  * @brief Allocate an uninitialized workspace array.
  *
  * @param count  Number of elements of type T; 0 gives a valid pointer to no elements.
- * @return An owning pointer to the array; empty if `count * sizeof(T)` overflows size_t or the
- *         allocation fails.
+ * @return An owning pointer to the array, never empty.
+ * @throws std::bad_alloc if `count * sizeof(T)` exceeds SIZE_MAX or the allocation fails.
  */
 template <class T>
-Workspace<T> alloc_workspace(std::size_t count) noexcept
+Workspace<T> alloc_workspace(std::uint64_t count)
 {
-    if (count > SIZE_MAX / sizeof(T)) { return Workspace<T>(); }
-    return Workspace<T>(static_cast<T *>(PyMem_RawMalloc(count * sizeof(T))));
+    if (count > SIZE_MAX / sizeof(T)) { throw std::bad_alloc(); }
+    T *p = static_cast<T *>(PyMem_RawMalloc(static_cast<std::size_t>(count) * sizeof(T)));
+    if (!p) { throw std::bad_alloc(); }
+    return Workspace<T>(p);
 }
 
 
 /**
- * @brief Deleter that releases a reference to a NumPy array with Py_XDECREF.
+ * @brief The deleter of OwnedArray: releases the reference with Py_XDECREF.
  */
-struct PyArrayDecref {
+struct OwnedArrayDeleter {
     void operator()(PyArrayObject *p) const noexcept { Py_XDECREF(p); }
 };
 
@@ -71,7 +73,7 @@ struct PyArrayDecref {
 /**
  * @brief Owning reference to a NumPy array; `release()` hands the reference to the caller.
  */
-using OwnedArray = std::unique_ptr<PyArrayObject, PyArrayDecref>;
+using OwnedArray = std::unique_ptr<PyArrayObject, OwnedArrayDeleter>;
 
 
 /**
@@ -106,7 +108,7 @@ bool checked_narrow(From v, To *out) noexcept
  * @param typenum  NumPy type number; NPY_FLOAT32, NPY_FLOAT64, NPY_COMPLEX64 and NPY_COMPLEX128 are
  *                 dispatched.
  * @param f        Callable invoked as `f(f32{})`, `f(f64{})`, `f(c64{})` or `f(c128{})`, returning a
- *                 BatchStatus.
+ *                 BatchStatus; it may throw std::bad_alloc, e.g. from alloc_workspace.
  * @return The result of @p f; BatchStatus::bad_dtype for any other @p typenum;
  *         BatchStatus::no_memory if @p f throws std::bad_alloc.
  */

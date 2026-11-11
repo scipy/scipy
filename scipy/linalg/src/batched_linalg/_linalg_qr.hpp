@@ -92,7 +92,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
     // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
-    if (pivoting && (3 * (std::size_t)N + 1 > (std::size_t)CBLAS_INT_MAX)) { return BatchStatus::too_large; }
+    if (pivoting && (3 * (std::uint64_t)N + 1 > (std::uint64_t)CBLAS_INT_MAX)) { return BatchStatus::too_large; }
 
     /*
      * Allocate buffer and slice into parts
@@ -130,16 +130,15 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      *      storing `R`. At the end `Q` is copied into a newly allocated array.
      *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
      */
-    // element counts are products of dimensions of existing arrays (A, and Q for mode == FULL),
-    // so they fit size_t
-    const std::size_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
+    // each count is bounded by an existing array (A, and Q for mode == FULL) or by CBLAS_INT, so
+    // the 64-bit sums are exact
+    const std::uint64_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
     const bool needs_buffer = !((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE);
-    const std::size_t buf_size = needs_buffer ? (std::size_t)M * ((mode == QR_mode::FULL) ? max_dim : N) : 0;
-    const std::size_t rwork_size = (pivoting && is_complex_v<T>) ? 2 * (std::size_t)N : 0;
+    const std::uint64_t buf_size = needs_buffer ? (std::uint64_t)M * ((mode == QR_mode::FULL) ? max_dim : N) : 0;
+    const std::uint64_t rwork_size = (pivoting && is_complex_v<T>) ? 2 * (std::uint64_t)N : 0;
 
     auto buffer = alloc_workspace<T>(lwork + tau_size + buf_size);
     auto rwork = alloc_workspace<real_type>(rwork_size);   // `c/zgeqp3` needs rwork
-    if (!buffer || !rwork) { return BatchStatus::no_memory; }
 
     T *cursor = buffer.get();
     T *work = cursor;       cursor += lwork;

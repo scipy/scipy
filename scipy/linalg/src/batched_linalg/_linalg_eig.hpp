@@ -54,8 +54,9 @@ transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, npy_intp ldv
  * @param[in]  overwrite_a  If true, @p ap_Am is 2-D and F-contiguous and is used in place.
  * @param[in]  overwrite_b  If true, @p ap_Bm is 2-D and F-contiguous and is used in place.
  * @param[out] vec_status   Receives the status of the first failing slice, if any.
- * @return ok; too_large if n or the workspace does not fit CBLAS_INT; no_memory; lapack_error
- *         if the workspace query fails.
+ * @return ok; too_large if n or the workspace does not fit CBLAS_INT; lapack_error if the
+ *         workspace query fails.
+ * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
@@ -96,10 +97,9 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     // the complex flavors read rwork already during the workspace query: 2n for geev, 8n for ggev
-    std::size_t rwork_size = 0;
-    if constexpr (is_complex_v<T>) { rwork_size = (generalized ? 8 : 2) * (std::size_t)n; }
+    std::uint64_t rwork_size = 0;
+    if constexpr (is_complex_v<T>) { rwork_size = (generalized ? 8 : 2) * (std::uint64_t)n; }
     auto rwork = alloc_workspace<real_type>(rwork_size);
-    if (!rwork) { return BatchStatus::no_memory; }
 
     // query lwork
     T tmp = 0.0;
@@ -136,16 +136,15 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
      * - data_A and data_B are the F-ordered copies of the slices unless they are used in place
      * - buf_vl and buf_vr hold the eigenvectors when they are requested
      */
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    const std::size_t nn = (std::size_t)n * n;
-    const std::size_t wi_size = is_complex_v<T> ? 0 : (std::size_t)n;
-    const std::size_t beta_size = generalized ? (std::size_t)n : 0;
-    const std::size_t a_size = overwrite_a ? 0 : nn;
-    const std::size_t b_size = (generalized && !overwrite_b) ? nn : 0;
-    const std::size_t vl_size = ptr_vl ? nn : 0, vr_size = ptr_vr ? nn : 0;
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    const std::uint64_t nn = (std::uint64_t)n * n;
+    const std::uint64_t wi_size = is_complex_v<T> ? 0 : (std::uint64_t)n;
+    const std::uint64_t beta_size = generalized ? (std::uint64_t)n : 0;
+    const std::uint64_t a_size = overwrite_a ? 0 : nn;
+    const std::uint64_t b_size = (generalized && !overwrite_b) ? nn : 0;
+    const std::uint64_t vl_size = ptr_vl ? nn : 0, vr_size = ptr_vr ? nn : 0;
 
     auto buf = alloc_workspace<T>(lwork + n + wi_size + beta_size + a_size + b_size + vl_size + vr_size);
-    if (!buf) { return BatchStatus::no_memory; }
 
     // partition the workspace; overwrite_x inputs are 2-D F-contiguous and already in place
     T *cursor = buf.get();
@@ -245,8 +244,9 @@ _eig(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayObj
  * @param[in]  iu           Last 0-based index for range 'I'.
  * @param[in]  driver       The LAPACK routine.
  * @param[out] vec_status   Receives the status of the first failing slice, if any.
- * @return ok; too_large if n or a workspace size does not fit CBLAS_INT; no_memory; lapack_error
- *         if the workspace query fails.
+ * @return ok; too_large if n or a workspace size does not fit CBLAS_INT; lapack_error if the
+ *         workspace query fails.
+ * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
@@ -296,9 +296,9 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     // they overflow, the workspace query returns a value too small to run with instead of
     // failing, so they are checked here first.
     if ((driver == Eigh_driver::EVD || driver == Eigh_driver::GVD) && jobz == 'V') {
-        const std::size_t un = n, lwmin = is_complex_v<T> ? un * un + 2 * un : 2 * un * un + 6 * un + 1;
-        const std::size_t lrwmin = is_complex_v<T> ? 2 * un * un + 5 * un + 1 : 0;
-        if (lwmin > (std::size_t)CBLAS_INT_MAX || lrwmin > (std::size_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
+        const std::uint64_t un = n, lwmin = is_complex_v<T> ? un * un + 2 * un : 2 * un * un + 6 * un + 1;
+        const std::uint64_t lrwmin = is_complex_v<T> ? 2 * un * un + 5 * un + 1 : 0;
+        if (lwmin > (std::uint64_t)CBLAS_INT_MAX || lrwmin > (std::uint64_t)CBLAS_INT_MAX) { return BatchStatus::too_large; }
     }
 
     // query lwork; the divide-and-conquer and RRR drivers also report lrwork and liwork
@@ -363,12 +363,12 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     if (lwork < 0) { return BatchStatus::too_large; }
 
     // real work, complex flavors only: fixed for ev/gv (3n - 2) and evx/gvx (7n), queried otherwise
-    std::size_t lrwork = 0;
+    std::uint64_t lrwork = 0;
     if constexpr (is_complex_v<T>) {
         if (driver == Eigh_driver::EV || driver == Eigh_driver::GV) {
-            lrwork = 3 * (std::size_t)n - 2;
+            lrwork = 3 * (std::uint64_t)n - 2;
         } else if (expert) {
-            lrwork = 7 * (std::size_t)n;
+            lrwork = 7 * (std::uint64_t)n;
         } else {
             CBLAS_INT queried = _calc_lwork(tmp_rwork);
             if (queried < 0) { return BatchStatus::too_large; }
@@ -377,10 +377,10 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     }
     // integer work: none for ev/gv, 5n plus an n-long ifail for evx/gvx, queried otherwise; evr also
     // needs 2m for isuppz
-    std::size_t liwork = 0, isuppz_size = 0, ifail_size = 0;
+    std::uint64_t liwork = 0, isuppz_size = 0, ifail_size = 0;
     if (driver == Eigh_driver::EVD || driver == Eigh_driver::GVD || driver == Eigh_driver::EVR) { liwork = tmp_iwork; }
-    if (expert) { liwork = 5 * (std::size_t)n; ifail_size = n; }
-    if (driver == Eigh_driver::EVR) { isuppz_size = 2 * (std::size_t)m; }
+    if (expert) { liwork = 5 * (std::uint64_t)n; ifail_size = n; }
+    if (driver == Eigh_driver::EVR) { isuppz_size = 2 * (std::uint64_t)m; }
 
     CBLAS_INT int_lrwork, int_liwork;
     if (!checked_narrow<CBLAS_INT>(lrwork, &int_lrwork) || !checked_narrow<CBLAS_INT>(liwork, &int_liwork)) {
@@ -394,17 +394,16 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
      *   real_type:  w (n, when range 'I' wants fewer than n values: LAPACK still writes n) | rwork (lrwork)
      *   CBLAS_INT:  iwork (liwork) | isuppz (2m, evr) | ifail (n, evx/gvx)
      */
-    // element counts are products of dimensions of existing arrays, so they fit size_t
-    const std::size_t nn = (std::size_t)n * n;
-    const std::size_t z_size = (ptr_Z && !vectors_in_a) ? (std::size_t)n * m : 0;
-    const std::size_t a_size = overwrite_a ? 0 : nn;
-    const std::size_t b_size = (generalized && !overwrite_b) ? nn : 0;
-    const std::size_t w_size = (m < n) ? (std::size_t)n : 0;
+    // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
+    const std::uint64_t nn = (std::uint64_t)n * n;
+    const std::uint64_t z_size = (ptr_Z && !vectors_in_a) ? (std::uint64_t)n * m : 0;
+    const std::uint64_t a_size = overwrite_a ? 0 : nn;
+    const std::uint64_t b_size = (generalized && !overwrite_b) ? nn : 0;
+    const std::uint64_t w_size = (m < n) ? (std::uint64_t)n : 0;
 
     auto buf = alloc_workspace<T>(lwork + z_size + a_size + b_size);
     auto rbuf = alloc_workspace<real_type>(w_size + lrwork);
     auto ibuf = alloc_workspace<CBLAS_INT>(liwork + isuppz_size + ifail_size);
-    if (!buf || !rbuf || !ibuf) { return BatchStatus::no_memory; }
 
     // partition the workspaces; overwrite_x inputs are 2-D F-contiguous and already in place
     T *cursor = buf.get();

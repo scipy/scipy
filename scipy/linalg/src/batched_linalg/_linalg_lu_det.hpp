@@ -144,8 +144,9 @@ det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, CBLAS_INT n, CBLAS_INT *inf
  * @param[in]  permute_l  If true, L receives P @ L; the permutation is still written.
  * @param[in]  in_place   If true, @p ap_a is 2-D, F-contiguous and writeable, and is factored
  *                        in place instead of being copied to a workspace.
- * @return ok; too_large if m or n does not fit CBLAS_INT; no_memory; lapack_error if ?getrf
- *         rejects an argument. An exactly singular slice is not an error.
+ * @return ok; too_large if m or n does not fit CBLAS_INT; lapack_error if ?getrf rejects an
+ *         argument. An exactly singular slice is not an error.
+ * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
@@ -166,10 +167,9 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
     }
     const npy_intp mn = m < n ? m : n;
 
-    // element counts are dimensions of an existing array, so they fit size_t
-    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::size_t)m * n);
+    // the count is bounded by an existing array, so it is exact in 64 bits
+    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::uint64_t)m * n);
     auto ipiv = alloc_workspace<CBLAS_INT>(mn);
-    if (!scratch || !ipiv) { return BatchStatus::no_memory; }
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
@@ -195,8 +195,9 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, bool permute_l, bo
  * @param[out] det_out   C-contiguous (...) buffer, one determinant per slice, in det_type_t<T>.
  * @param[in]  in_place  If true, @p ap_a is 2-D, contiguous in either order and writeable,
  *                       and is factored in place; det(A^T) = det(A).
- * @return ok; too_large if n does not fit CBLAS_INT; no_memory; lapack_error if ?getrf
- *         rejects an argument. An exactly singular slice has determinant zero.
+ * @return ok; too_large if n does not fit CBLAS_INT; lapack_error if ?getrf rejects an
+ *         argument. An exactly singular slice has determinant zero.
+ * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
@@ -214,10 +215,9 @@ _det(PyArrayObject *ap_a, det_type_t<T> *det_out, bool in_place)
     CBLAS_INT n;
     if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) { return BatchStatus::too_large; }
 
-    // element counts are dimensions of an existing array, so they fit size_t
-    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::size_t)n * n);
+    // the count is bounded by an existing array, so it is exact in 64 bits
+    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::uint64_t)n * n);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
-    if (!scratch || !ipiv) { return BatchStatus::no_memory; }
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr(idx, a_data, ndim, shape, strides);
