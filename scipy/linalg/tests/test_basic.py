@@ -3270,10 +3270,23 @@ class TestNonNativeInput:
             _batched_linalg._det(a, False)
         with pytest.raises(TypeError, match="native byte order"):
             _batched_linalg._bandwidth(a)
+        # the right-hand side too
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._solve(np.eye(3), a)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._lstsq(np.eye(3), a, 0.0, "gelsd")
         with pytest.raises(_internal_matfuncs.error, match="native byte order"):
             _internal_matfuncs.matrix_exponential(a)
         with pytest.raises(_internal_matfuncs.error, match="native byte order"):
             _internal_matfuncs.recursive_schur_sqrtm(a)
+
+    def test_compiled_entry_points_refuse_mixed_dtypes(self):
+        # The Python layer gives a and b a common dtype; the compiled code checks it.
+        a, b = np.eye(3), np.eye(3, dtype=np.float32)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._solve(a, b)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._lstsq(a, b, 0.0, "gelsd")
 
 
 @pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")

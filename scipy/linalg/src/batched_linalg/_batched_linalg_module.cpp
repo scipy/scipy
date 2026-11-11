@@ -177,9 +177,14 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!_check_dtype_and_flags(ap_Am, "solve")) {
         return NULL;
     }
+    if (!_check_dtype_and_flags(ap_b, "solve")) { return NULL; }
 
     // Sanity check shapes
     int typenum = PyArray_TYPE(ap_Am);
+    if (PyArray_TYPE(ap_b) != typenum) {
+        PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same dtype.");
+        return NULL;
+    }
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
     if (shape[ndim - 1] != shape[ndim - 2]) {
@@ -495,6 +500,11 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
     if (!_check_dtype_and_flags(ap_Am, "lstsq")) { return NULL; }
+    if (!_check_dtype_and_flags(ap_b, "lstsq")) { return NULL; }
+    if (PyArray_TYPE(ap_b) != PyArray_TYPE(ap_Am)) {
+        PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same dtype.");
+        return NULL;
+    }
     if (rcond < 0) {
         PyErr_SetString(PyExc_ValueError, "Expected rcond >= 0.");
         return NULL;
