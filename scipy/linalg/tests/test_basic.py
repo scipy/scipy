@@ -3298,6 +3298,63 @@ class TestNonNativeInput:
             _batched_linalg._lstsq(a, b, 0.0, "gelsd")
 
 
+class TestReadOnlyOverwrite:
+    # overwrite_a and overwrite_b let a function reuse an input array, but never a
+    # read-only one. Writing into a read-only memory map raises SIGSEGV. The result
+    # must be the one computed without overwriting.
+
+    def inputs(self):
+        rng = np.random.default_rng(1234)
+        x, y = rng.standard_normal((2, 4, 4))
+        a = x @ x.T + np.eye(4)   # symmetric positive definite
+        b = y @ y.T + np.eye(4)
+        r = rng.standard_normal((4, 3))
+        return {k: np.asfortranarray(v) for k, v in dict(a=a, b=b, r=r).items()}
+
+    funcs = {
+        "inv": lambda a, b, r, ow: inv(a, overwrite_a=ow),
+        "det": lambda a, b, r, ow: det(a, overwrite_a=ow),
+        "lu": lambda a, b, r, ow: lu(a, overwrite_a=ow),
+        "qr": lambda a, b, r, ow: qr(a, overwrite_a=ow),
+        "qr_r": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="r"),
+        "qr_economic": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="economic"),
+        "qr_raw": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="raw"),
+        "svd": lambda a, b, r, ow: svd(a, overwrite_a=ow),
+        "cholesky": lambda a, b, r, ow: cholesky(a, overwrite_a=ow),
+        "eig": lambda a, b, r, ow: eig(a, overwrite_a=ow),
+        "eig_generalized": lambda a, b, r, ow: eig(a, b, overwrite_a=ow,
+                                                   overwrite_b=ow),
+        "eigh": lambda a, b, r, ow: eigh(a, overwrite_a=ow),
+        "eigh_generalized": lambda a, b, r, ow: eigh(a, b, overwrite_a=ow,
+                                                     overwrite_b=ow),
+        "solve": lambda a, b, r, ow: solve(a, r, overwrite_a=ow, overwrite_b=ow),
+        "lstsq": lambda a, b, r, ow: lstsq(a, r, overwrite_a=ow, overwrite_b=ow),
+    }
+
+    @pytest.mark.parametrize("kind", ["flag", "memmap"])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_read_only_input_kept(self, func, kind, tmp_path):
+        native = self.inputs()
+        if kind == "flag":
+            read_only = {k: v.copy(order="F") for k, v in native.items()}
+            for v in read_only.values():
+                v.setflags(write=False)
+        else:
+            read_only = {}
+            for k, v in native.items():
+                np.save(tmp_path / f"{k}.npy", v)
+                read_only[k] = np.load(tmp_path / f"{k}.npy", mmap_mode="r")
+        assert all(v.flags.f_contiguous and not v.flags.writeable
+                   for v in read_only.values())
+        res = self.funcs[func](**read_only, ow=True)
+        for k, v in native.items():
+            assert_equal(read_only[k], v)
+        ref = self.funcs[func](**native, ow=False)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+
 @pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")
 @pytest.mark.parametrize("func", ["inv", "det", "cholesky", "lu", "qr", "svd", "eig",
                                   "eigh", "solve", "lstsq"])
