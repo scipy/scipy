@@ -7,7 +7,7 @@ namespace sp_linalg {
 
 template<typename T>
 BatchStatus
-_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
+_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, bool overwrite_a, QR_mode mode, bool pivoting, SliceStatusVec &vec_status)
 {
     using real_type = real_of_t<T>;
     SliceStatus slice_status;

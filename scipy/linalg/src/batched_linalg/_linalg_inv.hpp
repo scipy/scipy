@@ -13,7 +13,7 @@ void invert_slice_general(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
     real_type anorm = norm1_(data, (npy_intp)N);
@@ -51,7 +51,7 @@ void invert_slice_cholesky(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     real_type rcond;
@@ -87,7 +87,7 @@ void invert_slice_sym_herm(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     real_type rcond;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
@@ -147,7 +147,7 @@ void invert_slice_triangular(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
 
@@ -203,7 +203,7 @@ inline void invert_slice_diagonal(
 
 template<typename T>
 BatchStatus
-_inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
+_inverse(PyArrayObject* ap_Am, T* ret_data, St structure, bool lower, bool overwrite_a, SliceStatusVec& vec_status)
 {
     int64_t lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
@@ -230,7 +230,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn, info;
+    CBLAS_INT intn, info = 0;
     if (!checked_narrow<CBLAS_INT>(n, &intn)) { return BatchStatus::too_large; }
 
     T tmp = 0.0;

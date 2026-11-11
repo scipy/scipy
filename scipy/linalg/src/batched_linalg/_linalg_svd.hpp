@@ -74,7 +74,7 @@ gesdd_min_lwork(std::uint64_t m, std::uint64_t n, char jobz)
 
 template<typename T>
 BatchStatus
-_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, bool use_gesdd, int overwrite_a, SliceStatusVec& vec_status)
+_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, char jobz, bool use_gesdd, bool overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
@@ -103,7 +103,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
     u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
-    CBLAS_INT intn, intm, ldu, ldvh, info;
+    CBLAS_INT intn, intm, ldu, ldvh, info = 0;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm) ||
         !checked_narrow<CBLAS_INT>(u_shape0 == 0 ? 1 : u_shape0, &ldu) ||
         !checked_narrow<CBLAS_INT>(vh_shape0 == 0 ? 1 : vh_shape0, &ldvh)) {

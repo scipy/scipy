@@ -13,7 +13,7 @@ inline void solve_slice_general(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
     real_type anorm = norm1_(data, (npy_intp)N);
@@ -49,7 +49,7 @@ inline void solve_slice_triangular(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
 
@@ -76,7 +76,7 @@ inline void solve_slice_cholesky(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     real_type rcond;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
@@ -112,7 +112,7 @@ void solve_slice_sym_herm(
 ) {
     using real_type = real_of_t<T>;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     real_type rcond;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
@@ -182,7 +182,7 @@ void solve_slice_tridiag(
     T *dl = &work[3*N];
     to_tridiag(data, N, du, d, dl);
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
     real_type anorm = norm1_tridiag(dl, d, du, work2, (npy_intp)N);
@@ -223,7 +223,7 @@ inline void solve_slice_banded(
 
     CBLAS_INT ldab = 2 * kl + ku + 1;
 
-    CBLAS_INT info;
+    CBLAS_INT info = 0;
     char norm = '1';
     real_type rcond;
     real_type anorm = norm1_banded(ab, kl, ku, work2, N);
@@ -291,7 +291,7 @@ inline void solve_slice_diagonal(
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 BatchStatus
-_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, int overwrite_a, int overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
+_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, char trans, bool overwrite_a, bool overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
@@ -395,7 +395,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, cha
 
 template<typename T>
 BatchStatus
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int overwrite_b, SliceStatusVec& vec_status)
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, bool lower, bool transposed, bool overwrite_a, bool overwrite_b, SliceStatusVec& vec_status)
 {
     char trans = transposed ? 'T' : 'N';
     int64_t lower_band = 0, upper_band = 0;
@@ -436,7 +436,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn, int_nrhs, info;
+    CBLAS_INT intn, int_nrhs, info = 0;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
         return BatchStatus::too_large;
     }
