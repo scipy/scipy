@@ -39,7 +39,6 @@
 /*
  * ILP64 BLAS: override all BLAS symbol names with the ILP64-suffixed
  * variants (e.g., dgemm_ -> dgemm_64_ for OpenBLAS, dgemm_64 for MKL).
- * This must come after the Fortran naming blocks above so it overrides them.
  * SLU_BLAS_FUNC() is defined above.
  *
  * Note: LAPACK-like routines (dlacon2, scsum1, dzsum1, icmax1, izmax1) are
