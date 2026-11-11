@@ -783,7 +783,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     wrap : bool, optional
         If True, treat `x` as if it were arranged in a circle.
         Use for signals with periodic boundary conditions or
-        when peaks are at beginning or end of the array.
+        when peaks are at the beginning or end of the array.
 
         .. versionadded:: 2.0.0
 
@@ -939,6 +939,48 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     ...            ymax = x[peaks], color = "C1")
     >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
     ...            xmax=properties["right_ips"], color = "C1")
+    >>> plt.show()
+
+    Another useful feature is the ability to wrap around the end of the
+    array with ``wrap=True``, treating the signal as circular. This allows us to
+    find peaks at array edges.
+
+    >>> t = np.arange(100) / 100
+    >>> x = np.cos(2 * np.pi * 2 * t)
+    >>> peaks, _ = find_peaks(x, height=0)
+    >>> peaks_wrapped, _ = find_peaks(x, height=0, wrap=True)
+    >>> peaks, peaks_wrapped
+    (array([50]), array([ 0, 50]))
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x", markersize=12, label="wrap=False")
+    >>> plt.plot(peaks_wrapped, x[peaks_wrapped], "o", fillstyle="none",
+    ...          markersize=12, label="wrap=True")
+    >>> plt.plot(np.zeros_like(x), "--", color="gray")
+    >>> plt.xlim(0, 75)
+    >>> plt.legend(loc="lower center", bbox_to_anchor=(0.5, 1), ncol=2)
+    >>> plt.show()
+
+    It also allows for conditions, such as `distance`, to be measured across
+    edges as if the signal were periodic. The leftmost peak is removed because
+    it is within `distance` of the larger peak at the right edge.
+
+    >>> x = np.cos(2 * np.pi * 5 * (t - 0.1)) * (1 + t)
+    >>> distance = 30
+    >>> peaks, _ = find_peaks(x, distance=distance)
+    >>> peaks_wrapped, _ = find_peaks(x, distance=distance, wrap=True)
+    >>> peaks, peaks_wrapped
+    (array([10, 50, 90]), array([50, 90]))
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x", markersize=12, label="wrap=False")
+    >>> plt.plot(peaks_wrapped, x[peaks_wrapped], "o", fillstyle="none",
+    ...          markersize=12, label="wrap=True")
+    >>> for shift in (-x.size, 0, x.size):
+    ...     plt.hlines(y=x[peaks_wrapped], xmin=peaks_wrapped - distance + shift,
+    ...                xmax=peaks_wrapped + distance + shift, color="C1",
+    ...                label="distance" if shift == 0 else None)
+    >>> plt.xlim(0, x.size - 1)
+    >>> plt.plot(np.zeros_like(x), "--", color="gray")
+    >>> plt.legend(loc="lower center", bbox_to_anchor=(0.5, 1), ncol=3)
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
