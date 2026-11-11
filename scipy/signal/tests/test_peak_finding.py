@@ -809,6 +809,12 @@ class TestFindPeaks:
         xp_assert_close(props['left_ips'], np.asarray([6.4]))
         xp_assert_close(props['right_ips'], np.asarray([7.75]))
 
+    def test_empty_wrap(self):
+        """Test empty signal with wrap enabled."""
+        peaks, props = find_peaks(np.array([]), wrap=True)
+        assert peaks.size == 0
+        assert props == {}
+
     def test_constant_wrap(self):
         """
         Test behavior for signal without local maxima with wrap enabled.

@@ -989,6 +989,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         raise ValueError('`distance` must be greater or equal to 1')
 
     x_size = x.size
+    wrap = wrap and x_size > 0 # Cannot wrap empty array
     if wrap:
         min_idx = np.argmin(x) # Find index of global minimum
         # Rotate indicies of array so global min is at the start and end of array
