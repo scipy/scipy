@@ -20,7 +20,6 @@ Parts of the codebase to watch out for:
 - ``subprojects/``
 - ``scipy/_external/``
 - DIRECT_, at ``scipy/optimize/_direct``
-- SuperLU_, at ``scipy/sparse/linalg/_dsolve/SuperLU``
 - trlib_, at ``scipy/optimize/_trlib``
 - `Cython/Tempita`_, at ``tools/building/tempita``
 - `fast_matrix_market`_, at ``scipy/io/_fast_matrix_market``
@@ -28,7 +27,6 @@ Parts of the codebase to watch out for:
 - `uarray`_, at ``scipy/_lib/_uarray``
 - `scipy-mathjax`_, at ``doc/source/_static/scipy-mathjax``
 
-.. _SuperLU: https://github.com/xiaoyeli/superlu
 .. _trlib: https://github.com/felixlen/trlib
 .. _DIRECT: https://github.com/stevengj/nlopt/tree/master/src/algs/direct
 .. _`Cython/Tempita`: https://github.com/cython/cython/tree/master/Cython/Tempita
