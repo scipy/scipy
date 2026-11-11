@@ -1913,7 +1913,7 @@ _special_funcs = (
     # --
     _FuncInfo(
         _ellip_harm.ellip_harm, ["h2", "k2", "n", "p", "s", "signm=1", "signn=1"],
-        xp_capabilities(cpu_only=True),
+        xp_capabilities(cpu_only=True, jax_jit=False),
         is_ufunc=False,
         int_only=(False, False, True, True, False, True, True),
         test_large_ints=False,
@@ -1921,7 +1921,7 @@ _special_funcs = (
     ),
     _FuncInfo(
         _ellip_harm.ellip_harm_2, ["h2", "k2", "n", "p", "s"],
-        xp_capabilities(cpu_only=True),
+        xp_capabilities(cpu_only=True, jax_jit=False),
         is_ufunc=False,
         int_only=(False, False, True, True, False),
         test_large_ints=False,
@@ -1929,7 +1929,7 @@ _special_funcs = (
     ),
     _FuncInfo(
         _ellip_harm.ellip_normal, ["h2", "k2", "n", "p"],
-        xp_capabilities(cpu_only=True),
+        xp_capabilities(cpu_only=True, jax_jit=False),
         is_ufunc=False,
         int_only=(False, False, True, True),
         test_large_ints=False,
