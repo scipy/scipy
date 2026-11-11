@@ -239,7 +239,7 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
     if axis is None:
         res_shape = () if not keepdims else tuple([1 for _ in range(a1.ndim)])
     else:
-        axis = np.array(axis)
+        axis = np.array(axis).reshape((-1,))
 
         res_shape = np.array(a1.shape)
         if keepdims:
@@ -250,7 +250,7 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
             res_shape = res_shape[mask]
 
     if a.size == 0:
-        res_dtype = np.finfo(a1.dtype).dtype
+        res_dtype = np.finfo(a1.dtype).dtype if ord != 0 else np.dtype("int64")
         if len(res_shape) == 0:
             return res_dtype.type(0)
         else:

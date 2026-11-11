@@ -733,13 +733,16 @@ class TestBatch:
         )
 
     @pytest.mark.parametrize("dtype", floating)
-    @pytest.mark.parametrize("axis", [(-1,), (-1, -2)])
+    @pytest.mark.parametrize("ord", [0, 1, -1, 2, -2, np.inf, -np.inf])
+    @pytest.mark.parametrize("axis", [-1, (-1, -2)])
     @pytest.mark.parametrize("keepdims", [True, False])
-    def test_vector_norm(self, dtype, axis, keepdims):
+    def test_vector_norm(self, dtype, ord, axis, keepdims):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(
-            linalg.vector_norm, A, kwargs={"axis": axis, "keepdims": keepdims}
+            linalg.vector_norm,
+            A,
+            kwargs={"ord": ord, "axis": axis, "keepdims": keepdims}
         )
 
 

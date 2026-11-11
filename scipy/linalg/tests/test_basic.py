@@ -2772,7 +2772,13 @@ class TestVectorNorms:
         res = vector_norm(a, ord=ord, keepdims=keepdims)
 
         if n == 0:
-            ref = np.zeros((1, 1), dtype=res_dtype) if keepdims else res_dtype.type(0.0)
+            if ord != 0:
+                ref = (
+                    np.zeros((1, 1), dtype=res_dtype) if keepdims
+                    else res_dtype.type(0.0)
+                )
+            else:
+                ref = np.zeros((1, 1), dtype=np.int64) if keepdims else np.int64(0)
         else:
             if ord == 0:
                 ref = np.sum(a != 0, keepdims=keepdims)
@@ -2800,7 +2806,7 @@ class TestVectorNorms:
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
     @pytest.mark.parametrize("n_slices", [0, 3])
-    @pytest.mark.parametrize("axis", [None, (1,), (1, 2)])
+    @pytest.mark.parametrize("axis", [None, 1, (1, 2)])
     @pytest.mark.parametrize("keepdims", [True, False])
     def test_axis(self, dtype, n_slices, axis, keepdims):
         rng = np.random.default_rng(seed=123456789)
