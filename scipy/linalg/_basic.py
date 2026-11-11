@@ -1248,12 +1248,8 @@ def det(a, overwrite_a=False, check_finite=True):
     # Single precision input gives a double precision determinant, computed in double
     # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not
     # overflow.
-    det = _linalg_det(a1, overwrite_a)
-
-    # Return scalar for 2D input
-    if det.ndim == 0:
-        return det[()]
-    return det
+    # A scalar for 2D input, else an array of the batch shape.
+    return _linalg_det(a1, overwrite_a)
 
 
 # Linear Least Squares

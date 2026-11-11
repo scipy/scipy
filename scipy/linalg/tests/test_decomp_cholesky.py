@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
 from numpy import array, transpose, zeros_like, empty
@@ -34,8 +34,8 @@ class TestCholesky:
         view = rec['z']
         assert view.strides[-1] == 24
         for x in (view, view[1]):
-            np.testing.assert_equal(cholesky(x, lower=lower),
-                                    cholesky(np.ascontiguousarray(x), lower=lower))
+            assert_equal(cholesky(x, lower=lower),
+                         cholesky(np.ascontiguousarray(x), lower=lower))
 
     def test_check_finite(self):
         a = [[8, 2, 3], [2, 9, 3], [3, 3, 6]]

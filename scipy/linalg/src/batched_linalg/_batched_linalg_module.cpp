@@ -882,10 +882,10 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (status != BatchStatus::ok) { return set_batch_error(status, "lu"); }
 
     if (permute_l) {
-        // P is already applied to L. Return an empty int32 array rather than None so the
-        // return type is always three arrays.
+        // P is already applied to L. Return an empty array of the same integer type rather
+        // than None so the return type is always three arrays.
         npy_intp zero = 0;
-        ap_perm.reset((PyArrayObject *)PyArray_EMPTY(1, &zero, NPY_INT32, 0));
+        ap_perm.reset((PyArrayObject *)PyArray_EMPTY(1, &zero, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32, 0));
         if (!ap_perm) { return NULL; }
     }
     return Py_BuildValue("NNN", PyArray_Return(ap_perm.release()),
@@ -935,7 +935,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
     Py_END_ALLOW_THREADS
     if (status != BatchStatus::ok) { return set_batch_error(status, "det"); }
 
-    return (PyObject *)ap_det.release();
+    return PyArray_Return(ap_det.release());
 }
 
 
