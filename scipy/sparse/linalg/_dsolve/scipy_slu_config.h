@@ -18,12 +18,19 @@ void superlu_python_module_free(void *ptr);
  * BLAS integer type: matches the BLAS library's integer ABI.
  * When HAVE_BLAS_ILP64 is defined (ILP64 build), this is int64_t;
  * otherwise it is int (LP64, the default).
+ *
+ * This is a macro rather than a typedef: upstream's superlu_config.h also
+ * declares `slu_blasint` (as `int`) unless it is already defined as a macro,
+ * and it may be included before this header (e.g. via slu_ddefs.h). Defining
+ * a macro overrides upstream's typedef for all later uses in either order.
  */
+#ifndef slu_blasint
 #ifdef HAVE_BLAS_ILP64
 #include <stdint.h>
-typedef int64_t slu_blasint;
+#define slu_blasint int64_t
 #else
-typedef int slu_blasint;
+#define slu_blasint int
+#endif
 #endif
 
 /*
