@@ -3194,8 +3194,9 @@ class TestFieldViewStrides:
             assert_equal(x, y)
 
     def test_most_negative_stride(self):
-        # NumPy accepts any stride for a dimension of length 1, INT64_MIN included.
-        imin = np.iinfo(np.int64).min
+        # NumPy accepts any stride for a dimension of length 1, the most negative
+        # npy_intp included.
+        imin = np.iinfo(np.intp).min
         as_strided = np.lib.stride_tricks.as_strided
         col = as_strided(np.array([[3.0], [4.0]]), (2, 1), strides=(8, imin))
         one = as_strided(np.array([[5.0]]), (1, 1), strides=(imin, imin))
