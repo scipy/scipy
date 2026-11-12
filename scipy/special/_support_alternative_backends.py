@@ -179,7 +179,7 @@ class _FuncInfo:
         else:
             @functools.wraps(self.func)
             def func(*args, **kwargs):
-                xp = array_namespace(*args)
+                xp = array_namespace(*args, *kwargs.values())
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             # needed to allow pickling
