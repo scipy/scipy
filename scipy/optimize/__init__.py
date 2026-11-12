@@ -442,8 +442,7 @@ from ._isotonic import isotonic_regression
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
-from ._hessian_update_strategy import (HessianUpdateStrategy, BFGS, SR1,
-                                        LBFGS)
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1, LBFGS
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment

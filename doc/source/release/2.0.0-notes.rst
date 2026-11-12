@@ -48,6 +48,10 @@ New features
 ``scipy.optimize`` improvements
 ===============================
 
+`scipy.optimize.LBFGS` provides a limited-memory Hessian update strategy for
+compatible optimization solvers. It retains a bounded history of curvature
+pairs instead of a dense Hessian or inverse-Hessian approximation.
+
 
 ``scipy.signal`` improvements
 =============================

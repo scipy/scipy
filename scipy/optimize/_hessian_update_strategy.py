@@ -1,8 +1,10 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
+from operator import index
+from warnings import warn
+
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs, issymmetric
-from warnings import warn
 
 
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1', 'LBFGS']
@@ -492,7 +494,9 @@ class LBFGS(HessianUpdateStrategy):
         Number of update pairs kept in the internal representation.
         The default is 10.
     init_scale : {float, 'auto'}, optional
-        Scale of the initial approximation.  When set to 'auto' the heuristic
+        Positive, finite scale of the initial positive-definite approximation.
+        It is applied only on the first accepted update, as in `BFGS`.
+        When set to 'auto' the heuristic
         described in [1]_, p.143 is used, otherwise the given float is used.
         The default is 'auto'.
 
@@ -508,33 +512,53 @@ class LBFGS(HessianUpdateStrategy):
               - \\frac{B_{j-1} s_j B_{j-1} s_j^T}{s_j^T B_{j-1} s_j},
 
     where ``s_j = delta_x`` and ``y_j = delta_grad``.  Writing
-    ``w_j = B_{j-1} s_j`` the operator is applied to a vector ``p`` as
-
-    .. math::
-
-        B p = \\gamma p + \\sum_j \\left(
-            \\frac{y_j^T p}{s_j^T y_j} y_j
-            - \\frac{w_j^T p}{s_j^T w_j} w_j \\right),
-
-    which needs ``O(memory * n)`` memory and work.  In the ``'inv_hess'``
-    mode the inverse of the same approximation is applied instead, using the
-    standard two-loop recursion.
+    ``w_j = B_{j-1} s_j`` and the projection
+    ``P_j = I - s_j w_j^T / (s_j^T w_j)``, the update can be written in
+    factored form as ``B_j = P_j^T B_{j-1} P_j + y_j y_j^T / (s_j^T y_j)``.
+    The product
+    with a vector ``p`` is evaluated in this factored form: the
+    projections are applied from the newest pair to the oldest, the
+    scaled identity in between, and the secant rank-one terms are added
+    on the way back.  Accumulating the expanded rank-one sum instead
+    adds large cancelling terms to the same accumulator and can lose
+    positive definiteness; the factored ordering reduces that risk.
+    Compact alternative representations are described in [3]_.
+    The product needs ``O(memory * n)`` storage and product work. Direct
+    updates rebuild the retained window after eviction in
+    ``O(memory**2 * n)`` work.
+    In the ``'inv_hess'`` mode the inverse approximation is applied using the
+    two-loop recursion [2]_, with ``O(memory * n)`` update and product work.
+    Each mode scales its own initial identity; scales are not reciprocated.
 
     Pairs that do not satisfy the curvature condition ``s_j^T y_j > 0`` carry
-    no usable curvature information and are discarded.
+    no usable curvature information and are discarded.  Detected loss of
+    positive definiteness in the stored factors resets the retained
+    history.  Finite precision can still degrade the approximation for
+    extremely ill-conditioned curvature pairs.
 
     References
     ----------
     .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
            Second Edition (2006).
+    .. [2] Nocedal, Jorge. "Updating quasi-Newton matrices with limited
+           storage." Mathematics of Computation 35 (1980), 773-782.
+    .. [3] Byrd, Richard H., Jorge Nocedal, and Robert B. Schnabel.
+           "Representations of quasi-Newton matrices and their use in limited
+           memory methods." Mathematical Programming 63 (1994), 129-156.
     """
 
     def __init__(self, memory=10, init_scale='auto'):
-        self.memory = int(memory)
+        if isinstance(memory, (bool, np.bool_)):
+            raise TypeError("`memory` must be a positive integer.")
+        self.memory = index(memory)
         if self.memory < 1:
             raise ValueError("`memory` must be a positive integer.")
         if not (isinstance(init_scale, str) and init_scale == 'auto'):
+            if np.iscomplexobj(init_scale) or np.ndim(init_scale) != 0:
+                raise ValueError("`init_scale` must be a positive finite scalar.")
             init_scale = float(init_scale)
+            if not np.isfinite(init_scale) or init_scale <= 0:
+                raise ValueError("`init_scale` must be a positive finite scalar.")
         self.init_scale = init_scale
         self.n = None
         self.approx_type = None
@@ -562,6 +586,11 @@ class LBFGS(HessianUpdateStrategy):
         """
         if approx_type not in ('hess', 'inv_hess'):
             raise ValueError("`approx_type` must be 'hess' or 'inv_hess'.")
+        if isinstance(n, (bool, np.bool_)):
+            raise TypeError("`n` must be a positive integer.")
+        n = index(n)
+        if n < 1:
+            raise ValueError("`n` must be a positive integer.")
         self.n = n
         self.approx_type = approx_type
         self.first_iteration = True
@@ -585,11 +614,8 @@ class LBFGS(HessianUpdateStrategy):
             The difference between the gradients:
             ``delta_grad = grad(x2) - grad(x1)``.
         """
-        s = np.asarray(delta_x, dtype=float).ravel()
-        y = np.asarray(delta_grad, dtype=float).ravel()
-        if s.shape != (self.n,) or y.shape != (self.n,):
-            raise ValueError("delta_x and delta_grad must have the problem "
-                             "dimension.")
+        s = self._validate_vector(delta_x)
+        y = self._validate_vector(delta_grad)
         if np.all(s == 0.0):
             return
         if np.all(y == 0.0):
@@ -600,32 +626,40 @@ class LBFGS(HessianUpdateStrategy):
                  'approximations.',
                  UserWarning, stacklevel=2)
             return
-        if float(y @ s) <= 0.0:
+        ys = float(y @ s)
+        if not np.isfinite(ys) or ys <= 0.0:
             # The curvature condition is violated, so the pair does not carry
             # usable curvature information and is discarded.
             return
         if self.first_iteration:
             self._gamma = self._auto_scale(s, y)
             self.first_iteration = False
-        # w = B s with B the approximation built from the pairs seen so far.
-        w = self._apply(self._s, self._y, self._w, s)
-        self._s.append(s)
-        self._y.append(y)
-        self._w.append(w)
-        if len(self._s) > min(self.memory, self.n):
+        if len(self._s) == self.memory:
             # The oldest pair is dropped.  Because the BFGS updates are
             # applied in sequence, the remaining vectors w_j have to be
             # recomputed.
             self._s.pop(0)
             self._y.pop(0)
-            self._w.pop(0)
-            self._rebuild()
-        if float(s @ w) <= 0.0:
-            # Round-off destroyed positive definiteness; start over.
-            self._s = []
-            self._y = []
-            self._w = []
-            self._gamma = self._auto_scale(s, y)
+            if self.approx_type == 'hess':
+                if not self._rebuild():
+                    self._s = []
+                    self._y = []
+                    self._w = []
+        if self.approx_type == 'hess':
+            w = self._apply(self._s, self._y, self._w, s)
+            sw = float(s @ w)
+            if not np.isfinite(sw) or sw <= 0.0:
+                # Round-off destroyed positive definiteness; start over.
+                self._s = []
+                self._y = []
+                self._w = []
+                w = self._gamma * s
+                sw = float(s @ w)
+                if not np.isfinite(sw) or sw <= 0.0:
+                    return
+            self._w.append(w)
+        self._s.append(s.copy())
+        self._y.append(y.copy())
 
     def dot(self, p):
         """Compute the product of the internal matrix with the given vector.
@@ -641,12 +675,30 @@ class LBFGS(HessianUpdateStrategy):
             1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
-        p = np.asarray(p, dtype=float).ravel()
+        column = np.shape(p) == (self.n, 1)
+        if column:
+            p = np.asarray(p)[:, 0]
+        p = self._validate_vector(p)
         if self.approx_type == 'inv_hess':
-            return self._apply_inverse(self._s, self._y, p)
-        if not self._s:
-            return self._gamma * p
-        return self._apply(self._s, self._y, self._w, p)
+            result = self._apply_inverse(self._s, self._y, p)
+        else:
+            result = self._apply(self._s, self._y, self._w, p)
+        if not np.all(np.isfinite(result)):
+            raise FloatingPointError("The approximation product is not finite.")
+        return result[:, None] if column else result
+
+    def _validate_vector(self, vector):
+        if self.n is None:
+            raise ValueError("The strategy has not been initialized.")
+        if np.iscomplexobj(vector):
+            raise ValueError("Vectors must be real.")
+        vector = np.asarray(vector, dtype=float)
+        if vector.shape != (self.n,):
+            raise ValueError("Vectors must be one-dimensional with the problem "
+                             "dimension.")
+        if not np.all(np.isfinite(vector)):
+            raise ValueError("Vectors must contain only finite values.")
+        return vector
 
     def get_matrix(self):
         """Return the current approximation as a dense matrix.
@@ -684,30 +736,55 @@ class LBFGS(HessianUpdateStrategy):
             return 1.0
         if isinstance(self.init_scale, str) and self.init_scale == 'auto':
             if self.approx_type == 'hess':
-                return y_norm2 / ys
-            return ys / y_norm2
+                scale = y_norm2 / ys
+            else:
+                scale = ys / y_norm2
+            return scale if np.isfinite(scale) and scale > 0 else 1.0
         return self.init_scale
 
     def _apply(self, s_list, y_list, w_list, v):
-        """Apply the approximated Hessian to the vector ``v``."""
-        out = self._gamma * v
-        for j in range(len(s_list)):
+        """Apply the approximated Hessian to the vector ``v``.
+
+        The product is evaluated in the factored form
+        ``B_j = P_j^T B_{j-1} P_j + y_j y_j^T / (s_j^T y_j)`` with
+        ``P_j = I - s_j w_j^T / (s_j^T w_j)`` and ``w_j = B_{j-1} s_j``:
+        the projections are applied from the newest pair to the oldest,
+        the scaled identity in between, and the secant rank-one terms
+        are added on the way back.  Accumulating the expanded rank-one
+        sum instead adds large cancelling terms to one accumulator and
+        can lose positive definiteness.
+        """
+        m = len(s_list)
+        q = np.array(v, dtype=float)
+        alphas = np.empty(m)
+        denoms = np.empty(m)
+        for j in range(m - 1, -1, -1):
             s = s_list[j]
             y = y_list[j]
             w = w_list[j]
             ys = float(y @ s)
             sBw = float(s @ w)
-            if ys <= 0.0 or sBw <= 0.0:
-                continue
-            out = out + y * (float(y @ v) / ys) - w * (float(w @ v) / sBw)
+            if not np.isfinite(ys) or not np.isfinite(sBw) or ys <= 0 or sBw <= 0:
+                raise FloatingPointError("Invalid stored BFGS curvature.")
+            alphas[j] = float(y @ q) / ys
+            denoms[j] = sBw
+            q -= s * (float(w @ q) / sBw)
+        out = self._gamma * q
+        for j in range(m):
+            out -= w_list[j] * (float(s_list[j] @ out) / denoms[j])
+            out += y_list[j] * alphas[j]
         return out
 
     def _rebuild(self):
         """Recompute the vectors ``w_j = B_{j-1} s_j`` of the window."""
         self._w = []
         for j in range(len(self._s)):
-            self._w.append(
-                self._apply(self._s[:j], self._y[:j], self._w[:j], self._s[j]))
+            w = self._apply(self._s[:j], self._y[:j], self._w, self._s[j])
+            sw = float(self._s[j] @ w)
+            if not np.all(np.isfinite(w)) or not np.isfinite(sw) or sw <= 0:
+                return False
+            self._w.append(w)
+        return True
 
     def _apply_inverse(self, s_list, y_list, v):
         """Apply the approximated inverse Hessian to the vector ``v``."""
@@ -717,10 +794,8 @@ class LBFGS(HessianUpdateStrategy):
         rhos = np.zeros(m)
         for i in range(m - 1, -1, -1):
             ys = float(y_list[i] @ s_list[i])
-            if ys <= 0.0:
-                # No usable curvature: fall back to the inverse of the
-                # scaled identity, which is self._gamma in 'inv_hess' mode.
-                return self._gamma * v
+            if not np.isfinite(ys) or ys <= 0.0:
+                raise FloatingPointError("Invalid stored BFGS curvature.")
             rhos[i] = 1.0 / ys
             alphas[i] = rhos[i] * float(s_list[i] @ q)
             q = q - alphas[i] * y_list[i]
