@@ -44,12 +44,20 @@ def polyroots(coef, *, xp):
     a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype, device=xp_device(coef))
     a[:, -1] = -xp.flip(coef[1:]) / coef[0]
 
-    # non-symmetric eigenvalue problem is not in the spec but is available on e.g. torch
+    return eigvals(a, xp=xp)
+
+
+def eigvals(a, *, xp):
+    """Eigenvalues of a general square matrix, cf `np.linalg.eigvals`.
+
+    linalg.eigvals is only in the array API spec since its 2025.12 revision,
+    fall back to numpy for backends which do not provide it yet.
+    """
     if hasattr(xp.linalg, 'eigvals'):
         return xp.linalg.eigvals(a)
     else:
         import numpy as np
-        return xp.asarray(np.linalg.eigvals(np.asarray(a)))
+        return xp.asarray(np.linalg.eigvals(np.asarray(a)), device=xp_device(a))
 
 
 # https://github.com/numpy/numpy/blob/v2.1.0/numpy/lib/_function_base_impl.py#L1874-L1925
