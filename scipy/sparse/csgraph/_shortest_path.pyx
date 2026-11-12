@@ -12,7 +12,6 @@ finding the k-shortest paths between two nodes in a graph.
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
-import warnings
 
 import numpy as np
 cimport numpy as np
@@ -78,12 +77,13 @@ def shortest_path(csgraph, method='auto',
                   based on the input data.
         'FW'   -- Floyd-Warshall algorithm.
                   Computational cost is approximately ``O[N^3]``.
+                  This algorithm can be used when weights are negative.
                   The input csgraph will be converted to a dense representation.
         'D'    -- Dijkstra's algorithm with priority queue.
                   Computational cost is approximately ``O[I * (E + N) * log(N)]``,
                   where ``E`` is the number of edges in the graph,
                   and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
-                  ``I = N``.
+                  ``I = N``. Negative weights are not supported.
                   The input csgraph will be converted to a csr representation.
         'BF'   -- Bellman-Ford algorithm.
                   This algorithm can be used when weights are negative.
@@ -571,10 +571,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     both are nonzero, setting directed=False will not yield the correct
     result.
 
-    Also, this routine does not work for graphs with negative
-    distances.  Negative distances can lead to infinite cycles that must
-    be handled by specialized algorithms such as Bellman-Ford's algorithm
-    or Johnson's algorithm.
+    Also, this routine does not support graphs with negative distances.
+    If any edge weight is negative, this function raises ``ValueError``.
+    For graphs with negative weights, consider using ``bellman_ford`` or ``johnson`` .
 
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
@@ -612,9 +611,8 @@ def dijkstra(csgraph, directed=True, indices=None,
     csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
 
     if np.any(csgraph.data < 0):
-        warnings.warn("Graph has negative weights: dijkstra will give "
-                      "inaccurate results if the graph contains negative "
-                      "cycles. Consider johnson or bellman_ford.")
+        raise ValueError("Dijkstra's algorithm does not support negative "
+                         "edge weights. Use bellman_ford or johnson.")
 
     N = csgraph.shape[0]
 
