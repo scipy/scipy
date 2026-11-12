@@ -20,12 +20,7 @@ __all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
 
 def _char_poly(M, *, xp):
     """Characteristic polynomial of a square matrix, like 2-D `np.poly`."""
-    if hasattr(xp.linalg, 'eigvals'):
-        ev = xp.linalg.eigvals(M)
-    else:
-        # the non-symmetric eigenvalue problem is not in the array API spec
-        ev = xp.asarray(np.linalg.eigvals(np.asarray(M)), device=xp_device(M))
-    return _pu.poly(ev, xp=xp)
+    return _pu.poly(_pu.eigvals(M, xp=xp), xp=xp)
 
 
 def tf2ss(num, den):
