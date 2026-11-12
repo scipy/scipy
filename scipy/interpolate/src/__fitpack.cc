@@ -1392,7 +1392,7 @@ norm_eq_lsq(const double *xptr, int64_t m,            // x, shape (m,)
         double wval = w(j) * w(j);
 
         // where in t is xval
-        left = _find_interval(t.data, len_t, k, xval, k, 0);
+        left = _find_interval(t.data, len_t, k, xval, left, 0);
 
         // non-zero b-splines at xval
         _deBoor_D(t.data, xval, k, left, 0, wrk);
