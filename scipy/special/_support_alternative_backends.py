@@ -89,7 +89,11 @@ class _FuncInfo:
     # Handle case where a backend has an implementation that takes its
     # arguments in a different order.
     alt_arg_orders_map: dict[str, tuple[int, ...]] | None = None
-    # Some functions only take integer arrays for some arguments.
+    # For testing purposes. Whether tests should only use integer arrays
+    # for some arguments. This may be because noninteger args or not supported
+    # or simply because the results for a particular backend do not match those
+    # for NumPy. To make backend specific choices for positive_only,
+    # pass in a dict mapping backend names to bool or tuple[bool, ...].
     int_only: tuple[bool, ...] | dict[str, tuple[bool, ...]] | None = None
     # For testing purposes, whether tests should only use positive values
     # for some arguments. If bool and equal to True, restrict to positive
