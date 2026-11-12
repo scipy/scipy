@@ -2,7 +2,6 @@
 import copy
 import math
 import numbers
-import operator
 import os
 import warnings
 from abc import ABC, abstractmethod
@@ -18,7 +17,7 @@ from collections.abc import Callable
 import numpy as np
 
 from scipy._lib._array_api import xp_capabilities
-from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType
+from scipy._lib._util import _RNG, DecimalNumber, IntNumber, SeedType, _validate_int
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -1946,7 +1945,7 @@ class Sobol(QMCEngine):
             The fast-forwarded engine.
 
         """
-        n = operator.index(n)
+        n = _validate_int(n, 'n')
         if self.num_generated == 0:
             _fast_forward(
                 n=n - 1, num_gen=self.num_generated, dim=self.d,
