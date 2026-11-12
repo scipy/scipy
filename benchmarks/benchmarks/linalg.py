@@ -101,6 +101,29 @@ class Bench(Benchmark):
 
 
 
+class LDL(Benchmark):
+    params = [[100, 1000], [False, True], [False, True], ['float64', 'complex128']]
+    param_names = ['size', 'singular', 'overwrite_a', 'dtype']
+
+    def setup(self, size, singular, overwrite_a, dtype):
+        rng = np.random.default_rng(1749)
+        a = rng.standard_normal((size, size)).astype(dtype)
+        if np.iscomplexobj(a):
+            a += 1j * rng.standard_normal(a.shape)
+        a = a + a.conj().T + size * np.eye(size)
+        # An exactly singular block, independent of roundoff in the dense block.
+        a[:2, :] = a[:, :2] = 0
+        a[:2, :2] = 0.0625 if singular else np.eye(2)
+        self.a = np.asfortranarray(a)
+
+    def time_ldl(self, size, singular, overwrite_a, dtype):
+        # Include the same copy in both cases to provide fresh input to every
+        # repetition, even when the factorization overwrites its argument.
+        sl.ldl(self.a.copy(order='F'), overwrite_a=overwrite_a)
+
+    peakmem_ldl = time_ldl
+
+
 class BatchedSolveBench(Benchmark):
     params = [
         [(100, 10, 10), (100, 20, 20), (100, 100)],
