@@ -2632,6 +2632,27 @@ class f_gen(rv_continuous):
     def _ppf(self, q, dfn, dfd):
         return sc.fdtri(dfn, dfd, q)
 
+    def _isf(self, q, dfn, dfd):
+        def small_beta_quantile(q, dfn, dfd, p):
+            log_z = np.log(tiny) + (np.log(q) - np.log(p)) / (dfd/2)
+            return np.exp(np.log(dfd) - np.log(dfn) - log_z)
+
+        # The reciprocal of F(dfn, dfd) follows F(dfd, dfn).
+        with np.errstate(divide='ignore', over='ignore'):
+            regular = xpx.apply_where(
+                q <= 0.5, (q, dfn, dfd),
+                lambda q, dfn, dfd: 1 / sc.fdtri(dfd, dfn, q),
+                lambda q, dfn, dfd: sc.fdtri(dfn, dfd, 1 - q))
+            a, b = dfd/2, dfn/2
+            tiny = np.finfo(float).tiny
+            p = sc.betainc(a, b, tiny)
+            # Below tiny, use I_z(a, b) ~ z**a/(a*B(a, b)) only within precision.
+            use_tail = ((q <= 0.5) & (q < p)
+                        & (tiny * (a + abs(b - 1)) < a * np.finfo(float).eps/2))
+            return xpx.apply_where(
+                use_tail, (q, dfn, dfd, p), small_beta_quantile,
+                fill_value=regular)
+
     def _stats(self, dfn, dfd):
         v1, v2 = 1. * dfn, 1. * dfd
         v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
