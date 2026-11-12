@@ -403,12 +403,17 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     rho_prev, p = None, None
 
     for iteration in range(maxiter):
-        if np.linalg.norm(r) < atol:  # Are we done?
-            return x, 0
+        if np.linalg.norm(r) <= atol:  # Is the recursive residual small?
+            # Confirm convergence: the recurrence can drift from b - A @ x.
+            r_true = b - matvec(x)
+            if np.linalg.norm(r_true) <= atol:
+                return x, 0
+            r = r_true
+            p = None
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
-        if iteration > 0:
+        if p is not None:
             beta = rho_cur / rho_prev
             p *= beta
             p += z
