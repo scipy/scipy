@@ -121,9 +121,10 @@ def tf2ss(num, den):
                 D)
 
     frow = -den[1:][None, :]
-    A = xp.concat(
-        (frow, xp.eye(K - 2, K - 1, dtype=frow.dtype, device=device)), axis=0)
-    B = xp.eye(K - 1, 1, dtype=frow.dtype, device=device)
+    # a sliced square eye, dask chunks eye(K - 2, K - 1) per column
+    eye = xp.eye(K - 1, dtype=frow.dtype, device=device)
+    A = xp.concat((frow, eye[:K - 2, :]), axis=0)
+    B = eye[:, :1]
     C = num[:, 1:] - num[:, 0][:, None] * den[1:][None, :]
     D = xp.reshape(D, (C.shape[0], B.shape[1]))
 
