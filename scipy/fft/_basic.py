@@ -156,6 +156,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
     >>> from scipy.fft import fft, fftfreq, fftshift
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> t = np.arange(256)
     >>> sp = fftshift(fft(np.sin(t)))
     >>> freq = fftshift(fftfreq(t.shape[-1]))
