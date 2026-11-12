@@ -473,6 +473,28 @@ class TestLogSoftmax:
         x, expect = self.data_2d(xp)
         xp_assert_close(log_softmax(x.T, axis=0), expect.T, rtol=1e-13)
 
+    def test_log_softmax_large_gap(self):
+        # gh-19521. log(1 + tiny) is 0 in float32 once tiny is below eps,
+        # so the old shift-and-log reported an exact 0 at the maximum.
+        x = np.array([20.0, 0.0], dtype=np.float32)
+        got = log_softmax(x)
+        reference = np.array([-2.061153622438558e-09, -20.0], dtype=np.float64)
+        xp_assert_close(got, reference.astype(np.float32), rtol=0, atol=np.float32(1e-6))
+        assert got[0] < 0
+        # A non-finite maximum keeps the previous path.
+        nonfinite = log_softmax(np.array([np.inf, 1.0]))
+        assert np.isnan(nonfinite[0])
+        assert np.isneginf(nonfinite[1])
+
+        tied = np.array([5.0, 5.0, 0.0])
+        # log(2 + exp(-5)) at each maximum, and -5 + that at the small entry.
+        log_mass = np.log(2.0 + np.exp(-5.0))
+        xp_assert_close(
+            log_softmax(tied),
+            np.array([-log_mass, -log_mass, -5.0 - log_mass]),
+            rtol=1e-13,
+        )
+
     def test_log_softmax_3d(self, xp):
         # 3D input, with a tuple for the axis.
         x, expect = self.data_2d(xp)
