@@ -47,6 +47,7 @@ py3.extension_module('_lsap',
 rootfind_lib = static_library('rootfind',
   [
     'Zeros/bisect.c',
+    'Zeros/bisect_exact.c',
     'Zeros/brenth.c',
     'Zeros/brentq.c',
     'Zeros/ridder.c',
