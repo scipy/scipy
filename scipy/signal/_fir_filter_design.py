@@ -678,6 +678,44 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     >>> print(taps[72:78])
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
+    The flexibility of `firwin2` over :func:`firwin` is that it can design
+    filters with an arbitrary piecewise linear frequency response. For example,
+    the following designs a 201-tap FIR equalizer with three frequency bands of
+    different gains, sampled at 48 kHz:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> fs = 48000
+    >>> numtaps = 201
+    >>> freq = [0, 1000, 4000, 8000, 16000, fs/2]
+    >>> gain = [1.0, 1.5, 1.0, 0.5, 1.0, 1.0]
+    >>> taps = signal.firwin2(numtaps, freq, gain, fs=fs)
+    >>> f, H = signal.freqz(taps, fs=fs)
+    ...
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(f, 20 * np.log10(np.maximum(np.abs(H), 1e-10)))
+    >>> ax.set_xlabel('Frequency (Hz)')
+    >>> ax.set_ylabel('Gain (dB)')
+    >>> ax.set_title('FIR Equalizer Designed with firwin2')
+    >>> ax.grid()
+    >>> plt.show()
+
+    Unlike :func:`firwin`, `firwin2` can also design Type III and Type IV
+    (antisymmetric) filters via the ``antisymmetric=True`` option, which are
+    useful for differentiators and Hilbert transformers:
+
+    >>> fs = 1000
+    >>> taps = signal.firwin2(100, [0.0, 0.4, 0.6, 1.0], [1.0, 1.0, 0.0, 0.0],
+    ...                       antisymmetric=True, fs=fs)
+    >>> f, H = signal.freqz(taps, fs=fs)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(f, np.abs(H))
+    >>> ax.set_xlabel('Frequency (Hz)')
+    >>> ax.set_ylabel('Magnitude')
+    >>> ax.set_title('Type IV Highpass Filter (antisymmetric=True)')
+    >>> ax.grid()
+    >>> plt.show()
+
     """
     xp = array_namespace(freq, gain)
     device = xp_result_device(freq, gain)
