@@ -2,6 +2,7 @@
 import copy
 import math
 import numbers
+import operator
 import os
 import warnings
 from abc import ABC, abstractmethod
@@ -1945,6 +1946,7 @@ class Sobol(QMCEngine):
             The fast-forwarded engine.
 
         """
+        n = operator.index(n)
         if self.num_generated == 0:
             _fast_forward(
                 n=n - 1, num_gen=self.num_generated, dim=self.d,
