@@ -336,7 +336,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
 )
 def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
-                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
+                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri', 'eval_hermite'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
