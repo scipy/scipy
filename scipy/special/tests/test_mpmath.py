@@ -1648,7 +1648,8 @@ class TestSystematic:
 
         def legenq(n, m, z):
             if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
-                # Exclude narrow neighborhood of the unit circle |z| = 1 where lqmn has known limitations
+                # Exclude narrow neighborhood of the unit circle |z| = 1 where
+                # lqmn has known limitations
                 return np.nan
             tp = 2 if abs(z) < 1 else 3
             val = exception_to_nan(mpmath.legenq)(n, m, z, type=tp)
@@ -1668,11 +1669,13 @@ class TestSystematic:
 
         def legenq(n, m, z):
             if abs(z) < 1e-15 or abs(abs(z) - 1.0) < 1e-6:
-                # Exclude narrow neighborhood of the unit circle |z| = 1 where lqmn has known limitations
+                # Exclude narrow neighborhood of the unit circle |z| = 1 where
+                # lqmn has known limitations
                 return np.nan
             tp = 2 if abs(z) < 1 else 3
             val = exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=tp)
-            # Reconcile mpmath type=3 branch with SciPy's sqrt(z^2 - 1) convention in left half-plane
+            # Reconcile mpmath type=3 branch with SciPy's sqrt(z^2 - 1)
+            # convention in left half-plane
             if tp == 3 and z.real < 0:
                 val = (-1)**int(m.real) * val
             return val
