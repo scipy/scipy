@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
 from pytest import raises, warns
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
@@ -924,6 +925,7 @@ class TestFindPeaks:
         for value in props.values():
             assert len(value) == len(peaks)
         assert_array_equal(props["peak_heights"], x[peaks])
+        
 
 class TestFindPeaksCwt:
 
