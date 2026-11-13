@@ -4976,7 +4976,7 @@ class invgamma_gen(rv_continuous):
     :math:`\tau^2`, then it can be modeled using `invgamma` with
     ``a=`` :math:`\nu/2` and ``scale=`` :math:`\nu \tau^2/2`.
 
-    Wikipedia [2]_ uses shape :math:`\alpha` and scale :math:`\beta`; SciPy's
+    Wikipedia [1]_ uses shape :math:`\alpha` and scale :math:`\beta`; SciPy's
     standard form corresponds to :math:`\alpha = a` and :math:`\beta = 1`
     (general :math:`\beta` is absorbed into ``scale``).
 
@@ -4984,11 +4984,7 @@ class invgamma_gen(rv_continuous):
 
     References
     ----------
-    .. [1] Johnson, N. L., Kotz, S., and Balakrishnan, N. "Continuous Univariate
-           Distributions, Volume 1", Second Edition, John Wiley and Sons,
-           Chapter 17 (1994).
-
-    .. [2] "Inverse-gamma distribution", Wikipedia,
+    .. [1] "Inverse-gamma distribution", Wikipedia,
            https://en.wikipedia.org/wiki/Inverse-gamma_distribution
 
     %(example)s
