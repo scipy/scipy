@@ -571,6 +571,11 @@ def _needs_betainc(name):
     )
 
 
+orthogonal_poly_eval_additional_note = (
+    "With PyTorch, noninteger values of the degree `n` are cast to"
+    " integers before evaluation."
+)
+
 _special_funcs = (
     # Airy functions
     _FuncInfo(
@@ -1945,7 +1950,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "legendre_polynomial_p"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -1958,7 +1965,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "chebyshev_polynomial_t"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -1971,7 +1980,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "chebyshev_polynomial_u"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -2011,7 +2022,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "laguerre_polynomial_l"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -2033,7 +2046,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "hermite_polynomial_h"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -2046,7 +2061,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "hermite_polynomial_he"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -2077,7 +2094,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "shifted_chebyshev_polynomial_t"},
         alt_arg_orders_map={"torch": (1, 0)},
@@ -2090,7 +2109,9 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["torch"],
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=orthogonal_poly_eval_additional_note,
+            ),
         ),
         alt_names_map={"torch": "shifted_chebyshev_polynomial_u"},
         alt_arg_orders_map={"torch": (1, 0)},
