@@ -2367,7 +2367,10 @@ def impulse(system, X0=None, T=None, N=None):
     if X0 is None:
         X = squeeze(sys.B)
     else:
-        X = squeeze(sys.B + X0)
+        # squeeze only 2-D X0: a squeezed Python scalar would become float64
+        if np.ndim(X0) > 1:
+            X0 = squeeze(X0)
+        X = squeeze(sys.B) + X0
     if N is None:
         N = 100
     if T is None:
