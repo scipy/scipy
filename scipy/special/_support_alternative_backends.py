@@ -2526,6 +2526,7 @@ _special_funcs = (
         xp_capabilities(
             cpu_only=True,
             exceptions=["cupy"],
+            jax_jit=False,
         ),
         is_ufunc=False,
         int_only=(False, True, False),
