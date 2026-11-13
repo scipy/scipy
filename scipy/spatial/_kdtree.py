@@ -276,6 +276,11 @@ class Rectangle:
         return minkowski(np.zeros_like(delta), delta, p)
 
 
+# `cKDTree` is a Cython extension type, which cannot carry a Python decorator
+# in Cython; register its capabilities here instead.
+xp_capabilities(np_only=True)(cKDTree)
+
+
 @xp_capabilities(np_only=True)
 class KDTree(cKDTree):
     """
