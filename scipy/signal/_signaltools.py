@@ -4200,6 +4200,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
             ', '.join(_upfirdn_modes))
 
     if padtype in funcs:
+        if (padtype in ("minimum", "maximum") and xp.isdtype(x.dtype, "integral")
+                and xp.iinfo(x.dtype).bits < 64):
+            dtype = np.result_type(np.asarray(x), np.asarray(h), np.float32)
+            x = xp.astype(x, getattr(xp, dtype.name))
         x = x - background_values
 
     # filter then remove excess
@@ -5067,6 +5071,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         return xp.asarray(y, device=device)
 
     # method == "pad"
+    if x.dtype.kind in "iu" and x.dtype.itemsize < 8:
+        x = x.astype(np.result_type(x, b, a, 1.0))
     edge, ext = _validate_pad(padtype, padlen, x, axis,
                               ntaps=max(len(a), len(b)))
 
@@ -5369,6 +5375,8 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
+    if x.dtype.kind in "iu" and x.dtype.itemsize < 8:
+        x = x.astype(np.result_type(x, sos, 1.0))
 
     # `method` is "pad"...
     ntaps = 2 * n_sections + 1
