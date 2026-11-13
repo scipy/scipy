@@ -14,6 +14,22 @@ platforms = [
 preview = ["pixi-build"]
 requires-pixi = ">=0.83.0"
 
+[workspace.build-variants]
+c_compiler = ["clang"]
+cxx_compiler = ["clangxx"]
+# NOTE: this is necessary for now to get all source packages in the ASAN env to use
+# the same version of clang
+c_compiler_version = ["22"]
+cxx_compiler_version = ["22"]
+python = ["3.12", "3.13", "3.14", "3.15"]
+
+[workspace.target.win.build-variants]
+c_compiler = ["clang-cl"]
+cxx_compiler = ["clang-cl"]
+
+[workspace.target.win-arm64.build-variants]
+python = ["3.14", "3.15"]
+
 
 ### SciPy Package Definition ###
 
@@ -24,20 +40,8 @@ version = "*"
 [package.build.config]
 compilers = ["c", "cxx"]
 
-[workspace.build-variants]
-# NOTE: this is necessary for now to get all source packages in the ASAN env to use
-# the same version of clang
-c_compiler = ["clang"]
-cxx_compiler = ["clangxx"]
-c_compiler_version = ["22"]
-cxx_compiler_version = ["22"]
-
-[workspace.target.win.build-variants]
-c_compiler = ["clang-cl"]
-cxx_compiler = ["clang-cl"]
-
 [package.host-dependencies]
-uv = "*"
+python = "*"
 pkg-config = "*"
 ninja = "*"
 meson = "!=1.12.0"  # scipy/scipy#25904
