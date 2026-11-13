@@ -2128,7 +2128,7 @@ const char *eval_chebyc_doc = R"(
     roots_chebyc : roots and quadrature weights of Chebyshev
                    polynomials of the first kind on [-2, 2]
     chebyc : Chebyshev polynomial object
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
 
     References
@@ -2292,7 +2292,7 @@ const char *eval_chebyt_doc = R"(
     chebyu : Chebychev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
 
     Notes
     -----
@@ -2603,7 +2603,7 @@ const char *eval_hermite_doc = R"(
     roots_hermite : roots and quadrature weights of physicist's
                     Hermite polynomials
     hermite : physicist's Hermite polynomial object
-    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    :class:`numpy.polynomial.hermite.Hermite` : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
 
     References
@@ -2675,7 +2675,7 @@ const char *eval_hermitenorm_doc = R"(
     roots_hermitenorm : roots and quadrature weights of probabilist's
                         Hermite polynomials
     hermitenorm : probabilist's Hermite polynomial object
-    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    :class:`numpy.polynomial.hermite_e.HermiteE` : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
 
     References
@@ -2833,7 +2833,7 @@ const char *eval_laguerre_doc = R"(
     roots_laguerre : roots and quadrature weights of Laguerre
                      polynomials
     laguerre : Laguerre polynomial object
-    numpy.polynomial.laguerre.Laguerre : Laguerre series
+    :class:`numpy.polynomial.laguerre.Laguerre` : Laguerre series
     eval_genlaguerre : evaluate generalized Laguerre polynomials
 
     References
@@ -2910,7 +2910,7 @@ const char *eval_legendre_doc = R"(
                      polynomials
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
-    numpy.polynomial.legendre.Legendre : Legendre series
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
 
     References
     ----------
@@ -2993,7 +2993,7 @@ const char *eval_sh_chebyt_doc = R"(
                       Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
 
     References
     ----------
@@ -3218,7 +3218,7 @@ const char *eval_sh_legendre_doc = R"(
                         Legendre polynomials
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
-    numpy.polynomial.legendre.Legendre : Legendre series
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
 
     References
     ----------

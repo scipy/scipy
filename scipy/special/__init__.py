@@ -800,7 +800,13 @@ from ._ufuncs import *
 from . import _basic
 from ._basic import *
 
-# Replace some function definitions from _ufuncs and _basic
+from ._ellip_harm import (
+    ellip_harm,
+    ellip_harm_2,
+    ellip_normal
+)
+
+# Replace some function definitions from _ufuncs, _basic and _ellip_harm
 # to add Array API support
 from ._support_alternative_backends import *
 
@@ -812,11 +818,7 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
+
 from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,

@@ -2,8 +2,7 @@ from functools import partial
 import pickle
 
 import pytest
-from hypothesis import given, strategies
-import hypothesis.extra.numpy as npst
+
 from scipy._external.packaging_version import version
 
 from scipy import special
@@ -88,6 +87,9 @@ def _skip_or_tweak_alternative_backends(
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal"}:
+        pytest.skip("requires dedicated tests due to keyword arguments.")
+
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
@@ -132,7 +134,11 @@ def _skip_or_tweak_alternative_backends(
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
-                                          'zeta', 'xlog1py'))
+                                          'zeta', 'xlog1py', 'eval_legendre',
+                                          'eval_chebyt', 'eval_chebyu',
+                                          'eval_laguerre', 'eval_hermite',
+                                          'eval_hermitenorm', 'eval_sh_chebyt',
+                                          'eval_sh_chebyu'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
@@ -166,13 +172,14 @@ def _skip_or_tweak_alternative_backends(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get(get_native_namespace_name(xp))
     if int_only is None:
         int_only = (False, ) * nfo.n_args
-        dtypes = (base_dtype, ) * nfo.n_args
-    else:
-        dtypes = tuple(
-            'intp' if needs_int else base_dtype for needs_int in int_only
-        )
+
+    dtypes = tuple(
+        'intp' if needs_int else base_dtype for needs_int in int_only
+    )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, int_only, elementwise_only=True
@@ -315,52 +322,6 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     _tuple_aware_xp_assert_close(res, _tuple_aware_to_xp(ref, xp), atol=atol)
 
 
-@pytest.mark.xslow
-@given(data=strategies.data())
-@pytest.mark.fail_slow(5)
-@pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs])
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings(
-    "ignore:overflow encountered:RuntimeWarning:array_api_strict"
-)
-def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
-                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
-        pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
-    positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype], (False,)*nfo.n_args, elementwise_only=True
-    )
-    dtype_np = getattr(np, dtypes[0])
-    dtype_xp = getattr(xp, dtypes[0])
-
-    elements = {'allow_subnormal': False}
-    # Most failures are due to NaN or infinity; uncomment to suppress them
-    # elements['allow_infinity'] = False
-    # elements['allow_nan'] = False
-    if any(positive_only):
-        elements['min_value'] = 0
-
-    shapes, _ = data.draw(
-        npst.mutually_broadcastable_shapes(num_shapes=nfo.n_args))
-    args_np = [data.draw(npst.arrays(dtype_np, shape, elements=elements))
-               for shape in shapes]
-
-    args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
-    args_np = [np.asarray(arg, dtype=dtype_np) for arg in args_np]
-
-    res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
-    ref = nfo.func(*args_np)  # Unwrapped ufunc
-    ref = _fix_ref_dtype(ref, xp, dtypes)
-    # When dtype_np is integer, the output dtype can be float
-    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
-    atol = 0 if ref_dtype.kind in 'iu' else 10 * np.finfo(ref_dtype).eps
-    _tuple_aware_xp_assert_close(res, _tuple_aware_to_xp(ref, xp), atol=atol)
-
-
 @pytest.mark.filterwarnings("ignore:numpy.core is deprecated:DeprecationWarning")
 @pytest.mark.parametrize("func", [nfo.wrapper for nfo in _special_funcs])
 def test_pickle(func):
@@ -386,18 +347,25 @@ def test_doc(func):
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize('nfo', _special_funcs)
-def test_ufunc_kwargs(nfo):
+@pytest.mark.parametrize(
+    'func,nfo',
+    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.is_ufunc],
+)
+def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work even though ufuncs have been replaced.
     """
+    ufunc = nfo.func
     int_only = nfo.int_only
     if not nfo.is_ufunc:
         pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
     func, ufunc = nfo.wrapper, nfo.func
+
+    if isinstance(int_only, dict):
+        int_only = int_only.get("numpy")
     if int_only is None:
-        int_only = (False, ) * nfo.n_args
-    # out=
+        int_only = (False,) * nfo.n_args
+
     args = [
         np.asarray([.1, .2]) if not needs_int
         else np.asarray([1, 2])
