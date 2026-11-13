@@ -963,13 +963,13 @@ class TestStudentT:
     (1000, -30, 7.6873437220217411e-142)
     ])
     def test_students_t_functions_spot_checks(self, df, t, cdf_ref):
-        assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-12)
+        assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-13)
         assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
         assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)
 
     @pytest.mark.parametrize("df, t, cdf_ref", [
-        (3, -2.311368906937497e+82, 8.9296194283025105e-248),
-        (10, -8.109742389861548e+29, 1.0000000001178707e-295)
+        (3, -2.311368906937497e82, 8.9296194283025105e-248),
+        (10, -8.109742389861548e29, 1.0000000001178707e-295)
     ])
     def test_gh25968(self, df, t, cdf_ref):
         # gh25968 reported wrong quantiles in the extreme left tail
