@@ -17,20 +17,28 @@
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
          :doi:`10.1016/0771-050X(75)90034-0`.
 """
-import warnings
 import operator
+import warnings
+
 import numpy as np
 
 from scipy._lib._array_api import (
-    array_namespace, concat_1d, xp_capabilities, xp_result_device
+    array_namespace,
+    concat_1d,
+    xp_capabilities,
+    xp_result_device,
 )
 
-from ._bsplines import (
-    _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
-    _lsq_solve_qr_for_root_rati_periodic, _periodic_knots
-)
 from . import _dierckx
-
+from ._bsplines import (
+    BSpline,
+    _lsq_solve_qr,
+    _lsq_solve_qr_for_root_rati_periodic,
+    _not_a_knot,
+    _periodic_knots,
+    fpcheck,
+    make_interp_spline,
+)
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -313,7 +321,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=No
     # Computes fp0 for constant function
     if periodic:
         t = np.zeros(nmin, dtype=float)
-        for i in range(0, k + 1):
+        for i in range(k + 1):
             t[i] = x[0] - (k - i) * per
             t[i + k + 1] = x[m - 1] + i * per
         _, fp = _get_residuals(x, y, t, k, w, periodic=periodic)
@@ -990,7 +998,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np,
         # in case of periodic splines
         per = xe - xb
         tc = np.zeros(2*(k + 1), dtype=float)
-        for i in range(0, k + 1):
+        for i in range(k + 1):
             tc[i] = x[0] - (k - i) * per
             tc[i + k + 1] = x[m - 1] + i * per
         _, fp0 = _get_residuals(x, y, tc, k, w, periodic=periodic)
@@ -1158,7 +1166,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     >>> rng = np.random.default_rng(42)
     >>> x = np.linspace(0, 10, 200)
     >>> sin = np.sin(x) * 5
-    >>> noise = rng.standard_normal(0, 0.8, x.shape) 
+    >>> noise = 0.8 * rng.standard_normal(x.shape) 
     >>> y_noisy = sin + noise
     >>> spl = make_splrep(x, y_noisy, s=0) 
     >>> spl_smooth = make_splrep(x, y_noisy, s=15)
@@ -1176,7 +1184,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
        >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
        >>> plt.legend()
        >>> plt.show()
-    """# noqa: E501
+    """
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
     device = xp_result_device(x, y, w, t)
@@ -1338,7 +1346,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """  # noqa:E501
+    """
 
     bc_type = _validate_bc_type(bc_type)
 
