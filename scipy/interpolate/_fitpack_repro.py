@@ -1155,24 +1155,27 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     --------
     >>> from scipy.interpolate import make_splrep
     >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
     >>> x = np.linspace(0, 10, 200)
-    >>> sin = np.sin(x)
-    >>> noise = np.random.normal(0, 0.1, x.shape)  # add noise to the sine function 
+    >>> sin = np.sin(x) * 5
+    >>> noise = rng.standard_normal(0, 0.8, x.shape) 
     >>> y_noisy = sin + noise
-    >>> spl = make_splrep(x, y_noisy, s=0) # create a spline function which hits every point
-    >>> spl_smooth = make_splrep(x, y_noisy, s=15) # create a smoothing spline function
-    For better understanding of the smoothing effect,
-    one can plot the original noisy data,
-    the spline that interpolates all points,
-    and the smoothing spline.
-    The smoothing spline will not pass through every point.
-    The code for plotting is as follows:
-    >>> import matplotlib.pyplot as plt
-    >>> plt.figure(figsize=(15, 6)) # increases the figure size for better visibility
-    >>> plt.scatter(x, y_noisy, label='Noisy Data', color='lightgray')
-    >>> plt.plot(x, spl(x), label='Interpolating Spline') # spline that hits every point
-    >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red') # smoothing spline
-    >>> plt.show()
+    >>> spl = make_splrep(x, y_noisy, s=0) 
+    >>> spl_smooth = make_splrep(x, y_noisy, s=15)
+
+    If you want to see a graphical representation
+    of the fitted smoothing spline from above, you can use the following code:
+
+    .. plot::
+       :context: close-figs
+
+       >>> import matplotlib.pyplot as plt
+       >>> plt.figure(figsize=(15, 6)) 
+       >>> plt.scatter(x, y_noisy, label='Noisy Data', color='orange')
+       >>> plt.plot(x, spl(x), label='Interpolating Spline', color='blue')
+       >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
+       >>> plt.legend()
+       >>> plt.show()
     """# noqa: E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
