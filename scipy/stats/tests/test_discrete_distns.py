@@ -734,6 +734,30 @@ class TestPoissonBinomial:
                0.0277036647503902354, 0.0007425936892786034]
         assert_allclose(res, ref)
 
+    @pytest.mark.parametrize("p, k, ref_sf, ref_logsf", [
+        ([(1 + i % 9) / 128 for i in range(32)], 23,
+         1.1963531710514960e-29, -66.595689791368116),
+        ([1 / 128] * 256, 249, 0.0, -1186.4216412494768),
+        ([1e-20] * 16, 0, 1.5999999999999999e-19, -43.279113137641133),
+    ])
+    def test_sf_small_upper_tail_gh26409(self, p, k, ref_sf, ref_logsf):
+        # Small upper tails must keep their value instead of being lost to
+        # 1 - cdf. Reference values are exact, with the float inputs taken as
+        # rationals:
+        #
+        # from fractions import Fraction
+        # from decimal import Decimal, getcontext
+        # getcontext().prec = 80
+        # dist = [Fraction(1)]
+        # for pi in map(Fraction, p):
+        #     dist = [a * (1 - pi) + b * pi for a, b in zip(dist + [0], [0] + dist)]
+        # sf = sum(dist[k + 1:])
+        # ref_sf, ref_logsf = float(sf), float(
+        #     (Decimal(sf.numerator) / Decimal(sf.denominator)).ln())
+        p = np.asarray(p)
+        assert_allclose(poisson_binom.sf(k, p), ref_sf, rtol=1e-13)
+        assert_allclose(poisson_binom.logsf(k, p), ref_logsf, rtol=1e-13)
+
 
 class TestRandInt:
     def test_gh19759(self):
