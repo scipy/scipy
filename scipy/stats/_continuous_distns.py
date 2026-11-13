@@ -4554,10 +4554,12 @@ class halfcauchy_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Half-Cauchy distribution", Wikipedia,
-           https://en.wikipedia.org/wiki/Half-Cauchy_distribution
+    .. [1] "Folded-t and half-t distributions", Wikipedia,
+           https://en.wikipedia.org/wiki/Folded-t_and_half-t_distributions
     .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
            Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, pp. 317-318.
+    .. [3] Gelman, A. (2006). "Prior distributions for variance parameters in
+           hierarchical models". Bayesian Analysis, 1(3), pp. 515-534.
 
     %(example)s
 
