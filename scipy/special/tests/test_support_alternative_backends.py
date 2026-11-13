@@ -118,7 +118,7 @@ def _skip_or_tweak_alternative_backends(
         return positive_only, dtypes
 
     # Integer-specific issues from this point onwards
-    if f_name == "round" and (is_cupy(xp) or is_torch(xp)):
+    if f_name == "round" and (is_cupy(xp) or is_torch(xp) or is_jax(xp)):
         pytest.skip("Backend integer rounding differs from scipy.special.round.")
 
     if f_name in {'gamma', 'gammasgn'} and is_cupy(xp):

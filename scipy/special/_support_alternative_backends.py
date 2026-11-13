@@ -2749,10 +2749,9 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.round, ["x"],
         xp_capabilities(
-            cpu_only=True,
-            exceptions=["cupy", "torch"],
             extra_note=_ufunc_kwargs_extra_note(),
         ),
+        backends_with_func_in_xp=("jax.numpy",),
     ),
     _FuncInfo(
         _ufuncs.xlogy, ["x", "y"],
