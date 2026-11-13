@@ -70,3 +70,15 @@ def test_no_spooky_action_at_a_distance(cls, xp):
     observed = foo.g(y, z)
     expected = xp.asarray(44.0)[()]
     xp_assert_close(observed, expected)
+
+
+def test_extension_type():
+    # Extension types (e.g. Cython ``cdef class``es) have an immutable
+    # ``__doc__``; the decorator must still record their capabilities.
+    from scipy.spatial import cKDTree
+
+    table = {}
+    doc = cKDTree.__doc__
+    assert xp_capabilities(np_only=True, capabilities_table=table)(cKDTree) is cKDTree
+    assert table[cKDTree]["np_only"] is True
+    assert cKDTree.__doc__ == doc

@@ -975,9 +975,11 @@ def xp_capabilities(
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc
-        except AttributeError:
-            # Can't update __doc__ on ufuncs if SciPy
-            # was compiled against NumPy < 2.2.
+        except (AttributeError, TypeError):
+            # Can't update __doc__ on ufuncs if SciPy was compiled against
+            # NumPy < 2.2 (AttributeError), nor on extension types such as
+            # Cython ``cdef class``es (TypeError: immutable type). The
+            # capabilities are still recorded in the table.
             pass
 
         return f
