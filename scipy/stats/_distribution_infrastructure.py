@@ -365,7 +365,7 @@ class _Interval(_Domain):
         """
         rng = np.random.default_rng(rng)
         dtype = xpx.default_dtype(xp)
-        device = xp_result_device(xp_device(min), xp_device(max))
+        device = xp_result_device(min, max)
         ddd = dict(dtype=dtype, device=device)
 
         # def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
@@ -1592,8 +1592,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._xp = array_namespace(*parameters.values())
             else:
                 self._xp = xp or self._xp
-                self._xp == (xp_compat_namespace(np) if self._xp == np
-                             else self._xp)
+                self._xp = (xp_compat_namespace(np) if self._xp == np
+                            else self._xp)
             device = device or xp_result_device(*parameters.values())
             dtype = dtype or xp_result_type(*parameters.values(),
                                             getattr(self, '_dtype', None),
@@ -3220,7 +3220,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if isinstance(rng, qmc.QMCEngine):
             uniform = self._qmc_uniform(full_shape, qrng=rng, **params)
         else:
-            uniform = rng.random(size=full_shape)
+            dtype = np.float32 if 'float32' in str(self._dtype) else np.float64
+            uniform = rng.random(size=full_shape, dtype=dtype)
         uniform = xp.asarray(uniform, dtype=self._dtype, device=self._device)
         return self._icdf_dispatch(uniform, **params)
 
@@ -6170,8 +6171,7 @@ class MonotonicTransformedDistribution(TransformedDistribution):
         xp = self._xp
         a, b = self._dist._support(**params)
         # For reciprocal transformation, we want this zero to become -inf
-        n0 = float('-0')
-        b = xp.where(b==0, xp.asarray(n0, dtype=b.dtype, device = self._device), b)
+        b = xp.where(b==0, -xp.zeros_like(b), b)
         with np.errstate(divide='ignore'):
             if self._increasing:
                 return self._g(a), self._g(b)

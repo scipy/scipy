@@ -1534,7 +1534,9 @@ class TestMakeDistribution:
             def sample(self, shape, *, a, b, rng=None):
                 # hmm... self._xp does not exist. Makes sense, but how
                 # can user-defined classes know which backend is being used?
-                p = xp.asarray(rng.uniform(size=shape))
+                dtype = (np.float32 if 'float32' in str(xp.result_type(a, b))
+                         else np.float64)
+                p = xp.asarray(rng.random(size=shape, dtype=dtype))
                 return xp.exp(xp.log(a) + p * (xp.log(b) - xp.log(a)))
 
             def moment(self, order, kind='raw', *, a, b):
