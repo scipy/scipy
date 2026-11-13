@@ -3139,3 +3139,14 @@ def test_byte_order_output_writeback(call):
     leaked = [str(w.message) for w in rec
               if issubclass(w.category, RuntimeWarning)]
     assert leaked == []
+
+
+def test_binary_erosion_filter_larger_than_array():
+    # Regression test for gh-26663: out-of-bounds offset when kernel
+    # footprint > array dimension
+    a = np.array([[0, 1], [1, 0]], bool)
+    s = np.array([[0, 1, 1]], bool)
+    res = ndimage.binary_erosion(a, s, origin=(0, 1), border_value=1, iterations=2)
+    expected = np.array([[0, 0], [1, 0]], bool)
+    np.testing.assert_array_equal(res, expected)
+
