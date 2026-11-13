@@ -488,6 +488,8 @@ class LBFGS(HessianUpdateStrategy):
     ``(delta_x, delta_grad)`` instead of a dense ``(n, n)`` matrix, which
     makes it usable for problems with a large number of variables.
 
+    .. versionadded:: 2.0.0
+
     Parameters
     ----------
     memory : int, optional
@@ -545,6 +547,22 @@ class LBFGS(HessianUpdateStrategy):
     .. [3] Byrd, Richard H., Jorge Nocedal, and Robert B. Schnabel.
            "Representations of quasi-Newton matrices and their use in limited
            memory methods." Mathematical Programming 63 (1994), 129-156.
+
+    Examples
+    --------
+    Initialize a two-variable Hessian approximation and update it with a
+    displacement and the corresponding gradient difference. The updated
+    approximation satisfies the secant equation ``B @ s = y``.
+
+    >>> import numpy as np
+    >>> from scipy.optimize import LBFGS
+    >>> strategy = LBFGS(memory=5, init_scale=1)
+    >>> strategy.initialize(2, 'hess')
+    >>> s = np.array([1., 0.])
+    >>> y = np.array([2., 1.])
+    >>> strategy.update(s, y)
+    >>> strategy.dot(s)
+    array([2., 1.])
     """
 
     def __init__(self, memory=10, init_scale='auto'):
