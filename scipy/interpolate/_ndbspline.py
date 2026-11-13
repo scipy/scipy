@@ -654,7 +654,7 @@ def _check_lsq_design_matrix(matr, ncoeff):
 
 
 def make_lsq_ndbspline(
-    x, y, t, k=3, *, w=None, grid=False, solver=ssl.lsqr, **solver_args
+    x, y, t, k=3, *, w=None, grid=False, solver=None, **solver_args
 ):
     r"""Construct a least-squares tensor-product B-spline.
 
@@ -682,11 +682,12 @@ def make_lsq_ndbspline(
         If False (default), `x` contains scattered coordinate rows. If True,
         `x` contains the one-dimensional axes of a complete rectilinear grid.
     solver : callable, optional
-        Sparse least-squares solver. Default is
-        `scipy.sparse.linalg.lsqr`. The solver must accept a sparse design
-        matrix and one-dimensional right-hand side and return a result with
-        the coefficients and termination status in its first two entries.
-        Status values ``0``, ``1``, and ``2`` indicate successful termination.
+        Sparse least-squares solver. By default,
+        `scipy.sparse.linalg.lsqr` is currently used. The solver must accept a
+        sparse design matrix and one-dimensional right-hand side and return a
+        result with the coefficients and termination status in its first two
+        entries. Status values ``0``, ``1``, and ``2`` indicate successful
+        termination.
     **solver_args
         Additional keyword arguments passed to `solver`.
 
@@ -762,6 +763,9 @@ def make_lsq_ndbspline(
     >>> spl([[0.25, 0.5]])
     array([1.25])
     """
+    if solver is None:
+        solver = ssl.lsqr
+
     if grid:
         return _make_lsq_ndbspl_from_grid(
             x, y, t, k=k, w=w, solver=solver, **solver_args

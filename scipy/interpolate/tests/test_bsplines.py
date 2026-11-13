@@ -4102,6 +4102,27 @@ class TestMakeLSQNdBSplinePublicAPI:
         self._assert_fit(spl, degrees, x_eval, expected)
 
 
+def test_make_lsq_ndbspline_random_scattered_data():
+    rng = np.random.default_rng(1234)
+    x = rng.uniform([-1.0, -2.0], [1.0, 2.0], size=(200, 2))
+    y = 1.0 + 2.0 * x[:, 0] - 0.5 * x[:, 1] + 0.25 * x[:, 0] * x[:, 1]
+    t = (
+        np.r_[[-1.0] * 4, 0.0, [1.0] * 4],
+        np.r_[[-2.0] * 4, 0.0, [2.0] * 4],
+    )
+
+    spl = make_lsq_ndbspline(x, y, t, atol=1e-12, btol=1e-12)
+
+    x_eval = rng.uniform([-1.0, -2.0], [1.0, 2.0], size=(50, 2))
+    expected = (
+        1.0
+        + 2.0 * x_eval[:, 0]
+        - 0.5 * x_eval[:, 1]
+        + 0.25 * x_eval[:, 0] * x_eval[:, 1]
+    )
+    xp_assert_close(spl(x_eval), expected, atol=1e-10)
+
+
 class TestMakeND:
     def test_2D_separable_simple(self):
         x = np.arange(6)
