@@ -758,8 +758,11 @@ class TestMannWhitneyU:
         x = xp.asarray([offset + i for i in range(4)], dtype=xp.int64)
         y = xp.asarray([offset + i for i in range(4, 8)], dtype=xp.int64)
         res = mannwhitneyu(x, y, alternative='two-sided', method=method)
-        xp_assert_equal(res.statistic, xp.asarray(0.0, dtype=xp.float64))
-        xp_assert_close(res.pvalue, xp.asarray(2 / 70, dtype=xp.float64), rtol=1e-14)
+        rtol = 1e-6 if xpx.default_dtype(xp) == xp.float32 else 1e-14
+        xp_assert_equal(res.statistic, xp.asarray(0.0, dtype=res.statistic.dtype))
+        xp_assert_close(
+            res.pvalue, xp.asarray(2 / 70, dtype=res.pvalue.dtype), rtol=rtol
+        )
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative, xp):
