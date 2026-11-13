@@ -24,17 +24,20 @@ lazy_xp_modules = [special]
 
 
 def _fix_ref_dtype(ref, xp, dtypes):
-    # int64 promotes like float32 on torch with default dtype = float32
-    # cast reference if needed
+    # Match PyTorch's float32/complex64 default promotion behavior.
     if (
             is_torch(xp)
             and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
+        def cast(r):
+            dtype = np.complex64 if np.iscomplexobj(r) else np.float32
+            return np.asarray(r, dtype=dtype)
+
         if isinstance(ref, tuple):
-            ref = tuple(np.float32(r) for r in ref)
-        else:
-            ref = np.float32(ref)
+            return tuple(cast(r) for r in ref)
+        return cast(ref)
+
     return ref
 
 
@@ -88,6 +91,20 @@ def _skip_or_tweak_alternative_backends(
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
 
+    if f_name == "owens_t" and is_jax(xp) and all(
+            dtype == "float32" for dtype in dtypes
+    ):
+        pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
+
+    if is_jax(xp) and f_name in {
+            "ncfdtrinc", "nctdtridf", "stdtridf", "chndtridf"
+    }:
+        pytest.xfail(
+            "Random inputs can specify unattainable inverse CDF targets; "
+            "Boost can return spurious results which differ between NumPy"
+            " and JAX due to JAX employing flush to zero for subnormals."
+        )
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
@@ -119,7 +136,7 @@ def _skip_or_tweak_alternative_backends(
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py')))
+                                           'xlog1py', 'beta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -132,6 +149,10 @@ def _skip_or_tweak_alternative_backends(
         # they were float64 when falling back to NumPy/SciPy.
         if not nfo.torch_native:
             pytest.xfail("dtypes do not match")
+
+    if f_name == 'beta' and is_jax(xp):
+        # jax disagree's with scipy when gamma poles are involved.
+        positive_only = [True, True]
 
     return positive_only, dtypes
 
@@ -383,7 +404,12 @@ def test_ufunc_kwargs(nfo):
         for needs_int in int_only
     ]
 
-    nout = ufunc.nout
+    nin, nout = ufunc.nin, ufunc.nout
+
+    resolved_dtypes = ufunc.resolve_dtypes(
+        tuple(arg.dtype for arg in args) + (None,) * nout
+    )
+    out_dtypes = resolved_dtypes[nin:]
 
     if nfo.is_elementwise:
         out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
@@ -392,20 +418,33 @@ def test_ufunc_kwargs(nfo):
         out_shapes = (shape,) if nout == 1 else shape
 
     if nout == 1:
-        out = np.empty(out_shapes[0])
+        out = np.empty(out_shapes[0], dtype=out_dtypes[0])
     else:
-        out = tuple(np.empty(shape) for shape in out_shapes)
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, out_dtypes)
+        )
 
     y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     # out= with out.dtype != args.dtype
+    lower_dtypes = [
+        np.complex64 if np.issubdtype(dtype, np.complexfloating)
+        else np.float32
+        for dtype in out_dtypes
+    ]
     if nout == 1:
-        out = np.empty(2, dtype=np.float32)
+        out = np.empty(out_shapes[0], dtype=lower_dtypes[0])
     else:
-        out = tuple(np.empty(2, dtype=np.float32) for _ in range(nout))
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, lower_dtypes)
+        )
 
-    y = func(*args, out=out)
+    with np.errstate(over="ignore"):
+        # ignore overflow because out may not be representable as float32
+        y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
@@ -418,8 +457,18 @@ def test_ufunc_kwargs(nfo):
         # dtype=np.float32 not available due to mixed integer and floating point inputs.
         return
 
+    if not any(
+            sig.split("->")[1] == "f" * nout
+            for sig in ufunc.types
+    ):
+        # dtype=np.float32 will not be available if there is no loop
+        # with float32 output.
+        return
+
     # dtype=
-    y = func(*args, dtype=np.float32)
+    with np.errstate(over="ignore"):
+        # ignore overflow because result may not be representable as float32
+        y = func(*args, dtype=np.float32)
     if nout == 1:
         assert y.dtype == np.float32
     else:
