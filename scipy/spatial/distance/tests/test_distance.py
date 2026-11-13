@@ -46,6 +46,7 @@ import pytest
 
 import scipy.spatial.distance
 
+from scipy.linalg import block_diag
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y)
 from scipy.spatial.distance._distance import (
@@ -1792,22 +1793,86 @@ class TestHamming:
             hamming(x, y)
 
 
-class TestSomeDistanceFunctions:
+@make_xp_test_case(mahalanobis)
+class TestMahalanobis:
+    def test_mahalanobis(self, xp):
+        x = xp.asarray([1.0, 2.0, 3.0])
+        y = xp.asarray([1.0, 1.0, 5.0])
+        vi = xp.asarray([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
 
-    def setup_method(self):
-        # 1D arrays
-        x = np.array([1.0, 2.0, 3.0])
-        y = np.array([1.0, 1.0, 5.0])
+    def test_mahalanobis_array_like(self):
+        x = [1.0, 2.0, 3.0]
+        y = [1.0, 1.0, 5.0]
+        vi = [[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]]
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
 
-        self.cases = [(x, y)]
+    def test_invariance(self, xp):
+        # We cannot test invariance with the standard helpers because VI is a matrix
+        rng = np.random.default_rng(1)
+        n = 5
+        u, v = rng.random(n), rng.random(n)
+        A = rng.random((n, n))
+        VI = A @ A.T + np.eye(n)  # positive definite
+        expected = xp.asarray(0.8507644608189677)  # For seed 1
+        # Case 1: Zero-weighted elements (zero rows and columns in VI)
+        _u, _v = np.concat([u, rng.random(3)]), np.concat([v, rng.random(3)])
+        _VI = block_diag(VI, np.zeros((3, 3)))
+        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        xp_assert_close(result, expected)
+        # Case 2: Duplicated elements at half weight
+        _u, _v = np.concat([u, u]), np.concat([v, v])
+        _VI = block_diag(VI, VI) / 2
+        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        xp_assert_close(result, expected)
+        # Case 3: Permuted elements
+        p = rng.permutation(n)
+        _u, _v = u[p], v[p]
+        _VI = VI[p][:, p]
+        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        xp_assert_close(result, expected)
+        # Case 4: Mahalanobis is invariant to M @ x + c (if M has an inverse and VI is
+        # scaled accordingly)
+        c = rng.random(n)
+        M = rng.random((n, n)) + n * np.eye(n)
+        M_inv = np.linalg.inv(M)
+        _u, _v = M @ u + c, M @ v + c
+        _VI = M_inv.T @ VI @ M_inv
+        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        xp_assert_close(result, expected)
 
-    def test_mahalanobis(self):
-        x = np.array([1.0, 2.0, 3.0])
-        y = np.array([1.0, 1.0, 5.0])
-        vi = np.array([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
-        for x, y in self.cases:
-            dist = mahalanobis(x, y, vi)
-            assert math.isclose(dist, math.sqrt(6.0), abs_tol=1.5e-7)
+    @pytest.mark.parametrize("u_shape, v_shape, VI_shape", [
+        ((5, 2, 4), (2, 4), (3, 1, 1, 4, 4)),
+        ((2, 4), (1, 4), (2, 4, 4)),
+        ((1, 4), (3, 2, 4), (4, 4)),
+        ((4,), (3, 1, 4), (2, 4, 4)),
+    ])
+    def test_mahalanobis_nd(self, xp, u_shape, v_shape, VI_shape):
+        # We need to test this separate because mahalanobis uses "VI" instead of "w"
+        rng = np.random.default_rng(1)
+        dtype = xpx.default_dtype(xp, "real floating")
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('VI', 2))(mahalanobis)
+        u = xp.asarray(rng.random(u_shape), dtype=dtype)
+        v = xp.asarray(rng.random(v_shape), dtype=dtype)
+        A = rng.random(VI_shape)
+        VI = xp.asarray(A @ A.mT + np.eye(4), dtype=dtype)  # positive definite
+        xp_assert_close(mahalanobis(u, v, VI), ref_func(u, v, VI))
+
+    @pytest.mark.parametrize("u_shape, v_shape, VI_shape, match", [
+        ((5, 2, 4), (3, 4), (4, 4), "incompatible for broadcasting"),  # u and v
+        ((5, 2, 4), (2, 4), (3, 4, 4), "incompatible for broadcasting"),  # VI batch
+        ((5, 2, 4), (2, 4), (3, 3), "VI is not compatible"),  # VI and last axis
+        ((2, 1), (2, 4), (4, 4), "VI is not compatible"),  # u size 1 on last axis
+        ((2, 4), (2, 1), (4, 4), "VI is not compatible"),  # v size 1 on last axis
+        ((5, 2, 4), (2, 4), (4, 3), "VI must be a square matrix"),
+    ])
+    def test_mahalanobis_nd_invalid_shapes(self, xp, u_shape, v_shape, VI_shape,
+                                           match):
+        u, v, VI = xp.ones(u_shape), xp.ones(v_shape), xp.ones(VI_shape)
+        with pytest.raises(ValueError, match=match):
+            mahalanobis(u, v, VI)
 
 
 class TestSquareForm:
@@ -2681,6 +2746,7 @@ class TestChebyshev:
         make_xp_pytest_param(hamming, None),
         make_xp_pytest_param(cityblock, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        # mahalanobis uses a VI matrix instead of a w vector. Tested in TestMahalanobis
         make_xp_pytest_param(chebyshev, None),
         make_xp_pytest_param(canberra, None),
         # jensenshannon takes no w vector. Tested in TestJensenShannon
