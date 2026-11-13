@@ -2749,7 +2749,13 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.round, ["x"],
         xp_capabilities(
-            extra_note=_ufunc_kwargs_extra_note(),
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=(
+                    "For alternative backends, this is essentially an alias of"
+                    " ``xp.round``\n    and thus behaves differently from"
+                    " ``scipy.special.round`` with respect to\n    input ``dtype``."
+                )
+            ),
         ),
         backends_with_func_in_xp=("jax.numpy",),
     ),
