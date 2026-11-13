@@ -8300,6 +8300,34 @@ class TestMielke:
 
 
 class TestBurr:
+    @pytest.mark.parametrize('method, x, c, d, ref', [
+        ('logpdf', 1e-200, 2.0, 3.0, -2300.7933335248176),
+        ('pdf', 1e-160, 2.0, 0.6, 1.2000000000000196e-32),
+        ('logpdf', 1e-10, 1.0, 1.0, -1.9999999999000001e-10),
+        ('logpdf', 1e-10, 2.0, 0.5, -1.5e-20),
+        ('pdf', 100.0, 3.0, 1000000.0, 0.01103637771695487),
+        ('pdf', 1300.0, 100.0, 1000000.0, 3.102568772686277e-307),
+        ('cdf', 1000.0, 3.0, 10000.0, 0.9999900000500048),
+        ('logsf', 1e-20, 2.0, 3.0, -9.999999999999996e-121),
+        ('ppf', 0.99999999, 3.0, 1000000.0, 46415.88818102501),
+        ('ppf', 0.99999999, 0.3, 2.0, 4.678428185819969e+27),
+        ('isf', 0.9, 100.0, 0.001, 9.999999999999982e-11),
+        ('ppf', 0.1, 100.0, 0.001, 1.0000000000000011e-10),
+        ('logcdf', 10000.0, 100.0, 1e+100, -1e-300),
+        ('sf', 10000.0, 100.0, 1e+100, 1e-300),
+        ('logsf', 10000.0, 100.0, 1e+100, -690.7755278982137),
+        ('cdf', 1e-300, 1e+308, 1e-308, 1.000000000000055e-300),
+        ('logcdf', 1e-300, 1e+308, 1e-308, -690.7755278982137),
+        ('logcdf', np.nextafter(1., 0.), 10., 1e308, -6.931471805599458e307),
+        ('logcdf', np.nextafter(1., 0.), 1e308, 1e6, -1.1102230246251566e298),
+        ('logsf', 1e100, 0.3, 1e-308, -778.2737614319874),
+        ('logsf', 1e300, 10., 1e-308, -7616.951487624303),
+    ])
+    def test_extreme_parameters(self, method, x, c, d, ref):
+        # Defining density and CDF formulas evaluated with mpmath at 400 digits.
+        result = getattr(stats.burr, method)(x, c, d)
+        assert_allclose(result, ref, rtol=5e-13, atol=0)
+
     def test_endpoints_7491(self):
         # gh-7491
         # Compute the pdf at the left endpoint dst.a.
@@ -8382,6 +8410,19 @@ class TestBurr:
         ref = [1.9469686558286508, 124.57309395989076, 12457.309396155173,
                124573093.96155174]
         assert_allclose(stats.burr.isf(q, c, d), ref, rtol=1e-14)
+
+    def test_tails(self):
+        # Reference values were computed with mpmath (mp.dps = 50) from
+        #   L = d * log1p(x**-c); cdf = exp(-L); sf = -expm1(-L)
+        assert_allclose(stats.burr.sf(100, 10, 0.1), 1e-21, rtol=1e-14)
+        assert_allclose(stats.burr.sf(1e8, 2, 3), 2.9999999999999994e-16,
+                        rtol=1e-14)
+        assert_allclose(stats.burr.logsf(1e8, 2, 3), -35.742749199236621,
+                        rtol=1e-14)
+        assert_allclose(stats.burr.cdf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
+        assert_allclose(stats.burr.ppf(1e-100, 10, 0.1), 1e-100, rtol=1e-13)
+        assert_allclose(stats.burr.cdf(4000, 2, 1e7), 0.53526143897331468,
+                        rtol=1e-14)
 
 
 class TestBurr12:
