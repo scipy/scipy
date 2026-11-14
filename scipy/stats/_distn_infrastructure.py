@@ -2756,6 +2756,11 @@ class rv_continuous(rv_generic):
         loc = kwds.pop('loc', start[-2])
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
+        fixed_loc = 'floc' in kwds
+        fixed_scale = 'fscale' in kwds
+        s_val = kwds.get('fscale', scale)
+        s = float(s_val) if (s_val is not None and np.isfinite(s_val) and s_val > 0) else 1.0
+
         x0, func, restore, args = self._reduce_func(args, kwds, data=data)
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
@@ -2764,11 +2769,28 @@ class rv_continuous(rv_generic):
         if kwds:
             raise TypeError(f"Unknown arguments: {kwds}.")
 
+        opt_kwargs = {'disp': 0}
+        if optimizer is optimize.fmin and len(x0) > 0:
+            N = len(x0)
+            sim = np.empty((N + 1, N), dtype=np.float64)
+            sim[0] = x0
+            loc_idx = (N - 2) if (not fixed_loc and not fixed_scale) else ((N - 1) if (not fixed_loc and fixed_scale) else None)
+            scale_idx = (N - 1) if not fixed_scale else None
+            for k in range(N):
+                y = np.array(x0, copy=True, dtype=np.float64)
+                if k == loc_idx or k == scale_idx:
+                    step = 0.05 * s
+                else:
+                    step = 0.05 * max(abs(y[k]), 1.0)
+                y[k] += step
+                sim[k + 1] = y
+            opt_kwargs['initial_simplex'] = sim
+
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
         # especially when the user fixes parameters. Minimizing the sum
         # of squares of the error generalizes to these cases.
-        vals = optimizer(func, x0, args=(data,), disp=0)
+        vals = optimizer(func, x0, args=(data,), **opt_kwargs)
         obj = func(vals, data)
 
         if restore is not None:

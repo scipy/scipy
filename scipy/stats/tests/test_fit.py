@@ -1093,3 +1093,17 @@ class TestFitResult:
             message = r"matplotlib must be installed to use method `plot`."
             with pytest.raises(ModuleNotFoundError, match=message):
                 res.plot(plot_type='llama')
+
+
+def test_fit_shift_invariance():
+    # gh-26704: subtracting a constant from data should translate loc by that constant
+    # and preserve optimal log-likelihood without degenerating in fmin's initial simplex.
+    lisbon = np.array([
+        129, 117, 100, 100, 132, 94, 108, 113, 96, 113, 96, 72, 98, 85, 124, 108, 102, 102, 112,
+        107, 86, 91, 96, 89, 90, 89, 89, 84, 107, 111], dtype=float)
+    fit1 = stats.lognorm.fit(lisbon - 100)
+    fit2 = stats.lognorm.fit(lisbon - 101)
+    assert_allclose(fit1[0], fit2[0], rtol=1e-3)
+    assert_allclose(fit1[2], fit2[2], rtol=1e-3)
+    assert_allclose(fit1[1] + 100, fit2[1] + 101, rtol=1e-3)
+
