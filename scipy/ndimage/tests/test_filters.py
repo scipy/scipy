@@ -3391,3 +3391,13 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+@pytest.mark.parametrize('input_dtype, output_dtype',
+                         [(np.float32, np.float64), (np.float64, np.float32)])
+def test_median_filter_output_dtype(input_dtype, output_dtype):
+    x = np.array([1, 9, 2, 8, 3], dtype=input_dtype)
+    output = np.zeros(x.shape, dtype=output_dtype)
+    actual = ndimage.median_filter(x, size=3, mode='nearest', output=output)
+    assert actual is output
+    xp_assert_equal(actual, np.array([1, 2, 8, 3, 3], dtype=output_dtype))
