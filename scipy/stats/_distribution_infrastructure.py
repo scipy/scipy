@@ -5829,8 +5829,7 @@ class Mixture(_ProbabilityDistribution):
             message = "`weights` must have floating point dtype."
             raise ValueError(message)
 
-        # not array API, but works
-        if not xp.isclose(xp.sum(weights), xp.asarray(1.0, device=self._device)):
+        if not xpx.isclose(xp.sum(weights), 1.0, xp=xp):
             message = "`weights` must sum to 1.0."
             raise ValueError(message)
 
