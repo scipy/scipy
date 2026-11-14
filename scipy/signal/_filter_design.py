@@ -145,21 +145,21 @@ def findfreqs(num, den, N, kind='ba', *, scale='log'):
     >>> signal.findfreqs([1, 0], [1, 8, 25], N=5)
     array([1.e-02, 1.e-01, 1.e+00, 1.e+01, 1.e+02])
     """
-    xp = array_namespace(num, den)
+    xp, dev = array_namespace(num, den), xp_result_device(num, den)
     if kind not in ('ba', 'zp'):
         raise ValueError(f"Parameter {kind=} not in ('ba', 'zp')!")
     if scale not in ('log', 'linear'):
         raise ValueError(f"Parameter {scale=} not in ('log', 'linear')!")
 
-    zz, pp = (xpx.atleast_nd(xp.asarray(v_), ndim=1, xp=xp) for v_ in (num, den))
+    zz, pp = (xpx.atleast_nd(xp.asarray(v_, device=dev), ndim=1, xp=xp)
+              for v_ in (num, den))
     if not (zz.ndim == pp.ndim == 1):
         raise ValueError("Parameter `num` and `den` must be promotable to 1d arrays!")
     if kind == 'ba':  # calculate roots from polynomials:
         zz, pp = (_pu.polyroots(v_, xp=xp) for v_ in (zz, pp))
 
     # The default value of -1000 produces a numerically unstable e_min = np.round(1.5).
-    vv = xp.asarray([-1000.+0.j if scale == 'linear' else -1500.+0.j],
-                    device=xp_result_device(pp, zz))
+    vv = xp.asarray([-1000.+0.j if scale == 'linear' else -1500.+0.j], device=dev)
     zz, pp, vv = xp_promote(zz, pp, vv, broadcast=False, xp=xp)
 
     ii, jj = xp.logical_and(xp.abs(zz) < 1e5, xp.imag(zz) >= 0), xp.imag(pp) >= 0
@@ -175,14 +175,14 @@ def findfreqs(num, den, N, kind='ba', *, scale='log'):
     om_max = xp.max(3 * xp.abs(xp.real(vv) + mu) + 1.5 * xp.imag(vv))
 
     if scale == 'linear':
-        return xp.linspace(om_min, om_max, N, device=xp_device(vv))
+        return xp.linspace(om_min, om_max, N, device=dev)
 
     # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
     # depending on the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
     e_min, e_max = xp.log10(om_min) - 0.5 - fudge, xp.log10(om_max) + 0.5
     om = 10 ** xp.linspace(xp.round(e_min), xp.round(e_max), N, dtype=xp.float64,
-                           device=xp_device(vv))
+                           device=dev)
     return xp.astype(om, om_min.dtype)
 
 
