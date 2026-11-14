@@ -780,6 +780,34 @@ class TestTRF(BaseMixin, BoundsMixin, SparseMixin, LossFunctionMixin):
                                 tr_options={'regularize': regularize})
             assert_allclose(res.cost, 0, atol=1e-20)
 
+    def test_exact_tr_solver_rank_deficient(self):
+        J = np.diag([1.0, 0.0])
+        target = np.array([1e-3, 0.0])
+        res = least_squares(lambda x: J @ (x - target), np.zeros(2),
+                            jac=lambda x: J, method='trf',
+                            tr_solver='exact', x_scale=1.0, max_nfev=10)
+        assert res.success
+        assert_allclose(res.x, target, rtol=1e-12, atol=1e-15)
+
+    def test_exact_tr_solver_near_boundary(self):
+        J = np.diag([100.0, 1.0])
+        target = np.full(2, (1 + 1e-10) / np.sqrt(2))
+        res = least_squares(lambda x: J @ (x - target), np.zeros(2),
+                            jac=lambda x: J, method='trf',
+                            tr_solver='exact', x_scale=1.0, max_nfev=2)
+        assert res.success
+        assert res.cost < 1e-15
+
+    def test_exact_tr_solver_graded(self):
+        J = np.diag([1e16, 1.0])
+        target = np.array([0.0, 2.0])
+        res = least_squares(lambda x: J @ (x - target), np.zeros(2),
+                            jac=lambda x: J, method='trf',
+                            tr_solver='exact', x_scale=1.0)
+        assert res.success
+        assert_allclose(res.x, target, rtol=1e-12, atol=1e-30)
+        assert res.cost < 1e-20
+
 
 class TestLM(BaseMixin):
     method = 'lm'

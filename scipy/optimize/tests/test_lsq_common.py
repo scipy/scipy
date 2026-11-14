@@ -1,4 +1,5 @@
 from numpy.testing import assert_, assert_allclose, assert_equal
+import pytest
 from pytest import raises as assert_raises
 import numpy as np
 
@@ -6,7 +7,8 @@ from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
     CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
     minimize_quadratic_1d, evaluate_quadratic, reflective_transformation,
-    left_multiplied_operator, right_multiplied_operator)
+    left_multiplied_operator, right_multiplied_operator,
+    solve_lsq_trust_region)
 
 
 class TestBounds:
@@ -240,6 +242,74 @@ class TestTrustRegion:
         x = np.zeros(3)
         s = np.zeros(3)
         assert_raises(ValueError, intersect_trust_region, x, s, Delta)
+
+    @pytest.mark.parametrize('n, m, uf, s, V, expected', [
+        (2, 2, [-0.5, 3], [2, 0], np.eye(2), [0.25, 0]),
+        (2, 1, [-1], [2], [[0.6], [0.8]], [0.3, 0.4]),
+        (2, 2, [-1e-3, -5e-17], [1, 1e-16], np.eye(2), [1e-3, 0.5]),
+        (2, 2, [3, -2], [0, 0], np.eye(2), [0, 0]),
+    ], ids=['rank-deficient', 'underdetermined', 'tiny-singular-value',
+            'zero-jacobian'])
+    def test_solve_lsq_gauss_newton(self, n, m, uf, s, V, expected):
+        uf, s, V = (np.asarray(a, dtype=float) for a in (uf, s, V))
+        p, alpha, n_iter = solve_lsq_trust_region(n, m, uf, s, V, 1.0)
+        assert_allclose(p, expected, rtol=1e-14)
+        assert alpha == 0
+        assert n_iter == 0
+
+    @pytest.mark.parametrize('n, m, uf, s, V, expected, expected_alpha', [
+        (2, 2, [-3, 7], [2, 0], np.eye(2), [1, 0], 2),
+        (2, 1, [-3], [1], [[0.6], [0.8]], [0.6, 0.8], 2),
+        (2, 2, [-3, -4], [1, 1], np.eye(2), [0.6, 0.8], 4),
+        (2, 2, [0, -2], [1e16, 1], np.eye(2), [0, 1], 1),
+    ], ids=['rank-deficient', 'underdetermined', 'full-rank', 'graded'])
+    def test_solve_lsq_boundary(self, n, m, uf, s, V, expected,
+                                expected_alpha):
+        uf, s, V = (np.asarray(a, dtype=float) for a in (uf, s, V))
+        p, alpha, n_iter = solve_lsq_trust_region(n, m, uf, s, V, 1.0,
+                                                  rtol=1e-12)
+        assert_allclose(p, expected, rtol=1e-10, atol=1e-12)
+        assert_allclose(alpha, expected_alpha, rtol=1e-10)
+        assert n_iter > 0
+
+    @pytest.mark.parametrize('initial_alpha, rtol, max_iter', [
+        (3.5, 0.2, 10),
+        (4.5, 0.2, 10),
+        (1.0, 1e-12, 1),
+    ], ids=['outside', 'inside', 'max-iter'])
+    def test_solve_lsq_returns_evaluated_alpha(self, initial_alpha, rtol,
+                                               max_iter):
+        uf = np.array([-3.0, -4.0])
+        s = np.ones(2)
+        p, alpha, n_iter = solve_lsq_trust_region(
+            2, 2, uf, s, np.eye(2), 1.0, initial_alpha=initial_alpha,
+            rtol=rtol, max_iter=max_iter)
+        assert alpha == initial_alpha
+        assert n_iter == 1
+        p_alpha = -s * uf / (s**2 + alpha)
+        p_alpha *= min(1, 1 / np.linalg.norm(p_alpha))
+        assert_allclose(p, p_alpha, rtol=1e-14)
+
+    def test_solve_lsq_default_rtol(self):
+        uf = np.array([100.0, 1.0])
+        s = np.array([100.0, 1.0])
+        Delta = np.sqrt(2) * (1 - 1e-8)
+        p, alpha, _ = solve_lsq_trust_region(2, 2, uf, s, np.eye(2), Delta)
+        assert alpha >= 0
+        p_alpha = -s * uf / (s**2 + alpha)
+        assert abs(np.linalg.norm(p_alpha) - Delta) < 0.01 * Delta
+        assert_allclose(p, p_alpha * Delta / np.linalg.norm(p_alpha),
+                        rtol=1e-14)
+
+    def test_solve_lsq_max_iter_descent(self):
+        uf = np.array([-1.0, -1.0])
+        s = np.array([10.0, 0.01])
+        Delta = 10.0
+        p, alpha, n_iter = solve_lsq_trust_region(
+            2, 2, uf, s, np.eye(2), Delta, max_iter=1)
+        assert n_iter == 1
+        assert np.linalg.norm(p) <= Delta
+        assert 0.5 * np.sum((s * p + uf)**2) <= 0.5 * np.sum(uf**2)
 
 
 def test_reflective_transformation():
