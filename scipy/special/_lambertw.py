@@ -2,6 +2,8 @@ from ._ufuncs import _lambertw
 
 import numpy as np
 
+__all__ = ["lambertw"]
+
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
