@@ -934,6 +934,27 @@ def estimate_rank(A, eps, rng=None):
     -------
     int
         Estimated matrix rank.
+
+    Examples
+    --------
+    Estimate the numerical rank of a Hilbert matrix.
+
+    >>> import numpy as np
+    >>> from scipy.linalg import hilbert
+    >>> from scipy.linalg.interpolative import estimate_rank
+    >>> from scipy.sparse.linalg import aslinearoperator
+
+    >>> A = hilbert(300)
+    >>> estimate_rank(A, eps=1e-3, rng=np.random.default_rng(44))
+    12
+
+    Different algorithms are used for arrays and linear operators, so the
+    estimated ranks may differ. The same matrix can be provided as a
+    ``LinearOperator``:
+
+    >>> L = aslinearoperator(A)
+    >>> estimate_rank(L, eps=1e-3, rng=np.random.default_rng(44))
+    5
     """
     from scipy.sparse.linalg import LinearOperator
 
