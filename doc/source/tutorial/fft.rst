@@ -617,6 +617,59 @@ array([ 10.,  20.,  10., -10.,  15.])
 >>> idct(dct(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
+Orthogonalization and DCT-I interpolation
+-----------------------------------------
+
+With ``norm="ortho"``, DCT types I, II, and III use
+``orthogonalize=True`` by default. Orthogonalization changes the
+transform definition (including endpoint weights), not just its
+overall scaling. Set ``orthogonalize=False`` to retain the
+Fourier-related definition while still using ``norm="ortho"`` for
+normalization. Use the same setting in :func:`dct` and :func:`idct`.
+
+The difference matters when using **DCT-I to interpolate between
+Chebyshev-Lobatto grids of different lengths**. A forward transform and
+its inverse can reconstruct the original samples with either setting,
+but this does not imply equivalent length-changing interpolation.
+For a linear function sampled on five Chebyshev-Lobatto points, the
+following example evaluates the DCT-I coefficients on a finer grid of
+50 points. Here ``orthogonalize=False`` preserves the cosine-series
+interpretation required for the interpolation. The factor below
+compensates for the change in transform length under ``norm="ortho"``.
+
+.. plot::
+    :alt: "Linear DCT-I interpolation from 5 to 50 Chebyshev-Lobatto points. The non-orthogonalized result follows the straight line; the default orthogonalization distorts it."
+
+    >>> from numpy.polynomial.chebyshev import chebpts2
+    >>> from scipy.fft import dct, idct
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> x = chebpts2(5)
+    >>> x_fine = chebpts2(50)
+    >>> scale = np.sqrt((len(x_fine) - 1) / (len(x) - 1))
+    >>> coeff = dct(x, type=1, norm="ortho", orthogonalize=False)
+    >>> y = scale * idct(coeff, type=1, n=len(x_fine),
+    ...                  norm="ortho", orthogonalize=False)
+    >>> coeff_orth = dct(x, type=1, norm="ortho")
+    >>> y_orth = scale * idct(coeff_orth, type=1, n=len(x_fine),
+    ...                       norm="ortho")
+    >>> np.allclose(y, x_fine, rtol=0, atol=1e-12)
+    True
+    >>> bool(np.max(np.abs(y_orth - x_fine)) > 0.1)
+    True
+    >>> fig, ax = plt.subplots()
+    >>> _ = ax.plot(x_fine, x_fine, "k--", label="f(x) = x")
+    >>> _ = ax.plot(x_fine, y, label="orthogonalize=False")
+    >>> _ = ax.plot(x_fine, y_orth, label="orthogonalize=True (default)")
+    >>> _ = ax.plot(x, x, "ko", label="Original samples")
+    >>> _ = ax.set(xlabel="x", ylabel="Interpolated values")
+    >>> _ = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2, frameon=False)
+    >>> plt.show()
+
+The appropriate ``orthogonalize`` value depends on the task: a
+fixed-length inverse and a length-changing DCT-I interpolation are
+different operations.
+
 Example
 -------
 
