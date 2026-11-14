@@ -177,6 +177,10 @@ def bode_signature(system, w=None, n=100):
 dbode_signature = bode_signature
 
 
+def freqs_ss_signature(A, B, C, D, *, om_spec, f_scale='linear', rtol=1e-12, atol=0.):
+    return array_namespace(A, B, C, D)
+
+
 def freqresp_signature(system, w=None, n=10000):
     return array_namespace(*_skip_if_lti(system), w)
 
@@ -328,7 +332,7 @@ def find_peaks_cwt_signature(
     return array_namespace(vector, widths, max_distances)
 
 
-def findfreqs_signature(num, den, N, kind='ba'):
+def findfreqs_signature(num, den, N, kind='ba', *, scale='log'):
     return array_namespace(num, den)
 
 

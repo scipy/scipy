@@ -19,8 +19,8 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, is_jax, xp_float_to_complex,
-    xp_result_type, xp_device, xp_result_device, _xp_result_devices,
+    array_namespace, xp_promote, xp_size, is_jax, xp_device, xp_result_device,
+    _xp_result_devices, xp_result_type
 )
 from scipy._external.array_api_compat import numpy as np_compat
 
@@ -69,36 +69,8 @@ def _real_dtype_for_complex(dtyp, *, xp):
         raise ValueError(f"Unknown dtype {dtyp}.")
 
 
-# https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
-def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp,
-              device=None):
-    if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
-        # If base is non-scalar, broadcast it with the others, since it
-        # may influence how axis is interpreted.
-        start, stop, base = map(xp.asarray, (start, stop, base))
-        ndmax = xp.broadcast_arrays(start, stop, base).ndim
-        start, stop, base = (
-            xpx.atleast_nd(a, ndim=ndmax)
-            for a in (start, stop, base)
-        )
-        base = xp.expand_dims(base)
-    try:
-        result_dt = xp.result_type(start, stop, base)
-    except ValueError:
-        # all of start, stop and base are python scalars
-        result_dt = xpx.default_dtype(xp)
-    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt,
-                    device=device)
-
-    yp = xp.pow(base, y)
-    if dtype is None:
-        return yp
-    return xp.astype(yp, dtype, copy=False)
-
-
-def findfreqs(num, den, N, kind='ba'):
-    """
-    Find array of frequencies for computing the response of an analog filter.
+def findfreqs(num, den, N, kind='ba', *, scale='log'):
+    r"""Find array of frequencies for computing the response of an analog filter.
 
     Parameters
     ----------
@@ -109,65 +81,109 @@ def findfreqs(num, den, N, kind='ba'):
         transfer function numerator and denominator (i.e., zeroes and poles).
     N : int
         The length of the array to be computed.
-    kind : str {'ba', 'zp'}, optional
+    kind : 'ba' | 'zp', optional
         Specifies whether the numerator and denominator are specified by their
-        polynomial coefficients ('ba'), or their roots ('zp').
+        polynomial coefficients ('ba', default), or their roots ('zp').
+    scale : 'log' | 'linear', optional
+        Toggles between logarithmic (default) and linear scaling.
 
     Returns
     -------
-    w : (N,) ndarray
-        A 1-D array of frequencies, logarithmically spaced.
+    om : (N,) ndarray
+        A 1-D array of angular frequencies.
+
+    Notes
+    -----
+    Let the set of the transfer function's zeros with non-negative imaginary part be
+    :math:`\mathcal{Z}` and :math:`\mathcal{P}` the set of the poles with non-negative
+    imaginary part and a magnitude smaller than :math:`10^5`. I.e.,
+
+    .. math::
+        \renewcommand{Im}[1]{\operatorname{Im}\{#1\}}
+        \renewcommand{Re}[1]{\operatorname{Re}\{#1\}}
+        \newcommand{\set}[1]{\mathcal{#1}} % vectors and matrices are bold:
+        \newcommand{\sP}{\set{P}}
+        \newcommand{\sV}{\set{V}}
+        \newcommand{\sZ}{\set{Z}}
+        %
+        \sZ &:= \big\{z \big| \Im{z} \geq 0 \wedge z \text{ is a zero} \big\} \,,\\
+        \sP &:= \big\{p \big| \Im{p} \geq 0 \,\wedge\,
+                                         |p| < 10^5 \wedge p \text{ is a pole}\big\} \,.
+
+    The union :math:`\sV := \sZ \cup \sP` of those sets is used to heuristically
+    determine a minimum and a maximum frequency as
+
+    .. math::
+
+        \omega_\min &:= \frac{1}{10}\min_{v\in\sV}\!\big(
+                                                  |\Re{v} + \mu(v)| + 2\Im{v} \big)\,,\\
+        \omega_\max &:= \max_{v\in\sV}\! \big(
+                                      3\, |\Re{v} + \mu(v)| + \frac{3}{2}\Im{v} \big)\,,
+
+    with :math:`\mu(v) = 1` if :math:`|v| < 10^{-10}` else :math:`0`. If :math:`\sV` is
+    empty, :math:`\omega_\min = 100` and :math:`\omega_\max = 3000` is used.
+
+    The expression ``om = np.linspace(𝜔_min, 𝜔_max, N)`` is used to create the linearly
+    spaced angular frequencies. For logarithmic spacing, corresponding minimum and
+    maximum frequency exponents are defined as
+
+    .. math::
+
+        e_\min := \log_{10}(\omega_\min) - \frac{1}{2}\,, \qquad
+        e_\max := \log_{10}(\omega_\max) + \frac{1}{2}\,,
+
+    Then, ``om = 10 ** np.linspace(round(e_min), round(e_max), N)`` is used to create
+    the logarithmically spaced angular frequencies.
 
     Examples
     --------
-    Find a set of nine frequencies that span the "interesting part" of the
-    frequency response for the filter with the transfer function
-
-        H(s) = s / (s^2 + 8s + 25)
+    Find a set of five frequencies that span the "interesting part" of the frequency
+    response for the filter with the transfer function
+    :math:`H(s) = s / (s^2 + 8s + 25)`:
 
     >>> from scipy import signal
-    >>> signal.findfreqs([1, 0], [1, 8, 25], N=9)
-    array([  1.00000000e-02,   3.16227766e-02,   1.00000000e-01,
-             3.16227766e-01,   1.00000000e+00,   3.16227766e+00,
-             1.00000000e+01,   3.16227766e+01,   1.00000000e+02])
+    >>> signal.findfreqs([1, 0], [1, 8, 25], N=5)
+    array([1.e-02, 1.e-01, 1.e+00, 1.e+01, 1.e+02])
     """
-    xp = array_namespace(num, den)
-    num, den = map(xp.asarray, (num, den))
+    xp, dev = array_namespace(num, den), xp_result_device(num, den)
+    if kind not in ('ba', 'zp'):
+        raise ValueError(f"Parameter {kind=} not in ('ba', 'zp')!")
+    if scale not in ('log', 'linear'):
+        raise ValueError(f"Parameter {scale=} not in ('log', 'linear')!")
 
-    if kind == 'ba':
-        ep = xpx.atleast_nd(_pu.polyroots(den, xp=xp), ndim=1, xp=xp)
-        tz = xpx.atleast_nd(_pu.polyroots(num, xp=xp), ndim=1, xp=xp)
-    elif kind == 'zp':
-        ep = xpx.atleast_nd(den, ndim=1, xp=xp)
-        tz = xpx.atleast_nd(num, ndim=1, xp=xp)
-    else:
-        raise ValueError("input must be one of {'ba', 'zp'}")
+    zz, pp = (xpx.atleast_nd(xp.asarray(v_, device=dev), ndim=1, xp=xp)
+              for v_ in (num, den))
+    if not (zz.ndim == pp.ndim == 1):
+        raise ValueError("Parameter `num` and `den` must be promotable to 1d arrays!")
+    if kind == 'ba':  # calculate roots from polynomials:
+        zz, pp = (_pu.polyroots(v_, xp=xp) for v_ in (zz, pp))
 
-    ep = xp_float_to_complex(ep, xp=xp)
-    tz = xp_float_to_complex(tz, xp=xp)
+    # The default value of -1000 produces a numerically unstable e_min = np.round(1.5).
+    vv = xp.asarray([-1000.+0.j if scale == 'linear' else -1500.+0.j], device=dev)
+    zz, pp, vv = xp_promote(zz, pp, vv, broadcast=False, xp=xp)
 
-    if ep.shape[0] == 0:
-        ep = xp.asarray([-1000], dtype=ep.dtype, device=xp_device(ep))
+    ii, jj = xp.logical_and(xp.abs(zz) < 1e5, xp.imag(zz) >= 0), xp.imag(pp) >= 0
+    if xp.any(ii) and xp.any(jj):  # using the maps ii and jj is nedded for dask
+        vv = xp.concat((zz[ii], pp[jj]))
+    elif xp.any(ii):
+        vv = zz[ii]
+    elif xp.any(jj):
+        vv = pp[jj]
 
-    ez = xp.concat((
-        ep[xp.imag(ep) >= 0],
-        tz[(xp.abs(tz) < 1e5) & (xp.imag(tz) >= 0)]
-    ))
+    mu = xp.astype(xp.abs(vv) < 1e-10, vv.dtype) # XXX True->1, False->0
+    om_min = 0.1 * xp.min(xp.abs(xp.real(vv) + mu) + 2 * xp.imag(vv))
+    om_max = xp.max(3 * xp.abs(xp.real(vv) + mu) + 1.5 * xp.imag(vv))
 
-    integ = xp.astype(xp.abs(ez) < 1e-10, ez.dtype) # XXX True->1, False->0
-    hfreq = xp.round(
-        xp.log10(xp.max(3*xp.abs(xp.real(ez) + integ) + 1.5*xp.imag(ez))) + 0.5
-    )
+    if scale == 'linear':
+        return xp.linspace(om_min, om_max, N, device=dev)
 
     # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
     # depending on the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
-    lfreq = xp.round(
-        xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
-    )
-
-    w = _logspace(lfreq, hfreq, N, xp=xp, device=xp_device(ez))
-    return w
+    e_min, e_max = xp.log10(om_min) - 0.5 - fudge, xp.log10(om_max) + 0.5
+    om = 10 ** xp.linspace(xp.round(e_min), xp.round(e_max), N, dtype=xp.float64,
+                           device=dev)
+    return xp.astype(om, om_min.dtype)
 
 
 def freqs(b, a, worN=200, plot=None):
