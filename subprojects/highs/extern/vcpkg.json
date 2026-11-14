@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "extras",
+  "description": "External dependencies for HiGHS",
+  "dependencies": [
+    {
+      "name": "openblas",
+      "platform": "!osx",
+      "features": [
+        "threads"
+      ]
+    },
+    {
+      "name": "zlib"
+    }
+  ]
+}

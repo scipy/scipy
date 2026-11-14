@@ -148,6 +148,8 @@ Name: HiGHS
 Files: subprojects/highs/*
 License: MIT
   For details, see subprojects/highs/LICENSE.txt
+  Code in subprojects/highs/extern/ is under additional licenses,
+  for details see subprojects/highs/THIRD_PARTY_NOTICES.md
 
 Name: Boost
 Files: subprojects/boost_math/math/*
