@@ -4,6 +4,8 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <numeric>
+#include <type_traits>
 
 #include "csr.h"
 #include "dense.h"
@@ -159,16 +161,15 @@ void bsr_sort_indices(const I n_brow,
 
 
     const I nblks = Ap[n_brow];
+    if (nblks <= 1) return;
+
     const npy_intp RC    = (npy_intp)R*C;
     const npy_intp nnz   = (npy_intp)RC*nblks;
 
     //compute permutation of blocks using CSR
     std::vector<I> perm(nblks);
-
-    for(I i = 0; i < nblks; i++)
-        perm[i] = i;
-
-    csr_sort_indices(n_brow, Ap, Aj, &perm[0]);
+    std::iota(perm.begin(), perm.end(), 0);
+    csr_sort_indices(n_brow, Ap, Aj, perm.data());
 
     std::vector<T> Ax_copy(nnz);
     std::copy(Ax, Ax + nnz, Ax_copy.begin());
@@ -226,11 +227,9 @@ void bsr_transpose(const I n_brow,
     //compute permutation of blocks using transpose(CSR)
     std::vector<I> perm_in (nblks);
     std::vector<I> perm_out(nblks);
+    std::iota(perm_in.begin(), perm_in.end(), 0);
 
-    for(I i = 0; i < nblks; i++)
-        perm_in[i] = i;
-
-    csr_tocsc(n_brow, n_bcol, Ap, Aj, &perm_in[0], Bp, Bj, &perm_out[0]);
+    csr_tocsc(n_brow, n_bcol, Ap, Aj, perm_in.data(), Bp, Bj, perm_out.data());
 
     for(I i = 0; i < nblks; i++){
         const T * Ax_blk = Ax + RC * perm_out[i];
@@ -314,8 +313,6 @@ void bsr_matmat(const I maxnnz,
 }
 
 
-
-
 template <class I, class T>
 bool is_nonzero_block(const T block[], const I blocksize){
     for(I i = 0; i < blocksize; i++){
@@ -326,6 +323,33 @@ bool is_nonzero_block(const T block[], const I blocksize){
     return false;
 }
 
+
+template <class I, class T, class T2, class bin_op>
+I bsr_binop_scan_columns(I head, const I length, I nnz, const npy_intp RC,
+                         I* next, T* A_row, T* B_row, I* Cj, T2* Cx)
+{
+    const bin_op op{};
+    for(I jj = 0; jj < length; jj++){
+        // compute binary_op(block_A, block_B)
+        for(npy_intp n = 0; n < RC; n++)
+            Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
+
+        // advance counter if block is nonzero
+        if( is_nonzero_block(Cx + (RC * nnz), RC) )
+            Cj[nnz++] = head;
+
+        // clear block_A and block_B values
+        for(npy_intp n = 0; n < RC; n++){
+            A_row[RC*head + n] = 0;
+            B_row[RC*head + n] = 0;
+        }
+
+        I temp = head;
+        head = next[head];
+        next[temp] = -1;
+    }
+    return nnz;
+}
 
 
 /*
@@ -347,13 +371,13 @@ bool is_nonzero_block(const T block[], const I blocksize){
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class bin_op>
+template <class I, class T, class T2>
 void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
                            const I R,      const I C,
                            const I Ap[],   const I Aj[],   const T Ax[],
                            const I Bp[],   const I Bj[],   const T Bx[],
                                  I Cp[],         I Cj[],        T2 Cx[],
-                           const bin_op& op)
+                           I (*scan_columns)(I, I, I, npy_intp, I*, T*, T*, I*, T2*))
 {
     //Method that works for duplicate and/or unsorted indices
     const npy_intp RC = (npy_intp)R*C;
@@ -397,25 +421,10 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
             }
         }
 
-
-        for(I jj = 0; jj < length; jj++){
-            // compute op(block_A, block_B)
-            for(I n = 0; n < RC; n++)
-                Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
-
-            // advance counter if block is nonzero
-            if( is_nonzero_block(Cx + (RC * nnz), RC) )
-                Cj[nnz++] = head;
-
-            // clear block_A and block_B values
-            for(I n = 0; n < RC; n++){
-                A_row[RC*head + n] = 0;
-                B_row[RC*head + n] = 0;
-            }
-
-            I temp = head;
-            head = next[head];
-            next[temp] = -1;
+        if (length > 0) {
+            nnz = scan_columns(head, length, nnz, RC,
+                               next.data(), A_row.data(), B_row.data(),
+                               Cj, Cx);
         }
 
         Cp[i + 1] = nnz;
@@ -574,6 +583,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                          I Cp[],         I Cj[],        T2 Cx[],
                    const bin_op& op)
 {
+    static_assert(std::is_empty_v<bin_op>, "Stateful binary_op types not allowed.");
     assert( R > 0 && C > 0);
 
     if( R == 1 && C == 1 ){
@@ -586,7 +596,8 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
     }
     else {
         // slower fallback method
-        bsr_binop_bsr_general(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        bsr_binop_bsr_general(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx,
+                              &bsr_binop_scan_columns<I, T, T2, bin_op>);
     }
 }
 
@@ -615,7 +626,8 @@ void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    // Alias: B < A
+    bsr_lt_bsr(n_row,n_col,R,C,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T, class T2>
@@ -633,7 +645,8 @@ void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    // Alias: B <= A
+    bsr_le_bsr(n_row,n_col,R,C,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T>
@@ -651,7 +664,7 @@ void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
+#include <type_traits>
 
 #include "util.h"
 #include "dense.h"
@@ -677,6 +678,29 @@ void csr_matmat(const I n_row,
     }
 }
 
+template <class I, class T, class T2, class binary_op>
+I csr_binop_scan_columns(I head, const I length, I nnz, I* next, T* A_row, T* B_row, I* Cj, T2* Cx) {
+    const binary_op op{};
+    // scan through columns where A or B has
+    // contributed a non-zero entry
+    for(I jj = 0; jj < length; jj++){
+        T2 result = op(A_row[head], B_row[head]);
+
+        if(result != 0){
+            Cj[nnz] = head;
+            Cx[nnz] = result;
+            nnz++;
+        }
+
+        I temp = head;
+        head = next[head];
+
+        next[temp]  = -1;
+        A_row[temp] =  0;
+        B_row[temp] =  0;
+    }
+    return nnz;
+}
 
 /*
  * Compute C = A (binary_op) B for CSR matrices that are not
@@ -697,11 +721,11 @@ void csr_matmat(const I n_row,
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <class I, class T, class T2>
 void csr_binop_csr_general(csr_array<const I, const T> A,
                            csr_array<const I, const T> B,
                            csr_array<I, T2> C,
-                           const binary_op& op)
+                           I (*scan_columns)(I, I, I, I*, T*, T*, I*, T2*))
 {
     //Method that works for duplicate and/or unsorted indices
 
@@ -746,24 +770,8 @@ void csr_binop_csr_general(csr_array<const I, const T> A,
             }
         }
 
-
-        // scan through columns where A or B has
-        // contributed a non-zero entry
-        for(I jj = 0; jj < length; jj++){
-            T result = op(A_row[head], B_row[head]);
-
-            if(result != 0){
-                C.indices[nnz] = head;
-                C.data[nnz] = result;
-                nnz++;
-            }
-
-            I temp = head;
-            head = next[head];
-
-            next[temp]  = -1;
-            A_row[temp] =  0;
-            B_row[temp] =  0;
+        if (length > 0) {
+            nnz = scan_columns(head, length, nnz, next.data(), A_row.data(), B_row.data(), C.indices, C.data);
         }
 
         C.indptr[i + 1] = nnz;
@@ -809,7 +817,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
             I B_j = B.indices[B_pos];
 
             if(A_j == B_j){
-                T result = op(A.data[A_pos],B.data[B_pos]);
+                T2 result = op(A.data[A_pos],B.data[B_pos]);
                 if(result != 0){
                     C.indices[nnz] = A_j;
                     C.data[nnz] = result;
@@ -818,7 +826,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
                 A_pos++;
                 B_pos++;
             } else if (A_j < B_j) {
-                T result = op(A.data[A_pos],0);
+                T2 result = op(A.data[A_pos],0);
                 if (result != 0){
                     C.indices[nnz] = A_j;
                     C.data[nnz] = result;
@@ -827,7 +835,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
                 A_pos++;
             } else {
                 //B_j < A_j
-                T result = op(0,B.data[B_pos]);
+                T2 result = op(0,B.data[B_pos]);
                 if (result != 0){
                     C.indices[nnz] = B_j;
                     C.data[nnz] = result;
@@ -839,7 +847,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
 
         //tail
         while(A_pos < A_end){
-            T result = op(A.data[A_pos],0);
+            T2 result = op(A.data[A_pos],0);
             if (result != 0){
                 C.indices[nnz] = A.indices[A_pos];
                 C.data[nnz] = result;
@@ -848,7 +856,7 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
             A_pos++;
         }
         while(B_pos < B_end){
-            T result = op(0,B.data[B_pos]);
+            T2 result = op(0,B.data[B_pos]);
             if (result != 0){
                 C.indices[nnz] = B.indices[B_pos];
                 C.data[nnz] = result;
@@ -860,7 +868,6 @@ void csr_binop_csr_canonical(csr_array<const I, const T> A,
         C.indptr[i+1] = nnz;
     }
 }
-
 
 /*
  * Compute C = A (binary_op) B for CSR matrices A,B where the column
@@ -907,13 +914,15 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
+    static_assert(std::is_empty_v<binary_op>, "Stateful binary_op types not allowed.");
     csr_array<const I, const T> A = {n_row, n_col, Ap, Aj, Ax};
     csr_array<const I, const T> B = {n_row, n_col, Bp, Bj, Bx};
     csr_array<I,T2> C = {n_row, n_col, Cp, Cj, Cx};
-    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
+    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj)) {
         csr_binop_csr_canonical(A, B, C, op);
-    else
-        csr_binop_csr_general(A, B, C, op);
+    } else {
+        csr_binop_csr_general(A, B, C, &csr_binop_scan_columns<I, T, T2, binary_op>);
+    }
 }
 
 /* element-wise binary operations*/
@@ -941,7 +950,8 @@ void csr_gt_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    // Alias: B < A
+    csr_lt_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T, class T2>
@@ -959,7 +969,8 @@ void csr_ge_csr(const I n_row, const I n_col,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    // Alias: B <= A
+    csr_le_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
 template <class I, class T>
@@ -1710,35 +1721,29 @@ inline int test_throw_error() {
     return 1;
 }
 
+/* Declarations that only use the index type. */
+#define SPTOOLS_CSR_EXTERN_INDEX_TEMPLATE(I) \
+  extern template bool csr_has_canonical_format(const I n_row, const I Ap[], const I Aj[]);
+
+SPTOOLS_FOR_EACH_INDEX_TYPE(SPTOOLS_CSR_EXTERN_INDEX_TEMPLATE)
+#undef SPTOOLS_CSR_EXTERN_INDEX_TEMPLATE
+
+/* Declarations that use index and data types. */
 #define SPTOOLS_CSR_EXTERN_TEMPLATE(I, T) \
-  extern template void csr_diagonal(const I k, const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Yx[]); \
-  extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
-  extern template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
-  extern template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
-  extern template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
   extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
   extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
-  extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
   extern template void csr_matmat(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[]); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::not_equal_to<T>& op); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less<T>& op); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less_equal<T>& op); \
-  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::greater_equal<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::not_equal_to<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::less<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], npy_bool_wrapper Cx[], const std::less_equal<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::multiplies<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const safe_divides<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::plus<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::minus<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const maximum<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const minimum<T>& op); \
-  extern template void csr_sum_duplicates(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
-  extern template void csr_eliminate_zeros(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
   extern template void csr_matvec(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
-  extern template void csr_matvecs(const I n_row, const I n_col, const I n_vecs, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
-  extern template void get_csr_submatrix(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I ir0, const I ir1, const I ic0, const I ic1, std::vector<I>* Bp, std::vector<I>* Bj, std::vector<T>* Bx); \
-  extern template void csr_row_index(const I n_row_idx, const I rows[], const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
-  extern template void csr_row_slice(const I start, const I stop, const I step, const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
-  extern template void csr_column_index2(const I col_order[], const I col_offsets[], const I nnz, const I Aj[], const T Ax[], I Bj[], T Bx[]); \
-  extern template void csr_sample_values(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I n_samples, const I Bi[], const I Bj[], T Bx[]);
+  extern template void csr_matvecs(const I n_row, const I n_col, const I n_vecs, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]);
 
 SPTOOLS_FOR_EACH_INDEX_DATA_TYPE_COMBINATION(SPTOOLS_CSR_EXTERN_TEMPLATE)
 #undef SPTOOLS_CSR_EXTERN_TEMPLATE
