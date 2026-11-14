@@ -16,7 +16,10 @@ from scipy._lib._array_api import (
 
 from ._bsplines import _not_a_knot, BSpline
 
-__all__ = ["NdBSpline"]
+__all__ = [
+    "NdBSpline",
+    "make_lsq_ndbspline",
+]
 
 
 def _get_dtype(dtype):
@@ -648,6 +651,129 @@ def _check_lsq_design_matrix(matr, ncoeff):
     supported = np.bincount(indices, minlength=ncoeff) > 0
     if not supported.all():
         raise ValueError(msg)
+
+
+def make_lsq_ndbspline(
+    x, y, t, k=3, *, w=None, grid=False, solver=None, **solver_args
+):
+    r"""Construct a least-squares tensor-product B-spline.
+
+    Parameters
+    ----------
+    x : array_like, shape (npts, ndim), or tuple of array_like
+        Coordinates of the data points. If ``grid=False``, each row contains
+        one point in ``ndim`` dimensions. If ``grid=True``, `x` is a tuple of
+        one-dimensional coordinate arrays with shapes ``(m1,), ..., (mN,)``
+        defining a rectilinear grid.
+    y : array_like, shape (npts, ...) or (m1, ..., mN, ...)
+        Data values at `x`. If ``grid=True``, the leading dimensions must
+        match the lengths of the grid axes. Trailing dimensions are treated
+        as separate outputs and are fitted using the same design matrix.
+    t : tuple of ndim array_like
+        Full knot vectors for each dimension, including boundary knots.
+    k : int or array_like, shape (ndim,), optional
+        Spline degree in each dimension. A scalar applies the same degree to
+        every dimension. Default is ``3``.
+    w : array_like, shape (npts,) or (m1, ..., mN), optional
+        Non-negative residual weights. If ``grid=True``, the shape must match
+        the grid. Zero-weighted data points do not contribute to the fit. By
+        default, all data points have equal weight.
+    grid : bool, optional
+        If False (default), `x` contains scattered coordinate rows. If True,
+        `x` contains the one-dimensional axes of a complete rectilinear grid.
+    solver : callable, optional
+        Sparse least-squares solver. By default,
+        `scipy.sparse.linalg.lsqr` is currently used. The solver must accept a
+        sparse design matrix and one-dimensional right-hand side and return a
+        result with the coefficients and termination status in its first two
+        entries. Status values ``0``, ``1``, and ``2`` indicate successful
+        termination.
+    **solver_args
+        Additional keyword arguments passed to `solver`.
+
+    Returns
+    -------
+    spl : NdBSpline
+        Tensor-product B-spline with coefficients fitted by least squares.
+
+    See Also
+    --------
+    NdBSpline : Tensor-product B-spline representation and evaluation.
+    make_lsq_spline : Construct a least-squares B-spline in one dimension.
+    RegularGridInterpolator : Interpolate data on a rectilinear grid.
+
+    Notes
+    -----
+    .. versionadded:: 2.0.0
+
+    Let ``A[i, j]`` be the value of the ``j``-th tensor-product basis
+    function evaluated at the ``i``-th data point ``x[i]``, and let
+    ``W = diag(w)``. This function solves
+
+    .. math::
+
+        \min_c \lVert W (A c - y) \rVert_2.
+
+    Thus, `w` multiplies the residual directly; the corresponding squared
+    objective contains ``w[i]**2``. The design matrix is sparse because each
+    B-spline basis function has local support.
+
+    Every tensor-product basis function must be supported by at least one
+    data point with positive weight, and there must be at least as many data
+    points as spline coefficients. Violating either condition makes the
+    design matrix rank-deficient, so the coefficients cannot be determined
+    uniquely and a `ValueError` is raised. These conditions are necessary,
+    but do not by themselves guarantee that the design matrix has full rank.
+    Coordinates in dimension ``d`` must lie in the base interval. With
+    ``grid=False``, this means
+    ``t[d][k[d]] <= x[:, d] <= t[d][-k[d] - 1]``; with ``grid=True``, it
+    means ``t[d][k[d]] <= x[d] <= t[d][-k[d] - 1]``.
+
+    With ``grid=True``, the grid is converted to scattered coordinate rows
+    internally. Both input forms therefore have the same least-squares and
+    solver semantics.
+
+    Examples
+    --------
+    Fit a linear function to scattered two-dimensional samples. For a linear
+    spline, each boundary is repeated twice in the full knot vectors.
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import make_lsq_ndbspline
+    >>> x = np.array([[0., 0.], [0., 1.], [1., 0.],
+    ...               [1., 1.], [0.5, 0.5]])
+    >>> y = x[:, 0] + 2*x[:, 1]
+    >>> t = (np.array([0., 0., 1., 1.]),
+    ...      np.array([0., 0., 1., 1.]))
+    >>> spl = make_lsq_ndbspline(x, y, t, k=1)
+    >>> spl([[0.25, 0.75]])
+    array([1.75])
+
+    Fit data sampled on a complete rectilinear grid by passing its axes and
+    setting ``grid=True``.
+
+    >>> points = (np.linspace(0., 1., 4), np.linspace(-1., 1., 5))
+    >>> x0, x1 = np.meshgrid(*points, indexing="ij")
+    >>> values = x0 + 2*x1
+    >>> t_grid = (np.array([0., 0., 1., 1.]),
+    ...           np.array([-1., -1., 1., 1.]))
+    >>> spl = make_lsq_ndbspline(
+    ...     points, values, t_grid, k=1, grid=True
+    ... )
+    >>> spl([[0.25, 0.5]])
+    array([1.25])
+    """
+    if solver is None:
+        solver = ssl.lsqr
+
+    if grid:
+        return _make_lsq_ndbspl_from_grid(
+            x, y, t, k=k, w=w, solver=solver, **solver_args
+        )
+
+    return _make_lsq_ndbspl(
+        x, y, t, k=k, w=w, solver=solver, **solver_args
+    )
 
 
 def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):

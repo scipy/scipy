@@ -36,6 +36,10 @@ New features
 ``scipy.interpolate`` improvements
 ==================================
 
+- Added `scipy.interpolate.make_lsq_ndbspline` to construct weighted
+  least-squares tensor-product B-splines from scattered or rectilinear-grid
+  data.
+
 
 ``scipy.linalg`` improvements
 =============================
