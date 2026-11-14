@@ -40,7 +40,7 @@ from numpy import array, asarray, ma
 from scipy import sparse
 from scipy.spatial.distance import cdist
 
-from scipy.optimize import milp, LinearConstraint
+from scipy.optimize import linprog
 from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
@@ -9866,9 +9866,10 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
             0 & 0 & \dots & 1 & 0 & 0 & \dots & 1 & \dots & 0 & 0 & \dots & 1
         \end{array}
 
-    By solving the dual form of the above linear programming problem (with
-    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)` can
-    be computed as :math:`b^T y^*`.
+    The Wasserstein distance :math:`l_1 (u, v)` is the minimum of this
+    linear programming problem over :math:`x \geq 0`. Its absolute error is
+    about :math:`10^{-10}` times the largest distance between a point of
+    :math:`u` and a point of :math:`v`.
 
     The above solution is inspired by Vincent Herrmann's blog [3]_ . For a
     more thorough explanation, see [4]_ .
@@ -9956,10 +9957,20 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     p_v = np.full(n, 1/n) if v_weights is None else v_weights/np.sum(v_weights)
     b = np.concatenate((p_u, p_v), axis=0)
 
-    # solving LP
-    constraints = LinearConstraint(A=A.T, ub=cost)
-    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return -opt_res.fun
+    max_cost = cost.max()
+    if max_cost == 0:
+        return 0.0
+
+    # Solve the primal so the transport plan can't go negative; the dual gave
+    # negative or zero distances for nearly equal weights (gh-26490). Costs
+    # are scaled to [0, 1], and 1e-10 is the smallest tolerance HiGHS accepts.
+    opt_res = linprog(cost / max_cost, A_eq=A, b_eq=b, bounds=(0, None),
+                      method='highs',
+                      options={'primal_feasibility_tolerance': 1e-10,
+                               'dual_feasibility_tolerance': 1e-10})
+    if not opt_res.success:
+        raise RuntimeError(f"Optimization failed: {opt_res.message}")
+    return float(max(0.0, opt_res.fun) * max_cost)
 
 
 @xp_capabilities(np_only=True)
