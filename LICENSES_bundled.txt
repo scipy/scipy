@@ -72,9 +72,9 @@ Copyright 1987-, A. Volgenant/Amsterdam School of Economics,
 
 
 Name: SuperLU
-Files: scipy/sparse/linalg/_dsolve/SuperLU/*
+Files: subprojects/superlu/superlu/*
 License: BSD-3-Clause
-  For details, see scipy/sparse/linalg/_dsolve/SuperLU/License.txt
+  For details, see subprojects/superlu/superlu/License.txt
 
 Name: ARPACK
 Files: scipy/sparse/linalg/_eigen/arpack/ARPACK/*

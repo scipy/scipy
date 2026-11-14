@@ -300,6 +300,10 @@ endif
 blas_dep = declare_dependency(dependencies: blas_dep, link_with: g77_abi_wrappers)
 lapack_dep = declare_dependency(dependencies: lapack_dep, link_with: g77_abi_wrappers)
 
+# Make SciPy's BLAS configuration (LP64/ILP64 and symbol naming) available to
+# vendored subprojects that call BLAS, e.g. `subprojects/superlu`.
+meson.override_dependency('scipy-blas', blas_dep)
+
 if use_ilp64 and not cython_blas_ilp64
   # This is the special handling for build option 3: everything ILP64 except
   # cython_blas/cython_lapack which will export an LP64 ABI. We're linking to
