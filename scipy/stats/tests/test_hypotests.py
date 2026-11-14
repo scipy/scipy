@@ -16,7 +16,7 @@ from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, is_numpy,
-                                   eager_warns, xp_ravel, is_jax)
+                                   eager_warns, xp_ravel, is_jax, is_marray)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
@@ -745,6 +745,24 @@ class TestMannWhitneyU:
         ref = mannwhitneyu(xp.astype(x, xp.float64), xp.astype(y, xp.float64),
                            method='asymptotic')
         xp_assert_equal(res.statistic, xp.astype(ref.statistic, xp.float32))
+
+    @pytest.mark.parametrize('offset', [0, 2**53])
+    @pytest.mark.parametrize('method', ['exact', 'auto'])
+    def test_gh26658_int64_precision(self, offset, method, xp):
+        if is_jax(xp) and method == 'auto':
+            pytest.skip("`method='auto'` is incompatible with JAX arrays.")
+        if is_marray(xp) and method != 'asymptotic':
+            pytest.skip("Only `method='asymptotic'` is compatible with MArrays.")
+        # Premature float conversion of large int64 inputs collapsed
+        # distinct observations exceeding 2**53 into artificial ties.
+        x = xp.asarray([offset + i for i in range(4)], dtype=xp.int64)
+        y = xp.asarray([offset + i for i in range(4, 8)], dtype=xp.int64)
+        res = mannwhitneyu(x, y, alternative='two-sided', method=method)
+        rtol = 1e-6 if xpx.default_dtype(xp) == xp.float32 else 1e-14
+        xp_assert_equal(res.statistic, xp.asarray(0.0, dtype=res.statistic.dtype))
+        xp_assert_close(
+            res.pvalue, xp.asarray(2 / 70, dtype=res.pvalue.dtype), rtol=rtol
+        )
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative, xp):
