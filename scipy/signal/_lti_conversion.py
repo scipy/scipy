@@ -335,7 +335,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation.
+    r"""Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------
@@ -349,8 +349,40 @@ def zpk2ss(z, p, k):
     A, B, C, D : ndarray
         State space representation of the system, in controller canonical
         form.
-
-    """
+        
+    Examples
+    --------
+    Convert the transfer function to the state-space representation:
+    
+    .. math::
+    
+        G(s) = \frac{1}{(s + 1)(s + 2)} = \frac{1}{s^2 + 3s + 2}
+    
+    The system has no finite zeros, poles at :math:`-1` and :math:`-2`, and a
+    gain of 1.
+    Define the zeros, poles and gain of the system:
+    
+    >>> z = []
+    >>> p = [-1, -2]
+    >>> k = 1
+    
+    We can transform this zero-pole-gain description to a state-space system:
+    >>> from scipy.signal import zpk2ss
+    
+    >>> A, B, C, D = zpk2ss(z, p, k)
+    >>> A
+    array([[-3., -2.],
+           [ 1.,  0.]])
+    >>> B
+    array([[1.],
+           [0.]])
+    >>> C
+    array([[0., 1.]])
+    >>> D
+    array([[0.]])
+    
+    Since `C` is ``[0, 1]`` and `D` is zero, the output is just the second state, ``y = x[1]``.
+    """    
     return tf2ss(*zpk2tf(z, p, k))
 
 
