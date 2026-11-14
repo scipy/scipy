@@ -2568,6 +2568,102 @@ class TestLogistic:
         _assert_less_or_close_loglike(stats.logistic, data)
 
 
+class TestLogitnorm:
+    # Reference values computed with mpmath (mp.dps = 50), e.g.
+    #   z = (mp.log(x / (1 - x)) - mu) / sigma
+    #   pdf = mp.npdf(z) / (sigma * x * (1 - x)); cdf = mp.ncdf(z)
+    @pytest.mark.parametrize('x, mu, sigma, pdf, cdf, sf', [
+        (0.3, 0.5, 1.2, 0.8429108152083371, 0.1307722217832624,
+         0.8692277782167376),
+        (1e-10, 0.5, 1.2, 1.1506311841790746e-74, 7.024745687697955e-86, 1.0),
+        (0.75, -1, 0.3, 1.6773763346896036e-10, 0.9999999999986773,
+         1.3227584492639214e-12),
+    ])
+    def test_against_mpmath(self, x, mu, sigma, pdf, cdf, sf):
+        dist = stats.logitnorm(mu, sigma)
+        assert_allclose(dist.pdf(x), pdf, rtol=1e-13)
+        assert_allclose(dist.cdf(x), cdf, rtol=1e-13)
+        assert_allclose(dist.sf(x), sf, rtol=1e-13)
+
+    def test_extreme_tails(self):
+        # pdf/cdf/sf underflow here, but the log functions remain accurate.
+        x = 1 - 2**-40
+        assert_allclose(stats.logitnorm.sf(x, 0, 1), 1.702108646586356e-169,
+                        rtol=1e-12)
+        assert_allclose(stats.logitnorm.logpdf(x, 0, 1), -357.5554624453419,
+                        rtol=1e-14)
+        assert_allclose(stats.logitnorm.logcdf(1e-300, 2, 3),
+                        -26669.579498509716, rtol=1e-14)
+        assert_allclose(stats.logitnorm.logpdf(1e-300, 2, 3),
+                        -25974.46047040414, rtol=1e-14)
+
+    def test_moments(self):
+        # Reference values: numerical integration with mpmath.quad.
+        mean, var = stats.logitnorm.stats(0.5, 1.2, moments='mv')
+        assert_allclose(mean, 0.5960873055121724, rtol=1e-9)
+        assert_allclose(var, 0.05272571660968746, rtol=1e-9)
+
+    def test_relation_to_norm(self):
+        # If X ~ norm(mu, sigma), then expit(X) ~ logitnorm(mu, sigma).
+        mu, sigma = -0.7, 1.6
+        q = np.linspace(0.01, 0.99, 25)
+        x = special.expit(stats.norm.ppf(q, mu, sigma))
+        assert_allclose(stats.logitnorm.ppf(q, mu, sigma), x, rtol=1e-14)
+        assert_allclose(stats.logitnorm.isf(q, mu, sigma),
+                        special.expit(stats.norm.isf(q, mu, sigma)),
+                        rtol=1e-14)
+        assert_allclose(stats.logitnorm.cdf(x, mu, sigma), q, rtol=1e-14)
+
+        rvs = stats.logitnorm.rvs(mu, sigma, size=100, random_state=1234)
+        ref = special.expit(stats.norm.rvs(mu, sigma, size=100,
+                                           random_state=1234))
+        assert_allclose(rvs, ref, rtol=1e-14)
+
+    def test_argcheck(self):
+        # mu may be negative; sigma must be positive and finite
+        assert_allclose(stats.logitnorm.pdf(0.5, -2.5, 1), stats.norm.pdf(2.5)*4,
+                        rtol=1e-15)
+        assert np.isnan(stats.logitnorm.pdf(0.5, 0, 0))
+        assert np.isnan(stats.logitnorm.pdf(0.5, 0, -1))
+        assert np.isnan(stats.logitnorm.pdf(0.5, np.inf, 1))
+
+    @pytest.mark.parametrize('fixed', [{}, {'fmu': 0.3}, {'fsigma': 0.9}])
+    def test_fit_mle_closed_form(self, fixed):
+        rng = np.random.default_rng(6517329860)
+        data = stats.logitnorm.rvs(0.4, 0.8, size=500, random_state=rng)
+        z = special.logit(data)
+
+        mu, sigma, loc, scale = stats.logitnorm.fit(data, floc=0, fscale=1,
+                                                    **fixed)
+        assert (loc, scale) == (0, 1)
+        mu_ref = fixed.get('fmu', np.mean(z))
+        sigma_ref = fixed.get('fsigma', np.sqrt(np.mean((z - mu_ref)**2)))
+        assert_allclose([mu, sigma], [mu_ref, sigma_ref], rtol=1e-14)
+
+        # The closed form agrees with numerical optimization of the
+        # log-likelihood, and attains at least as good a likelihood.
+        res = stats.logitnorm.fit(data, floc=0, fscale=1, superfit=True,
+                                  **fixed)
+        assert_allclose([mu, sigma], res[:2], rtol=1e-3)
+        nll = stats.logitnorm.nnlf
+        assert nll((mu, sigma, 0, 1), data) <= nll(res, data)
+
+    def test_fit_with_loc_scale(self):
+        # Data on (2, 5): the closed form is used after the transformation.
+        rng = np.random.default_rng(3417529)
+        y = stats.logitnorm.rvs(-0.2, 0.6, size=200, random_state=rng)
+        mu, sigma, loc, scale = stats.logitnorm.fit(2 + 3*y, floc=2, fscale=3)
+        z = special.logit(y)
+        assert_allclose([mu, sigma, loc, scale],
+                        [np.mean(z), np.std(z), 2, 3], rtol=1e-12)
+
+    def test_fit_data_outside_support(self):
+        with pytest.raises(FitDataError, match="logitnorm"):
+            stats.logitnorm.fit([0.2, 0.5, 1.0], floc=0, fscale=1)
+        with pytest.raises(FitDataError, match="logitnorm"):
+            stats.logitnorm.fit([0.2, 0.5, 0.0], floc=0, fscale=1)
+
+
 class TestLogser:
     def setup_method(self):
         self.rng = np.random.default_rng(187505461)
