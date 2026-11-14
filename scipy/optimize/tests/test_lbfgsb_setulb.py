@@ -1,6 +1,23 @@
 import numpy as np
+import pytest
 from scipy.optimize import _lbfgsb, minimize
 from scipy._lib._util import HAS_ILP64
+
+
+@pytest.mark.parametrize('bounds', [None, [(0.0, 0.8), (0.0, 0.7)]])
+@pytest.mark.parametrize('x0', [[-1.2, 1.0], [2.0, 2.0]])
+@pytest.mark.parametrize('maxls', [1, 2])
+def test_failed_line_search_objective_matches_point(bounds, x0, maxls):
+    def rosenbrock(x):
+        residual = x[1] - x[0]**2
+        return (100 * residual**2 + (1 - x[0])**2,
+                np.array([-400*x[0]*residual - 2*(1-x[0]), 200*residual]))
+
+    result = minimize(rosenbrock, x0, jac=True, method='L-BFGS-B',
+                      bounds=bounds, options={'maxls': maxls})
+    value, gradient = rosenbrock(result.x)
+    np.testing.assert_allclose(result.fun, value)
+    np.testing.assert_allclose(result.jac, gradient)
 
 
 def objfun(x):
