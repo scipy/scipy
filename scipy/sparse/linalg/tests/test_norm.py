@@ -150,3 +150,33 @@ class TestVsNumpyNorm:
                     for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))
+
+    # The int8 matrix would overflow in `abs` without the cast to float.
+    _dtype_matrix = np.array([[-128, 127, 0], [3, 0, -4]], dtype=np.int8)
+    _dtypes = (np.int8, np.float32, np.float64, np.complex64, np.complex128)
+
+    @pytest.mark.parametrize("dtype", _dtypes)
+    @pytest.mark.parametrize("ord", [None, 'fro', 1, -1, np.inf, -np.inf])
+    def test_sparse_matrix_norm_dtype(self, dtype, ord):
+        # gh-26281: the result dtype must match `numpy.linalg.norm`
+        M = self._dtype_matrix.astype(dtype)
+        expected = npnorm(M, ord)
+        rtol = 10 * np.finfo(expected.dtype).eps
+        for sparse_type in self._sparse_types:
+            actual = spnorm(sparse_type(M), ord)
+            assert actual.dtype == expected.dtype
+            assert_allclose(actual, expected, rtol=rtol)
+
+    @pytest.mark.parametrize("dtype", _dtypes)
+    @pytest.mark.parametrize("ord", [None, 1, 2, np.inf, -np.inf, 0.5])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_sparse_vector_norm_dtype(self, dtype, ord, axis):
+        # gh-26281: the result dtype must match `numpy.linalg.norm`.
+        # `ord=0` is left out: it returns an integer count of nonzeros.
+        M = self._dtype_matrix.astype(dtype)
+        expected = npnorm(M, ord, axis=axis)
+        rtol = 10 * np.finfo(expected.dtype).eps
+        for sparse_type in self._sparse_types:
+            actual = spnorm(sparse_type(M), ord, axis=axis)
+            assert actual.dtype == expected.dtype
+            assert_allclose(actual, expected, rtol=rtol)
