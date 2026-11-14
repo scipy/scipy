@@ -2697,7 +2697,9 @@ class TestChebyshev:
 def test_distance_nd(func, p, weights, u_shape, v_shape, w_shape):
     #  check that inputs broadcast correctly against a reference implementation
     rng = np.random.default_rng(6738657865438)
-    ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
+    argdefs = ([('u', 1), ('v', 1), ('p', 0), ('w', 1)] if func == minkowski else
+               [('u', 1), ('v', 1), ('w', 1)])
+    ref_func = _apply_over_batch(*argdefs)(func)
 
     u = rng.random(u_shape)
     v = rng.random(v_shape)
