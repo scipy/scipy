@@ -6,15 +6,15 @@
 namespace sp_linalg {
 
 template<typename T>
-int
-_cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a, int clean, SliceStatusVec &vec_status) {
+BatchStatus
+_cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, const bool lower, const bool overwrite_a, const bool clean, SliceStatusVec &vec_status) {
     St slice_structure = St::NONE;
     SliceStatus slice_status;
 
     //-------------------------------------------------------------------
     // Input array attributes
     //-------------------------------------------------------------------
-    T *Am_data = (T *)PyArray_DATA(ap_Am);
+    char *Am_data = PyArray_BYTES(ap_Am);
     npy_intp ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
@@ -31,12 +31,13 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     //--------------------------------------------------------------------
     // Workspace computation and allocation
     //--------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, info = 0;
+    CBLAS_INT intn, info = 0;
+    if (!checked_narrow<CBLAS_INT>(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
 
-    npy_intp sz = (npy_intp)sizeof(T);
-    npy_intp s0 = strides[ndim-2] / sz;
-    npy_intp s1 = strides[ndim-1] / sz;
-    int f_contig = (s0 == 1 && s1 == n);
+    // byte strides of the input slices
+    npy_intp s0 = strides[ndim-2];
+    npy_intp s1 = strides[ndim-1];
+    bool f_contig = (s0 == (npy_intp)sizeof(T)) && (s1 == n * (npy_intp)sizeof(T));
 
     /*
      * LAPACK's potrf interprets data as F-ordered, but scipy's convention
@@ -76,15 +77,16 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
     T *data_a = NULL;
 
     // Main loop over batch
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     for (npy_intp idx = 0; idx < outer_size; idx++) {
 
         // Ensure data is in the correct triangle of the F-ordered input data_a
         if (!overwrite_a) {
             data_a = &ret_data[idx * n * n];
-            T *slice_ptr_A = compute_slice_ptr(idx, Am_data, ndim, shape, strides);
+            T *slice_ptr_A = compute_slice_ptr<T>(idx, Am_data, ndim, shape, strides);
             copy_triangle_to_C(data_a, slice_ptr_A, n, n, s0, s1, lower ? 'L' : 'U');
         } else {
-            data_a = Am_data;
+            data_a = static_cast<T *>(PyArray_DATA(ap_Am));
         }
         // NB. `overwrite_a` is only enabled when the input is 2D contiguous so
         // data is already correctly ordered in input array. If generalized to
@@ -97,7 +99,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            return 1;
+            return {};
         }
 
         if (overwrite_a && clean) {
@@ -106,7 +108,7 @@ _cholesky(PyArrayObject *ap_Am, PyArrayObject *ap_Cm, int lower, int overwrite_a
 
     } // end of batching loop
 
-    return 1;
+    return {};
 }
 
 } // namespace sp_linalg

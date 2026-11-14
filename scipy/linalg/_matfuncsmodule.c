@@ -2,13 +2,13 @@
 
 void matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info);
 void matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info);
-void matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info);
-void matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info);
+void matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* info);
+void matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* info);
 
 void matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
 void matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* view_as_complex);
-void matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
-void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
+void matrix_squareroot_c(const PyArrayObject* ap_Am, scipy_c64* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
+void matrix_squareroot_z(const PyArrayObject* ap_Am, scipy_c128* restrict ap_ret, int* isIllconditioned, int* isSingular, CBLAS_INT* sq_info, int* unused         );
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 
@@ -63,6 +63,10 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be an nD-array"
                           "  of type float32, float64, complex64, or complex128.");
     }
+    if (!PyArray_ISBEHAVED_RO(ap_Am))
+    {
+        PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be aligned and in native byte order.");
+    }
 
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
@@ -99,16 +103,16 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX64) {
 
-        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(SCIPY_C));
+        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(scipy_c64));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Memory allocation failed."); }
-        matrix_squareroot_c(ap_Am, (SCIPY_C*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        matrix_squareroot_c(ap_Am, (scipy_c64*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX128) {
 
-        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(SCIPY_Z));
+        mem_ret = PyMem_RawMalloc(ret_dims*sizeof(scipy_c128));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Memory allocation failed."); }
-        matrix_squareroot_z(ap_Am, (SCIPY_Z*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        matrix_squareroot_z(ap_Am, (scipy_c128*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else {
@@ -201,6 +205,10 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Input must be at least a 2D-array"
                           "  of type float32, float64, complex64, or complex128.");
     }
+    if (!PyArray_ISBEHAVED_RO(ap_a))
+    {
+        PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Input must be aligned and in native byte order.");
+    }
     int ndim = PyArray_NDIM(ap_a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_a);      // Array shape
     int input_type = PyArray_TYPE(ap_a);        // Data type enum value
@@ -208,6 +216,14 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     if (shape[ndim - 1] != shape[ndim - 2])
     {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Last two dimensions of the input must be the same.");
+    }
+
+    // n*n is passed to BLAS as an element count, so it must fit CBLAS_INT
+    const npy_intp n = shape[ndim - 1];
+    if (n > 0 && n > CBLAS_INT_MAX / n)
+    {
+        Py_INCREF(Py_None);
+        return Py_BuildValue("Nn", Py_None, (Py_ssize_t)-10);
     }
 
     npy_intp ret_dims = 1;
@@ -227,15 +243,15 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
 
     } else if (PyArray_TYPE(ap_a) == NPY_COMPLEX64) {
 
-        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(SCIPY_C));
+        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(scipy_c64));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Memory allocation failed."); }
-        matrix_exponential_c(ap_a, (SCIPY_C*)mem_ret, &info);
+        matrix_exponential_c(ap_a, (scipy_c64*)mem_ret, &info);
 
     } else if (PyArray_TYPE(ap_a) == NPY_COMPLEX128) {
 
-        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(SCIPY_Z));
+        mem_ret = PyMem_RawCalloc(ret_dims, sizeof(scipy_c128));
         if (mem_ret == NULL) { PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Memory allocation failed."); }
-        matrix_exponential_z(ap_a, (SCIPY_Z*)mem_ret, &info);
+        matrix_exponential_z(ap_a, (scipy_c128*)mem_ret, &info);
     } else {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Unsupported input data type to C function.");
     }

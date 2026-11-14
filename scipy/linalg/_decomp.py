@@ -509,8 +509,12 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
                     raise ValueError('"type" keyword only accepts 1, 2, and 3.')
 
         batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+        # broadcast_to returns a read-only view; skip it where it changes nothing, so
+        # that _ensure_aligned_and_native sees whether the caller's array is writeable
+        if a1.shape[:-2] != batch_shape:
+            a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+        if b1.shape[:-2] != batch_shape:
+            b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
         a1, b1 = _ensure_dtype_cdsz(a1, b1) # Let `b1` and `a1` upcast each other
         a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)

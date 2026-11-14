@@ -17,10 +17,12 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, LinAlgWarning)
+                          matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
+                          cholesky, expm, sqrtm, bandwidth)
+from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._testutils import check_free_memory, IS_MUSL
+from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
 from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
@@ -1812,6 +1814,19 @@ class TestInv:
 
 
 class TestDet:
+    @pytest.mark.parametrize("value, expected", [(1e38, 1e76), (1e-30, 1e-60)])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex64])
+    def test_single_precision_range(self, value, expected, dtype):
+        # The determinant of single precision input is computed and returned in double
+        # precision, so it neither overflows nor underflows the single precision range.
+        # The entries themselves are normal float32 numbers; a subnormal one such as
+        # 1e-38 tests the LAPACK library instead, and ATLAS ?getrf gets it wrong.
+        a = np.diag(np.full(2, value, dtype=dtype))
+        for x in (a, np.stack([a, a])):
+            d = det(x)
+            assert np.asarray(d).dtype == np.result_type(dtype, np.float64)
+            assert_allclose(d, expected, rtol=1e-6)
+
     def test_1x1_all_singleton_dims(self):
         a = np.array([[1]])
         deta = det(a)
@@ -1976,6 +1991,29 @@ def direct_lstsq(a, b, cmplx=0):
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
+
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    @pytest.mark.parametrize("lapack_driver, m, n, nrhs, dtype", [
+        ("gelsd", 1000, 1000, 2_147_400, np.float32),  # min(m, n)*nrhs
+        ("gelss", 1000, 1000, 2_147_484, np.float32),  # ldb*nrhs
+        ("gelsd", 46341, 74200, 1, np.float32),        # m*m, on the path for n >= 1.6*m
+        ("gelss", 46341, 74200, 1, np.float32),
+        ("gelsd", 2, 2, 55_000_000, np.complex64),     # 3*smlsiz*nrhs in rwork
+    ])
+    def test_lp64_workspace_overflow(self, lapack_driver, m, n, nrhs, dtype):
+        # gelsd and gelss evaluate their workspace in LAPACK integers; with 32-bit
+        # integers these sizes overflow, and the call must be refused rather than run
+        # with a workspace that is too small. The inputs have zero strides and nothing
+        # is computed; the solution is allocated but never touched.
+        itemsize = np.dtype(dtype).itemsize
+        check_free_memory(free_mb=max(m, n) * nrhs * itemsize // 2**20 + 1000)
+        a = np.broadcast_to(np.ones((), dtype=dtype), (m, n))
+        b = np.broadcast_to(np.ones((), dtype=dtype), (m, nrhs))
+        with pytest.raises(ValueError, match="ILP64"):
+            lstsq(a, b, lapack_driver=lapack_driver, check_finite=False)
 
     def test_simple_exact(self):
         for dtype in REAL_DTYPES:
@@ -3107,3 +3145,236 @@ class TestDTypes:
                 solve(a, b)
         else:
             solve(a, b)
+
+
+class TestFieldViewStrides:
+    # A complex128 field of an aligned structured array has a 24-byte element stride,
+    # which is not a multiple of the 16-byte itemsize. Results must match the same
+    # values in a contiguous array exactly.
+
+    def field_view(self, values):
+        dt = np.dtype([("z", np.complex128), ("pad", np.float64)], align=True)
+        rec = np.zeros(values.shape, dtype=dt)
+        rec["z"] = values
+        view = rec["z"]
+        assert view.strides[-1] == 24
+        return view
+
+    def matrices(self, n=5):
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, n, n)) + 1j*rng.standard_normal((3, n, n))
+        return a + 4*np.eye(n)
+
+    @pytest.mark.parametrize("func", [inv, det])
+    def test_inv_det(self, func):
+        a = self.matrices()
+        assert_equal(func(self.field_view(a)), func(a))
+
+    def test_lu(self):
+        a = self.matrices()
+        for x, y in zip(lu(self.field_view(a)), lu(a)):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("assume_a", [None, "general", "banded", "pos"])
+    def test_solve(self, assume_a):
+        a = self.matrices()
+        if assume_a == "pos":
+            a = a @ a.conj().swapaxes(-1, -2)
+        b = self.matrices()[..., :2]
+        assert_equal(solve(self.field_view(a), self.field_view(b), assume_a=assume_a),
+                     solve(a, b, assume_a=assume_a))
+
+    @pytest.mark.parametrize("lapack_driver", ["gelsd", "gelsy", "gelss"])
+    def test_lstsq(self, lapack_driver):
+        a = self.matrices()[..., :3]
+        b = self.matrices()[..., :2]
+        res = lstsq(self.field_view(a), self.field_view(b), lapack_driver=lapack_driver)
+        ref = lstsq(a, b, lapack_driver=lapack_driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    def test_most_negative_stride(self):
+        # NumPy accepts any stride for a dimension of length 1, the most negative
+        # npy_intp included.
+        imin = np.iinfo(np.intp).min
+        as_strided = np.lib.stride_tricks.as_strided
+        col = as_strided(np.array([[3.0], [4.0]]), (2, 1), strides=(8, imin))
+        one = as_strided(np.array([[5.0]]), (1, 1), strides=(imin, imin))
+        assert_equal(qr(col), qr(np.ascontiguousarray(col)))
+        assert_equal(inv(one), inv(np.ascontiguousarray(one)))
+
+
+class TestNonNativeInput:
+    # Byte-swapped and misaligned arrays are copied into aligned arrays in native byte
+    # order before they reach the compiled code, so the results must match those of
+    # the native arrays exactly.
+
+    def byteswapped(self, x):
+        y = x.astype(x.dtype.newbyteorder())
+        assert not y.dtype.isnative
+        return y
+
+    def misaligned(self, x):
+        buf = np.zeros(x.nbytes + 1, dtype=np.uint8)
+        y = np.frombuffer(buf.data, dtype=x.dtype, count=x.size, offset=1)
+        y = y.reshape(x.shape)
+        y[...] = x
+        assert not y.flags.aligned
+        return y
+
+    def inputs(self, dtype):
+        rng = np.random.default_rng(1234)
+        xy = rng.standard_normal((2, 2, 4, 4)) / 2
+        r = rng.standard_normal((2, 4, 3))
+        if np.issubdtype(dtype, np.complexfloating):
+            xy = xy + 1j*rng.standard_normal((2, 2, 4, 4)) / 2
+            r = r + 1j*rng.standard_normal((2, 4, 3))
+        x, y = xy
+        # a and b Hermitian positive definite, r right-hand sides, t upper
+        # triangular with a -0.0 below the diagonal, which counts as zero
+        a = x @ x.conj().swapaxes(-1, -2) + np.eye(4)
+        b = y @ y.conj().swapaxes(-1, -2) + np.eye(4)
+        t = np.triu(a)
+        t[..., 3, 0] = -0.0
+        return {k: v.astype(dtype) for k, v in dict(a=a, b=b, r=r, t=t).items()}
+
+    funcs = {
+        "solve": lambda a, b, r, t: solve(a, r),
+        "inv": lambda a, b, r, t: inv(a),
+        "det": lambda a, b, r, t: det(a),
+        "lstsq": lambda a, b, r, t: lstsq(a, r),
+        "lu": lambda a, b, r, t: lu(a),
+        "qr": lambda a, b, r, t: qr(a),
+        "svd": lambda a, b, r, t: svd(a),
+        "eig": lambda a, b, r, t: eig(a),
+        "eig_generalized": lambda a, b, r, t: eig(a, b),
+        "eigh": lambda a, b, r, t: eigh(a),
+        "eigh_generalized": lambda a, b, r, t: eigh(a, b),
+        "cholesky": lambda a, b, r, t: cholesky(a),
+        "expm": lambda a, b, r, t: expm(a),
+        "sqrtm": lambda a, b, r, t: sqrtm(a),
+        "bandwidth": lambda a, b, r, t: bandwidth(t),
+    }
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_matches_native(self, func, dtype, kind):
+        native = self.inputs(dtype)
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        converted = {k: convert(v) for k, v in native.items()}
+        res = self.funcs[func](**converted)
+        ref = self.funcs[func](**native)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        assert len(res) == len(ref)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    def test_compiled_entry_points_refuse(self, kind):
+        # The compiled functions refuse such arrays instead of misreading them.
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        a = convert(np.eye(3))
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._det(a, False)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._bandwidth(a)
+        # the right-hand side too
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._solve(np.eye(3), a)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._lstsq(np.eye(3), a, 0.0, "gelsd")
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.matrix_exponential(a)
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.recursive_schur_sqrtm(a)
+
+    def test_compiled_entry_points_refuse_mixed_dtypes(self):
+        # The Python layer gives a and b a common dtype; the compiled code checks it.
+        a, b = np.eye(3), np.eye(3, dtype=np.float32)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._solve(a, b)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._lstsq(a, b, 0.0, "gelsd")
+
+
+class TestReadOnlyOverwrite:
+    # overwrite_a and overwrite_b let a function reuse an input array, but never a
+    # read-only one. Writing into a read-only memory map raises SIGSEGV. The result
+    # must be the one computed without overwriting.
+
+    def inputs(self):
+        rng = np.random.default_rng(1234)
+        x, y = rng.standard_normal((2, 4, 4))
+        a = x @ x.T + np.eye(4)   # symmetric positive definite
+        b = y @ y.T + np.eye(4)
+        r = rng.standard_normal((4, 3))
+        return {k: np.asfortranarray(v) for k, v in dict(a=a, b=b, r=r).items()}
+
+    funcs = {
+        "inv": lambda a, b, r, ow: inv(a, overwrite_a=ow),
+        "det": lambda a, b, r, ow: det(a, overwrite_a=ow),
+        "lu": lambda a, b, r, ow: lu(a, overwrite_a=ow),
+        "qr": lambda a, b, r, ow: qr(a, overwrite_a=ow),
+        "qr_r": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="r"),
+        "qr_economic": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="economic"),
+        "qr_raw": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="raw"),
+        "svd": lambda a, b, r, ow: svd(a, overwrite_a=ow),
+        "cholesky": lambda a, b, r, ow: cholesky(a, overwrite_a=ow),
+        "eig": lambda a, b, r, ow: eig(a, overwrite_a=ow),
+        "eig_generalized": lambda a, b, r, ow: eig(a, b, overwrite_a=ow,
+                                                   overwrite_b=ow),
+        "eigh": lambda a, b, r, ow: eigh(a, overwrite_a=ow),
+        "eigh_generalized": lambda a, b, r, ow: eigh(a, b, overwrite_a=ow,
+                                                     overwrite_b=ow),
+        "solve": lambda a, b, r, ow: solve(a, r, overwrite_a=ow, overwrite_b=ow),
+        "lstsq": lambda a, b, r, ow: lstsq(a, r, overwrite_a=ow, overwrite_b=ow),
+    }
+
+    @pytest.mark.parametrize("kind", ["flag", "memmap"])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_read_only_input_kept(self, func, kind, tmp_path):
+        native = self.inputs()
+        if kind == "flag":
+            read_only = {k: v.copy(order="F") for k, v in native.items()}
+            for v in read_only.values():
+                v.setflags(write=False)
+        else:
+            read_only = {}
+            for k, v in native.items():
+                np.save(tmp_path / f"{k}.npy", v)
+                read_only[k] = np.load(tmp_path / f"{k}.npy", mmap_mode="r")
+        assert all(v.flags.f_contiguous and not v.flags.writeable
+                   for v in read_only.values())
+        res = self.funcs[func](**read_only, ow=True)
+        for k, v in native.items():
+            assert_equal(read_only[k], v)
+        ref = self.funcs[func](**native, ow=False)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+
+@pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")
+@pytest.mark.parametrize("func", ["inv", "det", "cholesky", "lu", "qr", "svd", "eig",
+                                  "eigh", "solve", "lstsq"])
+def test_output_allocation_error_from_numpy(func):
+    # The 2**55 x 2 x 2 output cannot be allocated; NumPy's MemoryError, which states
+    # the requested size, reaches the caller unchanged.
+    a = np.broadcast_to(np.eye(2), (2**55, 2, 2))
+    b = np.broadcast_to(np.ones((2, 1)), (2**55, 2, 1))
+    calls = {
+        "inv": lambda: inv(a, check_finite=False),
+        "det": lambda: det(a, check_finite=False),
+        "cholesky": lambda: cholesky(a, check_finite=False),
+        "lu": lambda: lu(a, check_finite=False),
+        "qr": lambda: qr(a, check_finite=False),
+        "svd": lambda: svd(a, check_finite=False),
+        "eig": lambda: eig(a, check_finite=False),
+        "eigh": lambda: eigh(a, check_finite=False),
+        "solve": lambda: solve(a, b, check_finite=False),
+        "lstsq": lambda: lstsq(a, b, check_finite=False),
+    }
+    with pytest.raises(MemoryError, match="Unable to allocate"):
+        calls[func]()

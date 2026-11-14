@@ -129,6 +129,43 @@ class TestEigVals:
 
 class TestEig:
 
+    @pytest.mark.parametrize('generalized', [False, True])
+    def test_field_view_strides(self, generalized):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        def field_view(values):
+            dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+            rec = np.zeros(values.shape, dtype=dt)
+            rec['z'] = values
+            view = rec['z']
+            assert view.strides[-1] == 24
+            return view
+
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = b @ b.conj().swapaxes(-1, -2) + 5*np.eye(5)
+        args = (a, b) if generalized else (a,)
+        views = tuple(field_view(x) for x in args)
+        res = eig(*views, left=True, right=True)
+        ref = eig(*args, left=True, right=True)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize('generalized', [False, True])
+    def test_overwrite_f_contiguous(self, generalized):
+        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place and
+        # must give the same result as a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((5, 5))
+        b = rng.standard_normal((5, 5))
+        args = (a, b) if generalized else (a,)
+        ref = eig(*args, left=True, right=True)
+        copies = tuple(np.asfortranarray(x) for x in args)
+        res = eig(*copies, left=True, right=True, overwrite_a=True, overwrite_b=True)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, v = eig(a)
@@ -1001,6 +1038,67 @@ class TestEigTridiagonal:
 
 
 class TestEigh:
+    @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
+    def test_field_view_strides(self, driver):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        def field_view(values):
+            dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+            rec = np.zeros(values.shape, dtype=dt)
+            rec['z'] = values
+            view = rec['z']
+            assert view.strides[-1] == 24
+            return view
+
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        a = a + a.conj().swapaxes(-1, -2)
+        b = rng.standard_normal((3, 5, 5)) + 1j*rng.standard_normal((3, 5, 5))
+        b = b @ b.conj().swapaxes(-1, -2) + 5*np.eye(5)
+        args = (a, b) if driver.startswith('g') else (a,)
+        views = tuple(field_view(x) for x in args)
+        res = eigh(*views, driver=driver)
+        ref = eigh(*args, driver=driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    @pytest.mark.parametrize('driver', ['evd', 'gvd'])
+    def test_lp64_workspace_overflow(self, driver):
+        # With eigenvectors, ?syevd and ?sygvd need a workspace of 1 + 6n + 2n**2, which
+        # overflows 32-bit LAPACK integers from n = 32767. The call must be refused
+        # rather than run with a workspace that is too small. The inputs have zero
+        # strides and nothing is computed; the eigenvectors are allocated but never
+        # touched.
+        check_free_memory(free_mb=6000)
+        a = np.broadcast_to(np.float32(1), (32767, 32767))
+        args = (a, a) if driver == 'gvd' else (a,)
+        with pytest.raises(ValueError, match="ILP64"):
+            eigh(*args, driver=driver, check_finite=False)
+
+    @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
+    @pytest.mark.parametrize('subset', [None, 'index'])
+    def test_overwrite_f_contiguous(self, driver, subset):
+        # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place; the
+        # eigenvectors then come back in the input's own buffer and must equal a copy's.
+        if subset and driver in ('ev', 'evd', 'gv', 'gvd'):
+            pytest.skip('driver cannot compute subsets')
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((6, 6)) + 1j*rng.standard_normal((6, 6))
+        a = a + a.conj().T
+        b = rng.standard_normal((6, 6)) + 1j*rng.standard_normal((6, 6))
+        b = b @ b.conj().T + 6*np.eye(6)
+        args = (a, b) if driver.startswith('g') else (a,)
+        kw = dict(driver=driver, subset_by_index=[1, 3] if subset else None)
+        ref = eigh(*args, **kw)
+        copies = tuple(np.asfortranarray(x) for x in args)
+        res = eigh(*copies, overwrite_a=True, overwrite_b=True, **kw)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_wrong_inputs(self):
         # Nonsquare a
         assert_raises(ValueError, eigh, np.ones([1, 2]))
@@ -1472,6 +1570,25 @@ class TestSVD_GESDD:
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
+    @pytest.mark.parametrize('compute_uv, full_matrices',
+                             [(False, True), (True, True), (True, False)])
+    def test_field_view_strides(self, compute_uv, full_matrices):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must decompose like a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 6, 4)) + 1j*rng.standard_normal((3, 6, 4))
+        dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+        rec = np.zeros(a.shape, dtype=dt)
+        rec['z'] = a
+        view = rec['z']
+        assert view.strides[-1] == 24
+        kw = dict(compute_uv=compute_uv, full_matrices=full_matrices,
+                  lapack_driver=self.lapack_driver)
+        res, ref = svd(view, **kw), svd(a, **kw)
+        res, ref = (res, ref) if compute_uv else ((res,), (ref,))
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
     def test_simple(self):
         a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
         for full_matrices in (True, False):
@@ -1738,6 +1855,23 @@ def test_svd_gesdd_nosegfault():
         svd(df)
 
 
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+@pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+@pytest.mark.slow
+@pytest.mark.parametrize("n, dtype", [(26754, np.float32), (20724, np.complex64)])
+def test_svd_gesdd_lp64_workspace_overflow(n, dtype):
+    # ?gesdd evaluates its workspace in LAPACK integers: with 32-bit integers the real
+    # workspace overflows from n = 26754, and the one of the complex flavors from n =
+    # 20724. The call must be refused rather than run with a workspace that is too
+    # small. The input has zero strides and nothing is computed; U and Vh are allocated
+    # but never touched.
+    check_free_memory(free_mb=8000)
+    a = np.broadcast_to(np.ones((), dtype=dtype), (n, n))
+    with pytest.raises(ValueError, match="ILP64"):
+        svd(a, lapack_driver="gesdd", check_finite=False)
+
+
 def test_gesdd_nan_error_message():
     A = np.eye(2)
     A[0, 0] = np.nan
@@ -1823,6 +1957,27 @@ class TestQR:
         q, r = qr(a)
         assert_array_almost_equal(q.T @ q, eye(3))
         assert_array_almost_equal(q @ r, a)
+
+    @pytest.mark.parametrize('mode', ['full', 'r', 'economic', 'raw'])
+    @pytest.mark.parametrize('pivoting', [False, True])
+    def test_field_view_strides(self, mode, pivoting):
+        # A complex128 field of an aligned structured array has a 24-byte element
+        # stride, not a multiple of the itemsize; it must factor like a copy.
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, 6, 4)) + 1j*rng.standard_normal((3, 6, 4))
+        dt = np.dtype([('z', np.complex128), ('pad', np.float64)], align=True)
+        rec = np.zeros(a.shape, dtype=dt)
+        rec['z'] = a
+        view = rec['z']
+        assert view.strides[-1] == 24
+        res = qr(view, mode=mode, pivoting=pivoting)
+        ref = qr(a, mode=mode, pivoting=pivoting)
+        res = res if isinstance(res, tuple) else (res,)
+        ref = ref if isinstance(ref, tuple) else (ref,)
+        for x, y in zip(res, ref):
+            x, y = (x, y) if isinstance(x, tuple) else ((x,), (y,))
+            for p, q in zip(x, y):
+                assert_equal(p, q)
 
     def test_simple_left(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]

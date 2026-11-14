@@ -1122,7 +1122,8 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # XXX can relax a1.ndim == 2?
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
+    # keep the numbers in sync with C at
+    # `linalg/src/batched_linalg/_common_array_utils.hpp`
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
@@ -1224,6 +1225,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
@@ -1243,19 +1245,11 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    det = _linalg_det(a1, overwrite_a)
-
-    # Promote single precision to double to prevent overflows
-    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    if det.dtype.char == 'f':
-        det = det.astype(np.float64)
-    elif det.dtype.char == 'F':
-        det = det.astype(np.complex128)
-
-    # Return scalar for 2D input
-    if det.ndim == 0:
-        return det[()]
-    return det
+    # Single precision input gives a double precision determinant, computed in double
+    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not
+    # overflow.
+    # A scalar for 2D input, else an array of the batch shape.
+    return _linalg_det(a1, overwrite_a)
 
 
 # Linear Least Squares

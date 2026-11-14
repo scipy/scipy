@@ -17,6 +17,7 @@ from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
+from .lapack import _ensure_aligned_and_native
 from ._linalg_pythran import _funm_loops
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
@@ -302,6 +303,7 @@ def expm(A):
         a = a.astype(np.float64)
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
+    a, _ = _ensure_aligned_and_native(a, False)
 
     # An explicit formula for 2x2 case exists (formula (2.2) in [1]_). However, without
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
@@ -309,6 +311,10 @@ def expm(A):
 
     eA, info = matrix_exponential(a)
     if info != 0:
+        if info == -10:
+            raise ValueError("scipy.linalg.expm: the matrix size exceeds the range "
+                             "of the 32-bit integers of the LAPACK library, hence "
+                             "an ILP64-enabled LAPACK is required.")
         if info <= -11:
             # We raise it from failed mallocs; negative LAPACK codes > -7
             raise MemoryError("scipy.linalg.expm could not allocate "
@@ -417,6 +423,7 @@ def sqrtm(A):
     if a.dtype.char not in 'fdFD':
         raise TypeError("scipy.linalg.sqrtm is not supported for the data type"
                         f" {a.dtype}")
+    a, _ = _ensure_aligned_and_native(a, False)
 
     res, isIllconditioned, isSingular, info = recursive_schur_sqrtm(a)
     if info < 0:

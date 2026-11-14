@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _ensure_aligned_and_native
 from ._batched_linalg import _bandwidth
 from scipy._lib._util import _deprecate_dtypes
 
@@ -281,5 +281,6 @@ def bandwidth(a):
             np.zeros(batch_shape, dtype=np.int64)
         )
 
+    a, _ = _ensure_aligned_and_native(a, False)
     return _bandwidth(a)
 

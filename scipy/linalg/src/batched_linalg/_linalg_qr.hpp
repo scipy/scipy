@@ -6,8 +6,8 @@
 namespace sp_linalg {
 
 template<typename T>
-int
-_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, int overwrite_a, QR_mode mode, int pivoting, SliceStatusVec &vec_status)
+BatchStatus
+_qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, const bool overwrite_a, const QR_mode mode, const bool pivoting, SliceStatusVec &vec_status)
 {
     using real_type = real_of_t<T>;
     SliceStatus slice_status;
@@ -15,33 +15,32 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // ------------------------------------------------------------------------
     // Input array attributes, some bookkeeping due to conditional allocations
     // ------------------------------------------------------------------------
-    T *A_data = (T *)PyArray_DATA(ap_Am);
+    char *A_data = PyArray_BYTES(ap_Am);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp M = shape[ndim-2];
     npy_intp N = shape[ndim-1];
 
-    T *R_data = (T *)PyArray_DATA(ap_R);
+    char *R_data = PyArray_BYTES(ap_R);
     npy_intp *strides_R = PyArray_STRIDES(ap_R);
 
     // Conditional allocations based on the mode; not all data is always available.
-    T *Q_data = NULL, *tau_data = NULL;
-    CBLAS_INT *jpvt_data = NULL;
+    char *Q_data = NULL, *tau_data = NULL, *jpvt_data = NULL;
     npy_intp *strides_Q = NULL, *strides_tau = NULL, *strides_jpvt = NULL;
 
     if (mode != QR_mode::R) {
-        Q_data = (T *)PyArray_DATA(ap_Q);
+        Q_data = PyArray_BYTES(ap_Q);
         strides_Q = PyArray_STRIDES(ap_Q);
     }
 
     if (mode == QR_mode::RAW_MODE) {
-        tau_data = (T *)PyArray_DATA(ap_tau);
+        tau_data = PyArray_BYTES(ap_tau);
         strides_tau = PyArray_STRIDES(ap_tau);
     }
 
     if (pivoting) {
-        jpvt_data = (CBLAS_INT *)PyArray_DATA(ap_jpvt);
+        jpvt_data = PyArray_BYTES(ap_jpvt);
         strides_jpvt = PyArray_STRIDES(ap_jpvt);
     }
 
@@ -51,12 +50,17 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // -------------------------------------------------------------------
     // Workspace computation and allocation
     // -------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)N, intm = (CBLAS_INT)M, info = 0;
+    CBLAS_INT intn, intm, info = 0;
+    if (!checked_narrow<CBLAS_INT>(N, &intn) || !checked_narrow<CBLAS_INT>(M, &intm)) {
+        return {BatchCode::too_large, nullptr, std::max(N, M)};
+    }
     CBLAS_INT K = std::min(intn, intm), max_dim = std::max(intn, intm);
     CBLAS_INT middle_dim = (mode == QR_mode::ECONOMIC || mode == QR_mode::RAW_MODE) ? K : intm; // Final dimension: Q is [`M` x `middle_dim`], R is [`middle_dim` x `N`]
 
 
     // Probe both the factorization as well as `or_un_gqr` to find the optimal lwork
+    const char *factor_routine = pivoting ? "geqp3" : "geqrf";
+    const char *gqr_routine = is_complex_v<T> ? "ungqr" : "orgqr";
     T tmp_factor = 0.0;
     T tmp_or_un_gqr = 0.0;
     CBLAS_INT lwork = -1;
@@ -70,7 +74,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
         }
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return {BatchCode::lapack_error, factor_routine, info}; }
 
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
@@ -80,18 +84,21 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
         }
     }
-    if (info != 0) { info = -100; return (int)info; }
+    if (info != 0) { return {BatchCode::lapack_error, gqr_routine, info}; }
 
-    CBLAS_INT lwork_factor = _calc_lwork(tmp_factor);
-    CBLAS_INT lwork_or_un_gqr = _calc_lwork(tmp_or_un_gqr);
+    // _calc_lwork returns -1 when the queried lwork does not fit CBLAS_INT
+    int64_t size_factor = 0, size_or_un_gqr = 0;
+    CBLAS_INT lwork_factor = _calc_lwork(tmp_factor, 1.0, &size_factor);
+    CBLAS_INT lwork_or_un_gqr = _calc_lwork(tmp_or_un_gqr, 1.0, &size_or_un_gqr);
+    if ((lwork_factor < 0) || (lwork_or_un_gqr < 0)) {
+        const bool factor = lwork_factor < 0;
+        return {BatchCode::too_large, factor ? factor_routine : gqr_routine, factor ? size_factor : size_or_un_gqr};
+    }
     lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
-    if ((lwork < 0) || (pivoting && 3 * N + 1 >= std::numeric_limits<CBLAS_INT>::max())) {
-        // Too large lwork required - Computation cannot be performed.
-        // `geqrf` and `or_un_gqr` require an `lwork` of at least N,
-        // `geqp3` requires an `lwork` of at least 3N + 1. The former would not
-        // be detectable, but the latter is.
-        return -99;
+    // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
+    if (pivoting && (3 * (std::uint64_t)N + 1 > (std::uint64_t)CBLAS_INT_MAX)) {
+        return {BatchCode::too_large, "geqp3", 3 * (int64_t)N + 1};
     }
 
     /*
@@ -130,29 +137,24 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
      *      storing `R`. At the end `Q` is copied into a newly allocated array.
      *      XXX: for `M < N` it is possible to circumvent the temporary buffer, but that would lead to shape-dependent codepaths.
      */
-    CBLAS_INT tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
-    CBLAS_INT buf_size = ((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE) ? 0 : (mode == QR_mode::FULL) ? M * max_dim : M * N;
-    T *buffer = (T *)PyMem_RawMalloc((lwork + tau_size + buf_size) * sizeof(T));
-    if ( buffer == NULL ) { info = -101; return int(info); }
+    // each count is bounded by an existing array (A, and Q for mode == FULL) or by CBLAS_INT, so
+    // the 64-bit sums are exact
+    const std::uint64_t tau_size = (mode == QR_mode::RAW_MODE) ? 0 : K;
+    const bool needs_buffer = !((overwrite_a && mode != QR_mode::FULL) || mode == QR_mode::RAW_MODE);
+    const std::uint64_t buf_size = needs_buffer ? (std::uint64_t)M * ((mode == QR_mode::FULL) ? max_dim : N) : 0;
+    const std::uint64_t rwork_size = (pivoting && is_complex_v<T>) ? 2 * (std::uint64_t)N : 0;
 
-    T *work = &buffer[0];
-    T *tau_buffer = &buffer[lwork];
-    T *data_A = &buffer[lwork + tau_size];
+    auto buffer = alloc_workspace<T>(lwork + tau_size + buf_size);
+    auto rwork = alloc_workspace<real_type>(rwork_size);   // `c/zgeqp3` needs rwork
 
-    // `c/zgeqp3` needs rwork
-    real_type *rwork = NULL;
-    if (pivoting && is_complex_v<T>) {
-        rwork = (real_type *)PyMem_RawMalloc(2 * N * sizeof(real_type));
-
-        if (rwork == NULL) {
-            PyMem_RawFree(buffer);
-            info = -102;
-            return int(info);
-        }
-    }
+    T *cursor = buffer.get();
+    T *work = cursor;       cursor += lwork;
+    T *tau_buffer = cursor; cursor += tau_size;
+    T *data_A = cursor;
 
     // -------------------------------------------------------------------
     // Main loop to traverse the slices
+    // A failing slice is recorded in vec_status and ends the loop; the call itself still returns ok.
     // -------------------------------------------------------------------
     T *slice_ptr_A = NULL, *slice_ptr_Q = NULL, *slice_ptr_R = NULL, *slice_ptr_tau = NULL;
     CBLAS_INT *slice_ptr_jpvt = NULL;
@@ -162,21 +164,21 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         // less, however, the looping to compute the slices should traverse the same number of dimensions.
         // Hence, the use of `ndim` instead of `ndim-1`. Similarly, the shapes of `Q` and `R` might differ,
         // but only the batching ones are relevant, which are identical.
-        slice_ptr_A = compute_slice_ptr(idx, A_data, ndim, shape, strides);
+        slice_ptr_A = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
         if (!(mode == QR_mode::R && overwrite_a)) {
-            slice_ptr_R = compute_slice_ptr(idx, R_data, ndim, shape, strides_R);
+            slice_ptr_R = compute_slice_ptr<T>(idx, R_data, ndim, shape, strides_R);
         } // NB. if the condition is true the relevant buffer is already in place and no copy back is needed either.
 
         if (mode != QR_mode::R) {
-            slice_ptr_Q = compute_slice_ptr(idx, Q_data, ndim, shape, strides_Q);
+            slice_ptr_Q = compute_slice_ptr<T>(idx, Q_data, ndim, shape, strides_Q);
         }
         if (mode == QR_mode::RAW_MODE) {
-            slice_ptr_tau = compute_slice_ptr(idx, tau_data, ndim, shape, strides_tau);
+            slice_ptr_tau = compute_slice_ptr<T>(idx, tau_data, ndim, shape, strides_tau);
         } else { // `tau` might still be required for computation of `Q`, but should not be returned, so the temporary buffer is sufficient.
             slice_ptr_tau = tau_buffer;
         }
         if (pivoting) {
-            slice_ptr_jpvt = compute_slice_ptr(idx, jpvt_data, ndim, shape, strides_jpvt);
+            slice_ptr_jpvt = compute_slice_ptr<CBLAS_INT>(idx, jpvt_data, ndim, shape, strides_jpvt);
         }
 
         /*
@@ -187,9 +189,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
          * the returned array is in F-order, hence bypassing the buffer avoids two redundant copies.
          */
         if ((!overwrite_a && mode != QR_mode::RAW_MODE) || mode == QR_mode::FULL) {
-            copy_slice_F(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(data_A, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1], M);
         } else if (!overwrite_a && mode == QR_mode::RAW_MODE) {
-            copy_slice_F(slice_ptr_Q, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1]);
+            copy_strided_to_f(slice_ptr_Q, slice_ptr_A, M, N, strides[ndim-2], strides[ndim-1], M);
             data_A = slice_ptr_Q; // Add alias for easier to read codepaths later on.
         } else if (overwrite_a && (mode == QR_mode::RAW_MODE || mode == QR_mode::R || mode == QR_mode::ECONOMIC)) {
             data_A = slice_ptr_A;
@@ -208,7 +210,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             if constexpr (!is_complex_v<T>) {
                 lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, &info);
             } else {
-                lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, rwork, &info);
+                lapack::geqp3(intm, intn, data_A, intm, slice_ptr_jpvt, slice_ptr_tau, work, lwork, rwork.get(), &info);
             }
             for (CBLAS_INT i = 0; i < intn; i++) {
                 slice_ptr_jpvt[i] -= 1; // geqp3 returns a 1-based index array, so subtract 1
@@ -219,7 +221,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             slice_status.lapack_info = (Py_ssize_t)info;
             vec_status.push_back(slice_status);
 
-            goto free_exit;
+            return {};
         }
 
         // `R` is always required, the correct shape is ensured by `middle_dim`.
@@ -229,10 +231,10 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         } else if (mode == QR_mode::FULL && overwrite_a) {
             // The `R` array should be copied back into the `A` array, which is F-ordered, so pretend the transpose got copied.
             // Then zero out the other triangle since the original input data is still in place.
-            copy_triangle_to_C(slice_ptr_A, data_A, intn, intm, intm, 1, 'L');
+            copy_triangle_to_C(slice_ptr_A, data_A, intn, intm, intm * (npy_intp)sizeof(T), (npy_intp)sizeof(T), 'L');
             zero_other_triangle('U', slice_ptr_A, intm, intn, intm);
         } else {
-            copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, 1, intm, 'U'); // F-ordered input to `copy_triangle`, hence `s0 == 1` and `s1 == intm`
+            copy_triangle_to_C(slice_ptr_R, data_A, middle_dim, intn, (npy_intp)sizeof(T), intm * (npy_intp)sizeof(T), 'U'); // F-ordered input to `copy_triangle`, hence `s0 == sizeof(T)` and `s1 == intm * sizeof(T)`
         }
 
         // Construct the Q matrix if required, same handling for both modes; dimensions are set already.
@@ -246,7 +248,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
             if (info != 0) {
                 slice_status.lapack_info = (Py_ssize_t)info;
                 vec_status.push_back(slice_status);
-                goto free_exit;
+                return {};
             }
 
             if (!overwrite_a || mode == QR_mode::FULL) {
@@ -258,11 +260,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
 
     } // End of batching loop
 
-free_exit:
-    PyMem_RawFree(buffer);
-    PyMem_RawFree(rwork);
-
-    return 1;
+    return {};
 }
 
 } // namespace sp_linalg

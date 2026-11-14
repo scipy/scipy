@@ -3,12 +3,12 @@
 
 static float snorm1(float*, const Py_ssize_t);
 static double dnorm1(double*, const Py_ssize_t);
-static float cnorm1(SCIPY_C*, const Py_ssize_t);
-static double znorm1(SCIPY_Z*, const Py_ssize_t);
+static float cnorm1(scipy_c64*, const Py_ssize_t);
+static double znorm1(scipy_c128*, const Py_ssize_t);
 static float snorm1est(float*, CBLAS_INT, CBLAS_INT);
 static double dnorm1est(double*, CBLAS_INT, CBLAS_INT);
-static float cnorm1est(SCIPY_C*, CBLAS_INT, CBLAS_INT);
-static double znorm1est(SCIPY_Z*, CBLAS_INT, CBLAS_INT);
+static float cnorm1est(scipy_c64*, CBLAS_INT, CBLAS_INT);
+static double znorm1est(scipy_c128*, CBLAS_INT, CBLAS_INT);
 
 
 /***********************************************************************
@@ -42,7 +42,7 @@ dnorm1(double* A, const Py_ssize_t n)
 }
 
 static float
-cnorm1(SCIPY_C* A, const Py_ssize_t n)
+cnorm1(scipy_c64* A, const Py_ssize_t n)
 {
     float norm = 0.0;
     for (Py_ssize_t i = 0; i < n; i++)
@@ -55,7 +55,7 @@ cnorm1(SCIPY_C* A, const Py_ssize_t n)
 }
 
 static double
-znorm1(SCIPY_Z* A, const Py_ssize_t n)
+znorm1(scipy_c128* A, const Py_ssize_t n)
 {
     double norm = 0.0;
     for (Py_ssize_t i = 0; i < n; i++)
@@ -140,14 +140,14 @@ dnorm1est(double* A, CBLAS_INT n, CBLAS_INT p)
 
 
 static float
-cnorm1est(SCIPY_C* A, CBLAS_INT n, CBLAS_INT p)
+cnorm1est(scipy_c64* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
     float est;
-    SCIPY_C dbl1 = CPLX_C(1.0, 0.0), dbl0 = CPLX_C(0.0, 0.0);
+    scipy_c64 dbl1 = CMPLXF(1.0, 0.0), dbl0 = CMPLXF(0.0, 0.0);
     char* opA;
-    SCIPY_C* work_arr = PyMem_RawMalloc(3*n*sizeof(SCIPY_C));
+    scipy_c64* work_arr = PyMem_RawMalloc(3*n*sizeof(scipy_c64));
     if (!work_arr) { return -100; }
     // clacon( n, v, x, est, kase )
     BLAS_FUNC(clacn2)(&n, work_arr, &work_arr[n], &est, &kase, isave);
@@ -173,14 +173,14 @@ cnorm1est(SCIPY_C* A, CBLAS_INT n, CBLAS_INT p)
 
 
 static double
-znorm1est(SCIPY_Z* A, CBLAS_INT n, CBLAS_INT p)
+znorm1est(scipy_c128* A, CBLAS_INT n, CBLAS_INT p)
 {
     CBLAS_INT from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     CBLAS_INT isave[3];
     double est;
-    SCIPY_Z dbl1 = CPLX_Z(1.0, 0.0), dbl0 = CPLX_Z(0.0, 0.0);
+    scipy_c128 dbl1 = CMPLX(1.0, 0.0), dbl0 = CMPLX(0.0, 0.0);
     char* opA;
-    SCIPY_Z* work_arr = PyMem_RawMalloc(3*n*sizeof(SCIPY_Z));
+    scipy_c128* work_arr = PyMem_RawMalloc(3*n*sizeof(scipy_c128));
     if (!work_arr) { return -100; }
     // zlacon( n, v, x, est, kase )
     BLAS_FUNC(zlacn2)(&n, work_arr, &work_arr[n], &est, &kase, isave);
@@ -215,13 +215,14 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     Py_ssize_t i, j;
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
+    const npy_intp nn = (npy_intp)n * n;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
     // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
-    float* restrict work_arr = &Am[6*n*n];
-    float* restrict absA = &Am[5*n*n];
+    float* restrict work_arr = &Am[6*nn];
+    float* restrict absA = &Am[5*nn];
 
     *m = 0;
     *s = 0;
@@ -254,11 +255,11 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
 
-    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
-    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
-    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = powf(snorm1(&Am[2*n*n], n), 0.25);
-    d6 = powf(snorm1(&Am[3*n*n], n), 1.0/6.0);
+    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*nn], &n, &Am[0*nn], &n, &dbl0, &Am[1*nn], &n);
+    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*nn], &n, &Am[1*nn], &n, &dbl0, &Am[2*nn], &n);
+    BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[1*nn], &n, &dbl0, &Am[3*nn], &n);
+    d4 = powf(snorm1(&Am[2*nn], n), 0.25);
+    d6 = powf(snorm1(&Am[3*nn], n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -308,8 +309,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     if (n < 400)
     {
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = powf(snorm1(&Am[4*n*n], n), 0.125);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
+        d8 = powf(snorm1(&Am[4*nn], n), 0.125);
     } else {
         test = snorm1est(&Am[0], n, 8);
         // If memory error in s1normest
@@ -354,7 +355,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[3]) && lm == 0)
     {
         if (n >= 400) {
-            BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
+            BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
         }
         *m = 9;
         return;
@@ -365,8 +366,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     // Scale-square
     if (n < 400)
     {
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = powf(snorm1(&Am[4*n*n], n), 0.1);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
+        d10 = powf(snorm1(&Am[4*nn], n), 0.1);
     } else {
         test = snorm1est(&Am[0], n, 10);
         // If memory error in s1normest
@@ -382,7 +383,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = powf(2.0, -(*s));
-        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)nn; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = powf(2.0, -19.0*(*s));
@@ -414,9 +415,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
             for (j = 0; j < n; j++)
             {
                 Am[            (long)n*i + j] *= s0;
-                Am[(long)n*n + (long)n*i + j] *= s1;
-                Am[2L*n*n    + (long)n*i + j] *= s2;
-                Am[3L*n*n    + (long)n*i + j] *= s3;
+                Am[(long)nn + (long)n*i + j] *= s1;
+                Am[2L*nn    + (long)n*i + j] *= s2;
+                Am[3L*nn    + (long)n*i + j] *= s3;
             }
         }
     }
@@ -431,13 +432,14 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     Py_ssize_t i, j;
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
+    const npy_intp nn = (npy_intp)n * n;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
     // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
-    double* restrict work_arr = &Am[6*n*n];
-    double* restrict absA = &Am[5*n*n];
+    double* restrict work_arr = &Am[6*nn];
+    double* restrict absA = &Am[5*nn];
 
     *m = 0;
     *s = 0;
@@ -470,11 +472,11 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
 
-    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &dbl0, &Am[1*n*n], &n);
-    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[2*n*n], &n);
-    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &dbl0, &Am[3*n*n], &n);
-    d4 = pow(dnorm1(&Am[2*n*n], n), 0.25);
-    d6 = pow(dnorm1(&Am[3*n*n], n), 1.0/6.0);
+    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*nn], &n, &Am[0*nn], &n, &dbl0, &Am[1*nn], &n);
+    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*nn], &n, &Am[1*nn], &n, &dbl0, &Am[2*nn], &n);
+    BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[1*nn], &n, &dbl0, &Am[3*nn], &n);
+    d4 = pow(dnorm1(&Am[2*nn], n), 0.25);
+    d6 = pow(dnorm1(&Am[3*nn], n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -524,8 +526,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     if (n < 400)
     {
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d8 = pow(dnorm1(&Am[4*n*n], n), 0.125);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
+        d8 = pow(dnorm1(&Am[4*nn], n), 0.125);
     } else {
         test = dnorm1est(&Am[0], n, 8);
         // If memory error in d1normest
@@ -570,7 +572,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[3]) && lm == 0)
     {
         if (n >= 400) {
-            BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
+            BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
         }
         *m = 9;
         return;
@@ -581,8 +583,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     // Scale-square
     if (n < 400)
     {
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
-        d10 = pow(dnorm1(&Am[4*n*n], n), 0.1);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[3*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
+        d10 = pow(dnorm1(&Am[4*nn], n), 0.1);
     } else {
         test = dnorm1est(&Am[0], n, 10);
         // If memory error in d1normest
@@ -598,7 +600,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = pow(2.0, -(*s));
-        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)nn; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = pow(2.0, -19.0*(*s));
@@ -630,9 +632,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
             for (j = 0; j < n; j++)
             {
                 Am[            (long)n*i + j] *= s0;
-                Am[(long)n*n + (long)n*i + j] *= s1;
-                Am[2L*n*n    + (long)n*i + j] *= s2;
-                Am[3L*n*n    + (long)n*i + j] *= s3;
+                Am[(long)nn + (long)n*i + j] *= s1;
+                Am[2L*nn    + (long)n*i + j] *= s2;
+                Am[3L*nn    + (long)n*i + j] *= s3;
             }
         }
     }
@@ -642,21 +644,22 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 
 
 static void
-pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
+pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
+    const npy_intp nn = (npy_intp)n * n;
     float normA;
     float dbl1 = 1.0, dbl0 = 0.0;
-    SCIPY_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0);
+    scipy_c64 cdbl1 = CMPLXF(1.0, 0.0), cdbl0 = CMPLXF(0.0, 0.0);
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
     // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     // Am is complex, but work_arr and absA are real.
-    float* restrict work_arr = (float*)&Am[6*n*n];
-    float* restrict absA = (float*)&Am[5*n*n];
+    float* restrict work_arr = (float*)&Am[6*nn];
+    float* restrict absA = (float*)&Am[5*nn];
 
     *m = 0;
     *s = 0;
@@ -689,11 +692,11 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
 
-    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
-    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
-    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = powf(cnorm1(&Am[2*n*n], n), 0.25);
-    d6 = powf(cnorm1(&Am[3*n*n], n), 1.0/6.0);
+    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*nn], &n, &Am[0*nn], &n, &cdbl0, &Am[1*nn], &n);
+    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[2*nn], &n);
+    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[3*nn], &n);
+    d4 = powf(cnorm1(&Am[2*nn], n), 0.25);
+    d6 = powf(cnorm1(&Am[3*nn], n), 1.0/6.0);
     eta0 = fmaxf(d4, d6);
     eta1 = eta0;
 
@@ -743,8 +746,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     if (n < 400)
     {
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = powf(cnorm1(&Am[4*n*n], n), 0.125);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
+        d8 = powf(cnorm1(&Am[4*nn], n), 0.125);
     } else {
         test = cnorm1est(&Am[0], n, 8);
         // If memory error in c1normest
@@ -789,7 +792,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if ((eta2 < theta[3]) && lm == 0)
     {
         if (n >= 400) {
-            BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
+            BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
         }
         *m = 9;
         return;
@@ -800,8 +803,8 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     // Scale-square
     if (n < 400)
     {
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = powf(cnorm1(&Am[4*n*n], n), 0.1);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
+        d10 = powf(cnorm1(&Am[4*nn], n), 0.1);
     } else {
         test = cnorm1est(&Am[0], n, 10);
         // If memory error in c1normest
@@ -817,7 +820,7 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = powf(2.0, -(*s));
-        for (i = 0; i < (long)n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < (long)nn; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = powf(2.0, -19.0*(*s));
@@ -850,14 +853,14 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
             {
 #if defined(_MSC_VER)
                 Am[            (long)n*i + j] = _FCmulcr(Am[            (long)n*i + j], s0);
-                Am[(long)n*n + (long)n*i + j] = _FCmulcr(Am[(long)n*n + (long)n*i + j], s1);
-                Am[2L*n*n +    (long)n*i + j] = _FCmulcr(Am[2L*n*n    + (long)n*i + j], s2);
-                Am[3L*n*n +    (long)n*i + j] = _FCmulcr(Am[3L*n*n    + (long)n*i + j], s3);
+                Am[(long)nn + (long)n*i + j] = _FCmulcr(Am[(long)nn + (long)n*i + j], s1);
+                Am[2L*nn +    (long)n*i + j] = _FCmulcr(Am[2L*nn    + (long)n*i + j], s2);
+                Am[3L*nn +    (long)n*i + j] = _FCmulcr(Am[3L*nn    + (long)n*i + j], s3);
 #else
                 Am[            (long)n*i + j] *= s0;
-                Am[(long)n*n + (long)n*i + j] *= s1;
-                Am[2L*n*n    + (long)n*i + j] *= s2;
-                Am[3L*n*n    + (long)n*i + j] *= s3;
+                Am[(long)nn + (long)n*i + j] *= s1;
+                Am[2L*nn    + (long)n*i + j] *= s2;
+                Am[3L*nn    + (long)n*i + j] *= s3;
 #endif
             }
         }
@@ -868,21 +871,22 @@ pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
 
 
 static void
-pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
+pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     int lm = 0;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
+    const npy_intp nn = (npy_intp)n * n;
     double normA;
     double dbl1 = 1.0, dbl0 = 0.0;
-    SCIPY_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0);
+    scipy_c128 cdbl1 = CMPLX(1.0, 0.0), cdbl0 = CMPLX(0.0, 0.0);
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
     // work_arr is two (n,) cols that will be used multiplying absA.T, alternating.
     // Am is complex, but work_arr and absA are double.
-    double* restrict work_arr = (double*)&Am[6*n*n];
-    double* restrict absA = (double*)&Am[5*n*n];
+    double* restrict work_arr = (double*)&Am[6*nn];
+    double* restrict absA = (double*)&Am[5*nn];
 
     *m = 0;
     *s = 0;
@@ -915,11 +919,11 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > normA) { normA = work_arr[n+i]; } }
 
 
-    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*n*n], &n, &Am[0*n*n], &n, &cdbl0, &Am[1*n*n], &n);
-    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[2*n*n], &n);
-    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[1*n*n], &n, &cdbl0, &Am[3*n*n], &n);
-    d4 = pow(znorm1(&Am[2*n*n], n), 0.25);
-    d6 = pow(znorm1(&Am[3*n*n], n), 1.0/6.0);
+    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*nn], &n, &Am[0*nn], &n, &cdbl0, &Am[1*nn], &n);
+    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[2*nn], &n);
+    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[3*nn], &n);
+    d4 = pow(znorm1(&Am[2*nn], n), 0.25);
+    d6 = pow(znorm1(&Am[3*nn], n), 1.0/6.0);
     eta0 = fmax(d4, d6);
     eta1 = eta0;
 
@@ -969,8 +973,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // -------
     if (n < 400)
     {
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d8 = pow(znorm1(&Am[4*n*n], n), 0.125);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
+        d8 = pow(znorm1(&Am[4*nn], n), 0.125);
     } else {
         test = znorm1est(&Am[0], n, 8);
         // If memory error in z1normest
@@ -1017,7 +1021,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
         // Add the deferred matmul for m=9
         if (n >= 400)
         {
-            BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
+            BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
         }
         *m = 9;
         return;
@@ -1028,8 +1032,8 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     // Scale-square
     if (n < 400)
     {
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
-        d10 = pow(znorm1(&Am[4*n*n], n), 0.1);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[3*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
+        d10 = pow(znorm1(&Am[4*nn], n), 0.1);
     } else {
         test = znorm1est(&Am[0], n, 10);
         // If memory error in z1normest
@@ -1045,7 +1049,7 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     if (*s != 0)
     {
         two_pow_s = pow(2.0, -(*s));
-        for (i = 0; i < n*n; i++) { absA[i] *= two_pow_s; }
+        for (i = 0; i < nn; i++) { absA[i] *= two_pow_s; }
 
         // work_arr has spun 19 times already
         two_pow_s = pow(2.0, -19.0*(*s));
@@ -1078,14 +1082,14 @@ pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
             {
 #if defined(_MSC_VER)
                 Am[            (long)n*i + j] = _Cmulcr(Am[            (long)n*i + j], s0);
-                Am[(long)n*n + (long)n*i + j] = _Cmulcr(Am[(long)n*n + (long)n*i + j], s1);
-                Am[2L*n*n    + (long)n*i + j] = _Cmulcr(Am[2L*n*n    + (long)n*i + j], s2);
-                Am[3L*n*n    + (long)n*i + j] = _Cmulcr(Am[3L*n*n    + (long)n*i + j], s3);
+                Am[(long)nn + (long)n*i + j] = _Cmulcr(Am[(long)nn + (long)n*i + j], s1);
+                Am[2L*nn    + (long)n*i + j] = _Cmulcr(Am[2L*nn    + (long)n*i + j], s2);
+                Am[3L*nn    + (long)n*i + j] = _Cmulcr(Am[3L*nn    + (long)n*i + j], s3);
 #else
                 Am[            (long)n*i + j] *= s0;
-                Am[(long)n*n + (long)n*i + j] *= s1;
-                Am[2L*n*n    + (long)n*i + j] *= s2;
-                Am[3L*n*n    + (long)n*i + j] *= s3;
+                Am[(long)nn + (long)n*i + j] *= s1;
+                Am[2L*nn    + (long)n*i + j] *= s2;
+                Am[3L*nn    + (long)n*i + j] *= s3;
 #endif
             }
         }
@@ -1109,6 +1113,7 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
 
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     CBLAS_INT n2 = n*n, i, j;
+    const npy_intp nn = (npy_intp)n * n;   // offsets into Am; n2 is the BLAS element count
     float b[13];
     float two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
 
@@ -1120,12 +1125,12 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         b[2] = 12.0;
 
         // U = Am[0] @ Am[1] + b[1]*Am[0]
-        BLAS_FUNC(scopy)(&n2, Am, &int1, &Am[3*n2], &int1);
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[n2], &n, Am, &n, &b[1], &Am[3*n2], &n);
+        BLAS_FUNC(scopy)(&n2, Am, &int1, &Am[3*nn], &int1);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[nn], &n, Am, &n, &b[1], &Am[3*nn], &n);
 
         // V = b[2]*Am[1] + b[0]*I_n
-        BLAS_FUNC(sscal)(&n2, &b[2], &Am[n2], &int1);
-        for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
+        BLAS_FUNC(sscal)(&n2, &b[2], &Am[nn], &int1);
+        for (i = 0; i < n; i++) { Am[nn + n*i + i] += b[0]; }
 
     } else if (m == 5) {
         // Am[3] and Am[4] are free
@@ -1139,25 +1144,25 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         // V = b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(scopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(scopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
             }
         }
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
         // V
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
             }
         }
 
@@ -1176,13 +1181,13 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         // V = b[6]*Am[3] + b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(scopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(scopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
             }
         }
         // Defer the Am[0] multiplication since we still need Am[3] for V
@@ -1192,13 +1197,13 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         {
             for (j = 0; j < n; j++)
             {
-                Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     } else if (m == 9) {
 
@@ -1222,19 +1227,19 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         {
             for (j = 0; j < n; j++)
             {
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
-                Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
-                Am[n2 + n*i + j] = b[8]*temp1 + b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*temp2;
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
+                Am[4*nn + n*i + j] = temp1 + b[7]*Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*temp2;
+                Am[nn + n*i + j] = b[8]*temp1 + b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*temp2;
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] += b[1];
-                    Am[n2 + n*i + j] += b[0];
+                    Am[4*nn + n*i + j] += b[1];
+                    Am[nn + n*i + j] += b[0];
                 }
             }
         }
         // Now overwrite Am[3] with U
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     } else if (m == 13) {
         b[0]  = 64764752532480000.0;
@@ -1265,50 +1270,50 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        float* work = &Am[5*n2];
+        float* work = &Am[5*nn];
         float temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
-                Am[2*n2 + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
-                Am[4*n2 + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
-                Am[1*n2 + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
+                Am[2*nn + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
+                Am[4*nn + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
+                Am[1*nn + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
                 work[n*i + j]      =       temp3 + b[11]*temp2 + b[9]*temp1;
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] += b[1];
-                    Am[1*n2 + n*i + j] += b[0];
+                    Am[2*nn + n*i + j] += b[1];
+                    Am[1*nn + n*i + j] += b[0];
                 }
             }
         }
 
         // V = P @ Q + R
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, &Am[3*n2], &n, &dbl1, &Am[1*n2], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, &Am[3*nn], &n, &dbl1, &Am[1*nn], &n);
 
         // U = K @ (L @ M + N)
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*n2], &n, &dbl1, &Am[2*n2], &n);
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n2], &n, Am, &n, &dbl1, &Am[3*n2], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*nn], &n, &dbl1, &Am[2*nn], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl1, &Am[3*nn], &n);
 
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
     // subtract U from V
-    BLAS_FUNC(saxpy)(&n2, &dblm1, &Am[3*n2], &int1, &Am[n2], &int1);
+    BLAS_FUNC(saxpy)(&n2, &dblm1, &Am[3*nn], &int1, &Am[nn], &int1);
 
     // Solve for (V-U) X = U
-    swap_cf_s(&Am[3*n2], &Am[2*n2], n, n, n);
+    swap_cf_s(&Am[3*nn], &Am[2*nn], n, n, n);
 
-    BLAS_FUNC(sgetrf)(&n, &n, &Am[n2], &n, ipiv, info);
-    BLAS_FUNC(sgetrs)("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    BLAS_FUNC(sscal)(&n2, &two, &Am[2*n2], &int1);
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += 1.0; }
+    BLAS_FUNC(sgetrf)(&n, &n, &Am[nn], &n, ipiv, info);
+    BLAS_FUNC(sgetrs)("T", &n, &n, &Am[nn], &n, ipiv, &Am[2*nn], &n, info);
+    BLAS_FUNC(sscal)(&n2, &two, &Am[2*nn], &int1);
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] += 1.0; }
 
-    swap_cf_s(&Am[2*n2], Am, n, n, n);
+    swap_cf_s(&Am[2*nn], Am, n, n, n);
 
     return;
 }
@@ -1324,6 +1329,7 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
 
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     CBLAS_INT n2 = n*n, i, j;
+    const npy_intp nn = (npy_intp)n * n;   // offsets into Am; n2 is the BLAS element count
     double b[13];
     double two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
 
@@ -1338,12 +1344,12 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         // V = 12.*Am[1] + 120*I_n
 
         // U = Am[0] @ Am[1] + b[1]*Am[0]
-        BLAS_FUNC(dcopy)(&n2, Am, &int1, &Am[3*n2], &int1);
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[n2], &n, Am, &n, &b[1], &Am[3*n2], &n);
+        BLAS_FUNC(dcopy)(&n2, Am, &int1, &Am[3*nn], &int1);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[nn], &n, Am, &n, &b[1], &Am[3*nn], &n);
 
         // V = b[2]*Am[1] + b[0]*I_n
-        BLAS_FUNC(dscal)(&n2, &b[2], &Am[n2], &int1);
-        for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
+        BLAS_FUNC(dscal)(&n2, &b[2], &Am[nn], &int1);
+        for (i = 0; i < n; i++) { Am[nn + n*i + i] += b[0]; }
 
     } else if (m == 5) {
         // Am[3] and Am[4] are free
@@ -1357,26 +1363,26 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         // V = b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(dcopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(dcopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
             }
         }
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
         // V
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
             }
         }
 
@@ -1395,13 +1401,13 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         // V = b[6]*Am[3] + b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(dcopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(dcopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
             }
         }
         // Defer the Am[0] multiplication since we still need Am[3] for V
@@ -1411,13 +1417,13 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         {
             for (j = 0; j < n; j++)
             {
-                Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     } else if (m == 9) {
 
@@ -1441,19 +1447,19 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         {
             for (j = 0; j < n; j++)
             {
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
-                Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
-                Am[n2 + n*i + j] = b[8]*temp1 + b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*temp2;
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
+                Am[4*nn + n*i + j] = temp1 + b[7]*Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*temp2;
+                Am[nn + n*i + j] = b[8]*temp1 + b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*temp2;
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] += b[1];
-                    Am[n2 + n*i + j] += b[0];
+                    Am[4*nn + n*i + j] += b[1];
+                    Am[nn + n*i + j] += b[0];
                 }
             }
         }
         // Now overwrite Am[3] with U
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, Am, &n, &dbl0, &Am[3*n2], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     } else if (m == 13) {
         b[0]  = 64764752532480000.0;
@@ -1484,56 +1490,56 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        double* work = &Am[5*n2];
+        double* work = &Am[5*nn];
         double temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
-                Am[2*n2 + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
-                Am[4*n2 + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
-                Am[1*n2 + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
+                Am[2*nn + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
+                Am[4*nn + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
+                Am[1*nn + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
                 work[n*i + j]      =       temp3 + b[11]*temp2 + b[9]*temp1;
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] += b[1];
-                    Am[1*n2 + n*i + j] += b[0];
+                    Am[2*nn + n*i + j] += b[1];
+                    Am[1*nn + n*i + j] += b[0];
                 }
             }
         }
 
         // V = P @ Q + R
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*n2], &n, &Am[3*n2], &n, &dbl1, &Am[n2], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[4*nn], &n, &Am[3*nn], &n, &dbl1, &Am[nn], &n);
 
         // U = K @ (L @ M + N)
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*n2], &n, &dbl1, &Am[2*n2], &n);
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*n2], &n, Am, &n, &dbl1, &Am[3*n2], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*nn], &n, &dbl1, &Am[2*nn], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl1, &Am[3*nn], &n);
 
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
     // subtract U from V
-    BLAS_FUNC(daxpy)(&n2, &dblm1, &Am[3*n2], &int1, &Am[n2], &int1);
+    BLAS_FUNC(daxpy)(&n2, &dblm1, &Am[3*nn], &int1, &Am[nn], &int1);
 
     // Solve for (V-U) X = U
-    swap_cf_d(&Am[3*n2], &Am[2*n2], n, n, n);
+    swap_cf_d(&Am[3*nn], &Am[2*nn], n, n, n);
 
-    BLAS_FUNC(dgetrf)(&n, &n, &Am[n2], &n, ipiv, info);
-    BLAS_FUNC(dgetrs)("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    BLAS_FUNC(dscal)(&n2, &two, &Am[2*n2], &int1);
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += 1.0; }
+    BLAS_FUNC(dgetrf)(&n, &n, &Am[nn], &n, ipiv, info);
+    BLAS_FUNC(dgetrs)("T", &n, &n, &Am[nn], &n, ipiv, &Am[2*nn], &n, info);
+    BLAS_FUNC(dscal)(&n2, &two, &Am[2*nn], &int1);
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] += 1.0; }
 
-    swap_cf_d(&Am[2*n2], Am, n, n, n);
+    swap_cf_d(&Am[2*nn], Am, n, n, n);
     return;
 }
 
 
 static void
-pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t size_n, const int m, CBLAS_INT* info)
+pade_UV_calc_c(scipy_c64* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t size_n, const int m, CBLAS_INT* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1542,13 +1548,14 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
 
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     CBLAS_INT n2 = n*n, i, j;
+    const npy_intp nn = (npy_intp)n * n;   // offsets into Am; n2 is the BLAS element count
     float b[13];
     float two = 2.0;
-    SCIPY_C temp1, temp2, temp3, cb1;
-    SCIPY_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0), cdblm1 = CPLX_C(-1.0, 0.0);
+    scipy_c64 temp1, temp2, temp3, cb1;
+    scipy_c64 cdbl1 = CMPLXF(1.0, 0.0), cdbl0 = CMPLXF(0.0, 0.0), cdblm1 = CMPLXF(-1.0, 0.0);
 
 #if defined(_MSC_VER)
-    SCIPY_C inter1, inter2, inter3, inter4;
+    scipy_c64 inter1, inter2, inter3, inter4;
 #endif
 
     if (m == 3)
@@ -1557,23 +1564,23 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         b[0] = 120.0;
         b[1] = 60.0;
         b[2] = 12.0;
-        cb1 = CPLX_C(b[1], 0.0);
+        cb1 = CMPLXF(b[1], 0.0);
 
         // U = Am[0] @ Am[1] + 60.*Am[0]
         // V = 12.*Am[1] + 120*I_n
 
         // U = Am[0] @ Am[1] + b[1]*Am[0]
-        BLAS_FUNC(ccopy)(&n2, Am, &int1, &Am[3*n2], &int1);
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb1, &Am[3*n2], &n);
+        BLAS_FUNC(ccopy)(&n2, Am, &int1, &Am[3*nn], &int1);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[nn], &n, Am, &n, &cb1, &Am[3*nn], &n);
 
         // V = b[2]*Am[1] + b[0]*I_n
-        BLAS_FUNC(csscal)(&n2, &b[2], &Am[n2], &int1);
+        BLAS_FUNC(csscal)(&n2, &b[2], &Am[nn], &int1);
 #if defined(_MSC_VER)
             for (i = 0; i < n; i++) {
-                Am[n2 + n*i + i] = CPLX_C(crealf(Am[n2 + n*i + i]) + b[0], cimagf(Am[n2 + n*i + i]));
+                Am[nn + n*i + i] = CMPLXF(crealf(Am[nn + n*i + i]) + b[0], cimagf(Am[nn + n*i + i]));
             }
 #else
-            for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
+            for (i = 0; i < n; i++) { Am[nn + n*i + i] += b[0]; }
 #endif
 
     } else if (m == 5) {
@@ -1588,26 +1595,26 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // V = b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(ccopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(ccopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _FCmulcr(Am[n2 + n*i + j], b[3]);
-                inter2 = Am[2*n2 + n*i + j];
-                Am[4*n2 + n*i + j] =  CPLX_C(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
-                if (i == j) { Am[4*n2 + n*i + j] = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j])); }
+                inter1 = _FCmulcr(Am[nn + n*i + j], b[3]);
+                inter2 = Am[2*nn + n*i + j];
+                Am[4*nn + n*i + j] =  CMPLXF(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
+                if (i == j) { Am[4*nn + n*i + j] = CMPLXF(crealf(Am[4*nn + n*i + j]) + b[1], cimagf(Am[4*nn + n*i + j])); }
 #else
-                Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
 #endif
             }
         }
 
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
         // V
         for (i = 0; i < n; i++)
@@ -1615,13 +1622,13 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _FCmulcr(Am[n2 + n*i + j], b[2]);
-                inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
-                Am[n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
-                if (i == j) { Am[n2 + n*i + j] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
+                inter1 = _FCmulcr(Am[nn + n*i + j], b[2]);
+                inter2 = _FCmulcr(Am[2*nn + n*i + j], b[4]);
+                Am[nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
+                if (i == j) { Am[nn + n*i + j] = CMPLXF(crealf(Am[nn + n*i + j]) + b[0], cimagf(Am[nn + n*i + j])); }
 #else
-                Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
 #endif
             }
         }
@@ -1640,22 +1647,22 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // V = b[6]*Am[3] + b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(ccopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(ccopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _FCmulcr(Am[n2 + n*i + j], b[3]);
-                inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[5]);
-                inter3 = Am[3*n2 + n*i + j];
-                Am[4*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                inter1 = _FCmulcr(Am[nn + n*i + j], b[3]);
+                inter2 = _FCmulcr(Am[2*nn + n*i + j], b[5]);
+                inter3 = Am[3*nn + n*i + j];
+                Am[4*nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
-                if (i == j) { Am[4*n2 + n*i + j]  = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j])); }
+                if (i == j) { Am[4*nn + n*i + j]  = CMPLXF(crealf(Am[4*nn + n*i + j]) + b[1], cimagf(Am[4*nn + n*i + j])); }
 #else
-                Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
 #endif
             }
         }
@@ -1668,21 +1675,21 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _FCmulcr(Am[n2 + n*i + j], b[2]);
-                inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
-                inter3 = _FCmulcr(Am[3*n2 + n*i + j], b[6]);
-                Am[n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                inter1 = _FCmulcr(Am[nn + n*i + j], b[2]);
+                inter2 = _FCmulcr(Am[2*nn + n*i + j], b[4]);
+                inter3 = _FCmulcr(Am[3*nn + n*i + j], b[6]);
+                Am[nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                           cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
-                if (i == j) { Am[n2 + n*i + j]  = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
+                if (i == j) { Am[nn + n*i + j]  = CMPLXF(crealf(Am[nn + n*i + j]) + b[0], cimagf(Am[nn + n*i + j])); }
 #else
-                Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
 #endif
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     } else if (m == 9) {
 
@@ -1707,44 +1714,44 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
 
                 inter2 = _FCmulcr(temp2, b[3]);
-                inter3 = _FCmulcr(Am[2*n2 + n*i + j], b[5]);
-                inter4 = _FCmulcr(Am[3*n2 + n*i + j], b[7]);
+                inter3 = _FCmulcr(Am[2*nn + n*i + j], b[5]);
+                inter4 = _FCmulcr(Am[3*nn + n*i + j], b[7]);
 
-                Am[4*n2 + n*i + j] = CPLX_C(crealf(temp1) + crealf(inter2) + crealf(inter3) + crealf(inter4),
+                Am[4*nn + n*i + j] = CMPLXF(crealf(temp1) + crealf(inter2) + crealf(inter3) + crealf(inter4),
                                             cimagf(temp1) + cimagf(inter2) + cimagf(inter3) + cimagf(inter4));
 
                 inter1 = _FCmulcr(temp1, b[8]);
                 inter2 = _FCmulcr(temp2, b[2]);
-                inter3 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
-                inter4 = _FCmulcr(Am[3*n2 + n*i + j], b[6]);
+                inter3 = _FCmulcr(Am[2*nn + n*i + j], b[4]);
+                inter4 = _FCmulcr(Am[3*nn + n*i + j], b[6]);
 
-                Am[n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3) + crealf(inter4),
+                Am[nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3) + crealf(inter4),
                                           cimagf(inter1) + cimagf(inter2) + cimagf(inter3) + cimagf(inter4));
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j]));
-                    Am[n2 + n*i + j] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j]));
+                    Am[4*nn + n*i + j] = CMPLXF(crealf(Am[4*nn + n*i + j]) + b[1], cimagf(Am[4*nn + n*i + j]));
+                    Am[nn + n*i + j] = CMPLXF(crealf(Am[nn + n*i + j]) + b[0], cimagf(Am[nn + n*i + j]));
                 }
 #else
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
-                Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
-                Am[n2 + n*i + j] = b[8]*temp1 + b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*temp2;
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
+                Am[4*nn + n*i + j] = temp1 + b[7]*Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*temp2;
+                Am[nn + n*i + j] = b[8]*temp1 + b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*temp2;
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] += b[1];
-                    Am[n2 + n*i + j] += b[0];
+                    Am[4*nn + n*i + j] += b[1];
+                    Am[nn + n*i + j] += b[0];
                 }
 #endif
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     } else if (m == 13) {
         b[0]  = 64764752532480000.0;
@@ -1775,101 +1782,101 @@ pade_UV_calc_c(SCIPY_C* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        SCIPY_C* work = &Am[5*n2];
+        scipy_c64* work = &Am[5*nn];
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
                 inter1 = _FCmulcr(temp1, b[3]);
                 inter2 = _FCmulcr(temp2, b[5]);
                 inter3 = _FCmulcr(temp3, b[7]);
 
-                Am[2*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                Am[2*nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
 
                 inter1 = _FCmulcr(temp1, b[8]);
                 inter2 = _FCmulcr(temp2, b[10]);
                 inter3 = _FCmulcr(temp3, b[12]);
 
-                Am[4*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                Am[4*nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
 
                 inter1 = _FCmulcr(temp1, b[2]);
                 inter2 = _FCmulcr(temp2, b[4]);
                 inter3 = _FCmulcr(temp3, b[6]);
 
-                Am[1*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                Am[1*nn + n*i + j] = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
 
                 inter1 = _FCmulcr(temp1, b[9]);
                 inter2 = _FCmulcr(temp2, b[11]);
                 inter3 = temp3;
 
-                work[n*i + j]      = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                work[n*i + j]      = CMPLXF(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] = CPLX_C(crealf(Am[2*n2 + n*i + j]) + b[1], cimagf(Am[2*n2 + n*i + j]));
-                    Am[1*n2 + n*i + j] = CPLX_C(crealf(Am[1*n2 + n*i + j]) + b[0], cimagf(Am[1*n2 + n*i + j]));
+                    Am[2*nn + n*i + j] = CMPLXF(crealf(Am[2*nn + n*i + j]) + b[1], cimagf(Am[2*nn + n*i + j]));
+                    Am[1*nn + n*i + j] = CMPLXF(crealf(Am[1*nn + n*i + j]) + b[0], cimagf(Am[1*nn + n*i + j]));
                 }
 #else
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
-                Am[2*n2 + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
-                Am[4*n2 + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
-                Am[1*n2 + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
+                Am[2*nn + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
+                Am[4*nn + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
+                Am[1*nn + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
                 work[n*i + j]      =       temp3 + b[11]*temp2 + b[9]*temp1;
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] += b[1];
-                    Am[1*n2 + n*i + j] += b[0];
+                    Am[2*nn + n*i + j] += b[1];
+                    Am[1*nn + n*i + j] += b[0];
                 }
 #endif
             }
         }
 
         // V = P @ Q + R
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, &Am[3*n2], &n, &cdbl1, &Am[1*n2], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, &Am[3*nn], &n, &cdbl1, &Am[1*nn], &n);
 
         // U = K @ (L @ M + N)
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*n2], &n, &cdbl1, &Am[2*n2], &n);
-        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*nn], &n, &cdbl1, &Am[2*nn], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
     // subtract U from V
-    BLAS_FUNC(caxpy)(&n2, &cdblm1, &Am[3*n2], &int1, &Am[n2], &int1);
+    BLAS_FUNC(caxpy)(&n2, &cdblm1, &Am[3*nn], &int1, &Am[nn], &int1);
 
     // Solve for (V-U) X = U
-    swap_cf_c(&Am[3*n2], &Am[2*n2], n, n, n);
+    swap_cf_c(&Am[3*nn], &Am[2*nn], n, n, n);
 
-    BLAS_FUNC(cgetrf)(&n, &n, &Am[n2], &n, ipiv, info);
-    BLAS_FUNC(cgetrs)("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    BLAS_FUNC(csscal)(&n2, &two, &Am[2*n2], &int1);
+    BLAS_FUNC(cgetrf)(&n, &n, &Am[nn], &n, ipiv, info);
+    BLAS_FUNC(cgetrs)("T", &n, &n, &Am[nn], &n, ipiv, &Am[2*nn], &n, info);
+    BLAS_FUNC(csscal)(&n2, &two, &Am[2*nn], &int1);
 
 #if defined(_MSC_VER)
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] = CPLX_C(crealf(Am[2*n2 + n*i + i]) + 1.0f, cimagf(Am[2*n2 + n*i + i])); }
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] = CMPLXF(crealf(Am[2*nn + n*i + i]) + 1.0f, cimagf(Am[2*nn + n*i + i])); }
 #else
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += cdbl1; }
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] += cdbl1; }
 #endif
 
-    swap_cf_c(&Am[2*n2], Am, n, n, n);
+    swap_cf_c(&Am[2*nn], Am, n, n, n);
 
     return;
 }
 
 
 static void
-pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t size_n, const int m, CBLAS_INT* info)
+pade_UV_calc_z(scipy_c128* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t size_n, const int m, CBLAS_INT* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1878,13 +1885,14 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
 
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     CBLAS_INT n2 = n*n, i, j;
+    const npy_intp nn = (npy_intp)n * n;   // offsets into Am; n2 is the BLAS element count
     double b[13];
     double two = 2.0;
-    SCIPY_Z temp1, temp2, temp3, cb1;
-    SCIPY_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0), cdblm1 = CPLX_Z(-1.0, 0.0);
+    scipy_c128 temp1, temp2, temp3, cb1;
+    scipy_c128 cdbl1 = CMPLX(1.0, 0.0), cdbl0 = CMPLX(0.0, 0.0), cdblm1 = CMPLX(-1.0, 0.0);
 
 #if defined(_MSC_VER)
-    SCIPY_Z inter1, inter2, inter3, inter4;
+    scipy_c128 inter1, inter2, inter3, inter4;
 #endif
 
     if (m == 3)
@@ -1893,18 +1901,18 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         b[0] = 120.0;
         b[1] = 60.0;
         b[2] = 12.0;
-        cb1 = CPLX_Z(b[1], 0.0);
+        cb1 = CMPLX(b[1], 0.0);
 
         // U = Am[0] @ Am[1] + b[1]*Am[0]
-        BLAS_FUNC(zcopy)(&n2, Am, &int1, &Am[3*n2], &int1);
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb1, &Am[3*n2], &n);
+        BLAS_FUNC(zcopy)(&n2, Am, &int1, &Am[3*nn], &int1);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[nn], &n, Am, &n, &cb1, &Am[3*nn], &n);
 
         // V = b[2]*Am[1] + b[0]*I_n
-        BLAS_FUNC(zdscal)(&n2, &b[2], &Am[n2], &int1);
+        BLAS_FUNC(zdscal)(&n2, &b[2], &Am[nn], &int1);
 #if defined(_MSC_VER)
-        for (i = 0; i < n; i++) { Am[n2 + n*i + i] = CPLX_Z(creal(Am[n2 + n*i + i]) + b[0], cimag(Am[n2 + n*i + i])); }
+        for (i = 0; i < n; i++) { Am[nn + n*i + i] = CMPLX(creal(Am[nn + n*i + i]) + b[0], cimag(Am[nn + n*i + i])); }
 #else
-        for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
+        for (i = 0; i < n; i++) { Am[nn + n*i + i] += b[0]; }
 #endif
 
     } else if (m == 5) {
@@ -1919,25 +1927,25 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // V = b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(zcopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(zcopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _Cmulcr(Am[n2 + n*i + j], b[3]);
-                inter2 = Am[2*n2 + n*i + j];
-                Am[4*n2 + n*i + j] =  CPLX_Z(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
-                if (i == j) { Am[4*n2 + n*i + j] = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j])); }
+                inter1 = _Cmulcr(Am[nn + n*i + j], b[3]);
+                inter2 = Am[2*nn + n*i + j];
+                Am[4*nn + n*i + j] =  CMPLX(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
+                if (i == j) { Am[4*nn + n*i + j] = CMPLX(creal(Am[4*nn + n*i + j]) + b[1], cimag(Am[4*nn + n*i + j])); }
 #else
-                Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
 #endif
             }
         }
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
         // V
         for (i = 0; i < n; i++)
@@ -1945,13 +1953,13 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _Cmulcr(Am[n2 + n*i + j], b[2]);
-                inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
-                Am[n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
-                if (i == j) { Am[n2 + n*i + j] = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j])); }
+                inter1 = _Cmulcr(Am[nn + n*i + j], b[2]);
+                inter2 = _Cmulcr(Am[2*nn + n*i + j], b[4]);
+                Am[nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
+                if (i == j) { Am[nn + n*i + j] = CMPLX(creal(Am[nn + n*i + j]) + b[0], cimag(Am[nn + n*i + j])); }
 #else
-                Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
 #endif
             }
         }
@@ -1970,22 +1978,22 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // V = b[6]*Am[3] + b[4]*Am[2] + b[2]*Am[1] + b[0]*I_n
 
         // Am[4] = Am[1]
-        BLAS_FUNC(zcopy)(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+        BLAS_FUNC(zcopy)(&n2, &Am[nn], &int1, &Am[4*nn], &int1);
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _Cmulcr(Am[n2 + n*i + j], b[3]);
-                inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[5]);
-                inter3 = Am[3*n2 + n*i + j];
-                Am[4*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                inter1 = _Cmulcr(Am[nn + n*i + j], b[3]);
+                inter2 = _Cmulcr(Am[2*nn + n*i + j], b[5]);
+                inter3 = Am[3*nn + n*i + j];
+                Am[4*nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
-                if (i == j) { Am[4*n2 + n*i + j]  = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j])); }
+                if (i == j) { Am[4*nn + n*i + j]  = CMPLX(creal(Am[4*nn + n*i + j]) + b[1], cimag(Am[4*nn + n*i + j])); }
 #else
-                Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
-                if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+                Am[4*nn + n*i + j] = Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*Am[nn + n*i + j];
+                if (i == j) { Am[4*nn + n*i + j] += b[1]; }
 #endif
             }
         }
@@ -1998,21 +2006,21 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                inter1 = _Cmulcr(Am[n2 + n*i + j], b[2]);
-                inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
-                inter3 = _Cmulcr(Am[3*n2 + n*i + j], b[6]);
-                Am[n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                inter1 = _Cmulcr(Am[nn + n*i + j], b[2]);
+                inter2 = _Cmulcr(Am[2*nn + n*i + j], b[4]);
+                inter3 = _Cmulcr(Am[3*nn + n*i + j], b[6]);
+                Am[nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                           cimag(inter1) + cimag(inter2) + cimag(inter3));
-                if (i == j) { Am[n2 + n*i + j]  = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j])); }
+                if (i == j) { Am[nn + n*i + j]  = CMPLX(creal(Am[nn + n*i + j]) + b[0], cimag(Am[nn + n*i + j])); }
 #else
-                Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+                Am[nn + n*i + j] = b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*Am[nn + n*i + j];
+                if (i == j) { Am[nn + n*i + j] += b[0]; }
 #endif
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     } else if (m == 9) {
 
@@ -2037,44 +2045,44 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
 
                 inter2 = _Cmulcr(temp2, b[3]);
-                inter3 = _Cmulcr(Am[2*n2 + n*i + j], b[5]);
-                inter4 = _Cmulcr(Am[3*n2 + n*i + j], b[7]);
+                inter3 = _Cmulcr(Am[2*nn + n*i + j], b[5]);
+                inter4 = _Cmulcr(Am[3*nn + n*i + j], b[7]);
 
-                Am[4*n2 + n*i + j] = CPLX_Z(creal(temp1) + creal(inter2) + creal(inter3) + creal(inter4),
+                Am[4*nn + n*i + j] = CMPLX(creal(temp1) + creal(inter2) + creal(inter3) + creal(inter4),
                                             cimag(temp1) + cimag(inter2) + cimag(inter3) + cimag(inter4));
 
                 inter1 = _Cmulcr(temp1, b[8]);
                 inter2 = _Cmulcr(temp2, b[2]);
-                inter3 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
-                inter4 = _Cmulcr(Am[3*n2 + n*i + j], b[6]);
+                inter3 = _Cmulcr(Am[2*nn + n*i + j], b[4]);
+                inter4 = _Cmulcr(Am[3*nn + n*i + j], b[6]);
 
-                Am[n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3) + creal(inter4),
+                Am[nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3) + creal(inter4),
                                           cimag(inter1) + cimag(inter2) + cimag(inter3) + cimag(inter4));
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j]));
-                    Am[n2 + n*i + j] = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j]));
+                    Am[4*nn + n*i + j] = CMPLX(creal(Am[4*nn + n*i + j]) + b[1], cimag(Am[4*nn + n*i + j]));
+                    Am[nn + n*i + j] = CMPLX(creal(Am[nn + n*i + j]) + b[0], cimag(Am[nn + n*i + j]));
                 }
 #else
-                temp1 = Am[4*n2 + n*i + j];
-                temp2 = Am[n2 + n*i + j];
-                Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
-                Am[n2 + n*i + j] = b[8]*temp1 + b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*temp2;
+                temp1 = Am[4*nn + n*i + j];
+                temp2 = Am[nn + n*i + j];
+                Am[4*nn + n*i + j] = temp1 + b[7]*Am[3*nn + n*i + j] + b[5]*Am[2*nn + n*i + j] + b[3]*temp2;
+                Am[nn + n*i + j] = b[8]*temp1 + b[6]*Am[3*nn + n*i + j] + b[4]*Am[2*nn + n*i + j] + b[2]*temp2;
                 if (i == j)
                 {
-                    Am[4*n2 + n*i + j] += b[1];
-                    Am[n2 + n*i + j] += b[0];
+                    Am[4*nn + n*i + j] += b[1];
+                    Am[nn + n*i + j] += b[0];
                 }
 #endif
             }
         }
 
         // Now overwrite Am[3] with U
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     } else if (m == 13) {
         b[0]  = 64764752532480000.0;
@@ -2105,93 +2113,93 @@ pade_UV_calc_z(SCIPY_Z* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t 
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        SCIPY_Z* work = &Am[5*n2];
+        scipy_c128* work = &Am[5*nn];
 
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
 #if defined(_MSC_VER)
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
                 inter1 = _Cmulcr(temp1, b[3]);
                 inter2 = _Cmulcr(temp2, b[5]);
                 inter3 = _Cmulcr(temp3, b[7]);
 
-                Am[2*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                Am[2*nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
 
                 inter1 = _Cmulcr(temp1, b[8]);
                 inter2 = _Cmulcr(temp2, b[10]);
                 inter3 = _Cmulcr(temp3, b[12]);
 
-                Am[4*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                Am[4*nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
 
                 inter1 = _Cmulcr(temp1, b[2]);
                 inter2 = _Cmulcr(temp2, b[4]);
                 inter3 = _Cmulcr(temp3, b[6]);
 
-                Am[1*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                Am[1*nn + n*i + j] = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
 
                 inter1 = _Cmulcr(temp1, b[9]);
                 inter2 = _Cmulcr(temp2, b[11]);
                 inter3 = temp3;
 
-                work[n*i + j]      = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                work[n*i + j]      = CMPLX(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] = CPLX_Z(creal(Am[2*n2 + n*i + j]) + b[1], cimag(Am[2*n2 + n*i + j]));
-                    Am[1*n2 + n*i + j] = CPLX_Z(creal(Am[1*n2 + n*i + j]) + b[0], cimag(Am[1*n2 + n*i + j]));
+                    Am[2*nn + n*i + j] = CMPLX(creal(Am[2*nn + n*i + j]) + b[1], cimag(Am[2*nn + n*i + j]));
+                    Am[1*nn + n*i + j] = CMPLX(creal(Am[1*nn + n*i + j]) + b[0], cimag(Am[1*nn + n*i + j]));
                 }
 #else
-                temp1 = Am[1*n2 + n*i + j];
-                temp2 = Am[2*n2 + n*i + j];
-                temp3 = Am[3*n2 + n*i + j];
+                temp1 = Am[1*nn + n*i + j];
+                temp2 = Am[2*nn + n*i + j];
+                temp3 = Am[3*nn + n*i + j];
 
-                Am[2*n2 + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
-                Am[4*n2 + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
-                Am[1*n2 + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
+                Am[2*nn + n*i + j] =  b[7]*temp3 +  b[5]*temp2 + b[3]*temp1;
+                Am[4*nn + n*i + j] = b[12]*temp3 + b[10]*temp2 + b[8]*temp1;
+                Am[1*nn + n*i + j] =  b[6]*temp3 +  b[4]*temp2 + b[2]*temp1;
                 work[n*i + j]      =       temp3 + b[11]*temp2 + b[9]*temp1;
                 if (i == j)
                 {
-                    Am[2*n2 + n*i + j] += b[1];
-                    Am[1*n2 + n*i + j] += b[0];
+                    Am[2*nn + n*i + j] += b[1];
+                    Am[1*nn + n*i + j] += b[0];
                 }
 #endif
             }
         }
 
         // V = P @ Q + R
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, &Am[3*n2], &n, &cdbl1, &Am[1*n2], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[4*nn], &n, &Am[3*nn], &n, &cdbl1, &Am[1*nn], &n);
 
         // U = K @ (L @ M + N)
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*n2], &n, &cdbl1, &Am[2*n2], &n);
-        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, work, &n, &Am[3*nn], &n, &cdbl1, &Am[2*nn], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, Am, &n, &cdbl0, &Am[3*nn], &n);
 
     }
 
     // inv(V-U) (V+U) = inv(V-U) (V-U+2U) = I + 2 inv(V-U) U
     // subtract U from V
-    BLAS_FUNC(zaxpy)(&n2, &cdblm1, &Am[3*n2], &int1, &Am[n2], &int1);
+    BLAS_FUNC(zaxpy)(&n2, &cdblm1, &Am[3*nn], &int1, &Am[nn], &int1);
     // Solve for (V-U) X = U
-    swap_cf_z(&Am[3*n2], &Am[2*n2], n, n, n);
+    swap_cf_z(&Am[3*nn], &Am[2*nn], n, n, n);
 
-    BLAS_FUNC(zgetrf)(&n, &n, &Am[n2], &n, ipiv, info);
-    BLAS_FUNC(zgetrs)("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
-    BLAS_FUNC(zdscal)(&n2, &two, &Am[2*n2], &int1);
+    BLAS_FUNC(zgetrf)(&n, &n, &Am[nn], &n, ipiv, info);
+    BLAS_FUNC(zgetrs)("T", &n, &n, &Am[nn], &n, ipiv, &Am[2*nn], &n, info);
+    BLAS_FUNC(zdscal)(&n2, &two, &Am[2*nn], &int1);
 
 #if defined(_MSC_VER)
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] = CPLX_Z(creal(Am[2*n2 + n*i + i]) + 1.0, cimag(Am[2*n2 + n*i + i])); }
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] = CMPLX(creal(Am[2*nn + n*i + i]) + 1.0, cimag(Am[2*nn + n*i + i])); }
 #else
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += cdbl1; }
+    for (i = 0; i < n; i++) { Am[2*nn + n*i + i] += cdbl1; }
 #endif
 
-    swap_cf_z(&Am[2*n2], &Am[0], n, n, n);
+    swap_cf_z(&Am[2*nn], &Am[0], n, n, n);
 
     return;
 }
@@ -2206,7 +2214,9 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     float* restrict a_data = (float*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
+    const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
     npy_intp outer_size = 1;
@@ -2215,19 +2225,22 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 4*n workspace.
-    // 5*n*n is for holding the powers of A
-    // n*n for holding the absolute values of A
+    // expm requires 6*nn + 4*n workspace.
+    // 5*nn is for holding the powers of A
+    // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    float* restrict Am = PyMem_RawMalloc(sizeof(float)*(6*n*n + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(float)) { *info = -100; return; }
+    float* restrict Am = PyMem_RawMalloc(sizeof(float)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
-    float* restrict Am1 = &Am[n*n];
+    float* restrict Am1 = &Am[nn];
     // These two arrays are only used for the triangular case for scaling/squaring
-    float* restrict diag_aw = &Am[6*n*n + 2*n];
-    float* restrict sd = &Am[6*n*n + 3*n];
+    float* restrict diag_aw = &Am[6*nn + 2*n];
+    float* restrict sd = &Am[6*nn + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2242,17 +2255,17 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        float* restrict slice_ptr = (float*)(a_data + (offset/sizeof(float)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(float)) + (j*strides[ndim - 1]/sizeof(float)));
+                Am1[i * n + j] = *(const float*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_s(Am1, n, n, &lband, &uband);
         if ((lband == 0) && (uband == 0)) {
             for (npy_intp i = 0; i < n; i++) {
-                result[idx*n*n + i*n + i] = expf(Am1[i*n + i]);
+                result[idx*nn + i*n + i] = expf(Am1[i*n + i]);
             }
             continue;
         }
@@ -2346,7 +2359,7 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
         }
 
         // Copy back the result to output array
-        swap_cf_s(temp1, &result[idx*n*n], n, n, n);
+        swap_cf_s(temp1, &result[idx*nn], n, n, n);
     }
 
     PyMem_RawFree(ipiv);
@@ -2363,7 +2376,9 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     double* restrict a_data = (double*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
+    const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
     npy_intp outer_size = 1;
@@ -2372,19 +2387,22 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 4*n workspace.
-    // 5*n*n is for holding the powers of A
-    // n*n for holding the absolute values of A
+    // expm requires 6*nn + 4*n workspace.
+    // 5*nn is for holding the powers of A
+    // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    double* restrict Am = PyMem_RawMalloc(sizeof(double)*(6*n*n + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(double)) { *info = -100; return; }
+    double* restrict Am = PyMem_RawMalloc(sizeof(double)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
-    double* restrict Am1 = &Am[n*n];
+    double* restrict Am1 = &Am[nn];
     // These two arrays are only used for the triangular case for scaling/squaring
-    double* restrict diag_aw = &Am[6*n*n + 2*n];
-    double* restrict sd = &Am[6*n*n + 3*n];
+    double* restrict diag_aw = &Am[6*nn + 2*n];
+    double* restrict sd = &Am[6*nn + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2399,17 +2417,17 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        double* restrict slice_ptr = (double*)(a_data + (offset/sizeof(double)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(double)) + (j*strides[ndim - 1]/sizeof(double)));
+                Am1[i * n + j] = *(const double*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_d(Am1, n, n, &lband, &uband);
         if ((lband == 0) && (uband == 0)) {
             for (npy_intp i = 0; i < n; i++) {
-                result[idx*n*n + i*n + i] = exp(Am1[i*n + i]);
+                result[idx*nn + i*n + i] = exp(Am1[i*n + i]);
             }
             continue;
         }
@@ -2503,7 +2521,7 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
         }
 
         // Copy back the result to output array
-        swap_cf_d(temp1, &result[idx*n*n], n, n, n);
+        swap_cf_d(temp1, &result[idx*nn], n, n, n);
     }
 
     PyMem_RawFree(ipiv);
@@ -2512,15 +2530,17 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
 
 
 void
-matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info)
+matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* info)
 {
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
-    SCIPY_C* restrict a_data = (SCIPY_C*)PyArray_DATA(a);
+    scipy_c64* restrict a_data = (scipy_c64*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
+    const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
     npy_intp outer_size = 1;
@@ -2529,19 +2549,22 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // expm requires 6*n*n + 4*n workspace.
-    // 5*n*n is for holding the powers of A
-    // n*n for holding the absolute values of A
+    // expm requires 6*nn + 4*n workspace.
+    // 5*nn is for holding the powers of A
+    // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    SCIPY_C* restrict Am = PyMem_RawMalloc(sizeof(SCIPY_C)*(6*n*n + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(scipy_c64)) { *info = -100; return; }
+    scipy_c64* restrict Am = PyMem_RawMalloc(sizeof(scipy_c64)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
-    SCIPY_C* restrict Am1 = &Am[n*n];
+    scipy_c64* restrict Am1 = &Am[nn];
     // These two arrays are only used for the triangular case for scaling/squaring
-    SCIPY_C* restrict diag_aw = &Am[6*n*n + 2*n];
-    SCIPY_C* restrict sd = &Am[6*n*n + 3*n];
+    scipy_c64* restrict diag_aw = &Am[6*nn + 2*n];
+    scipy_c64* restrict sd = &Am[6*nn + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2556,17 +2579,17 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_C* restrict slice_ptr = (SCIPY_C*)(a_data + (offset/sizeof(SCIPY_C)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_C)) + (j*strides[ndim - 1]/sizeof(SCIPY_C)));
+                Am1[i * n + j] = *(const scipy_c64*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_c(Am1, n, n, &lband, &uband);
         if ((lband == 0) && (uband == 0)) {
             for (npy_intp i = 0; i < n; i++) {
-                result[idx*n*n + i*n + i] = cexpf(Am1[i*n + i]);
+                result[idx*nn + i*n + i] = cexpf(Am1[i*n + i]);
             }
             continue;
         }
@@ -2607,21 +2630,21 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
             return;
         }
 
-        SCIPY_C* temp1 = Am;
-        SCIPY_C* temp2 = Am1;
+        scipy_c64* temp1 = Am;
+        scipy_c64* temp2 = Am1;
         if (s > 0) {
             // Squaring needed.
             if ((lband == 0) || (uband == 0)) {
                 // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
                 for (int iter = s - 1; iter >= 0; iter--) {
 #if defined(_MSC_VER)
-                    SCIPY_C c_one = CPLX_C(1.0f, 0.0f);
-                    SCIPY_C c_zero = CPLX_C(0.0f, 0.0f);
+                    scipy_c64 c_one = CMPLXF(1.0f, 0.0f);
+                    scipy_c64 c_zero = CMPLXF(0.0f, 0.0f);
                     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &c_one, temp1, &n, temp1, &n, &c_zero, temp2, &n);
 #else
-                    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &(SCIPY_C){CPLX_C(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(SCIPY_C){CPLX_C(0.0f, 0.0f)}, temp2, &n);
+                    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &(scipy_c64){CMPLXF(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(scipy_c64){CMPLXF(0.0f, 0.0f)}, temp2, &n);
 #endif
-                    SCIPY_C* swap = temp1;
+                    scipy_c64* swap = temp1;
                     temp1 = temp2;
                     temp2 = swap;
 
@@ -2631,22 +2654,22 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 
                         for (npy_intp i = 0; i < n - 1; i++) {
 #if defined(_MSC_VER)
-                            SCIPY_C d_i = _FCmulcr(diag_aw[i], scale);
-                            SCIPY_C d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
-                            SCIPY_C diff = CPLX_C(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
-                            SCIPY_C exp_d_i = cexpf(d_i);
-                            SCIPY_C exp_d_ip1 = cexpf(d_ip1);
-                            SCIPY_C exp_diff = CPLX_C(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
+                            scipy_c64 d_i = _FCmulcr(diag_aw[i], scale);
+                            scipy_c64 d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
+                            scipy_c64 diff = CMPLXF(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
+                            scipy_c64 exp_d_i = cexpf(d_i);
+                            scipy_c64 exp_d_ip1 = cexpf(d_ip1);
+                            scipy_c64 exp_diff = CMPLXF(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
                             float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
-                            SCIPY_C diff_inv = CPLX_C(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
-                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            scipy_c64 diff_inv = CMPLXF(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
+                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
                             temp1[i * n + i] = exp_d_i;                                            // diagonal
                             temp1[i * n + (i + 1)] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale);  // subdiagonal
 #else
-                            SCIPY_C d_i = diag_aw[i] * scale;
-                            SCIPY_C d_ip1 = diag_aw[i + 1] * scale;
-                            SCIPY_C diff = d_ip1 - d_i;
-                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            scipy_c64 d_i = diag_aw[i] * scale;
+                            scipy_c64 d_ip1 = diag_aw[i + 1] * scale;
+                            scipy_c64 diff = d_ip1 - d_i;
+                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
                             temp1[i * n + i] = cexpf(d_i);                      // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
 #endif
@@ -2666,22 +2689,22 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 #endif
                         for (npy_intp i = 0; i < n - 1; i++) {
 #if defined(_MSC_VER)
-                            SCIPY_C d_i = _FCmulcr(diag_aw[i], scale);
-                            SCIPY_C d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
-                            SCIPY_C diff = CPLX_C(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
-                            SCIPY_C exp_d_i = cexpf(d_i);
-                            SCIPY_C exp_d_ip1 = cexpf(d_ip1);
-                            SCIPY_C exp_diff = CPLX_C(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
+                            scipy_c64 d_i = _FCmulcr(diag_aw[i], scale);
+                            scipy_c64 d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
+                            scipy_c64 diff = CMPLXF(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
+                            scipy_c64 exp_d_i = cexpf(d_i);
+                            scipy_c64 exp_d_ip1 = cexpf(d_ip1);
+                            scipy_c64 exp_diff = CMPLXF(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
                             float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
-                            SCIPY_C diff_inv = CPLX_C(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
-                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            scipy_c64 diff_inv = CMPLXF(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
+                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
                             temp1[(i + 1) * n + i] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale); // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                             // diagonal
 #else
-                            SCIPY_C d_i = diag_aw[i] * scale;
-                            SCIPY_C d_ip1 = diag_aw[i + 1] * scale;
-                            SCIPY_C diff = d_ip1 - d_i;
-                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            scipy_c64 d_i = diag_aw[i] * scale;
+                            scipy_c64 d_ip1 = diag_aw[i + 1] * scale;
+                            scipy_c64 diff = d_ip1 - d_i;
+                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = cexpf(d_ip1);        // diagonal
 #endif
@@ -2693,14 +2716,14 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
                 // General dense case, compute A**(2**s) by repeated squaring.
                 for (int i = 0; i < s; i++) {
 #if defined(_MSC_VER)
-                    SCIPY_C c_one = CPLX_C(1.0f, 0.0f);
-                    SCIPY_C c_zero = CPLX_C(0.0f, 0.0f);
+                    scipy_c64 c_one = CMPLXF(1.0f, 0.0f);
+                    scipy_c64 c_zero = CMPLXF(0.0f, 0.0f);
                     BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &c_one, temp1, &n, temp1, &n, &c_zero, temp2, &n);
 #else
-                    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &(SCIPY_C){CPLX_C(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(SCIPY_C){CPLX_C(0.0f, 0.0f)}, temp2, &n);
+                    BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &(scipy_c64){CMPLXF(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(scipy_c64){CMPLXF(0.0f, 0.0f)}, temp2, &n);
 #endif
                     // Swap pointers
-                    SCIPY_C *swap = temp1;
+                    scipy_c64 *swap = temp1;
                     temp1 = temp2;
                     temp2 = swap;
                 }
@@ -2708,7 +2731,7 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
         }
 
         // Copy back the result to output array
-        swap_cf_c(temp1, &result[idx*n*n], n, n, n);
+        swap_cf_c(temp1, &result[idx*nn], n, n, n);
     }
 
     PyMem_RawFree(ipiv);
@@ -2717,15 +2740,17 @@ matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, CBLAS_INT* info
 
 
 void
-matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info)
+matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* info)
 {
     // --------------------------------------------------------------------
     // Input Array Attributes
     // --------------------------------------------------------------------
-    SCIPY_Z* restrict a_data = (SCIPY_Z*)PyArray_DATA(a);
+    scipy_c128* restrict a_data = (scipy_c128*)PyArray_DATA(a);
     int ndim = PyArray_NDIM(a);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(a);      // Array shape
-    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];                // Slice size
+    // Slice size; the caller checked that n*n fits CBLAS_INT, offsets are npy_intp
+    CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
+    const npy_intp nn = (npy_intp)n * n;
     npy_intp* restrict strides = PyArray_STRIDES(a);
     // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
     npy_intp outer_size = 1;
@@ -2733,19 +2758,22 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
     {
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
-    // expm requires 6*n*n + 4*n workspace.
-    // 5*n*n is for holding the powers of A
-    // n*n for holding the absolute values of A
+    // expm requires 6*nn + 4*n workspace.
+    // 5*nn is for holding the powers of A
+    // nn for holding the absolute values of A
     // 2*n is the alternating vector pair for the ell() power iterations
     // 2*n for the scaling/squaring in the triangular case
-    SCIPY_Z* restrict Am = PyMem_RawMalloc(sizeof(SCIPY_Z)*(6*n*n + 4*n));
+    // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
+    const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
+    if (ws_count > SIZE_MAX / sizeof(scipy_c128)) { *info = -100; return; }
+    scipy_c128* restrict Am = PyMem_RawMalloc(sizeof(scipy_c128)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
     if (ipiv == NULL) { PyMem_RawFree(Am); *info = -101; return; }
-    SCIPY_Z* restrict Am1 = &Am[n*n];
+    scipy_c128* restrict Am1 = &Am[nn];
     // These two arrays are only used for the triangular case for scaling/squaring
-    SCIPY_Z* restrict diag_aw = &Am[6*n*n + 2*n];
-    SCIPY_Z* restrict sd = &Am[6*n*n + 3*n];
+    scipy_c128* restrict diag_aw = &Am[6*nn + 2*n];
+    scipy_c128* restrict sd = &Am[6*nn + 3*n];
 
     /*====================================================================
     |                    MAIN nxn SLICE LOOP                             |
@@ -2760,17 +2788,17 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
-        SCIPY_Z* restrict slice_ptr = (SCIPY_Z*)(a_data + (offset/sizeof(SCIPY_Z)));
+        const char* restrict slice_ptr = (const char*)a_data + offset;   // byte offset of the slice
 
         for (CBLAS_INT i = 0; i < n; i++) {
             for (CBLAS_INT j = 0; j < n; j++) {
-                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_Z)) + (j*strides[ndim - 1]/sizeof(SCIPY_Z)));
+                Am1[i * n + j] = *(const scipy_c128*)(slice_ptr + i*strides[ndim - 2] + j*strides[ndim - 1]);
             }
         }
         bandwidth_z(Am1, n, n, &lband, &uband);
         if ((lband == 0) && (uband == 0)) {
             for (npy_intp i = 0; i < n; i++) {
-                result[idx*n*n + i*n + i] = cexp(Am1[i*n + i]);
+                result[idx*nn + i*n + i] = cexp(Am1[i*n + i]);
             }
             continue;
         }
@@ -2811,21 +2839,21 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
             return;
         }
 
-        SCIPY_Z* temp1 = Am;
-        SCIPY_Z* temp2 = Am1;
+        scipy_c128* temp1 = Am;
+        scipy_c128* temp2 = Am1;
         if (s > 0) {
             // Squaring needed.
             if ((lband == 0) || (uband == 0)) {
                 // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
                 for (int iter = s - 1; iter >= 0; iter--) {
 #if defined(_MSC_VER)
-                    SCIPY_Z z_one = CPLX_Z(1.0, 0.0);
-                    SCIPY_Z z_zero = CPLX_Z(0.0, 0.0);
+                    scipy_c128 z_one = CMPLX(1.0, 0.0);
+                    scipy_c128 z_zero = CMPLX(0.0, 0.0);
                     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &z_one, temp1, &n, temp1, &n, &z_zero, temp2, &n);
 #else
-                    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &(SCIPY_Z){CPLX_Z(1.0, 0.0)}, temp1, &n, temp1, &n, &(SCIPY_Z){CPLX_Z(0.0, 0.0)}, temp2, &n);
+                    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &(scipy_c128){CMPLX(1.0, 0.0)}, temp1, &n, temp1, &n, &(scipy_c128){CMPLX(0.0, 0.0)}, temp2, &n);
 #endif
-                    SCIPY_Z* swap = temp1;
+                    scipy_c128* swap = temp1;
                     temp1 = temp2;
                     temp2 = swap;
 
@@ -2835,22 +2863,22 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
 
                         for (npy_intp i = 0; i < n - 1; i++) {
 #if defined(_MSC_VER)
-                            SCIPY_Z d_i = _Cmulcr(diag_aw[i], scale);
-                            SCIPY_Z d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
-                            SCIPY_Z diff = CPLX_Z(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
-                            SCIPY_Z exp_d_i = cexp(d_i);
-                            SCIPY_Z exp_d_ip1 = cexp(d_ip1);
-                            SCIPY_Z exp_diff = CPLX_Z(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
+                            scipy_c128 d_i = _Cmulcr(diag_aw[i], scale);
+                            scipy_c128 d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
+                            scipy_c128 diff = CMPLX(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
+                            scipy_c128 exp_d_i = cexp(d_i);
+                            scipy_c128 exp_d_ip1 = cexp(d_ip1);
+                            scipy_c128 exp_diff = CMPLX(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
                             double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
-                            SCIPY_Z diff_inv = CPLX_Z(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
-                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            scipy_c128 diff_inv = CMPLX(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
+                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
                             temp1[i * n + i] = exp_d_i;                                          // diagonal
                             temp1[i * n + (i + 1)] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // subdiagonal
 #else
-                            SCIPY_Z d_i = diag_aw[i] * scale;
-                            SCIPY_Z d_ip1 = diag_aw[i + 1] * scale;
-                            SCIPY_Z diff = d_ip1 - d_i;
-                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            scipy_c128 d_i = diag_aw[i] * scale;
+                            scipy_c128 d_ip1 = diag_aw[i + 1] * scale;
+                            scipy_c128 diff = d_ip1 - d_i;
+                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
                             temp1[i * n + i] = cexp(d_i);                       // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
 #endif
@@ -2870,22 +2898,22 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
 #endif
                         for (npy_intp i = 0; i < n - 1; i++) {
 #if defined(_MSC_VER)
-                            SCIPY_Z d_i = _Cmulcr(diag_aw[i], scale);
-                            SCIPY_Z d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
-                            SCIPY_Z diff = CPLX_Z(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
-                            SCIPY_Z exp_d_i = cexp(d_i);
-                            SCIPY_Z exp_d_ip1 = cexp(d_ip1);
-                            SCIPY_Z exp_diff = CPLX_Z(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
+                            scipy_c128 d_i = _Cmulcr(diag_aw[i], scale);
+                            scipy_c128 d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
+                            scipy_c128 diff = CMPLX(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
+                            scipy_c128 exp_d_i = cexp(d_i);
+                            scipy_c128 exp_d_ip1 = cexp(d_ip1);
+                            scipy_c128 exp_diff = CMPLX(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
                             double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
-                            SCIPY_Z diff_inv = CPLX_Z(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
-                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            scipy_c128 diff_inv = CMPLX(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
+                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
                             temp1[(i + 1) * n + i] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                           // diagonal
 #else
-                            SCIPY_Z d_i = diag_aw[i] * scale;
-                            SCIPY_Z d_ip1 = diag_aw[i + 1] * scale;
-                            SCIPY_Z diff = d_ip1 - d_i;
-                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            scipy_c128 d_i = diag_aw[i] * scale;
+                            scipy_c128 d_ip1 = diag_aw[i + 1] * scale;
+                            scipy_c128 diff = d_ip1 - d_i;
+                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = cexp(d_ip1);         // diagonal
 #endif
@@ -2897,14 +2925,14 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
                 // General dense case, compute A**(2**s) by repeated squaring.
                 for (int i = 0; i < s; i++) {
 #if defined(_MSC_VER)
-                    SCIPY_Z z_one = CPLX_Z(1.0, 0.0);
-                    SCIPY_Z z_zero = CPLX_Z(0.0, 0.0);
+                    scipy_c128 z_one = CMPLX(1.0, 0.0);
+                    scipy_c128 z_zero = CMPLX(0.0, 0.0);
                     BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &z_one, temp1, &n, temp1, &n, &z_zero, temp2, &n);
 #else
-                    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &(SCIPY_Z){CPLX_Z(1.0, 0.0)}, temp1, &n, temp1, &n, &(SCIPY_Z){CPLX_Z(0.0, 0.0)}, temp2, &n);
+                    BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &(scipy_c128){CMPLX(1.0, 0.0)}, temp1, &n, temp1, &n, &(scipy_c128){CMPLX(0.0, 0.0)}, temp2, &n);
 #endif
                     // Swap pointers
-                    SCIPY_Z *swap = temp1;
+                    scipy_c128 *swap = temp1;
                     temp1 = temp2;
                     temp2 = swap;
                 }
@@ -2912,7 +2940,7 @@ matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, CBLAS_INT* info
         }
 
         // Copy back the result to output array
-        swap_cf_z(temp1, &result[idx*n*n], n, n, n);
+        swap_cf_z(temp1, &result[idx*nn], n, n, n);
     }
 
     PyMem_RawFree(ipiv);

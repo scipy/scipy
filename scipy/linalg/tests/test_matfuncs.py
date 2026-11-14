@@ -24,6 +24,8 @@ from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 from scipy.linalg import LinAlgWarning
+from scipy.linalg.blas import HAS_ILP64
+from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.optimize import minimize
 
 
@@ -785,6 +787,19 @@ class TestFractionalMatrixPower:
 
 
 class TestExpM:
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    def test_lp64_size_limit(self):
+        # n*n is passed to BLAS as an element count, so with 32-bit LAPACK integers expm
+        # must refuse n = 46341 rather than overflow. The input has zero strides and
+        # nothing is computed.
+        check_free_memory(free_mb=10000)
+        a = np.broadcast_to(np.float32(1), (46341, 46341))
+        with pytest.raises(ValueError, match="ILP64"):
+            expm(a)
+
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -1157,3 +1172,19 @@ class TestKhatriRao:
         b = xp.empty((5, 0))
         res = khatri_rao(a, b)
         xp_assert_close(res, xp.empty((15, 0)))
+
+
+@pytest.mark.parametrize("func", [expm, sqrtm])
+@pytest.mark.parametrize("dtype, pad", [(np.complex128, np.float64),
+                                        (np.complex64, np.float32)])
+@pytest.mark.parametrize("shape", [(4, 4), (2, 4, 4)])
+def test_field_view_strides(func, dtype, pad, shape):
+    # A complex field of an aligned structured array has an element stride that is not a
+    # multiple of the itemsize (24 and 12 bytes); it must give the result of a copy.
+    rng = np.random.default_rng(1234)
+    a = ((rng.standard_normal(shape) + 1j*rng.standard_normal(shape)) / 4).astype(dtype)
+    rec = np.zeros(shape, dtype=np.dtype([("z", dtype), ("pad", pad)], align=True))
+    rec["z"] = a
+    view = rec["z"]
+    assert view.strides[-1] % view.itemsize != 0
+    xp_assert_equal(func(view), func(a))

@@ -1162,13 +1162,23 @@ def _ensure_dtype_cdsz(*arrays):
         dtype = np.complex64 if complex else np.float32
     elif np.finfo(dtype).bits >= 64:
         dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
+    # .char to tell 'g' from 'd' (and 'G' from 'D') where long double is double: there
+    # astype(copy=False) returns the long double array itself, which is not 'd'
+    dtype = np.dtype(dtype)
+    return (array.astype(dtype, copy=array.dtype.char != dtype.char)
+            for array in arrays)
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
-    """Make sure an input array is aligned and not byteswapped, copy otherwise.
+    """Make sure an input array is aligned and in native byte order, copy otherwise.
+
+    A read-only array is never overwritten.
     """
-    if not (a.flags['ALIGNED'] and a.dtype.byteorder == '='):
+    if not (a.flags['ALIGNED'] and a.dtype.isnative):
         overwrite_a = True
-        a = a.copy()
+        # astype, unlike copy, also converts the byte order
+        a = a.astype(a.dtype.newbyteorder('='), order='C')
+    elif overwrite_a and not a.flags['WRITEABLE']:
+        # only read when needed: for np.broadcast_arrays views it warns
+        overwrite_a = False
     return a, overwrite_a
