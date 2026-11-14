@@ -2281,6 +2281,30 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _mathieu.mathieu_se, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_se", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_ce, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_ce", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
         _mathieu.mathieu_sem, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
