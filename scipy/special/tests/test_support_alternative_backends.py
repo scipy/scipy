@@ -6,6 +6,7 @@ import pytest
 from scipy._external.packaging_version import version
 
 from scipy import special
+from scipy.special import _support_alternative_backends as sab
 from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
@@ -579,3 +580,25 @@ def test_spheroidal_wave_functions(xp, func, nfo):
         atol=10 * np.finfo(np.float64).eps,
         check_0d=nfo.produces_0d,
     )
+
+
+def test_all_public_funcs_registered():
+    # These are the private submodules that _support_alternative_backends.py
+    # consumes. i.e., they contain definitions of public functions for which
+    # delegation is set up with alternative backends machinery. Other private
+    # submodules, such as _spherical_bessel.py and _basic.py are consumers of
+    # delegating wrappers from _support_alternative_backends.
+    public_funcs = set(
+        special._ufuncs.__all__
+        + special._ellip_harm.__all__
+        + special._lambertw.__all__
+        + special._mathieu.__all__
+        + special._spfun_stats.__all__
+    )
+    public_funcs -= {"geterr", "seterr", "errstate"}
+
+    missing = public_funcs - set(sab.__all__)
+    assert not missing, f"Missing backend registrations: {sorted(missing)}"
+
+    missing = public_funcs - set(special.__all__)
+    assert not missing, f"Missing public exports: {sorted(missing)}"
