@@ -20,8 +20,8 @@ JAX_SIGNAL_FUNCS = [
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
 CUPY_BLACKLIST = [
-    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'get_window', 'lfilter_zi',
-    'sosfilt_zi', 'remez',
+    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'findfreqs', 'get_window',
+    'lfilter_zi', 'sosfilt_zi', 'remez',
 ]
 
 def delegate_xp(delegator, module_name):
