@@ -141,6 +141,8 @@ class _FuncInfo:
     # available in the `scipy.special` namespace for this backend.
     # One example is `jax.numpy.sinc` being available but not `jax.scipy.special.sinc`.
     backends_with_func_in_xp: tuple[str, ...] = ()
+    # is this part of the public API?
+    public: bool = True
 
     @property
     def name(self):
@@ -165,6 +167,10 @@ class _FuncInfo:
             import scipy.special
             return getattr(scipy.special, self.name)
 
+        module = "scipy.special"
+        if not self.public:
+            module = f"{module}._support_alternative_backends"
+
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
@@ -176,6 +182,7 @@ class _FuncInfo:
                 self.name,
                 self.arg_names,
                 self.func.__doc__,
+                module=module,
             )
         else:
             @functools.wraps(self.func)
@@ -184,15 +191,18 @@ class _FuncInfo:
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             # needed to allow pickling
-            func.__module__ = "scipy.special"
+            func.__module__ = module
             func.__qualname__ = self.name
 
         if self.name in {"mathieu_cem", "mathieu_sem"}:
             # Warn outside backend dispatch and register the public wrapper.
             func = _mathieu._deprecated_mathieu(func, self.name[:-1])
-        capabilities = self.xp_capabilities or xp_capabilities()
-        cap_func = capabilities(func)
-        assert cap_func is func
+
+        if self.public:
+            # Don't apply xp_capabilities to private functions.
+            capabilities = self.xp_capabilities or xp_capabilities()
+            capabilities(func)
+
         return func
 
     @functools.lru_cache(1000)
@@ -983,7 +993,70 @@ _special_funcs = (
         torch_native=False,
     ),
     # Spherical Bessel functions
-    # --
+    _FuncInfo(
+        _ufuncs._spherical_jn, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_yn, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_in, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_kn, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_jn_d, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_yn_d, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_in_d, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._spherical_kn_d, ["n", "z"],
+        xp_capabilities(cpu_only=True),
+        int_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+        public=False,
+    ),
     # Struve functions
     _FuncInfo(
         _ufuncs.struve, ["v", "x"],
@@ -2152,6 +2225,23 @@ _special_funcs = (
         test_large_ints=False,
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.hyperu, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hyperu", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hyp0f1, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hyp0f1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     # Parabolic cylinder functions
     # --
     _FuncInfo(
@@ -2204,6 +2294,30 @@ _special_funcs = (
         ),
         int_only=(True, False),
         positive_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_se, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_se", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_ce, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_ce", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
         test_large_ints=False,
         torch_native=False,
     ),
@@ -2791,4 +2905,5 @@ globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # support. Add noqa because the linter gets confused by the sneaky way psi
 # is inserted into globals above.
 digamma = psi  # type:ignore[name-defined]  # noqa: F821
-__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]
+jn = jv  # type:ignore[name-defined]  # noqa: F821
+__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma", "jn"]
