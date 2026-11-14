@@ -1443,6 +1443,7 @@ cdef extern from r"cython_special_wrappers.h":
     double xsf_pdtr(double k, double m) nogil
     double xsf_pdtrc(double k, double m) nogil
     double xsf_pdtri(int k, double y) nogil
+    double special_pdtri_unsafe(double k, double y) nogil
     double xsf_smirnov(int n, double x) nogil
     double xsf_smirnovc(int n, double x) nogil
     double xsf_smirnovi(int n, double x) nogil
@@ -1592,10 +1593,6 @@ from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
-
-from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
-ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
-cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
 
 from ._legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) noexcept nogil
@@ -2955,7 +2952,7 @@ cpdef double pdtrc(double x0, double x1) noexcept nogil:
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.pdtri"""
     if dlp_number_t is double:
-        return _func_pdtri_unsafe(x0, x1)
+        return special_pdtri_unsafe(x0, x1)
     elif dlp_number_t is long:
         return xsf_pdtri(x0, x1)
     elif dlp_number_t is Py_ssize_t:
