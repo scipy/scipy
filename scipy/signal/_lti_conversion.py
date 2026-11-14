@@ -4,18 +4,23 @@ from one representation to another.
 """
 
 import numpy as np
-from numpy import (r_, eye, atleast_2d, poly, dot,
-                   asarray, zeros, array, outer)
 from scipy import linalg
 
 from scipy._lib._array_api import (array_namespace, xp_size, xp_promote,
                                    xp_result_type, xp_device)
+from scipy._external.array_api_compat import numpy as np_compat
 import scipy._external.array_api_extra as xpx
+from scipy.signal import _polyutils as _pu
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
 
 __all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
            'cont2discrete']
+
+
+def _char_poly(M, *, xp):
+    """Characteristic polynomial of a square matrix, like 2-D `np.poly`."""
+    return _pu.poly(_pu.eigvals(M, xp=xp), xp=xp)
 
 
 def tf2ss(num, den):
@@ -75,42 +80,53 @@ def tf2ss(num, den):
     #   A, B, C, and D follow quite naturally.
     #
     num, den = normalize(num, den)   # Strips zeros, checks arrays
-    nn = len(num.shape)
-    if nn == 1:
-        num = asarray([num], num.dtype)
+    try:
+        xp = array_namespace(num, den)
+    except TypeError:
+        # object arrays, test_ltisys.py::TestSS2TF::test_simo_round_trip
+        xp = np_compat
+    device = xp_device(den)
+
+    if num.ndim == 1:
+        num = num[None, :]
     M = num.shape[1]
-    K = len(den)
+    K = den.shape[0]
     if M > K:
         msg = "Improper transfer function. `num` is longer than `den`."
         raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
-        return (array([], float), array([], float), array([], float),
-                array([], float))
+        return tuple(xp.asarray([], dtype=xp.float64, device=device)
+                     for _ in range(4))
 
     # pad numerator to have same number of columns has denominator
-    num = np.hstack((np.zeros((num.shape[0], K - M), dtype=num.dtype), num))
+    num = xp.concat(
+        (xp.zeros((num.shape[0], K - M), dtype=num.dtype, device=device), num),
+        axis=1)
 
     if num.shape[-1] > 0:
-        D = atleast_2d(num[:, 0])
-
+        D = xpx.atleast_nd(num[:, 0], ndim=2, xp=xp)
     else:
         # We don't assign it an empty array because this system
         # is not 'null'. It just doesn't have a non-zero D
         # matrix. Thus, it should have a non-zero shape so that
         # it can be operated on by functions like 'ss2tf'
-        D = array([[0]], float)
+        D = xp.asarray([[0.0]], device=device)
 
     if K == 1:
-        D = D.reshape(num.shape)
+        D = xp.reshape(D, num.shape)
 
-        return (zeros((1, 1)), zeros((1, D.shape[1])),
-                zeros((D.shape[0], 1)), D)
+        return (xp.zeros((1, 1), dtype=D.dtype, device=device),
+                xp.zeros((1, D.shape[1]), dtype=D.dtype, device=device),
+                xp.zeros((D.shape[0], 1), dtype=D.dtype, device=device),
+                D)
 
-    frow = -array([den[1:]])
-    A = r_[frow, eye(K - 2, K - 1)]
-    B = eye(K - 1, 1)
-    C = num[:, 1:] - outer(num[:, 0], den[1:])
-    D = D.reshape((C.shape[0], B.shape[1]))
+    frow = -den[1:][None, :]
+    # a sliced square eye, dask chunks eye(K - 2, K - 1) per column
+    eye = xp.eye(K - 1, dtype=frow.dtype, device=device)
+    A = xp.concat((frow, eye[:K - 2, :]), axis=0)
+    B = eye[:, :1]
+    C = num[:, 1:] - num[:, 0][:, None] * den[1:][None, :]
+    D = xp.reshape(D, (C.shape[0], B.shape[1]))
 
     return A, B, C, D
 
@@ -305,6 +321,12 @@ def ss2tf(A, B, C, D, input=0):
     # Check consistency and make them all floating point 2d arrays:
     A, B, C, D = abcd_normalize(A, B, C, D)
 
+    try:
+        xp = array_namespace(A, B, C, D)
+    except TypeError:
+        # object arrays, test_ltisys.py::TestSS2TF::test_simo_round_trip
+        xp = np_compat
+
     nout, nin = D.shape
     if input >= nin:
         raise ValueError("System does not have the input specified.")
@@ -314,22 +336,24 @@ def ss2tf(A, B, C, D, input=0):
     D = D[:, input:input + 1]
 
     try:
-        den = poly(A)
+        den = _char_poly(A, xp=xp)
     except ValueError:
         den = 1
 
-    if (B.size == 0) and (C.size == 0):
-        num = np.ravel(D)
-        if (D.size == 0) and (A.size == 0):
+    if (xp_size(B) == 0) and (xp_size(C) == 0):
+        num = xp.reshape(D, (-1,))
+        if (xp_size(D) == 0) and (xp_size(A) == 0):
             den = []
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
-    num = np.empty((nout, num_states + 1), type_test.dtype)
+    result_dtype = xp_result_type(A, B, C, D, force_floating=True, xp=xp)
+    num = xp.empty((nout, num_states + 1), dtype=result_dtype,
+                   device=xp_device(A))
     for k in range(nout):
-        Ck = atleast_2d(C[k, :])
-        num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
+        Ck = C[k:k + 1, :]
+        num_k = _char_poly(A - B @ Ck, xp=xp) + (D[k, ...] - 1.0) * den
+        num = xpx.at(num)[k, ...].set(xp.astype(num_k, result_dtype))
 
     return num, den
 
@@ -555,7 +579,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         # Build an exponential matrix similar to 'zoh' method
         em_upper = linalg.block_diag(np.block([a, b]) * dt, np.eye(m))
-        em_lower = zeros((m, n + 2 * m))
+        em_lower = np.zeros((m, n + 2 * m))
         em = np.block([[em_upper], [em_lower]])
 
         ms = linalg.expm(em)

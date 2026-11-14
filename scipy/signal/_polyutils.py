@@ -44,12 +44,20 @@ def polyroots(coef, *, xp):
     a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype, device=xp_device(coef))
     a[:, -1] = -xp.flip(coef[1:]) / coef[0]
 
-    # non-symmetric eigenvalue problem is not in the spec but is available on e.g. torch
+    return eigvals(a, xp=xp)
+
+
+def eigvals(a, *, xp):
+    """Eigenvalues of a general square matrix, cf `np.linalg.eigvals`.
+
+    linalg.eigvals is only in the array API spec since its 2025.12 revision,
+    fall back to numpy for backends which do not provide it yet.
+    """
     if hasattr(xp.linalg, 'eigvals'):
         return xp.linalg.eigvals(a)
     else:
         import numpy as np
-        return xp.asarray(np.linalg.eigvals(np.asarray(a)))
+        return xp.asarray(np.linalg.eigvals(np.asarray(a)), device=xp_device(a))
 
 
 # https://github.com/numpy/numpy/blob/v2.1.0/numpy/lib/_function_base_impl.py#L1874-L1925
@@ -146,16 +154,12 @@ def poly(seq_of_zeros, *, xp):
         return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype,
                           device=xp_device(seq_of_zeros))
 
-    # prefer np.convolve etc, if available
-    convolve_func = getattr(xp, 'convolve', None)
-    if convolve_func is None:
-        from scipy.signal import convolve as convolve_func
-
     dt = seq_of_zeros.dtype
     a = xp.ones((1,), dtype=dt, device=xp_device(seq_of_zeros))
-    one = xp.ones_like(seq_of_zeros[0])
+    pad = xp.zeros((1,), dtype=dt, device=xp_device(seq_of_zeros))
     for zero in seq_of_zeros:
-        a = convolve_func(a, xp.stack((one, -zero)), mode='full')
+        # a = convolve(a, (1, -zero)), written out to keep it on device
+        a = xp.concat((a, pad)) - zero * xp.concat((pad, a))
 
     if xp.isdtype(a.dtype, 'complex floating'):
         # if complex roots are all complex conjugates, the roots are real.
