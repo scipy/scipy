@@ -2225,6 +2225,23 @@ _special_funcs = (
         test_large_ints=False,
         torch_native=False,
     ),
+    _FuncInfo(
+        _ufuncs.hyperu, ["a", "b", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hyperu", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.hyp0f1, ["v", "z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("hyp0f1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     # Parabolic cylinder functions
     # --
     _FuncInfo(
