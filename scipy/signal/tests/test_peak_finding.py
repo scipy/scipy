@@ -809,6 +809,165 @@ class TestFindPeaks:
         xp_assert_close(props['left_ips'], np.asarray([6.4]))
         xp_assert_close(props['right_ips'], np.asarray([7.75]))
 
+    def test_empty_wrap(self):
+        """Test empty signal with wrap enabled."""
+        peaks, props = find_peaks(np.array([]), wrap=True)
+        assert peaks.size == 0
+        assert props == {}
+
+    def test_constant_wrap(self):
+        """
+        Test behavior for signal without local maxima with wrap enabled.
+        """
+        open_interval = (None, None)
+        peaks, props = find_peaks(np.ones(10),
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval,
+                                  wrap=True)
+        assert peaks.size == 0
+        for key in self.property_keys:
+            assert props[key].size == 0
+
+    def test_wrap(self):
+        """
+        Test wrap condition for peaks.
+        """
+        x = np.array([5, 2, 0, 1, 3, 1, 4])
+        peaks, props = find_peaks(x, wrap=True)
+        assert peaks.size == 2
+        xp_assert_equal(peaks, np.asarray([0, 4]))
+
+    def test_no_wrap(self):
+        """
+        Test no wrap (default behavior) condition for peaks.
+        """
+        x = np.array([5, 2, 0, 1, 3, 1, 4])
+        peaks, props = find_peaks(x, wrap=False)
+        assert peaks.size == 1
+        xp_assert_equal(peaks, np.asarray([4]))
+
+    def test_plateau_size_wrap(self):
+        """
+        Test plateau size condition for peaks with wrap enabled.
+        """
+        # Prepare signal with peaks with peak_height == plateau_size
+        plateau_sizes = np.array([1, 2, 3, 4, 8, 20, 111])
+        x = np.zeros(plateau_sizes.size * 2 + 1)
+        x[1::2] = plateau_sizes
+        repeats = np.ones(x.size, dtype=int)
+        repeats[1::2] = x[1::2]
+        x = np.repeat(x, repeats)
+         # Shift to test plateau size around end of array
+        x = np.roll(x, shift=60)
+
+        # Test full output
+        peaks, props = find_peaks(x, plateau_size=(None, None), wrap=True)
+        xp_assert_equal(peaks, [3, 61, 63, 67, 71, 78, 93], check_dtype=False)
+        xp_assert_equal(props["plateau_sizes"], [111, 1, 2, 3, 4, 8, 20],
+                        check_dtype=False)
+        xp_assert_equal(props["left_edges"], [105, 61, 63, 66, 70, 75, 84],
+                        check_dtype=False)
+        xp_assert_equal(props["right_edges"], [58, 61, 64, 68, 73, 82, 103],
+                        check_dtype=False)
+
+        # Test conditions
+        xp_assert_equal(find_peaks(x, plateau_size=4, wrap=True)[0], [3, 71, 78, 93],
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, plateau_size=(None, 3.5), wrap=True)[0],
+                        [61, 63, 67], check_dtype=False)
+        xp_assert_equal(find_peaks(x, plateau_size=(5, 50), wrap=True)[0], [78, 93],
+                        check_dtype=False)
+
+    def test_height_condition_wrap(self):
+        """
+        Test height condition for peaks with wrap enabled.
+        """
+        x = (10, 1/3, 0., 2.5, 0, 4., 0)
+        peaks, props = find_peaks(x, height=(None, None), wrap=True)
+        xp_assert_equal(peaks, np.array([0, 3, 5]), check_dtype=False)
+        xp_assert_equal(props['peak_heights'], np.array([10., 2.5, 4.,]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=0.5, wrap=True)[0], np.array([0, 3, 5]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=(None, 3), wrap=True)[0], np.array([3]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, height=(2, 3), wrap=True)[0], np.array([3]),
+                        check_dtype=False)
+
+        # Ensure that array valued height works
+        xp_assert_equal(find_peaks(x, height=np.array([5, 1, 1, 3, 0, 3, 0]),
+                        wrap=True)[0], np.array([0, 5]), check_dtype=False)
+
+    def test_threshold_condition_wrap(self):
+        """
+        Test threshold condition for peaks with wrap enabled.
+        """
+        x = (7, 2, 1, 4, -1)
+        peaks, props = find_peaks(x, threshold=(None, None), wrap=True)
+        xp_assert_equal(peaks, np.array([0, 3]), check_dtype=False)
+        xp_assert_equal(props['left_thresholds'], np.array([8.0, 3.0]))
+        xp_assert_equal(props['right_thresholds'], np.array([5.0, 5.0]))
+        xp_assert_equal(find_peaks(x, threshold=4, wrap=True)[0], np.array([0]),
+                        check_dtype=False)
+        xp_assert_equal(find_peaks(x, threshold=5.5, wrap=True)[0],
+                        np.array([], dtype=int), check_dtype=False)
+        xp_assert_equal(find_peaks(x, threshold=(3, 5), wrap=True)[0],
+                        np.array([3], dtype=int), check_dtype=False)
+
+    def test_distance_condition_wrap(self):
+        """
+        Test distance condition for peaks.
+        """
+        x = np.array([2., 0., 3., 1., 1.])
+
+        # Peaks 0 and 2 are distance 2 apart
+        xp_assert_equal(find_peaks(x, distance=2, wrap=True)[0], np.array([0, 2]),
+                        check_dtype=False)
+        # Filter out the smaller peak at index 0
+        xp_assert_equal(find_peaks(x, distance=3, wrap=True)[0], np.array([2]),
+                        check_dtype=False)
+
+        # Ensure smaller peaks removed first
+        x = [10, -2, 1, -1, 0, -3, -50]
+        peaks_subset = find_peaks(x, distance=20, wrap=True)[0]  # use distance > x size
+        assert peaks_subset.size == 1 and peaks_subset[0] == 0
+
+        # Test multiple removals
+        x = np.zeros(30)
+        x[[2, 5, 12, 15, 18, 27, 29]] = [9, 2, 3, 8, 4, 5, 1]
+        peaks, _ = find_peaks(x, distance=6, wrap=True)
+        xp_assert_equal(peaks, [2, 15])
+        peaks, _ = find_peaks(x[::-1], distance=6, wrap=True)
+        xp_assert_equal(peaks, [14, 27])
+
+    def test_prominence_condition_wrap(self):
+        """
+        Test prominence condition for peaks with wrap enabled.
+        """
+        x = np.array([2, 0, 5, 1, 4, 3])
+
+        peaks, props = find_peaks(x, prominence=0, wrap=True)
+        xp_assert_equal(peaks, np.array([2, 4]), check_dtype=False)
+        xp_assert_equal(props['prominences'], np.array([5., 3.]))
+        xp_assert_equal(props['left_bases'], np.array([1, 3]), check_dtype=False)
+        xp_assert_equal(props['right_bases'], np.array([1, 1]), check_dtype=False)
+
+        peaks, _ = find_peaks(x, prominence=4, wrap=True)
+        xp_assert_equal(peaks, np.array([2]), check_dtype=False)
+
+    def test_width_condition_wrap(self):
+        """
+        Test width condition for peaks with wrap enabled.
+        """
+        x = np.array([2, 0, 5, 1, 4, 3])
+        peaks, props = find_peaks(x, width=0, rel_height=0.75, wrap=True)
+
+        xp_assert_equal(peaks, np.array([2, 4]), check_dtype=False)
+        xp_assert_equal(props['width_heights'], np.array([1.25, 1.75]))
+        xp_assert_equal(props['widths'], np.array([1.6875, 2.875]))
+        xp_assert_equal(props['left_ips'], np.array([1.25, 3.25]))
+        xp_assert_equal(props['right_ips'], np.array([2.9375, 0.125]))
+
     def test_properties(self):
         """
         Test returned properties.

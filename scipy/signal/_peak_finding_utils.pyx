@@ -91,7 +91,8 @@ def _local_maxima_1d(const np.float64_t[::1] x not None):
 
 def _select_by_peak_distance(const np.intp_t[::1] peaks not None,
                              const np.float64_t[::1] priority not None,
-                             np.float64_t distance):
+                             np.float64_t distance, np.intp_t x_size,
+                             bint wrap=False):
     """
     Evaluate which peaks fulfill the distance condition.
 
@@ -104,6 +105,15 @@ def _select_by_peak_distance(const np.intp_t[::1] peaks not None,
         peak with a higher priority value is kept over one with a lower one.
     distance : np.float64
         Minimal distance that peaks must be spaced.
+    x_size : np.intp
+        Size of the original array used to calculate circular distance.
+
+        .. versionadded:: 2.0.0
+    wrap : bool, optional
+        If True, measures distance around the end of array,
+        as if peaks were arranged in a circle. Default is False.
+
+        .. versionadded:: 2.0.0
 
     Returns
     -------
@@ -121,7 +131,7 @@ def _select_by_peak_distance(const np.intp_t[::1] peaks not None,
     cdef:
         np.uint8_t[::1] keep
         np.intp_t[::1] priority_to_position
-        np.intp_t i, j, k, peaks_size, distance_
+        np.intp_t i, j, k, peaks_size, distance_, early_search_max, late_search_max
 
     peaks_size = peaks.shape[0]
     # Round up because actual peak distance can only be natural number
@@ -144,16 +154,26 @@ def _select_by_peak_distance(const np.intp_t[::1] peaks not None,
                 # Skip evaluation for peak already marked as "don't keep"
                 continue
 
-            k = j - 1
+            # Loop at most back to element's right neighbor, or min of array
+            early_search_max = j + 1 if wrap else 0
+            # Start at the adjacent left peak, wrapping if necessary
+            k = j + peaks_size - 1 if wrap else j - 1
             # Flag "earlier" peaks for removal until minimal distance is exceeded
-            while 0 <= k and peaks[j] - peaks[k] < distance_:
-                keep[k] = 0
+            # The second condition calculates circular distance
+            # early_search_max stops uneeded wraparound if wrap=False
+            while early_search_max <= k and (peaks[j] - peaks[k % peaks_size] + x_size) % x_size < distance_:
+                keep[k % peaks_size] = 0
                 k -= 1
 
+            # Loop at most back to element's left neighbor, or max of array
+            late_search_max = j + peaks_size if wrap else peaks_size
+            # Start at the adjacent right peak
             k = j + 1
             # Flag "later" peaks for removal until minimal distance is exceeded
-            while k < peaks_size and peaks[k] - peaks[j] < distance_:
-                keep[k] = 0
+            # The second condition calculates circular distance
+            # late_search_max stops uneeded wraparound if wrap=False
+            while k < late_search_max and (peaks[k % peaks_size] - peaks[j] + x_size) % x_size < distance_:
+                keep[k % peaks_size] = 0
                 k += 1
 
     return keep.base.view(dtype=np.bool_)  # Return as boolean array
