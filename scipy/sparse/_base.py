@@ -661,6 +661,13 @@ class _spbase(SparseABC):
             - If `other` is a scalar, the result is a sparse array/matrix.
             - If `other` is an ndarray, the result is an ndarray.
 
+        Notes
+        -----
+        Sparse results are not guaranteed to have sorted indices, even when
+        both inputs have sorted indices. For CSR and CSC results, use
+        `has_sorted_indices` to check the ordering and `sort_indices` to
+        sort the indices in place when needed.
+
         Examples
         --------
         >>> import numpy as np
