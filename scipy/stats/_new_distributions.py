@@ -75,6 +75,30 @@ class Normal(ContinuousDistribution):
     def _logcdf_formula(self, x, *, mu, sigma, **kwargs):
         return StandardNormal._logcdf_formula(self, (x - mu)/sigma)
 
+    def _logcdf2_formula(self, x, y, **params):
+        xp = self._xp
+        out = xp.asarray(self._logcdf2_subtraction(x, y, **params))
+        mask = (xp.isinf(xp.real(out)) & (xp.real(out) < 0)
+                & xp.isfinite(x) & xp.isfinite(y) & (x != y))
+        if xp.any(mask):
+            a, b = xp.minimum(x, y)[mask], xp.maximum(x, y)[mask]
+            width = b - a
+            params = {key: xp.broadcast_to(val, mask.shape)[mask]
+                      for key, val in params.items()}
+
+            def integrand(t, a, width, **params):
+                return self._logpdf_dispatch(a + width*t, **params)
+
+            # Preserve the original width, even when its half underflows or
+            # separately standardized endpoints round to the same value.
+            integral = self._quadrature(integrand, limits=(0., 1.),
+                                        args=(a, width), params=params, log=True)
+            logmass = integral + xp.log(width)
+            if xp.isdtype(out.dtype, "complex floating"):
+                logmass = logmass + xp.where(x[mask] > y[mask], xp.pi*1j, 0j)
+            out[mask] = logmass
+        return out[()]
+
     def _cdf_formula(self, x, *, mu, sigma, **kwargs):
         return StandardNormal._cdf_formula(self, (x - mu)/sigma)
 
