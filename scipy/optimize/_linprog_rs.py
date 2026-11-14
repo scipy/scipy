@@ -268,14 +268,6 @@ def _select_singleton_columns(A, b):
     return column_indices[first_columns], unique_row_indices
 
 
-def _find_nonzero_rows(A, tol):
-    """
-    Returns logical array indicating the locations of rows with at least
-    one nonzero element.
-    """
-    return np.any(np.abs(A) > tol, axis=1)
-
-
 def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-12):
     """
     Selects a pivot to enter the basis. Currently Bland's rule - the smallest
