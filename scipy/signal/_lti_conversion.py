@@ -355,7 +355,7 @@ def zpk2ss(z, p, k):
 
 
 def ss2zpk(A, B, C, D, input=0):
-    """State-space representation to zero-pole-gain representation.
+    r"""State-space representation to zero-pole-gain representation.
 
     A, B, C, D defines a linear state-space system with `p` inputs,
     `q` outputs, and `n` state variables.
@@ -379,7 +379,42 @@ def ss2zpk(A, B, C, D, input=0):
         Zeros and poles.
     k : float
         System gain.
+        
+    Examples
+    --------
+    Define a continuous-time state-space system with one state, where the
+    input also reaches the output directly:
 
+    .. math::
+
+        \dot{x} = -x + u, \qquad y = x + u.
+
+    >>> from scipy.signal import ss2zpk
+    >>> A = [[-1]]
+    >>> B = [[1]]
+    >>> C = [[1]]
+    >>> D = [[1]]
+
+    The transfer function of this system is
+
+    .. math::
+
+        G(s) = C(sI - A)^{-1}B + D
+             = \frac{1}{s + 1} + 1
+             = \frac{s + 2}{s + 1}.
+
+    Convert the system to zero-pole-gain form:
+
+    >>> z, p, k = ss2zpk(A, B, C, D)
+    >>> z
+    array([-2.])
+    >>> p
+    array([-1.])
+    >>> float(k)
+    1.0
+
+    The factored form of \(G(s)\) shows the same zero at −2, pole at −1, and unit gain.
+    
     """
     return tf2zpk(*ss2tf(A, B, C, D, input=input))
 
