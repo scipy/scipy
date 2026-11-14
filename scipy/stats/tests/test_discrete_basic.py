@@ -25,9 +25,6 @@ distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'nhypergeom'}
 
-# Override number of ULPs adjustment for `check_cdf_ppf`
-roundtrip_cdf_ppf_exceptions = {'nbinom': 30}
-
 def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
@@ -215,7 +212,7 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
     # CDF values down by a few ULPs help to avoid this.
-    n_ulps = roundtrip_cdf_ppf_exceptions.get(distfn.name, 15)
+    n_ulps = 15
     cdf_supp0 = cdf_supp - n_ulps*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')

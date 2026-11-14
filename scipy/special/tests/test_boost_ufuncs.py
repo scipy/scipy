@@ -1,9 +1,13 @@
+import sys
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import scipy.special._ufuncs as scu
 from scipy.integrate import tanhsinh
 
+_IS_32BIT = (sys.maxsize < 2**32)
 
 type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
                          'd': (np.float64, 32*np.finfo(np.float64).eps)}
@@ -79,4 +83,12 @@ def test_extreme_inputs_for_binomial_quantiles(func, dtype):
     # resulting in Python interpreter crashes
     n = 10e18
     p = 0.5
-    func(dtype(p), dtype(n), dtype(p))
+    with warnings.catch_warnings():
+        if _IS_32BIT:
+            # boost may run out of root-finding iterations on i686 and emit
+            # a RuntimeWarning while still returning its best guess
+            warnings.filterwarnings(
+                "ignore", "Error in function boost::math::quantile",
+                RuntimeWarning)
+        res = func(dtype(p), dtype(n), dtype(p))
+    assert not np.isnan(res)

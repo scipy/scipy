@@ -728,6 +728,16 @@ class TestNoncentralTFunctions:
             atol=1e-11, rtol=0
         )
 
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (36927.726327192555, 22.657510627430774, -1.9600282275330887,
+         4.1656076955530763e-134),
+        (24661.95794984711, 19.630953694774004, -1.9600601807012346,
+         1.1113682575781306e-103),
+        (1000, 23, -1, 1.6147146123955216e-127)
+    ])
+    def test_gh25470(self, df, nc, x, expected_cdf):
+        assert_allclose(sp.nctdtr(df, nc, x), expected_cdf, rtol=1e-13)
+
 
 class TestNegativeBinomialFunctions:
 
@@ -940,6 +950,36 @@ class TestPdtrik:
         # mp.gammainc(k+1, a=m, regularized=True)
         assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
 
+
+class TestStudentT:
+    # all cdf reference values were computed with mpmath using
+    # the function above with 1000 dps
+    @pytest.mark.parametrize("df, t, cdf_ref", [
+    (10, 10, 0.9999992052234122),
+    (10, -10, 7.9477658779820598e-7),
+    (1, -2000, 0.0001591549298289854),
+    (1000, -2, 0.02288517324662582),
+    (1000, 5, 0.99999966163718177),
+    (1000, -30, 7.6873437220217411e-142)
+    ])
+    def test_students_t_functions_spot_checks(self, df, t, cdf_ref):
+        assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-13)
+        assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
+        assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)
+
+    @pytest.mark.parametrize("df, t, cdf_ref", [
+        (3, -2.311368906937497e82, 8.9296194283025105e-248),
+        (10, -8.109742389861548e29, 1.0000000001178707e-295)
+    ])
+    def test_gh25968(self, df, t, cdf_ref):
+        # gh25968 reported wrong quantiles in the extreme left tail
+        assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-6)
+
+    def test_gh25667(self):
+        # gh25667 reported incorrect cdf values for very small t with df=1
+        assert_allclose(sp.stdtr(1, 1e-10), 0.50000000003183099, rtol=1e-14)
+
+
 @pytest.mark.parametrize("a, b, p, ref", [
     (0, 0, 0, np.nan),
     (0, 0, 1, np.nan),
@@ -1002,16 +1042,3 @@ def test_nrdtrimn_edge_cases(p, std, x, ref):
 ])
 def test_nrdtrisd_edge_cases(mn, p, x, ref):
     assert_equal(sp.nrdtrisd(mn, p, x), ref)
-
-@pytest.mark.parametrize("df, t, cdf_ref", [
-    (10, 10, 0.9999992052234122),
-    (10, -10, 7.947765877982061e-07),
-    (1, -2000, 0.0001591549298289854),
-    (1000, -2, 0.022885173246625867),
-    (1000, 5, 0.9999996616371818),
-    (1000, -30, 7.687343722021527e-142)
-])
-def test_students_t_functions_spot_checks(df, t, cdf_ref):
-    assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-12)
-    assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
-    assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)

@@ -5252,3 +5252,8 @@ class TestStirling2:
             denom = stirling2([n], k_entries, exact=True)
             num = denom - stirling2([n], k_entries, exact=False)
             assert np.max(np.abs(num / denom)) < 2e-5
+
+
+def test_gh23363():
+    # gh23363 reported that hyp1f1 could hang for large arguments
+    cephes.hyp1f1(2, 3, 1e40)
