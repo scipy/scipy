@@ -4,6 +4,4 @@
 #include "sparsetools.h"
 #include "bsr.h"
 
-extern "C" {
 #include "bsr_impl.h"
-}
