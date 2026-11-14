@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
 import scipy._external.array_api_extra as xpx
 from . import _basic
 from . import _ellip_harm
+from . import _lambertw
 from . import _mathieu
 from . import _spfun_stats
 from . import _ufuncs
@@ -2153,17 +2154,69 @@ _special_funcs = (
     ),
     # Parabolic cylinder functions
     # --
-    # Mathieu and related functions
     _FuncInfo(
-        _mathieu.mathieu_ce, ["m", "q", "x"],
+        _ufuncs.pbdv, ["v", "x"],
         xp_capabilities(
             cpu_only=True,
             skip_backends=[("dask.array", "multiple outputs")],
-            extra_note=_ufunc_kwargs_extra_note("mathieu_ce", ["torch"]),
+            extra_note=_ufunc_kwargs_extra_note("pbdv", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pbvv, ["v", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pbvv", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pbwa, ["a", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pbwa", ["torch"]),
+        ),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    # Mathieu and related functions
+    _FuncInfo(
+        _ufuncs.mathieu_a, ["m", "q"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("mathieu_a", ["torch"]),
+        ),
+        int_only=(True, False),
+        positive_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.mathieu_b, ["m", "q"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("mathieu_b", ["torch"]),
+        ),
+        int_only=(True, False),
+        positive_only=(True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _mathieu.mathieu_sem, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_sem", ["torch"]),
         ),
         int_only=(True, False, False),
-        test_large_ints=False,
         positive_only=(True, False, False),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
@@ -2179,23 +2232,47 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _mathieu.mathieu_se, ["m", "q", "x"],
+        _ufuncs.mathieu_modcem1, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
             skip_backends=[("dask.array", "multiple outputs")],
-            extra_note=_ufunc_kwargs_extra_note("mathieu_se", ["torch"]),
+            extra_note=_ufunc_kwargs_extra_note("mathieu_modcem1", ["torch"]),
         ),
         int_only=(True, False, False),
-        test_large_ints=False,
         positive_only=(True, False, False),
+        test_large_ints=False,
         torch_native=False,
     ),
     _FuncInfo(
-        _mathieu.mathieu_sem, ["m", "q", "x"],
+        _ufuncs.mathieu_modcem2, ["m", "q", "x"],
         xp_capabilities(
             cpu_only=True,
             skip_backends=[("dask.array", "multiple outputs")],
-            extra_note=_ufunc_kwargs_extra_note("mathieu_sem", ["torch"]),
+            extra_note=_ufunc_kwargs_extra_note("mathieu_modcem2", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.mathieu_modsem1, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_modsem1", ["torch"]),
+        ),
+        int_only=(True, False, False),
+        positive_only=(True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.mathieu_modsem2, ["m", "q", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("mathieu_modsem2", ["torch"]),
         ),
         int_only=(True, False, False),
         positive_only=(True, False, False),
@@ -2203,12 +2280,276 @@ _special_funcs = (
         torch_native=False,
     ),
     # Spheroidal wave functions
-    # --
+    _FuncInfo(
+        _ufuncs.pro_ang1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_ang1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad2, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad2", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_ang1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_ang1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad1, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad1", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad2, ["m", "n", "c", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad2", ["torch"]),
+        ),
+        int_only=(True, True, False, False),
+        positive_only=(True, True, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_cv, ["m", "n", "c"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("pro_cv", ["torch"]),
+        ),
+        int_only=(True, True, False),
+        positive_only=(True, True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_cv, ["m", "n", "c"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("obl_cv", ["torch"]),
+        ),
+        int_only=(True, True, False),
+        positive_only=(True, True, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_ang1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_ang1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.pro_rad2_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("pro_rad2_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_ang1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_ang1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad1_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad1_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.obl_rad2_cv, ["m", "n", "c", "cv", "x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("obl_rad2_cv", ["torch"]),
+        ),
+        int_only=(True, True, False, False, False),
+        positive_only=(True, True, False, False, False),
+        test_large_ints=False,
+        torch_native=False,
+    ),
     # Kelvin functions
-    # --
-    # Lambert w and related functions
-    # --
+    _FuncInfo(
+        _ufuncs.kelvin, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("kelvin", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ber, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ber", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.bei, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("bei", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.berp, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("berp", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.beip, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("beip", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.ker, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("ker", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kei, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kei", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.kerp, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("kerp", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.keip, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("keip", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    # Lambert W and related functions
+    _FuncInfo(
+        _lambertw.lambertw, ["z","k=0", "tol=1e-8"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            jax_jit=False,
+        ),
+        is_ufunc=False,
+        int_only=(False, True, False),
+        positive_only=(False, False, True),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.wrightomega, ["z"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("wrightomega", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     # Other special functions
+    _FuncInfo(
+        _ufuncs.agm, ["a", "b"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("agm", ["torch"]),
+        ),
+        torch_native=False,
+    ),
     _FuncInfo(
         _ufuncs.binom, ["x", "y"],
         xp_capabilities(
@@ -2247,6 +2588,26 @@ _special_funcs = (
             cpu_only=True,
             exceptions=["cupy", "jax.numpy"],
             extra_note=_ufunc_kwargs_extra_note("expi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.shichi, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("shichi", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.sici, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            skip_backends=[("dask.array", "multiple outputs")],
+            extra_note=_ufunc_kwargs_extra_note("sici", ["torch"]),
         ),
         torch_native=False,
     ),
@@ -2351,6 +2712,24 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
+        _ufuncs.log1p, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("log1p", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.expm1, ["x"],
+        xp_capabilities(
+            cpu_only=True,
+            exceptions=["cupy"],
+            extra_note=_ufunc_kwargs_extra_note("expm1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
         _ufuncs.cosm1, ["x"],
         xp_capabilities(
             cpu_only=True,
@@ -2358,6 +2737,27 @@ _special_funcs = (
             extra_note=_ufunc_kwargs_extra_note("cosm1", ["torch"]),
         ),
         torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.powm1, ["x", "y"],
+        xp_capabilities(
+            cpu_only=True,
+            extra_note=_ufunc_kwargs_extra_note("powm1", ["torch"]),
+        ),
+        torch_native=False,
+    ),
+    _FuncInfo(
+        _ufuncs.round, ["x"],
+        xp_capabilities(
+            extra_note=_ufunc_kwargs_extra_note(
+                additional_note=(
+                    "For alternative backends, this is essentially an alias of"
+                    " ``xp.round``\n    and thus behaves differently from"
+                    " ``scipy.special.round`` with respect to\n    input ``dtype``."
+                )
+            ),
+        ),
+        backends_with_func_in_xp=("jax.numpy",),
     ),
     _FuncInfo(
         _ufuncs.xlogy, ["x", "y"],
@@ -2378,11 +2778,8 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.sinc, ["x"],
-        xp_capabilities(
-            cpu_only=True,
-            exceptions=["cupy", "torch"],
-        ),
+        np.sinc, ["x"],
+        xp_capabilities(),
         backends_with_func_in_xp=("jax.numpy",),
         is_ufunc=False,
     ),

@@ -87,7 +87,14 @@ def _skip_or_tweak_alternative_backends(
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
-    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal"}:
+    if f_name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal", "lambertw"}:
         pytest.skip("requires dedicated tests due to keyword arguments.")
 
     if f_name in {'betaincinv'} and is_cupy(xp):
@@ -111,6 +118,8 @@ def _skip_or_tweak_alternative_backends(
         return positive_only, dtypes
 
     # Integer-specific issues from this point onwards
+    if f_name == "round" and (is_cupy(xp) or is_torch(xp) or is_jax(xp)):
+        pytest.skip("Backend integer rounding differs from scipy.special.round.")
 
     if f_name in {'gamma', 'gammasgn'} and is_cupy(xp):
         # CuPy has not yet updated gamma pole behavior to match
@@ -355,6 +364,13 @@ def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work even though ufuncs have been replaced.
     """
+    if nfo.name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
     ufunc = nfo.func
     int_only = nfo.int_only
     if not nfo.is_ufunc:
@@ -499,3 +515,60 @@ def test_poisson_binom_cdf_axis(xp, axis):
     ref = special.poisson_binom_cdf(k, p, axis=axis)
     res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p), axis=axis)
     xp_assert_close(res, ref)
+
+
+_spheroidal_funcs = {
+    "pro_ang1", "pro_ang1_cv", "pro_cv",
+    "pro_rad1", "pro_rad1_cv", "pro_rad2", "pro_rad2_cv",
+    "obl_ang1", "obl_ang1_cv", "obl_cv",
+    "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+}
+
+
+def _spheroidal_args(name):
+    m = np.asarray([[0], [1], [2]], dtype=np.int32)
+    n = np.asarray([[0], [2], [3]], dtype=np.int32)
+    c = np.asarray([0.7, 1.1, 1.5], dtype=np.float64)
+
+    args = [m, n, c]
+
+    if name.endswith("_cv") and name not in {"pro_cv", "obl_cv"}:
+        cv = getattr(special, name[:3] + "_cv")(m, n, c)
+        args.append(cv)
+
+    if "ang1" in name:
+        x = np.asarray([-0.5, 0.1, 0.6])
+        args.append(x)
+    elif "rad" in name:
+        x = (
+            np.asarray([1.3, 1.7, 2.1])
+            if name.startswith("pro_")
+            else np.asarray([0.6, 1.2, 1.8])
+        )
+        args.append(x)
+
+    return args
+
+
+@pytest.mark.parametrize(
+    "func,nfo",
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo)
+        for nfo in _special_funcs
+        if nfo.name in _spheroidal_funcs
+    ],
+)
+@pytest.mark.skip_xp_backends("dask.array", reason="fails to find correct output shape")
+def test_spheroidal_wave_functions(xp, func, nfo):
+    args_np = _spheroidal_args(nfo.name)
+    args_xp = [xp.asarray(arg) for arg in args_np]
+
+    ref = nfo.func(*args_np)
+    res = nfo.wrapper(*args_xp)
+
+    _tuple_aware_xp_assert_close(
+        res,
+        _tuple_aware_to_xp(ref, xp),
+        atol=10 * np.finfo(np.float64).eps,
+        check_0d=nfo.produces_0d,
+    )

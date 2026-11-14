@@ -806,8 +806,13 @@ from ._ellip_harm import (
     ellip_normal
 )
 
-# Replace some function definitions from _ufuncs, _basic and _ellip_harm
-# to add Array API support
+from ._lambertw import lambertw
+
+from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
+from ._spfun_stats import poisson_binom_cdf
+
+# Replace some function definitions from _ufuncs, _basic, _ellip_harm,
+# _lambertw, _mathieu, and _spfun_stats to add Array API support
 from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
@@ -818,25 +823,12 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-
-from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
     spherical_in,
     spherical_kn
 )
-
-# These functions are generated dynamically and inserted into globals
-# through _support_alternative_backends. This confuses the type checker though
-# so import them when type checking. Importing them in the regular code path
-# breaks test_support_alternative_backends.py due to the vagaries of how
-# those tests are set up. TODO: Do the setup of delegation in scipy.special
-# in a more principled way.
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
-    from ._spfun_stats import poisson_binom_cdf
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
@@ -867,4 +859,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-del TYPE_CHECKING
