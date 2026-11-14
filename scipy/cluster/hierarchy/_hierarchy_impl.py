@@ -1231,8 +1231,11 @@ def cut_tree(Z, n_clusters=None, height=None):
     n_clusters : array_like, optional
         Number of clusters in the tree at the cut point.
     height : array_like, optional
-        The height at which to cut the tree. For non-monotonic linkages,
-        see Notes.
+        The height at which to cut the tree. Only merges at heights strictly
+        below `height` are applied, whereas ``fcluster(Z, height,
+        criterion='distance')`` also applies merges at `height`, so the two
+        agree unless `height` equals a merge height. For non-monotonic
+        linkages, see Notes.
 
     Returns
     -------

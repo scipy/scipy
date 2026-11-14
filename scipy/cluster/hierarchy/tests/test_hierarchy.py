@@ -1278,20 +1278,44 @@ def test_cut_tree_non_monotonic(xp):
     for method in [centroid, median]:
         Z = xp.asarray(method(np.random.randn(nobs, 4)))
         assert not is_monotonic(Z)
-        assert_equal(np.asarray(cut_tree(Z)).max(axis=0),
-                     np.arange(nobs - 1, -1, -1))
+        cutree = np.asarray(cut_tree(Z))
+        assert_equal([len(np.unique(col)) for col in cutree.T],
+                     np.arange(nobs, 0, -1))
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_tied_heights(xp):
+    # Merges at the same height on independent branches must keep the order
+    # the previous `bisect.insort_left` traversal gave them: here (0, 1) is
+    # merged before (2, 3).
+    Z = linkage(np.array([[0.], [1.], [10.], [11.]]), method='single')
+    assert Z[0, 2] == Z[1, 2]
+    expected = [[0, 0, 0, 0],
+                [1, 0, 0, 0],
+                [2, 1, 1, 0],
+                [3, 2, 1, 0]]
+    xp_assert_equal(cut_tree(xp.asarray(Z)), xp.asarray(expected),
+                    check_dtype=False)
 
 
 @make_xp_test_case(cut_tree)
 def test_cut_tree_non_monotonic_height(xp):
     # gh-8063: on a non-monotonic linkage, `height` is compared against the
-    # monotonized heights, matching `fcluster(..., criterion='distance')`.
+    # monotonized heights (`maxdists`), as in `fcluster(..., 'distance')`.
     X = np.array([[0, 0], [2, 0], [1, 1.5]])
-    Z = xp.asarray(centroid(X))
-    # the two merges happen at 1.80 and 1.68
+    Z_np = centroid(X)
+    Z = xp.asarray(Z_np)
+    # the merges happen at 1.80 and 1.68; both monotonized heights are 1.80
     xp_assert_equal(cut_tree(Z, height=[1.7, 1.9]),
                     xp.asarray([[0, 0], [1, 0], [2, 0]]), check_dtype=False)
 
+    # `cut_tree` applies merges strictly below `height`, `fcluster` also
+    # applies merges at the threshold, so they differ at a merge height
+    h = maxdists(Z_np)[0]
+    assert len(np.unique(np.asarray(cut_tree(Z, height=h)))) == 3
+    assert len(np.unique(fcluster(Z_np, h, criterion='distance'))) == 1
+
+    # strictly between merge heights the two agree
     np.random.seed(23)
     Z = centroid(np.random.randn(50, 4))
     # cut halfway between consecutive merge heights to avoid ties
