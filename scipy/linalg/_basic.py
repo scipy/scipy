@@ -242,7 +242,19 @@ def solve(a, b, lower=False, overwrite_a=False,
         return x
 
     if a_is_scalar:
+        if structure == 101:
+            # positive definite 1x1 matrix must have positive diagonal entry.
+            if a1.item() <= 0:
+                raise LinAlgError("Matrix is not positive definite.")
+        elif structure == 211:
+            # Hermitian matrices have real diagonal entries.
+            # Match LAPACK's behavior by discarding the imaginary part of
+            # the scalar diagonal entry, ensuring consistent behavior
+            # for 1x1 and larger matrices.
+            a1 = a1.real
+
         if a1.item() == 0:
+            # Checking for singularity before performing scalar division.
             raise LinAlgError("A singular matrix detected.")
 
         out = b1 / a1
