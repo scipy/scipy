@@ -667,7 +667,8 @@ or as a :obj:`~scipy.sparse.linalg.LinearOperator` object.
 
 When the evaluation of the Hessian :math:`H(x, v)`
 is difficult to implement or computationally infeasible, one may use :class:`HessianUpdateStrategy`.
-Currently available strategies are :class:`BFGS` and :class:`SR1`.
+Currently available strategies are :class:`BFGS`, :class:`SR1`, and
+:class:`LBFGS`.
 
     >>> from scipy.optimize import BFGS
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac=cons_J, hess=BFGS())
