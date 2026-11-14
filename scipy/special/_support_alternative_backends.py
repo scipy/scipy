@@ -2888,4 +2888,5 @@ globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # support. Add noqa because the linter gets confused by the sneaky way psi
 # is inserted into globals above.
 digamma = psi  # type:ignore[name-defined]  # noqa: F821
-__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]
+jn = jv  # type:ignore[name-defined]  # noqa: F821
+__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma", "jn"]
