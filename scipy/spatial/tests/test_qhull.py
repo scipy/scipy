@@ -1,5 +1,7 @@
 import os
 import copy
+import re
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -165,6 +167,53 @@ class Test_Qhull:
             [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]]
         )
         Voronoi(points)
+
+    @staticmethod
+    def _error_message(points):
+        with pytest.raises(qhull.QhullError) as exc:
+            qhull.ConvexHull(points)
+        # the run-id differs between calls
+        return re.sub(r"run-id \d+", "run-id", str(exc.value))
+
+    def test_error_messages_with_reused_streams(self):
+        # Without open_memstream (e.g., on Windows), message streams are
+        # reused; each error must contain its own message and nothing else.
+        flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
+        flat_3d = np.array([[0., 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]])
+        msg_2d = self._error_message(flat_2d)
+        msg_3d = self._error_message(flat_3d)
+        assert msg_2d.startswith("QH6154") and msg_3d.startswith("QH6154")
+        assert len(msg_3d) > len(msg_2d)
+
+        # more coexisting instances than the number of kept spare streams
+        rng = np.random.default_rng(1234)
+        hulls = [qhull.ConvexHull(rng.random((10, 2)), incremental=True)
+                 for _ in range(40)]
+        for hull in hulls:
+            hull.close()
+
+        for _ in range(3):
+            assert self._error_message(flat_3d) == msg_3d
+            assert self._error_message(flat_2d) == msg_2d
+
+    @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+    def test_error_messages_threaded(self):
+        flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
+        expected = self._error_message(flat_2d)
+        rng = np.random.default_rng(1234)
+        points = rng.random((30, 2))
+        expected_vertices = qhull.ConvexHull(points).vertices
+
+        def worker(i):
+            for _ in range(20):
+                if i % 2:
+                    assert self._error_message(flat_2d) == expected
+                else:
+                    assert_equal(qhull.ConvexHull(points).vertices,
+                                 expected_vertices)
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            list(executor.map(worker, range(16)))
 
 
 class TestUtilities:
