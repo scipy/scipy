@@ -1014,8 +1014,7 @@ class TestNdimageFilters:
         ],
     )
     def test_derivative_filter_axes(self, xp, filter_func, kwargs):
-        array = xp.arange(6 * 8 * 12, dtype=xp.float64)
-        array = xp.reshape(array, (6, 8, 12))
+        array = xp.asarray(np.random.default_rng(0).random((6, 8, 12)))
 
         # duplicate axes raises an error
         with pytest.raises(ValueError, match="axes must be unique"):
