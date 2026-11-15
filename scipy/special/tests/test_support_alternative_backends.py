@@ -1,4 +1,5 @@
 from functools import partial
+import inspect
 import pickle
 
 import pytest
@@ -466,6 +467,65 @@ def test_ufunc_kwargs(func, nfo):
     else:
         for y_i in y:
             assert y_i.dtype == np.float32
+
+
+@pytest.mark.parametrize(
+    'func,nfo',
+    [
+        make_xp_pytest_param(
+            i.wrapper, i,
+            additional_marks=(
+                pytest.mark.filterwarnings(
+                    "ignore::scipy.integrate.IntegrationWarning"
+                )
+                if i.name in {"ellip_harm_2", "ellip_normal"}
+                else None
+            )
+        )
+        for i in _special_funcs if not i.is_ufunc and i.public
+    ]
+)
+@pytest.mark.skip_xp_backends("dask.array", reason="")
+@pytest.mark.parametrize('n_positional', [0, 1])
+def test_non_ufunc_kwargs(xp, func, nfo, n_positional):
+    """Test passing arguments by keyword to non-ufunc wrappers."""
+    sample_args = {
+        'polygamma': (1, [1.5, 2.5]),
+        'multigammaln': ([4., 5.], 2),
+        'ellip_harm': (5., 8., 2, 1, [10., 11.]),
+        'ellip_harm_2': (5., 8., 2, 1, [10., 11.]),
+        'ellip_normal': (5., 8., 2, [1, 2]),
+        'lambertw': ([1.5, -0.25], [0, -1], 1e-8),
+        'zeta': ([2.5, 3.5], [1.5, 2.5]),
+        'sinc': ([0.25, 0.75],),
+    }
+
+    if n_positional >= len(sample_args[nfo.name]):
+        pytest.skip("No keyword arguments to test.")
+
+    python_int_only = nfo.python_int_only
+    if isinstance(python_int_only, dict):
+        python_int_only = python_int_only.get(get_native_namespace_name(xp))
+    if python_int_only is None:
+        python_int_only = (False,) * nfo.n_args
+
+    args_np = tuple(
+        arg if needs_python_int else np.asarray(arg)
+        for arg, needs_python_int in zip(sample_args[nfo.name], python_int_only)
+    )
+    args_xp = tuple(
+        xp.asarray(arg) if isinstance(arg, np.ndarray) else arg
+        for arg in args_np
+    )
+
+    names = list(inspect.signature(nfo.func).parameters)
+    kwargs_np = dict(zip(names[n_positional:], args_np[n_positional:]))
+    kwargs_xp = dict(zip(names[n_positional:], args_xp[n_positional:]))
+
+    ref = nfo.func(*args_np[:n_positional], **kwargs_np)
+    res = nfo.wrapper(*args_xp[:n_positional], **kwargs_xp)
+
+    xp_assert_close(res, xp.asarray(ref))
 
 
 @pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
