@@ -1,6 +1,7 @@
 import functools
 import inspect
 import operator
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
@@ -163,15 +164,10 @@ class _FuncInfo:
 
     @property
     def wrapper(self):
+        module = "scipy.special" if self.public else __name__
         if self.name in globals():
             # Already initialised. We are likely in a unit test.
-            # Return function potentially overridden by xpx.testing.lazy_xp_function.
-            import scipy.special
-            return getattr(scipy.special, self.name)
-
-        module = "scipy.special"
-        if not self.public:
-            module = f"{module}._support_alternative_backends"
+            return getattr(sys.modules[module], self.name)
 
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
@@ -2953,18 +2949,39 @@ _special_funcs = (
 
 if TYPE_CHECKING:
     # The typechecker can have difficulty resolving dynamically generated
-    # wrappers. Fool it by importing the base ufuncs here.
+    # wrappers. Fool it by importing the base functions here.
+    from ._ufuncs import *  # noqa: F403
+    # These are the only things brought in with ``from ._ufuncs import *``
+    # which are not actually available from ``_support_alternative_backends``.
+    # Rather than explicitly import everything else, just delete them here.
+    del seterr, geterr, errstate  # noqa: F821
+
     from ._ufuncs import (  # noqa: F401
         _spherical_jn, _spherical_yn, _spherical_in,
         _spherical_kn, _spherical_jn_d, _spherical_yn_d,
-        _spherical_in_d, _spherical_kn_d
+        _spherical_in_d, _spherical_kn_d, _riemann_zeta, _zeta
     )
+
+    from ._ellip_harm import (  # noqa: F401
+        ellip_harm,
+        ellip_harm_2,
+        ellip_normal
+    )
+
+    from ._lambertw import lambertw  #noqa: F401
+    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem  # noqa: F401
+    from ._polygamma import polygamma  # noqa: F401
+    from ._spfun_stats import poisson_binom_cdf, multigammaln  # noqa: F401
+    from numpy import sinc  # noqa: F401
+
 
 # Override ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 # Define aliases here so they also have alternative backend support.
 # Add noqa because the linter gets confused by the sneaky way functions
 # are inserted into globals above.
-digamma = psi  # type:ignore[name-defined]  # noqa: F821
-jn = jv  # type:ignore[name-defined]  # noqa: F821
-__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma", "jn"]
+digamma = psi  # type:ignore[name-defined]  # noqa: F405
+jn = jv  # type:ignore[name-defined]  # noqa: F405
+__all__ = (
+    [nfo.func.__name__ for nfo in _special_funcs if nfo.public] + ["digamma", "jn"]
+)

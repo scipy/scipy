@@ -794,23 +794,12 @@ Convenience functions
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
-from . import _ufuncs
-from ._ufuncs import *
-
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
-
-from ._lambertw import lambertw
-from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
-from ._polygamma import polygamma
-from ._spfun_stats import poisson_binom_cdf
-
-# Replace some function definitions from _ufuncs, _ellip_harm, _lambertw,
-# _mathieu, _polygamma, and _spfun_stats to add Array API support.
+# Contains dynamically generated wrappers which enable alternative
+# backend support.
 from ._support_alternative_backends import *
+
+from . import _ufuncs
+from ._ufuncs import geterr, seterr, errstate
 
 from . import _basic
 from ._basic import *
@@ -830,13 +819,16 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-
-# We replace some function definitions from various places with those from
-# _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
-# or explicitly added to __all__ below, so there is presently no need to consider
-# _support_alternative_backends.__all__.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
+__all__ = (
+    _support_alternative_backends.__all__
+    + _basic.__all__
+    + _orthogonal.__all__
+    + _multiufuncs.__all__
+)
 __all__ += [
+    'geterr',
+    'seterr',
+    'errstate',
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
