@@ -1,4 +1,5 @@
 import itertools as it
+import math
 import operator
 import os
 import pickle
@@ -24,9 +25,11 @@ from scipy.stats._distribution_infrastructure import (
 from scipy.stats._new_distributions import (
     StandardNormal, _LogUniform, _Gamma, _StandardCauchy, _TestCircular)
 from scipy.stats import Normal, Uniform
+from scipy._external import array_api_extra as xpx
 from scipy._lib._testutils import mutually_broadcastable_shapes
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import make_xp_test_case, is_numpy, is_cupy
+from scipy._lib._array_api import (
+    make_xp_test_case, is_numpy, is_cupy, is_torch, xp_copy, xp_compat_namespace)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 
 
@@ -40,7 +43,7 @@ class Test_RealInterval:
             domain.get_numerical_endpoints(dict, xp=np)
 
     @pytest.mark.parametrize('x', [rng.uniform(10, 10, size=(2, 3, 4)),
-                                   -np.inf, np.pi])
+                                   -np.asarray(np.inf), np.asarray(np.pi)])
     def test_contains_simple(self, x):
         # Test `contains` when endpoints are defined by constants
         a, b = -np.inf, np.pi
@@ -54,6 +57,7 @@ class Test_RealInterval:
            data=strategies.data())
     def test_contains(self, shapes, inclusive_a, inclusive_b, data):
         # Test `contains` when endpoints are defined by parameters
+        shapes = [tuple(shape) for shape in shapes]
         input_shapes, result_shape = shapes
         shape_a, shape_b, shape_x = input_shapes
 
@@ -152,7 +156,7 @@ class Test_RealInterval:
         assert domain1.symbols is not domain2.symbols
 
 
-def draw_distribution_from_family(family, rng, shape_options, proportions=None, xp=np):
+def draw_distribution_from_family(family, rng, shape_options, proportions=None, *, xp):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
     proportions = (0.7, 0.1, 0.1, 0.1) if proportions is None else proportions
@@ -274,7 +278,8 @@ class DistributionsTest:
                         tol_override=tol_override, xp=xp)
 
     def test_mode(self, case, *, tol_override=None, xp):
-        tol_override = {'atol': 1e-6} if tol_override is None else tol_override
+        default_atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-4
+        tol_override = {'atol': default_atol} if tol_override is None else tol_override
         check_dist_func(case.dist, 'mode', None, case.result_shape,
                         {'optimization'}, tol_override=tol_override, xp=xp)
 
@@ -401,14 +406,19 @@ class Test_LogUniform(DistributionsTest):
         xp_assert_close(dist.pdf(x),
                         1 / (x * (xp.log(dist.b) - xp.log(dist.a))))
 
+    @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
+    def test_moment(self, case, xp):
+        atol = 1e-8 if case.dist._dtype == xp.float64 else 5e-3
+        return super().test_moment(case, tol_override={'atol': atol}, xp=xp)
+
     @pytest.mark.fail_slow(10)
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case, xp):
         return super().test_lmoment(case, xp=xp)
 
     def test_gh_25180(self, xp):
-        X = _LogUniform(log_a=xp.float64(-0.28915434544814245),
-                        log_b=xp.float64(0.3085224670197856))
+        X = _LogUniform(log_a=xp.asarray(-0.28915434544814245, dtype=xp.float64),
+                        log_b=xp.asarray(0.3085224670197856, dtype=xp.float64))
         actual = X.mode(method='optimization')
         assert xp.isfinite(actual)
 
@@ -427,7 +437,8 @@ class Test_TestCircular(DistributionsTest):
 
     def test_median(self, case, xp):
         # can only expect about half precision with optimization
-        return super().test_median(case, tol_override={'atol': 1e-6}, xp=xp)
+        atol = 1e-6 if case.dist._dtype == xp.float64 else 1e-3
+        return super().test_median(case, tol_override={'atol': atol}, xp=xp)
 
 
 @make_xp_test_case(stats.Normal)
@@ -446,7 +457,7 @@ class TestOtherMethods:
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name, xp):
         X = stats.Normal(mu=1, sigma=2, xp=xp)
-        X.tol = 1e-12
+        X.tol = xp.finfo(X._dtype).eps * 3e3
         p = xp.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
         ifunc = getattr(X, 'i'+method_name)
@@ -460,7 +471,7 @@ class TestOtherMethods:
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_icomplement_safe(self, method_name, xp):
         X = stats.Normal(mu=1, sigma=2, xp=xp)
-        X.tol = 1e-12
+        X.tol = xp.finfo(X._dtype).eps * 3e3
         p = xp.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
         ifunc = getattr(X, 'i'+method_name)
@@ -472,7 +483,7 @@ class TestOtherMethods:
 
     def test_subtraction_safe(self, xp):
         X = stats.Normal(xp=xp)
-        X.tol = 1e-12
+        X.tol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
 
         # Regular subtraction is fine in either tail (and of course, across tails)
         x = xp.asarray([-11, -10, 10, 11])
@@ -480,8 +491,12 @@ class TestOtherMethods:
         p0 = X.cdf(x, y, method='quadrature')
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
-        xp_assert_equal(p2, p1)
         xp_assert_close(p1, p0, rtol=X.tol)
+
+        if is_torch(xp):
+            pass  # https://github.com/pytorch/pytorch/issues/192295
+        else:
+            xp_assert_equal(p2, p1)
 
         # Safe subtraction is needed in special cases
         x = xp.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
@@ -599,8 +614,6 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-    tol_override = {'atol': 0} if tol_override is None else tol_override
-
     args = tuple() if arg is None else (arg,)
     methods = methods.copy()
 
@@ -623,9 +636,13 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
         assert np.isscalar(ref)
 
     for method in methods:
+        atol = 1e-6 if (method in {'complement', 'log/exp'}
+                        and ref.dtype == xp.float32) else 0
+        _tol_override = {'atol': atol} if tol_override is None else tol_override
+
         res = getattr(dist, fname)(*args, method=method)
         if 'log' in fname:
-            xp_assert_close(xp.exp(res), xp.exp(ref), **tol_override)
+            xp_assert_close(xp.exp(res), xp.exp(ref), **_tol_override)
         else:
             if fname in {'median', 'mode'} and isinstance(dist, CircularDistribution):
                 # wrap to center around 0
@@ -633,7 +650,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods, tol_override=None, 
                 period = b - a
                 res = xp.where(res > period/2, res - period, res)[()]
                 ref = xp.where(ref > period/2, ref - period, ref)[()]
-            xp_assert_close(res, ref, **tol_override)
+            xp_assert_close(res, ref, **_tol_override)
 
         # for now, make sure dtypes are consistent; later, we can check whether
         # they are correct.
@@ -874,7 +891,9 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
     # with one another, effectively testing the correctness of the generic
     # computation methods and confirming the consistency of specific
     # distributions with their pdf/logpdf.
-    _tol_override = {'rtol': 1e-7, 'atol': 1e-13}
+    default_atol = 1e-13 if dist._dtype == xp.float64 else 1e-7
+    default_rtol = 1e-7 if dist._dtype == xp.float64 else 1e-5
+    _tol_override = {'rtol': default_rtol, 'atol': default_atol}
     if tol_override is not None:
         _tol_override.update(tol_override)
     tol_override = _tol_override
@@ -882,8 +901,9 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
     def check(order, kind, method=None, ref=None, success=True):
         if success:
             res = dist.moment(order, kind, method=method)
-            xp_assert_close(res, ref, rtol=tol_override['rtol'],
-                            atol=tol_override['atol']*10**order)
+            rtol = tol_override['rtol']
+            atol = tol_override['atol']
+            xp_assert_close(res, ref, rtol=rtol, atol=atol*10**order)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
@@ -962,7 +982,7 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
 
     # If we have standard moment formulas, or if there are
     # values in their cache, we can use method='normalize'.
-    if not np.any(variance == 0):  # ...unless the variance is zero.
+    if not xp.any(variance == 0):  # ...unless the variance is zero.
         # (In that case the standardized moment is NaN; we can't recover the central
         #  moment from that.)
         dist.moment(0, 'standardized')  # build up the cache
@@ -986,7 +1006,7 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        if not np.any(variance == 0):
+        if not xp.any(variance == 0):
             # `method='general'` results just aren't correct for degenerate
             # distributions or when moments are not defined. That's OK.
             check(i, 'standardized', 'general', ref, success=i <= 2)
@@ -997,7 +1017,8 @@ def check_moment_funcs(dist, result_shape, *, tol_override=None, xp):
 
 def check_lmoment_funcs(dist, result_shape, *, tol_override=None, xp):
     # Perform consistency check for L-moments similar to check_moment_funcs above
-    tol_override = {'atol' : 5e-13} if tol_override is None else tol_override
+    default_atol = 5e-13 if dist._dtype == xp.float64 else 5e-7
+    tol_override = {'atol' : default_atol} if tol_override is None else tol_override
 
     if not isinstance(dist, ContinuousDistribution):
         message = "L-moments are currently available only for continuous..."
@@ -1055,7 +1076,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
     if dist_shape and num_parameters == 0:
         pytest.skip("Distribution can't have a shape without parameters.")
 
-    dist = family._draw(dist_shape, rng, xp=np)
+    dist = family._draw(dist_shape, rng, xp=xp_compat_namespace(np))
 
     n = 1024
     sample_size = (n,) + x_shape
@@ -1190,6 +1211,8 @@ def test_input_validation(xp):
         _p2 = _RealParameter('d', domain=_RealInterval())
         _parameterizations = [_Parameterization(_p1, _p2)]
         _variable = _RealParameter('x', domain=_RealInterval())
+        def __init__(self, *args, **kwargs):
+            return super().__init__(*args, xp=xp, **kwargs)
 
     message = ("The provided parameters `{a}` do not match a supported "
                "parameterization of the `Test2` distribution family.")
@@ -1214,7 +1237,11 @@ def test_input_validation(xp):
 
     message = "Parameter `c` must be of real dtype."
     with pytest.raises(TypeError, match=message):
-        Test2(c=[1, object()], d=[1, 2])
+        Test2(c=[1, 1+0j], d=[1, 2])
+
+    message = "`dtype` must be..."
+    with pytest.raises(ValueError, match=message):
+        Test2(c=1, d=1, dtype=xp.int64)
 
     message = "Parameter `convention` of `Test2.kurtosis` must be one of..."
     with pytest.raises(ValueError, match=message):
@@ -1299,8 +1326,9 @@ class TestAttributes:
         with pytest.raises(ValueError, match=message):
             X.tol = xp.nan
 
+        fine_tol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
         X1 = stats.Normal(tol=1e-1, xp=xp)
-        X2 = stats.Normal(tol=1e-12, xp=xp)
+        X2 = stats.Normal(tol=fine_tol, xp=xp)
         ref = X.cdf(x)
         res1 = X1.cdf(x, method='quadrature')
         res2 = X2.cdf(x, method='quadrature')
@@ -1506,7 +1534,9 @@ class TestMakeDistribution:
             def sample(self, shape, *, a, b, rng=None):
                 # hmm... self._xp does not exist. Makes sense, but how
                 # can user-defined classes know which backend is being used?
-                p = xp.asarray(rng.uniform(size=shape))
+                dtype = (np.float32 if 'float32' in str(xp.result_type(a, b))
+                         else np.float64)
+                p = xp.asarray(rng.random(size=shape, dtype=dtype))
                 return xp.exp(xp.log(a) + p * (xp.log(b) - xp.log(a)))
 
             def moment(self, order, kind='raw', *, a, b):
@@ -1557,7 +1587,8 @@ class TestMakeDistribution:
                 if standardize and order < 3:
                     continue
                 xp_assert_close(X.lmoment(order, standardize=standardize),
-                                Y.lmoment(order, standardize=standardize))
+                                Y.lmoment(order, standardize=standardize),
+                                atol=5e-13 if X._dtype == xp.float64 else 5e-3)
 
         # Confirm that the `sample` and `moment` methods are overridden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
@@ -1700,15 +1731,16 @@ class TestMakeDistribution:
 
         Z = Beta(a=a, b=b)
 
-        X = MyBeta(a=xp.asarray(a), b=xp.asarray(b))
-        Y = MyBeta(mu=xp.asarray(mu), nu=xp.asarray(nu))
+        dtype = xp.float64  # stats.beta doesn't do float32
+        X = MyBeta(a=xp.asarray(a, dtype=dtype), b=xp.asarray(b, dtype=dtype))
+        Y = MyBeta(mu=xp.asarray(mu, dtype=dtype), nu=xp.asarray(nu, dtype=dtype))
 
         x = Z.sample(shape=10, rng=rng)
         p = Z.cdf(x)
         x_xp, p_xp = xp.asarray(x), xp.asarray(p)
 
-        xp_assert_close(X.support()[0], xp.asarray(Z.support()[0]))
-        xp_assert_close(X.support()[1], xp.asarray(Z.support()[1]))
+        xp_assert_close(X.support()[0], xp.asarray(xp_copy(Z.support()[0])))
+        xp_assert_close(X.support()[1], xp.asarray(xp_copy(Z.support()[1])))
         xp_assert_close(X.median(), xp.asarray(Z.median()))
         xp_assert_close(X.pdf(x_xp), xp.asarray(Z.pdf(x)))
         xp_assert_close(X.cdf(x_xp), xp.asarray(Z.cdf(x)))
@@ -1716,8 +1748,8 @@ class TestMakeDistribution:
         xp_assert_close(X.icdf(p_xp), xp.asarray(Z.icdf(p)))
         xp_assert_close(X.iccdf(p_xp), xp.asarray(Z.iccdf(p)))
 
-        xp_assert_close(Y.support()[0], xp.asarray(Z.support()[0]))
-        xp_assert_close(Y.support()[1], xp.asarray(Z.support()[1]))
+        xp_assert_close(Y.support()[0], xp.asarray(xp_copy(Z.support()[0])))
+        xp_assert_close(Y.support()[1], xp.asarray(xp_copy(Z.support()[1])))
         xp_assert_close(Y.median(), xp.asarray(Z.median()))
         xp_assert_close(Y.pdf(x_xp), xp.asarray(Z.pdf(x)))
         xp_assert_close(Y.cdf(x_xp), xp.asarray(Z.cdf(x)))
@@ -1725,8 +1757,8 @@ class TestMakeDistribution:
         xp_assert_close(Y.icdf(p_xp), xp.asarray(Z.icdf(p)))
         xp_assert_close(Y.iccdf(p_xp), xp.asarray(Z.iccdf(p)))
 
-    @pytest.mark.parametrize("n", [10, np.asarray([10., 11., 12.])])
-    @pytest.mark.parametrize("p", [0.4, np.asarray([0.4, 0.5, 0.6])])
+    @pytest.mark.parametrize("n", [10, [10., 11., 12.]])
+    @pytest.mark.parametrize("p", [0.4, [0.4, 0.5, 0.6]])
     def test_custom_discrete(self, n, p, xp):
         rng = np.random.default_rng(5875373614)
 
@@ -1753,19 +1785,21 @@ class TestMakeDistribution:
 
         Y = stats.make_distribution(stats.binom)(n=n, p=p)
         Binomial = stats.make_distribution(MyBinomial())
-        X = Binomial(n=xp.asarray(n), p=xp.asarray(p))
+        dtype = xp.float64  # binom doesn't do float32
+        n, p = xp.asarray(n, dtype=dtype), xp.asarray(p, dtype=dtype)
+        X = Binomial(n=n, p=p)
 
         x = Y.sample(shape=10, rng=rng)
         p = rng.random(x.shape)
         x_np, p_np = xp.asarray(x), xp.asarray(p)
 
-        xp_assert_close(X.support()[0], xp.asarray(Y.support()[0]))
-        xp_assert_close(X.support()[1], xp.asarray(Y.support()[1]))
+        xp_assert_close(X.support()[0], xp.asarray(xp_copy(Y.support()[0])))
+        xp_assert_close(X.support()[1], xp.asarray(xp_copy(Y.support()[1])))
         xp_assert_close(X.entropy(), xp.asarray(Y.entropy()))
         xp_assert_close(X.median(), xp.asarray(Y.median()))
         xp_assert_close(X.logpdf(x_np), xp.asarray(Y.logpdf(x)))
         xp_assert_close(X.pdf(x_np), xp.asarray(Y.pdf(x)))
-        xp_assert_close(X.logpmf(x), xp.asarray(Y.logpmf(x)))
+        xp_assert_close(X.logpmf(x_np), xp.asarray(Y.logpmf(x)))
         xp_assert_close(X.pmf(x_np), xp.asarray(Y.pmf(x)))
         xp_assert_close(X.logcdf(x_np), xp.asarray(Y.logcdf(x)))
         xp_assert_close(X.cdf(x_np), xp.asarray(Y.cdf(x)))
@@ -1811,13 +1845,13 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        assert str(dist(a=2)) == "Gamma(a=2.0)"
-        assert repr(dist(a=2)) == "Gamma(a=np.float64(2.0))"
+        assert str(dist(a=2)) == "Gamma(a=2)"
+        assert repr(dist(a=2)) == "Gamma(a=2)"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
-        assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2)"
+        assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=2)"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
     @pytest.mark.slow  # just in case
@@ -2089,7 +2123,7 @@ class TestReciprocal:
     @pytest.mark.parametrize('scale', [1, 2, -1])
     @pytest.mark.xfail_on_32bit("`scale=-1` fails on 32-bit; needs investigation")
     def test_reciprocal(self, scale, xp):
-        if scale == -1 and is_cupy(xp):
+        if scale == -1 and (is_cupy(xp) or is_torch(xp)):
             pytest.skip("`scale=-1' fails w/ CuPy; needs investigation.")
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
@@ -2106,7 +2140,8 @@ class TestReciprocal:
         # Test distribution
         a = xp.asarray(a)
         X = _Gamma(a=a) if sign > 0 else -_Gamma(a=a)
-        Y = scale / X
+        # shouldn't matter whether scale is a scalar or array...
+        Y = (scale if is_cupy(xp) else xp.asarray(scale)) / X
 
         y = Y0.sample(shape=(3, 10), rng=rng)
         p = Y0.cdf(y)
@@ -2177,7 +2212,7 @@ class TestLog:
 class TestMonotonicTransform:
     def test_monotonic_transforms_str(self):
         X = Uniform(a=1, b=2)
-        X_str = "Uniform(a=1.0, b=2.0)"
+        X_str = "Uniform(a=1, b=2)"
 
         assert str(stats.log(X)) == f"log({X_str})"
         assert str(1 / X) == f"1/({X_str})"
@@ -2215,8 +2250,8 @@ class TestArithmetic:
 
         a, b, loc, scale = 0.294, 1.34, 0.57, 1.16
 
-        x = rng.uniform(-3, 3, 100)
         Y = _LogUniform(a=a, b=b, xp=xp)
+        x = xp.asarray(rng.uniform(-3, 3, 100), dtype=Y._dtype)
 
         X = scale*Y + loc
         xp_assert_close(X.cdf(x), Y.cdf((x - loc) / scale))
@@ -2285,7 +2320,8 @@ class TestPow:
     def test_pow(self, xp):
         rng = np.random.default_rng(81345982345826)
 
-        Y = Normal(xp=xp)**2
+        dtype = xp.float64  # stats.chi2 doesn't do float32
+        Y = Normal(xp=xp, dtype=dtype)**2
         Y0 = stats.chi2(df=1)
 
         y = Y0.rvs(10, random_state=rng)
@@ -2323,7 +2359,8 @@ class TestOrderStatistic:
     @pytest.mark.fail_slow(20)  # Moments require integration
     def test_order_statistic(self, xp):
         rng = np.random.default_rng(7546349802439582)
-        X = Uniform(a=0, b=1, xp=xp)
+        dtype = xp.float64
+        X = Uniform(a=0, b=1, dtype=dtype, xp=xp)
         n = 5
         r = np.asarray([[1], [3], [5]])
         Y = stats.order_statistic(X, n=n, r=xp.asarray(r))
@@ -2345,11 +2382,11 @@ class TestOrderStatistic:
         xp_assert_close(Y.support()[1], xp.asarray(Y0.support()[1]))
         xp_assert_close(Y.pdf(y_xp), xp.asarray(Y0.pdf(y)))
         xp_assert_close(Y.cdf(y_xp, method='formula'),
-                        xp.asarray(Y.cdf(y, method='quadrature')))
+                        xp.asarray(Y.cdf(y_xp, method='quadrature')))
         xp_assert_close(Y.ccdf(y_xp, method='formula'),
-                        xp.asarray(Y.ccdf(y, method='quadrature')))
+                        xp.asarray(Y.ccdf(y_xp, method='quadrature')))
         xp_assert_close(Y.icdf(p_xp, method='formula'),
-                        xp.asarray(Y.icdf(p, method='inversion')))
+                        xp.asarray(Y.icdf(p_xp, method='inversion')))
         if is_numpy(xp):  # CuPy needs betainccinv
             xp_assert_close(Y.iccdf(p_xp, method='formula'),
                             xp.asarray(Y.iccdf(p, method='inversion')))
@@ -2402,7 +2439,7 @@ class TestOrderStatistic:
         Z1 = stats.order_statistic(Y1, r=r, n=n)
         X2 = TruncatedNormal(a=a, b=b)
         Z2 = stats.order_statistic(X2, r=r, n=n)
-        xp_assert_close(Z1.cdf(xp.asarray(x)), xp.asarray(Z2.cdf(x)))
+        xp_assert_close(Z1.cdf(xp.asarray(x)), xp.asarray(Z2.cdf(x)).tolist())
 
 
 @make_xp_test_case(stats.make_distribution)
@@ -2447,13 +2484,14 @@ class TestQuantileDefinedDistribution:
         TukeyLambda1 = stats.make_distribution(MyTukeyLambda())
         TukeyLambda2 = stats.make_distribution(stats.tukeylambda)
 
-        lam = 5  # test `_derivative`` `initial_step` logic
-        X = TukeyLambda1(lam=lam, xp=xp)
+        xp_dtype = xp.float64  # stats.tukeylambda only does float64
+        lam = 5
+        X = TukeyLambda1(lam=lam, dtype=xp_dtype, xp=xp)
         Y = TukeyLambda2(lam=lam)
 
         x = np.linspace(-1/lam, 1/lam, 10)
         p = Y.cdf(x)
-        x_xp, p_xp = xp.asarray(x), xp.asarray(p)
+        x_xp, p_xp = xp.asarray(x, dtype=X._dtype), xp.asarray(p, dtype=X._dtype)
 
         with np.errstate(divide='ignore'):  # stats.tukeylambda is noisy
             xp_assert_close(X.support()[0], xp.asarray(Y.support()[0]))
@@ -2499,19 +2537,6 @@ class TestFullCoverage:
         with pytest.raises(NotImplementedError):
             _Parameter.validate(None, 1.)
 
-    @pytest.mark.parametrize(("dtype_in", "dtype_out"),
-                              [(np.float16, np.float16),
-                               (np.int16, np.float64)])
-    def test_RealParameter_uncommon_dtypes(self, dtype_in, dtype_out):
-        domain = _RealInterval((-1, 1))
-        parameter = _RealParameter('x', domain=domain)
-
-        x = np.asarray([0.5, 2.5], dtype=dtype_in)
-        arr, dtype, valid = parameter.validate(x, parameter_values={}, xp=np)
-        assert_equal(arr, x)
-        assert dtype == dtype_out
-        assert_equal(valid, [True, False])
-
     def test_ContinuousDistribution_set_invalid_nan(self):
         # Exercise code paths when formula returns wrong shape and dtype
         # We could consider making this raise an error to force authors
@@ -2540,11 +2565,8 @@ class TestFullCoverage:
 
     def test_ContinuousDistribution__repr__(self):
         X = Uniform(a=0, b=1)
-        assert repr(X) == "Uniform(a=np.float64(0.0), b=np.float64(1.0))"
-        assert repr(X*3 + 2) == (
-            "np.float64(3.0)*Uniform(a=np.float64(0.0), b=np.float64(1.0))"
-            " + np.float64(2.0)"
-        )
+        assert repr(X) == "Uniform(a=0, b=1)"
+        assert repr(X*3 + 2) == "np.float64(3.0)*Uniform(a=0, b=1) + np.float64(2.0)"
 
         X = Uniform(a=np.zeros(4), b=1)
         assert repr(X) == "Uniform(a=array([0., 0., 0., 0.]), b=1)"
@@ -2626,8 +2648,8 @@ class MixedDist(ContinuousDistribution):
     _variable = _RealParameter('x', domain=_RealInterval(endpoints=(-inf, inf)))
     def _pdf_formula(self, x, *args, **kwargs):
         xp = self._xp
-        return (0.4 * 1/(1.1 * xp.sqrt(2*xp.pi)) * xp.exp(-0.5*((x+0.25)/1.1)**2)
-                + 0.6 * 1/(0.9 * xp.sqrt(2*xp.pi)) * xp.exp(-0.5*((x-0.5)/0.9)**2))
+        return (0.4 * 1/(1.1 * math.sqrt(2*math.pi)) * xp.exp(-0.5*((x+0.25)/1.1)**2)
+                + 0.6 * 1/(0.9 * math.sqrt(2*math.pi)) * xp.exp(-0.5*((x-0.5)/0.9)**2))
 
 
 @make_xp_test_case(stats.Mixture)
@@ -2672,7 +2694,7 @@ class TestMixture:
                      Normal(mu=0.5, sigma=0.9, xp=xp)),
                     weights=(0.4, 0.6))
         Y = MixedDist(xp=xp)
-        x = xp.asarray(rng.random(shape))
+        x = xp.asarray(rng.random(shape), dtype=X._dtype)
 
         xp_assert_close(X.logentropy(), Y.logentropy())
         xp_assert_close(X.entropy(), Y.entropy())
@@ -2697,7 +2719,7 @@ class TestMixture:
             for order in range(5):
                 xp_assert_close(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind),
-                                atol=1e-15)
+                                atol=1e-15 if X._dtype == xp.float64 else 1e-7)
         message = "L-moments are not currently available..."
         with pytest.raises(NotImplementedError, match=message):
             X.lmoment(1)
@@ -2714,7 +2736,8 @@ class TestMixture:
         X = _Gamma(a=a, xp=xp)
         Y = stats.Mixture((X, -X))
         x = np.linspace(-4, 4, 300)
-        xp_assert_close(Y.pdf(xp.asarray(x)), xp.asarray(stats.dgamma(a=a).pdf(x)))
+        xp_assert_close(Y.pdf(xp.asarray(x, dtype=X._dtype)),
+                        xp.asarray(stats.dgamma(a=a).pdf(x), dtype=X._dtype))
 
     def test_properties(self, xp):
         components = [Normal(mu=-0.25, sigma=1.1, xp=xp),
@@ -2742,7 +2765,7 @@ class TestMixture:
         rng = np.random.default_rng(24358934657854237863456)
         X0 = _StandardCauchy(xp=xp)
         X = stats.Mixture([X0, X0])
-        p = xp.asarray(rng.random(size=10))
+        p = xp.asarray(rng.random(size=10).tolist())
         logp = xp.log(p)
         xp_assert_close(X.icdf(p), X0.icdf(p))
         xp_assert_close(X.iccdf(p), X0.iccdf(p))
@@ -2767,23 +2790,23 @@ class TestMixture:
         xp_assert_close(Z.standard_deviation(), xp.sqrt(Z.variance()))
         xp_assert_close(Z.skewness(), xp.asarray(0.0))
         xp_assert_close(Z.kurtosis(), xp.asarray(6.0))
-        xp_assert_close(Z.logpmf(0), xp.asarray(np.log(0.5)))
-        xp_assert_close(Z.logpmf(1), xp.asarray(-np.inf))
+        xp_assert_close(Z.logpmf(0), xp.asarray(math.log(0.5)))
+        xp_assert_close(Z.logpmf(1), xp.asarray(-math.inf))
         xp_assert_close(Z.pmf(0), xp.asarray(0.5))
         xp_assert_close(Z.pmf(1), xp.asarray(0.))
-        xp_assert_close(Z.logpdf(0), xp.asarray(np.inf))
-        xp_assert_close(Z.logpdf(1), xp.asarray(np.log(Y.pdf(1)/2)))
-        xp_assert_close(Z.pdf(0), xp.asarray(np.inf))
+        xp_assert_close(Z.logpdf(0), xp.asarray(math.inf))
+        xp_assert_close(Z.logpdf(1), xp.log(Y.pdf(1)/2))
+        xp_assert_close(Z.pdf(0), xp.asarray(math.inf))
         xp_assert_close(Z.pdf(1), xp.asarray(Y.pdf(1)/2))
-        xp_assert_close(Z.logcdf(0), xp.asarray(np.log(0.75)))
-        xp_assert_close(Z.logcdf(-1e-10), xp.asarray(np.log(0.25)))
-        xp_assert_close(Z.logcdf(1e-10), xp.asarray(np.log(0.75)))
+        xp_assert_close(Z.logcdf(0), xp.asarray(math.log(0.75)))
+        xp_assert_close(Z.logcdf(-1e-10), xp.asarray(math.log(0.25)))
+        xp_assert_close(Z.logcdf(1e-10), xp.asarray(math.log(0.75)))
         xp_assert_close(Z.cdf(0), xp.asarray(0.75))
         xp_assert_close(Z.cdf(-1e-10), xp.asarray(0.25))
         xp_assert_close(Z.cdf(1e-10), xp.asarray(0.75))
-        xp_assert_close(Z.logccdf(0), xp.asarray(np.log(0.25)))
-        xp_assert_close(Z.logccdf(-1e-10), xp.asarray(np.log(0.75)))
-        xp_assert_close(Z.logccdf(1e-10), xp.asarray(np.log(0.25)))
+        xp_assert_close(Z.logccdf(0), xp.asarray(math.log(0.25)))
+        xp_assert_close(Z.logccdf(-1e-10), xp.asarray(math.log(0.75)))
+        xp_assert_close(Z.logccdf(1e-10), xp.asarray(math.log(0.25)))
         xp_assert_close(Z.ccdf(0), xp.asarray(0.25))
         xp_assert_close(Z.ccdf(-1e-10), xp.asarray(0.75))
         xp_assert_close(Z.ccdf(1e-10), xp.asarray(0.25))
