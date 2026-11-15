@@ -3820,6 +3820,11 @@ class TestBessel:
                 else:
                     raise AssertionError(f"Invalid t return for nt={nt}")
 
+    @pytest.mark.parametrize("nt", [569, 572])
+    def test_jnjnp_zeros_overflow(self, nt):
+        # regresion test for gh-26699
+        special.jnjnp_zeros(nt)
+
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
         assert_allclose(jnp, array([1.84118,
