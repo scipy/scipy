@@ -6,6 +6,7 @@ import pytest
 from scipy._external.packaging_version import version
 
 from scipy import special
+from scipy.special import _support_alternative_backends as sab
 from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
@@ -178,7 +179,10 @@ def _skip_or_tweak_alternative_backends(
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
 @pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
 @pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
+    'func,nfo', [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public
+    ]
+)
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
     if isinstance(int_only, dict):
@@ -287,7 +291,11 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
 @pytest.mark.parametrize(
     'func, nfo',
-    [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs if i.n_args >= 2])
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs
+        if nfo.n_args >= 2 and nfo.public
+    ]
+)
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
@@ -347,7 +355,7 @@ def test_repr(func):
 @pytest.mark.skipif(
     version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
-@pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
+@pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs if nfo.public])
 def test_doc(func):
     """xp_capabilities updates the docstring in place.
     Make sure it does so exactly once.
@@ -358,7 +366,7 @@ def test_doc(func):
 
 @pytest.mark.parametrize(
     'func,nfo',
-    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.is_ufunc],
+    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public and nfo.is_ufunc],
 )
 def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
@@ -572,3 +580,25 @@ def test_spheroidal_wave_functions(xp, func, nfo):
         atol=10 * np.finfo(np.float64).eps,
         check_0d=nfo.produces_0d,
     )
+
+
+def test_all_public_funcs_registered():
+    # These are the private submodules that _support_alternative_backends.py
+    # consumes. i.e., they contain definitions of public functions for which
+    # delegation is set up with alternative backends machinery. Other private
+    # submodules, such as _spherical_bessel.py and _basic.py are consumers of
+    # delegating wrappers from _support_alternative_backends.
+    public_funcs = set(
+        special._ufuncs.__all__
+        + special._ellip_harm.__all__
+        + special._lambertw.__all__
+        + special._mathieu.__all__
+        + special._spfun_stats.__all__
+    )
+    public_funcs -= {"geterr", "seterr", "errstate"}
+
+    missing = public_funcs - set(sab.__all__)
+    assert not missing, f"Missing backend registrations: {sorted(missing)}"
+
+    missing = public_funcs - set(special.__all__)
+    assert not missing, f"Missing public exports: {sorted(missing)}"
