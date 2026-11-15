@@ -251,7 +251,7 @@ def lombscargle(
     freqs = freqs.reshape(1, -1)
     # column vectors
     x = x.reshape(-1, 1)
-    y = y.reshape(-1, 1)  # type:ignore[union-attr]
+    y = y.reshape(-1, 1)
     weights = weights.reshape(-1, 1)
 
     # store frequent intermediates
@@ -296,7 +296,7 @@ def lombscargle(
     # to prevent division by zero errors with a and b, as well as correcting for
     # numerical precision errors that lead to CC or SS being approximately -0.0,
     # make sure CC and SS are both > 0
-    epsneg = np.finfo(dtype=y.dtype).epsneg  # type:ignore[union-attr]
+    epsneg = np.finfo(dtype=y.dtype).epsneg
     CC[CC < epsneg] = epsneg
     SS[SS < epsneg] = epsneg
 

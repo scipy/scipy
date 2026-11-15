@@ -924,7 +924,7 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes, angles = _promote(axes, angles, xp=xp)
-        cython_compatible = axes.ndim < 3 and angles.ndim < 2  # type:ignore[union-attr]
+        cython_compatible = axes.ndim < 3 and angles.ndim < 2
         backend = select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
@@ -2225,9 +2225,10 @@ class Rotation:
         # TODO: This special case handling is mainly a result of Array API limitations.
         # Ideally we would get rid of them altogether and converge to [indexer, ...]
         # indexing.
-        if is_array and indexer.dtype == self._xp.bool:  # type:ignore[union-attr]
+        if is_array and indexer.dtype == self._xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
-        if is_array and self._xp.isdtype(indexer.dtype, "integral"):  # type:ignore[union-attr]
+        # pyrefly:ignore[missing-attribute]
+        if is_array and self._xp.isdtype(indexer.dtype, "integral"):
             # xp.take is implementation-defined for zero-dim arrays, hence we raise
             # pre-emptively to have consistent behavior across frameworks.
             if self._quat.shape[0] == 0:
@@ -2575,7 +2576,7 @@ class Rotation:
         xp = array_namespace(a)
         a, b, weights = _promote(a, b, weights, xp=xp)
         cython_compatible = (
-            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)  # type:ignore[union-attr]
+            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
         )
         backend = select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)

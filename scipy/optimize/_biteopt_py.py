@@ -4,7 +4,7 @@ from typing import Concatenate
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
-from ._biteopt import minimize as _minimize  # type: ignore[import-not-found]
+from ._biteopt import minimize as _minimize  # pyrefly:ignore[missing-module-attribute]
 from scipy._lib._util import _validate_int
 
 __all__ = ['biteopt']
