@@ -1,0 +1,7 @@
+# ThreadSanitizer runtime suppressions, passed via TSAN_OPTIONS=suppressions=
+# by the `test-tsan` Pixi tasks. Keep each entry tied to the reason it exists.
+
+# HiGHS <= 1.14 (vendored: 1.12) updates shared MIP sub-solver timing counters
+# from the main thread and a HighsTaskExecutor worker. Profiling statistics
+# only. HiGHS keeps these records per thread since 1.15.
+race:HighsSubSolverCallTime::add

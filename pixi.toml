@@ -277,8 +277,14 @@ features = ["gha-update", "default-platforms"]
 no-default-feature = true
 
 [environments.asan]
-features = ["asan-build-deps", "run-deps", "test-deps", "asan"]
+features = ["sanitizer-build-deps", "run-deps", "test-deps", "asan"]
 solve-group = "asan"
+no-default-feature = true
+
+[environments.tsan]
+# tasks: build-tsan, test-tsan, test-tsan-parallel
+features = ["sanitizer-build-deps", "run-deps", "test-deps", "tsan"]
+solve-group = "tsan"
 no-default-feature = true
 
 
@@ -1008,7 +1014,7 @@ gmpy2 = {
   },
 }
 
-[feature.asan-build-deps.dependencies]
+[feature.sanitizer-build-deps.dependencies]
 clangxx = "22.*"
 ccache = "*"
 pkg-config = "*"
@@ -1048,6 +1054,100 @@ depends-on = "build-asan"
 env.ASAN_OPTIONS = "quarantine_size_mb=64:detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0:$ASAN_OPTIONS"
 env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
 description = "Test SciPy with address sanitizer"
+
+
+[feature.tsan]
+# TSAN builds use the free-threaded interpreter, so every report is also a
+# free-threading finding. osx-arm64 is left out because the environment does
+# not solve there yet (clang 22's libcompiler-rt is rejected in this env,
+# although the asan env resolves the same build).
+platforms = ["linux-64", "linux-aarch64"]
+
+[feature.tsan.dependencies]
+spin = "*"
+# no psutil: it has no free-threaded conda build, and pytest-run-parallel
+# only needs it for `--parallel-threads=auto`
+pytest-run-parallel = "*"
+
+# keep `python.rev` in sync with the host-dependency of the numpy package below
+# (both must resolve to the same source package)
+python = {
+  flags = ["tsan_freethreading"],
+  git = "https://github.com/python/cpython",
+  subdirectory = "Tools/pixi-packages",
+  rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d",
+}
+
+numpy = {
+  flags = ["tsan_freethreading"],
+  git = "https://github.com/numpy/numpy",
+  subdirectory = "pixi-packages/tsan_freethreading",
+  rev = "c33148c55c0cd182ca37c1d977e4fd801134900a",
+}
+
+gmpy2 = {
+  git = "https://github.com/gmpy2/gmpy2",
+  rev = "49b9de3b07421d621cd04e1a4c1acb1382940d77",
+  package = {
+    version = "2.3.1",
+    build = {
+      backend.name = "pixi-build-python",
+      config = {
+        compilers = ["c"],
+        ignore-pypi-mapping = false,
+      }
+    },
+    host-dependencies = {
+      gmp = "*",
+      mpfr = "*",
+      mpc = "*",
+      python = {
+        flags = ["tsan_freethreading"],
+        git = "https://github.com/python/cpython",
+        subdirectory = "Tools/pixi-packages",
+        # keep in sync with `dependencies.python.rev` above
+        rev = "847d099efa4785658ba9bd3163e35cb4ae742f6d",
+      },
+    },
+  },
+}
+
+[feature.tsan.tasks.build-tsan]
+# No `-shared-libsan` here: the TSAN cpython and numpy packages link the
+# runtime statically, and a second (shared) copy fails with
+# "cannot allocate memory in static TLS block" at import time. For the same
+# reason the build must stay clang-only (no gfortran, which would pull in
+# GCC's libtsan).
+cmd = "spin build --tsan --build-dir=build-tsan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = {
+  TSAN_OPTIONS = "halt_on_error=0:allocator_may_return_null=1",
+  CC = "clang",
+  CXX = "clang++",
+}
+description = "Build SciPy against a free-threaded CPython and NumPy with thread sanitizer"
+
+[feature.tsan.tasks.test-tsan]
+# TSAN exits non-zero at the end of the run if it reported any race, even
+# with `halt_on_error=0`. OpenBLAS is not instrumented, so TSAN cannot see
+# its internal synchronization and reports its worker threads' writes as
+# races (seen in PROPACK). Single-threaded BLAS avoids that; an instrumented
+# OpenBLAS, as NumPy's TSAN CI builds, is the way to lift this.
+cmd = "spin test --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow'"
+depends-on = "build-tsan"
+env.OPENBLAS_NUM_THREADS = "1"
+env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:suppressions=$PIXI_PROJECT_ROOT/tools/tsan-suppressions.txt:$TSAN_OPTIONS"
+env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
+description = "Test SciPy with thread sanitizer"
+
+[feature.tsan.tasks.test-tsan-parallel]
+# Same as test-parallel-freethreading: run each test in several threads at
+# once, so TSAN sees code paths that are single-threaded in a plain run.
+cmd = "spin test --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow' -- --parallel-threads=4 --skip-thread-unsafe=true"
+depends-on = "build-tsan"
+env.OPENBLAS_NUM_THREADS = "1"
+env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:suppressions=$PIXI_PROJECT_ROOT/tools/tsan-suppressions.txt:$TSAN_OPTIONS"
+env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
+description = "Test SciPy with thread sanitizer and pytest-run-parallel"
 
 
 ### Alternative python versions ###
