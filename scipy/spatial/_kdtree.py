@@ -278,7 +278,7 @@ class Rectangle:
 
 # `cKDTree` is a Cython extension type, which cannot carry a Python decorator
 # in Cython; register its capabilities here instead.
-xp_capabilities(np_only=True)(cKDTree)
+xp_capabilities(out_of_scope=True)(cKDTree)
 
 
 @xp_capabilities(np_only=True)
