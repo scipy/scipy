@@ -3,6 +3,7 @@ import operator
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -2898,6 +2899,15 @@ _special_funcs = (
         is_ufunc=False,
     ),
 )
+
+if TYPE_CHECKING:
+    # The typechecker can have difficulty resolving dynamically generated
+    # wrappers. Fool it by importing the base ufuncs here.
+    from ._ufuncs import (
+        _spherical_jn, _spherical_yn, _spherical_in,
+        _spherical_kn, _spherical_jn_d, _spherical_yn_d,
+        _spherical_in_d, _spherical_kn_d
+    )
 
 # Override ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
