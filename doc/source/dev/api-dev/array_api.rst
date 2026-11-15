@@ -24,19 +24,6 @@ In the following, an array API compatible namespace is noted as ``xp``.
 Using array API standard support
 --------------------------------
 
-To enable the array API standard support, an environment variable must be set
-before importing SciPy:
-
-.. code:: bash
-
-   export SCIPY_ARRAY_API=1
-
-This both enables array API standard support and the more strict input
-validation for array-like arguments. *Note that this environment variable is
-meant to be temporary, as a way to make incremental changes and merge them into
-``main`` without affecting backwards compatibility immediately. We do not
-intend to keep this environment variable around long-term.*
-
 This clustering example shows usage with PyTorch tensors as inputs and return
 values:
 
@@ -60,7 +47,7 @@ CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
 uses compiled code in its implementation, which won't work on GPU, and there
 are currently no GPU specific implementations to delegate to.
 
-More strict array input validation will reject ``np.matrix`` and
+More strict array input validation now rejects ``np.matrix`` and
 ``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
 
 .. code:: python
@@ -76,7 +63,7 @@ More strict array input validation will reject ``np.matrix`` and
     (array([1, 1, 0], dtype=int32), array([0.43588989, 0.73484692, 0.83066239]))
 
     >>> # The above uses numpy arrays; trying to use np.matrix instances or object
-    >>> # arrays instead will yield an exception with `SCIPY_ARRAY_API=1`:
+    >>> # arrays instead will raise an exception
     >>> vq(np.asmatrix(features), code_book)
     ...
     TypeError: 'numpy.matrix' are not supported
@@ -624,7 +611,7 @@ GPU.
 .. dropdown:: Functions with JAX JIT support but no GPU support
   :icon: alert
   :color: warning
-	      
+
   It's possible for a function to be natively available in JAX,
   support ``jax.jit``, but not be supported on GPU. Thus, it may be
   possible for JAX delegation to be set up in a function which has
@@ -980,18 +967,6 @@ markers).
   xfail certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to xfail tests.
-* ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
-  are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
-  `scipy.stats` functions pass masked arrays to the function being tested, but
-  masked arrays are incompatible with the array API. Use of the
-  ``skip_xp_invalid_arg`` decorator allows these tests to protect against
-  regressions when ``SCIPY_ARRAY_API`` is not used without resulting in failures
-  when ``SCIPY_ARRAY_API`` is used. In time, we will want these functions to emit
-  deprecation warnings when they receive array API invalid input, and this
-  decorator will check that the deprecation warning is emitted without it
-  causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
-  default and only behavior, these tests (and the decorator itself) will be
-  removed.
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
@@ -1071,7 +1046,6 @@ Examples
 The following examples demonstrate how to use direct markers together with
 ``make_xp_test_case``::
 
-  from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close, make_xp_test_case
 
   @make_xp_test_case(toto)
@@ -1089,11 +1063,6 @@ The following examples demonstrate how to use direct markers together with
       def test_toto2(self, xp):
           ...
   ...
-      # Do not run when SCIPY_ARRAY_API=1 is used since calling toto on masked
-      # arrays will raise in this case.
-      @skip_xp_invalid_arg
-      def test_toto_masked_array(self):
-          ...
 
 
 Running tests

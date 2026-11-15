@@ -31,7 +31,11 @@ class MyNormal:
 
 class TestMyNormal(DistributionsTest):
     family = stats.make_distribution(MyNormal())
-    seed =7694871136
+    seed = 7694871136
+
+    @pytest.fixture
+    def xp(self):
+        return np
 
     def test_purported_distribution(self, valid_dist_x):
         message = "This method must be overridden..."
@@ -40,5 +44,5 @@ class TestMyNormal(DistributionsTest):
 
     @pytest.mark.xslow
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
-    def test_lmoment(self, case):
-        return super().test_lmoment(case, tol_override={'atol': 1e-9})
+    def test_lmoment(self, case, xp):
+        return super().test_lmoment(case, tol_override={'atol': 1e-9}, xp=xp)

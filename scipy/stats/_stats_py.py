@@ -1558,7 +1558,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
 def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
     """Get p-value given the statistic, (continuous) distribution, and alternative"""
-    xp = array_namespace(statistic) if xp is None else xp
+    xp = array_namespace(statistic, masked_ok=True) if xp is None else xp
 
     if alternative == 'less':
         pvalue = distribution.cdf(statistic)
@@ -2662,22 +2662,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
-def _isconst(x):
-    """
-    Check if all values in x are the same.  nans are ignored.
-
-    x must be a 1d array.
-
-    The return value is a 1d array with length 1, so it can be used
-    in np.apply_along_axis.
-    """
-    y = x[~np.isnan(x)]
-    if y.size == 0:
-        return np.array([True])
-    else:
-        return (y[0] == y).all(keepdims=True)
-
-
 @xp_capabilities(marray=True)
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
@@ -2853,7 +2837,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    xp = array_namespace(a)
+    xp = array_namespace(a, masked_ok=True)
     a = xp_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
@@ -2936,7 +2920,10 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
         zero = std <= xp.abs(eps * mn)
         zero = xp.broadcast_to(zero, z.shape)
         zero = xp.asarray(zero.data) if is_marray(xp) else zero
-        z = xpx.at(z, zero).set(xp.nan)
+        if isinstance(z, np.ma.MaskedArray):
+            z[zero] = xp.nan
+        else:
+            z = xpx.at(z, zero).set(xp.nan)
 
     return z
 
@@ -3214,28 +3201,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
 
     out = out if keepdims else xp.squeeze(out, axis=-1)
     return out[()] if out.ndim == 0 else out
-
-
-def _mad_1d(x, center, nan_policy):
-    # Median absolute deviation for 1-d array x.
-    # This is a helper function for `median_abs_deviation`; it assumes its
-    # arguments have been validated already.  In particular,  x must be a
-    # 1-d numpy array, center must be callable, and if nan_policy is not
-    # 'propagate', it is assumed to be 'omit', because 'raise' is handled
-    # in `median_abs_deviation`.
-    # No warning is generated if x is empty or all nan.
-    isnan = np.isnan(x)
-    if isnan.any():
-        if nan_policy == 'propagate':
-            return np.nan
-        x = x[~isnan]
-    if x.size == 0:
-        # MAD of an empty array is nan.
-        return np.nan
-    # Edge cases have been handled, so do the basic MAD calculation.
-    med = center(x)
-    mad = np.median(np.abs(x - med))
-    return mad
 
 
 @xp_capabilities(skip_backends=[('dask.array', 'not supported by `quantile`')],
@@ -3933,11 +3898,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
@@ -8686,11 +8652,12 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
 
     """
     xp = array_namespace(*samples)
-    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     lengths = [sample.shape[-1] for sample in samples]
     if any(lengths) < 1:  # Only needed for `test_axis_nan_policy`
@@ -11112,7 +11079,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
     """
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
-    xp = array_namespace(x) if xp is None else xp
+    xp = array_namespace(x, masked_ok=True) if xp is None else xp
     x = _asarray(x, dtype=dtype, subok=True)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
 
@@ -11191,7 +11158,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
             dtype=None, xp=None):
     # an array-api compatible function for variance with scipy.stats interface
     # and features (e.g. `nan_policy`).
-    xp = array_namespace(x) if xp is None else xp
+    xp = array_namespace(x, masked_ok=True) if xp is None else xp
     x = _asarray(x, subok=True)
 
     # use `_xp_mean` instead of `xp.var` for desired warning behavior
@@ -11316,11 +11283,11 @@ class _SimpleF:
         return special.fdtrc(self.dfn, self.dfd, x)
 
 
-def _log1mexp(x):
+def _log1mexp(x, xp=None):
     r"""Compute the log of the complement of the exponential"""
     # adapted from gh-19021 (https://github.com/scipy/scipy/issues/19021)
 
-    xp = array_namespace(x)
+    xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):
         return special._ufuncs._log1mexp(x)
 

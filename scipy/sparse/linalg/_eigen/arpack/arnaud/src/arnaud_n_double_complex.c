@@ -14,7 +14,7 @@ static void znaup2(struct ARNAUD_state_d*, ARNAUD_CPLX_TYPE* , ARNAUD_CPLX_TYPE*
 static void znaitr(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT, ARNAUD_CPLX_TYPE*, double*, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_INT*, ARNAUD_CPLX_TYPE*);
 static void znapps(ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
 static void zneigh(double*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_INT, ARNAUD_CPLX_TYPE*, double*, ARNAUD_INT*);
-static void zngets(struct ARNAUD_state_d*, ARNAUD_INT*, ARNAUD_INT*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
+static void zngets(struct ARNAUD_state_d*, ARNAUD_INT, ARNAUD_INT*, ARNAUD_INT*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
 static void zsortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y);
 static int sortc_LM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
 static int sortc_SM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
@@ -156,7 +156,7 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         //  accordingly.
 
         np = V->ncv - V->nev;
-        zngets(V, &V->nev, &np, &workl[irz], &workl[bounds]);
+        zngets(V, 0, &V->nev, &np, &workl[irz], &workl[bounds]);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -708,7 +708,7 @@ LINE20:
     //  bounds are in the last NEV loc. of RITZ
     //  BOUNDS respectively.
 
-    zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
+    zngets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds);
 
     //  Convergence test: currently we use the following criteria.
     //  The relative accuracy of a Ritz value is considered
@@ -853,7 +853,7 @@ LINE20:
         // resort the eigenvalues.
 
         if (nevbef < V->aup2_nev) {
-            zngets(V, &V->aup2_nev, &V->np, ritz, bounds);
+            zngets(V, V->shift, &V->aup2_nev, &V->np, ritz, bounds);
         }
     }
 
@@ -1040,15 +1040,15 @@ LINE40:
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
 
-    ARNAUD_BLAS(zcopy)(&n, resid, &int1, &v[ldv*V->aitr_j], &int1);
+    ARNAUD_BLAS(zcopy)(&n, resid, &int1, &v[(int64_t)ldv*V->aitr_j], &int1);
 
     if (*rnorm >= unfl)
     {
         temp1 = 1.0 / *rnorm;
-        ARNAUD_BLAS(zdscal)(&n, &temp1, &v[ldv*V->aitr_j], &int1);
+        ARNAUD_BLAS(zdscal)(&n, &temp1, &v[(int64_t)ldv*V->aitr_j], &int1);
         ARNAUD_BLAS(zdscal)(&n, &temp1, &workd[ipj], &int1);
     } else {
-        ARNAUD_BLAS(zlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*V->aitr_j], &n, &infol);
+        ARNAUD_BLAS(zlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[(int64_t)ldv*V->aitr_j], &n, &infol);
         ARNAUD_BLAS(zlascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
@@ -1056,7 +1056,7 @@ LINE40:
     //  Note that this is not quite yet r_{j}. See STEP 4
 
     V->aitr_step3 = 1;
-    ARNAUD_BLAS(zcopy)(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
+    ARNAUD_BLAS(zcopy)(&n, &v[(int64_t)ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
@@ -1347,10 +1347,11 @@ znapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLX_TYPE* shift, AR
                 if (tst1 == 0.0)
                 {
                     tmp_int = kplusp - jj;
-                    ARNAUD_BLAS(zlanhs)("1", &tmp_int, h, &ldh, (double*)workl);
+                    tst1 = ARNAUD_BLAS(zlanhs)("1", &tmp_int, h, &ldh, (double*)workl);
                 }
                 if (fabs(creal(h[iend+1 + ldh*iend])) <= fmax(ulp*tst1, smlnum))
                 {
+                    h[iend+1 + ldh*iend] = ARNAUD_cplx(0.0, 0.0);
                     break;
                 }
             }
@@ -1363,13 +1364,6 @@ znapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLX_TYPE* shift, AR
 
                 istart += 1;
                 continue;
-
-            } else if (iend < kplusp - 1) {
-
-                // Valid block found and it's not the entire remaining array
-                // Clean up the noise
-
-                    h[iend+1 + ldh*iend] = ARNAUD_cplx(0.0, 0.0);
             }
 
             h11 = h[istart + ldh*istart];
@@ -1475,17 +1469,17 @@ znapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLX_TYPE* shift, AR
     {
         tmp_int = kplusp - i;
         ARNAUD_BLAS(zgemv)("N", &n, &tmp_int, &cdbl1, v, &ldv, &q[(*kev-i-1)*ldq], &int1, &cdbl0, workd, &int1);
-        ARNAUD_BLAS(zcopy)(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
+        ARNAUD_BLAS(zcopy)(&n, workd, &int1, &v[(int64_t)ldv*(kplusp-i-1)], &int1);
     }
 
     //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
 
-    ARNAUD_BLAS(zlacpy)("A", &n, kev, &v[ldv*(kplusp - *kev)], &ldv, v, &ldv);
+    ARNAUD_BLAS(zlacpy)("A", &n, kev, &v[(int64_t)ldv*(kplusp - *kev)], &ldv, v, &ldv);
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
     if (creal(h[*kev + ldh*(*kev-1)]) > 0.0) {
-        ARNAUD_BLAS(zcopy)(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
+        ARNAUD_BLAS(zcopy)(&n, &workd[n], &int1, &v[(int64_t)ldv*(*kev)], &int1);
     }
 
     //  Update the residual vector:
@@ -1498,7 +1492,7 @@ znapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, ARNAUD_CPLX_TYPE* shift, AR
 
     if (creal(h[*kev + ldh*(*kev-1)]) > 0.0)
     {
-        ARNAUD_BLAS(zaxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
+        ARNAUD_BLAS(zaxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[(int64_t)ldv*(*kev)], &int1, resid, &int1);
     }
 
     return;
@@ -1562,13 +1556,13 @@ zneigh(double* rnorm, ARNAUD_INT n, ARNAUD_CPLX_TYPE* h, ARNAUD_INT ldh, ARNAUD_
 
 
 static void
-zngets(struct ARNAUD_state_d *V, ARNAUD_INT* kev, ARNAUD_INT* np,
+zngets(struct ARNAUD_state_d *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np,
        ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds)
 {
 
     zsortc(V->which, 1, *kev + *np, ritz, bounds);
 
-    if (V->shift == 1)
+    if (ishift == 1)
     {
 
         //  Sort the unwanted Ritz values used as shifts so that
@@ -1837,10 +1831,10 @@ ARNAUD_BLAS(zdotc)(const ARNAUD_INT* n, const ARNAUD_CPLX_TYPE* restrict x, cons
         for (ARNAUD_INT i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[i], conj(y[i]));
+            temp = _Cmulcc(conj(x[i]), y[i]);
             result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[i] * conj(y[i]));
+            result = result + (conj(x[i]) * y[i]);
 #endif
         }
 
@@ -1852,10 +1846,10 @@ ARNAUD_BLAS(zdotc)(const ARNAUD_INT* n, const ARNAUD_CPLX_TYPE* restrict x, cons
         for (ARNAUD_INT i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[ix], conj(y[iy]));
+            temp = _Cmulcc(conj(x[ix]), y[iy]);
             result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[ix] * conj(y[iy]));
+            result = result + (conj(x[ix]) * y[iy]);
 #endif
             ix += *incx;
             iy += *incy;

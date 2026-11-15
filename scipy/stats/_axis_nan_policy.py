@@ -276,7 +276,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     # otherwise, the statistic and p-value will be either empty arrays or
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
-    NaN = _get_nan(*samples)
+    NaN = _get_nan(*samples, xp=xp)
     output = xp.full(output_shape, xp.nan, dtype=NaN.dtype, device=xp_device(NaN))
     return output
 
@@ -571,7 +571,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
 
-            NaN = _get_nan(*samples) if samples else xp.nan
+            NaN = _get_nan(*samples, xp=xp) if samples else xp.nan
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])  # NumPy OK for ndims

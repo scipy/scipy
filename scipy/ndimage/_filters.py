@@ -573,8 +573,9 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    weights : array
-        1-D sequence of numbers.
+    weights : array_like
+        The 1-D correlation kernel to correlate with each line of `input`
+        along `axis`.
     %(axis)s
     %(output)s
     %(mode_reflect)s
@@ -633,8 +634,9 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    weights : ndarray
-        1-D sequence of numbers.
+    weights : array_like
+        The 1-D convolution kernel to convolve with each line of `input`
+        along `axis`.
     %(axis)s
     %(output)s
     %(mode_reflect)s
@@ -1330,8 +1332,9 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     Parameters
     ----------
     %(input)s
-    weights : ndarray
-        array of weights, same number of dimensions as input
+    weights : array_like
+        The correlation kernel. Must have the same number of dimensions as
+        `input`, unless `axes` is specified.
     %(output)s
     %(mode_reflect)s
     %(cval)s
@@ -1339,9 +1342,9 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
         `input` is filtered along the specified axes. When `axes` is
-        specified, any tuples used for `mode` or `origin` must match the length
-        of `axes`. The ith entry in any of these tuples corresponds to the ith
-        entry in `axes`.
+        specified, the dimensionality of `weights` and the length of any
+        tuple used for `origin` must match the length of `axes`. The ith
+        entry in `origin` corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1401,7 +1404,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     ----------
     %(input)s
     weights : array_like
-        Array of weights, same number of dimensions as input
+        The convolution kernel. Must have the same number of dimensions as
+        `input`, unless `axes` is specified.
     %(output)s
     %(mode_reflect)s
     cval : scalar, optional
@@ -1417,9 +1421,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
         `input` is filtered along the specified axes. When `axes` is
-        specified, any tuples used for `mode` or `origin` must match the length
-        of `axes`. The ith entry in any of these tuples corresponds to the ith
-        entry in `axes`.
+        specified, the dimensionality of `weights` and the length of any
+        tuple used for `origin` must match the length of `axes`. The ith
+        entry in `origin` corresponds to the ith entry in `axes`.
 
     Returns
     -------

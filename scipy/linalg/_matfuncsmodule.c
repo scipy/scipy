@@ -1,4 +1,4 @@
-#include "src/_common_array_utils.h"
+#include "_common_array_utils.h"
 
 void matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info);
 void matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info);

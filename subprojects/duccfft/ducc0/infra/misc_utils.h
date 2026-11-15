@@ -49,6 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DUCC0_MISC_UTILS_H
 #define DUCC0_MISC_UTILS_H
 
+#include <numeric>
+#include <functional>
 #include <cstddef>
 #include <tuple>
 #ifdef __GLIBC__
@@ -57,7 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #endif
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_misc_utils {
 
@@ -95,9 +97,7 @@ template<typename shp> shp noncritical_shape(const shp &in, size_t elemsz)
 template<typename shp> size_t noncritical_size(const shp &in, size_t elemsz)
   {
   shp tmp = noncritical_shape(in, elemsz);
-  size_t res = 1;
-  for (auto d:tmp) res *= d;
-  return res;
+  return reduce(tmp.begin, tmp.end(), size_t(1), multiplies<size_t>());
   }
 
 #ifdef __GLIBC__
@@ -118,6 +118,7 @@ inline bool preallocate_memory(double gbytes)
   free(blob);
   return true;
   }
+
 inline bool set_heap_trim_limit(double gbytes)
   {
   auto nbytes = size_t(1e9*gbytes);

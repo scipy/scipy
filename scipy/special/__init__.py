@@ -636,19 +636,27 @@ universal functions):
    :toctree: generated/
 
    mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even Mathieu function and its derivative.
-   mathieu_sem     -- Odd Mathieu function and its derivative.
+   mathieu_ce -- Even Mathieu function and its derivative.
+   mathieu_se -- Odd Mathieu function and its derivative.
    mathieu_modcem1 -- Even modified Mathieu function of the first kind and its derivative.
    mathieu_modcem2 -- Even modified Mathieu function of the second kind and its derivative.
    mathieu_modsem1 -- Odd modified Mathieu function of the first kind and its derivative.
    mathieu_modsem2 -- Odd modified Mathieu function of the second kind and its derivative.
+
+The following functions are deprecated in favor of the functions above:
+
+.. autosummary::
+   :toctree: generated/
+
+   mathieu_cem     -- Even Mathieu function and its derivative.
+   mathieu_sem     -- Odd Mathieu function and its derivative.
 
 Spheroidal wave functions
 -------------------------
@@ -792,8 +800,19 @@ from ._ufuncs import *
 from . import _basic
 from ._basic import *
 
-# Replace some function definitions from _ufuncs and _basic
-# to add Array API support
+from ._ellip_harm import (
+    ellip_harm,
+    ellip_harm_2,
+    ellip_normal
+)
+
+from ._lambertw import lambertw
+
+from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
+from ._spfun_stats import poisson_binom_cdf
+
+# Replace some function definitions from _ufuncs, _basic, _ellip_harm,
+# _lambertw, _mathieu, and _spfun_stats to add Array API support
 from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
@@ -804,29 +823,12 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
-from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
     spherical_in,
     spherical_kn
 )
-
-# These functions are generated dynamically and inserted into globals
-# through _support_alternative_backends. This confuses the type checker though
-# so import them when type checking. Importing them in the regular code path
-# breaks test_support_alternative_backends.py due to the vagaries of how
-# those tests are set up. TODO: Do the setup of delegation in scipy.special
-# in a more principled way.
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from ._mathieu import mathieu_cem, mathieu_sem
-    from ._spfun_stats import poisson_binom_cdf
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
@@ -847,6 +849,8 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_ce',
+    'mathieu_se',
     'mathieu_cem',
     'mathieu_sem',
     'poisson_binom_cdf',
@@ -855,4 +859,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-del TYPE_CHECKING
