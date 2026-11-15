@@ -2903,7 +2903,7 @@ _special_funcs = (
 if TYPE_CHECKING:
     # The typechecker can have difficulty resolving dynamically generated
     # wrappers. Fool it by importing the base ufuncs here.
-    from ._ufuncs import (
+    from ._ufuncs import (  # noqa: F401
         _spherical_jn, _spherical_yn, _spherical_in,
         _spherical_kn, _spherical_jn_d, _spherical_yn_d,
         _spherical_in_d, _spherical_kn_d
