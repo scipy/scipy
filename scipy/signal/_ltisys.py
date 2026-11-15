@@ -268,7 +268,9 @@ class lti(LinearTimeInvariant):
         X0 : array_like, optional
             Initial state-vector (default is zero).
         T : array_like, optional
-            Time points (computed if not given).
+            Nonnegative, increasing, equally spaced time points (computed if not
+            given). The unit step is applied at time zero, even when the first
+            requested time is positive.
         N : int, optional
             Number of time points to compute if `T` is not given.
 
@@ -2397,7 +2399,9 @@ def step(system, X0=None, T=None, N=None):
     X0 : array_like, optional
         Initial state-vector (default is zero).
     T : array_like, optional
-        Time points (computed if not given).
+        Nonnegative, increasing, equally spaced time points (computed if not
+        given). The unit step is applied at time zero, even when the first
+        requested time is positive.
     N : int, optional
         Number of time points to compute if `T` is not given.
 
@@ -2442,8 +2446,16 @@ def step(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    vals = lsim(sys, U, T, X0=X0, interp=False)
-    return vals[0], vals[1]
+    simulation_times = T
+    if T.ndim == 1 and T.size and T[0] > 0:
+        # Unlike a general input to lsim, the unit step starts at time zero.
+        # Evolve the state under that input before the first requested sample.
+        _, _, states = lsim(sys, ones(2, sys.A.dtype), [0, T[0]],
+                            X0=X0, interp=False)
+        X0 = states[-1]
+        simulation_times = T - T[0]
+    vals = lsim(sys, U, simulation_times, X0=X0, interp=False)
+    return T, vals[1]
 
 
 def bode(system, w=None, n=100):
