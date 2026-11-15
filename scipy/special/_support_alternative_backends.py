@@ -1,4 +1,5 @@
 import functools
+import inspect
 import operator
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -186,8 +187,16 @@ class _FuncInfo:
                 module=module,
             )
         else:
+            signature = inspect.signature(self.func)
+
             @functools.wraps(self.func)
             def func(*args, **kwargs):
+                if kwargs:
+                    # normalize signature to support passing args as
+                    # kwargs.
+                    bound = signature.bind(*args, **kwargs)
+                    bound.apply_defaults()
+                    args, kwargs = bound.args, bound.kwargs
                 xp = array_namespace(*args, *kwargs.values())
                 return self._wrapper_for(xp)(*args, **kwargs)
 
