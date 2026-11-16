@@ -53,6 +53,12 @@ def delegate_xp(delegator, module_name):
                     # CuPy < 14 exposes this under the old SciPy name.
                     cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
+                # LTI instances hold a cupyx twin, hand that over (gh-25072)
+                args = tuple(
+                    getattr(a, '_delegate_to', None)
+                    if getattr(a, '_delegate_to', None) is not None else a
+                    for a in args
+                )
                 # cupyx functions have no `device` kwarg (cupy#9848); they create on the
                 # current cuda device, so honor a device request via the
                 # cupy.cuda.Device context manager

@@ -33,7 +33,9 @@ from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                               cont2discrete)
 
-from scipy._lib._array_api import array_namespace, xp_device, xp_promote, xpx
+from scipy._lib._array_api import (array_namespace, is_numpy,
+                                   scipy_namespace_for, xp_device, xp_promote,
+                                   xpx)
 
 import numpy as np
 from numpy import (real, atleast_1d, squeeze, asarray, zeros,
@@ -44,6 +46,19 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'lsim', 'impulse', 'step', 'bode',
            'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
            'dfreqresp', 'dbode']
+
+
+def _signal_twin_cls(name, *arrays):
+    """The backend class to delegate to. None means run natively."""
+    try:
+        xp = array_namespace(*arrays)
+    except TypeError:
+        # array-likes and object arrays stay on the native numpy path
+        return None
+    if is_numpy(xp):
+        return None
+    spx = scipy_namespace_for(xp)
+    return getattr(getattr(spx, "signal", None), name, None)
 
 
 class LinearTimeInvariant:
@@ -68,6 +83,7 @@ class LinearTimeInvariant:
 
         self.inputs = None
         self.outputs = None
+        self._delegate_to = None
         self._dt = None
 
     @property
@@ -837,6 +853,14 @@ class TransferFunction(LinearTimeInvariant):
         self._num = None
         self._den = None
 
+        twin_cls = _signal_twin_cls("TransferFunction", *system)
+        if twin_cls is not None:
+            self._delegate_to = (twin_cls(*system) if self.dt is None
+                                 else twin_cls(*system, dt=self.dt))
+            self.inputs = self._delegate_to.inputs
+            self.outputs = self._delegate_to.outputs
+            return
+
         self.num, self.den = normalize(*system)
 
     def __repr__(self):
@@ -851,10 +875,17 @@ class TransferFunction(LinearTimeInvariant):
     @property
     def num(self):
         """Numerator of the `TransferFunction` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.num
         return self._num
 
     @num.setter
     def num(self, num):
+        if self._delegate_to is not None:
+            self._delegate_to.num = num
+            self.inputs = self._delegate_to.inputs
+            self.outputs = self._delegate_to.outputs
+            return
         xp = array_namespace(num)
         self._num = xpx.atleast_nd(num, ndim=1, xp=xp)
 
@@ -868,10 +899,15 @@ class TransferFunction(LinearTimeInvariant):
     @property
     def den(self):
         """Denominator of the `TransferFunction` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.den
         return self._den
 
     @den.setter
     def den(self, den):
+        if self._delegate_to is not None:
+            self._delegate_to.den = den
+            return
         xp = array_namespace(den)
         self._den = xpx.atleast_nd(den, ndim=1, xp=xp)
 
@@ -1241,6 +1277,14 @@ class ZerosPolesGain(LinearTimeInvariant):
         self._poles = None
         self._gain = None
 
+        twin_cls = _signal_twin_cls("ZerosPolesGain", *system)
+        if twin_cls is not None:
+            self._delegate_to = (twin_cls(*system) if self.dt is None
+                                 else twin_cls(*system, dt=self.dt))
+            self.inputs = self._delegate_to.inputs
+            self.outputs = self._delegate_to.outputs
+            return
+
         self.zeros, self.poles, self.gain = system
 
     def __repr__(self):
@@ -1256,10 +1300,17 @@ class ZerosPolesGain(LinearTimeInvariant):
     @property
     def zeros(self):
         """Zeros of the `ZerosPolesGain` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.zeros
         return self._zeros
 
     @zeros.setter
     def zeros(self, zeros):
+        if self._delegate_to is not None:
+            self._delegate_to.zeros = zeros
+            self.inputs = self._delegate_to.inputs
+            self.outputs = self._delegate_to.outputs
+            return
         xp = array_namespace(zeros)
         self._zeros = xpx.atleast_nd(zeros, ndim=1, xp=xp)
 
@@ -1273,20 +1324,30 @@ class ZerosPolesGain(LinearTimeInvariant):
     @property
     def poles(self):
         """Poles of the `ZerosPolesGain` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.poles
         return self._poles
 
     @poles.setter
     def poles(self, poles):
+        if self._delegate_to is not None:
+            self._delegate_to.poles = poles
+            return
         xp = array_namespace(poles)
         self._poles = xpx.atleast_nd(poles, ndim=1, xp=xp)
 
     @property
     def gain(self):
         """Gain of the `ZerosPolesGain` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.gain
         return self._gain
 
     @gain.setter
     def gain(self, gain):
+        if self._delegate_to is not None:
+            self._delegate_to.gain = gain
+            return
         self._gain = gain
 
     def _copy(self, system):
@@ -1634,6 +1695,14 @@ class StateSpace(LinearTimeInvariant):
         self._C = None
         self._D = None
 
+        twin_cls = _signal_twin_cls("StateSpace", *system)
+        if twin_cls is not None:
+            self._delegate_to = (twin_cls(*system) if self.dt is None
+                                 else twin_cls(*system, dt=self.dt))
+            self.inputs = self._delegate_to.inputs
+            self.outputs = self._delegate_to.outputs
+            return
+
         # Convert A, B, C, D into 2d arrays of dtype float64 or complex128:
         self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
@@ -1818,10 +1887,15 @@ class StateSpace(LinearTimeInvariant):
     @property
     def A(self):
         """State matrix of the `StateSpace` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.A
         return self._A
 
     @A.setter
     def A(self, A):
+        if self._delegate_to is not None:
+            self._delegate_to.A = A
+            return
         if A is None:
             self._A = None
             return
@@ -1831,10 +1905,16 @@ class StateSpace(LinearTimeInvariant):
     @property
     def B(self):
         """Input matrix of the `StateSpace` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.B
         return self._B
 
     @B.setter
     def B(self, B):
+        if self._delegate_to is not None:
+            self._delegate_to.B = B
+            self.inputs = self._delegate_to.inputs
+            return
         if B is None:
             self._B = None
             return
@@ -1845,10 +1925,16 @@ class StateSpace(LinearTimeInvariant):
     @property
     def C(self):
         """Output matrix of the `StateSpace` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.C
         return self._C
 
     @C.setter
     def C(self, C):
+        if self._delegate_to is not None:
+            self._delegate_to.C = C
+            self.outputs = self._delegate_to.outputs
+            return
         if C is None:
             self._C = None
             return
@@ -1859,10 +1945,15 @@ class StateSpace(LinearTimeInvariant):
     @property
     def D(self):
         """Feedthrough matrix of the `StateSpace` system."""
+        if self._delegate_to is not None:
+            return self._delegate_to.D
         return self._D
 
     @D.setter
     def D(self, D):
+        if self._delegate_to is not None:
+            self._delegate_to.D = D
+            return
         if D is None:
             self._D = None
             return
