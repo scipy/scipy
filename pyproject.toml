@@ -175,6 +175,7 @@ doc = [
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
+    "sphinx-reredirects",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",
     "numpydoc",

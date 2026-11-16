@@ -47,6 +47,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'numpydoc',
     'sphinx_copybutton',
+    'sphinx_reredirects',
     'sphinx_design',
     'scipyoptdoc',
     'doi_role',
@@ -272,6 +273,28 @@ html_file_suffix = '.html'
 htmlhelp_basename = 'scipy'
 
 mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
+
+# sphinx-reredirects: keep old URLs of moved pages working
+# (target URLs are relative to the old page's location)
+_moved_building_pages = [
+    "index",
+    "blas_lapack",
+    "compilers_and_options",
+    "cross_compilation",
+    "introspecting_a_build",
+    "redistributable_binaries",
+    "system_level",
+    "understanding_meson",
+]
+redirects = {
+    # moved from dev/building/ to tutorial/building/
+    **{f"dev/building/{p}": f"../../tutorial/building/{p}.html"
+       for p in _moved_building_pages},
+    # moved from building/ to dev/building/ (and later to tutorial/building/)
+    **{f"building/{p}": f"../tutorial/building/{p}.html"
+       for p in _moved_building_pages},
+    "building/contributor": "../dev/building/contributor.html",
+}
 
 # sphinx-copybutton configurations
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.{3,}: | {5,8}: "

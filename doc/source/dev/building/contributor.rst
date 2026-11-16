@@ -59,7 +59,7 @@ two main steps: setting up system-level dependencies, and building SciPy itself.
 
 .. _system-level:
 
-.. include:: system_level.rst
+.. include:: ../../tutorial/building/system_level.rst
 
 .. _the-spin-interface:
 

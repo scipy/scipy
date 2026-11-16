@@ -66,10 +66,11 @@ There are also additional user guides for these topics:
 - :ref:`scipy_parallel_execution`
 - :ref:`scipy_thread_safety`
 - :ref:`security`
+- :ref:`building-from-source`
 
 
 .. toctree::
-   :caption: User guide
+   :caption: Submodules
    :hidden:
 
    fft
@@ -86,7 +87,12 @@ There are also additional user guides for these topics:
    stats
    arpack
    csgraph
-   parallel_execution
-   security
-   thread_safety
 
+.. toctree::
+   :caption: Topics
+   :hidden:
+
+   parallel_execution
+   thread_safety
+   security
+   building/index
