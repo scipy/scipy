@@ -209,6 +209,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
                 ``4`` : The HiGHS solver ran into a problem.
 
+                ``5`` : The solve was interrupted by the callback.
+
             message : str
                 A string descriptor of the exit status of the algorithm.
             nit : int
@@ -264,18 +266,16 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             mip_node_count : int
                 The number of subproblems or "nodes" solved by the MILP
-                solver. Only present when `integrality` is not `None`.
+                solver. Only present when a MIP returns a solution.
 
             mip_dual_bound : float
                 The MILP solver's final estimate of the lower bound on the
-                optimal solution. Only present when `integrality` is not
-                `None`.
+                optimal solution. Only present when a MIP returns a solution.
 
             mip_gap : float
                 The difference between the final objective function value
                 and the final dual bound, scaled by the final objective
-                function value. Only present when `integrality` is not
-                `None`.
+                function value. Only present when a MIP returns a solution.
 
     Notes
     -----
