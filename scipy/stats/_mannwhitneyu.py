@@ -180,7 +180,10 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         raise ValueError('`x` and `y` must not contain NaNs.')
     if xp_size(x) == 0 or xp_size(y) == 0:
         raise ValueError('`x` and `y` must be of nonzero size.')
-    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    # Do not force floating point here: converting large int64 values to
+    # float64 before ranking can collapse distinct observations into ties.
+    # `_rankdata` converts to a suitable floating dtype after sorting.
+    x, y = xp_promote(x, y, xp=xp)
 
     bools = {True, False}
     if use_continuity not in bools:
@@ -488,8 +491,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     # Follows [2]
     ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
-    ranks = xp.astype(ranks, x.dtype, copy=False)
-    t = xp.astype(t, x.dtype, copy=False)
+    # `_rankdata` converts integer input to a floating dtype before ranking;
+    # retain that dtype so average ranks stay fractional and the returned
+    # statistic and p-value keep their usual floating-point type.
+    dtype = ranks.dtype
     # method 2, steps 2 and 3. Subtracting the constant inside the sum keeps the
     # accumulation at the magnitude of U1 rather than that of R1. R1 can be much
     # larger than U1, and in low precision it is represented more coarsely, so
@@ -522,7 +527,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         _mwu_state.s.set_shapes(n1, n2)
         p = xpx.lazy_apply(_mwu_state.s.sf, xp.astype(U, xp.int64),
                            as_numpy=True, dtype=xp.float64)
-        p = xp.astype(p, x.dtype, copy=False) * f
+        p = xp.astype(p, dtype, copy=False) * f
     elif method == "asymptotic":
         z = _get_mwu_z(U1, n1, n2, t, continuity=use_continuity,
                        alternative=alternative, xp=xp)
