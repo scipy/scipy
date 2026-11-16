@@ -179,9 +179,6 @@ class _FuncInfo:
 
     def _make_wrapper(self):
         module = "scipy.special" if self.public else __name__
-        if self.name in globals():
-            # Already initialised. We are likely in a unit test.
-            return getattr(sys.modules[module], self.name)
 
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
