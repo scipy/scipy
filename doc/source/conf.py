@@ -212,7 +212,7 @@ html_sidebars = {
 }
 html_js_files = [('custom-icons.js', {"defer": "defer"}),]  # for custom header icon(s)
 html_theme_options = {
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 7,
     "icon_links": [
       {
         "name": "GitHub",
@@ -358,7 +358,9 @@ for key in (
         'tsearch',
         'minkowski_distance_p',
         'minkowski_distance',
-        'distance_matrix'
+        'distance_matrix',
+        'mathieu_cem',
+        'mathieu_sem',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

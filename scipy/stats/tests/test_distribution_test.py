@@ -35,6 +35,9 @@ class TestMyNormal(DistributionsTest):
 
     @pytest.fixture
     def xp(self):
+        if np.lib.NumpyVersion(np.__version__) < "2.1.0":
+            from scipy._external.array_api_compat import numpy as np_compat
+            return np_compat
         return np
 
     def test_purported_distribution(self, valid_dist_x):

@@ -125,6 +125,10 @@ const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_trivariate_normal_cdf_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_cauchy_isf_doc = R"(
     _cauchy_isf(p, loc, scale)
 
@@ -2124,7 +2128,7 @@ const char *eval_chebyc_doc = R"(
     roots_chebyc : roots and quadrature weights of Chebyshev
                    polynomials of the first kind on [-2, 2]
     chebyc : Chebyshev polynomial object
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
 
     References
@@ -2288,7 +2292,7 @@ const char *eval_chebyt_doc = R"(
     chebyu : Chebychev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
 
     Notes
     -----
@@ -2599,7 +2603,7 @@ const char *eval_hermite_doc = R"(
     roots_hermite : roots and quadrature weights of physicist's
                     Hermite polynomials
     hermite : physicist's Hermite polynomial object
-    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    :class:`numpy.polynomial.hermite.Hermite` : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
 
     References
@@ -2671,7 +2675,7 @@ const char *eval_hermitenorm_doc = R"(
     roots_hermitenorm : roots and quadrature weights of probabilist's
                         Hermite polynomials
     hermitenorm : probabilist's Hermite polynomial object
-    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    :class:`numpy.polynomial.hermite_e.HermiteE` : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
 
     References
@@ -2829,7 +2833,7 @@ const char *eval_laguerre_doc = R"(
     roots_laguerre : roots and quadrature weights of Laguerre
                      polynomials
     laguerre : Laguerre polynomial object
-    numpy.polynomial.laguerre.Laguerre : Laguerre series
+    :class:`numpy.polynomial.laguerre.Laguerre` : Laguerre series
     eval_genlaguerre : evaluate generalized Laguerre polynomials
 
     References
@@ -2906,7 +2910,7 @@ const char *eval_legendre_doc = R"(
                      polynomials
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
-    numpy.polynomial.legendre.Legendre : Legendre series
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
 
     References
     ----------
@@ -2989,7 +2993,7 @@ const char *eval_sh_chebyt_doc = R"(
                       Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
-    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
 
     References
     ----------
@@ -3214,7 +3218,7 @@ const char *eval_sh_legendre_doc = R"(
                         Legendre polynomials
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
-    numpy.polynomial.legendre.Legendre : Legendre series
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
 
     References
     ----------
@@ -12317,7 +12321,7 @@ const char *mathieu_a_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -12326,12 +12330,12 @@ const char *mathieu_a_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the even solution, ``ce_m(z, q)``, of
+        Characteristic value for the even solution, :math:`\mathrm{ce}_m(x, q)`, of
         Mathieu's equation.
 
     See Also
     --------
-    mathieu_b, mathieu_cem, mathieu_sem
+    mathieu_b, mathieu_ce, mathieu_se
 
     References
     ----------
@@ -12348,7 +12352,7 @@ const char *mathieu_b_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -12357,18 +12361,22 @@ const char *mathieu_b_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the odd solution, ``se_m(z, q)``, of Mathieu's
-        equation.
+        Characteristic value for the odd solution, :math:`\mathrm{se}_m(x, q)`, of
+        Mathieu's equation.
 
     See Also
     --------
-    mathieu_a, mathieu_cem, mathieu_sem
+    mathieu_a, mathieu_ce, mathieu_se
 
     References
     ----------
     .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
            https://github.com/brorson/ScipyMathieuPaper
 
+    )";
+
+const char *_mathieu_ce_doc = R"(
+    Internal function. Use `mathieu_ce`.
     )";
 
 const char *_mathieu_cem_doc = R"(
@@ -12505,6 +12513,10 @@ const char *mathieu_modsem2_doc = R"(
     --------
     mathieu_modcem2
 
+    )";
+
+const char *_mathieu_se_doc = R"(
+    Internal function. Use `mathieu_se`.
     )";
 
 const char *_mathieu_sem_doc = R"(

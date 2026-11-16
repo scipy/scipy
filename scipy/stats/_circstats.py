@@ -702,8 +702,8 @@ def directional_stats(samples, *, axis=0, normalize=True):
     each observation is irrelevant).
 
     Several definitions of directional variance involving the mean resultant
-    length ``R`` have been proposed, including ``1 - R`` [1]_, ``1 - R**2``
-    [2]_, and ``2 * (1 - R)`` [2]_. Rather than choosing one, this function
+    length ``R`` have been proposed, including ``1 - R`` [2]_, ``1 - R**2``
+    [1]_, and ``2 * (1 - R)`` [1]_. Rather than choosing one, this function
     returns ``R`` as attribute `mean_resultant_length` so the user can compute
     their preferred measure of dispersion.
 

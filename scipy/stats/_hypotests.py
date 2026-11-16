@@ -3,12 +3,10 @@ from dataclasses import dataclass
 import math
 import numpy as np
 import warnings
-from itertools import combinations
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._crosstab import crosstab
-from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy,
                                    is_lazy_array, _count_nonmasked, is_marray,
@@ -744,33 +742,6 @@ def _get_wilcoxon_distr2(n):
     return res
 
 
-def _tau_b(A):
-    """Calculate Kendall's tau-b and p-value from contingency table."""
-    # See [2] 2.2 and 4.2
-
-    # contingency table must be truly 2D
-    if A.shape[0] == 1 or A.shape[1] == 1:
-        return np.nan, np.nan
-
-    NA = A.sum()
-    PA = _P(A)
-    QA = _Q(A)
-    Sri2 = (A.sum(axis=1)**2).sum()
-    Scj2 = (A.sum(axis=0)**2).sum()
-    denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
-
-    tau = (PA-QA)/(denominator)**0.5
-
-    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
-    s02_tau_b = numerator/denominator
-    if s02_tau_b == 0:  # Avoid divide by zero
-        return tau, 0
-    Z = tau/s02_tau_b**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
-
-    return tau, p
-
-
 def _somers_d(A, alternative='two-sided'):
     """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
@@ -987,23 +958,6 @@ def somersd(x, y=None, alternative='two-sided'):
     res = SomersDResult(d, p, table)
     res.correlation = d
     return res
-
-
-# This could be combined with `_all_partitions` in `_resampling.py`
-def _all_partitions(nx, ny):
-    """
-    Partition a set of indices into two fixed-length sets in all possible ways
-
-    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
-    ny in all possible ways (ignoring order of elements).
-    """
-    z = np.arange(nx+ny)
-    for c in combinations(z, nx):
-        x = np.array(c)
-        mask = np.ones(nx+ny, bool)
-        mask[x] = False
-        y = z[mask]
-        yield x, y
 
 
 def _compute_log_combinations(n):

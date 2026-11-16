@@ -488,8 +488,8 @@ jobs:
       - name: build + test in i686 container
         run: |
           set -exuo pipefail
-          docker pull quay.io/pypa/manylinux_2_28_i686
-          docker run -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_28_i686 /bin/bash -c '
+          docker pull quay.io/pypa/manylinux_2_34_i686
+          docker run --security-opt seccomp=unconfined -v "$(pwd):/scipy" --platform=linux/i386 quay.io/pypa/manylinux_2_34_i686 /bin/bash -c '
             set -exuo pipefail
             cd /scipy
             uname -a
@@ -606,7 +606,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.14"
+          # use a variant other than the system default
+          python-version: "3.15"
 
       - name: Setup Python build/test deps
         run: |

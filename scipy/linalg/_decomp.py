@@ -106,7 +106,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
         This option is sometimes useful for generalized eigenvalue problems,
         ``b is not None``, where an eigenvalue, :math:`\lambda = \alpha / \beta`  ,
-        can over- or underflow; typically, :\math:`\alpha` and :math:`\beta` are of the
+        can over- or underflow; typically, :math:`\alpha` and :math:`\beta` are of the
         order of ``norm(a)`` and ``norm(b)``, respectively.
 
         Default is False.
