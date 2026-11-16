@@ -715,6 +715,11 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     xp = array_namespace(a)
     a, mask = _put_val_to_limits(a, limits, inclusive, val=0., xp=xp)
+    # The sum and the count below are accumulated in the dtype of `a`, so
+    # promote integer inputs to floating point first: an integer accumulator
+    # overflows for large values or many elements. The mean is a quotient, so
+    # a floating accumulator loses nothing that was not lost anyway.
+    a = xp_promote(a, force_floating=True, xp=xp)
     # explicit dtype specification required due to data-apis/array-api-compat#152
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype, device=xp_device(a)), axis=axis,
