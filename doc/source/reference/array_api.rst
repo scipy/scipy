@@ -7,9 +7,8 @@ Many SciPy functions supports multiple array types via the
 `Python array API standard <https://data-apis.org/array-api/latest/index.html>`_.
 
 This standard allows users to use any array API compatible array library
-with parts of SciPy out of the box, with with the main
+with parts of SciPy out of the box, with the main
 principle being *"array type in equals array type out"*.
-Currently, SciPy supports NumPy, PyTorch, JAX, Dask and CuPy arrays.
 For more information, see :ref:`dev-arrayapi`.
 
 This clustering example shows usage with PyTorch tensors as inputs and return

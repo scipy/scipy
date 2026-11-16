@@ -3,10 +3,6 @@
 Support for the array API standard
 ==================================
 
-.. note:: Array API standard support is still experimental and hidden behind an
-          environment variable. Only a small part of the public API is covered
-          right now.
-
 This guide describes how to **use** and **add support for** the
 `Python array API standard <https://data-apis.org/array-api/latest/index.html>`_.
 This standard allows users to use any array API compatible array library
