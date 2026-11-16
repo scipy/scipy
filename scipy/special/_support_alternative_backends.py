@@ -2953,7 +2953,7 @@ _special_funcs += tuple(
         torch_native=False,
     )
     for name, func in vars(_ufuncs).items() if name.startswith("_")
-    and hasattr(func, "nin") and func not in registered
+    and hasattr(func, "nin") and name not in registered
 )
 
 if TYPE_CHECKING:
