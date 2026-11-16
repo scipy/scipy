@@ -221,7 +221,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
         The hypothesized difference in means between the distributions
         underlying the samples.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
+        Defines the alternative hypothesis (case-insensitive).
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the difference between distribution means is not
@@ -306,6 +306,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     """
 
     _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative)
+    alternative = alternative.lower()
 
     # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
     lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
