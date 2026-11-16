@@ -374,7 +374,7 @@ def lombscargle(
             YE -= Y * np.conj(E)
             EE -= np.abs(E)**2
 
-        epsneg = np.finfo(dtype=y.dtype).epsneg
+        epsneg = np.finfo(np.float64).epsneg
         EE[EE < epsneg] = epsneg
 
         a = YE / EE
@@ -404,8 +404,8 @@ def lombscargle(
         if model == "sine_cosine":
             # squeeze back to vectors
             a = np.squeeze(a)
-            b = np.squeeze(b)
-            tau = np.squeeze(tau)
+            b = np.squeeze(b)  # pyrefly: ignore[unbound-name]
+            tau = np.squeeze(tau)  # pyrefly: ignore[unbound-name]
 
             # calculate the complex representation, and correct for tau rotation
             pgram = (a + 1j * b) * np.exp(1j * tau)
