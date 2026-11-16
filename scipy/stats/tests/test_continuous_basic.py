@@ -315,9 +315,10 @@ def test_cont_basic_fit(distname, arg, n_fit_samples, method, fix_args):
     else:
         check_fit_args(distfn, arg, rvs, method)
 
-@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(
-    slow_test_cont_basic_expensive, xslow_test_cont_basic_expensive)))
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(set(), set())))
 def test_rvs_scalar(distname, arg):
+    # A single variate per call, so this is fast for every distribution
+    # (< 0.2s for studentized_range, the slowest) and none are marked slow.
     # rvs should return a scalar when given scalar arguments (gh-12428)
     try:
         distfn = getattr(stats, distname)
