@@ -16,8 +16,8 @@ each subpackage along with some general application notes.
 
 .. _NumPy: https://numpy.org
 
-The following table lists the subpackages SciPy provides. The left column contains the
-subpackage names, whereas the right column provides a description and links to the
+The following table lists the submodules SciPy provides. The left column contains the
+submodule names, whereas the right column provides a description and links to the
 corresponding chapter of this User Guide (if available):
 
 .. list-table::
@@ -59,10 +59,13 @@ corresponding chapter of this User Guide (if available):
       - :doc:`./stats`
 
 
-There are also additional user guides for these topics:
+There are also additional user guides on these parts of submodules:
 
 - :doc:`./arpack` - Eigenvalue problem solver using iterative methods
 - :doc:`./csgraph` - Compressed Sparse Graph Routines
+
+and on these topics:
+
 - :ref:`scipy_parallel_execution`
 - :ref:`scipy_thread_safety`
 - :ref:`security`
