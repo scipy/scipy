@@ -24,12 +24,8 @@ cdef enum:
 
 cdef stdio.FILE *_spare[_MAX_SPARE]
 cdef int _n_spare = 0
-# Guards `_spare` and `_n_spare`. It is held only for a few C statements that
-# never call into Python or take another lock, so it cannot deadlock with the
-# callers' own locks (e.g., `_Qhull._lock`). It is a C-level mutex rather than
-# a `threading.Lock` because `_recycle` runs from `__dealloc__`, where nothing
-# may fail or raise: a mutex cannot, whereas a blocked `threading.Lock`
-# acquire can raise (e.g., `KeyboardInterrupt`), which would leak the handle.
+# Guards `_spare` and `_n_spare`. Hold it only around plain C statements (no
+# calls into Python, no other locks), so that it cannot deadlock.
 cdef cython.pymutex _spare_lock
 
 
