@@ -1,9 +1,6 @@
 cimport cython
 from libc cimport stdio, stdlib
 from cpython cimport PyBytes_FromStringAndSize
-from cpython.pythread cimport (
-    PyThread_type_lock, PyThread_allocate_lock, PyThread_acquire_lock,
-    PyThread_release_lock, WAIT_LOCK)
 
 import os
 import tempfile
@@ -18,37 +15,58 @@ cdef extern from "messagestream.h":
 # `close` rewinds such streams and keeps up to `_MAX_SPARE` of them here for
 # reuse by later streams. The limit is kept small because the Windows C
 # runtime allows only ~512 open ``FILE*`` streams per process (gh-21958).
+# Reuse only rewinds a file, so it keeps its largest size until it is closed;
+# files larger than `_MAX_SPARE_SIZE` bytes (e.g., from Qhull's trace
+# options) are therefore closed instead of kept.
 cdef enum:
     _MAX_SPARE = 16
+    _MAX_SPARE_SIZE = 65536
 
 cdef stdio.FILE *_spare[_MAX_SPARE]
 cdef int _n_spare = 0
-cdef PyThread_type_lock _spare_lock = PyThread_allocate_lock()
-if _spare_lock == NULL:
-    raise MemoryError("thread lock allocation failed")
+# Guards `_spare` and `_n_spare`. It is held only for a few C statements that
+# never call into Python or take another lock, so it cannot deadlock with the
+# callers' own locks (e.g., `_Qhull._lock`). It is a C-level mutex rather than
+# a `threading.Lock` because `_recycle` runs from `__dealloc__`, where nothing
+# may fail or raise: a mutex cannot, whereas a blocked `threading.Lock`
+# acquire can raise (e.g., `KeyboardInterrupt`), which would leak the handle.
+cdef cython.pymutex _spare_lock
 
 
 cdef stdio.FILE *_take_spare() noexcept nogil:
+    """Return a spare stream, now owned by the caller, or NULL if none."""
     global _n_spare
     cdef stdio.FILE *handle = NULL
-    PyThread_acquire_lock(_spare_lock, WAIT_LOCK)
-    if _n_spare > 0:
-        _n_spare -= 1
-        handle = _spare[_n_spare]
-    PyThread_release_lock(_spare_lock)
+    with _spare_lock:
+        if _n_spare > 0:
+            _n_spare -= 1
+            handle = _spare[_n_spare]
     return handle
 
 
-cdef bint _put_spare(stdio.FILE *handle) noexcept nogil:
+cdef inline bint _past_max_size(stdio.FILE *handle) noexcept nogil:
+    # Checks the position, which is cheap, rather than the file size, which
+    # costs a slow filesystem query on Windows. Callers only write at the
+    # position, and spare files are at most `_MAX_SPARE_SIZE` bytes, so a
+    # file grows larger than that only if the position does too.
+    cdef long pos = stdio.ftell(handle)
+    return pos < 0 or pos > _MAX_SPARE_SIZE
+
+
+cdef void _recycle(stdio.FILE *handle, bint too_large) noexcept nogil:
+    """Take ownership of a file stream: keep it for reuse, or close it."""
     global _n_spare
-    cdef bint kept = False
-    PyThread_acquire_lock(_spare_lock, WAIT_LOCK)
-    if _n_spare < _MAX_SPARE:
-        _spare[_n_spare] = handle
-        _n_spare += 1
-        kept = True
-    PyThread_release_lock(_spare_lock)
-    return kept
+    if too_large or _past_max_size(handle):
+        stdio.fclose(handle)
+        return
+    stdio.rewind(handle)
+    with _spare_lock:
+        if _n_spare < _MAX_SPARE:
+            _spare[_n_spare] = handle
+            _n_spare += 1
+            handle = NULL
+    if handle != NULL:
+        stdio.fclose(handle)
 
 
 @cython.final
@@ -116,6 +134,8 @@ cdef class MessageStream:
         return obj.decode('latin1')
 
     def clear(self):
+        if _past_max_size(self.handle):
+            self._too_large = 1
         stdio.rewind(self.handle)
 
     cpdef close(self):
@@ -127,8 +147,6 @@ cdef class MessageStream:
             stdlib.free(self._memstream_ptr)
             self._memstream_ptr = NULL
         else:
-            stdio.rewind(self.handle)
-            if not _put_spare(self.handle):
-                stdio.fclose(self.handle)
+            _recycle(self.handle, self._too_large)
 
         self.handle = NULL
