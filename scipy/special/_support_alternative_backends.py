@@ -2963,10 +2963,28 @@ if TYPE_CHECKING:
     # import and delete these here.
     del seterr, geterr, errstate  # noqa: F821
 
+    # The type checker also needs to be aware of all private ufuncs for which
+    # delegation is set up.
     from ._ufuncs import (  # noqa: F401
-        _spherical_jn, _spherical_yn, _spherical_in,
-        _spherical_kn, _spherical_jn_d, _spherical_yn_d,
-        _spherical_in_d, _spherical_kn_d, _riemann_zeta, _zeta
+        _beta_pdf, _binom_cdf, _binom_isf, _binom_pmf, _binom_ppf, _binom_sf,
+        _bivariate_normal_cdf, _cauchy_isf, _cauchy_ppf, _cosine_cdf,
+        _cosine_invcdf, _cospi, _ellip_harm, _gen_harmonic, _hypergeom_cdf,
+        _hypergeom_mean, _hypergeom_pmf, _hypergeom_sf, _hypergeom_skewness,
+        _hypergeom_variance, _igam_fac, _invgauss_isf, _invgauss_ppf, _iv_ratio,
+        _iv_ratio_c, _iv_ratioinv, _kolmogc, _kolmogci, _kolmogp, _lambertw,
+        _landau_cdf, _landau_isf, _landau_pdf, _landau_ppf, _landau_sf, _lgam1p,
+        _log1mexp, _log1pmx, _mathieu_ce, _mathieu_cem, _mathieu_se, _mathieu_sem,
+        _nbinom_cdf, _nbinom_isf, _nbinom_kurtosis_excess, _nbinom_mean,
+        _nbinom_pmf, _nbinom_ppf, _nbinom_sf, _nbinom_skewness, _nbinom_variance,
+        _ncf_isf, _ncf_kurtosis_excess, _ncf_mean, _ncf_pdf, _ncf_sf, _ncf_skewness,
+        _ncf_variance, _nct_isf, _nct_kurtosis_excess, _nct_mean, _nct_pdf, _nct_sf,
+        _nct_skewness, _nct_variance, _ncx2_isf, _ncx2_pdf, _ncx2_sf,
+        _normalized_gen_harmonic, _riemann_zeta, _scaled_exp1,
+        _sf_error_test_function, _sinpi, _skewnorm_cdf, _skewnorm_isf,
+        _skewnorm_ppf, _smirnovc, _smirnovci, _smirnovp, _spherical_in,
+        _spherical_in_d, _spherical_jn, _spherical_jn_d, _spherical_kn,
+        _spherical_kn_d, _spherical_yn, _spherical_yn_d, _stirling2_inexact,
+        _trivariate_normal_cdf, _von_mises_cdf, _zeta,
     )
 
     from ._ellip_harm import (  # noqa: F401
