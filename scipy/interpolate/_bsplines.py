@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError, LinAlgWarning,
                           cholesky_banded, cho_solve_banded,
-                          solve, solve_banded)
+                          solve, solve_banded, invpascal)
 from scipy.optimize import minimize_scalar
 from . import _dierckx
 from . import _fitpack_impl
@@ -3177,6 +3177,18 @@ def _penalty_matrix_banded(t):
 
     return omega_banded
 
+def _pspline_penalty(n, order=2):
+    """P-spline penalty matrix P, with c @ P @ c == sum(diff(c, order)**2).
+
+    See Eilers & Marx, "Why P-splines?",
+    https://psplines.bitbucket.io/Support/WhyPsplines.pdf
+    """
+    if n <= order:
+        raise ValueError(f"Need at least {order + 1} coefficients, got {n}.")
+    # Difference operator is the rows of inv(Pascal)
+    d = invpascal(order + 1, kind='lower', exact=True)[-1].astype(float)
+    D = diags_array(d, offsets=list(range(order + 1)), shape=(n - order, n))
+    return D.T @ D
 
 def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
     """Select lam by minimizing the GCV criterion over the dimensionless

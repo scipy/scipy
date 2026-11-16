@@ -30,7 +30,7 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt, _compute_b_inv,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr,
-                                         _penalty_matrix_banded,
+                                         _penalty_matrix_banded, _pspline_penalty,
                                          _solve_smoothing_spline_coefficients)
 from scipy.interpolate._fitpack_repro import Fperiodic, root_rati
 
@@ -3363,6 +3363,75 @@ def bspline(x, t, c, k):
     assert (n >= k+1) and (len(c) >= n)
     return sum(c[i] * B(x, k, i, t) for i in range(n))
 
+
+class TestPSplinePenalty:
+
+    @pytest.mark.parametrize('order', [1, 2, 3, 4])
+    def test_quadratic_form(self, order):
+        # the defining property is, c @ P @ c is the sum of squared differences
+        rng = np.random.RandomState(1234)
+        n = 20
+        c = rng.uniform(size=n)
+        P = _pspline_penalty(n, order=order)
+        xp_assert_close(c @ (P @ c), np.sum(np.diff(c, n=order)**2))
+
+    @pytest.mark.parametrize('order', [1, 2, 3])
+    def test_dense_oracle(self, order):
+        n = 11
+        D = np.diff(np.eye(n), n=order, axis=0)
+        P = _pspline_penalty(n, order=order)
+        xp_assert_close(P.toarray(), D.T @ D)
+
+    @pytest.mark.parametrize('order', [1, 2, 3])
+    def test_null_space(self, order):
+        # differencing annihilates polynomials of degree < order, so their
+        # coefficient vectors have zero penalty
+        n = 15
+        j = np.arange(n, dtype=np.float64)
+        P = _pspline_penalty(n, order=order)
+        for deg in range(order):
+            c = j**deg
+            xp_assert_close(P @ c, np.zeros(n), atol=1e-10)
+
+    def test_large_scale(self):
+        # the identity holds for larger systems and badly scaled coefficients
+        rng = np.random.RandomState(42)
+        n = 10_000
+        c = 1e8 * rng.standard_normal(n)
+        P = _pspline_penalty(n)
+        xp_assert_close(c @ (P @ c), np.sum(np.diff(c, n=2)**2), rtol=1e-12)
+
+    def test_too_few_coefficients(self):
+        with assert_raises(ValueError):
+            _pspline_penalty(2, order=2)
+
+    @pytest.mark.parametrize('order', [1, 2, 3])
+    def test_rank(self, order):
+        # P is PSD and its null space is exactly the polynomial coefficient
+        # vectors, i.e. of dimension `order`
+        n = 12
+        evals = np.linalg.eigvalsh(_pspline_penalty(n, order=order).toarray())
+        assert (evals > -1e-12).all()
+        assert np.sum(np.abs(evals) < 1e-10) == order
+
+    def test_removes_singularities(self):
+        # "it is impossible to have too many B-splines, because the penalty
+        # removes any singularities" (Eilers & Marx, "Why P-splines?",
+        # https://psplines.bitbucket.io/Support/WhyPsplines.pdf), with more basis
+        # functions than data points B^T B is singular, but
+        # B^T B + lam * P is positive definite
+        rng = np.random.RandomState(99)
+        x = np.sort(rng.uniform(0, 1, 8))
+        t = np.r_[[0.]*4, np.linspace(0, 1, 30)[1:-1], [1.]*4]
+        B = BSpline.design_matrix(x, t, k=3).toarray()
+        n = t.shape[0] - 4
+
+        BtB = B.T @ B
+        with assert_raises(np.linalg.LinAlgError):
+            np.linalg.cholesky(BtB)
+
+        P = _pspline_penalty(n).toarray()
+        np.linalg.cholesky(BtB + 1e-3 * P)  # does not raise
 
 class NdBSpline0:
     def __init__(self, t, c, k=3):
