@@ -132,6 +132,11 @@ which are disabled even when calling ``spin test -m full``.
 They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 
+``Hypothesis`` is an optional test dependency: property-based tests are skipped
+when it is not installed. New tests that use it should import the names they
+need from ``scipy._lib._hypothesis_helpers`` and be marked with
+``@pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")``.
+
 By default, tests that use ``Hypothesis`` run with the ``deterministic``
 profile defined in ``scipy/scipy/conftest.py``. This profile includes the
 Hypothesis setting ``derandomize=True`` so the same examples are used until

@@ -11,8 +11,7 @@ import os
 import warnings
 from collections import namedtuple
 from itertools import product
-import hypothesis.extra.numpy as npst
-import hypothesis
+from scipy._lib._hypothesis_helpers import HAS_HYPOTHESIS, hypothesis, npst
 import contextlib
 
 from numpy.testing import (assert_, assert_equal,
@@ -4121,6 +4120,7 @@ class TestTTest_1samp:
 
     @skip_xp_backends(np_only=True, reason='Too slow.')
     @pytest.mark.xslow
+    @pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])

@@ -9,9 +9,9 @@ import importlib
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
-from hypothesis import strategies as st
-from hypothesis import given, settings
-import hypothesis.extra.numpy as npst
+from scipy._lib._hypothesis_helpers import (
+    HAS_HYPOTHESIS, given, settings, st, npst
+)
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._testutils import IS_WASM
@@ -3323,6 +3323,7 @@ class TestVectorizedFilter:
 
 # cost is Hypothesis engine overhead per example, not `median_filter`; lengths past ~50
 # can't reach the `lim = (size - 1) // 2` boundary fuzzed here, so they only add cost
+@pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
 @settings(max_examples=50)
 @given(x=npst.arrays(dtype=np.float64,
                      shape=st.integers(min_value=1, max_value=200)),

@@ -103,6 +103,9 @@ Backwards incompatible changes
 *************
 Other changes
 *************
+- ``hypothesis`` is now an optional test dependency: property-based tests are
+  skipped when it is not installed. This removes the Rust toolchain requirement
+  for running the test suite on platforms without prebuilt ``hypothesis`` wheels.
 
 
 
