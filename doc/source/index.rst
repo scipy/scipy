@@ -62,24 +62,24 @@ science, and engineering.
             To the reference guide
 
     .. grid-item-card::
-        :img-top: _static/index_getting_started.svg
+        :img-top: _static/index_array_api.svg
         :text-align: center
 
-        **Building from source**
+        **Array API**
         ^^^
 
-        Want to build from source rather than use a Python distribution or
-        pre-built SciPy binary? This guide will describe how to set up your
-        build environment, and how to build *SciPy* itself, including the many
-        options for customizing that build.
+        Want to use SciPy with PyTorch, JAX, or CuPy arrays? Many SciPy
+        functions support multiple array types via the Python array API
+        standard. This section describes how it works and details
+        support coverage across the library.
 
         +++
 
-        .. button-ref:: building-from-source
+        .. button-ref:: array-api-coverage
             :color: secondary
             :click-parent:
 
-            To the build guide
+            To the array API coverage tables
 
     .. grid-item-card::
         :img-top: _static/index_contribute.svg

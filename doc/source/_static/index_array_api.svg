@@ -1,0 +1,13 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+ width="358.3pt" height="340pt" viewBox="0 0 157 149"
+ preserveAspectRatio="xMidYMid meet">
+<metadata>
+Logo of the Consortium for Python Data API Standards (MIT License),
+traced from https://github.com/data-apis/array-api/blob/main/spec/_static/images/favicon.png
+</metadata>
+<g fill="#000000" stroke="none">
+<polygon points="33,0 78.5,23.5 124,0 150,18 78.5,55 7,18"/>
+<polygon points="0,32 71,68 71,149 45.5,137 45,84 0,59.5"/>
+<polygon points="157,32 86,68 86,149 111.5,137 112,84 157,59.5"/>
+</g>
+</svg>
