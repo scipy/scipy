@@ -450,12 +450,12 @@ class TestTf2Sos:
         a_xp = xp.asarray(a)
         expected_sos_xp = xp.asarray(expected_sos)
         sos = tf2sos(b_xp, a_xp)
-        assert_allclose(sos, expected_sos_xp, atol=1e-14)
+        xp_assert_close(sos, expected_sos_xp, atol=1e-14)
 
         # Check filtering behavior matches lfilter
         x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
         y_tf = lfilter(b, a, x)
-        y_sos = sosfilt(np.asarray(sos), x)
+        y_sos = sosfilt(xp_copy_to_numpy(sos), x)
         assert_allclose(y_sos, y_tf, atol=1e-14)
 
     def test_complex_input_with_pure_delay(self):
