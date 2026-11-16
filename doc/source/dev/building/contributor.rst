@@ -182,18 +182,6 @@ interface is self-documenting, so please see ``spin --help`` and
 .. _meson-python: https://mesonbuild.com/meson-python/
 
 
-Working with XSF
-^^^^^^^^^^^^^^^^
-
-Many functions in ``scipy.special`` are implemented in the C++ library
-`XSF <https://github.com/scipy/xsf>`_, included as a Git submodule at
-``subprojects/xsf``. To test changes to XSF within SciPy, edit the files
-in that directory, then rebuild SciPy and run the relevant tests.
-See the `XSF contribution guide
-<https://github.com/scipy/xsf/blob/main/CONTRIBUTING.md>`_ for details
-on developing and testing XSF itself.
-
-
 Installing static type stubs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -202,3 +190,15 @@ you can include the ``scipy-stubs`` package in your development environment.
 It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
 
 .. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
+
+
+Working with xsf
+================
+
+Many functions in ``scipy.special`` are implemented in the C++ library
+`xsf <https://github.com/scipy/xsf>`_, included as a Git submodule at
+``subprojects/xsf``. To test changes to XSF within SciPy, edit the files
+in that directory, then rebuild SciPy and run the relevant tests.
+See the `xsf contribution guide
+<https://github.com/scipy/xsf/blob/main/CONTRIBUTING.md>`_ for details
+on developing and testing xsf itself.
