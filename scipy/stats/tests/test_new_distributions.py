@@ -5,7 +5,7 @@ from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import make_xp_test_case, is_cupy
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy import stats, special
-from scipy.stats.tests.test_continuous import DistributionsTest
+from scipy.stats.tests.test_univariate_distribution import DistributionsTest
 from scipy.stats._new_distributions import StandardNormal
 
 

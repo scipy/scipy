@@ -7,7 +7,6 @@ py3.install_sources([
     'test_circstats.py',
     'test_contingency.py',
     'test_continued_fraction.py',
-    'test_continuous.py',
     'test_continuous_basic.py',
     'test_continuous_fit_censored.py',
     'test_correlation.py',
@@ -42,6 +41,7 @@ py3.install_sources([
     'test_stats.py',
     'test_survival.py',
     'test_tukeylambda_stats.py',
+    'test_univariate_distribution.py',
     'test_variation.py'
   ],
   subdir: 'scipy/stats/tests',
