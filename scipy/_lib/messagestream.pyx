@@ -65,6 +65,33 @@ cdef void _recycle(stdio.FILE *handle, bint too_large) noexcept nogil:
         stdio.fclose(handle)
 
 
+# Test hooks below, not public API: they let the code above also be tested
+# where ``open_memstream`` exists.
+cdef bint _use_memstream = True
+
+
+def _force_tempfile(bint enabled):
+    """For tests only: make new streams use temporary files."""
+    global _use_memstream
+    _use_memstream = not enabled
+
+
+def _spare_count():
+    """For tests only: return the number of streams kept for reuse."""
+    cdef int n
+    with _spare_lock:
+        n = _n_spare
+    return n
+
+
+def _close_spares():
+    """For tests only: close all streams kept for reuse."""
+    cdef stdio.FILE *handle = _take_spare()
+    while handle != NULL:
+        stdio.fclose(handle)
+        handle = _take_spare()
+
+
 @cython.final
 cdef class MessageStream:
     """
@@ -75,8 +102,9 @@ cdef class MessageStream:
     def __cinit__(self):
         # Try first in-memory files, if available
         self._memstream_ptr = NULL
-        self.handle = messagestream_open_memstream(&self._memstream_ptr,
-                                                   &self._memstream_size)
+        if _use_memstream:
+            self.handle = messagestream_open_memstream(&self._memstream_ptr,
+                                                       &self._memstream_size)
         if self.handle != NULL:
             self._is_memstream = 1
             return

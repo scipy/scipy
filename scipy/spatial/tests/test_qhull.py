@@ -12,8 +12,28 @@ from pytest import raises as assert_raises
 import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
+from scipy._lib import messagestream
 
 import itertools
+
+
+@pytest.fixture
+def tempfile_streams():
+    # Use the temporary-file message streams of platforms without
+    # open_memstream, starting with none kept for reuse.
+    messagestream._close_spares()
+    messagestream._force_tempfile(True)
+    try:
+        yield
+    finally:
+        messagestream._force_tempfile(False)
+        messagestream._close_spares()
+
+
+@pytest.fixture(params=["default", "tempfile"])
+def message_streams(request):
+    if request.param == "tempfile":
+        request.getfixturevalue("tempfile_streams")
 
 def sorted_tuple(x):
     return tuple(sorted(x))
@@ -175,6 +195,8 @@ class Test_Qhull:
         # the run-id differs between calls
         return re.sub(r"run-id \d+", "run-id", str(exc.value))
 
+    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    @pytest.mark.usefixtures("message_streams")
     def test_error_messages_with_reused_streams(self):
         # Without open_memstream (e.g., on Windows), message streams are
         # reused; each error must contain its own message and nothing else.
@@ -196,7 +218,36 @@ class Test_Qhull:
             assert self._error_message(flat_3d) == msg_3d
             assert self._error_message(flat_2d) == msg_2d
 
+    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    @pytest.mark.usefixtures("tempfile_streams")
+    def test_reused_message_stream_starts_empty(self):
+        # Not all users clear a new stream before passing it to C code
+        self._error_message(np.array([[0., 0], [1, 1], [2, 2]]))
+        assert messagestream._spare_count() == 1
+        stream = messagestream.MessageStream()
+        assert stream.get() == ""
+        stream.close()
+
+    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    @pytest.mark.usefixtures("tempfile_streams")
+    def test_large_message_streams_not_reused(self):
+        # Streams that grew large, here from Qhull's trace option T4, are
+        # closed rather than kept for reuse, so their files don't stay on disk
+        points = np.random.default_rng(1234).random((100, 2))
+        qhull.ConvexHull(points, qhull_options="T4")
+        assert messagestream._spare_count() == 0
+
+        # also if the stream was cleared after growing large
+        hull = qhull.ConvexHull(points, qhull_options="T4", incremental=True)
+        hull.add_points([[0.5, 0.5]])
+        hull.close()
+        assert messagestream._spare_count() == 0
+
+        qhull.ConvexHull(points)
+        assert messagestream._spare_count() == 1
+
     @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+    @pytest.mark.usefixtures("message_streams")
     def test_error_messages_threaded(self):
         flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
         expected = self._error_message(flat_2d)
