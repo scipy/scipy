@@ -1,5 +1,7 @@
 import functools
+import inspect
 import operator
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
@@ -12,10 +14,10 @@ from scipy._lib._array_api import (
     is_array_api_obj, xp_result_device,
 )
 import scipy._external.array_api_extra as xpx
-from . import _basic
 from . import _ellip_harm
 from . import _lambertw
 from . import _mathieu
+from . import _polygamma
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
@@ -162,15 +164,10 @@ class _FuncInfo:
 
     @property
     def wrapper(self):
+        module = "scipy.special" if self.public else __name__
         if self.name in globals():
             # Already initialised. We are likely in a unit test.
-            # Return function potentially overridden by xpx.testing.lazy_xp_function.
-            import scipy.special
-            return getattr(scipy.special, self.name)
-
-        module = "scipy.special"
-        if not self.public:
-            module = f"{module}._support_alternative_backends"
+            return getattr(sys.modules[module], self.name)
 
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
@@ -186,8 +183,16 @@ class _FuncInfo:
                 module=module,
             )
         else:
+            signature = inspect.signature(self.func)
+
             @functools.wraps(self.func)
             def func(*args, **kwargs):
+                if kwargs:
+                    # normalize signature to support passing args as
+                    # kwargs.
+                    bound = signature.bind(*args, **kwargs)
+                    bound.apply_defaults()
+                    args, kwargs = bound.args, bound.kwargs
                 xp = array_namespace(*args, *kwargs.values())
                 return self._wrapper_for(xp)(*args, **kwargs)
 
@@ -554,6 +559,17 @@ def _ndtri_exp(xp, spsx):
         return ndtri(xp.exp(x))  # this is almost all we need
 
     return __ndtri_exp
+
+
+def __riemann_zeta(xp, spsx):
+    zeta = _get_native_func(xp, spsx, "zeta")
+    if zeta is None:
+        return None
+
+    def ___riemann_zeta(z):
+        return zeta(z, 1.0)
+
+    return ___riemann_zeta
 
 
 def _poisson_binom_cdf_shape_mapper(k_shape, p_shape, axis=-1, **kwargs):
@@ -1855,7 +1871,7 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.polygamma, ["n", "x"],
+        _polygamma.polygamma, ["n", "x"],
         is_ufunc=False,
         scalar_or_0d_only={"torch": (True, False)},
         produces_0d=True,
@@ -2736,10 +2752,17 @@ _special_funcs = (
         torch_native=False,
     ),
     _FuncInfo(
-        _basic.zeta, ["x", "q=None"],
-        is_ufunc=False,
+        _ufuncs._zeta, ["x", "q"],
+        alt_names_map={"torch": "zeta", "cupy": "zeta", "jax.numpy": "zeta"},
         positive_only={"jax.numpy": True, "torch": (True, False)},
         test_large_ints=False,
+        public=False,
+    ),
+    _FuncInfo(
+        _ufuncs._riemann_zeta, ["z"],
+        xp_capabilities(cpu_only=True),
+        generic_impl=__riemann_zeta,
+        public=False,
     ),
     _FuncInfo(
         _ufuncs.zetac, ["x"],
@@ -2902,18 +2925,40 @@ _special_funcs = (
 
 if TYPE_CHECKING:
     # The typechecker can have difficulty resolving dynamically generated
-    # wrappers. Fool it by importing the base ufuncs here.
+    # wrappers. Fool it by importing the base functions here.
+    from ._ufuncs import *  # noqa: F403
+    # These are the only things brought in with ``from ._ufuncs import *``
+    # which are not actually available from ``_support_alternative_backends``.
+    # Rather than explicitly import everything else, just use the star
+    # import and delete these here.
+    del seterr, geterr, errstate  # noqa: F821
+
     from ._ufuncs import (  # noqa: F401
         _spherical_jn, _spherical_yn, _spherical_in,
         _spherical_kn, _spherical_jn_d, _spherical_yn_d,
-        _spherical_in_d, _spherical_kn_d
+        _spherical_in_d, _spherical_kn_d, _riemann_zeta, _zeta
     )
+
+    from ._ellip_harm import (  # noqa: F401
+        ellip_harm,
+        ellip_harm_2,
+        ellip_normal
+    )
+
+    from ._lambertw import lambertw  #noqa: F401
+    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem  # noqa: F401
+    from ._polygamma import polygamma  # noqa: F401
+    from ._spfun_stats import poisson_binom_cdf, multigammaln  # noqa: F401
+    from numpy import sinc  # noqa: F401
+
 
 # Override ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
-# digamma is an alias for psi. Define here so it also has alternative backend
-# support. Add noqa because the linter gets confused by the sneaky way psi
-# is inserted into globals above.
-digamma = psi  # type:ignore[name-defined]  # noqa: F821
-jn = jv  # type:ignore[name-defined]  # noqa: F821
-__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma", "jn"]
+# Define aliases here so they also have alternative backend support.
+# Add noqa because the linter gets confused by the sneaky way functions
+# are inserted into globals above.
+digamma = psi  # type:ignore[name-defined]  # noqa: F405
+jn = jv  # type:ignore[name-defined]  # noqa: F405
+__all__ = (
+    [nfo.func.__name__ for nfo in _special_funcs if nfo.public] + ["digamma", "jn"]
+)
