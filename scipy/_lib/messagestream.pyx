@@ -88,7 +88,7 @@ cdef class MessageStream:
 
         # The OS deletes the file when the last handle to it is closed, also
         # if the process is killed, so there is nothing to clean up.
-        with tempfile.TemporaryFile(prefix='scipy-') as f:
+        with tempfile.TemporaryFile(prefix='scipy-errmsg-') as f:
             fd = os.dup(f.fileno())
 
         self.handle = stdio.fdopen(fd, 'wb+')
