@@ -19,6 +19,7 @@ import numpy as np
 from ._optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
 from ._linprog_highs import _linprog_highs
+from ._highspy._highs_wrapper import _callback_result
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
@@ -652,19 +653,33 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Give unmodified problem to HiGHS
     if meth.startswith('highs'):
-        if callback is not None:
-            raise NotImplementedError("HiGHS solvers do not support the "
-                                      "callback interface.")
         highs_solvers = {'highs-ipm': 'ipm', 'highs-ds': 'simplex',
                          'highs': None}
 
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
-                             **solver_options)
+                             callback=callback, **solver_options)
+        phase = sol.pop('phase', None)
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
                           sol['con'], lp.bounds, tol, sol['message'],
                           integrality))
         sol['success'] = sol['status'] == 0
+        if callback is not None:
+            arrays = {}
+            for key in ("x", "slack", "con"):
+                value = sol[key]
+                arrays[key] = None if value is None else np.copy(value)
+            mip = {key: sol[key] for key in
+                   ("mip_node_count", "mip_dual_bound", "mip_gap")
+                   if key in sol}
+            try:
+                callback(_callback_result(
+                    arrays["x"], sol["fun"], arrays["slack"], arrays["con"],
+                    sol["nit"], phase, True, success=sol["success"],
+                    status=sol["status"], message=sol["message"],
+                    mip=mip or None))
+            except StopIteration:
+                pass
         return OptimizeResult(sol)
 
     warn(f"`method='{meth}'` is deprecated and will be removed in a future version "

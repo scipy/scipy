@@ -51,7 +51,9 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
         HighsModelStatus.kInfeasible: (2, "The problem is infeasible. "),
         HighsModelStatus.kUnbounded: (3, "The problem is unbounded. "),
         HighsModelStatus.kUnboundedOrInfeasible: (4, "The problem is unbounded "
-                                                  "or infeasible. ")}
+                                                  "or infeasible. "),
+        HighsModelStatus.kInterrupt: (
+            5, "Optimization interrupted by callback. ")}
     unrecognized = (4, "The HiGHS status code was not recognized. ")
     scipy_status, scipy_message = (
         scipy_statuses_messages.get(highs_status, unrecognized))
@@ -86,6 +88,13 @@ def _convert_to_highs_enum(option, option_str, choices):
         return choices[default_str]
 
 
+def _count(value, default=0):
+    # HiGHS uses -1 for a count it never produced. ``None`` stays missing.
+    if value is None:
+        return default
+    return int(value) if value >= 0 else 0
+
+
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
@@ -94,6 +103,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    simplex_dual_edge_weight_strategy=None,
                    mip_rel_gap=None,
                    mip_max_nodes=None,
+                   callback=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -347,13 +357,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    if integrality is None or np.sum(integrality) == 0:
-        integrality = np.empty(0)
-    else:
-        integrality = np.array(integrality)
+    # An empty integrality array is the continuous model, not a MIP.
+    # An all-zero solution is still a MIP solution.
+    is_mip = integrality is not None and np.sum(integrality) != 0
+    integrality = np.array(integrality) if is_mip else np.empty(0)
 
     res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                         lb, ub, integrality.astype(np.uint8), options)
+                         lb, ub, integrality.astype(np.uint8), options,
+                         callback=callback, A=A, n_slack=b_ub.size)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
@@ -385,6 +396,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                                                      highs_message)
 
     x = res['x'] # is None if not set
+    # ``0 or -1`` would report HiGHS's unknown count when the simplex
+    # count is zero, which is the usual MIP result.
+    simplex_nit = _count(res.get('simplex_nit'))
+    ipm_nit = _count(res.get('ipm_nit'))
     sol = {'x': x,
            'slack': slack,
            'con': con,
@@ -408,13 +423,18 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'status': status,
            'success': res['status'] == HighsModelStatus.kOptimal,
            'message': message,
-           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
-           'crossover_nit': res.get('crossover_nit'),
+           'nit': simplex_nit or ipm_nit,
+           'crossover_nit': _count(res.get('crossover_nit'), None),
            }
 
-    if np.any(x) and integrality is not None:
+    if callback is not None:
+        ipm_phase = solver == "ipm" or (
+            solver is None and not simplex_nit and ipm_nit)
+        sol['phase'] = 1 if ipm_phase else 2
+
+    if is_mip and x is not None:
         sol.update({
-            'mip_node_count': res.get('mip_node_count', 0),
+            'mip_node_count': _count(res.get('mip_node_count')),
             'mip_dual_bound': res.get('mip_dual_bound', 0.0),
             'mip_gap': res.get('mip_gap', 0.0),
         })
