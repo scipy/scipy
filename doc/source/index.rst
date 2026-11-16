@@ -28,7 +28,7 @@ science, and engineering.
         :img-top: _static/index_user_guide.svg
         :text-align: center
 
-        **User guide**
+        **User Guide**
         ^^^
 
         The user guide provides in-depth information on the
@@ -46,7 +46,7 @@ science, and engineering.
         :img-top: _static/index_api.svg
         :text-align: center
 
-        **API reference**
+        **API Reference**
         ^^^
 
         The reference guide contains a detailed description of
@@ -65,7 +65,7 @@ science, and engineering.
         :img-top: _static/index_array_api.svg
         :text-align: center
 
-        **Array API**
+        **Array API Coverage**
         ^^^
 
         Want to use SciPy with PyTorch, JAX, or CuPy arrays? Many SciPy
@@ -85,7 +85,7 @@ science, and engineering.
         :img-top: _static/index_contribute.svg
         :text-align: center
 
-        **Developer guide**
+        **Developer Guide**
         ^^^
 
         Saw a typo in the documentation? Want to improve
@@ -105,7 +105,7 @@ science, and engineering.
 
    Installing <https://scipy.org/install/>
    User Guide <tutorial/index>
-   API reference <reference/index>
-   Array API <reference/array_api>
+   API Reference <reference/index>
+   Array API Coverage<reference/array_api>
    Development <dev/index>
-   Release notes <release>
+   Release Notes <release>
