@@ -2953,7 +2953,8 @@ if TYPE_CHECKING:
     from ._ufuncs import *  # noqa: F403
     # These are the only things brought in with ``from ._ufuncs import *``
     # which are not actually available from ``_support_alternative_backends``.
-    # Rather than explicitly import everything else, just delete them here.
+    # Rather than explicitly import everything else, just use the star
+    # import and delete these here.
     del seterr, geterr, errstate  # noqa: F821
 
     from ._ufuncs import (  # noqa: F401
