@@ -127,30 +127,16 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
 }
 
 
+/* ctypes._CFuncPtr, resolved once in PyInit__quadpack. */
+static PyObject *cfuncptr_type = NULL;
+
 static int
 init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
 {
-    static PyObject *cfuncptr_type = NULL;
-
     int ret;
     int ndim;
     int flags = CCALLBACK_OBTAIN;
     ccallback_signature_t *signatures = quadpack_call_signatures;
-
-    if (cfuncptr_type == NULL) {
-        PyObject *module;
-
-        module = PyImport_ImportModule("ctypes");
-        if (module == NULL) {
-            return -1;
-        }
-
-        cfuncptr_type = PyObject_GetAttrString(module, "_CFuncPtr");
-        Py_DECREF(module);
-        if (cfuncptr_type == NULL) {
-            return -1;
-        }
-    }
 
     if (PyObject_TypeCheck(func, (PyTypeObject *)cfuncptr_type)) {
         /* Legacy support --- ctypes objects can be passed in as-is */
@@ -985,6 +971,18 @@ PyInit__quadpack(void)
     }
     if (PyDict_SetItemString(mdict, "error", quadpack_error)) {
         return NULL;
+    }
+
+    {
+        PyObject *ctypes = PyImport_ImportModule("ctypes");
+        if (ctypes == NULL) {
+            return NULL;
+        }
+        cfuncptr_type = PyObject_GetAttrString(ctypes, "_CFuncPtr");
+        Py_DECREF(ctypes);
+        if (cfuncptr_type == NULL) {
+            return NULL;
+        }
     }
 
 #if Py_GIL_DISABLED
