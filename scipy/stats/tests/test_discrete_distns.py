@@ -15,6 +15,7 @@ from numpy.testing import (
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
+from scipy._lib._testutils import IS_WASM, _run_concurrent_barrier
 
 
 # The expected values were computed with Wolfram Alpha, using
@@ -613,6 +614,29 @@ class TestNCH:
         dist = dists[dist_name]
         x = dist.rvs(50, 30, [[10], [20]], [0.5, 1.0, 2.0], size=(5, 1, 2, 3))
         assert x.shape == (5, 1, 2, 3)
+
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
+    @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
+    @pytest.mark.parametrize('dist_name',
+                             ['nchypergeom_fisher', 'nchypergeom_wallenius'])
+    def test_rvs_seeded_in_threads(self, dist_name):
+        # The sampler used to keep the bit generator in a module-level
+        # pointer that every call overwrote, so concurrent calls with
+        # different seeds drew from each other's generator. Only free-threaded
+        # builds can interleave the calls; with the GIL this passes on the old
+        # code too.
+        dist = getattr(stats, dist_name)
+        args = (140, 80, 60, 1.5)
+        n_workers = 4
+
+        def draw(seed):
+            rng = np.random.default_rng(seed)
+            return dist.rvs(*args, size=500, random_state=rng)
+
+        expected = [draw(seed) for seed in range(n_workers)]
+        results = _run_concurrent_barrier(n_workers, draw)
+        for seed in range(n_workers):
+            assert_equal(results[seed], expected[seed], err_msg=f"seed={seed}")
 
 
 @pytest.mark.parametrize("mu, q, expected",

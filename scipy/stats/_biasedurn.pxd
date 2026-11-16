@@ -23,5 +23,6 @@ cdef extern from "biasedurn/stocc.h" nogil:
         void SetAccuracy(double accur)
         int FishersNCHyp (int n, int m, int N, double odds) except +
         int WalleniusNCHyp (int n, int m, int N, double odds) except +
-        double(*next_double)()
-        double(*next_normal)(const double m, const double s)
+        void *rng_state
+        double(*next_double)(void *rng_state)
+        double(*next_normal)(void *rng_state, const double m, const double s)
