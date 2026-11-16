@@ -41,6 +41,8 @@ py3.install_sources([
     'test_stats.py',
     'test_survival.py',
     'test_tukeylambda_stats.py',
+    'test_univariate_distribution_extensions.py',
+    'test_univariate_distribution_util.py',
     'test_univariate_distribution.py',
     'test_variation.py'
   ],
