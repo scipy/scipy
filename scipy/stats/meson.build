@@ -153,6 +153,8 @@ py3.install_sources([
     '_stats_py.py',
     '_survival.py',
     '_tukeylambda_stats.py',
+    '_univariate_distribution_extensions.py',
+    '_univariate_distribution_util.py',
     '_univariate_distribution.py',
     '_variation.py',
     '_warnings_errors.py',

@@ -9,9 +9,10 @@ from scipy._lib._array_api import xp_capabilities, is_cupy
 from scipy._external import array_api_extra as xpx
 from scipy import special
 from scipy.special import _ufuncs as scu
+from scipy.stats._univariate_distribution_util import (
+    _RealInterval, _IntegerInterval, _RealParameter, _Parameterization)
 from scipy.stats._univariate_distribution import (
-    ContinuousDistribution, DiscreteDistribution, CircularDistribution,
-    _RealInterval, _IntegerInterval, _RealParameter, _Parameterization, _combine_docs)
+    ContinuousDistribution, DiscreteDistribution, CircularDistribution, _combine_docs)
 
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
@@ -37,6 +38,7 @@ rv_capabilities = xp_capabilities(
             "plot": dict(np_only=True),
     }
 )
+
 
 @rv_capabilities_w_torch
 class Normal(ContinuousDistribution):

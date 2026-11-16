@@ -630,7 +630,7 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._univariate_distribution import (
+from ._univariate_distribution_extensions import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
 from ._new_distributions import Normal, Logistic, Uniform, Binomial, VonMises
