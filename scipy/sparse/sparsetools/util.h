@@ -33,6 +33,15 @@ OVERRIDE_safe_divides(npy_clongdouble_wrapper)
 
 #undef OVERRIDE_safe_divides
 
+template <class I, class T>
+struct csr_array {
+    const I n_row;
+    const I n_col;
+    I *indptr;
+    I *indices;
+    T *data;
+};
+
 template <class T>
 struct maximum {
     T operator() (const T& x, const T& y) const {
