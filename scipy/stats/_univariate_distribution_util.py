@@ -759,7 +759,7 @@ def _set_invalid_nan_property(f):
     @functools.wraps(f)
     def filtered(self, *args, **kwargs):
         xp = self._xp
-        if self.validation_policy == "_SKIP_ALL":
+        if self.validation_policy == _SKIP_ALL:
             return f(self, *args, **kwargs)
 
         res = f(self, *args, **kwargs)
