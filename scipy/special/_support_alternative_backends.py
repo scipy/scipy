@@ -2,7 +2,6 @@ import functools
 import inspect
 import operator
 import threading
-import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
