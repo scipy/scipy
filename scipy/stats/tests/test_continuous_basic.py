@@ -50,7 +50,8 @@ _IS_32BIT = (sys.maxsize < 2**32)
 # and cdf are compared with mpmath in test_distributions.py.
 xslow_test_cont_basic = {'studentized_range'}
 slow_test_cont_basic = {'norminvgauss'}
-# test_cont_basic_expensive: sampling, stats, entropy and named arguments.
+# test_cont_basic_expensive: sampling, stats, entropy and named arguments
+# (which call `moment`).
 xslow_test_cont_basic_expensive = {'studentized_range', 'kstwo', 'ksone',
                                    'recipinvgauss', 'kappa4'}
 slow_test_cont_basic_expensive = {'gausshyper'}
@@ -203,7 +204,8 @@ def test_cont_basic(distname, arg, num_parallel_threads):
 def test_cont_basic_expensive(distname, arg, sn):
     # The checks of test_cont_basic that are expensive for some distributions:
     # sampling (sample moments, KS test), stats, entropy (numerical
-    # integration) and named arguments (many method calls).
+    # integration) and named arguments (`check_named_args` calls `moment`,
+    # which integrates numerically if there is no closed form).
     distfn, distname = _cont_basic_dist(distname)
 
     rng = np.random.default_rng(7654565)
