@@ -18,7 +18,7 @@ from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
 from scipy.stats._distr_params import distcont, distdiscrete
-from scipy.stats._distribution_infrastructure import (
+from scipy.stats._univariate_distribution import (
     _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, DiscreteDistribution, CircularDistribution, Mixture,
     ShiftedScaledDistribution, _generate_domain_support, _logexpxmexpy)
@@ -1840,7 +1840,7 @@ class TestMakeDistribution:
             stats.make_distribution(MyTestDistribution())(n=10)
 
     def test_repr_str_docs(self):
-        from scipy.stats._distribution_infrastructure import _distribution_names
+        from scipy.stats._univariate_distribution import _distribution_names
         for dist in _distribution_names.keys():
             assert hasattr(stats, dist)
 
@@ -1903,7 +1903,7 @@ class TestMakeDistribution:
         assert X.support() == (-xp.inf, xp.inf)
 
 
-@make_xp_test_case(stats._distribution_infrastructure.TransformedDistribution)
+@make_xp_test_case(stats._univariate_distribution.TransformedDistribution)
 class TestTransforms:
     def test_ContinuousDistribution_only(self, xp):
         X = stats.Binomial(n=10, p=0.5, xp=xp)
@@ -1954,7 +1954,7 @@ class TestTruncate:
         assert xp.all((sample > lb) & (sample < ub))
 
 
-@make_xp_test_case(stats._distribution_infrastructure.ShiftedScaledDistribution)
+@make_xp_test_case(stats._univariate_distribution.ShiftedScaledDistribution)
 class TestLocScale:
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('seed', 911679639 + np.arange(20))
@@ -2117,7 +2117,7 @@ class TestExpPow:
         xp_assert_close(Y.sample(rng=seed), xp.asarray(np.exp(X.sample(rng=seed))))
 
 
-@make_xp_test_case(stats._distribution_infrastructure.TransformedDistribution)
+@make_xp_test_case(stats._univariate_distribution.TransformedDistribution)
 class TestReciprocal:
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('scale', [1, 2, -1])
@@ -2208,7 +2208,7 @@ class TestLog:
         xp_assert_close(Y.sample(rng=seed), xp.asarray(np.log(X.sample(rng=seed))))
 
 
-@make_xp_test_case(stats._distribution_infrastructure.MonotonicTransformedDistribution)
+@make_xp_test_case(stats._univariate_distribution.MonotonicTransformedDistribution)
 class TestMonotonicTransform:
     def test_monotonic_transforms_str(self):
         X = Uniform(a=1, b=2)
@@ -2243,7 +2243,7 @@ class TestMonotonicTransform:
             X ** [0.5, 1.5]
 
 
-@make_xp_test_case(stats._distribution_infrastructure.TransformedDistribution)
+@make_xp_test_case(stats._univariate_distribution.TransformedDistribution)
 class TestArithmetic:
     def test_arithmetic_operators(self, xp):
         rng = np.random.default_rng(2348923495832349834)
@@ -2315,7 +2315,7 @@ class TestAbs:
         assert_equal(X.ccdf(1), Y.ccdf(1))
 
 
-@make_xp_test_case(stats._distribution_infrastructure.TransformedDistribution)
+@make_xp_test_case(stats._univariate_distribution.TransformedDistribution)
 class TestPow:
     def test_pow(self, xp):
         rng = np.random.default_rng(81345982345826)
