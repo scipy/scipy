@@ -1,6 +1,7 @@
 import functools
 import inspect
 import operator
+import threading
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -21,6 +22,8 @@ from . import _polygamma
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
+
+_wrapper_lock = threading.RLock()
 
 
 def _special_namespace_for(xp):
@@ -164,6 +167,17 @@ class _FuncInfo:
 
     @property
     def wrapper(self):
+        # Need to ensure wrapper is only constructed once, even in multithreaded
+        # context.
+        with _wrapper_lock:
+            try:
+                return self.__dict__["_wrapper"]
+            except KeyError:
+                wrapper = self._make_wrapper()
+                self.__dict__["_wrapper"] = wrapper
+                return wrapper
+
+    def _make_wrapper(self):
         module = "scipy.special" if self.public else __name__
         if self.name in globals():
             # Already initialised. We are likely in a unit test.
@@ -260,7 +274,7 @@ class _FuncInfo:
             # not elementwise. Otherwise, we would not be able to define a
             # general rule for mask propagation.
 
-            _f = globals()[self.name]  # Allow nested wrapping
+            _f = get_function[self.name]  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
                     raise NotImplementedError(
@@ -288,7 +302,7 @@ class _FuncInfo:
             # or any other function with reductions, as they would change their
             # output depending on chunking!
 
-            _f = globals()[self.name]  # Allow nested wrapping
+            _f = get_function(self.name)  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
                     raise NotImplementedError(
@@ -2939,7 +2953,7 @@ _special_funcs += tuple(
         torch_native=False,
     )
     for name, func in vars(_ufuncs).items() if name.startswith("_")
-    and hasattr(func, "nin") and not func in registered
+    and hasattr(func, "nin") and func not in registered
 )
 
 if TYPE_CHECKING:
@@ -2971,13 +2985,26 @@ if TYPE_CHECKING:
     from numpy import sinc  # noqa: F401
 
 
-# Override ufuncs.
-globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
-# Define aliases here so they also have alternative backend support.
-# Add noqa because the linter gets confused by the sneaky way functions
-# are inserted into globals above.
-digamma = psi  # type:ignore[name-defined]  # noqa: F405
-jn = jv  # type:ignore[name-defined]  # noqa: F405
-__all__ = (
-    [nfo.func.__name__ for nfo in _special_funcs if nfo.public] + ["digamma", "jn"]
-)
+_FUNC_INFO = {info.name: info for info in _special_funcs}
+_aliases = {"digamma": "psi", "jn": "jv"}
+
+__all__ = [name for name, info in _FUNC_INFO.items() if info.public] + list(_aliases)
+
+
+def get_function(name):
+    if name in _aliases:
+        name = _aliases[name]
+
+    return _FUNC_INFO[name].wrapper
+
+
+def __getattr__(name):
+    if name not in _FUNC_INFO and name not in _aliases:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}"
+        )
+    return get_function(name)
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
