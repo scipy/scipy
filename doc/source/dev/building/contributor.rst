@@ -18,6 +18,8 @@ First, `clone the SciPy repository <https://docs.github.com/en/repositories/crea
 
 and `install Pixi <https://pixi.prefix.dev/latest/installation>`__.
 
+Next, set up your operating system, following `conda-forge's system setup guide <https://conda-forge.org/docs/user/system_setup_compilers/>`__.
+
 SciPy can then be built with the single command::
 
     pixi run build
@@ -27,13 +29,14 @@ Running a task automatically installs and uses a suitable environment:
 
 .. code-block:: console
 
-    pixi run test       # run the tests
-    pixi run open-docs  # build and preview the docs
-    pixi run lint       # run main lint checks
-    pixi run ipython    # spawn an IPython prompt with SciPy installed
-    pixi run smoke-docs # run the doctests
-    pixi run test-cpu   # run the tests with all CPU array backends
-    pixi run bench      # run the benchmarks
+    pixi run test               # run the tests
+    pixi run open-docs          # build and preview the docs
+    pixi run lint               # run main lint checks
+    pixi run ipython            # spawn an IPython prompt with SciPy installed
+    pixi run smoke-docs         # run the doctests
+    pixi run test-cpu           # run the tests with all CPU array backends
+    pixi run bench              # run the benchmarks
+    pixi run pre-commit-install # install a pre-commit lint hook
 
 .. tip::
 
@@ -49,7 +52,7 @@ Alternative methods
 
 If not using Pixi, one takes responsibility for one's own virtual environments.
 This section describes how to set up one's system for contributing to SciPy
-when using a tool like `uv`, `pip`, or `conda`.
+when using another tool, such as ``uv``, ``pip``, or ``conda``.
 
 Building SciPy from source to contribute to SciPy can be split into
 two main steps: setting up system-level dependencies, and building SciPy itself.
