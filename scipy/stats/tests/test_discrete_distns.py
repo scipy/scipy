@@ -722,6 +722,16 @@ def test_yulesimon_cdf_sf_noninteger(alpha):
         assert_allclose(dist.logsf(x), dist.logsf(k), rtol=1e-14)
 
 
+@pytest.mark.parametrize('p', [0.1, 0.6, 0.95])
+def test_logser_sf_noninteger(p):
+    # sf and logsf of a discrete distribution are step functions
+    k = np.arange(1, 10)
+    dist = stats.logser(p)
+    for x in (k + 0.25, k + 0.5, k + 0.99):
+        assert_allclose(dist.sf(x), dist.sf(k), rtol=1e-14)
+        assert_allclose(dist.logsf(x), dist.logsf(k), rtol=1e-14)
+
+
 class TestPoissonBinomial:
     def test_pmf(self):
         # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson

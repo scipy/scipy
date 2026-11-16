@@ -942,6 +942,7 @@ class logser_gen(rv_discrete):
         # an unregularized beta function (yet, although we could get it from Boost),
         # and neither technically support `b=0` - despite the function being accurate
         # for `b` super close to zero. See https://github.com/scipy/scipy/issues/3890.
+        k = floor(k)
         return -special.betainc(k+1, tiny, p) * special.beta(k+1, tiny) / np.log1p(-p)
 
     def _stats(self, p):
