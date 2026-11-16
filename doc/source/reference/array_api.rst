@@ -1,6 +1,6 @@
 .. _array-api-coverage:
 
-Array API coverage
+Array API Coverage
 ==================
 
 Many SciPy functions supports multiple array types via the 
