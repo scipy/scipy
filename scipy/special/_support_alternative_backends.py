@@ -2923,6 +2923,25 @@ _special_funcs = (
     ),
 )
 
+# Delete submodules which have overlapping names with private ufuncs that
+# we want to be importable from here.
+del _ellip_harm, _lambertw
+
+registered = {info.name for info in _special_funcs}
+
+# Automatic registration of private ufuncs that have not been explicitly
+# registered.
+_special_funcs += tuple(
+    _FuncInfo(
+        func,
+        [f"x{i}" for i in range(func.nin)],
+        public=False,
+        torch_native=False,
+    )
+    for name, func in vars(_ufuncs).items() if name.startswith("_")
+    and hasattr(func, "nin") and not func in registered
+)
+
 if TYPE_CHECKING:
     # The typechecker can have difficulty resolving dynamically generated
     # wrappers. Fool it by importing the base functions here.
