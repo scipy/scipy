@@ -710,6 +710,18 @@ def test_gh20048():
         test_dist.ppf(0.999)
 
 
+@pytest.mark.parametrize('alpha', [0.5, 2.0, 11.0])
+def test_yulesimon_cdf_sf_noninteger(alpha):
+    # cdf, sf and logsf of a discrete distribution are step functions, so
+    # evaluating them between two integers must give the value at the lower one
+    k = np.arange(1, 10)
+    dist = stats.yulesimon(alpha)
+    for x in (k + 0.25, k + 0.5, k + 0.99):
+        assert_allclose(dist.cdf(x), dist.cdf(k), rtol=1e-14)
+        assert_allclose(dist.sf(x), dist.sf(k), rtol=1e-14)
+        assert_allclose(dist.logsf(x), dist.logsf(k), rtol=1e-14)
+
+
 class TestPoissonBinomial:
     def test_pmf(self):
         # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson

@@ -1834,13 +1834,16 @@ class yulesimon_gen(rv_discrete):
         return log(alpha) + special.betaln(x, alpha + 1)
 
     def _cdf(self, x, alpha):
-        return 1 - x * special.beta(x, alpha + 1)
+        k = floor(x)
+        return 1 - k * special.beta(k, alpha + 1)
 
     def _sf(self, x, alpha):
-        return x * special.beta(x, alpha + 1)
+        k = floor(x)
+        return k * special.beta(k, alpha + 1)
 
     def _logsf(self, x, alpha):
-        return log(x) + special.betaln(x, alpha + 1)
+        k = floor(x)
+        return log(k) + special.betaln(k, alpha + 1)
 
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
