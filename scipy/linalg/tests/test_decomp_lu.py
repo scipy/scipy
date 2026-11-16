@@ -1,3 +1,5 @@
+import threading
+
 import pytest
 from pytest import raises as assert_raises
 
@@ -5,6 +7,7 @@ import numpy as np
 from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 from scipy._lib._util import HAS_ILP64
+from scipy._lib._testutils import IS_WASM
 
 
 REAL_DTYPES = [np.float32, np.float64]
@@ -179,6 +182,50 @@ class TestLU:
         assert_allclose(p, np.empty(shape=(1, 0, 0)))
         assert_allclose(l, np.empty(shape=(1, 1, 0)))
         assert_allclose(u, np.empty(shape=(1, 0, 0)))
+
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
+    @pytest.mark.thread_unsafe(reason="Test spawns worker threads")
+    def test_threaded_input_shape_unchanged(self):
+        # lu() used to build the output shapes in the input array's own
+        # dimensions and restore them afterwards, so a concurrent lu() on the
+        # same array, or anyone reading a.shape, could see a wrong shape.
+        # Only free-threaded builds can observe the intermediate state; with
+        # the GIL this passes on the old code too.
+        shape = (60, 20)
+        a = np.random.default_rng(1234).standard_normal(shape)
+        n_workers, n_calls = 2, 300
+        barrier = threading.Barrier(n_workers + 1)
+        done = threading.Event()
+        seen = []
+        errors = []
+
+        def worker():
+            barrier.wait()
+            try:
+                for _ in range(n_calls):
+                    lu(a)
+            except Exception as e:
+                errors.append(e)
+
+        def watcher():
+            barrier.wait()
+            while not done.is_set():
+                s = a.shape
+                if s != shape:
+                    seen.append(s)
+                    return
+
+        workers = [threading.Thread(target=worker) for _ in range(n_workers)]
+        watch = threading.Thread(target=watcher)
+        for t in [*workers, watch]:
+            t.start()
+        for t in workers:
+            t.join()
+        done.set()
+        watch.join()
+        assert errors == []
+        assert seen == []
+        assert a.shape == shape
 
 
 class TestLUFactor:

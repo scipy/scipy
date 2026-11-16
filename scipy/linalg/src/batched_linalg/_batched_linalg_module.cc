@@ -1133,7 +1133,7 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     LU_Context ctx = {};
     PyObject *result = NULL;
 
-    npy_intp *shape = PyArray_SHAPE(ap_a);
+    const npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp elem_size = PyArray_ITEMSIZE(ap_a);
     CBLAS_INT m = (CBLAS_INT)shape[ndim - 2];
@@ -1173,11 +1173,14 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Legacy overwrite_a: reuse input as the larger factor (2D + F-contiguous only).
     // Disabled when permute_l is true (permute_rows needs C-ordered data).
+    // Output shapes are built in a local copy: `shape` points into the input
+    // array's own dimensions, which must not be written.
+    npy_intp other_shape[LU_MAX_NDIM];
+    for (int i = 0; i < ndim; i++) { other_shape[i] = shape[i]; }
+
     if (overwrite_a && !permute_l && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a)) {
 
         ctx.overwrite_a = true;
-        npy_intp other_shape[LU_MAX_NDIM];
-        for (int i = 0; i < ndim; i++) { other_shape[i] = shape[i]; }
 
         if (m > n) {
             // Tall: L (m x n) is large — reuse input. Allocate U (n x n).
@@ -1198,15 +1201,14 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     } else {
 
         // Allocate output arrays: L (..., m, minmn), U (..., minmn, n)
-        shape[ndim - 1] = minmn;
-        ap_l = (PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0);
-        if (!ap_l) { PyErr_NoMemory(); shape[ndim - 1] = n; goto fail; }
-        shape[ndim - 1] = n;
+        other_shape[ndim - 1] = minmn;
+        ap_l = (PyArrayObject *)PyArray_ZEROS(ndim, other_shape, typenum, 0);
+        if (!ap_l) { PyErr_NoMemory(); goto fail; }
 
-        shape[ndim - 2] = minmn;
-        ap_u = (PyArrayObject *)PyArray_ZEROS(ndim, shape, typenum, 0);
-        if (!ap_u) { PyErr_NoMemory(); shape[ndim - 2] = m; goto fail; }
-        shape[ndim - 2] = m;
+        other_shape[ndim - 1] = n;
+        other_shape[ndim - 2] = minmn;
+        ap_u = (PyArrayObject *)PyArray_ZEROS(ndim, other_shape, typenum, 0);
+        if (!ap_u) { PyErr_NoMemory(); goto fail; }
     }
 
     // Dispatch to templated C++ code
@@ -1292,7 +1294,7 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    npy_intp *shape = PyArray_SHAPE(ap_a);
+    const npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *byte_strides = PyArray_STRIDES(ap_a);
     npy_intp elem_size = PyArray_ITEMSIZE(ap_a);
     CBLAS_INT n = (CBLAS_INT)shape[ndim - 1];
@@ -1407,7 +1409,7 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-    npy_intp *shape = PyArray_SHAPE(ap_a);
+    const npy_intp *shape = PyArray_SHAPE(ap_a);
     int64_t n = shape[ndim - 2], m = shape[ndim - 1];
 
     int typenum = PyArray_TYPE(ap_a);
