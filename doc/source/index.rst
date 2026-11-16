@@ -98,7 +98,7 @@ science, and engineering.
             :color: secondary
             :click-parent:
 
-            To the development guide
+            To the developer guide
 
 .. toctree::
    :hidden:
