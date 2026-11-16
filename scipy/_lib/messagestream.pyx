@@ -37,6 +37,7 @@ cdef stdio.FILE *_take_spare() noexcept nogil:
         if _n_spare > 0:
             _n_spare -= 1
             handle = _spare[_n_spare]
+            _spare[_n_spare] = NULL
     return handle
 
 
@@ -133,6 +134,8 @@ cdef class MessageStream:
         cdef char *buf = NULL
         cdef bytes obj
 
+        if self.handle == NULL:
+            raise ValueError("I/O operation on closed MessageStream")
         pos = stdio.ftell(self.handle)
         if pos <= 0:
             return ""
@@ -158,6 +161,8 @@ cdef class MessageStream:
         return obj.decode('latin1')
 
     def clear(self):
+        if self.handle == NULL:
+            raise ValueError("I/O operation on closed MessageStream")
         if _past_max_size(self.handle):
             self._too_large = 1
         stdio.rewind(self.handle)

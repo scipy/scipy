@@ -3,9 +3,11 @@ from libc cimport stdio, stdlib
 
 @cython.final
 cdef class MessageStream:
-    # Borrowed: valid only until `close()`, after which the stream may be
-    # reused by another MessageStream. Write to it and read the messages
-    # with `get()`; never close or reopen it, or change its mode or buffering.
+    # The stream that messages are written to. Owned by this MessageStream
+    # until `close()`, which sets it to NULL; the stream may then be reused
+    # by another MessageStream. Code given a copy of it only borrows it: it
+    # must not use the copy after `close()`, nor close or reopen the stream
+    # or change its mode or buffering.
     cdef stdio.FILE *handle
     cdef bint _is_memstream
     cdef bint _too_large

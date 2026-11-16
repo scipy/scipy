@@ -48,6 +48,17 @@ def test_close_twice():
     assert messagestream._spare_count() == 1
 
 
+@pytest.mark.parametrize("tempfile", [True, False])
+def test_closed_stream(tempfile):
+    messagestream._force_tempfile(tempfile)
+    stream = MessageStream()
+    stream.close()
+    with pytest.raises(ValueError, match="closed"):
+        stream.get()
+    with pytest.raises(ValueError, match="closed"):
+        stream.clear()
+
+
 def test_number_of_kept_streams_is_limited():
     n = MAX_SPARE + 4
     for _ in range(2):
