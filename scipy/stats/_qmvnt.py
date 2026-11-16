@@ -37,7 +37,7 @@ import numpy as np
 
 from scipy.fft import fft, ifft
 from scipy.special import ndtr as phi, ndtri as phinv
-from scipy.special._ufuncs import _bivariate_normal_cdf
+from scipy.special._ufuncs import _bivariate_normal_cdf, _trivariate_normal_cdf
 from scipy.stats._qmc import primes_from_2_to
 
 from ._qmvnt_cy import _qmvn_inner, _qmvt_inner
@@ -174,6 +174,9 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     n_samples : int
         The number of integration points actually used.
     """
+    if np.any(np.isnan(low)) or np.any(np.isnan(high)):
+        return np.nan, np.nan, 0
+
     n = len(covar)
     n_samples = 0
     if n == 1:
@@ -184,6 +187,12 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
         prob = _bvn(low, high, covar)
         est_error = 1e-15
     else:
+        if n == 3:
+            prob = _tvn(low, high, covar)
+            if not np.isnan(prob):
+                return prob, 1e-15, n_samples
+            # `xsf::trivariate_normal_cdf` can reject nearly singular
+            # covariances; use QMC for those.
         mi = min(limit, n * 1000)
         prob = 0.0
         est_error = 1.0
@@ -498,3 +507,64 @@ def _bvn(a, b, A):
          + _bivariate_normal_cdf(xl, yl, r))
     p = max( 0., min( p, 1. ) )
     return p
+
+
+def _tvn(a, b, A):
+    """Trivariate normal integration over box bounds.
+
+    For ``X ~ N(0, A)`` with covariance matrix ``A``, return
+
+        P(a[0] <= X[0] <= b[0], a[1] <= X[1] <= b[1], a[2] <= X[2] <= b[2]).
+
+    Parameters
+    ----------
+    a, b : (3,) array_like
+        The low and high integration bounds.
+    A : (3, 3) array_like
+        Covariance matrix.
+
+    Returns
+    -------
+    p : float
+        Probability within the bounds.
+
+    Notes
+    -----
+    Computed via 8-corner inclusion-exclusion on the standardized trivariate normal
+    CDF ``_trivariate_normal_cdf`` with correlations ``rij = A[i, j] / (si * sj)``,
+    where ``si = sqrt(A[i, i])``. Positive-tail intervals are reflected into the
+    lower tail to avoid subtracting CDF values near one. The result is clipped
+    to ``[0, 1]``.
+    """
+    s = np.sqrt(np.maximum(np.diag(A), 0.))
+    nonzero = s > 0
+    # reflect upper tails to avoid cancellation near one
+    reflect = (a > 0) & nonzero
+    if np.any(reflect):
+        a, b = np.where(reflect, -b, a), np.where(reflect, -a, b)
+        signs = np.where(reflect, -1., 1.)
+        A = signs[:, None] * A * signs[None, :]
+    if not np.all(nonzero):
+        # zero-variance coordinates need bounds containing zero: a <= 0 <= b.
+        if np.any(a[~nonzero] > 0) or np.any(b[~nonzero] < 0):
+            return 0.0
+        if np.count_nonzero(nonzero) == 2:
+            # reduce to the two-dimensional case
+            return _bvn(a[nonzero], b[nonzero], A[np.ix_(nonzero, nonzero)])
+        # univariate probability; no random coordinates gives 1
+        return float(np.prod(phi(b[nonzero] / s[nonzero])
+                             - phi(a[nonzero] / s[nonzero])))
+
+    r12 = np.clip(A[1, 0] / (s[0] * s[1]), -1, 1)
+    r13 = np.clip(A[2, 0] / (s[0] * s[2]), -1, 1)
+    r23 = np.clip(A[2, 1] / (s[1] * s[2]), -1, 1)
+    xl, yl, zl = a / s
+    xu, yu, zu = b / s
+
+    def cdf(x, y, z):
+        return _trivariate_normal_cdf(x, y, z, r12, r13, r23, 1e-15)
+
+    p = (cdf(xu, yu, zu) - cdf(xl, yu, zu) - cdf(xu, yl, zu) - cdf(xu, yu, zl)
+         + cdf(xl, yl, zu) + cdf(xl, yu, zl) + cdf(xu, yl, zl) - cdf(xl, yl, zl))
+
+    return np.clip(p, 0., 1.)

@@ -896,6 +896,31 @@ class TestSobol(QMCEngineTests):
         sample = engine.random(8)
         assert_array_equal(self.unscramble_nd, sample)
 
+    @pytest.mark.parametrize("bits", [32, 64])
+    @pytest.mark.parametrize(
+        "n", [5, np.int64(5), np.uint32(5), np.uint64(5)],
+        ids=["int", "int64", "uint32", "uint64"])
+    def test_fast_forward_int_types(self, bits, n):
+        # gh-26551: fast_forward failed with bits=64 and with NumPy ints
+        ref = qmc.Sobol(2, scramble=False, bits=bits).random(16)
+
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        engine.fast_forward(n)
+        assert_array_equal(engine.random(4), ref[5:9])
+
+        # same thing after a first draw
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        engine.random(2)
+        engine.fast_forward(n)
+        assert_array_equal(engine.random(4), ref[7:11])
+        assert type(engine.num_generated) is int
+
+    def test_fast_forward_float(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        with pytest.raises(TypeError):
+            engine.fast_forward(5.5)
+        assert engine.num_generated == 0
+
 
 class TestLow0Bit:
     def test_examples(self):

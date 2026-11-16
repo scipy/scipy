@@ -172,11 +172,13 @@ cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil
 cpdef double lpmv(double x0, double x1, double x2) noexcept nogil
 cpdef double mathieu_a(double x0, double x1) noexcept nogil
 cpdef double mathieu_b(double x0, double x1) noexcept nogil
+cdef void mathieu_ce(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_modcem1(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_modcem2(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_modsem1(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_modsem2(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
+cdef void mathieu_se(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) noexcept nogil
 cdef void modfresnelm(double x0, double complex *y0, double complex *y1) noexcept nogil
 cdef void modfresnelp(double x0, double complex *y0, double complex *y1) noexcept nogil

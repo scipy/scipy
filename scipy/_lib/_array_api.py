@@ -473,7 +473,7 @@ def xp_result_type(*args, force_floating=False, xp):
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
-    except ValueError:  # all scalars; need at least one array/dtype
+    except (ValueError, AttributeError):  # all scalars; need at least one array/dtype
         if not force_floating:
             raise
         return xp.result_type(*(args_not_none + [xp.asarray(1.0)])) # skip device check
@@ -862,7 +862,7 @@ def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     {textwrap.indent(mparray_note or "", ' '*4)}
     {textwrap.indent(extra_note or "",  ' '*4)}
 
-        See :ref:`dev-arrayapi` for more information.
+        See :ref:`array-api-coverage` for more information.
 
     """
 
@@ -975,9 +975,11 @@ def xp_capabilities(
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc
-        except AttributeError:
-            # Can't update __doc__ on ufuncs if SciPy
-            # was compiled against NumPy < 2.2.
+        except (AttributeError, TypeError):
+            # Can't update __doc__ on ufuncs if SciPy was compiled against
+            # NumPy < 2.2 (AttributeError), nor on extension types such as
+            # Cython ``cdef class``es (TypeError: immutable type). The
+            # capabilities are still recorded in the table.
             pass
 
         return f

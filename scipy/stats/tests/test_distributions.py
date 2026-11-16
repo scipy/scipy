@@ -3721,6 +3721,14 @@ class TestPowerlaw:
     def test_sf(self, x, a, sf):
         assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
 
+    # Reference values: isf(q, a) = (1 - q)**(1/a), computed with mpmath.
+    @pytest.mark.parametrize('q, a, ref',
+                             [(1e-13, 1e-12, 0.9048374180359551),
+                              (1e-17, 1e-6, 0.99999999999),
+                              (1e-10, 2.5, 0.99999999996)])
+    def test_isf(self, q, a, ref):
+        assert_allclose(stats.powerlaw.isf(q, a), ref, rtol=5e-16)
+
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
@@ -7396,6 +7404,16 @@ class TestRecipInvGauss:
         expected = 2.699819200556787e-18
         assert_allclose(p, expected, 5e-15)
 
+    # Reference values computed with mpmath by inverting the sf (see
+    # test_cdf_small_x, with sf = ncdf(isqx*trm1) + exp(2/mu)*ncdf(-isqx*trm2)).
+    @pytest.mark.parametrize('q, mu, ref',
+                             [(1e-20, 1, 89.1289139343137),
+                              (1e-17, 3, 74.16905813968064),
+                              (1e-12, 0.5, 54.70285594611544),
+                              (0.3, 1, 2.3269780446175887)])
+    def test_isf(self, q, mu, ref):
+        assert_allclose(stats.recipinvgauss.isf(q, mu), ref, rtol=5e-15)
+
 
 class TestRice:
     def setup_method(self):
@@ -8054,6 +8072,36 @@ class TestRdist:
     def test_rdist_sf(self, x, c, ref):
         assert_allclose(stats.rdist.sf(x, c), ref, rtol=5e-14)
 
+    # Reference values computed with mpmath by bisection on sf(x) = q, with
+    # sf(x) = cdf(-x) = mp.betainc(c/2, c/2, 0, (1 - x)/2, regularized=True)
+    # (mp.dps = 50).
+    @pytest.mark.parametrize(
+        "q, c, ref",
+        [
+            (1e-20, 1000, 0.286797866281768),
+            (1e-18, 50, 0.887223924640435),
+            (1e-20, 3, 0.9999999999999347),
+            (0.3, 2.5, 0.3533946790853331),
+        ]
+    )
+    def test_rdist_isf(self, q, c, ref):
+        assert_allclose(stats.rdist.isf(q, c), ref, rtol=5e-15)
+
+
+class TestSemicircular:
+    # Reference values computed with mpmath by inverting the closed-form sf,
+    # sf(x) = (acos(x) - x*sqrt(1 - x**2))/pi.
+    @pytest.mark.parametrize(
+        "q, ref",
+        [
+            (1e-20, 0.9999999999999347),
+            (1e-10, 0.9999996972174989),
+            (0.3, 0.31969150979050387),
+        ]
+    )
+    def test_isf(self, q, ref):
+        assert_allclose(stats.semicircular.isf(q), ref, rtol=1e-15)
+
 
 class TestTrapezoid:
     def test_reduces_to_triang(self):
@@ -8220,6 +8268,21 @@ class TestMaxwell:
         ref = -2.6596152026762177e-25
         logsf = stats.maxwell.logsf(1e-8)
         assert_allclose(logsf, ref, rtol=5e-15)
+
+
+class TestMoyal:
+    # Reference values: isf(q) = -log(2*erfinv(q)**2), computed with mpmath.
+    @pytest.mark.parametrize(
+        "q, ref",
+        [
+            (1e-20, 91.65182101447238),
+            (1e-12, 54.81045952656764),
+            (1e-5, 22.574268224598644),
+            (0.9, -0.9953027993634331),
+        ]
+    )
+    def test_isf(self, q, ref):
+        assert_allclose(stats.moyal.isf(q), ref, rtol=5e-15)
 
 
 class TestMielke:
@@ -8636,7 +8699,6 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
-    @pytest.mark.xfail(reason="Precision in tail hasn't been fixed in xsf")
     def test_large_argument_ticket_21370(self):
         # Check that survival function goes to 0 as x gets large
         x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
