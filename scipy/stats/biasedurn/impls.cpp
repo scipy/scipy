@@ -5,7 +5,7 @@
 #include "stocc.h"
 
 double StochasticLib1::Normal(double m, double s) {
-  return next_normal(m, s);
+  return next_normal(rng_state, m, s);
 }
 
 void FatalError(const char* msg) {
