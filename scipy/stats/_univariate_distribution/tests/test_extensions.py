@@ -9,16 +9,12 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy import special
 from scipy import stats
 from scipy.stats._distr_params import distcont, distdiscrete
-from scipy.stats._univariate_distribution._univariate_distribution_util import (
-    _RealInterval, _RealParameter)
-from scipy.stats._univariate_distribution._univariate_distribution import (
-    ContinuousDistribution)
-from scipy.stats._univariate_distribution._univariate_distribution_extensions import (
-    Mixture)
-from scipy.stats._univariate_distribution._new_distributions import (
-    _Gamma, _StandardCauchy)
+from scipy.stats._univariate_distribution._util import _RealInterval, _RealParameter
+from scipy.stats._univariate_distribution._core import ContinuousDistribution
+from scipy.stats._univariate_distribution._extensions import Mixture
+from scipy.stats._univariate_distribution._distributions import _Gamma, _StandardCauchy
 from scipy.stats import Normal, Uniform
-from scipy.stats._univariate_distribution.tests.test_univariate_distribution import (
+from scipy.stats._univariate_distribution.tests.test_core import (
     draw_distribution_from_family)
 from scipy._lib._array_api import make_xp_test_case, is_numpy, is_cupy, xp_copy
 from scipy._lib._array_api_no_0d import xp_assert_close
@@ -468,7 +464,7 @@ class TestMakeDistribution:
             stats.make_distribution(MyTestDistribution())(n=10)
 
     def test_repr_str_docs(self):
-        from scipy.stats._univariate_distribution._univariate_distribution_extensions import _distribution_names  # noqa: E501
+        from scipy.stats._univariate_distribution._extensions import _distribution_names
         for dist in _distribution_names.keys():
             assert hasattr(stats, dist)
 

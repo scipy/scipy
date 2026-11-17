@@ -2,8 +2,8 @@
 
 Currently also contains some private helpers (e.g. _set_invalid_nan) and
 somewhat specific distribution classes (e.g. MonotonicTransformedDistribution)
-to avoid circular imports; ideally these move to `_univariate_distribution_util.py`
-and `_univariate_distribution_extensions.py` over time.
+to avoid circular imports; ideally these move to `_util.py` and `_extensions.py`
+over time.
 """
 import functools
 from functools import cached_property
@@ -23,11 +23,10 @@ from scipy import special
 from scipy.differentiate import derivative
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize import elementwise
-from scipy.stats._univariate_distribution._probability_distribution import (
-    _ProbabilityDistribution)
+from scipy.stats._univariate_distribution._docs import _ProbabilityDistribution
 from scipy.stats._stats_py import _log1mexp
 from scipy.stats import qmc
-from scipy.stats._univariate_distribution._univariate_distribution_util import (
+from scipy.stats._univariate_distribution._util import (
     _RealInterval, _RealParameter, _Parameterization,
     _set_invalid_nan_property, _dispatch, _cdf2_input_validation, _SKIP_ALL, _NO_CACHE,
     _guess_bracket, _log_real_standardize, _generate_domain_support, _logexpxmexpy,
@@ -131,8 +130,8 @@ def _isnull(x):
 # It is much faster to check whether these are necessary than to do them.
 
 
-# ideally we would move this back to _univariate_distribution_util.py
-# but currently it needs CircularDistribution and DiscreteDistribution.
+# ideally we would move this back to _util.py but currently it needs
+# `CircularDistribution` and `DiscreteDistribution`.
 def _set_invalid_nan(f):
     # Wrapper for input / output validation and standardization of distribution
     # functions that accept either the quantile or percentile as an argument:
@@ -2460,7 +2459,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return self.mean() if order == 1 else None
 
     def _lmoment_from_order_statistics(self, order, **params):
-        from scipy.stats._univariate_distribution._univariate_distribution_extensions import order_statistic  # noqa: E501
+        from scipy.stats._univariate_distribution._extensions import order_statistic
         xp = self._xp
         k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
@@ -3665,8 +3664,8 @@ class FoldedDistribution(TransformedDistribution):
             return f"abs({str(self._dist)})"
 
 
-# These should probably go back to _univariate_distribution_util.py
-# but _combine_docs needs UnivariateDistribution
+# These should probably go back to `_util.py`` but `_combine_docs` needs
+# `UnivariateDistribution`
 def _combine_docs(dist_family, *, include_examples=True):
     fields = set(NumpyDocString.sections)
     fields.remove('index')

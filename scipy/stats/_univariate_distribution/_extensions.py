@@ -11,12 +11,11 @@ from scipy._external import array_api_extra as xpx
 from scipy import special, stats
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize import elementwise
-from scipy.stats._univariate_distribution._probability_distribution import (
-    _ProbabilityDistribution)
-from scipy.stats._univariate_distribution._univariate_distribution_util import (
+from scipy.stats._univariate_distribution._docs import _ProbabilityDistribution
+from scipy.stats._univariate_distribution._util import (
      _RealInterval, _IntegerInterval, _Parameterization, _guess_bracket,
      _RealParameter, _log_real_standardize,  rv_capabilities)
-from scipy.stats._univariate_distribution._univariate_distribution import (
+from scipy.stats._univariate_distribution._core import (
     UnivariateDistribution, ContinuousDistribution, DiscreteDistribution,
     CircularDistribution, TransformedDistribution, MonotonicTransformedDistribution,
     FoldedDistribution, _combine_docs)

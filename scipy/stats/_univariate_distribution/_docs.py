@@ -1,5 +1,5 @@
 # Temporary file separated from _distribution_infrastructure.py
-# (now _univariate_distribution.py) to simplify the diff during PR review.
+# (now _core.py) to simplify the diff during PR review.
 from abc import ABC, abstractmethod
 from types import GenericAlias
 

@@ -4,7 +4,7 @@
 import pytest
 import numpy as np
 from scipy import stats, special
-from .test_univariate_distribution import DistributionsTest
+from .test_core import DistributionsTest
 
 
 class MyNormal:
