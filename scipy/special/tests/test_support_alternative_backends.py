@@ -1,8 +1,10 @@
-from functools import partial
+import ast
 import inspect
 import pickle
-
 import pytest
+
+from pathlib import Path
+from functools import partial
 
 from scipy._external.packaging_version import version
 
@@ -662,3 +664,46 @@ def test_all_public_funcs_registered():
 
     missing = public_funcs - set(special.__all__)
     assert not missing, f"Missing public exports: {sorted(missing)}"
+
+
+def test_type_stub_consistency():
+    # Rough check that type stubs in _support_alternative_backends.pyi match
+    # the dynamically generated contents of _support_alternative_backends.py
+    path = Path(sab.__file__).with_suffix(".pyi")
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    annotations = {
+        node.target.id: ast.unparse(node.annotation)
+        for node in tree.body
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+    }
+    wrapper_types = {"_CallableUFuncWrapper", "Callable[..., Any]"}
+    declared = {
+        name: annotation
+        for name, annotation in annotations.items()
+        if annotation in wrapper_types
+    }
+
+    expected = {
+        name: "_CallableUFuncWrapper" if info.is_ufunc else "Callable[..., Any]"
+        for name, info in sab._FUNC_INFO.items()
+    }
+    expected.update({
+        alias: expected[target]
+        for alias, target in sab._aliases.items()
+    })
+
+    assert declared.keys() == expected.keys()
+    assert declared == expected
+
+    all_def = next(
+        node for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "__all__"
+                for target in node.targets)
+    )
+    stub_all = ast.literal_eval(all_def.value)
+
+    assert len(stub_all) == len(set(stub_all))
+    assert set(stub_all) == set(sab.__all__)
