@@ -5,7 +5,6 @@ import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy._lib._array_api import (
