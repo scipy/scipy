@@ -3331,7 +3331,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, t=None, axis=0):
             # no penalty: the minimizer on knots at the data sites is the
             # natural interpolating spline
             spl = make_interp_spline(x, y, 3, bc_type='natural')
-            return BSpline.construct_fast(spl.t, spl.c, 3, axis=axis)
+            t_ = xp.asarray(spl.t, device=device)
+            c_ = xp.asarray(spl.c, device=device)
+            return BSpline.construct_fast(t_, c_, 3, axis=axis)
         # default knots at the data sites: by the classic smoothing spline
         # theorem the minimizer is the natural cubic spline on these knots,
         # so the general penalized least-squares construction applies
