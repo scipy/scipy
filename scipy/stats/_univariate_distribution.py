@@ -1,3 +1,10 @@
+"""Core univariate distribution classes.
+
+Currently also contains some private helpers (e.g. _set_invalid_nan) and
+somewhat specific distribution classes (e.g. MonotonicTransformedDistribution)
+to avoid circular imports; ideally these move to `_univariate_distribution_util.py`
+and `_univariate_distribution_extensions.py` over time.
+"""
 import functools
 from functools import cached_property
 import math

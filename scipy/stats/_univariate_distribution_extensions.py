@@ -1,3 +1,7 @@
+"""Public functionality built on top of core univariate distribution classes.
+
+May also include private helpers for the public functionality.
+"""
 import functools
 import numpy as np
 from math import inf
@@ -14,8 +18,7 @@ from scipy.stats._univariate_distribution_util import (
 from scipy.stats._univariate_distribution import (
     UnivariateDistribution, ContinuousDistribution, DiscreteDistribution,
     CircularDistribution, TransformedDistribution, MonotonicTransformedDistribution,
-    FoldedDistribution)
-from scipy.stats._new_distributions import _combine_docs
+    FoldedDistribution, _combine_docs)
 
 
 __all__ = ['make_distribution', 'Mixture', 'order_statistic',
@@ -883,7 +886,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> from scipy.stats._distribution_infrastructure import OrderStatisticDistribution
+    >>> from scipy.stats._univariate_distribution import OrderStatisticDistribution
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))

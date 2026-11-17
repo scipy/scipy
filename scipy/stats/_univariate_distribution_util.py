@@ -1,3 +1,8 @@
+"""Private helper functions and classes used by the univariate distribution classes.
+
+Ideally, all private functions and classes used by the main distribution classes
+go here.
+"""
 from abc import ABC, abstractmethod
 import functools
 import inspect
