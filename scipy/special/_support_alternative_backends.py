@@ -270,7 +270,7 @@ class _FuncInfo:
             # not elementwise. Otherwise, we would not be able to define a
             # general rule for mask propagation.
 
-            _f = get_function[self.name]  # Allow nested wrapping
+            _f = get_function(self.name)  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
                     raise NotImplementedError(
