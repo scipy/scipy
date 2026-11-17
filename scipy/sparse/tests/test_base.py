@@ -148,8 +148,8 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                    scipy.sparse._lil, scipy.sparse._sputils,
                    scipy.sparse._compressed, scipy.sparse._construct]
 
-        @functools.wraps(func)
         @pytest.mark.thread_unsafe
+        @functools.wraps(func)
         def wrapper(*a, **kw):
             try:
                 for mod in modules:
