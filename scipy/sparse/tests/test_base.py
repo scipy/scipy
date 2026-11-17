@@ -168,6 +168,8 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                         ))
                         setattr(mod, 'downcast_intp_index', new_downcast_intp_index)
 
+                # set self.maxval_limit so tests can use that value
+                a[0].maxval_limit = maxval_limit
                 return func(*a, **kw)
             finally:
                 for mod, name, oldfunc in backup:
@@ -4488,14 +4490,13 @@ class _CompressedMixin:
     @with_64bit_maxval_limit(300)
     def test_large_assignments(self):
         # Here maxval_limit is our proxy for switching int32 to int64
-        # tests assume a match between decorator and default value
-        maxval_limit = 300  # must match decorator value for this test!
+        # The decorator sets self.maxval_limit for us to use here.
 
         # When nnz grows bigger than int32 can hold, shift to int64 index arrays
         def check(A, index, rhs):
             # check that we start small
             assert A.indices.dtype == np.int32
-            assert A.nnz < maxval_limit
+            assert A.nnz < self.maxval_limit
             # do the assignment
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", warn_msg,
@@ -4504,7 +4505,7 @@ class _CompressedMixin:
             # check that we end large
             assert A.indptr.dtype == np.int64
             assert A.indices.dtype == np.int64
-            assert A.nnz > maxval_limit
+            assert A.nnz > self.maxval_limit
 
         # select N, NN with:
         #   2*(N**2+1) < maxval_limit: so noncanonical A.nnz < maxval_limit preupdate
