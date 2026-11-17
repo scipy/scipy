@@ -8,3 +8,4 @@ used by other classes in :mod:`scipy.stats`.
     :toctree: generated/
 
     scipy.stats._distribution_infrastructure.UnivariateDistribution
+    scipy.stats._distribution_infrastructure.CircularDistribution

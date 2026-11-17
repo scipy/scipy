@@ -54,7 +54,7 @@ class Normal(ContinuousDistribution):
     Notes
     -----
 
-    This distribution is a subclass of the :class:`ContinuousDistribution
+    This distribution is a subclass of the :class:`UnivariateDistribution
     <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """
@@ -79,7 +79,7 @@ class Normal(ContinuousDistribution):
         symbol=r'\sigma',
         domain=_sigma_domain,
         typical=(0.5, 1.5),
-        docstring="The scalar parameter, which is also the standard deviation. "\
+        docstring="The scale parameter, which is also the standard deviation. "\
                   "Default: 1.0.",
     )
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
@@ -456,7 +456,7 @@ class Uniform(ContinuousDistribution):
     Notes
     -----
 
-    This distribution is a subclass of the :class:`ContinuousDistribution
+    This distribution is a subclass of the :class:`UnivariateDistribution
     <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """

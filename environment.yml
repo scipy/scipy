@@ -37,7 +37,7 @@ dependencies:
   - typing_extensions
   - types-psutil
   # For building docs
-  - sphinx<8.2.0
+  - sphinx>=8.2.0,<8.3.0
   - intersphinx-registry
   - numpydoc
   - ipython

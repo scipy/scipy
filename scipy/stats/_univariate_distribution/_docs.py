@@ -433,7 +433,7 @@ class _ProbabilityDistribution(ABC):
         See Also
         --------
         moment
-        order_statistic
+        scipy.stats.order_statistic
 
         Notes
         -----

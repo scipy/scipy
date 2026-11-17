@@ -773,12 +773,14 @@ def custom_generate_autosummary_docs(
 
         # Custom autosummary for scipy.stats
         newdist = importlib.import_module("scipy.stats._new_distributions")
+        inherited = False
         if inspect.isfunction(obj) or isinstance(obj, property):
             if qualname.split(".")[0] in newdist.__all__:
                 if inspect.isfunction(obj):
                     if obj.__qualname__ != qualname:
                         # This is an inherited object; do not generate a stub
                         # file for it
+                        inherited = True
                         app.config.autosummary_filename_map[f"{name}"] = (
                             f"scipy.stats._distribution_infrastructure.{obj.__qualname__}"
                         )
@@ -793,9 +795,16 @@ def custom_generate_autosummary_docs(
                     ):
                         # This is an inherited property; do not generate a stub
                         # file for it
+                        inherited = True
                         app.config.autosummary_filename_map[f"{name}"] = (
                             f"scipy.stats._distribution_infrastructure.{obj.fget.__qualname__}"
                         )
+
+        if inherited:
+            # The parent class page generates this stub with the right
+            # automethod target; writing it here would produce a stub
+            # pointing at the subclass instead.
+            continue
 
         filename_map = app.config.autosummary_filename_map
 
@@ -808,11 +817,13 @@ def custom_generate_autosummary_docs(
             template,
             entry.template,
             imported_members,
-            app,
             entry.recursive,
             context,
             modname,
             qualname,
+            config=app.config,
+            events=app.events,
+            registry=app.registry,
         )
 
         file_path = Path(path, filename_map.get(name, name) + suffix)
