@@ -137,10 +137,8 @@ py3.install_sources([
     '_mstats_extras.py',
     '_multicomp.py',
     '_multivariate.py',
-    '_new_distributions.py',
     '_odds_ratio.py',
     '_page_trend_test.py',
-    '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
     '_quantile.py',
@@ -153,9 +151,6 @@ py3.install_sources([
     '_stats_py.py',
     '_survival.py',
     '_tukeylambda_stats.py',
-    '_univariate_distribution_extensions.py',
-    '_univariate_distribution_util.py',
-    '_univariate_distribution.py',
     '_variation.py',
     '_warnings_errors.py',
     '_wilcoxon.py',
@@ -183,6 +178,7 @@ py3.install_sources([
 )
 
 subdir('_levy_stable')
+subdir('_univariate_distribution')
 subdir('_unuran')
 subdir('_rcont')
 

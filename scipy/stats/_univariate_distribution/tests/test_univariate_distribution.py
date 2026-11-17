@@ -12,14 +12,14 @@ from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
-from scipy.stats._univariate_distribution_util import (
+from scipy.stats._univariate_distribution._univariate_distribution_util import (
     _RealInterval, _Parameterization, _RealParameter,
     _generate_domain_support)
-from scipy.stats._univariate_distribution import (
+from scipy.stats._univariate_distribution._univariate_distribution import (
     ContinuousDistribution, DiscreteDistribution, CircularDistribution,
     ShiftedScaledDistribution, TransformedDistribution,
     MonotonicTransformedDistribution)
-from scipy.stats._new_distributions import (
+from scipy.stats._univariate_distribution._new_distributions import (
     StandardNormal, _LogUniform, _Gamma, _TestCircular)
 from scipy.stats import Normal, Uniform
 from scipy._external import array_api_extra as xpx
@@ -1759,7 +1759,7 @@ class TestReprs:
         from numpy import float32  # noqa: F401
         from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
         from scipy.stats import Mixture, Normal # noqa: F401
-        from scipy.stats._new_distributions import Uniform # noqa: F401
+        from scipy.stats._univariate_distribution._new_distributions import Uniform # noqa: F401
         new_dist = eval(repr(dist))
         # A basic check that the distributions are the same
         sample1 = dist.sample(shape=10, rng=1234)

@@ -23,10 +23,10 @@ from scipy import special
 from scipy.differentiate import derivative
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize import elementwise
-from scipy.stats._probability_distribution import _ProbabilityDistribution
+from scipy.stats._univariate_distribution._probability_distribution import _ProbabilityDistribution
 from scipy.stats._stats_py import _log1mexp
 from scipy.stats import qmc
-from scipy.stats._univariate_distribution_util import (
+from scipy.stats._univariate_distribution._univariate_distribution_util import (
     _RealInterval, _RealParameter, _Parameterization,
     _set_invalid_nan_property, _dispatch, _cdf2_input_validation, _SKIP_ALL, _NO_CACHE,
     _guess_bracket, _log_real_standardize, _generate_domain_support, _logexpxmexpy,
@@ -2459,7 +2459,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return self.mean() if order == 1 else None
 
     def _lmoment_from_order_statistics(self, order, **params):
-        from scipy.stats._univariate_distribution_extensions import order_statistic
+        from scipy.stats._univariate_distribution._univariate_distribution_extensions import order_statistic
         xp = self._xp
         k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)

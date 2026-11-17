@@ -7,7 +7,7 @@ from numpy.testing import assert_equal
 from hypothesis import strategies, given
 import hypothesis.extra.numpy as npst
 
-from scipy.stats._univariate_distribution_util import (
+from scipy.stats._univariate_distribution._univariate_distribution_util import (
     _Domain, _RealInterval, _Parameter, _RealParameter, _logexpxmexpy)
 from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_equal

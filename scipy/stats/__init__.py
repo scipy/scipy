@@ -630,10 +630,11 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._univariate_distribution_extensions import (
+from ._univariate_distribution._univariate_distribution_extensions import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-from ._new_distributions import Normal, Logistic, Uniform, Binomial, VonMises
+from ._univariate_distribution._new_distributions import (Normal, Logistic, Uniform,
+                                                          Binomial, VonMises)
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi, spearmanrho, theilslopes, siegelslopes
 from ._quantile import quantile, estimated_cdf
