@@ -9,8 +9,9 @@ import numpy as np
 from numpy import inf
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from hypothesis import strategies, given
-import hypothesis.extra.numpy as npst
+from scipy._lib._hypothesis_helpers import (
+    HAS_HYPOTHESIS, given, strategies, npst
+)
 
 from scipy import special
 from scipy import stats
@@ -51,6 +52,7 @@ class Test_RealInterval:
         assert_equal(domain.contains(x, xp=np), (a < x) & (x <= b))
 
     @pytest.mark.slow
+    @pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
     @given(shapes=npst.mutually_broadcastable_shapes(num_shapes=3, min_side=0),
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
@@ -125,6 +127,7 @@ class Test_RealInterval:
         assert str(domain) == case[4]
 
     @pytest.mark.slow
+    @pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
     @given(a=strategies.one_of(
         strategies.decimals(allow_nan=False),
         strategies.characters(whitelist_categories="L"),

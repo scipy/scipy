@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
-from hypothesis import given
-import hypothesis.strategies as st
-import hypothesis.extra.numpy as hyp_num
+from scipy._lib._hypothesis_helpers import (
+    HAS_HYPOTHESIS, given, st, npst as hyp_num
+)
 
 from scipy.integrate import (romb, newton_cotes,
                              cumulative_trapezoid, trapezoid,
@@ -673,6 +673,7 @@ class TestCumulativeSimpson:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow
+    @pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
     @given(
         y=hyp_num.arrays(
             np.float64,
@@ -705,6 +706,7 @@ class TestCumulativeSimpson:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow
+    @pytest.mark.skipif(not HAS_HYPOTHESIS, reason="hypothesis is not installed")
     @given(
         y=hyp_num.arrays(
             np.float64,

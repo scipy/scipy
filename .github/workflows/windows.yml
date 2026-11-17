@@ -81,7 +81,7 @@ jobs:
       - name: pip-packages
         run: |
           # 2.0.0 is currently our oldest supported NumPy version
-          python -m pip install numpy==2.0.0 --group build --group dev-cli --group test-core --group openblas32
+          python -m pip install numpy==2.0.0 --group build --group dev-cli --group test-core --group test-hypothesis --group openblas32
 
       - name: Build
         run: |

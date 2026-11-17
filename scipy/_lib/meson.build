@@ -105,6 +105,7 @@ python_sources = [
   '_public_api.py',
   '_sparse.py',
   '_pytest_header.py',
+  '_hypothesis_helpers.py',
   '_testutils.py',
   '_util.py',
   'deprecation.py',

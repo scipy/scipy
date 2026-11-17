@@ -104,10 +104,13 @@ build = [
 
 test-core = [
     "pytest>=8.0.0",
-    "hypothesis>=6.30",
     "pooch",
     "pytest-xdist",  # not required, but used widely, belongs in -core
     "pytest-timeout",  # not required, but used widely, belongs in -core
+]
+test-hypothesis = [
+    # Optional: property-based tests are skipped without it (see gh-25837).
+    "hypothesis>=6.30",
 ]
 test-mp = [
     "mpmath",
@@ -138,6 +141,7 @@ test-array-types = [
 test = [
     { include-group = "optional-runtime-deps" },
     { include-group = "test-core" },
+    { include-group = "test-hypothesis" },
     { include-group = "test-mp" },
     { include-group = "test-extending-cython" },
     { include-group = "test-parallel" },
@@ -278,7 +282,7 @@ build-frontend = { name = "pyodide-build" }
 before-build = "bash {project}/tools/wheels/cibw_before_build_pyodide.sh {project}"
 before-test = ""
 repair-wheel-command = "pyodide auditwheel repair --libdir {project}/.blis/lib --output-dir {dest_dir} {wheel}"
-test-requires = ["pytest", "hypothesis", "threadpoolctl", "pooch"]
+test-requires = ["pytest", "threadpoolctl", "pooch"]
 test-command = "python -m pytest -vra --pyargs scipy -m 'not slow'"
 [tool.cibuildwheel.pyodide.config-settings]
 setup-args = ["-Dblas=blis", "-Dlapack=semicolon-lapack", "-Dconfig-output=portable"]

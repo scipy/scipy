@@ -67,7 +67,7 @@ jobs:
       - name: Install Python packages
         if: matrix.python-version == '3.12'
         run: |
-          python -m pip install --group build --group dev-cli --group test-core --group test-mp --group optional-runtime-deps
+          python -m pip install --group build --group dev-cli --group test-core --group test-hypothesis --group test-mp --group optional-runtime-deps
 
       - name: Install Python packages from repositories
         if: matrix.python-version == '3.15-dev' # this run will use python dev versions when available
@@ -236,7 +236,7 @@ jobs:
 
       - name: Install Python packages
         run: |
-          python -m pip install --group build --group dev-cli --group test-core --group optional-runtime-deps
+          python -m pip install --group build --group dev-cli --group test-core --group test-hypothesis --group optional-runtime-deps
 
       - name: Set up ccache
         uses: ./.github/ccache
