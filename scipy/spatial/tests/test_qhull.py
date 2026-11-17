@@ -13,6 +13,7 @@ import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 from scipy._lib import messagestream
+from scipy._lib._testutils import IS_WASM
 
 import itertools
 
@@ -247,6 +248,7 @@ class Test_Qhull:
         assert messagestream._spare_count() == 1
 
     @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     @pytest.mark.usefixtures("message_streams")
     def test_error_messages_threaded(self):
         flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
