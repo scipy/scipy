@@ -767,3 +767,107 @@ class TestEstimatedCDF:
         xp_assert_equal(stats.estimated_cdf(x, x, method=method), ref_r)
         xp_assert_equal(stats.estimated_cdf(x, xr, method=method), ref_r)
         xp_assert_equal(stats.estimated_cdf(x, xl, method=method), ref_l)
+
+
+@make_xp_test_case(stats.quantile)
+class TestWeightedCDFRegression:
+    @pytest.mark.parametrize("method", ["inverted_cdf", "averaged_inverted_cdf"])
+    @pytest.mark.parametrize("scale", [0.0625, 0.25, 1.0, 4.0, 16.0])
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_relative_weights(self, method, scale, dtype, xp):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray([0, 1, 2], dtype=dtype)
+        weights = xp.asarray([0.25, 1.5, 0.25], dtype=dtype) * scale
+        probabilities = xp.asarray([0, 0.125, 0.5, 0.875, 1], dtype=dtype)
+        reference = ([0, 0, 1, 1, 2] if method == "inverted_cdf"
+                     else [0, 0.5, 1, 1.5, 2])
+        result = stats.quantile(x, probabilities, weights=weights, method=method)
+        xp_assert_equal(result, xp.asarray(reference, dtype=dtype))
+
+    @pytest.mark.parametrize("method", ["inverted_cdf", "averaged_inverted_cdf"])
+    def test_duplicates_zero_and_nan(self, method, xp):
+        x = xp.asarray([0., 1., 1., 2., 999., xp.nan])
+        weights = xp.asarray([0.25, 0.75, 0.75, 0.25, 0., 1.])
+        result = stats.quantile(x, xp.asarray(0.5), weights=weights,
+                                method=method, nan_policy="omit")
+        xp_assert_equal(result, xp.asarray(1.))
+
+    @pytest.mark.parametrize("method", ["inverted_cdf", "averaged_inverted_cdf"])
+    def test_axis_broadcast(self, method, xp):
+        x = xp.asarray([[0., 1., 2.], [10., 11., 12.]])
+        weights = xp.asarray([0.25, 1.5, 0.25])
+        result = stats.quantile(x, xp.asarray(0.5), weights=weights,
+                                method=method, axis=-1, keepdims=True)
+        xp_assert_equal(result, xp.asarray([[1.], [11.]]))
+
+    @pytest.mark.parametrize("method", ["inverted_cdf", "averaged_inverted_cdf"])
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    @pytest.mark.parametrize("p", [0.25, 0.5])
+    def test_smallest_subnormal_preservation(self, method, dtype, p, xp):
+        np_dtype = getattr(np, dtype)
+        tiny = np.nextafter(np_dtype(0), np_dtype(1))
+        xp_dtype = getattr(xp, dtype)
+        x = xp.asarray([tiny, tiny], dtype=xp_dtype)
+        weights = xp.asarray([1.0, 1.0], dtype=xp_dtype)
+        result = stats.quantile(x, xp.asarray(p, dtype=xp_dtype),
+                                weights=weights, method=method)
+        xp_assert_equal(result, xp.asarray(tiny, dtype=xp_dtype))
+
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_averaged_inverted_cdf_boundary(self, dtype, xp):
+        xp_dtype = getattr(xp, dtype)
+        x = xp.asarray([0.0, 1.0], dtype=xp_dtype)
+        weights = xp.asarray([1.0, 1.0], dtype=xp_dtype)
+        res_avg = stats.quantile(x, xp.asarray(0.5, dtype=xp_dtype),
+                                 weights=weights, method="averaged_inverted_cdf")
+        xp_assert_equal(res_avg, xp.asarray(0.5, dtype=xp_dtype))
+        res_inv = stats.quantile(x, xp.asarray(0.5, dtype=xp_dtype),
+                                 weights=weights, method="inverted_cdf")
+        xp_assert_equal(res_inv, xp.asarray(0.0, dtype=xp_dtype))
+
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_averaged_inverted_cdf_distinct_subnormals(self, dtype, xp):
+        if is_cupy(xp) and dtype == "float32":
+            pytest.skip(
+                "CuPy single-precision arithmetic flushes subnormals to zero (FTZ)"
+            )
+        np_dtype = getattr(np, dtype)
+        tiny = np.nextafter(np_dtype(0), np_dtype(1))
+        xp_dtype = getattr(xp, dtype)
+        x = xp.asarray([tiny, 2 * tiny], dtype=xp_dtype)
+        weights = xp.asarray([1.0, 1.0], dtype=xp_dtype)
+        p = xp.asarray(0.5, dtype=xp_dtype)
+        res_avg = stats.quantile(x, p, weights=weights, method="averaged_inverted_cdf")
+        xp_assert_equal(res_avg, xp.asarray(np_dtype(2) * tiny, dtype=xp_dtype))
+        res_inv = stats.quantile(x, p, weights=weights, method="inverted_cdf")
+        xp_assert_equal(res_inv, xp.asarray(tiny, dtype=xp_dtype))
+
+    @pytest.mark.parametrize("method", ["inverted_cdf", "averaged_inverted_cdf"])
+    def test_zero_weight_at_boundaries(self, method, xp):
+        # Leading zero-weight observation
+        x = xp.asarray([0.0, 10.0, 20.0])
+        weights = xp.asarray([0.0, 1.0, 1.0])
+        result_lower = stats.quantile(
+            x, xp.asarray(0.0), weights=weights, method=method
+        )
+        xp_assert_equal(result_lower, xp.asarray(10.0))
+
+        # Trailing zero-weight observation
+        x2 = xp.asarray([10.0, 20.0, 30.0])
+        weights2 = xp.asarray([1.0, 1.0, 0.0])
+        result_upper = stats.quantile(
+            x2, xp.asarray(1.0), weights=weights2, method=method
+        )
+        xp_assert_equal(result_upper, xp.asarray(20.0))
+
+    @pytest.mark.parametrize("vals, expected", [
+        ([-1.5e308, 1.5e308], 0.0),
+        ([1e308, 1.5e308], 1.25e308),
+        ([-1e308, 1e100], -5e307),
+    ])
+    def test_large_value_midpoints(self, vals, expected, xp):
+        x = xp.asarray(vals, dtype=xp.float64)
+        weights = xp.asarray([1.0, 1.0], dtype=xp.float64)
+        p = xp.asarray(0.5, dtype=xp.float64)
+        res = stats.quantile(x, p, weights=weights, method="averaged_inverted_cdf")
+        xp_assert_equal(res, xp.asarray(expected, dtype=xp.float64))

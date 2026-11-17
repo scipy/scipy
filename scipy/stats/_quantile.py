@@ -440,6 +440,27 @@ def _quantile_hf(y, p, n, method, weights, xp):
         n_int = xp.asarray(n, dtype=xp.int64)
         n_int = xp.broadcast_to(n_int, cumulative_weights.shape[:-1] + (1,))
         total_weight = xp.take_along_axis(cumulative_weights, n_int-1, axis=-1)
+        if method in {'inverted_cdf', 'averaged_inverted_cdf'}:
+            # These estimators depend on relative mass, not integer ranks.
+            target = p * total_weight
+            j = _xp_searchsorted(cumulative_weights, target, side='left')
+            upper = xp.maximum(n_int - 1, xp.zeros_like(n_int))
+            j = xp.minimum(j, upper)
+            left = xp.take_along_axis(y, j, axis=-1)
+            if method == 'inverted_cdf':
+                return left
+            jp1 = _xp_searchsorted(cumulative_weights, target, side='right')
+            jp1 = xp.minimum(jp1, upper)
+            right = xp.take_along_axis(y, jp1, axis=-1)
+            hi = xp.finfo(y.dtype).max / 2
+            c_left = xp.clip(left, -hi, hi)
+            c_right = xp.clip(right, -hi, hi)
+            mid_small = 0.5 * (c_left + c_right)
+            mid_large = 0.5 * left + 0.5 * right
+            mid = xp.where((xp.abs(left) <= hi) & (xp.abs(right) <= hi),
+                           mid_small, mid_large)
+            return xp.where((j == jp1) | (left == right), left, mid)
+
         jg = p * total_weight + m
         jp1 = _xp_searchsorted(cumulative_weights, jg, side='right')
         j = _xp_searchsorted(cumulative_weights, jg-1, side='right')
