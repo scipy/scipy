@@ -338,11 +338,15 @@ def laplacian(
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 
-    if normed and (
-        np.issubdtype(csgraph.dtype, np.signedinteger)
-        or np.issubdtype(csgraph.dtype, np.uint)
-    ):
+    if normed and np.issubdtype(csgraph.dtype, np.integer):
         csgraph = csgraph.astype(np.float64)
+
+    # Widen before arithmetic: a final cast cannot repair overflow in
+    # symmetrization, negation, diagonal assignment or matrix-free products.
+    if dtype is not None:
+        work_dtype = np.promote_types(csgraph.dtype, dtype)
+        if work_dtype != csgraph.dtype:
+            csgraph = csgraph.astype(work_dtype)
 
     if form == "array":
         create_lap = (
