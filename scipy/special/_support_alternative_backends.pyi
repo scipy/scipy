@@ -1,7 +1,6 @@
-# Type declarations for functions generated dynamically by
-# scipy.special._support_alternative_backends._FuncInfo.
-# Keep these names in sync with _special_funcs and the private
-# ufuncs automatically registered from scipy.special._ufuncs.
+# Type declarations for functions generated dynamically in
+# scipy.special._support_alternative_backends.
+
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
