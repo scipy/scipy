@@ -45,9 +45,7 @@ _IS_32BIT = (sys.maxsize < 2**32)
 # Entries sorted by speed (very slow to slow).
 # xslow took > 1s; slow took > 0.5s
 
-# test_cont_basic: the cheap checks (method consistency, support, dtypes, ...).
-# studentized_range is left out: its checks take several seconds and its pdf
-# and cdf are compared with mpmath in test_distributions.py.
+# test_cont_basic: the cheap checks (method consistency, support, dtypes, ...)
 xslow_test_cont_basic = {'studentized_range'}
 slow_test_cont_basic = {'norminvgauss'}
 # test_cont_basic_expensive: sampling, stats, entropy and named arguments
@@ -156,7 +154,7 @@ def _cont_basic_meths(distfn):
 @pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(
     slow_test_cont_basic, xslow_test_cont_basic)))
 def test_cont_basic(distname, arg, num_parallel_threads):
-    # The checks that are cheap for every distribution. The ones that are
+    # The checks that are generally cheap for distributions. The ones that are
     # expensive for some (sampling, stats, entropy, named arguments) are in
     # test_cont_basic_expensive, so that they can be marked slow separately.
     distfn, distname = _cont_basic_dist(distname)
