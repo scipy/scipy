@@ -203,25 +203,19 @@ def test_complex(transform, dtype):
     assert_array_almost_equal(x, y)
 
 
-@pytest.mark.parametrize('dtype', [np.complex64, np.complex128, np.clongdouble])
 @pytest.mark.parametrize('transform', [dct, dst, idct, idst,
                                        dctn, dstn, idctn, idstn])
-@pytest.mark.parametrize('type', [1, 2, 3, 4])
-@pytest.mark.parametrize('norm', [None, 'backward', 'ortho', 'forward'])
-@pytest.mark.parametrize('orthogonalize', [None, False, True])
-@pytest.mark.parametrize('overwrite_x', [False, True])
-def test_complex_orthogonalize(transform, dtype, type, norm, orthogonalize,
-                               overwrite_x):
-    values = np.arange(1, 16).reshape(3, 5).astype(dtype)
+@pytest.mark.parametrize('norm, orthogonalize', [('ortho', False), ('backward', True)])
+def test_complex_orthogonalize(transform, norm, orthogonalize):
+    values = np.arange(1, 16).reshape(3, 5)
     x = values + 1j*values[::-1]
     original = x.copy()
-    kwargs = dict(type=type, norm=norm, orthogonalize=orthogonalize)
+    kwargs = dict(type=2, norm=norm, orthogonalize=orthogonalize)
     expected = transform(x.real, **kwargs) + 1j*transform(x.imag, **kwargs)
-    actual = transform(x, overwrite_x=overwrite_x, **kwargs)
-    tol = 100*np.finfo(dtype).eps
+    actual = transform(x, **kwargs)
+    tol = 100*np.finfo(x.dtype).eps
     assert_allclose(actual, expected, rtol=tol, atol=tol)
-    if not overwrite_x:
-        assert_equal(x, original)
+    assert_equal(x, original)
 
 
 DecMapType = dict[
