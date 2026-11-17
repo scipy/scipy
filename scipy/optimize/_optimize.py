@@ -1198,7 +1198,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
     return ret
 
 def _line_search_wolfe_bracket_for_dtype(dtype):
-    for amin,amax in ((1e-100,1e100),(1e-30,1e30),(1e-4,1e4)):
+    for amin, amax in ((1e-100, 1e100), (1e-30, 1e30), (1e-4, 1e4)):
         if float(np.finfo(dtype).tiny) < amin and amax < float(np.finfo(dtype).max):
             break
     else:
