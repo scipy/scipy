@@ -1161,29 +1161,30 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
 
     Examples
     --------
+    Create a noisy sine wave:
+
     >>> from scipy.interpolate import make_splrep
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng(42)
     >>> x = np.linspace(0, 10, 200)
     >>> sin = np.sin(x) * 5
     >>> noise = 0.8 * rng.standard_normal(x.shape) 
     >>> y_noisy = sin + noise
+
+    Create an interpolating spline and a smoothing spline:
+
     >>> spl = make_splrep(x, y_noisy, s=0) 
     >>> spl_smooth = make_splrep(x, y_noisy, s=15)
 
-    If you want to see a graphical representation
-    of the fitted smoothing spline from above, you can use the following code:
+    Plot both splines:
 
-    .. plot::
-       :context: close-figs
-
-       >>> import matplotlib.pyplot as plt
-       >>> plt.figure(figsize=(15, 6)) 
-       >>> plt.scatter(x, y_noisy, label='Noisy Data', color='orange')
-       >>> plt.plot(x, spl(x), label='Interpolating Spline', color='blue')
-       >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
-       >>> plt.legend()
-       >>> plt.show()
+    >>> plt.figure(figsize=(15, 6)) 
+    >>> plt.scatter(x, y_noisy, label='Noisy Data', color='orange')
+    >>> plt.plot(x, spl(x), label='Interpolating Spline', color='blue')
+    >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
+    >>> plt.legend()
+    >>> plt.show()
     """ #noqa:E501
     xp = array_namespace(x, y, w, t)
     # the NumPy round-trip must return the result on the inputs' device
