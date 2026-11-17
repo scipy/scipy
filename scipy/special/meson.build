@@ -204,6 +204,7 @@ python_sources = [
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_support_alternative_backends.py',
+  '_support_alternative_backends.pyi',
   '_testutils.py',
   '_ufuncs.pyi',
   'cython_special.pxd',

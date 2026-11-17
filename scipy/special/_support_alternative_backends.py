@@ -1,11 +1,10 @@
 import functools
 import inspect
 import operator
-import sys
+import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -21,6 +20,8 @@ from . import _polygamma
 from . import _spfun_stats
 from . import _ufuncs
 from ._ufunc_tools import _make_ufunc_wrapper
+
+_wrapper_lock = threading.RLock()
 
 
 def _special_namespace_for(xp):
@@ -164,10 +165,18 @@ class _FuncInfo:
 
     @property
     def wrapper(self):
+        # Need to ensure wrapper is only constructed once, even in multithreaded
+        # context.
+        with _wrapper_lock:
+            try:
+                return self.__dict__["_wrapper"]
+            except KeyError:
+                wrapper = self._make_wrapper()
+                self.__dict__["_wrapper"] = wrapper
+                return wrapper
+
+    def _make_wrapper(self):
         module = "scipy.special" if self.public else __name__
-        if self.name in globals():
-            # Already initialised. We are likely in a unit test.
-            return getattr(sys.modules[module], self.name)
 
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
@@ -260,7 +269,7 @@ class _FuncInfo:
             # not elementwise. Otherwise, we would not be able to define a
             # general rule for mask propagation.
 
-            _f = globals()[self.name]  # Allow nested wrapping
+            _f = get_function(self.name)  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
                     raise NotImplementedError(
@@ -288,7 +297,7 @@ class _FuncInfo:
             # or any other function with reductions, as they would change their
             # output depending on chunking!
 
-            _f = globals()[self.name]  # Allow nested wrapping
+            _f = get_function(self.name)  # Allow nested wrapping
             def f(*args, out=None, _f=_f, xp=xp, **kwargs):
                 if out is not None:
                     raise NotImplementedError(
@@ -2923,42 +2932,46 @@ _special_funcs = (
     ),
 )
 
-if TYPE_CHECKING:
-    # The typechecker can have difficulty resolving dynamically generated
-    # wrappers. Fool it by importing the base functions here.
-    from ._ufuncs import *  # noqa: F403
-    # These are the only things brought in with ``from ._ufuncs import *``
-    # which are not actually available from ``_support_alternative_backends``.
-    # Rather than explicitly import everything else, just use the star
-    # import and delete these here.
-    del seterr, geterr, errstate  # noqa: F821
+# Delete submodules which have overlapping names with private ufuncs that
+# we want to be importable from here.
+del _ellip_harm, _lambertw
 
-    from ._ufuncs import (  # noqa: F401
-        _spherical_jn, _spherical_yn, _spherical_in,
-        _spherical_kn, _spherical_jn_d, _spherical_yn_d,
-        _spherical_in_d, _spherical_kn_d, _riemann_zeta, _zeta
+registered = {info.name for info in _special_funcs}
+
+# Automatic registration of private ufuncs that have not been explicitly
+# registered.
+_special_funcs += tuple(
+    _FuncInfo(
+        func,
+        [f"x{i}" for i in range(func.nin)],
+        public=False,
+        torch_native=False,
     )
-
-    from ._ellip_harm import (  # noqa: F401
-        ellip_harm,
-        ellip_harm_2,
-        ellip_normal
-    )
-
-    from ._lambertw import lambertw  #noqa: F401
-    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem  # noqa: F401
-    from ._polygamma import polygamma  # noqa: F401
-    from ._spfun_stats import poisson_binom_cdf, multigammaln  # noqa: F401
-    from numpy import sinc  # noqa: F401
-
-
-# Override ufuncs.
-globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
-# Define aliases here so they also have alternative backend support.
-# Add noqa because the linter gets confused by the sneaky way functions
-# are inserted into globals above.
-digamma = psi  # type:ignore[name-defined]  # noqa: F405
-jn = jv  # type:ignore[name-defined]  # noqa: F405
-__all__ = (
-    [nfo.func.__name__ for nfo in _special_funcs if nfo.public] + ["digamma", "jn"]
+    for name, func in vars(_ufuncs).items() if name.startswith("_")
+    and hasattr(func, "nin") and name not in registered
 )
+
+
+_FUNC_INFO = {info.name: info for info in _special_funcs}
+_aliases = {"digamma": "psi", "jn": "jv"}
+
+__all__ = [name for name, info in _FUNC_INFO.items() if info.public] + list(_aliases)
+
+
+def get_function(name):
+    if name in _aliases:
+        name = _aliases[name]
+
+    return _FUNC_INFO[name].wrapper
+
+
+def __getattr__(name):
+    if name not in _FUNC_INFO and name not in _aliases:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}"
+        )
+    return get_function(name)
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
