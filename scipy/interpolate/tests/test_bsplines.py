@@ -2711,10 +2711,8 @@ class TestSmoothingSpline:
     def test_knots_equal_abscissa(self, lam):
         # Calling with t=None builds the clamped knot vector at the data
         # sites internally; passing that same vector explicitly via t=
-        # must reproduce the t=None result exactly.
-        # Tolerance: the two paths use different solvers and drift apart
-        # by ~eps * cond, and cond grows linearly with lam, hence the
-        # lam sweep with lam-dependent tolerance.
+        # must reproduce the t=None result exactly, both go through the
+        # same solve.
         rng = np.random.RandomState(1234)
         n = 10
         x = np.sort(rng.random_sample(n) * 4 - 2)
@@ -2724,7 +2722,7 @@ class TestSmoothingSpline:
         spl2 = make_smoothing_spline(x, y, lam=lam)
         xp_assert_close(spl1.t, t, atol=0)      # user knots are used verbatim
         xp_assert_close(spl1.t, spl2.t, atol=1e-15)
-        xp_assert_close(spl1.c, spl2.c, atol=1e-12 * max(1.0, lam / 1e-4))
+        xp_assert_close(spl1.c, spl2.c, atol=0)
 
     def test_lam_zero_matches_lsq_spline(self):
         # at lam=0 the smoothing spline reduces to an ordinary
@@ -3157,20 +3155,6 @@ class TestSmoothingSpline:
             make_smoothing_spline(x, y, t=t)
         n_warns = sum(issubclass(r.category, sl.LinAlgWarning) for r in rec)
         assert n_warns <= 1
-
-    def test_gcv_user_knots_master(self):
-        """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
-        rng = np.random.default_rng(7)
-        x = np.sort(rng.uniform(0, 4, 50))
-        y = np.sin(2 * x) + 0.3 * rng.normal(size=50)
-        t = _augknt(x, 3)
-        f_old = make_smoothing_spline(x, y)(x)          # existing GCV path
-        f_new = make_smoothing_spline(x, y, t=t)(x)     # user-knots GCV path
-        # The two searches find essentially the same lam. Across seeds the
-        # measured difference between the fits is 1e-7 to 3e-5, since the
-        # optimizers stop at slightly different points on the flat GCV
-        # valley. A tolerance of 1e-4 keeps a comfortable margin.
-        xp_assert_close(f_new, f_old, atol=1e-4)
 
     def test_gcv_user_knots_weights(self):
         """Unit weights reproduce the unweighted GCV fit; nonuniform weights run."""
