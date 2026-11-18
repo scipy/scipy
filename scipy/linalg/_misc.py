@@ -1,11 +1,15 @@
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
-from .lapack import get_lapack_funcs
-from ._batched_linalg import _bandwidth
-from scipy._lib._util import _deprecate_dtypes
+from .lapack import (
+    get_lapack_funcs, _ensure_aligned_and_native, _normalize_lapack_dtype
+)
+from ._batched_linalg import _bandwidth, _vector_norm, _matrix_norm
+from scipy._lib._util import _asarray_validated, _deprecate_dtypes
 
-__all__ = ['LinAlgError', 'LinAlgWarning', 'norm', 'bandwidth']
+__all__ = [
+    'LinAlgError', 'LinAlgWarning', 'bandwidth', 'norm', 'matrix_norm', 'vector_norm'
+]
 
 
 class LinAlgWarning(RuntimeWarning):
@@ -181,6 +185,150 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
 
 
+def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
+    """
+    Specialized implementation of vector norm.
+
+    Parameters
+    ----------
+    a : array_like
+        The input array.
+
+    axis : {int, tuple of ints, None}, optional
+        The axes to treat as one single vector. None implies the entire array is
+        treated as a single vector.
+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one. With this option the result will
+        broadcast correctly against the original `a`.
+
+    ord : {inf, -inf, int, float}, optional
+        Which order of the norm to compute.
+
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    n : float or ndarray
+        Vector norm of the input array, dimensions of the output are determined by
+        the option keepdims.
+    """
+    # keep in sync with C++ side
+    order = {
+        0       : 0,
+        1       : 1,
+        -1      : 2,
+        2       : 3,
+        -2      : 4,
+        np.inf  : 5,
+        -np.inf : 6,
+    }.get(ord, "unknown")
+
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("vector_norm", a1)
+    a1, _ = _normalize_lapack_dtype(a1, False)
+    a1, _ = _ensure_aligned_and_native(a1, False)
+
+    if order == "unknown": # early fallback to NumPy for unsupported orders
+        return np.linalg.vector_norm(a, keepdims=keepdims, axis=axis, ord=ord)
+
+    if axis is None:
+        res_shape = () if not keepdims else tuple([1 for _ in range(a1.ndim)])
+    else:
+        axis = np.array(axis).reshape((-1,))
+
+        res_shape = np.array(a1.shape)
+        if keepdims:
+            res_shape[axis] = 1
+        else:
+            mask = np.ones((a1.ndim,), dtype=bool)
+            mask[axis] = False
+            res_shape = res_shape[mask]
+
+    if a.size == 0:
+        res_dtype = np.finfo(a1.dtype).dtype if ord != 0 else np.dtype("int64")
+        if len(res_shape) == 0:
+            return res_dtype.type(0)
+        else:
+            return np.zeros(res_shape, dtype=res_dtype)
+
+    # Low level routine expects the data along the trailing (single) axis
+    if axis is None:
+        a1 = a1.flatten()
+    else:
+        for ind, ax in enumerate(axis):
+            a1 = a1.swapaxes(ax, -ind-1)
+        a1 = a1.reshape(a1.shape[:-len(axis)] + (-1,))
+
+    if order == 0:
+        res = np.sum(a1 != 0, axis=-1)
+    else:
+        res = _vector_norm(a1, order)
+    return res.reshape(res_shape)
+
+
+def matrix_norm(a, keepdims=False, ord="fro", check_finite=True):
+    """
+    Specialized implementation of matrix norm.
+
+    Parameters
+    ----------
+    a : array_like
+        The input array.
+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one. With this option the result will
+        broadcast correctly against the original `a`.
+
+    ord : {inf, -inf, int, float, "fro", "nuc"}, optional
+        Which order of the norm to compute.
+
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    n : float or ndarray
+        Vector norm of the input array, dimensions of the output are determined by
+        the option keepdims.
+    """
+    # keep in sync with the C++ side
+    order = {
+        "fro"   : 0,
+        1       : 1,
+        -1      : 2,
+        np.inf  : 3,
+        -np.inf : 4,
+    }.get(ord, None)
+
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    _deprecate_dtypes("matrix_norm", a1)
+    a1, _ = _normalize_lapack_dtype(a1, False)
+    a1, _ = _ensure_aligned_and_native(a1, False)
+
+    if a1.size == 0:
+        res_dtype = np.finfo(a1.dtype).dtype
+        res_shape = a1.shape[:-2] + (() if not keepdims else (1, 1))
+        if len(res_shape) == 0:
+            return res_dtype.type(0)
+        else:
+            return np.zeros(res_shape, dtype=np.finfo(a1.dtype).dtype)
+
+    if order is not None:
+        res = _matrix_norm(a1, order)
+        return res.reshape(res.shape + (() if not keepdims else (1, 1)))
+
+    else: # fall back to NumPy
+        return np.linalg.matrix_norm(a1, ord=ord, keepdims=keepdims)
+
+
 def _datacopied(arr, original):
     """
     Strict check for `arr` not sharing any data with `original`,
@@ -282,4 +430,3 @@ def bandwidth(a):
         )
 
     return _bandwidth(a)
-

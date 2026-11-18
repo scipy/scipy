@@ -42,6 +42,8 @@ Basics
    matmul_toeplitz - Multiply a Toeplitz matrix with an array.
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
+   matrix_norm - Specialized matrix norm implementation
+   vector_norm - Specialized vector norm implementation
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinvh - Pseudo-inverse of hermitian matrix

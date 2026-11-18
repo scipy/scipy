@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pyport.h"
 namespace sp_linalg {
 
 
@@ -40,7 +41,7 @@ enum QR_mode : Py_ssize_t
     ECONOMIC = 31
 };
 
-// Eigh driver tags; pythn side maps driver strings to these values
+// Eigh driver tags; python side maps driver strings to these values
 enum Eigh_driver : Py_ssize_t
 {
     EV = 1,
@@ -50,6 +51,28 @@ enum Eigh_driver : Py_ssize_t
     GV = 10,
     GVD = 11,
     GVX = 12
+};
+
+// Which vector norm to compute; python side maps to these values
+enum Vector_norm_ord : Py_ssize_t
+{
+    V_ZERO      = 0,
+    V_ONE       = 1,
+    V_NEG_ONE   = 2,
+    V_TWO       = 3,
+    V_NEG_TWO   = 4,
+    V_INF       = 5,
+    V_NEG_INF   = 6,
+};
+
+// Which matrix norm to compute; python side maps to these values
+enum Matrix_norm_ord : Py_ssize_t
+{
+    M_FRO       = 0,
+    M_ONE       = 1,
+    M_NEG_ONE   = 2,
+    M_INF       = 3,
+    M_NEG_INF   = 4,
 };
 
 
