@@ -622,7 +622,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
            Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
-        The default is over all axes.
+        The default is over all axes. Along every axis not in `axes`, the
+        sizes of `in1` and `in2` must be equal or one of them must be 1, in
+        which case it is broadcast.
 
     Returns
     -------
@@ -630,12 +632,16 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
-        The output size along each axis depends on ``mode``. For input
-        sizes ``N`` and ``M`` along a given axis:
+        The output size along each axis in `axes` depends on ``mode``. For
+        input sizes ``N`` and ``M`` along such an axis:
 
         - ``full`` : ``N + M - 1``
         - ``same`` : ``N`` (same as the size of `in1`)
         - ``valid`` : ``max(N, M) - min(N, M) + 1``
+
+        Along axes not in `axes`, the output size is the broadcast size of
+        `in1` and `in2` for ``full`` and ``valid``, and the size of `in1`
+        for ``same``.
 
     See Also
     --------
@@ -687,6 +693,19 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> ax_blurred.set_title('Blurred')
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
+
+    Use `axes` to convolve only along some axes. Here each of the three
+    channels of an RGB image is blurred with the same 2-D kernel by
+    convolving over the first two axes only. The kernel has size 1 along the
+    channel axis, so it is broadcast across the channels.
+
+    >>> rgb = datasets.face()
+    >>> rgb.shape
+    (768, 1024, 3)
+    >>> blurred_rgb = signal.fftconvolve(rgb, kernel[:, :, np.newaxis],
+    ...                                  mode='same', axes=(0, 1))
+    >>> blurred_rgb.shape
+    (768, 1024, 3)
 
     """
     xp = array_namespace(in1, in2)
@@ -882,7 +901,9 @@ def oaconvolve(in1, in2, mode="full", axes=None):
            Boundary effects may be visible.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
-        The default is over all axes.
+        The default is over all axes. Along every axis not in `axes`, the
+        sizes of `in1` and `in2` must be equal or one of them must be 1, in
+        which case it is broadcast.
 
     Returns
     -------
@@ -890,12 +911,16 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
-        The output size along each axis depends on ``mode``. For input
-        sizes ``N`` and ``M`` along a given axis:
+        The output size along each axis in `axes` depends on ``mode``. For
+        input sizes ``N`` and ``M`` along such an axis:
 
         - ``full`` : ``N + M - 1``
         - ``same`` : ``N`` (same as the size of `in1`)
         - ``valid`` : ``max(N, M) - min(N, M) + 1``
+
+        Along axes not in `axes`, the output size is the broadcast size of
+        `in1` and `in2` for ``full`` and ``valid``, and the size of `in1`
+        for ``same``.
 
     See Also
     --------
