@@ -22,13 +22,13 @@ import itertools
 def tempfile_streams():
     # Use the temporary-file message streams of platforms without
     # open_memstream, starting with none kept for reuse.
-    messagestream._close_spares()
+    messagestream._fhcache_clear()
     messagestream._force_tempfile(True)
     try:
         yield
     finally:
         messagestream._force_tempfile(False)
-        messagestream._close_spares()
+        messagestream._fhcache_clear()
 
 
 @pytest.fixture(params=["default", "tempfile"])
@@ -225,7 +225,7 @@ class Test_Qhull:
     def test_reused_message_stream_starts_empty(self):
         # Not all users clear a new stream before passing it to C code
         self._error_message(np.array([[0., 0], [1, 1], [2, 2]]))
-        assert messagestream._spare_count() == 1
+        assert messagestream._fhcache_size() == 1
         stream = messagestream.MessageStream()
         assert stream.get() == ""
         stream.close()
@@ -237,16 +237,16 @@ class Test_Qhull:
         # closed rather than kept for reuse, so their files don't stay on disk
         points = np.random.default_rng(1234).random((100, 2))
         qhull.ConvexHull(points, qhull_options="T4")
-        assert messagestream._spare_count() == 0
+        assert messagestream._fhcache_size() == 0
 
         # also if the stream was cleared after growing large
         hull = qhull.ConvexHull(points, qhull_options="T4", incremental=True)
         hull.add_points([[0.5, 0.5]])
         hull.close()
-        assert messagestream._spare_count() == 0
+        assert messagestream._fhcache_size() == 0
 
         qhull.ConvexHull(points)
-        assert messagestream._spare_count() == 1
+        assert messagestream._fhcache_size() == 1
 
     # Thread safe, but keeps many files open at once
     @pytest.mark.parallel_threads_limit(1)

@@ -24,8 +24,16 @@ cdef enum:
 
 cdef stdio.FILE *_spare[_MAX_SPARE]
 cdef int _n_spare = 0
-# Guards `_spare` and `_n_spare`. Hold it only around plain C statements (no
-# calls into Python, no other locks), so that it cannot deadlock.
+# Statistics, see `_fhcache_info`
+cdef Py_ssize_t _hits = 0
+cdef Py_ssize_t _misses = 0
+cdef Py_ssize_t _n_messagestream = 0
+cdef Py_ssize_t _n_tempfile = 0
+cdef Py_ssize_t _close_errors = 0
+# Guards `_spare`, `_n_spare`, `_hits`, `_misses`, `_n_messagestream`,
+# `_n_tempfile` and `_close_errors`: take it for every read or write of
+# them. Hold it only around plain C statements (no calls into Python, no
+# other locks), so that it cannot deadlock.
 cdef cython.pymutex _spare_lock
 
 
@@ -41,6 +49,40 @@ cdef stdio.FILE *_take_spare() noexcept nogil:
     return handle
 
 
+cdef void _close_tempfile(stdio.FILE *handle) noexcept nogil:
+    """Close a temporary file stream."""
+    global _n_tempfile, _close_errors
+    # Even if fclose fails (e.g., when flushing fails), it releases the
+    # stream and its file, so there is nothing left to clean up. The failure
+    # is only counted, for `_fhcache_info`.
+    cdef bint failed = stdio.fclose(handle) != 0
+    with _spare_lock:
+        _n_tempfile -= 1
+        if failed:
+            _close_errors += 1
+
+
+cdef enum:  # how a MessageStream got its stream, for `_count_open`
+    _GOT_MEMSTREAM, _GOT_SPARE, _GOT_NEW_TEMPFILE
+
+
+cdef void _count_open(int how) noexcept nogil:
+    global _n_messagestream, _hits, _misses, _n_tempfile
+    with _spare_lock:
+        _n_messagestream += 1
+        if how == _GOT_SPARE:
+            _hits += 1
+        elif how == _GOT_NEW_TEMPFILE:
+            _misses += 1
+            _n_tempfile += 1
+
+
+cdef void _count_close() noexcept nogil:
+    global _n_messagestream
+    with _spare_lock:
+        _n_messagestream -= 1
+
+
 cdef inline bint _past_max_size(stdio.FILE *handle) noexcept nogil:
     # Checks the position, which is cheap, rather than the file size, which
     # costs a slow filesystem query on Windows. Callers only write at the
@@ -54,7 +96,7 @@ cdef void _recycle(stdio.FILE *handle, bint too_large) noexcept nogil:
     """Take ownership of a file stream: keep it for reuse, or close it."""
     global _n_spare
     if too_large or _past_max_size(handle):
-        stdio.fclose(handle)
+        _close_tempfile(handle)
         return
     stdio.rewind(handle)
     with _spare_lock:
@@ -63,34 +105,74 @@ cdef void _recycle(stdio.FILE *handle, bint too_large) noexcept nogil:
             _n_spare += 1
             handle = NULL
     if handle != NULL:
-        stdio.fclose(handle)
+        _close_tempfile(handle)
 
 
-# Test hooks below, not public API: they let the code above also be tested
-# where ``open_memstream`` exists.
-cdef bint _use_memstream = True
+def _fhcache_info():
+    """Return statistics about the temporary files of MessageStream.
+
+    The returned dict has these keys:
+
+    - ``hits``: streams taken from the spare files kept for reuse
+    - ``misses``: temporary files created because no spare was available
+    - ``max_spare``: the maximum number of spare files kept
+    - ``n_spare``: the number of spare files currently kept
+    - ``n_messagestream``: MessageStream objects that currently have a stream,
+      in memory or a temporary file
+    - ``n_tempfile``: temporary files currently open, in use or spare
+    - ``close_errors``: failed attempts to close a temporary file
+
+    ``n_tempfile - n_spare`` can never exceed ``n_messagestream``; if it
+    does, a temporary file was lost without being closed. If
+    ``n_messagestream`` keeps growing instead, MessageStream objects are kept
+    alive elsewhere, e.g., by a reference cycle (gh-24493).
+    """
+    cdef Py_ssize_t hits, misses, n_messagestream, n_tempfile, close_errors
+    cdef int n_spare
+    with _spare_lock:
+        hits = _hits
+        misses = _misses
+        n_spare = _n_spare
+        n_messagestream = _n_messagestream
+        n_tempfile = _n_tempfile
+        close_errors = _close_errors
+    return {"hits": hits, "misses": misses, "max_spare": _MAX_SPARE,
+            "n_spare": n_spare, "n_messagestream": n_messagestream,
+            "n_tempfile": n_tempfile, "close_errors": close_errors}
 
 
-def _force_tempfile(bint enabled):
-    """For tests only: make new streams use temporary files."""
-    global _use_memstream
-    _use_memstream = not enabled
-
-
-def _spare_count():
-    """For tests only: return the number of streams kept for reuse."""
+def _fhcache_size():
+    """Return the number of spare temporary files kept for reuse."""
     cdef int n
     with _spare_lock:
         n = _n_spare
     return n
 
 
-def _close_spares():
-    """For tests only: close all streams kept for reuse."""
+def _fhcache_clear():
+    """Close the spare temporary files kept for reuse.
+
+    For example before forking, or to release resources. Streams in use by
+    a MessageStream are not affected.
+    """
     cdef stdio.FILE *handle = _take_spare()
     while handle != NULL:
-        stdio.fclose(handle)
+        _close_tempfile(handle)
         handle = _take_spare()
+
+
+# Whether new MessageStreams try ``open_memstream`` before falling back to
+# temporary files. `_force_tempfile` turns this off, so that the temporary
+# files and their reuse can also be tested where ``open_memstream`` exists.
+cdef bint _try_memstream = True
+
+
+def _force_tempfile(bint enabled):
+    """Make new MessageStreams use temporary files even where
+    ``open_memstream`` exists (used by the tests).
+    """
+    global _try_memstream
+    _try_memstream = not enabled
 
 
 @cython.final
@@ -103,16 +185,18 @@ cdef class MessageStream:
     def __cinit__(self):
         # Try first in-memory files, if available
         self._memstream_ptr = NULL
-        if _use_memstream:
+        if _try_memstream:
             self.handle = messagestream_open_memstream(&self._memstream_ptr,
                                                        &self._memstream_size)
         if self.handle != NULL:
             self._is_memstream = 1
+            _count_open(_GOT_MEMSTREAM)
             return
 
         # Fall back to temporary files, reusing one if possible
         self.handle = _take_spare()
         if self.handle != NULL:
+            _count_open(_GOT_SPARE)
             return
 
         # The OS deletes the file when the last handle to it is closed, also
@@ -124,6 +208,7 @@ cdef class MessageStream:
         if self.handle == NULL:
             os.close(fd)
             raise OSError("Failed to open a temporary file")
+        _count_open(_GOT_NEW_TEMPFILE)
 
     def __dealloc__(self):
         self.close()
@@ -179,3 +264,4 @@ cdef class MessageStream:
             _recycle(self.handle, self._too_large)
 
         self.handle = NULL
+        _count_close()
