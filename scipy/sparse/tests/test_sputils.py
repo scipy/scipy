@@ -187,11 +187,14 @@ class TestSparseUtils:
             assert indices is A.indices
             assert indptr is A.indptr
 
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="dtype <class 'numpy.int32'>"):
             sputils.safely_cast_index_arrays(C64, np.int32)
         indices, indptr = sputils.safely_cast_index_arrays(C64, np.int64)
         assert indices is C64.indices
         assert indptr is C64.indptr
+
+        with assert_raises(ValueError, match="indptr.*<class 'numpy.int8'>"):
+            sputils.safely_cast_index_arrays(container(np.ones((128, 1))), np.int8)
 
     def test_safely_cast_index_coo(self):
         # This is slow to test completely as nnz > imax is big
