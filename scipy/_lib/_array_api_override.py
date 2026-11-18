@@ -5,7 +5,6 @@ and internally.
 See also _array_api_compat_vendor.py
 """
 import enum
-import os
 
 from functools import lru_cache
 from types import ModuleType
@@ -23,11 +22,6 @@ from scipy._lib._sparse import SparseABC
 type Array = Any  # To be changed to a Protocol later (see array-api#589)
 type ArrayLike = Array | npt.ArrayLike
 
-# To enable array API and strict array-like input validation
-SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
-# To control the default device - for use in the test suite only
-SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
-
 
 class _ArrayClsInfo(enum.Enum):
     skip = 0
@@ -37,7 +31,7 @@ class _ArrayClsInfo(enum.Enum):
 
 
 @lru_cache(100)
-def _validate_array_cls(cls: type, sparse_ok=False) -> _ArrayClsInfo:
+def _validate_array_cls(cls: type, sparse_ok=False, masked_ok=False) -> _ArrayClsInfo:
     if issubclass(cls, list | tuple):
         return _ArrayClsInfo.array_like
 
@@ -53,7 +47,9 @@ def _validate_array_cls(cls: type, sparse_ok=False) -> _ArrayClsInfo:
         return _ArrayClsInfo.numpy
 
     if issubclass(cls, np.ma.MaskedArray):
-        raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
+        if not masked_ok:
+            raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
+        return _ArrayClsInfo.numpy
 
     if issubclass(cls, np.matrix):
         raise TypeError("Inputs of type `numpy.matrix` are not supported.")
@@ -67,10 +63,14 @@ def _validate_array_cls(cls: type, sparse_ok=False) -> _ArrayClsInfo:
     if issubclass(cls, int | float | complex | bool | type(None)):
         return _ArrayClsInfo.skip
 
+    # Allow mpmath objects for compatibility with mparray
+    if 'mpmath' in str(cls):
+        return _ArrayClsInfo.skip
+
     return _ArrayClsInfo.unknown
 
 
-def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
+def array_namespace(*arrays: Array, sparse_ok=False, masked_ok=False) -> ModuleType:
     """Get the array API compatible namespace for the arrays xs.
 
     Parameters
@@ -79,6 +79,9 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
         Arrays used to infer the common namespace.
     sparse_ok : bool
         ``True`` if `scipy.sparse` arrays should be accepted where the
+        namespace would otherwise be NumPy. Default: ``False``.
+    masked_ok : bool
+        ``True`` if `numpy.ma.MaskedArray` arrays should be accepted where the
         namespace would otherwise be NumPy. Default: ``False``.
 
     Returns
@@ -90,8 +93,8 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
     -----
     Wrapper around `array_api_compat.array_namespace`.
 
-    1. Check for the global switch `SCIPY_ARRAY_API`. If disabled, just
-       return array_api_compat.numpy namespace and skip all compliance checks.
+    1. ~~Check for the global switch `SCIPY_ARRAY_API`. If disabled, just~~
+       ~~return array_api_compat.numpy namespace and skip all compliance checks.~~
 
     2. Check for known-bad array classes.
        The following subclasses are not supported and raise and error:
@@ -108,15 +111,12 @@ def array_namespace(*arrays: Array, sparse_ok=False) -> ModuleType:
        - `array_namespace(np.asarray([1, 2], [3, 4])` returns NumPy namespace;
        - `array_namespace(cp.asarray([1, 2], [3, 4])` raises an error.
     """
-    if not SCIPY_ARRAY_API:
-        # here we could wrap the namespace if needed
-        return np_compat
-
     numpy_arrays = []
     api_arrays = []
 
     for array in arrays:
-        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok)  # type:ignore[arg-type]
+        arr_info = _validate_array_cls(type(array), sparse_ok=sparse_ok,  # type:ignore[arg-type]
+                                       masked_ok=masked_ok)
         if arr_info is _ArrayClsInfo.skip:
             pass
 

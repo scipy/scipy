@@ -516,21 +516,24 @@ def test_dft():
 
 
 @make_xp_test_case(fiedler)
-def test_fiedler(xp):
-    f = fiedler(xp.asarray([]))
+@pytest.mark.parametrize('dtype', ["float32", "float64"])
+def test_fiedler(xp, dtype):
+    dtype = getattr(xp, dtype)
+    f = fiedler(xp.asarray([], dtype=dtype))
     assert xp_size(f) == 0
     assert f.shape == (0, 0)
+    assert f.dtype == dtype
 
-    f = fiedler(xp.asarray([123.]))
-    xp_assert_equal(f, xp.asarray([[0.]]))
+    f = fiedler(xp.asarray([123.], dtype=dtype))
+    xp_assert_equal(f, xp.asarray([[0.]], dtype=dtype))
 
-    f = fiedler(xp.arange(1, 7))
+    f = fiedler(xp.arange(1, 7, dtype=dtype))
     des = xp.asarray([[0, 1, 2, 3, 4, 5],
                       [1, 0, 1, 2, 3, 4],
                       [2, 1, 0, 1, 2, 3],
                       [3, 2, 1, 0, 1, 2],
                       [4, 3, 2, 1, 0, 1],
-                      [5, 4, 3, 2, 1, 0]])
+                      [5, 4, 3, 2, 1, 0]], dtype=dtype)
     xp_assert_equal(f, des)
 
 
@@ -565,7 +568,7 @@ class TestConvolutionMatrix:
 
     def test_bad_n(self):
         # n must be a positive integer
-        with pytest.raises(ValueError, match='n must be a positive integer'):
+        with pytest.raises(ValueError, match='n must be an integer not less than 1'):
             convolution_matrix([1, 2, 3], 0)
 
     def test_empty_first_arg(self):
@@ -628,3 +631,30 @@ def test_batch(dtype, f, args, kwargs, xp):
     res = f(xp.asarray(A, dtype=dtype), *args, **kwargs)
     ref = xp.empty(batch_shape + ref.shape[-2:], dtype=dtype)
     xp_assert_close(res, ref)
+
+
+@pytest.mark.parametrize('func, min_val', [
+    (hadamard, 1),
+    (helmert, 1),
+    (hilbert, 0),
+    (invhilbert, 0),
+    (pascal, 0),
+    (invpascal, 0),
+    (dft, 0),
+    (lambda n: convolution_matrix([1, 2, 3], n), 1),
+])
+def test_special_matrices_validate_int(func, min_val):
+    for bad_n in [1.5, "1"]:
+        with pytest.raises(TypeError, match="n must be an integer"):
+            func(bad_n)
+
+    for bad_n in [-1, -5]:
+        with pytest.raises(ValueError, match="n must be an integer not less than"):
+            func(bad_n)
+
+    if min_val == 1:
+        with pytest.raises(ValueError, match="n must be an integer not less than 1"):
+            func(0)
+    else:
+        assert func(0).shape == (0, 0)
+

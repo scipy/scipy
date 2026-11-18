@@ -1,7 +1,7 @@
 import pytest
 from numpy.testing import assert_allclose, assert_
 import numpy as np
-from scipy.integrate import RK23, RK45, DOP853
+from scipy.integrate import ode, RK23, RK45, DOP853
 from scipy.integrate._ivp import dop853_coefficients
 
 
@@ -35,3 +35,9 @@ def test_error_estimation_complex(solver_class):
     solver.step()
     err_norm = solver._estimate_error_norm(solver.K, h, scale=[1])
     assert np.isrealobj(err_norm)
+
+@pytest.mark.parametrize("solver", ['lsoda', 'dopri5', 'dop853'])
+@pytest.mark.parametrize("method", ['adams', 'bdf'])
+def test_compatible_method_solvers(solver, method):
+    with pytest.raises(ValueError):
+        ode(lambda t, y: y).set_integrator(solver, method=method)

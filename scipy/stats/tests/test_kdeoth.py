@@ -621,12 +621,9 @@ def test_seed():
         rstate2 = np.random.RandomState(seed=138)
         samp2 = gkde_trail.resample(n_sample, seed=rstate2)
         assert_allclose(samp1, samp2, atol=1e-13)
-
-        # check that np.random.Generator can be used (numpy >= 1.17)
-        if hasattr(np.random, 'default_rng'):
-            # obtain a np.random.Generator object
-            rng = np.random.default_rng(1234)
-            gkde_trail.resample(n_sample, seed=rng)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1234)
+        gkde_trail.resample(n_sample, seed=rng)
 
     rng = np.random.default_rng(8765678)
     n_basesample = 500

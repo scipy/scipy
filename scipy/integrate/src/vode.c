@@ -974,7 +974,8 @@ dvnlsd(
         // When RC differs from 1 by more than CCMAX, IPUP is set to MITER
         // to force DVJAC to be called, if a Jacobian is involved.
         // In any case, DVJAC is called at least every MSBP steps.
-        if ((fabs(S->rc - 1.0) > 0.3) || (S->nst >= S->nslp + msbp)) { S->ipup = S->miter; }
+        S->drc = fabs(S->rc - 1.0);
+        if ((S->drc > 0.3) || (S->nst >= S->nslp + msbp)) { S->ipup = S->miter; }
     } else {
         S->crate = 1.0;
     }
@@ -1015,7 +1016,7 @@ dvnlsd(
             // If matrix is singular, give up immediately (Fortran line 2896: GO TO 430)
             if (ierpj != 0) {
                 *nflag = -1;
-                S->icf = 1;
+                S->icf = 2;
                 S->ipup = S->miter;
                 return;
             }
@@ -2001,7 +2002,7 @@ dvode(
             lenwm = 0;
         } else if (S->miter == 1 || S->miter == 2) {
             lenwm = 2 + (1 + jco) * S->n * S->n;
-            S->locjs = S->n * S->n + 2;
+            S->locjs = S->n * S->n + 3;
         } else if (S->miter == 3) {
             lenwm = 2 + S->n;
         } else {  // MITER == 4 or 5
@@ -2009,7 +2010,7 @@ dvode(
             CBLAS_INT lenp = (mband + ml) * S->n;
             int lenj = mband * S->n;
             lenwm = 2 + lenp + jco * lenj;
-            S->locjs = lenp + 2;
+            S->locjs = lenp + 3;
         }
 
         S->lewt = S->lwm + lenwm;

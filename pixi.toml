@@ -12,7 +12,7 @@ platforms = [
   { platform = "linux-64", cuda = "13.0" },
 ]
 preview = ["pixi-build"]
-requires-pixi = ">=0.71.0"
+requires-pixi = ">=0.83.0"
 
 
 ### SciPy Package Definition ###
@@ -24,25 +24,31 @@ version = "*"
 [package.build.config]
 compilers = ["c", "cxx"]
 
+[workspace.build-variants]
+# NOTE: this is necessary for now to get all source packages in the ASAN env to use
+# the same version of clang
+c_compiler = ["clang"]
+cxx_compiler = ["clangxx"]
+c_compiler_version = ["22"]
+cxx_compiler_version = ["22"]
+
 [workspace.target.win.build-variants]
-c_compiler = ["clang-cl"] 
+c_compiler = ["clang-cl"]
 cxx_compiler = ["clang-cl"]
 
 [package.host-dependencies]
 uv = "*"
 pkg-config = "*"
 ninja = "*"
-meson = "*"
+meson = "!=1.12.0"  # scipy/scipy#25904
 meson-python = "*"
 cython = "*"
 pythran = "*"
 pybind11 = "*"
 numpy = "*"
-blas-devel = "*"
-
-[package.host-dependencies."if(host_platform == 'win-64')"]
-meson = "<1.12.0"  # scipy/scipy#25904
-openblas = "*"
+# currently, we use openblas uniformly, matching our wheels,
+# which differs from conda-forge's default of mkl on windows.
+blas-devel = { version = "*", build = "*_openblas" }
 
 
 ### Environments ###
@@ -50,7 +56,7 @@ openblas = "*"
 
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task", "win-openblas"]
+features = ["build-deps", "build-deps-compilers", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
@@ -64,7 +70,7 @@ features = ["run-deps", "test-deps", "smoke-docs", "default-platforms"]
 solve-group = "default"
 
 [environments.docs]
-# tasks: docs, refguide-check
+# tasks: docs, open-docs, refguide-check
 features = ["docs", "marray"]
 solve-group = "default"
 
@@ -78,6 +84,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "ipython-dep", "ipython-task"]
 solve-group = "default"
 
+[environments.jupyter]
+# tasks: jupyter
+features = ["run-deps", "test-deps", "ipython-dep", "jupyter"]
+solve-group = "default"
+
 [environments.bench]
 # tasks: bench
 features = ["run-deps", "bench-common", "bench", "default-platforms"]
@@ -85,12 +96,12 @@ solve-group = "default"
 
 [environments.build-debug]
 # tasks: build-debug
-features = ["build-deps", "build-debug"]
+features = ["build-deps", "build-deps-compilers", "build-debug"]
 solve-group = "debug"
 
 [environments.build-freethreading]
 # tasks: build-freethreading
-features = ["py-freethreading", "build-deps", "build-freethreading", "default-platforms"]
+features = ["py-freethreading", "build-deps", "build-deps-compilers", "build-freethreading", "default-platforms"]
 no-default-feature = true # avoid python-gil
 solve-group = "freethreading"
 
@@ -129,7 +140,7 @@ features = ["typecheck", "run-deps", "test-deps", "default-platforms"]
 # to more reliably test the very latest versions of core dependencies
 [environments.build-cpu]
 # tasks: build-cpu
-features = ["build-deps", "build-cpu", "default-platforms"]
+features = ["build-deps", "build-deps-compilers", "build-cpu", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
@@ -152,15 +163,20 @@ solve-group = "array-api-cpu"
 features = ["run-deps", "test-deps", "bench-common", "mkl", "torch-cpu", "torch-cpu-tasks", "marray", "default-platforms"]
 solve-group = "array-api-cpu"
 
+[environments.mparray]
+# tasks: test-mparray
+features = ["run-deps", "test-deps", "mkl", "mparray", "mparray-tasks", "default-platforms"]
+solve-group = "array-api-cpu"
+
 [environments.array-api-cpu]
 # tasks: test-cpu, bench-cpu, ipython-cpu
-features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu", "ipython-dep", "ipython-cpu-task", "default-platforms"]
+features = ["run-deps", "test-deps", "test-cpu", "bench-common", "mkl", "sparse", "array_api_strict", "dask", "jax-cpu", "marray", "mparray", "torch-cpu", "ipython-dep", "ipython-cpu-task", "default-platforms"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
 # tasks: build-cuda
 # note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
-features = ["build-deps", "build-cuda", "py-cuda"]
+features = ["build-deps", "build-deps-compilers", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy, bench-cupy
@@ -179,7 +195,7 @@ solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
 # tasks: build-accelerate-lp64
-features = ["build-deps", "accelerate", "build-accelerate-lp64"]
+features = ["build-deps", "build-deps-compilers", "accelerate", "build-accelerate-lp64"]
 solve-group = "accelerate-lp64"
 
 [environments.accelerate-lp64]
@@ -189,7 +205,7 @@ solve-group = "accelerate-lp64"
 
 [environments.build-accelerate-ilp64]
 # tasks: build-accelerate-ilp64
-features = ["build-deps", "accelerate", "build-accelerate-ilp64"]
+features = ["build-deps", "build-deps-compilers", "accelerate", "build-accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
 [environments.accelerate-ilp64]
@@ -199,7 +215,7 @@ solve-group = "accelerate-ilp64"
 
 [environments.build-mkl-lp64]
 # tasks: build-mkl-lp64
-features = ["build-deps", "mkl", "build-mkl-lp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-lp64"]
 solve-group = "mkl-lp64"
 
 [environments.mkl-lp64]
@@ -209,7 +225,7 @@ solve-group = "mkl-lp64"
 
 [environments.build-mkl-ilp64]
 # tasks: build-mkl-ilp64
-features = ["build-deps", "mkl", "build-mkl-ilp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-ilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-ilp64]
@@ -219,7 +235,7 @@ solve-group = "mkl-ilp64"
 
 [environments.build-mkl-cyilp64]
 # tasks: build-mkl-cyilp64
-features = ["build-deps", "mkl", "build-mkl-cyilp64"]
+features = ["build-deps", "build-deps-compilers", "mkl", "build-mkl-cyilp64"]
 solve-group = "mkl-ilp64"
 
 [environments.mkl-cyilp64]
@@ -229,23 +245,36 @@ solve-group = "mkl-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs", "osx-platform"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs", "osx-platform"]
 
 [environments.scipy-openblas32]
 # tasks: build-scipy-openblas32, test-scipy-openblas32
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas32", "default-platforms"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "scipy-openblas32", "default-platforms"]
 
 [environments.scipy-openblas64]
 # tasks: build-scipy-openblas64, test-scipy-openblas64
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas64", "default-platforms"]
+features = ["build-deps", "build-deps-compilers", "run-deps", "test-deps", "scipy-openblas64", "default-platforms"]
 
 [environments.build-clang-23]
 # tasks: build-clang-23
 features = ["build-deps", "build-clang-23"]
 
+[environments.build-intel]
+# tasks: build-intel
+features = ["build-deps", "pythran-pypi", "intel", "build-intel", "py312"]
+
+[environments.test-intel]
+# tasks: test-intel
+features = ["run-deps", "test-deps", "intel", "test-intel", "py312"]
+
 [environments.gha-update]
 # tasks: gha-update
 features = ["gha-update", "default-platforms"]
+no-default-feature = true
+
+[environments.asan]
+features = ["asan-build-deps", "run-deps", "test-deps", "asan"]
+solve-group = "asan"
 no-default-feature = true
 
 
@@ -276,7 +305,11 @@ blas-devel = "*"
 
 ### Default building ###
 
-[feature.build-deps]
+# these build deps pull in conda-forge compilers,
+# which we sometimes want to avoid,
+# e.g. when using Intel oneAPI
+[feature.build-deps-compilers]
+dependencies.pythran = "*"  # https://github.com/conda-forge/pythran-feedstock/issues/77
 # minimally-activated gxx and clangxx on linux and osx respectively
 target.unix.dependencies.cxx-compiler = "2.*"
 target.linux.activation.env = {
@@ -300,7 +333,6 @@ ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
@@ -323,7 +355,7 @@ description = "Build SciPy (default settings)"
 ### Default testing ###
 
 [feature.test-deps.dependencies]
-pytest = "*"
+pytest = ">=9.0.3"
 hypothesis = "*"
 pytest-cov = "*"
 pytest-timeout = "*"
@@ -442,16 +474,27 @@ cmd = "spin docs --no-build"
 depends-on = "build"
 description = "Build the documentation"
 
+[feature.docs.tasks.open-docs]
+cmd = "open doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
+[feature.docs.target.win.tasks.open-docs]
+cmd = "cmd /c start doc/build/html/index.html"
+depends-on = "docs"
+description = "Build and preview the documentation"
+
 [feature.docs.tasks.refguide-check]
 cmd = "spin refguide-check --no-build"
 depends-on = "build"
-description = "Build the documentation"
+description = "Check docs reference guide matches `__all__` attributes"
 
 
 ### IPython ###
 
 [feature.ipython-dep.dependencies]
 ipython = "*"
+matplotlib = "*"
 
 [feature.ipython-task.tasks.ipython]
 cmd = "spin ipython --no-build"
@@ -465,13 +508,28 @@ env.SCIPY_ARRAY_API = "1"
 description = "Launch IPython (array-api-cpu env)"
 
 
+### Jupyter ###
+
+[feature.jupyter.dependencies]
+jupyterlab = ">=4.6.4"
+ipykernel = "*"
+
+[feature.jupyter.tasks.jupyter]
+cmd = "spin run --no-build jupyter lab"
+depends-on = "build"
+# Keep notebook kernels from importing the source tree ahead of the local build.
+env.PYTHONSAFEPATH = "1"
+description = "Launch JupyterLab with the local SciPy build"
+
+
 ### Benchmarking ###
 
 [feature.bench-common.dependencies]
-asv = "==0.6.5"
+asv = "==0.6.6"
+asv_runner = ">=0.3.1"
 cffi = "*"
 pyfftw = "*"
-pytest = "*"
+pytest = ">=9.0.3"
 psutil = "*"
 # peak_finding calls scipy.datasets.electrocardiogram() in setup(), so a missing
 # pooch is an asv failure rather than a skip
@@ -523,12 +581,23 @@ description = "Debug with gdb"
 ### Linting ###
 
 [feature.lint.dependencies]
+lefthook = "*"
 actionlint-with-all = "*"
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
 tach = "*"
 zizmor = "*"
+
+[feature.lint.tasks]
+pre-commit = {
+  cmd = "lefthook run pre-commit --all-files --force",
+  description = "Run all linters and formatters",
+}
+pre-commit-install = {
+  cmd = "lefthook install",
+  description = "Install pre-commit git hooks",
+}
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
@@ -645,7 +714,7 @@ description = "Check loaded shared libraries with MKL (ILP64, cython-blas ILP64)
 
 
 [feature.scipy-openblas32.pypi-dependencies]
-scipy-openblas32 = "==0.3.34.0.0"
+scipy-openblas32 = "==0.3.34.237.0"
 
 [feature.scipy-openblas32.tasks.build-scipy-openblas32]
 cmd = "spin build --build-dir=build-scipy-openblas32 --with-scipy-openblas=32"
@@ -657,7 +726,7 @@ depends-on = "build-scipy-openblas32"
 description = "Test SciPy with scipy-openblas32"
 
 [feature.scipy-openblas64.pypi-dependencies]
-scipy-openblas64 = "==0.3.34.0.0"
+scipy-openblas64 = "==0.3.34.237.0"
 
 [feature.scipy-openblas64.tasks.build-scipy-openblas64]
 cmd = "spin build --build-dir=build-scipy-openblas64 --with-scipy-openblas=64 -S-Duse-ilp64=true -S-Dblas-symbol-suffix=64_"
@@ -851,8 +920,19 @@ marray-python = "*"
 [feature.sparse.dependencies]
 sparse = "*"
 
+[feature.mparray.dependencies]
+mparray = "*"
+
+[feature.mparray-tasks.tasks.test-mparray]
+cmd = "spin test --no-build --build-dir=build-cpu -b mparray -m 'array_api_backends and not slow'"
+depends-on = "build-cpu"
+description = "Test with mparray"
 
 ### Optional dependencies ###
+
+[feature.pythran-pypi.pypi-dependencies]
+pythran = "*"
+
 
 [feature.scikit-sparse.dependencies]
 scikit-sparse = "*"
@@ -875,6 +955,95 @@ description = "Build SciPy with system libs (e.g. boost, qhull)"
 cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
+
+
+[feature.asan]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
+
+[feature.asan.dependencies]
+spin = "*"
+
+python = {
+  flags = ["asan"],
+  git = "https://github.com/lucascolley/cpython",
+  subdirectory = "Tools/pixi-packages",
+  rev = "aa372d05e1e6ab3f1b16f4e13841b347f5b37e89",
+}
+
+numpy = {
+  flags = ["asan"],
+  git = "https://github.com/lucascolley/numpy",
+  subdirectory = "pixi-packages/asan",
+  rev = "553a4620011c9301d6d66185766fbf76921c564b",
+}
+
+gmpy2 = {
+  git = "https://github.com/gmpy2/gmpy2",
+  rev = "49b9de3b07421d621cd04e1a4c1acb1382940d77",
+  package = {
+    version = "2.3.1",
+    build = {
+      backend.name = "pixi-build-python",
+      config = {
+        compilers = ["c"],
+        ignore-pypi-mapping = false,
+      }
+    },
+    host-dependencies = {
+      gmp = "*",
+      mpfr = "*",
+      mpc = "*",
+      python = {
+        flags = ["asan"],
+        git = "https://github.com/lucascolley/cpython",
+        subdirectory = "Tools/pixi-packages",
+        # keep in sync with `dependencies.python.rev` above
+        rev = "aa372d05e1e6ab3f1b16f4e13841b347f5b37e89",
+      },
+    },
+  },
+}
+
+[feature.asan-build-deps.dependencies]
+clangxx = "22.*"
+ccache = "*"
+pkg-config = "*"
+ninja = "*"
+meson = "*"
+meson-python = "*"
+cython = "*"
+pythran = "*"
+pybind11 = "*"
+# needed at build-time as well as run-time
+numpy = "*"
+blas-devel = { version = "*", build = "*openblas" }
+
+
+[feature.asan.tasks.build-asan]
+# `use-pythran=false` needed with py316dev due to https://github.com/serge-sans-paille/gast/issues/110
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Duse-pythran=false --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env = {
+  ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0",
+  LDFLAGS = "-shared-libsan $LDFLAGS",
+  CC = "clang",
+  CXX = "clang++",
+}
+description = "Build SciPy, NumPy, and CPython with address sanitizer"
+
+[feature.asan.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan -m 'not fail_asan and not slow'"
+depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0:$ASAN_OPTIONS"
+env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
+description = "Test SciPy with address sanitizer"
+
+[feature.asan.target.osx-arm64.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan -m 'not fail_asan and not slow'"
+depends-on = "build-asan"
+# include `quarantine_size_mb=64` to avoid hang with large memory usage
+env.ASAN_OPTIONS = "quarantine_size_mb=64:detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0:$ASAN_OPTIONS"
+env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
+description = "Test SciPy with address sanitizer"
 
 
 ### Alternative python versions ###
@@ -919,6 +1088,7 @@ description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
 [feature.build-clang-23.dependencies]
 python-build = "*"
 clang-23 = "*"
+pythran = "*"
 
 [feature.build-clang-23.tasks.build-clang-23]
 cmd = "python -m build -wnx -Csetup-args=--werror"
@@ -927,6 +1097,39 @@ env = {
   CXX = "ccache clang++-23",
 }
 description = "Build SciPy with clang-23 and -werror"
+
+
+### Alternative compilers ###
+
+[feature.intel]
+platforms = ["linux-64"]
+
+[feature.build-intel.activation.env]
+# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+LINUX_CPPKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh"
+LINUX_HPCKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh"
+
+[feature.build-intel.tasks.install-oneapi-cppkit]
+cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL \"\" a585655669cee57a0965eba46d96b1081d9ab86e3e4b421505ebec651b41564b'"
+description = "Install Intel oneAPI CPP kit (2025.0.1.27)"
+
+[feature.build-intel.tasks.install-oneapi-hpckit]
+cmd = "bash -lc 'test -f /opt/intel/oneapi/setvars.sh || bash tools/intel_oneAPI/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL \"\" 941a4d4ccc05cfb60f5edbe7c2c5e34197cce561c12d565cd8c6fefe6b752fb6'"
+description = "Install Intel oneAPI HPC kit (2025.0.1.47)"
+
+[feature.build-intel.tasks.build-intel]
+cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin build --build-dir=build-intel --setup-args=-Dblas=mkl-dynamic-lp64-iomp --setup-args=-Dlapack=mkl-dynamic-lp64-iomp'"
+depends-on = ["install-oneapi-cppkit", "install-oneapi-hpckit"]
+env = {
+  CC = "icx",
+  CXX = "icpx",
+}
+description = "Build SciPy (Intel OneAPI compilers)"
+
+[feature.test-intel.tasks.test-intel]
+cmd = "bash -lc '. /opt/intel/oneapi/setvars.sh --force; spin test --build-dir=build-intel --no-build'"
+depends-on = "build-intel"
+description = "Test SciPy (Intel OneAPI compilers)"
 
 
 ### Maintenance tools ###

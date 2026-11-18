@@ -24,17 +24,20 @@ lazy_xp_modules = [special]
 
 
 def _fix_ref_dtype(ref, xp, dtypes):
-    # int64 promotes like float32 on torch with default dtype = float32
-    # cast reference if needed
+    # Match PyTorch's float32/complex64 default promotion behavior.
     if (
             is_torch(xp)
             and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
+        def cast(r):
+            dtype = np.complex64 if np.iscomplexobj(r) else np.float32
+            return np.asarray(r, dtype=dtype)
+
         if isinstance(ref, tuple):
-            ref = tuple(np.float32(r) for r in ref)
-        else:
-            ref = np.float32(ref)
+            return tuple(cast(r) for r in ref)
+        return cast(ref)
+
     return ref
 
 
@@ -58,7 +61,9 @@ def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
         xp_assert_close(actual_i, desired_i, **kwargs)
 
 
-def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
+def _skip_or_tweak_alternative_backends(
+        xp, nfo, dtypes, int_only, *, elementwise_only=False
+):
     """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
@@ -71,6 +76,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         dtype strings 'float64', 'int32', 'int64', etc. with integer types
         mapped to the type of the NumPy default int.
     """
+    if elementwise_only and not nfo.is_elementwise:
+        pytest.skip("test assumes elementwise broadcasting")
     f_name = nfo.name
     if isinstance(nfo.positive_only, dict):
         positive_only = nfo.positive_only.get(get_native_namespace_name(xp), False)
@@ -83,6 +90,20 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
 
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
+
+    if f_name == "owens_t" and is_jax(xp) and all(
+            dtype == "float32" for dtype in dtypes
+    ):
+        pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
+
+    if is_jax(xp) and f_name in {
+            "ncfdtrinc", "nctdtridf", "stdtridf", "chndtridf"
+    }:
+        pytest.xfail(
+            "Random inputs can specify unattainable inverse CDF targets; "
+            "Boost can return spurious results which differ between NumPy"
+            " and JAX due to JAX employing flush to zero for subnormals."
+        )
 
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
@@ -115,7 +136,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py')))
+                                           'xlog1py', 'beta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -128,6 +149,10 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         # they were float64 when falling back to NumPy/SciPy.
         if not nfo.torch_native:
             pytest.xfail("dtypes do not match")
+
+    if f_name == 'beta' and is_jax(xp):
+        # jax disagree's with scipy when gamma poles are involved.
+        positive_only = [True, True]
 
     return positive_only, dtypes
 
@@ -150,7 +175,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes, int_only
+        xp, nfo, dtypes, int_only, elementwise_only=True
     )
 
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
@@ -307,7 +332,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype], (False,)*nfo.n_args
+        xp, nfo, [dtype], (False,)*nfo.n_args, elementwise_only=True
     )
     dtype_np = getattr(np, dtypes[0])
     dtype_xp = getattr(xp, dtypes[0])
@@ -355,25 +380,23 @@ def test_repr(func):
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
     """xp_capabilities updates the docstring in place.
-    Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
+    Make sure it does so exactly once.
     """
     match = "has support for Python Array API"
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize(
-    'func,n_args,int_only,is_ufunc,ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc, nfo.func)
-     for nfo in _special_funcs]
-)
-def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
+@pytest.mark.parametrize('nfo', _special_funcs)
+def test_ufunc_kwargs(nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
-    of ufuncs still work when SCIPY_ARRAY_API is set.
+    of ufuncs still work even though ufuncs have been replaced.
     """
-    if not is_ufunc:
-        pytest.skip(f"{func.__name__} is not a ufunc.")
+    int_only = nfo.int_only
+    if not nfo.is_ufunc:
+        pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
+    func, ufunc = nfo.wrapper, nfo.func
     if int_only is None:
-        int_only = (False, ) * n_args
+        int_only = (False, ) * nfo.n_args
     # out=
     args = [
         np.asarray([.1, .2]) if not needs_int
@@ -381,22 +404,47 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
         for needs_int in int_only
     ]
 
-    nout = ufunc.nout
-    if nout == 1:
-        out = np.empty(2)
+    nin, nout = ufunc.nin, ufunc.nout
+
+    resolved_dtypes = ufunc.resolve_dtypes(
+        tuple(arg.dtype for arg in args) + (None,) * nout
+    )
+    out_dtypes = resolved_dtypes[nin:]
+
+    if nfo.is_elementwise:
+        out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
     else:
-        out = tuple(np.empty(2) for _ in range(nout))
+        shape = nfo.shape_mapper(*(arg.shape for arg in args))
+        out_shapes = (shape,) if nout == 1 else shape
+
+    if nout == 1:
+        out = np.empty(out_shapes[0], dtype=out_dtypes[0])
+    else:
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, out_dtypes)
+        )
 
     y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     # out= with out.dtype != args.dtype
+    lower_dtypes = [
+        np.complex64 if np.issubdtype(dtype, np.complexfloating)
+        else np.float32
+        for dtype in out_dtypes
+    ]
     if nout == 1:
-        out = np.empty(2, dtype=np.float32)
+        out = np.empty(out_shapes[0], dtype=lower_dtypes[0])
     else:
-        out = tuple(np.empty(2, dtype=np.float32) for _ in range(nout))
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, lower_dtypes)
+        )
 
-    y = func(*args, out=out)
+    with np.errstate(over="ignore"):
+        # ignore overflow because out may not be representable as float32
+        y = func(*args, out=out)
     _tuple_aware_xp_assert_close(y, out)
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
@@ -405,8 +453,22 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc, ufunc):
         # pulled on the deprecation.
         return
 
+    if func.__name__ in {"poisson_binom_cdf"}:
+        # dtype=np.float32 not available due to mixed integer and floating point inputs.
+        return
+
+    if not any(
+            sig.split("->")[1] == "f" * nout
+            for sig in ufunc.types
+    ):
+        # dtype=np.float32 will not be available if there is no loop
+        # with float32 output.
+        return
+
     # dtype=
-    y = func(*args, dtype=np.float32)
+    with np.errstate(over="ignore"):
+        # ignore overflow because result may not be representable as float32
+        y = func(*args, dtype=np.float32)
     if nout == 1:
         assert y.dtype == np.float32
     else:
@@ -432,4 +494,40 @@ def test_mixed_arrays_and_python_scalars(xp):
     # Tests that the delegation infrastructure respects NEP50.
     res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
     ref = xp.asarray(0.4349004, dtype=xp.float32)
+    xp_assert_close(res, ref)
+
+
+# gufuncs are currently rare enough that they can have their own tests rather than
+# relying on the machinery above.
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("int_dtype", [np.int32, np.int64])
+@pytest.mark.parametrize("float_dtype", [np.float32, np.float64])
+def test_poisson_binom_cdf(xp, int_dtype, float_dtype):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=int_dtype)[:, None]
+    p = np.asarray(
+        [
+            [0.2, 0.4, 0.6, 0.8],
+            [0.1, 0.3, 0.5, 0.7],
+        ],
+        dtype=float_dtype,
+    )
+    ref = special.poisson_binom_cdf(k, p)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p))
+    xp_assert_close(res, ref)
+
+
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("axis", [-1, 0, 1])
+def test_poisson_binom_cdf_axis(xp, axis):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=np.int32)[:, None]
+    p = np.asarray(
+        [
+            [0.1, 0.2, 0.3, 0.4],
+            [0.5, 0.6, 0.7, 0.8],
+            [0.15, 0.25, 0.35, 0.45],
+        ],
+        dtype=np.float64,
+    )
+    ref = special.poisson_binom_cdf(k, p, axis=axis)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p), axis=axis)
     xp_assert_close(res, ref)

@@ -232,7 +232,7 @@ def _diff_pade9(A, E, ident):
 def expm_frechet_algo_64(A, E):
     n = A.shape[0]
     s = None
-    ident = np.identity(n)
+    ident = np.identity(n, dtype=A.dtype)
     A_norm_1 = scipy.linalg.norm(A, 1)
     m_pade_pairs = (
             (3, _diff_pade3),
@@ -346,7 +346,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
         raise ValueError('expected a square matrix')
 
     n = A.shape[0]
-    ident = np.identity(n)
+    ident = np.identity(n, dtype=A.dtype)
     cols = []
     for i in range(n):
         for j in range(n):
@@ -357,7 +357,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
     return np.vstack(cols).T
 
 
-@_apply_over_batch(('A', 2), signature="(i,i)->()")
+@_apply_over_batch(('A', 2), signature="(i,i)->float()")
 def expm_cond(A, check_finite=True):
     """
     Relative condition number of the matrix exponential in the Frobenius norm.

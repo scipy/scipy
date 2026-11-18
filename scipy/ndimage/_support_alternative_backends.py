@@ -1,7 +1,6 @@
 import functools
 from scipy._lib._array_api import (
-    xp_result_device, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API,
-    xp_capabilities,
+    xp_result_device, is_cupy, is_jax, scipy_namespace_for, xp_capabilities,
 )
 
 import numpy as np
@@ -121,7 +120,6 @@ for func_name in _ndimage_api.__all__:
     # pyrefly:ignore[not-callable]
     f = capabilities(
         delegate_xp(delegator, MODULE_NAME)(bare_func)
-        if SCIPY_ARRAY_API else bare_func
     )
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[func_name] = f

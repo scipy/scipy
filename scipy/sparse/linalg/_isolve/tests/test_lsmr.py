@@ -203,3 +203,27 @@ def test_nD():
     b = np.ones((2, 2))
     with pytest.raises(ValueError, match="expected 2-D"):
         lsmr(A, b)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.complex64])
+def test_low_precision_dtypes(dtype):
+    # the 1e+100 sentinel used to track cond(A) overflowed when compared with
+    # float32 scalars, raising a RuntimeWarning
+    rng = np.random.default_rng(0)
+    A = rng.standard_normal((20, 5)).astype(dtype)
+    xtrue = rng.standard_normal(5).astype(dtype)
+    x = lsmr(A, A @ xtrue)[0]
+    assert_allclose(x, xtrue, atol=1e-4)
+
+
+@pytest.mark.parametrize('x0', [np.zeros(5), np.zeros(5, dtype=np.float32),
+                                np.zeros(5, dtype=int), [0] * 5])
+@pytest.mark.parametrize('dtype', [np.float64, np.complex128])
+def test_x0_dtype(x0, dtype):
+    # x used to take its dtype from x0, so these raised or lost precision
+    rng = np.random.default_rng(0)
+    A = rng.standard_normal((20, 5)).astype(dtype)
+    b = rng.standard_normal(20).astype(dtype)
+    x = lsmr(A, b, x0=x0)[0]
+    assert x.dtype == dtype
+    assert_allclose(x, lsmr(A, b)[0])

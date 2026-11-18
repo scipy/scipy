@@ -8,7 +8,7 @@ import numpy as np
 import os
 from warnings import warn
 
-from .._lib._util import _prune_array, copy_if_needed
+from .._lib._util import _prune_array
 from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
@@ -59,7 +59,7 @@ class _dia_base(_data_matrix):
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     if not copy:
-                        copy = copy_if_needed
+                        copy = None
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     getdtype(self.data.dtype)  # check that dtype is supported
                     offsets = np.array(arg1[1],
@@ -196,17 +196,17 @@ class _dia_base(_data_matrix):
         other_d = other.data.shape[1]
         # Fast path for a sparsity structure where the final offsets are a
         # permutation of the existing offsets and the diagonal lengths match.
+        dtype = np.result_type(self.data, other.data)
         if self_d == other_d and len(new_offsets) == len(self.offsets):
-            new_data = self.data[_invert_index(self_idx)]
+            new_data = self.data[_invert_index(self_idx)].astype(dtype, copy=False)
             if sub:
                 new_data[other_idx, :] -= other.data
             else:
                 new_data[other_idx, :] += other.data
         elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            new_data = other.data[_invert_index(other_idx)].astype(dtype, copy=False)
             if sub:
-                new_data = -other.data[_invert_index(other_idx)]
-            else:
-                new_data = other.data[_invert_index(other_idx)]
+                new_data = -new_data
             new_data[self_idx, :] += self.data
         else:
             # Maximum diagonal length of the result.
@@ -215,7 +215,7 @@ class _dia_base(_data_matrix):
             # Add all diagonals to a freshly allocated data array.
             new_data = np.zeros(
                 (len(new_offsets), d),
-                dtype=np.result_type(self.data, other.data),
+                dtype=dtype,
             )
             new_data[self_idx, :self_d] += self.data[:, :d]
             if sub:

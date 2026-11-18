@@ -1,14 +1,14 @@
 """QR decomposition functions."""
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from scipy._lib.deprecation import _NoValue
 
 import os
 import warnings
 
 # Local imports
-from .lapack import _normalize_lapack_dtype, get_lapack_funcs, HAS_ILP64
+from .lapack import _normalize_lapack_dtype, get_lapack_funcs
 from ._misc import _datacopied
 from ._basic import _format_emit_errors_warnings
 from . import _batched_linalg
@@ -418,7 +418,7 @@ def _rq_signature(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=Fa
         return "(i,j)->(i,j)"
 
 
-@_apply_over_batch(('a', 2), signature=_rq_signature)
+@_apply_over_batch(('a', 2), signature=_rq_signature, zero_size_fill=None)
 def rq(a, overwrite_a=False, lwork=_NoValue, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.

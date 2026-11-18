@@ -9,7 +9,8 @@ from typing import Any
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 import scipy.special._ufuncs as scu
-from scipy.special._spfun_stats import _poisson_binom_pmf, _poisson_binom_cdf
+from scipy.special import poisson_binom_cdf
+from scipy.special._spfun_stats import _poisson_binom_pmf
 from scipy._lib._util import rng_integers
 import scipy._external.array_api_extra as xpx
 from scipy.interpolate import interp1d
@@ -1647,7 +1648,7 @@ class poisson_binom_gen(rv_discrete):
         k = np.atleast_1d(k).astype(np.int64)
         k, *args = np.broadcast_arrays(k, *args)
         p = np.stack(args, dtype=np.float64, axis=-1)
-        return _poisson_binom_cdf(k, p)
+        return poisson_binom_cdf(k, p)
 
     def _stats(self, *args, **kwds):
         p = np.stack(args, axis=0)

@@ -165,7 +165,7 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
     # every unmatched column will be matched with this vertex.
     cdef ITYPE_t[:] dist = np.empty(i + 1, dtype=ITYPE)
 
-    cdef ITYPE_t k, v, w, up, u, yu, u_old
+    cdef ITYPE_t k, v, w, up, u, yu, u_old, dist_v
 
     # At the end of the day, unmatched vertices will have a value of -1. As
     # mentioned above, unmatched vertices in the right partition will be
@@ -249,12 +249,23 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
                     # Pop v from stack.
                     stack_head -= 1
                     v = stack[stack_head]
-                    could_augment = False
+                    # Mark v as visited, so that it is explored at most once
+                    # in this phase. If the search from v fails, v is a dead
+                    # end for the rest of the phase; if it succeeds, v lies on
+                    # the augmenting path and must not feature in another one.
+                    # Without this, v would be explored once for every path
+                    # that leads to it, and the number of such paths can grow
+                    # exponentially with the depth of the search (gh-26147).
+                    # A popped vertex can be marked already only when the
+                    # input contains duplicate entries.
+                    if dist[v] == INF:
+                        continue
+                    dist_v = dist[v]
+                    dist[v] = INF
                     for up in range(indptr[v], indptr[v + 1]):
                         u = indices[up]
                         yu = y[u]
-                        if dist[yu] == dist[v] + 1:
-                            could_augment = True
+                        if dist[yu] == dist_v + 1:
                             # If yu is unmatched, we have found an augmenting
                             # path. We update the matching and move on to the
                             # next unmatched vertex.
@@ -262,10 +273,6 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
                                 done = True
                                 # Unwind and follow the path back to the root.
                                 while True:
-                                    # Mark v as visited to ensure that it
-                                    # features in only one augmenting path in
-                                    # this sequence of DFS runs.
-                                    dist[v] = INF
                                     u_old = x[v]
                                     y[u] = v
                                     x[v] = u

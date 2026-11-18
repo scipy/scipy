@@ -67,12 +67,9 @@ class eager:
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
-# check if it's available
+# check if it's available. Do not select a backend here: plotting tests request
+# the `mpl_agg` fixture instead (gh-3588).
 try:
-    import matplotlib
-    # and set the backend to be Agg (no gui)
-    matplotlib.use('Agg')
-    # before importing pyplot
     import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
@@ -349,6 +346,19 @@ class TestFcluster:
                            xp.asarray([1, 2, 3]))
         assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
                            xp.asarray([1, 2, 3]))
+
+    @make_xp_test_case(single, maxdists)
+    @pytest.mark.parametrize("criterion", ["maxclust", "maxclust_monocrit"])
+    @pytest.mark.parametrize("t", [0, -1, 0.5])
+    def test_fcluster_maxclust_t_less_than_one_gh_21206(self, t, criterion, xp):
+        # No threshold can give fewer than one cluster, so the search for one
+        # ran off the end of the criterion array and the result was whatever
+        # happened to be in memory there.
+        y = xp.asarray([[1.], [4.], [5.], [9.]])
+        Z = single(y)
+        kwargs = {'monocrit': maxdists(Z)} if 'monocrit' in criterion else {}
+        with assert_raises(ValueError, match="at least 1"):
+            fcluster(Z, t=t, criterion=criterion, **kwargs)
 
 
 @make_xp_test_case(leaders)
@@ -954,6 +964,8 @@ class TestDendrogram:
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_valid_label_size(self, xp):
         link = xp.asarray([
             [0, 1, 1.0, 4],
@@ -981,6 +993,8 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     @pytest.mark.parametrize("orientation", ['top', 'bottom', 'left', 'right'])
     def test_dendrogram_plot(self, orientation, xp):
         # Tests dendrogram plotting.
@@ -1052,6 +1066,8 @@ class TestDendrogram:
          reason='dask.array has bad interaction with matplotlib'
     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    @pytest.mark.thread_unsafe(reason="matplotlib's pyplot state is not thread-safe")
+    @pytest.mark.usefixtures("mpl_agg")
     def test_dendrogram_truncate_mode(self, xp):
         Z = xp.asarray(linkage(hierarchy_test_data.ytdist, 'single'))
 
@@ -1213,6 +1229,35 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[5, 10]), rtol=1e-15)
     xp_assert_close(cutree[:, np.searchsorted(heights, [10, 5])],
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_n_clusters_order(xp):
+    # gh-9818: an `n_clusters` entry equal to the number of observations was
+    # written to the first column of the result regardless of its position in
+    # `n_clusters`, leaving the column that requested it filled with zeros.
+    np.random.seed(195)
+    Z = xp.asarray(linkage(np.random.randn(5, 4), method='average'))
+
+    # requesting several cluster counts at once must agree with requesting
+    # them one at a time
+    one_at_a_time = xp.concat([cut_tree(Z, n_clusters=k) for k in range(1, 6)],
+                              axis=1)
+    xp_assert_equal(cut_tree(Z, n_clusters=list(range(1, 6))), one_at_a_time)
+
+    # ... and the column for `n_clusters=5` must not depend on it being the
+    # first entry requested
+    xp_assert_equal(cut_tree(Z, n_clusters=[4, 5])[:, [1]],
+                    cut_tree(Z, n_clusters=[5]))
+
+    # repeating `n_clusters=5` must fill every column that requested it
+    xp_assert_equal(cut_tree(Z, n_clusters=[5, 5]),
+                    xp.concat([cut_tree(Z, n_clusters=5)] * 2, axis=1))
+
+    # `height=0` reaches the same all-singletons case through `height`
+    xp_assert_equal(cut_tree(Z, height=[10, 0]),
+                    xp.concat([cut_tree(Z, height=10),
+                               cut_tree(Z, height=0)], axis=1))
 
 
 @make_xp_test_case(optimal_leaf_ordering)

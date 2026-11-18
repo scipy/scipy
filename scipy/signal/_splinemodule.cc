@@ -38,10 +38,10 @@ static char doc_FIRsepsym2d[] = "sepfir2d(input, hrow, hcol)\n"
 "        The input signal. Must be a rank-2 array.\n"
 "    hrow : ndarray\n"
 "        A rank-1 array defining the row direction of the filter.\n"
-"        Must be odd-length\n"
+"        Must be odd-length, and no longer than ``input.shape[1] + 1``.\n"
 "    hcol : ndarray\n"
 "        A rank-1 array defining the column direction of the filter.\n"
-"        Must be odd-length\n"
+"        Must be odd-length, and no longer than ``input.shape[0] + 1``.\n"
 "\n"
 "    Returns\n"
 "    -------\n"
@@ -91,14 +91,17 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
     PYERR("hrow and hcol must be odd length");
   }
 
-  /**
-   * TODO: The following functions assume Nh <= N and violation of this causes a
-   * segfault. This is also caught by the ASAN tests and currently ignored.
-   *
-   * A proper fix is either to put an input validation or fix the boundary condition
-   * logic for filters larger than the signal.
-   *
+  /* _fir_mirror_symmetric reflects an out-of-range index only once, so it needs
+   * at least 2*(Nh/2) samples along the axis it filters. Shorter axes make it
+   * read, and for Nh/2 > N also write, outside the arrays. Lifting the
+   * restriction would require repeated reflection in the boundary sections.
    */
+  if (N < 2 * (PyArray_DIMS(a_hrow)[0] >> 1)) {
+    PYERR("hrow must not be longer than input.shape[1] + 1");
+  }
+  if (M < 2 * (PyArray_DIMS(a_hcol)[0] >> 1)) {
+    PYERR("hcol must not be longer than input.shape[0] + 1");
+  }
 
   switch (thetype) {
   case NPY_FLOAT:

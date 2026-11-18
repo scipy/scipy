@@ -24,6 +24,7 @@ def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
     return c0 * rsupk * (np.cos(omega * k) + gamma * np.sin(omega * k))
 
 
+@skip_xp_backends("mparray", reason="not supported for this private function")
 @pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestSymIIR:
 

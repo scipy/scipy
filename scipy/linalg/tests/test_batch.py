@@ -30,7 +30,8 @@ class TestBatch:
     # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
-                   broadcast=True, check_kwargs=True, test_zero_size=True):
+                   broadcast=True, check_kwargs=True, test_zero_size_shape=True,
+                   test_zero_size_dtype=True):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -81,14 +82,15 @@ class TestBatch:
         n_batch = len(batch_shape)
         zero_size_in = [np.empty((0,) + array.shape[n_batch:], dtype=array.dtype)
                         for array in arrays]
-        if test_zero_size is True:
+        if test_zero_size_shape is True:
             zero_size_out = fun(*zero_size_in, **kwargs)
             zero_size_out = (zero_size_out,) if n_out == 1 else zero_size_out
             for res_k, ref_k in zip(zero_size_out, ref):
                 ref_k = np.empty((0,) + ref_k.shape, dtype=ref_k.dtype)
                 np.testing.assert_equal(res_k, ref_k)
-                # assert res_k.dtype == ref_k.dtype
-        elif test_zero_size is False:
+                if test_zero_size_dtype:
+                    assert res_k.dtype == ref_k.dtype
+        elif test_zero_size_shape is False:
             fun_name = fun.__name__.lstrip('_')
             message = f"`{fun_name}` does not support zero-size batches."
             with pytest.raises(ValueError, match=message):
@@ -134,7 +136,8 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype):  # matrix in, matrix out
         rng = np.random.default_rng(8342310302941288912051)
-        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        shape = (5, 3, 4, 6) if fun == linalg.pinv else (5, 3, 4, 4)
+        A = get_random(shape, dtype=dtype, rng=rng)
 
         # sqrtm can return complex output for real input resulting in i/o type
         # mismatch. Nudge the eigenvalues to positive side to avoid this.
@@ -152,10 +155,12 @@ class TestBatch:
         self.batch_test(linalg.null_space, A)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_funm(self, dtype):
+    @pytest.mark.parametrize('disp', [False, True])
+    def test_funm(self, dtype, disp):
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin, disp=disp),
+                        n_out=(1 if disp else 2))
 
     @pytest.mark.parametrize('dtype', floating)
     def test_fractional_matrix_power(self, dtype):
@@ -187,9 +192,17 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     @pytest.mark.parametrize('kwargs', [{}, {'separate':False}, {'separate':True}])
     def test_matrix_balance(self, dtype, kwargs):
+        def _matrix_balance_unpacked(a, **kwargs):
+            res = linalg.matrix_balance(a, **kwargs)
+            if kwargs.get("separate", False):
+                return res[0], *res[1]
+            else:
+                return res
+
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs=kwargs)
+        self.batch_test(_matrix_balance_unpacked, A,
+            n_out=3 if kwargs.get("separate", False) else 2, kwargs=kwargs)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_bandwidth(self, dtype):
@@ -607,7 +620,7 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_matmul_toeplitz(self, separate_r, xdim, dtype):
         rng = np.random.default_rng(8342310302941288912051)
-        c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        c = get_random((2, 3, 4 if separate_r else 5), dtype=dtype, rng=rng)
         r = get_random((2, 3, 5), dtype=dtype, rng=rng)
         c_or_cr = (c, r) if separate_r else c
         x = get_random(xdim, dtype=dtype, rng=rng)

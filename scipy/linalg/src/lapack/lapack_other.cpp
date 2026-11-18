@@ -325,7 +325,11 @@ namespace lapack {
             ARRAY_INOUT(T, c, 1, overwrite_c != 0);
             CHECKARRAY(len(c) == 1LL * n * (n + 1) / 2, c);
 
-            lapack::sfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            if constexpr (!is_complex_v<T>) {
+                lapack::sfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            } else {
+                lapack::hfrk(transr, uplo, trans, n, k, alpha, a.data<T>(), lda, beta, c.data<T>());
+            }
             return make_result(c);
         }
 
@@ -989,8 +993,13 @@ namespace lapack {
             CHECK(lwork >= hi - lo, lwork);
 
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(lwork, 1));
-            lapack::orghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
-                          lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
+                              lwork, &info);
+            } else {
+                lapack::unghr(n, lo + 1, hi + 1, a.data<T>(), n, tau.data<T>(), work.data<T>(),
+                              lwork, &info);
+            }
             return make_result(a, static_cast<long long>(info));
         }
 
@@ -1009,7 +1018,11 @@ namespace lapack {
 
             T work{}, a{}, tau{};
             CBLAS_INT info = 0;
-            lapack::orghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            } else {
+                lapack::unghr(n, lo + 1, hi + 1, &a, n, &tau, &work, -1, &info);
+            }
             return make_result(work, static_cast<long long>(info));
         }
 
@@ -1032,7 +1045,11 @@ namespace lapack {
             CHECK(lwork >= n || lwork == -1, lwork);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::orgqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orgqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            } else {
+                lapack::ungqr(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            }
             return make_result(a, work, static_cast<long long>(info));
         }
 
@@ -1055,7 +1072,11 @@ namespace lapack {
             CHECK(lwork >= m || lwork == -1, lwork);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::orgrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::orgrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            } else {
+                lapack::ungrq(m, n, k, a.data<T>(), m, tau.data<T>(), work.data<T>(), lwork, &info);
+            }
             return make_result(a, work, static_cast<long long>(info));
         }
 
@@ -1084,8 +1105,13 @@ namespace lapack {
             CHECKARRAY(len(tau) == k, tau);
 
             ARRAY_OUT(T, work, 1, true, ctx.zeros(std::max<CBLAS_INT>(lwork, 1)));
-            lapack::ormqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
-                          ldc, work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            } else {
+                lapack::unmqr(side, trans, m, n, k, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            }
             return make_result(c, work, static_cast<long long>(info));
         }
 
@@ -1123,8 +1149,13 @@ namespace lapack {
             CHECK(lwork >= order || lwork == -1, lwork);
 
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(lwork, 1));
-            lapack::ormrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
-                          ldc, work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            } else {
+                lapack::unmrz(side, trans, m, n, k, l, a.data<T>(), lda, tau.data<T>(), c.data<T>(),
+                              ldc, work.data<T>(), lwork, &info);
+            }
             return make_result(c, static_cast<long long>(info));
         }
 
@@ -1146,7 +1177,11 @@ namespace lapack {
 
             CBLAS_INT k = side == 'L' ? m : n, l = 0, info = 0;
             T work{}, a{}, tau{}, c{};
-            lapack::ormrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::ormrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            } else {
+                lapack::unmrz(side, trans, m, n, k, l, &a, k, &tau, &c, m, &work, -1, &info);
+            }
             return make_result(work, static_cast<long long>(info));
         }
 
@@ -1385,7 +1420,7 @@ namespace lapack {
             ARRAY_OUT(T, u2, 2, true, ctx.zeros(compute_u2 ? mmp : 0, compute_u2 ? mmp : 0));
             ARRAY_OUT(T, v1t, 2, true, ctx.zeros(compute_v1t ? q : 0, compute_v1t ? q : 0));
             ARRAY_OUT(T, v2t, 2, true, ctx.zeros(compute_v2t ? mmq : 0, compute_v2t ? mmq : 0));
-            ARRAY_HIDDEN(CBLAS_INT, iwork, p + mmp - r);
+            ARRAY_HIDDEN(CBLAS_INT, iwork, m - r);   /* == p + mmp - r, and r <= m */
 
             const char u1c = compute_u1 ? 'Y' : 'N', u2c = compute_u2 ? 'Y' : 'N';
             const char v1c = compute_v1t ? 'Y' : 'N', v2c = compute_v2t ? 'Y' : 'N';
@@ -1495,7 +1530,7 @@ namespace lapack {
             CHECK(lwork >= 7, lwork);
 
             ARRAY_HIDDEN(T, work, lwork);
-            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max<CBLAS_INT>(3, m + 3 * n));
+            ARRAY_HIDDEN(CBLAS_INT, iwork, std::max(3LL, 1LL * m + 3LL * n));
 
             lapack::gejsv("CEFGAR"[joba], "UFWN"[jobu], "VJWN"[jobv], jobr ? 'R' : 'N',
                           jobt ? 'T' : 'N', jobp ? 'P' : 'N', m, n, a.data<T>(), lda,
@@ -1676,7 +1711,7 @@ namespace lapack {
                 CHECK(lrwork >= lrwork_deflt, lrwork);
                 ARRAY_HIDDEN(T, work, lwork);
                 ARRAY_HIDDEN(R, rwork, lrwork);
-                lapack::sbevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, kd, ab.data<T>(), ldab,
+                lapack::hbevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, kd, ab.data<T>(), ldab,
                               w.data<R>(), z.data<T>(), ldz, work.data<T>(), lwork,
                               rwork.data<R>(), lrwork, iwork.data<CBLAS_INT>(), liwork, &info);
             }
@@ -1749,7 +1784,7 @@ namespace lapack {
             if constexpr (is_complex_v<T>) {
                 ARRAY_HIDDEN(T, work, n);
                 ARRAY_HIDDEN(R, rwork, 7LL * n);
-                lapack::sbevx(jobz, rangec, uplo, n, kd, ab.data<T>(), ldab, q.data<T>(), ldq,
+                lapack::hbevx(jobz, rangec, uplo, n, kd, ab.data<T>(), ldab, q.data<T>(), ldq,
                               vl, vu, il, iu, abstol, &m, w.data<R>(), zdata, ldz,
                               work.data<T>(), rwork.data<R>(), iwork.data<CBLAS_INT>(),
                               ifail.data<CBLAS_INT>(), &info);
@@ -1801,9 +1836,9 @@ namespace lapack {
             ARRAY_IN(T, a, 2);
             CBLAS_INT m = shape(a, 0), n = shape(a, 1);
             CBLAS_INT lda = std::max<CBLAS_INT>(1, m);
-            /* The infinity norm is the only one that needs scratch, and it needs `m` of it; the
+            /* The infinity norm is the only one that needs scratch, and it needs `m`; the
              * `.pyf` allocates `m + 1` for every norm and this keeps that. */
-            ARRAY_HIDDEN(R, work, m + 1);
+            ARRAY_HIDDEN(R, work, 1LL * m + 1);
 
             return make_result(lapack::lange(norm, m, n, a.data<T>(), lda, work.data<R>()));
         }
@@ -1992,10 +2027,23 @@ namespace lapack {
         }
 
 
-        /** @brief `ilaver` reports the LAPACK version and has no flavor at all, so it is a
-         *         plain function rather than a template and gets a bare method-table row. */
-        static PyObject *ilaver(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)) noexcept
+        /**
+         * @brief `ilaver` reports the LAPACK version and has no flavor at all, so it is a plain
+         *        function rather than a template and gets a bare method-table row.
+         *
+         * @note It takes no arguments, but is still declared in the three-argument
+         *       `METH_VARARGS | METH_KEYWORDS` shape every other row uses, because
+         *       `add_wrapped_table` calls them all through one function-pointer type and never
+         *       consults `ml_flags`.  The empty kwlist is therefore what rejects anything it is
+         *       passed; `METH_NOARGS` would not.  Having no flavor, it takes the bare
+         *       `CtxBase` rather than a `Ctx<T>`, which is all `PARSE_ARGS()` needs.
+         */
+        static PyObject *ilaver(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
+            static const char *kwlist[] = {nullptr};
+            static constexpr wrapper::CtxBase<module> ctx("", "ilaver", "", kwlist);
+            PARSE_ARGS();
+
             CBLAS_INT major = 0, minor = 0, patch = 0;
             lapack::ilaver(&major, &minor, &patch);
             return make_result(static_cast<long long>(major), static_cast<long long>(minor),
@@ -2094,7 +2142,7 @@ namespace lapack {
             ROW(dlamch, lamch, f64),
             ROW(crot, rot, c64),
             ROW(zrot, rot, c128),
-            {"ilaver", (PyCFunction)ilaver, METH_NOARGS, nullptr},
+            {"ilaver", (PyCFunction)(void (*)())ilaver, METH_VARARGS | METH_KEYWORDS, nullptr},
             {nullptr, nullptr, 0, nullptr},
         };
 

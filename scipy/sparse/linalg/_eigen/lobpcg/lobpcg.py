@@ -21,7 +21,7 @@ import warnings
 import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse import issparse
 
 __all__ = ["lobpcg"]

@@ -187,11 +187,13 @@ compiled_code_skips = {  # compiled code ignores "numpydoc ignore=" comments"
     "scipy.special.logit" : ['PR02', 'PR01'],
     "scipy.special.mathieu_a" : ['PR02', 'PR01'],
     "scipy.special.mathieu_b" : ['PR02', 'PR01'],
+    "scipy.special.mathieu_ce" : ['PR01'],
     "scipy.special.mathieu_cem" : ['PR02', 'PR01'],
     "scipy.special.mathieu_modcem1" : ['PR02', 'PR01'],
     "scipy.special.mathieu_modcem2" : ['PR02', 'PR01'],
     "scipy.special.mathieu_modsem1" : ['PR02', 'PR01'],
     "scipy.special.mathieu_modsem2" : ['PR02', 'PR01'],
+    "scipy.special.mathieu_se" : ['PR01'],
     "scipy.special.mathieu_sem" : ['PR02', 'PR01'],
     "scipy.special.modfresnelm" : ['PR02', 'PR01'],
     "scipy.special.modfresnelp" : ['PR02', 'PR01'],
@@ -549,7 +551,6 @@ legacy_functions = [
     "scipy.interpolate.UnivariateSpline",
     "scipy.interpolate.splder",
     "scipy.interpolate.Rbf",
-    "scipy.interpolate.interp2d",
     "scipy.sparse.lil_matrix",
     "scipy.sparse.dok_matrix",
     "scipy.sparse.dia_matrix",
@@ -593,7 +594,8 @@ false_positives = ["scipy.stats.Uniform",
                    "scipy.stats.Normal",
                    "scipy.stats.Mixture",
                    "scipy.stats.Binomial",
-                   "scipy.stats.Logistic"]
+                   "scipy.stats.Logistic",
+                   "scipy.stats.VonMises"]
 
 skip_modules = [
     "scipy.fftpack",

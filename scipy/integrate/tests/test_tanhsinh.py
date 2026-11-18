@@ -709,7 +709,7 @@ class TestTanhSinh:
         def f(x, c):
             return x**c
 
-        res = _tanhsinh(f, a, b, args=xp.asarray(29.))
+        res = _tanhsinh(f, a, b, args=(xp.asarray(29.),))
         xp_assert_close(res.integral, xp.asarray(1/30))
 
         # Test NaNs

@@ -67,7 +67,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ducc0/math/cmplx.h"
 #include "ducc0/math/unity_roots.h"
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_fft {
 
@@ -82,7 +82,7 @@ template<typename T> inline void PMINPLACE(T &a, T &b)
   { T t = a; a+=b; b=t-b; }
 template<typename T> inline void MPINPLACE(T &a, T &b)
   { T t = a; a-=b; b=t+b; }
-template<bool fwd, typename T, typename T2> void special_mul (const Cmplx<T> &v1, const Cmplx<T2> &v2, Cmplx<T> &res)
+template<bool fwd, typename T, typename T2> DUCC0_ALWAYS_INLINE void special_mul (const Cmplx<T> &v1, const Cmplx<T2> &v2, Cmplx<T> &res)
   {
   res = fwd ? Cmplx<T>(v1.r*v2.r+v1.i*v2.i, v1.i*v2.r-v1.r*v2.i)
             : Cmplx<T>(v1.r*v2.r-v1.i*v2.i, v1.r*v2.i+v1.i*v2.r);
@@ -90,36 +90,43 @@ template<bool fwd, typename T, typename T2> void special_mul (const Cmplx<T> &v1
 
 struct util1d // hack to avoid duplicate symbols
   {
-  /* returns the smallest composite of 2, 3, 5, 7 and 11 which is >= n */
+  // Finds the smallest composite p of 2 and 3 for which p*x>=n.
+  // Returns min(p*x, bestfac).
+  static size_t iter23(size_t n, size_t x, size_t bestfac)
+    {
+    while (x<n) x*=2;
+    // In the loop below, successively remove factors of 2 and
+    // add factors of 3, such that x stays in (n/2; 3*n).
+    // Whenever a new minimum target value is found, remember it.
+    // Stop if either x==n or no factors of 2 are left.
+    for (;;)
+      {
+      if (x<n)
+        x*=3;
+      else if (x>n)
+        {
+        if (x<bestfac) bestfac=x;
+        if (x&1) return bestfac;  // no more factors 2 left
+        x>>=1;  // remove a factor 2
+        }
+      else
+        return n;
+      }
+    }
+  // Returns the smallest composite of 2, 3, 5, 7 and 11 which is >= n.
   DUCC0_NOINLINE static size_t good_size_cmplx(size_t n)
     {
     if (n<=12) return n;
 
-    size_t bestfac=2*n;
+    size_t bestfac=2*n;  // guaranteed upper limit to the solution
     for (size_t f11=1; f11<bestfac; f11*=11)
       for (size_t f117=f11; f117<bestfac; f117*=7)
         for (size_t f1175=f117; f1175<bestfac; f1175*=5)
-          {
-          size_t x=f1175;
-          while (x<n) x*=2;
-          for (;;)
-            {
-            if (x<n)
-              x*=3;
-            else if (x>n)
-              {
-              if (x<bestfac) bestfac=x;
-              if (x&1) break;
-              x>>=1;
-              }
-            else
-              return n;
-            }
-          }
+          if ((bestfac=iter23(n, f1175, bestfac))==n) return n;
     return bestfac;
     }
-  /* returns the smallest composite of 2, 3, 5, 7 and 11 which is >= n
-     and a multiple of required_factor. */
+  // Returns the smallest composite p of 2, 3, 5, 7 and 11,
+  // for which p*required_factor >= n.
   DUCC0_NOINLINE static size_t good_size_cmplx(size_t n,
     size_t required_factor)
     {
@@ -127,34 +134,18 @@ struct util1d // hack to avoid duplicate symbols
     return good_size_cmplx((n+required_factor-1)/required_factor) * required_factor;
     }
 
-  /* returns the smallest composite of 2, 3, 5 which is >= n */
+  // Returns the smallest composite of 2, 3, 5 which is >= n.
   DUCC0_NOINLINE static size_t good_size_real(size_t n)
     {
     if (n<=6) return n;
 
-    size_t bestfac=2*n;
+    size_t bestfac=2*n;  // guaranteed upper limit to the solution
     for (size_t f5=1; f5<bestfac; f5*=5)
-      {
-      size_t x = f5;
-      while (x<n) x *= 2;
-      for (;;)
-        {
-        if (x<n)
-          x*=3;
-        else if (x>n)
-          {
-          if (x<bestfac) bestfac=x;
-          if (x&1) break;
-          x>>=1;
-          }
-        else
-          return n;
-        }
-      }
+      if ((bestfac=iter23(n, f5, bestfac))==n) return n;
     return bestfac;
     }
-  /* returns the smallest composite of 2, 3, 5 which is >= n
-     and a multiple of required_factor. */
+  // Returns the smallest composite of 2, 3, 5,
+  // for which p*required_factor >= n.
   DUCC0_NOINLINE static size_t good_size_real(size_t n,
     size_t required_factor)
     {
@@ -555,11 +546,11 @@ template<typename T0> class T_dct1
       size_t N=fftplan.length(), n=N/2+1;
       if (ortho)
         { c[0]*=sqrt2; c[n-1]*=sqrt2; }
-      auto tmp=&buf[0];
+      auto tmp=buf;
       tmp[0] = c[0];
       for (size_t i=1; i<n; ++i)
         tmp[i] = tmp[N-i] = c[i];
-      auto res = fftplan.exec(tmp, &buf[N], fct, true, nthreads);
+      auto res = fftplan.exec(tmp, buf+N, fct, true, nthreads);
       c[0] = res[0];
       for (size_t i=1; i<n; ++i)
         c[i] = res[2*i-1];
@@ -597,7 +588,7 @@ template<typename T0> class T_dst1
       bool /*ortho*/, int /*type*/, bool /*cosine*/, size_t nthreads=1) const
       {
       size_t N=fftplan.length(), n=N/2-1;
-      auto tmp = &buf[0];
+      auto tmp=buf;
       tmp[0] = tmp[n+1] = c[0]*0;
       for (size_t i=0; i<n; ++i)
         { tmp[i+1]=c[i]; tmp[N-1-i]=-c[i]; }
@@ -710,7 +701,7 @@ template<typename T0> class T_dcst23
       int type, bool cosine, size_t nthreads=1) const
       {
       aligned_array<T> buf(bufsize());
-      exec(c, &buf[0], fct, ortho, type, cosine, nthreads);
+      exec(c, buf.data(), fct, ortho, type, cosine, nthreads);
       }
 
     size_t length() const { return fftplan.length(); }
@@ -829,7 +820,7 @@ template<typename T0> class T_dcst4
       bool /*ortho*/, int /*type*/, bool cosine, size_t nthreads=1) const
       {
       aligned_array<T> buf(bufsize());
-      exec(c, &buf[0], fct, true, 4, cosine, nthreads);
+      exec(c, buf.data(), fct, true, 4, cosine, nthreads);
       }
 
     size_t length() const { return N; }

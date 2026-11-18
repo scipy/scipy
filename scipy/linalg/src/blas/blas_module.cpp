@@ -2,8 +2,9 @@
  * @file
  * @brief The `_fblas` / `_fblas_64` extension module: assembles the per-level wrapper tables.
  *
- * The wrappers live in `blas_l1.cpp` / `blas_l2.cpp` / `blas_l3.cpp` contributing a
- * `blas::capi::l*_methods` chunk merged in the exec slot with `PyModule_AddFunctions`.
+ * The wrappers live in `blas_l1.cpp` / `blas_l2.cpp` / `blas_l3.cpp`, each contributing a
+ * `blas::capi::l*_methods` chunk that `add_wrapped_table` turns into `BlasFunc` objects in
+ * the exec slot.
  *
  */
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_blas_ARRAY_API
@@ -60,6 +61,7 @@ blasfunc_repr(PyObject *self) {
 
 static int
 blasfunc_traverse(PyObject *self, visitproc visit, void *arg) {
+    Py_VISIT(Py_TYPE(self));   // heap type: instances own a reference to their type
     Py_VISIT(((BlasFunc *)self)->dict);
     Py_VISIT(((BlasFunc *)self)->doc);
     return 0;
@@ -102,13 +104,23 @@ blasfunc_get_name(PyObject *self, void *Py_UNUSED(closure)) {
  *
  * @note Built lazily by build_doc() on first access and cached in `self->doc`. The store runs
  *       in a per-object critical section, so concurrent first accesses keep one build and drop
- *       the other. `doc` is set at most once and never cleared while `self` is live, so the
- *       cached fast path reads without locking.
+ *       the other. The cached path takes the same lock, so a reader never sees the pointer
+ *       without the string it was built from; `__doc__` is cold enough that the lock costs
+ *       nothing worth reclaiming.
  */
 static PyObject *
 blasfunc_get_doc(PyObject *self, void *Py_UNUSED(closure)) {
     BlasFunc *f = (BlasFunc *)self;
-    if (f->doc != nullptr) { return Py_NewRef(f->doc); }
+
+    PyObject *doc;
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_BEGIN_CRITICAL_SECTION(self);
+#endif
+    doc = Py_XNewRef(f->doc);
+#if PY_VERSION_HEX >= 0x030d00f0
+    Py_END_CRITICAL_SECTION();
+#endif
+    if (doc != nullptr) { return doc; }
 
     const char *name = PyUnicode_AsUTF8(f->name);
     if (name == nullptr) { return nullptr; }
@@ -126,11 +138,12 @@ blasfunc_get_doc(PyObject *self, void *Py_UNUSED(closure)) {
         f->doc = built;
         built = nullptr;
     }
+    doc = Py_NewRef(f->doc);
 #if PY_VERSION_HEX >= 0x030d00f0
     Py_END_CRITICAL_SECTION();
 #endif
     if (built != nullptr) { Py_DECREF(built); }   // lost the race; keep the winner
-    return Py_NewRef(f->doc);
+    return doc;
 }
 
 
@@ -160,12 +173,15 @@ static PyType_Slot blasfunc_slots[] = {
     {0, nullptr},
 };
 
+/* `add_wrapped_table` is the only constructor: DISALLOW_INSTANTIATION keeps
+ * `object.__new__` from handing back an instance whose `meth` and `name` are still
+ * null, which every method below would then dereference. */
 static PyType_Spec blasfunc_spec = {
-    "scipy.linalg." FBLAS_MODULE_STR ".blas_function", /* name      */
-    sizeof(BlasFunc),                                  /* basicsize */
-    0,                                                 /* itemsize  */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,           /* flags     */
-    blasfunc_slots,                                    /* slots     */
+    "scipy.linalg." FBLAS_MODULE_STR ".blas_function",                           /* name      */
+    sizeof(BlasFunc),                                                            /* basicsize */
+    0,                                                                           /* itemsize  */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* flags     */
+    blasfunc_slots,                                                              /* slots     */
 };
 
 /** @brief Wrap every row of a PyMethodDef table in a BlasFunc and add it to the module. */
@@ -174,11 +190,14 @@ add_wrapped_table(PyObject *module, PyTypeObject *tp, const PyMethodDef *defs) {
 
     for (const PyMethodDef *d = defs; d->ml_name != nullptr; d++) {
 
+        // PyObject_GC_New gives the instance an owned reference to its heap type.
         BlasFunc *f = PyObject_GC_New(BlasFunc, tp);
         if (f == nullptr) { return -1; }
 
-        Py_INCREF(tp);   // the reference the instance owns
-
+        /* Every row is invoked through this one pointer type by `blasfunc_call`, which -- unlike
+         * CPython's own dispatch -- never consults `ml_flags`.  So every entry in these tables
+         * must genuinely be `METH_VARARGS | METH_KEYWORDS`: a `METH_NOARGS` or `METH_O` row
+         * would be called through the wrong function-pointer type. */
         f->meth = reinterpret_cast<PyCFunctionWithKeywords>(reinterpret_cast<void (*)()>(d->ml_meth));
         f->dict = nullptr;
         f->doc = nullptr;

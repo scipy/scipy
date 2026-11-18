@@ -22,7 +22,6 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
-from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -2611,6 +2610,9 @@ class TestPinvSymmetric:
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+        aa = np.stack([a, 2*a])
+        assert_equal(pinv(aa), np.stack([pinv(aa[0]), pinv(aa[1])]))
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -2652,6 +2654,26 @@ class TestPinvSymmetric:
         # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
+
+    def test_rank(self):
+        a = np.diag([0, 1, 2])
+        a_p, rank = pinvh(a, return_rank=True)
+        assert rank == 2
+        assert_allclose(
+            a_p,
+            np.asarray([[0. , 0. , 0. ],
+                        [0. , 1. , 0. ],
+                        [0. , 0. , 0.5]]),
+            atol=1e-15
+        )
+
+        aa = np.stack([a, 2*a, np.diag([1, 2, 3])])
+        _, rank = pinvh(aa, return_rank=True)
+        assert_equal(rank, np.asarray([2, 2, 3]))
+
+        aaa = np.stack([aa, aa])
+        _, rank = pinvh(aaa, return_rank=True)
+        assert_equal(rank, np.asarray([[2, 2, 3], [2, 2, 3]]))
 
     @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
@@ -2921,9 +2943,8 @@ class TestSolveCirculant:
 
 class TestMatrix_Balance:
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-    @skip_xp_invalid_arg
     def test_string_arg(self):
-        assert_raises(ValueError, matrix_balance, 'Some string for fail')
+        assert_raises(TypeError, matrix_balance, 'Some string for fail')
 
     def test_infnan_arg(self):
         assert_raises(ValueError, matrix_balance,
@@ -3049,12 +3070,11 @@ class TestDTypes:
     def test_det(self, tcode):
         a = self.get_arr2D(tcode)
 
-        is_arm = platform.machine() == 'arm64'
-        is_armhf = platform.machine() == 'armv8l'   # gh-24831
+        is_arm = platform.machine().startswith('arm')   # gh-24831
         is_windows = os.name == 'nt'
 
         failing_tcodes = 'SUVOmM'
-        if not (is_arm or is_armhf or is_windows):
+        if not (is_arm or is_windows):
             failing_tcodes += 'gG'
 
         if tcode in failing_tcodes:

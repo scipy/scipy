@@ -663,6 +663,25 @@ def test_max_step(num_parallel_threads):
                 assert_raises(RuntimeError, solver.step)
 
 
+def test_min_step():
+    def fun(t, y):
+        return -0.5 * y
+
+    res = solve_ivp(fun, [1, 8], [1.0], min_step=0,
+                    method='LSODA', rtol=1e-7, atol=1e-9)
+    assert res.success
+    assert_equal(res.status, 0)
+
+    with pytest.warns(UserWarning, match='lsoda: Repeated convergence failures'):
+        res = solve_ivp(fun, [1, 8], [1.0], min_step=2,
+                        method='LSODA', rtol=1e-7, atol=1e-9)
+    assert not res.success
+    assert_equal(res.status, -1)
+
+    with pytest.raises(ValueError, match='`min_step` must be nonnegative'):
+        LSODA(fun, 1, [1.0], 8, min_step=-1)
+
+
 def test_first_step(num_parallel_threads):
     rtol = 1e-3
     atol = 1e-6

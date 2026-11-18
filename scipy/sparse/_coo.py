@@ -10,7 +10,6 @@ from warnings import warn
 
 import numpy as np
 
-from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
@@ -33,7 +32,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
         if not copy:
-            copy = copy_if_needed
+            copy = None
 
         if isinstance(arg1, tuple):
             if isshape(arg1, allow_nd=self._allow_nd):
@@ -1544,8 +1543,8 @@ def _get_sparse_data_and_coords(x, new_shape, dtype):
     if len_diff > 0:
         # prepend ones to shape of x to match ndim
         x_shape = [1] * len_diff + list(x_shape)
-        coord_zeros = np.zeroslike(x_coords[0])
-        x_coords = tuple([coord_zeros] * len_diff + x_coords)
+        coord_zeros = np.zeros_like(x_coords[0])
+        x_coords = [coord_zeros] * len_diff + x_coords
     # taking away axes (squeezing) is not part of broadcasting, but long
     # spmatrix history of using 2d vectors in 1d space, so we manually
     # squeeze the front and back axes here to be compatible

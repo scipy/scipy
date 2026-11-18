@@ -20,6 +20,7 @@ py3.extension_module('_rgi_cython',
   linalg_cython_gen.process('_rgi_cython.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
 )

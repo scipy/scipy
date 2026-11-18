@@ -892,8 +892,9 @@ namespace wrapper {
                 if (!PyErr_Occurred()) {
                     char pk[32];
                     poskind(pk, sizeof pk, index(name));
-                    PyErr_Format(PyExc_TypeError, "%s.%s: failed to create array from the %s`%s`",
-                                Mod::pyname, qualname(), pk, name);
+                    /* qualname() already carries `Mod::pyname`, so it is not repeated here. */
+                    PyErr_Format(PyExc_TypeError, "%s: failed to create array from the %s`%s`",
+                                qualname(), pk, name);
                 }
                 return py_ref(nullptr);
             }

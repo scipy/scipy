@@ -11,7 +11,6 @@ from scipy._lib._array_api import (
     is_cupy,
     is_array_api_strict,
     make_xp_test_case,
-    SCIPY_ARRAY_API,
     xp_size,
     xp_copy,
 )
@@ -19,6 +18,11 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays
+
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:`scipy.stats.mstats` is deprecated:DeprecationWarning"),  # noqa: E501
+]
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -226,8 +230,6 @@ class TestQuantile:
             weights, x_rep = None, x
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if weights is not None:
                 pytest.skip("MArray is not yet compatible with weights")
             marray = pytest.importorskip('marray')
@@ -584,8 +586,6 @@ class TestEstimatedCDF:
         dtype = getattr(xp, dtype)
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=meth)
             mxp = marray._get_namespace(xp)
@@ -666,8 +666,6 @@ class TestEstimatedCDF:
         elif nan_policy == 'marray':
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             mxp = marray._get_namespace(xp)
             mask = (x > 0.)
@@ -695,8 +693,6 @@ class TestEstimatedCDF:
             x = xpx.at(x)[:].set(xp.nan)
             kwargs = {'nan_policy': 'omit'}
         elif nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
             marray = pytest.importorskip('marray')

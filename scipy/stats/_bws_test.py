@@ -1,7 +1,8 @@
 import numpy as np
 from functools import partial
 
-from scipy import stats
+from scipy.stats._resampling import PermutationMethod, permutation_test
+from scipy.stats._stats_py import rankdata
 from scipy.stats._axis_nan_policy import _broadcast_arrays
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_ravel,
@@ -34,7 +35,7 @@ def _bws_input_validation(x, y, alternative, axis, method):
         raise ValueError('`x` and `y` must contain at least two observations each.')
 
     x, y = xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1)
-    z = stats.rankdata(xp.concat((x, y), axis=-1), axis=-1)
+    z = rankdata(xp.concat((x, y), axis=-1), axis=-1)
     z = xp.astype(z, xp_result_type(x, y, force_floating=True, xp=xp))
     x, y = z[..., :x.shape[-1]], z[..., x.shape[-1]:]
     x, y = xp.moveaxis(x, -1, axis), xp.moveaxis(y, -1, axis)
@@ -44,8 +45,8 @@ def _bws_input_validation(x, y, alternative, axis, method):
     if alternative not in alternatives:
         raise ValueError(f'`alternative` must be one of {alternatives}.')
 
-    method = stats.PermutationMethod() if method is None else method
-    if not isinstance(method, stats.PermutationMethod):
+    method = PermutationMethod() if method is None else method
+    if not isinstance(method, PermutationMethod):
         raise ValueError('`method` must be an instance of '
                          '`scipy.stats.PermutationMethod`')
 
@@ -198,8 +199,8 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     bws_statistic = partial(_bws_statistic, alternative=alternative, xp=xp)
 
     permutation_alternative = 'less' if alternative == 'less' else 'greater'
-    res = stats.permutation_test((x, y), bws_statistic,
-                                 alternative=permutation_alternative, axis=axis,
-                                 **method._asdict())
+    res = permutation_test((x, y), bws_statistic,
+                           alternative=permutation_alternative, axis=axis,
+                           **method._asdict())
 
     return res

@@ -8,17 +8,89 @@ from numpy.testing import assert_equal
 from numpy._core._exceptions import UFuncTypeError
 from scipy._external.packaging_version import version
 # ufunc wrapper with array api dispatch
-from scipy.special import mathieu_sem
+from scipy.special import mathieu_se
 # ufunc using special._ufunc_tools._with_cache_optimization
-from scipy.special._mathieu import mathieu_sem as mathieu_sem_wrapper
+from scipy.special._mathieu import mathieu_se as mathieu_se_wrapper
 # raw ufunc without cache optimization
-from scipy.special._ufuncs import _mathieu_sem
+from scipy.special._ufuncs import _mathieu_se
 
-from scipy.special._spfun_stats import _poisson_binom_cdf
+from scipy.special._spfun_stats import poisson_binom_cdf
 from scipy.special._ufuncs import betainc
 
 from scipy.special._ufunc_tools import _make_ufunc_wrapper
+from scipy.special._ufunc_tools import _with_cache_optimization
 
+
+def _make_passthrough(ufunc):
+    def wrapper(*args, **kwargs):
+        return ufunc(*args, **kwargs)
+    return wrapper
+
+
+def _assert_same_result(actual, desired):
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+        for actual_i, desired_i in zip(actual, desired):
+            _assert_same_result(actual_i, desired_i)
+        return
+
+    np.testing.assert_equal(actual, desired)
+
+    if isinstance(desired, np.ndarray):
+        assert type(actual) is type(desired)
+        assert actual.dtype == desired.dtype
+        assert actual.shape == desired.shape
+        assert actual.strides == desired.strides
+
+
+_vecdot_cached_wrapper = _with_cache_optimization(
+    name="_vecdot_cached_wrapper",
+    arg_names=["x1", "x2"],
+    docstring="Wrapper for np.vecdot.",
+    ufunc=np.vecdot,
+    cache_arg_indices=[0],
+)
+
+_solve_cached_wrapper = _with_cache_optimization(
+    name="_solve_wrapper",
+    arg_names=["a", "b"],
+    docstring="Wrapper for NumPy solve gufunc.",
+    ufunc=np.linalg._umath_linalg.solve,
+    cache_arg_indices=[0],
+)
+
+_betainc_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(betainc),
+            betainc,
+            "betainc",
+            ["a", "b", "x"],
+            "Wrapper for betainc.",
+)
+
+_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
+            _make_passthrough(poisson_binom_cdf),
+            poisson_binom_cdf,
+            "poisson_binom_cdf",
+            ["k", "p"],
+            "Wrapper for poisson_binom_cdf.",
+)
+
+_mathieu_se_wrapper_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(mathieu_se_wrapper),
+    mathieu_se_wrapper,
+    "mathieu_se",
+    ["m", "q", "x"],
+    "Wrapper for wrapper of mathieu_se",
+)
+
+_vecdot_wrapper = _make_ufunc_wrapper(
+    _make_passthrough(np.vecdot),
+    np.vecdot,
+    "vecdot",
+    ["x1", "x2"],
+    "Wrapper for vecdot."
+)
 
 # Tests that ufunc kwargs still work when _with_cache_optimization is applied
 class TestWithCacheOptimization:
@@ -40,7 +112,7 @@ class TestWithCacheOptimization:
     ])
     @pytest.mark.parametrize("out_order", ["C", "F"])
     def test_out(self, m_shape, q_shape, x_shape, where_shape, out_order):
-        # the call to mathieu_sem in this test raised a segfault on scipy/main prior to
+        # the call to mathieu_se in this test raised a segfault on scipy/main prior to
         # https://github.com/scipy/scipy/pull/25127 -- https://github.com/scipy/xsf/pull/146.
         rng = np.random.default_rng(1234)
 
@@ -57,12 +129,12 @@ class TestWithCacheOptimization:
 
         out0 = np.full(batch_shape, np.nan, order=out_order)
         out1 = np.full(batch_shape, np.nan, order=out_order)
-        res0, res1 = mathieu_sem(m, q, x, out=(out0, out1), where=where)
+        res0, res1 = mathieu_se(m, q, x, out=(out0, out1), where=where)
         assert res0 is out0 and res1 is out1
 
         expected0 = np.full(batch_shape, np.nan, order=out_order)
         expected1 = np.full(batch_shape, np.nan, order=out_order)
-        _mathieu_sem(m, q, x, out=(expected0, expected1), where=where)
+        _mathieu_se(m, q, x, out=(expected0, expected1), where=where)
         assert_equal((res0, res1), (expected0, expected1))
         assert res0.flags == expected0.flags
         assert res1.flags == expected1.flags
@@ -73,10 +145,10 @@ class TestWithCacheOptimization:
         x = [[30, 60, 90]]
         out0 = np.full((3, 3), np.nan)
         out1 = np.full((3, 3), np.nan)
-        mathieu_sem(m, q, x, out=(out0, out1))
+        mathieu_se(m, q, x, out=(out0, out1))
         expected0 = np.full((3, 3), np.nan)
         expected1 = np.full((3, 3), np.nan)
-        mathieu_sem(m, q, x, out=(expected0, expected1))
+        mathieu_se(m, q, x, out=(expected0, expected1))
         assert_equal((out0, out1), (expected0, expected1))
 
     @pytest.mark.parametrize("subok", [True, False])
@@ -86,8 +158,8 @@ class TestWithCacheOptimization:
         m = np.asarray([1, 2, 3]).view(ArraySubClass)
         q = np.asarray([2.1, 3.2, 4.3]).view(ArraySubClass)
         x = np.asarray([10, 20, 30]).view(ArraySubClass)
-        res0, res1 = mathieu_sem(m, q, x, subok=subok)
-        expected0, expected1 = _mathieu_sem(m, q, x, subok=subok)
+        res0, res1 = mathieu_se(m, q, x, subok=subok)
+        expected0, expected1 = _mathieu_se(m, q, x, subok=subok)
         assert type(res0) is type(expected0) and type(res1) is type(expected1)
 
     @pytest.mark.parametrize("order_m", ["C", "F"])
@@ -116,8 +188,8 @@ class TestWithCacheOptimization:
         m = np.asarray(rng.integers(1, 20, m_shape), copy=True, order=order_m)
         q = np.asarray(rng.uniform(0, 10, q_shape), copy=True, order=order_q)
         x = np.asarray(rng.uniform(0, 90, x_shape), copy=True, order=order_x)
-        res0, res1 = mathieu_sem(m, q, x, order=order)
-        expected0, expected1 = _mathieu_sem(m, q, x, order=order)
+        res0, res1 = mathieu_se(m, q, x, order=order)
+        expected0, expected1 = _mathieu_se(m, q, x, order=order)
         assert_equal((res0, res1), (expected0, expected1))
 
         assert res0.flags == expected0.flags
@@ -128,10 +200,10 @@ class TestWithCacheOptimization:
         q = np.float16(1.0)
         x = np.float16(45.0)
         with pytest.raises(UFuncTypeError):
-            res0, res1 = mathieu_sem(m, q, x, casting="no")
+            res0, res1 = mathieu_se(m, q, x, casting="no")
 
-        res0, res1 = mathieu_sem(m, q, x, casting="safe")
-        expected0, expected1 = _mathieu_sem(m, q, x, casting="safe")
+        res0, res1 = mathieu_se(m, q, x, casting="safe")
+        expected0, expected1 = _mathieu_se(m, q, x, casting="safe")
         assert_equal((res0, res1), (expected0, expected1))
 
     @pytest.mark.parametrize("dtype_kwarg", [np.float32, np.float64])
@@ -141,8 +213,8 @@ class TestWithCacheOptimization:
         q = np.asarray([2, 3, 4], dtype=input_dtype)
         x = np.asarray([30, 60, 90], dtype=input_dtype)
 
-        res0, res1 = mathieu_sem(m, q, x, dtype=dtype_kwarg)
-        expected0, expected1 = _mathieu_sem(m, q, x, dtype=dtype_kwarg)
+        res0, res1 = mathieu_se(m, q, x, dtype=dtype_kwarg)
+        expected0, expected1 = _mathieu_se(m, q, x, dtype=dtype_kwarg)
         assert_equal((res0, res1), (expected0, expected1))
         assert res0.dtype == res1.dtype == expected0.dtype == expected1.dtype
 
@@ -156,8 +228,8 @@ class TestWithCacheOptimization:
         m = [1, 2, 3]
         q = [2, 3, 4]
         x = [30, 60, 90]
-        res0, res1 = mathieu_sem(m, q, x, signature=signature)
-        expected0, expected1 = _mathieu_sem(m, q, x, signature=signature)
+        res0, res1 = mathieu_se(m, q, x, signature=signature)
+        expected0, expected1 = _mathieu_se(m, q, x, signature=signature)
         assert_equal((res0, res1), (expected0, expected1))
         assert res0.dtype == res1.dtype == expected0.dtype == expected1.dtype
 
@@ -171,12 +243,12 @@ class TestWithCacheOptimization:
         x = [10.0, 20.0, 30.0]
         if version.parse(np.__version__) >= version.parse("2.4.0"):
             with pytest.warns(UserWarning, match="'where' used without 'out'"):
-                res0, res1 = mathieu_sem(m, q, x, where=where)
+                res0, res1 = mathieu_se(m, q, x, where=where)
         else:
-            res0, res1 = mathieu_sem(m, q, x, where=where)
+            res0, res1 = mathieu_se(m, q, x, where=where)
 
         mask = np.broadcast_to(where, (3,))
-        expected0, expected1 = mathieu_sem(m, q, x)
+        expected0, expected1 = mathieu_se(m, q, x)
         assert_equal(res0[mask], expected0[mask])
         assert_equal(res1[mask], expected1[mask])
 
@@ -192,10 +264,10 @@ class TestWithCacheOptimization:
                 message="'where' used without 'out'",
                 category=UserWarning,
             )
-            res0, res1 = mathieu_sem(m, q, x, where=where, out=(None, None))
+            res0, res1 = mathieu_se(m, q, x, where=where, out=(None, None))
 
         mask = np.broadcast_to(where, (3,))
-        expected0, expected1 = mathieu_sem(m, q, x)
+        expected0, expected1 = mathieu_se(m, q, x)
         assert_equal(res0[mask], expected0[mask])
         assert_equal(res1[mask], expected1[mask])
 
@@ -208,8 +280,8 @@ class TestWithCacheOptimization:
 
         out = [np.full((5, 4), np.nan) for _ in range(2)]
         expected = [np.full((5, 4), np.nan) for _ in range(2)]
-        mathieu_sem(m, q, x, out=tuple(out), where=where)
-        _mathieu_sem(m, q, x, out=tuple(expected), where=where)
+        mathieu_se(m, q, x, out=tuple(out), where=where)
+        _mathieu_se(m, q, x, out=tuple(expected), where=where)
         assert_equal(out, expected)
 
     def test_out_with_none_entry(self):
@@ -220,8 +292,8 @@ class TestWithCacheOptimization:
         x = [[30, 60, 90]]
         out0 = np.full((3, 3), np.nan)
         expected0 = np.full((3, 3), np.nan)
-        res0, res1 = mathieu_sem(m, q, x, out=(out0, None))
-        exp0, exp1 = _mathieu_sem(m, q, x, out=(expected0, None))
+        res0, res1 = mathieu_se(m, q, x, out=(out0, None))
+        exp0, exp1 = _mathieu_se(m, q, x, out=(expected0, None))
         assert res0 is out0
         assert_equal((res0, res1), (exp0, exp1))
 
@@ -230,80 +302,238 @@ class TestWithCacheOptimization:
         q = [[2, 2, 2]]
         x = [[30, 60, 90]]
         out0 = np.full((3, 3), np.nan)
-        # mathieu_sem has two outputs, so a bare array is not acceptable.
+        # mathieu_se has two outputs, so a bare array is not acceptable.
         with pytest.raises(TypeError, match="must be a tuple of arrays"):
-            mathieu_sem(m, q, x, out=out0)
+            mathieu_se(m, q, x, out=out0)
         with pytest.raises(TypeError, match="must be a tuple of arrays"):
-            mathieu_sem(m, q, x, out=[out0, out0.copy()])
+            mathieu_se(m, q, x, out=[out0, out0.copy()])
         with pytest.raises(ValueError, match="exactly 2 entries"):
-            mathieu_sem(m, q, x, out=(out0,))
+            mathieu_se(m, q, x, out=(out0,))
 
     def test_unexpected_kwarg_names_wrapper(self):
-        with pytest.raises(TypeError, match="mathieu_sem"):
-            mathieu_sem(1, 2, 3, not_a_ufunc_kwarg=True)
+        with pytest.raises(TypeError, match="mathieu_se"):
+            mathieu_se(1, 2, 3, not_a_ufunc_kwarg=True)
 
     def test_wrapper_metadata(self):
         for attr in ["nin", "nout", "nargs", "ntypes", "types", "signature"]:
-            assert getattr(mathieu_sem, attr) == getattr(_mathieu_sem, attr)
+            assert getattr(mathieu_se, attr) == getattr(_mathieu_se, attr)
 
-    @pytest.mark.parametrize("func", [mathieu_sem, mathieu_sem_wrapper])
+    @pytest.mark.parametrize("func", [mathieu_se, mathieu_se_wrapper])
     def test_pickle(self, func):
         assert pickle.loads(pickle.dumps(func)) is func
 
+    def test_gufunc_output_core_dims(self):
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
 
-def _make_passthrough(ufunc):
-    def wrapper(*args, **kwargs):
-        return ufunc(*args, **kwargs)
-    return wrapper
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b)
 
-_betainc_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(betainc),
-            betainc,
-            "betainc",
-            ["a", "b", "x"],
-            "Wrapper for betainc.",
-)
+        _assert_same_result(actual, desired)
 
-_poisson_binom_cdf_wrapper = _make_ufunc_wrapper(
-            _make_passthrough(_poisson_binom_cdf),
-            _poisson_binom_cdf,
-            "poisson_binom_cdf",
-            ["k", "p"],
-            "Wrapper for _poisson_binom_cdf.",
-)
+    def test_gufunc_output_core_dims_out(self):
+        a = np.eye(3)[None, None, :, :] * np.arange(1, 5)[None, :, None, None]
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+        out = np.empty((2, 4, 3, 2))
 
-_mathieu_sem_wrapper_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(mathieu_sem_wrapper),
-    mathieu_sem_wrapper,
-    "mathieu_sem",
-    ["m", "q", "x"],
-    "Wrapper for wrapper of mathieu_sem",
-)
+        desired = np.linalg._umath_linalg.solve(a, b)
+        actual = _solve_cached_wrapper(a, b, out=out)
 
-_vecdot_wrapper = _make_ufunc_wrapper(
-    _make_passthrough(np.vecdot),
-    np.vecdot,
-    "vecdot",
-    ["x1", "x2"],
-    "Wrapper for vecdot."
-)
+        assert actual is out
+        _assert_same_result(actual, desired)
 
+    def test_gufunc_axis(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
 
-def _assert_same_result(actual, desired):
-    if isinstance(desired, tuple):
-        assert isinstance(actual, tuple)
-        assert len(actual) == len(desired)
-        for actual_i, desired_i in zip(actual, desired):
-            _assert_same_result(actual_i, desired_i)
-        return
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
 
-    np.testing.assert_equal(actual, desired)
+        desired = np.vecdot(x1, x2, axis=1)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1)
 
-    if isinstance(desired, np.ndarray):
-        assert type(actual) is type(desired)
-        assert actual.dtype == desired.dtype
-        assert actual.shape == desired.shape
-        assert actual.strides == desired.strides
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axis_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        out = np.empty((2, 4))
+        desired_out = np.empty_like(out)
+
+        desired = np.vecdot(x1, x2, axis=1, out=desired_out)
+        actual = _vecdot_cached_wrapper(x1, x2, axis=1, out=out)
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        desired = np.linalg._umath_linalg.solve(a, b, axes=axes)
+        actual = _solve_cached_wrapper(a, b, axes=axes)
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "axes",
+        [
+            [(1, 3), (0, 3), (1, 3)],
+            [(1, -1), (0, -1), (1, -1)],
+        ],
+    )
+    def test_gufunc_axes_out(self, axes):
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        out = np.empty((2, 3, 4, 2))
+        desired_out = np.empty_like(out)
+
+        desired = np.linalg._umath_linalg.solve(
+            a, b, axes=axes, out=desired_out
+        )
+        actual = _solve_cached_wrapper(
+            a, b, axes=axes, out=out
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_keepdims(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        desired = np.vecdot(x1, x2, keepdims=True)
+        actual = _vecdot_cached_wrapper(x1, x2, keepdims=True)
+
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_keepdims_out(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        out = np.empty((2, 4, 1))
+        desired_out = np.empty_like(out)
+
+        desired = np.vecdot(
+            x1, x2, keepdims=True, out=desired_out
+        )
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, out=out
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"axis": 1},
+            {"axes": [(1,), (1,), (1,)]},
+            {"axes": [(1,), (1,)]},
+        ],
+    )
+    def test_gufunc_keepdims_axes(self, kwargs):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        desired = np.vecdot(x1, x2, keepdims=True, **kwargs)
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, **kwargs
+        )
+
+        _assert_same_result(actual, desired)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"axis": 1},
+            {"axes": [(1,), (1,), (1,)]},
+            {"axes": [(1,), (1,)]},
+        ],
+    )
+    def test_gufunc_keepdims_axes_out(self, kwargs):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        desired = np.vecdot(x1, x2, keepdims=True, **kwargs)
+        out = np.empty_like(desired)
+        desired_out = np.empty_like(desired)
+
+        desired = np.vecdot(
+            x1, x2, keepdims=True, out=desired_out, **kwargs
+        )
+        actual = _vecdot_cached_wrapper(
+            x1, x2, keepdims=True, out=out, **kwargs
+        )
+
+        assert actual is out
+        _assert_same_result(actual, desired)
+
+    def test_gufunc_axis_axes_validation(self):
+        x1 = np.arange(12.0).reshape(1, 4, 3)
+        x2 = np.arange(6.0).reshape(2, 1, 3)
+
+        x1 = np.moveaxis(x1, -1, 1)
+        x2 = np.moveaxis(x2, -1, 1)
+
+        with pytest.raises(TypeError, match="cannot specify both 'axis'.*"):
+            _vecdot_cached_wrapper(x1, x2, axis=1, axes=[(1,), (1,), ()])
+
+        a = (
+            np.arange(1.0, 5.0)[None, :, None, None]
+            * np.eye(3)[None, None, :, :]
+        )
+        b = np.arange(12.0).reshape(2, 1, 3, 2) + 1
+
+        a = np.moveaxis(a, (-2, -1), (1, 3))
+        b = np.moveaxis(b, (-2, -1), (0, 3))
+
+        with pytest.raises(TypeError, match="axis can only be used with.*"):
+            _solve_cached_wrapper(a, b, axis=1)
+
+        with pytest.raises(TypeError, match="axes should be a list"):
+            _solve_cached_wrapper(a, b, axes=((1, 3), (0, 3), (1, 3)))
+
+        with pytest.raises(ValueError, match="axes should have one entry.*"):
+            _solve_cached_wrapper(a, b, axes=[(1, 3), (0, 3)])
+
+        with pytest.raises(TypeError, match=r"axes item \d+ should be a tuple"):
+            _solve_cached_wrapper(a, b, axes=[[1, 3], (0, 3), (1, 3)])
+
+        with pytest.raises(
+                ValueError, match=r"axes item \d+ should have length.*"
+        ):
+            _solve_cached_wrapper(a, b, axes=[(1,), (0, 3), (1, 3)])
 
 
 class TestMakeUFuncWrapper:
@@ -311,8 +541,8 @@ class TestMakeUFuncWrapper:
         "func,func_wrapper",
         [
             [betainc, _betainc_wrapper],
-            [mathieu_sem_wrapper, _mathieu_sem_wrapper_wrapper],
-            [_poisson_binom_cdf, _poisson_binom_cdf_wrapper],
+            [mathieu_se_wrapper, _mathieu_se_wrapper_wrapper],
+            [poisson_binom_cdf, _poisson_binom_cdf_wrapper],
             [np.vecdot, _vecdot_wrapper],
         ]
     )
@@ -352,10 +582,10 @@ class TestMakeUFuncWrapper:
         m = np.asarray([1, 4])
         q = np.linspace(1, 50, 10)
         x = np.linspace(0, 360, 10)
-        desired0, desired1 = mathieu_sem_wrapper(
+        desired0, desired1 = mathieu_se_wrapper(
             m[:, None], q[None, :], x[:, None, None]
         )
-        actual0, actual1 = _mathieu_sem_wrapper_wrapper(
+        actual0, actual1 = _mathieu_se_wrapper_wrapper(
             m[:, None], q[None, :], x[:, None, None]
         )
         np.testing.assert_equal(actual0, desired0)
@@ -366,11 +596,11 @@ class TestMakeUFuncWrapper:
         q = np.linspace(1, 50, 10)
         x = np.linspace(0, 360, 10)
         out_desired0, out_desired1 = np.empty((10, 2, 10)), np.empty((10, 2, 10))
-        desired0, desired1 = mathieu_sem_wrapper(
+        desired0, desired1 = mathieu_se_wrapper(
             m[:, None], q[None, :], x[:, None, None], out=(out_desired0, out_desired1)
         )
         out_actual0, out_actual1 = np.empty((10, 2, 10)), np.empty((10, 2, 10))
-        actual0, actual1 = _mathieu_sem_wrapper_wrapper(
+        actual0, actual1 = _mathieu_se_wrapper_wrapper(
             m[:, None], q[None, :], x[:, None, None], out=(out_actual0, out_actual1)
         )
         assert out_actual0 is actual0
@@ -389,7 +619,7 @@ class TestMakeUFuncWrapper:
         ])
 
         out_desired = np.empty((2, 3, 2))
-        _poisson_binom_cdf(k[:, :, None], p, out=out_desired)
+        poisson_binom_cdf(k[:, :, None], p, out=out_desired)
         out_actual = np.empty((2, 3, 2))
         actual = _poisson_binom_cdf_wrapper(k[:, :, None], p, out=out_actual)
         assert out_actual is actual
@@ -534,7 +764,7 @@ class TestMakeUFuncWrapper:
         "func_wrapper, expected",
         [
             (_betainc_wrapper, "(a, b, x, /, out=None, **kwargs)"),
-            (_mathieu_sem_wrapper_wrapper, "(m, q, x, /, out=None, **kwargs)"),
+            (_mathieu_se_wrapper_wrapper, "(m, q, x, /, out=None, **kwargs)"),
             (_poisson_binom_cdf_wrapper, "(k, p, /, out=None, **kwargs)"),
             (_vecdot_wrapper, "(x1, x2, /, out=None, **kwargs)"),
         ],

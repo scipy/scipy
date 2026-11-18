@@ -1,8 +1,6 @@
 import functools
 import types
-from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API, xp_capabilities
-)
+from scipy._lib._array_api import is_cupy, is_jax, scipy_namespace_for, xp_capabilities
 
 from ._signal_api import *   # noqa: F403
 from . import _signal_api
@@ -385,7 +383,7 @@ for obj_name in _signal_api.__all__:
     bare_obj = getattr(_signal_api, obj_name)
     delegator = getattr(_delegators, obj_name + "_signature", None)
 
-    if SCIPY_ARRAY_API and delegator is not None:
+    if delegator is not None:
         f = delegate_xp(delegator, MODULE_NAME)(bare_obj)
     else:
         f = bare_obj

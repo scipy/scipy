@@ -65,6 +65,11 @@ New features
 ``scipy.special`` improvements
 ==============================
 
+- Added `scipy.special.mathieu_ce` and `scipy.special.mathieu_se`, which accept
+  the angular argument in radians and return the function value and its
+  derivative with respect to that same argument.
+  Both functions are also available in `scipy.special.cython_special`.
+
 
 ``scipy.stats`` improvements
 ============================
@@ -74,6 +79,15 @@ New features
 *******************
 Deprecated features
 *******************
+
+- `scipy.special.mathieu_cem` and `scipy.special.mathieu_sem` are deprecated
+  and will be removed in SciPy 2.2.0. Use `scipy.special.mathieu_ce` and
+  `scipy.special.mathieu_se` instead, converting the input from degrees to
+  radians. For example, replace ``mathieu_cem(m, q, x)`` with
+  ``mathieu_ce(m, q, np.deg2rad(x))``. Both APIs return derivatives per radian,
+  so the returned derivative requires no conversion.
+  The corresponding legacy functions in `scipy.special.cython_special`
+  are also deprecated.
 
 
 

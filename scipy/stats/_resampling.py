@@ -22,9 +22,9 @@ from scipy._lib._array_api import (
 )
 from scipy._external import array_api_extra as xpx
 from scipy.special import ndtr, ndtri
-from scipy import stats
 
 from ._common import ConfidenceInterval
+from ._quantile import quantile
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
 
@@ -661,7 +661,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
-    ci = stats.quantile(theta_hat_b, interval, axis=-1)
+    ci = quantile(theta_hat_b, interval, axis=-1)
     if not is_lazy_array(ci) and xp.any(xp.isnan(ci)):
         msg = (
             "The BCa confidence interval cannot be calculated. "

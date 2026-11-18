@@ -393,8 +393,9 @@ Miscellaneous
 .. autosummary::
    :toctree: generated/
 
-   tklmbda      -- Tukey-Lambda cumulative distribution function.
-   owens_t      -- Owen's T Function.
+   tklmbda                 -- Tukey-Lambda cumulative distribution function.
+   owens_t                 -- Owen's T Function.
+   poisson_binom_cdf       -- Poisson binomial cumulative distribution function.
 
 
 Information Theory functions
@@ -635,19 +636,27 @@ universal functions):
    :toctree: generated/
 
    mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even Mathieu function and its derivative.
-   mathieu_sem     -- Odd Mathieu function and its derivative.
+   mathieu_ce -- Even Mathieu function and its derivative.
+   mathieu_se -- Odd Mathieu function and its derivative.
    mathieu_modcem1 -- Even modified Mathieu function of the first kind and its derivative.
    mathieu_modcem2 -- Even modified Mathieu function of the second kind and its derivative.
    mathieu_modsem1 -- Odd modified Mathieu function of the first kind and its derivative.
    mathieu_modsem2 -- Odd modified Mathieu function of the second kind and its derivative.
+
+The following functions are deprecated in favor of the functions above:
+
+.. autosummary::
+   :toctree: generated/
+
+   mathieu_cem     -- Even Mathieu function and its derivative.
+   mathieu_sem     -- Odd Mathieu function and its derivative.
 
 Spheroidal wave functions
 -------------------------
@@ -816,7 +825,7 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-# These mathieu functions are generated dynamically and inserted into globals
+# These functions are generated dynamically and inserted into globals
 # through _support_alternative_backends. This confuses the type checker though
 # so import them when type checking. Importing them in the regular code path
 # breaks test_support_alternative_backends.py due to the vagaries of how
@@ -824,7 +833,8 @@ from ._spherical_bessel import (
 # in a more principled way.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ._mathieu import mathieu_cem, mathieu_sem
+    from ._mathieu import mathieu_ce, mathieu_se, mathieu_cem, mathieu_sem
+    from ._spfun_stats import poisson_binom_cdf
 
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
@@ -845,8 +855,11 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_ce',
+    'mathieu_se',
     'mathieu_cem',
     'mathieu_sem',
+    'poisson_binom_cdf',
 ]
 
 from scipy._lib._testutils import PytestTester

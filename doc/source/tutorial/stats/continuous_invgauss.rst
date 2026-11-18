@@ -26,11 +26,11 @@ a parameter in that distribution. A standard form is :math:`x>0`
     m_{d} & = & \frac{\mu}{2}\left(\sqrt{9\mu^{2}+4}-3\mu\right)\end{eqnarray*}
 
 This is related to the canonical form or JKB "two-parameter" inverse
-Gaussian when written in it's full form with scale parameter
+Gaussian when written in its full form with scale parameter
 :math:`S` and location parameter :math:`L` by taking
 :math:`L=0` and :math:`S\equiv\lambda,` then :math:`\mu S` is equal to
 :math:`\mu_{2}` where :math:`\mu_{2}` is the parameter used by JKB.
-We prefer this form because of it's consistent use of the scale parameter.
+We prefer this form because of its consistent use of the scale parameter.
 Notice that in JKB the skew :math:`\left(\sqrt{\beta_{1}}\right)` and the
 kurtosis ( :math:`\beta_{2}-3` ) are both functions only of
 :math:`\mu_{2}/\lambda=\mu S/S=\mu` as shown here, while the variance
