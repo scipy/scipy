@@ -1176,8 +1176,9 @@ def _ensure_aligned_and_native(a, overwrite_a):
     """
     if not (a.flags['ALIGNED'] and a.dtype.isnative):
         overwrite_a = True
-        # astype, unlike copy, also converts the byte order
-        a = a.astype(a.dtype.newbyteorder('='), order='C')
+        # astype, unlike copy, also converts the byte order. A 2-D copy is F-ordered,
+        # so that the compiled code can work on it in place.
+        a = a.astype(a.dtype.newbyteorder('='), order='F' if a.ndim == 2 else 'C')
     elif overwrite_a and not a.flags['WRITEABLE']:
         # only read when needed: for np.broadcast_arrays views it warns
         overwrite_a = False
