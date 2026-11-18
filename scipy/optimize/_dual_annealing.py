@@ -502,9 +502,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
-        the algorithm jump to a more distant region. The value range is
-        [1.1, 3]; smaller values are rejected as the visiting distribution
-        overflows double precision.
+        the algorithm jump to a more distant region. Must be higher than 1.1.
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
