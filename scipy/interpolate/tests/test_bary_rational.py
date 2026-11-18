@@ -96,6 +96,12 @@ class TestAAA:
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
 
+    def test_constant_funciton(self):
+        z = np.linspace(1, 5, 5)
+        f = np.array([0,0,0,0, 1])
+        r = AAA(z, f)
+        assert_equal(r.support_points.shape, (5,))
+
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
     def test_exp(self):
