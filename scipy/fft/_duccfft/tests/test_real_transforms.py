@@ -207,6 +207,7 @@ def test_complex(transform, dtype):
                                        dctn, dstn, idctn, idstn])
 @pytest.mark.parametrize('norm, orthogonalize', [('ortho', False), ('backward', True)])
 def test_complex_orthogonalize(transform, norm, orthogonalize):
+    # Regression test for gh-26741
     values = np.arange(1, 16).reshape(3, 5)
     x = values + 1j*values[::-1]
     original = x.copy()
