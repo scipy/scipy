@@ -10,7 +10,7 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
     is_jax, xp_promote, xp_capabilities, get_native_namespace_name,
-    is_array_api_obj, xp_result_device,
+    is_array_api_obj, xp_result_device, is_torch, xp_result_type
 )
 import scipy._external.array_api_extra as xpx
 from . import _ellip_harm
@@ -69,6 +69,29 @@ def _ufunc_kwargs_extra_note(
         "    ``out`` is never supported for JAX because JAX arrays are immutable.\n"
         f"    {out_note}\n"
         f"    {additional_note}\n\n"
+    )
+
+
+def _torch_promote_scalars(args, xp):
+    """Promote Python scalars to arrays to workaround torch limitation
+
+    Most PyTorch special functions currently do not accept Python scalars
+    as arguments. Do our best to get something like NEP50 promotion rules.
+    """
+    if not any(type(arg) in (int, float, complex) for arg in args):
+        return args
+
+    # Casting to the result type should be wholly unsatisfactory in the
+    # general case, (consider for instance the "dddD->D" loop for hyp2f1),
+    # but currently happens to work for all existing native PyTorch functions
+    # available here.
+    dtype = xp_result_type(*args, xp=xp)
+    device = xp_result_device(*args)
+
+    return tuple(
+        xp.asarray(arg, dtype=dtype, device=device)
+        if type(arg) in (int, float, complex) else arg
+        for arg in args
     )
 
 
@@ -181,6 +204,8 @@ class _FuncInfo:
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
+                if is_torch(xp) and self.torch_native:
+                    args = _torch_promote_scalars(args, xp)
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             func = _make_ufunc_wrapper(
