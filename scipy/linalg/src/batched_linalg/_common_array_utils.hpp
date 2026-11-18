@@ -300,7 +300,7 @@ CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0, int64_t *size=n
         }
     }
     if (!(value >= 0 && value < limit)) {
-        if (size) { *size = !(value >= 0) ? -1 : (value < 0x1p63) ? static_cast<int64_t>(value) : INT64_MAX; }
+        if (size) { *size = !(value >= 0) ? -1 : (value < std::ldexp(1.0, 63)) ? static_cast<int64_t>(value) : INT64_MAX; }
         return -1;
     }
     return value > 0 ? static_cast<CBLAS_INT>(value) : 1;
