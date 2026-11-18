@@ -3298,6 +3298,15 @@ class TestNonNativeInput:
         with pytest.raises(ValueError, match="same dtype"):
             _batched_linalg._lstsq(a, b, 0.0, "gelsd")
 
+    def test_compiled_entry_points_refuse_row_mismatch(self):
+        # The Python layer checks that b has as many rows as a; the compiled code
+        # checks it too, instead of reading past the end of b.
+        b = np.ones((2, 1))
+        with pytest.raises(ValueError, match="shape mismatch"):
+            _batched_linalg._solve(np.eye(3), b)
+        with pytest.raises(ValueError, match="shape mismatch"):
+            _batched_linalg._lstsq(np.ones((3, 2)), b, 0.0, "gelsd")
+
 
 class TestOverwrite:
     # overwrite_a and overwrite_b let a function reuse an input array, but never a

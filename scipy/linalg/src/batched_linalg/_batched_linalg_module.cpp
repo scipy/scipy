@@ -230,13 +230,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp ndim_b = PyArray_NDIM(ap_b);
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
 
-    bool dims_match = ndim_b == ndim;
-    if (dims_match) {
-        for (int i=0; i<ndim-1; i++) {
-            dims_match = dims_match && (shape[i] == shape_b[i]);
-        }
-    }
-    if (!dims_match){
+    if (ndim_b != ndim || !std::equal(shape, shape + ndim - 1, shape_b)) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
         return NULL;
     }
@@ -550,7 +544,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // The Python layer made b at least 2-D and broadcast the batch dimensions of a and b, so
     // a is (..., m, n) and b is (..., m, nrhs) with the same leading dimensions.
-    if (PyArray_NDIM(ap_b) != ndim || !std::equal(shape, shape + ndim - 2, shape_b)) {
+    if (PyArray_NDIM(ap_b) != ndim || !std::equal(shape, shape + ndim - 1, shape_b)) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
         return NULL;
     }
