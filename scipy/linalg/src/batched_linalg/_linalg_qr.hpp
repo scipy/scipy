@@ -63,15 +63,14 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     const char *gqr_routine = is_complex_v<T> ? "ungqr" : "orgqr";
     T tmp_factor = 0.0;
     T tmp_or_un_gqr = 0.0;
-    CBLAS_INT lwork = -1;
 
     if (!pivoting) {
-        lapack::geqrf(intm, intn, NULL, intm, NULL, &tmp_factor, lwork, &info);
+        lapack::geqrf(intm, intn, NULL, intm, NULL, &tmp_factor, -1, &info);
     } else {
         if constexpr (!is_complex_v<T>) {
-            lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, &info);
+            lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, -1, &info);
         } else {
-            lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, lwork, NULL, &info);
+            lapack::geqp3(intm, intn, NULL, intm, NULL, NULL, &tmp_factor, -1, NULL, &info);
         }
     }
     if (info != 0) { return {BatchCode::lapack_error, factor_routine, info}; }
@@ -79,9 +78,9 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
     // Also probe the Q construction step if required.
     if (mode == QR_mode::FULL || mode == QR_mode::ECONOMIC) {
         if constexpr (!is_complex_v<T>) {
-            lapack::orgqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
+            lapack::orgqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, -1, &info);
         } else {
-            lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, lwork, &info);
+            lapack::ungqr(intm, middle_dim, K, NULL, intm, NULL, &tmp_or_un_gqr, -1, &info);
         }
     }
     if (info != 0) { return {BatchCode::lapack_error, gqr_routine, info}; }
@@ -94,7 +93,7 @@ _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObjec
         const bool factor = lwork_factor < 0;
         return {BatchCode::too_large, factor ? factor_routine : gqr_routine, factor ? size_factor : size_or_un_gqr};
     }
-    lwork = std::max(lwork_factor, lwork_or_un_gqr);
+    const CBLAS_INT lwork = std::max(lwork_factor, lwork_or_un_gqr);
 
     // `geqp3` requires an `lwork` of at least 3N + 1, which must fit CBLAS_INT as well
     if (pivoting && (3 * (std::uint64_t)N + 1 > (std::uint64_t)CBLAS_INT_MAX)) {
