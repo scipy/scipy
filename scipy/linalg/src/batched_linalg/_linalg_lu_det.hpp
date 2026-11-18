@@ -137,20 +137,20 @@ det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, const CBLAS_INT n, CBLAS_IN
 /**
  * @brief Batched LU decomposition, `linalg.lu`.
  *
- * @param[in]  ap_a       Input array of shape (..., m, n), any strides.
- * @param[out] l_out      C-contiguous (..., m, min(m, n)) buffer for L, zero on entry.
- * @param[out] u_out      C-contiguous (..., min(m, n), n) buffer for U, zero on entry.
- * @param[out] perm       C-contiguous (..., m) buffer for the row permutations.
- * @param[in]  permute_l  If true, L receives P @ L; the permutation is still written.
- * @param[in]  in_place   If true, @p ap_a is 2-D, F-contiguous and writeable, and is factored
- *                        in place instead of being copied to a workspace.
+ * @param[in]  ap_a         Input array of shape (..., m, n), any strides.
+ * @param[out] l_out        C-contiguous (..., m, min(m, n)) buffer for L, zero on entry.
+ * @param[out] u_out        C-contiguous (..., min(m, n), n) buffer for U, zero on entry.
+ * @param[out] perm         C-contiguous (..., m) buffer for the row permutations.
+ * @param[in]  permute_l    If true, L receives P @ L; the permutation is still written.
+ * @param[in]  overwrite_a  If true, @p ap_a is 2-D, F-contiguous and writeable, and is factored
+ *                          in place instead of being copied to a workspace.
  * @return ok; too_large if m or n does not fit CBLAS_INT; lapack_error if ?getrf rejects an
  *         argument. An exactly singular slice is not an error.
  * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
-_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute_l, const bool in_place)
+_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute_l, const bool overwrite_a)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
@@ -168,13 +168,13 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
     const npy_intp mn = m < n ? m : n;
 
     // the count is bounded by an existing array, so it is exact in 64 bits
-    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::uint64_t)m * n);
+    auto scratch = alloc_workspace<T>(overwrite_a ? 0 : (std::uint64_t)m * n);
     auto ipiv = alloc_workspace<CBLAS_INT>(mn);
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr<T>(idx, a_data, ndim, shape, strides);
         T *f_buf = slice_ptr;
-        if (!in_place) {
+        if (!overwrite_a) {
             copy_strided_to_f(scratch.get(), slice_ptr, m, n, s0, s1, m);
             f_buf = scratch.get();
         }
@@ -191,17 +191,17 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
 /**
  * @brief Batched determinant, `linalg.det`.
  *
- * @param[in]  ap_a      Input array of shape (..., n, n), any strides.
- * @param[out] det_out   C-contiguous (...) buffer, one determinant per slice, in det_type_t<T>.
- * @param[in]  in_place  If true, @p ap_a is 2-D, contiguous in either order and writeable,
- *                       and is factored in place; det(A^T) = det(A).
+ * @param[in]  ap_a         Input array of shape (..., n, n), any strides.
+ * @param[out] det_out      C-contiguous (...) buffer, one determinant per slice, in det_type_t<T>.
+ * @param[in]  overwrite_a  If true, @p ap_a is 2-D, contiguous in either order and writeable,
+ *                          and is factored in place; det(A^T) = det(A).
  * @return ok; too_large if n does not fit CBLAS_INT; lapack_error if ?getrf rejects an
  *         argument. An exactly singular slice has determinant zero.
  * @throws std::bad_alloc if a workspace cannot be allocated.
  */
 template<typename T>
 BatchStatus
-_det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool in_place)
+_det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool overwrite_a)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
@@ -216,13 +216,13 @@ _det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool in_place)
     if (!checked_narrow<CBLAS_INT>(shape[ndim - 1], &n)) { return {BatchCode::too_large, nullptr, shape[ndim - 1]}; }
 
     // the count is bounded by an existing array, so it is exact in 64 bits
-    auto scratch = alloc_workspace<T>(in_place ? 0 : (std::uint64_t)n * n);
+    auto scratch = alloc_workspace<T>(overwrite_a ? 0 : (std::uint64_t)n * n);
     auto ipiv = alloc_workspace<CBLAS_INT>(n);
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         T *slice_ptr = compute_slice_ptr<T>(idx, a_data, ndim, shape, strides);
         T *f_buf = slice_ptr;
-        if (!in_place) {
+        if (!overwrite_a) {
             copy_strided_to_f(scratch.get(), slice_ptr, n, n, s0, s1, n);
             f_buf = scratch.get();
         }

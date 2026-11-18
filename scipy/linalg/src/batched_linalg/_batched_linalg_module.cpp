@@ -883,14 +883,14 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_perm || !ap_l || !ap_u) { return NULL; }
 
     // A 2-D F-contiguous writeable input is the getrf workspace itself: no copy is made.
-    bool in_place = overwrite_a && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a);
+    overwrite_a = overwrite_a && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a);
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
         return _lu<T>(ap_a, static_cast<T *>(PyArray_DATA(ap_l.get())), static_cast<T *>(PyArray_DATA(ap_u.get())),
-                      static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get())), (bool)permute_l, in_place);
+                      static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get())), (bool)permute_l, (bool)overwrite_a);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "lu", typenum); }
@@ -937,14 +937,14 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // A 2-D contiguous writeable input is the getrf workspace itself; det(A^T) = det(A), so
     // either order works.
-    bool in_place = overwrite_a && (ndim == 2) && PyArray_ISWRITEABLE(ap_a)
-                    && (PyArray_ISFARRAY_RO(ap_a) || PyArray_ISCARRAY_RO(ap_a));
+    overwrite_a = overwrite_a && (ndim == 2) && PyArray_ISWRITEABLE(ap_a)
+                  && (PyArray_ISFARRAY_RO(ap_a) || PyArray_ISCARRAY_RO(ap_a));
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _det<T>(ap_a, static_cast<det_type_t<T> *>(PyArray_DATA(ap_det.get())), in_place);
+        return _det<T>(ap_a, static_cast<det_type_t<T> *>(PyArray_DATA(ap_det.get())), (bool)overwrite_a);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "det", typenum); }
