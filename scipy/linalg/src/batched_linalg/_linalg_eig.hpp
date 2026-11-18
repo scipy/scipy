@@ -301,10 +301,8 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    // With eigenvectors, ?syevd/?sygvd need lwork >= 1 + 6n + 2n^2, and ?heevd/?hegvd need
-    // lwork >= 2n + n^2 and lrwork >= 1 + 5n + 2n^2. LAPACK evaluates these in CBLAS_INT; when
-    // they overflow, the workspace query returns a value too small to run with instead of
-    // failing, so they are checked here first.
+    // the minimum lwork and lrwork of evd and gvd with eigenvectors, see "Workspace sizes that
+    // LAPACK computes itself" in _common_array_utils.hpp
     if ((driver == Eigh_driver::EVD || driver == Eigh_driver::GVD) && jobz == 'V') {
         const std::uint64_t un = n, lwmin = is_complex_v<T> ? un * un + 2 * un : 2 * un * un + 6 * un + 1;
         const std::uint64_t lrwmin = is_complex_v<T> ? 2 * un * un + 5 * un + 1 : 0;

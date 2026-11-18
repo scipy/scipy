@@ -125,8 +125,8 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     std::uint64_t iwork_size = 0, rwork_size = 0;
     if (use_gesdd) {
         iwork_size = 8 * k;
-        // ?gesdd evaluates its workspace in CBLAS_INT, already in the workspace query; with
-        // vectors the largest of those sizes is the minimum of its path, quadratic in min(m, n)
+        // the minimum lwork of real ?gesdd, see "Workspace sizes that LAPACK computes itself" in
+        // _common_array_utils.hpp
         if constexpr (!is_complex_v<T>) {
             const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, jobz);
             if (min_lwork > (std::uint64_t)CBLAS_INT_MAX) {

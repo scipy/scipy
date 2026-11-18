@@ -125,6 +125,7 @@ set_batch_error(const BatchStatus status, const char *func, const int typenum) {
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
         case BatchCode::ok:
             break;
+        // no default label, so that the compiler warns about a missing code; see BatchCode
     }
     return PyErr_Format(PyExc_SystemError, "scipy.linalg.%s: no error to report.", func);
 }

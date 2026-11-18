@@ -15,6 +15,9 @@ using lapack::irwork_t;
 
 /**
  * @brief Kind of failure of a whole batched call.
+ *
+ * The switch in set_batch_error lists every code and has no default label, so the compiler
+ * warns when a code is added but not handled. ok and unknown values raise a SystemError there.
  */
 enum class BatchCode {
     ok,
@@ -28,7 +31,12 @@ enum class BatchCode {
 /**
  * @brief Outcome of a whole batched call, as opposed to the per-slice SliceStatus.
  *
- * A failing slice does not fail the call: drivers record it in the SliceStatusVec and return ok.
+ * too_large means a number passed to LAPACK does not fit CBLAS_INT, a limit of the LAPACK build.
+ * no_memory means an allocation failed. A count that only sizes an allocation, such as n * n for
+ * the copy of a slice, never goes to LAPACK and can only end in no_memory.
+ *
+ * A slice for which LAPACK returns info > 0, such as a singular matrix, does not fail the call.
+ * The driver records it in the SliceStatusVec and returns ok, and the Python layer raises from it.
  */
 struct BatchStatus {
     BatchCode code = BatchCode::ok;
@@ -50,6 +58,23 @@ struct WorkspaceDeleter {
  */
 template <class T>
 using Workspace = std::unique_ptr<T[], WorkspaceDeleter>;
+
+
+/*
+ * Workspace counts are std::uint64_t and do not overflow. Each is a sum of a few small multiples
+ * of matrix sizes taken from existing arrays, which are below 2**61 because NumPy keeps the size
+ * in bytes of any array within npy_intp, and of values that fit CBLAS_INT.
+ */
+
+
+/*
+ * Workspace sizes that LAPACK computes itself
+ *
+ * Some LAPACK routines compute their workspace sizes in CBLAS_INT, already in the query, and on
+ * LP64 builds this can overflow into a size that is too small. checked_narrow cannot see that,
+ * so for these routines the drivers evaluate the Reference-LAPACK formulas in 64 bits first and
+ * return too_large if the result does not fit.
+ */
 
 
 /**

@@ -68,12 +68,8 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     const real_type r_rcond = (real_type)rcond;
     CBLAS_INT rank = 0, info = 0;
 
-    // The LAPACK routines evaluate their workspace sizes in CBLAS_INT, already in the workspace
-    // query, so the largest of those sizes is computed here first, after Reference-LAPACK.
-    // It grows with min(m, n)*nrhs, ldb*nrhs (the comparisons in gelss), the block size times
-    // nrhs, the m*m factor of the path that starts with an LQ factorization, and, in the real
-    // workspace of the complex gelsd, 3*smlsiz*nrhs + n*(1 + nrhs). The sizes are counted in
-    // uint64_t, which holds them exactly for every CBLAS_INT operand below 2**31.
+    // the largest workspace size the routine computes, after Reference-LAPACK, see "Workspace
+    // sizes that LAPACK computes itself" in _common_array_utils.hpp
     {
         const std::uint64_t um = m, un = n, unrhs = nrhs, uk = min_mn, umx = max_mn, uldb = ldb;
         // ILAENV(1, ...) block size of the routines each driver calls: 64 for the ?TZRZF and ?ORMRZ
@@ -94,11 +90,13 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
             need = std::max(need, 3*uk + wlalsd);
             if (lq_path) { need = std::max(need, um*um + 4*um + std::max(wlalsd, um*unrhs + um)); }
             if constexpr (is_complex_v<T>) {
+                // the complex gelsd computes the size of its real workspace rwork as well
                 const std::uint64_t lrwork = 10*uk + 2*uk*smlsiz + 8*uk*nlvl + 3*smlsiz*unrhs +
                                              std::max((smlsiz + 1)*(smlsiz + 1), un*(1 + unrhs) + 2*unrhs);
                 need = std::max(need, lrwork);
             }
         } else if (driver == LstsqDriver::gelss) {
+            // gelss also compares lwork with ldb*nrhs to choose its path
             need = std::max(need, uldb*unrhs + 4*umx + uk);
             if (lq_path) { need = std::max(need, um*um + 4*um + std::max({um, unrhs, un}) + um*unrhs); }
         }
