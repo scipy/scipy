@@ -196,7 +196,8 @@ class Test_Qhull:
         # the run-id differs between calls
         return re.sub(r"run-id \d+", "run-id", str(exc.value))
 
-    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    # Thread safe, but keeps many files open at once
+    @pytest.mark.parallel_threads_limit(1)
     @pytest.mark.usefixtures("message_streams")
     def test_error_messages_with_reused_streams(self):
         # Without open_memstream (e.g., on Windows), message streams are
@@ -247,7 +248,8 @@ class Test_Qhull:
         qhull.ConvexHull(points)
         assert messagestream._spare_count() == 1
 
-    @pytest.mark.thread_unsafe(reason="Spawns worker threads")
+    # Thread safe, but keeps many files open at once
+    @pytest.mark.parallel_threads_limit(1)
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     @pytest.mark.usefixtures("message_streams")
     def test_error_messages_threaded(self):
