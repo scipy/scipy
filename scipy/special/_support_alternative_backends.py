@@ -72,26 +72,32 @@ def _ufunc_kwargs_extra_note(
     )
 
 
-def _torch_promote_scalars(args, xp):
+def _torch_promote_scalars(args, xp, ignore_idx):
     """Promote Python scalars to arrays to workaround torch limitation
 
     Most PyTorch special functions currently do not accept Python scalars
     as arguments. Do our best to get something like NEP50 promotion rules.
     """
-    if not any(type(arg) in (int, float, complex) for arg in args):
+    if ignore_idx is None:
+        ignore_idx = set()
+
+    if not any(
+            type(arg) in (int, float, complex) for i, arg in enumerate(args)
+            if i not in ignore_idx
+    ):
         return args
 
     # Casting to the result type should be wholly unsatisfactory in the
     # general case, (consider for instance the "dddD->D" loop for hyp2f1),
     # but currently happens to work for all existing native PyTorch functions
-    # available here.
+    # available here that are relevant (i.e. take multiple arguments).
     dtype = xp_result_type(*args, xp=xp)
     device = xp_result_device(*args)
 
     return tuple(
         xp.asarray(arg, dtype=dtype, device=device)
-        if type(arg) in (int, float, complex) else arg
-        for arg in args
+        if type(arg) in (int, float, complex) and i not in ignore_idx else arg
+        for i, arg in enumerate(args)
     )
 
 
@@ -170,6 +176,12 @@ class _FuncInfo:
     backends_with_func_in_xp: tuple[str, ...] = ()
     # is this part of the public API?
     public: bool = True
+    # For some special functions, torch will not accept mixed scalar / tensor
+    # inputs, so we try to promote the scalars to tensors. For some other
+    # functions, torch does accept Python scalar for some inputs. Add those
+    # indices to this set to tell the machinery not to try to promote the
+    # corresponding args.
+    torch_promote_scalars_ignore_idx: set[int] | None = None
 
     @property
     def name(self):
@@ -205,7 +217,9 @@ class _FuncInfo:
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
                 if is_torch(xp) and self.torch_native:
-                    args = _torch_promote_scalars(args, xp)
+                    args = _torch_promote_scalars(
+                        args, xp, self.torch_promote_scalars_ignore_idx
+                    )
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             func = _make_ufunc_wrapper(
