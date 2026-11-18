@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz
+    _ensure_aligned_and_native, _ensure_dtype_cdsz, _broadcast_batch
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -230,9 +230,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise ValueError(f"incompatible shapes: {a1.shape=} and {b1.shape=}")
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
 
     # catch empty inputs
     if a1.size == 0 or b1.size == 0:
@@ -1436,9 +1434,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                          f' of rows ({m} != {b1.shape[-2]}).')
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
+    batch_shape = a1.shape[:-2]
 
     overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
     overwrite_b = (

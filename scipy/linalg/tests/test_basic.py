@@ -3299,10 +3299,11 @@ class TestNonNativeInput:
             _batched_linalg._lstsq(a, b, 0.0, "gelsd")
 
 
-class TestReadOnlyOverwrite:
+class TestOverwrite:
     # overwrite_a and overwrite_b let a function reuse an input array, but never a
-    # read-only one. Writing into a read-only memory map raises SIGSEGV. The result
-    # must be the one computed without overwriting.
+    # read-only one: writing into a read-only memory map raises SIGSEGV. Where a
+    # function returns its result in a reused input, the result is as writeable as
+    # that input. Either way the result must be the one computed without overwriting.
 
     def inputs(self):
         rng = np.random.default_rng(1234)
@@ -3354,6 +3355,24 @@ class TestReadOnlyOverwrite:
         res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
         for x, y in zip(res, ref):
             assert_equal(x, y)
+
+    @pytest.mark.parametrize("b_ndim", [1, 2])
+    @pytest.mark.parametrize("func", ["solve", "lstsq"])
+    def test_solution_in_b_is_writeable(self, func, b_ndim):
+        # With overwrite_b=True, solve and lstsq may write the solution into b itself
+        # and return a view of b. The caller's b is writeable, so the solution they
+        # get back must be writeable too.
+        f = {"solve": solve, "lstsq": lambda a, b, **kw: lstsq(a, b, **kw)[0]}[func]
+        native = self.inputs()
+        a, r = native["a"], native["r"]
+        if b_ndim == 1:
+            r = r[:, 0].copy()
+        ref = f(a, r)
+        b = r.copy(order="F")
+        x = f(a, b, overwrite_b=True)
+        assert np.shares_memory(x, b)   # the solution was computed in place
+        assert x.flags.writeable
+        assert_equal(x, ref)
 
 
 @pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")

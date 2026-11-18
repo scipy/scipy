@@ -1182,3 +1182,20 @@ def _ensure_aligned_and_native(a, overwrite_a):
         # only read when needed: for np.broadcast_arrays views it warns
         overwrite_a = False
     return a, overwrite_a
+
+
+def _broadcast_batch(a, b):
+    """Broadcast the batch dimensions of `a` and `b`, all but the last two.
+
+    An array that already has the full batch shape is returned unchanged rather than
+    passed through np.broadcast_to, because broadcast_to always returns a read-only
+    view, even when the shape stays the same. Wrapping the caller's array in such a
+    view would hide whether it is writeable, and a result written into it (with
+    overwrite_a or overwrite_b) would reach the caller as a read-only array.
+    """
+    batch_shape = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+    if a.shape[:-2] != batch_shape:
+        a = np.broadcast_to(a, batch_shape + a.shape[-2:])
+    if b.shape[:-2] != batch_shape:
+        b = np.broadcast_to(b, batch_shape + b.shape[-2:])
+    return a, b
