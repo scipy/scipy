@@ -310,6 +310,10 @@ CBLAS_INT _calc_lwork(const T _lwrk, const f64 fudge_factor=1.0, int64_t *size=n
 /**
  * @brief Pointer to the first element of the idx-th 2-D slice of an array of ndim >= 2.
  *
+ * The caller's arrays are addressed in bytes, because their strides need not be multiples of
+ * the item size. Arrays this module allocates, and inputs the Python layer passes to be
+ * overwritten, are contiguous and aligned, so they are used as T* directly.
+ *
  * @tparam T       Element type; may be const.
  * @param idx      Slice index in C order over the leading ndim - 2 dimensions.
  * @param data     The array's PyArray_BYTES.
