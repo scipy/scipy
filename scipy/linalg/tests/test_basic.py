@@ -3334,7 +3334,7 @@ class TestNonNativeInput:
                                   b, False, 1)
 
 
-class TestOverwrite:
+class TestReadOnlyOverwrite:
     # overwrite_a and overwrite_b let a function reuse an input array, but never a
     # read-only one: writing into a read-only memory map raises SIGSEGV. Where a
     # function returns its result in a reused input, the result is as writeable as
