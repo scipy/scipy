@@ -2,7 +2,8 @@ import pytest
 
 from scipy._lib._array_api import np_compat as np
 from scipy._lib._array_api import (
-    array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities
+    array_namespace, make_xp_pytest_param, xp_assert_close, xp_capabilities,
+    xp_result_device
 )
 
 local_capabilities_table = {}  # type:ignore[var-annotated]
@@ -24,11 +25,13 @@ class A:
     def __init__(self, x):
         xp = array_namespace(x)
         self._xp = xp
+        # the NumPy round-trip must return results on the input's device
+        self._device = xp_result_device(x)
         self.x = np.asarray(x)
 
     def f(self, y):
         y = np.asarray(y)
-        return self._xp.asarray(np.matmul(self.x, y))
+        return self._xp.asarray(np.matmul(self.x, y), device=self._device)
 
     def g(self, y, z):
         return self.f(y) + self.f(z)
@@ -67,3 +70,15 @@ def test_no_spooky_action_at_a_distance(cls, xp):
     observed = foo.g(y, z)
     expected = xp.asarray(44.0)[()]
     xp_assert_close(observed, expected)
+
+
+def test_extension_type():
+    # Extension types (e.g. Cython ``cdef class``es) have an immutable
+    # ``__doc__``; the decorator must still record their capabilities.
+    from scipy.spatial import cKDTree
+
+    table = {}
+    doc = cKDTree.__doc__
+    assert xp_capabilities(np_only=True, capabilities_table=table)(cKDTree) is cKDTree
+    assert table[cKDTree]["np_only"] is True
+    assert cKDTree.__doc__ == doc

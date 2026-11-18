@@ -148,7 +148,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
-    
+
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
 
     References

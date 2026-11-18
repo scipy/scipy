@@ -113,6 +113,7 @@ py3.install_sources([
     '_binomtest.py',
     '_bws_test.py',
     '_censored_data.py',
+    '_circstats.py',
     '_common.py',
     '_constants.py',
     '_continued_fraction.py',
@@ -122,7 +123,6 @@ py3.install_sources([
     '_crosstab.py',
     '_discrete_distns.py',
     '_distn_infrastructure.py',
-    '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
     '_finite_differences.py',
@@ -137,10 +137,8 @@ py3.install_sources([
     '_mstats_extras.py',
     '_multicomp.py',
     '_multivariate.py',
-    '_new_distributions.py',
     '_odds_ratio.py',
     '_page_trend_test.py',
-    '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
     '_quantile.py',
@@ -156,18 +154,11 @@ py3.install_sources([
     '_variation.py',
     '_warnings_errors.py',
     '_wilcoxon.py',
-    'biasedurn.py',
     'contingency.py',
     'distributions.py',
-    'kde.py',
-    'morestats.py',
     'mstats.py',
-    'mstats_basic.py',
-    'mstats_extras.py',
-    'mvn.py',
     'qmc.py',
     'sampling.py',
-    'stats.py'
   ],
   subdir: 'scipy/stats'
 )
@@ -187,6 +178,7 @@ py3.install_sources([
 )
 
 subdir('_levy_stable')
+subdir('_univariate_distribution')
 subdir('_unuran')
 subdir('_rcont')
 

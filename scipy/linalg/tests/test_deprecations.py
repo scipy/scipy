@@ -4,8 +4,6 @@ import numpy as np
 import scipy.linalg as linalg
 import pytest
 
-from scipy._lib._array_api import SCIPY_ARRAY_API
-
 #
 # When the deprecation expires
 #     1. Change the test from asserting a DeprecationWarning to assert_raises
@@ -69,7 +67,7 @@ _skip_dict = {
 }
 
 
-# these raise if SCIPY_ARRAY_API env var is defined
+# these raise now
 _array_api_skip_dict = {
     'cho_factor' : 'mM',
     'cho_solve' : 'mM',
@@ -109,13 +107,12 @@ _array_api_skip_dict = {
 }
 
 
-if SCIPY_ARRAY_API:
-    #_skip_dict.update(**_array_api_skip_dict)
-    for key, val in _array_api_skip_dict.items():
-        if key in _skip_dict:
-            _skip_dict[key] += val
-        else:
-            _skip_dict[key] = val
+#_skip_dict.update(**_array_api_skip_dict)
+for key, val in _array_api_skip_dict.items():
+    if key in _skip_dict:
+        _skip_dict[key] += val
+    else:
+        _skip_dict[key] = val
 
 
 # loop over all names
@@ -159,7 +156,7 @@ def _patch_args(func_name, args):
         a = args[0]
         piv = np.arange(a.shape[0])
         args = ((a, piv), args[1])
-    elif func_name in ('eigh_tridiagonal', 'eigvalsh_tridiagonal'):       
+    elif func_name in ('eigh_tridiagonal', 'eigvalsh_tridiagonal'):
         d, e = args
         args = (d, e[:, :-1])
     elif func_name == 'cossin':

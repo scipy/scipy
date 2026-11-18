@@ -113,6 +113,28 @@ class TestLaplacianNd:
         L = eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
         assert_allclose(L, lap.toarray(), atol=atol)
 
+    @pytest.mark.parametrize('grid_shape', [(20, 2), (7, 3, 2), (6, 2, 5)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
+    def test_eigen_nonsquare_grid(self, grid_shape, bc):
+        lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=np.float64)
+        L = lap.toarray()
+        n = np.prod(grid_shape)
+        eigvals = eigh(L, eigvals_only=True)
+        atol = n * n * np.finfo(np.float64).eps
+        eigenvalues = lap.eigenvalues()
+        eigenvectors = lap.eigenvectors()
+        assert_allclose(eigenvalues, eigvals, atol=atol)
+        assert_allclose(eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T,
+                        L, atol=atol)
+        for m in [1, min(grid_shape) + 1, max(grid_shape) - 1, n]:
+            e = lap.eigenvalues(m)
+            ev = lap.eigenvectors(m)
+            assert_array_equal(e, eigenvalues[-m:])
+            # repeated eigenvalues make eigenvector order arbitrary; check eigenpairs
+            r = L @ ev - ev * e
+            assert_allclose(r, np.zeros_like(r), atol=atol)
+            assert_allclose(ev.T @ ev, np.eye(m), atol=atol)
+
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_toarray_tosparse_consistency(self, grid_shape, bc):

@@ -19,7 +19,7 @@ static void snconv(ARNAUD_INT n, float* ritzr, float* ritzi, float* bounds, cons
 static void sneigh(float*,ARNAUD_INT,float*,ARNAUD_INT,float*,float*,float*,float*,ARNAUD_INT,float*,ARNAUD_INT*);
 static void snaitr(struct ARNAUD_state_s*,ARNAUD_INT,ARNAUD_INT,float*,float*,float*,ARNAUD_INT,float*,ARNAUD_INT,ARNAUD_INT*,float*);
 static void snapps(ARNAUD_INT,ARNAUD_INT*,ARNAUD_INT,float*,float*,float*,ARNAUD_INT,float*,ARNAUD_INT,float*,float*,ARNAUD_INT,float*,float*);
-static void sngets(struct ARNAUD_state_s*,ARNAUD_INT*,ARNAUD_INT*,float*,float*,float*);
+static void sngets(struct ARNAUD_state_s*,ARNAUD_INT,ARNAUD_INT*,ARNAUD_INT*,float*,float*,float*);
 static void ssortc(const enum ARNAUD_which w, const ARNAUD_INT apply, const ARNAUD_INT n, float* xreal, float* ximag, float* y);
 static void sgetv0(struct ARNAUD_state_s *V, ARNAUD_INT initv, ARNAUD_INT n, ARNAUD_INT j, float* v, ARNAUD_INT ldv, float* resid, float* rnorm, ARNAUD_INT* ipntr, float* workd);
 
@@ -156,7 +156,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, ARNAUD_INT rvec, ARNAUD_INT howmny, ARNA
         //  accordingly.
 
         np = V->ncv - V->nev;
-        sngets(V, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
+        sngets(V, 0, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -520,7 +520,7 @@ ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v,
             V->info = -1;
         } else if (V->nev <= 0) {
             V->info = -2;
-        } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
+        } else if ((V->ncv <= V->nev + 1) || (V->ncv > V->n)) {
             V->info = -3;
         } else if (V->maxiter <= 0) {
             V->info = -4;
@@ -777,7 +777,7 @@ LINE20:
     V->np = V->aup2_np0;
     V->aup2_numcnv = V->aup2_nev;
 
-    sngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
+    sngets(V, V->shift, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
 
     if (V->aup2_nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
 
@@ -930,7 +930,7 @@ LINE20:
         V->np = V->aup2_kplusp - V->aup2_nev;
 
         if (nevbef < V->aup2_nev) {
-            sngets(V, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
+            sngets(V, V->shift, &V->aup2_nev, &V->np, ritzr, ritzi, bounds);
         }
 
     }
@@ -1249,14 +1249,14 @@ LINE40:
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
 
-    ARNAUD_BLAS(scopy)(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
+    ARNAUD_BLAS(scopy)(&n, resid, &int1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
         temp1 = 1.0f / *rnorm;
-        ARNAUD_BLAS(sscal)(&n, &temp1, &v[ldv*(V->aitr_j)], &int1);
+        ARNAUD_BLAS(sscal)(&n, &temp1, &v[(int64_t)ldv*(V->aitr_j)], &int1);
         ARNAUD_BLAS(sscal)(&n, &temp1, &workd[ipj], &int1);
     } else {
-        ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*(V->aitr_j)], &n, &infol);
+        ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[(int64_t)ldv*(V->aitr_j)], &n, &infol);
         ARNAUD_BLAS(slascl)("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
@@ -1264,7 +1264,7 @@ LINE40:
     //  Note that this is not quite yet r_{j}. See STEP 4
 
     V->aitr_step3 = 1;
-    ARNAUD_BLAS(scopy)(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
+    ARNAUD_BLAS(scopy)(&n, &v[(int64_t)ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
@@ -1597,6 +1597,7 @@ snapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shiftr, float* shift
                 }
                 if (fabsf(h[iend+1 + (iend * ldh)]) <= fmaxf(smlnum, ulp * tst1))
                 {
+                    h[iend+1 + (iend * ldh)] = 0.0f;
                     break;
                 }
             }
@@ -1607,8 +1608,6 @@ snapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shiftr, float* shift
             } else if  ((istart + 1 == iend) && fabsf(sigmai) > 0.0f) {
                 istart += 2;
                 continue;
-            } else {
-                h[iend+1 + (iend * ldh)] = 0.0f;
             }
 
             // We have a block [istart, iend] inclusive.
@@ -1736,20 +1735,20 @@ snapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shiftr, float* shift
     {
         tmp_int = kplusp - i;
         ARNAUD_BLAS(sgemv)("N", &n, &tmp_int, &dbl1, v, &ldv, &q[(*kev-i-1)*ldq], &int1, &dbl0, workd, &int1);
-        ARNAUD_BLAS(scopy)(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
+        ARNAUD_BLAS(scopy)(&n, workd, &int1, &v[(int64_t)ldv*(kplusp-i-1)], &int1);
     }
 
     //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
 
     for (i = 0; i < *kev; i++)
     {
-        ARNAUD_BLAS(scopy)(&n, &v[(kplusp-*kev+i)*ldv], &int1, &v[i*ldv], &int1);
+        ARNAUD_BLAS(scopy)(&n, &v[(int64_t)ldv*(kplusp-*kev+i)], &int1, &v[(int64_t)ldv*i], &int1);
     }
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
     if (h[*kev + ldh*(*kev-1)] > 0.0f){
-        ARNAUD_BLAS(scopy)(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
+        ARNAUD_BLAS(scopy)(&n, &workd[n], &int1, &v[(int64_t)ldv*(*kev)], &int1);
     }
 
     //  Update the residual vector:
@@ -1762,7 +1761,7 @@ snapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shiftr, float* shift
 
     if (h[*kev + ldh*(*kev-1)] > 0.0f)
     {
-        ARNAUD_BLAS(saxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
+        ARNAUD_BLAS(saxpy)(&n, &h[*kev + ldh*(*kev-1)], &v[(int64_t)ldv*(*kev)], &int1, resid, &int1);
     }
 
     return;
@@ -1771,7 +1770,7 @@ snapps(ARNAUD_INT n, ARNAUD_INT* kev, ARNAUD_INT np, float* shiftr, float* shift
 
 
 void
-sngets(struct ARNAUD_state_s *V, ARNAUD_INT* kev, ARNAUD_INT* np,
+sngets(struct ARNAUD_state_s *V, ARNAUD_INT ishift, ARNAUD_INT* kev, ARNAUD_INT* np,
        float* ritzr, float* ritzi, float* bounds)
 {
 
@@ -1820,7 +1819,7 @@ sngets(struct ARNAUD_state_s *V, ARNAUD_INT* kev, ARNAUD_INT* np,
         *kev += 1;
     }
 
-    if (V->shift == 1)
+    if (ishift == 1)
     {
 
         //  Sort the unwanted Ritz values used as shifts so that
@@ -1977,7 +1976,7 @@ LINE40:
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 5)
+    if (V->getv0_iter <= 5)
     {
 
         //  Perform iterative refinement step

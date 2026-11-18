@@ -3,13 +3,13 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import xp_result_device, array_namespace
 from . import _signaltools
-from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
+from ._short_time_fft import ShortTimeFFT
 from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
-from typing import cast, Literal
+from typing import Literal
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -663,13 +663,15 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
         if isinstance(window, str | tuple)
         else array_namespace(x, window)
     )
+    device = xp_result_device(x, window)
     x_np = np.asarray(x)
     freqs_np, Pxx_np = csd(x_np, x_np, fs=fs, window=window, nperseg=nperseg,
                            noverlap=noverlap, nfft=nfft, detrend=detrend,
                            return_onesided=return_onesided, scaling=scaling,
                            axis=axis, average=average)
 
-    return xp.asarray(freqs_np), xp.asarray(Pxx_np.real)
+    return (xp.asarray(freqs_np, device=device),
+            xp.asarray(Pxx_np.real, device=device))
 
 
 def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
@@ -909,8 +911,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
         z_shape[axis] = x.shape[axis] - y.shape[axis]
         y = np.concatenate((y, np.zeros(z_shape)), axis=axis)
 
-    # using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = 'onesided' if return_onesided else 'twosided'
     if scaling not in (scales := {'spectrum': 'magnitude', 'density': 'psd'}):
         raise ValueError(f"Parameter {scaling=} not in {scales}!")
 
@@ -1657,7 +1658,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     input_onesided : bool, optional
         If `True`, interpret the input array as one-sided FFTs, such
         as is returned by `stft` with ``return_onesided=True`` and
-        `numpy.fft.rfft`. If `False`, interpret the input as a a
+        `numpy.fft.rfft`. If `False`, interpret the input as a
         two-sided FFT. Defaults to `True`.
     boundary : bool, optional
         Specifies whether the input signal was extended at its

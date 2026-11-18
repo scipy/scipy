@@ -1,11 +1,13 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
 from ._matfuncs_sqrtm import SqrtmError
 
-from numpy cimport complex128_t, float64_t, intp_t
+from numpy cimport float32_t, float64_t, complex64_t, complex128_t, intp_t
 
 
 cdef fused floating:
+    float32_t
     float64_t
+    complex64_t
     complex128_t
 
 

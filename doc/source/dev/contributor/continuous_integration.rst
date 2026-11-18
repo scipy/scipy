@@ -4,7 +4,7 @@
 Continuous Integration
 ======================
 
-Continuous integration (CI) is part of our development process and ensure that
+Continuous integration (CI) is part of our development process and ensures that
 every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
@@ -16,19 +16,19 @@ Workflows
 
 We run more than 20 different workflows with different versions of the
 dependencies, different architectures, etc. A PR must pass all these checks
-before it can be merged as to ensure a sustainable state of the project.
+before it can be merged to ensure a sustainable state of the project.
 
 Apart from the unit tests, the documentation and examples in the docstrings are
 also checked. These are common failing workflows as Sphinx and doctests have
 very strict rules. These aspects are very important as documentation and
-examples are user facing elements. Ensures that these elements are properly
+examples are user facing elements. Ensure that these elements are properly
 rendered.
 
 The logs can be long, but you will always find out why your build/test did not
 pass a check. Simply click on ``Details`` to access the logs.
 
 Following is a list of all the different workflows in use. They are grouped
-by CI resources providers.
+by CI resource providers.
 
 GitHub Actions
 --------------
@@ -119,7 +119,7 @@ Adjustment options include:
   on a reduced set of platforms.
 - Marking the test as ``xslow``, if it is acceptable to run the test
   only occasionally.
-- Breaking up the test or parameterizing it, and possible marking
+- Breaking up the test or parameterizing it, and possibly marking
   parts of it as slow. Note that this does not reduce the total
   test duration, so other options are preferred.
 - For truly critical tests that are unavoidably slow, add an exception

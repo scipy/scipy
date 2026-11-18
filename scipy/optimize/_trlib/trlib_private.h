@@ -49,7 +49,9 @@ double BLAS_FUNC(ddot)(CBLAS_INT *n, double *x, CBLAS_INT *incx, double *y, CBLA
 void BLAS_FUNC(dpttrf)(CBLAS_INT *n, double *d, double *e, CBLAS_INT *info);
 void BLAS_FUNC(dpttrs)(CBLAS_INT *n, CBLAS_INT *nrhs, double *d, double *e, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
 void BLAS_FUNC(dptrfs)(CBLAS_INT *n, CBLAS_INT *nrhs, double *d, double *e, double *df, double *ef, double *b, CBLAS_INT *ldb, double *x, CBLAS_INT *ldx, double *ferr, double *berr, double *work, CBLAS_INT *info);
-void BLAS_FUNC(dlagtm)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *alpha, double *dl, double *d, double *du, double *x, CBLAS_INT *ldx, double *beta, double *b, CBLAS_INT *ldb, int);
+// dlagtm is declared without a trailing hidden Fortran
+// string length for trans. See gh-25592.
+void BLAS_FUNC(dlagtm)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *alpha, double *dl, double *d, double *du, double *x, CBLAS_INT *ldx, double *beta, double *b, CBLAS_INT *ldb);
 
 
 static void trlib_daxpy(trlib_int_t *n, double *alpha, double *x, trlib_int_t *incx, double *y, trlib_int_t *incy)
@@ -108,7 +110,7 @@ static void trlib_dlagtm(char *trans, trlib_int_t *n, trlib_int_t *nrhs, double 
                          trlib_int_t *ldx, double *beta, double *b, trlib_int_t *ldb)
 {
     CBLAS_INT n_ = *n, nrhs_ = *nrhs, ldb_ = *ldb, ldx_ = *ldx;
-    BLAS_FUNC(dlagtm)(trans, &n_, &nrhs_, alpha, dl, d, du, x, &ldx_, beta, b, &ldb_, 1);
+    BLAS_FUNC(dlagtm)(trans, &n_, &nrhs_, alpha, dl, d, du, x, &ldx_, beta, b, &ldb_);
 }
 
 

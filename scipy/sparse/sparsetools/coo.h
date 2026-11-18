@@ -22,13 +22,13 @@
  * Note:
  *   Output arrays Bp, Bj, and Bx must be preallocated
  *
- * Note: 
+ * Note:
  *   Input:  row and column indices *are not* assumed to be ordered
- *           
+ *
  *   Note: duplicate entries are carried over to the CSR representation
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
- * 
+ *
  */
 template <class I, class T>
 void coo_tocsr(const I n_row,
@@ -41,20 +41,20 @@ void coo_tocsr(const I n_row,
                      I Bj[],
                      T Bx[])
 {
-    //compute number of non-zero entries per row of A 
+    //compute number of non-zero entries per row of A
     std::fill(Bp, Bp + n_row, 0);
 
-    for (I n = 0; n < nnz; n++){            
+    for (I n = 0; n < nnz; n++){
         Bp[Ai[n]]++;
     }
 
     //cumsum the nnz per row to get Bp[]
-    for(I i = 0, cumsum = 0; i < n_row; i++){     
+    for(I i = 0, cumsum = 0; i < n_row; i++){
         I temp = Bp[i];
         Bp[i] = cumsum;
         cumsum += temp;
     }
-    Bp[n_row] = nnz; 
+    Bp[n_row] = nnz;
 
     //write Aj,Ax into Bj,Bx
     for(I n = 0; n < nnz; n++){
@@ -85,7 +85,7 @@ void coo_tocsr(const I n_row,
  *   npy_int64  nnz     - number of nonzeros in A
  *   I  Ai[nnz(A)]      - row indices
  *   I  Aj[nnz(A)]      - column indices
- *   T  Ax[nnz(A)]      - nonzeros 
+ *   T  Ax[nnz(A)]      - nonzeros
  *   T  Bx[n_row*n_col] - dense matrix
  *
  */
@@ -136,7 +136,7 @@ void coo_todense_nd(const I strides[],
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
             for(npy_int64 d = num_dims - 1; d >= 0; d--) {
-                index += Aijk[d * nnz + n] * strides[d];
+                index += (npy_intp)Aijk[d * nnz + n] * strides[d];
             }
             Bx[index] += Ax[n];
         }
@@ -145,7 +145,7 @@ void coo_todense_nd(const I strides[],
         for(npy_int64 n = 0; n < nnz; n++) {
             npy_intp index = 0;
             for(npy_int64 d = 0; d < num_dims; d++) {
-                index += Aijk[d * nnz + n] * strides[d];
+                index += (npy_intp)Aijk[d * nnz + n] * strides[d];
             }
             Bx[index] += Ax[n];
         }
@@ -171,7 +171,7 @@ void coo_todense_nd(const I strides[],
  *   Output array Yx must be preallocated
  *
  *   Complexity: Linear.  Specifically O(nnz(A))
- * 
+ *
  */
 template <class I, class T>
 void coo_matvec(const npy_int64 nnz,
@@ -198,7 +198,7 @@ void coo_matvec(const npy_int64 nnz,
  *
  * Output Arguments:
  *   T  Yx[n_row]     - output vector
- * 
+ *
  */
 template <class I, class T>
 void coo_matvec_nd(const npy_int64 nnz,
@@ -212,7 +212,7 @@ void coo_matvec_nd(const npy_int64 nnz,
     for(npy_int64 n = 0; n < nnz; n++){
         npy_intp index = 0;
         for(npy_int64 d = num_dims - 2; d >= 0; d--) {
-            index += Aijk[d * nnz + n] * strides[d];
+            index += (npy_intp)Aijk[d * nnz + n] * strides[d];
         }
         Yx[index] += Ax[n] * Xx[Aijk[nnz * (num_dims - 1) + n]];
     }
@@ -235,7 +235,7 @@ void coo_matvec_nd(const npy_int64 nnz,
  *
  * Notes:
  *   Output array Yx must be preallocated
- * 
+ *
  */
 template <class I, class T>
 void coo_matmat_dense(const npy_int64 nnz,
@@ -276,7 +276,7 @@ void coo_matmat_dense(const npy_int64 nnz,
  *
  * Notes:
  *   Output array Yx must be preallocated
- * 
+ *
  */
 template <class I, class T>
 void coo_matmat_dense_nd(const npy_int64 nnz,
@@ -301,7 +301,7 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
         strides_Y[i] = strides_Y[i + 1] * shape_Y[i + 1];
         dim_nnz[i] = i * nnz;
     }
-    
+
     // Iterate over all non-zero elements
     for (npy_int64 n = 0; n < nnz; ++n) {
         const T x = Ax[n];
@@ -313,10 +313,10 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
                 src_offset += A_coords[dim_nnz[dim] + n] * strides_B[dim];
                 dst_offset += A_coords[dim_nnz[dim] + n] * strides_Y[dim];
             }
-           
+
             dst_offset += n_col_B * A_coords[dim_nnz[n_dim - 2] + n];
             src_offset += n_col_B * A_coords[dim_nnz[n_dim - 1] + n];
-            
+
             // Multiply and accumulate in the output tensor Y
             for (npy_int64 i = 0; i < n_col_B; ++i) {
                 Yx[dst_offset + i] += x * Bx[src_offset + i];

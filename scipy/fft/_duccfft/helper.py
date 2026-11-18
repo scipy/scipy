@@ -6,7 +6,6 @@ import contextlib
 
 import numpy as np
 
-from scipy._lib._util import copy_if_needed
 from scipy._lib._array_api import xp_capabilities
 
 # good_size is exposed (and used) from this import
@@ -128,7 +127,7 @@ def _asfarray(x):
     # Require native byte order
     dtype = x.dtype.newbyteorder('=')
     # Always align input
-    copy = True if not x.flags['ALIGNED'] else copy_if_needed
+    copy = True if not x.flags['ALIGNED'] else None
     return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):

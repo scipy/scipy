@@ -1,12 +1,15 @@
-from functools import partial
+import ast
+import inspect
 import pickle
-
 import pytest
-from hypothesis import given, strategies
-import hypothesis.extra.numpy as npst
-from packaging import version
+
+from pathlib import Path
+from functools import partial
+
+from scipy._external.packaging_version import version
 
 from scipy import special
+from scipy.special import _support_alternative_backends as sab
 from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
@@ -23,8 +26,48 @@ pytestmark = pytest.mark.array_api_backends
 lazy_xp_modules = [special]
 
 
-def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
-    """Skip tests for specific intersections of scipy.special functions 
+def _fix_ref_dtype(ref, xp, dtypes):
+    # Match PyTorch's float32/complex64 default promotion behavior.
+    if (
+            is_torch(xp)
+            and xpx.default_dtype(xp) == xp.float32
+            and "float64" not in dtypes
+    ):
+        def cast(r):
+            dtype = np.complex64 if np.iscomplexobj(r) else np.float32
+            return np.asarray(r, dtype=dtype)
+
+        if isinstance(ref, tuple):
+            return tuple(cast(r) for r in ref)
+        return cast(ref)
+
+    return ref
+
+
+def _tuple_aware_to_xp(x, xp):
+    # convert array x to xp array and tuple of arrays to tuple of xp arrays
+    if isinstance(x, tuple):
+        return tuple(xp.asarray(x_i) for x_i in x)
+    return xp.asarray(x)
+
+
+def _tuple_aware_xp_assert_close(actual, desired, **kwargs):
+    # like xp_assert_close, but can handle tuples of arrays. This inherits default
+    # ``kwarg`` values from `_array_api_no_0d.xp_assert_close` which is imported
+    # above in this test file.
+    if isinstance(desired, tuple):
+        assert isinstance(actual, tuple)
+        assert len(actual) == len(desired)
+    else:
+        actual, desired = (actual,), (desired,)
+    for actual_i, desired_i in zip(actual, desired):
+        xp_assert_close(actual_i, desired_i, **kwargs)
+
+
+def _skip_or_tweak_alternative_backends(
+        xp, nfo, dtypes, int_only, *, elementwise_only=False
+):
+    """Skip tests for specific intersections of scipy.special functions
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
 
@@ -36,6 +79,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         dtype strings 'float64', 'int32', 'int64', etc. with integer types
         mapped to the type of the NumPy default int.
     """
+    if elementwise_only and not nfo.is_elementwise:
+        pytest.skip("test assumes elementwise broadcasting")
     f_name = nfo.name
     if isinstance(nfo.positive_only, dict):
         positive_only = nfo.positive_only.get(get_native_namespace_name(xp), False)
@@ -46,13 +91,39 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
 
     dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
+    if f_name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
+    if f_name in {"ellip_harm", "ellip_harm_2", "ellip_normal", "lambertw"}:
+        pytest.skip("requires dedicated tests due to keyword arguments.")
+
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
+
+    if f_name == "owens_t" and is_jax(xp) and all(
+            dtype == "float32" for dtype in dtypes
+    ):
+        pytest.xfail("JAX owens_t incorrectly promotes float32 to float64.")
+
+    if is_jax(xp) and f_name in {
+            "ncfdtrinc", "nctdtridf", "stdtridf", "chndtridf"
+    }:
+        pytest.xfail(
+            "Random inputs can specify unattainable inverse CDF targets; "
+            "Boost can return spurious results which differ between NumPy"
+            " and JAX due to JAX employing flush to zero for subnormals."
+        )
 
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
     # Integer-specific issues from this point onwards
+    if f_name == "round" and (is_cupy(xp) or is_torch(xp) or is_jax(xp)):
+        pytest.skip("Backend integer rounding differs from scipy.special.round.")
 
     if f_name in {'gamma', 'gammasgn'} and is_cupy(xp):
         # CuPy has not yet updated gamma pole behavior to match
@@ -76,11 +147,15 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
-                                          'zeta', 'xlog1py'))
+                                          'zeta', 'xlog1py', 'eval_legendre',
+                                          'eval_chebyt', 'eval_chebyu',
+                                          'eval_laguerre', 'eval_hermite',
+                                          'eval_hermitenorm', 'eval_sh_chebyt',
+                                          'eval_sh_chebyu'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta', 'poch',
-                                           'xlog1py')))
+                                           'xlog1py', 'beta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -94,6 +169,10 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         if not nfo.torch_native:
             pytest.xfail("dtypes do not match")
 
+    if f_name == 'beta' and is_jax(xp):
+        # jax disagree's with scipy when gamma poles are involved.
+        positive_only = [True, True]
+
     return positive_only, dtypes
 
 
@@ -103,19 +182,23 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
 @pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
 @pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
+    'func,nfo', [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public
+    ]
+)
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get(get_native_namespace_name(xp))
     if int_only is None:
         int_only = (False, ) * nfo.n_args
-        dtypes = (base_dtype, ) * nfo.n_args
-    else:
-        dtypes = tuple(
-            'intp' if needs_int else base_dtype for needs_int in int_only
-        )
+
+    dtypes = tuple(
+        'intp' if needs_int else base_dtype for needs_int in int_only
+    )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes, int_only
+        xp, nfo, dtypes, int_only, elementwise_only=True
     )
 
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
@@ -193,35 +276,34 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and "float64" not in dtypes
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
+    ref = _fix_ref_dtype(ref, xp, dtypes)
     # When dtype_np is integer, the output dtype can be float
-    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
+    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
+    atol = 0 if ref_dtype.kind in 'iu' else 10 * np.finfo(ref_dtype).eps
     rtol = None
     if is_torch(xp) and func.__name__ == 'j1':
         # If we end up needing more function/backend specific tolerance
         # adjustments, this should be factored out properly.
         atol = 1e-7
         rtol = 1e-5
-    xp_assert_close(
-        res, xp.asarray(ref), rtol=rtol, atol=atol, check_0d=nfo.produces_0d
+    _tuple_aware_xp_assert_close(
+        res, _tuple_aware_to_xp(ref, xp), rtol=rtol, atol=atol,
+        check_0d=nfo.produces_0d
     )
 
 
 @pytest.mark.parametrize(
     'func, nfo',
-    [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs if i.n_args >= 2])
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs
+        if nfo.n_args >= 2 and nfo.public
+    ]
+)
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
-                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
+                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri', 'boxcox', 'boxcox1p'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['intp', 'float32', 'float64', 'float64'][:nfo.n_args]
 
@@ -254,70 +336,10 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and "float64" not in dtypes
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
-
-    atol = 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol)
-
-
-@pytest.mark.xslow
-@given(data=strategies.data())
-@pytest.mark.fail_slow(5)
-@pytest.mark.parametrize(
-    'func,nfo', [make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs])
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings(
-    "ignore:overflow encountered:RuntimeWarning:array_api_strict"
-)
-def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
-                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
-        pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
-    positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype], (False,)*nfo.n_args
-    )
-    dtype_np = getattr(np, dtypes[0])
-    dtype_xp = getattr(xp, dtypes[0])
-
-    elements = {'allow_subnormal': False}
-    # Most failures are due to NaN or infinity; uncomment to suppress them
-    # elements['allow_infinity'] = False
-    # elements['allow_nan'] = False
-    if any(positive_only):
-        elements['min_value'] = 0
-
-    shapes, _ = data.draw(
-        npst.mutually_broadcastable_shapes(num_shapes=nfo.n_args))
-    args_np = [data.draw(npst.arrays(dtype_np, shape, elements=elements))
-               for shape in shapes]
-
-    args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
-    args_np = [np.asarray(arg, dtype=dtype_np) for arg in args_np]
-
-    res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
-    ref = nfo.func(*args_np)  # Unwrapped ufunc
-    if (
-            is_torch(xp)
-            and xpx.default_dtype(xp) == xp.float32
-            and dtype != "float64"
-    ):
-        # int64 promotes like float32 on torch with default dtype = float32
-        # cast reference if needed
-        ref = np.float32(ref)
-
-    # When dtype_np is integer, the output dtype can be float
-    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol)
+    ref = _fix_ref_dtype(ref, xp, dtypes)
+    ref_dtype = ref[0].dtype if isinstance(ref, tuple) else ref.dtype
+    atol = 10 * np.finfo(ref_dtype).eps
+    _tuple_aware_xp_assert_close(res, _tuple_aware_to_xp(ref, xp), atol=atol)
 
 
 @pytest.mark.filterwarnings("ignore:numpy.core is deprecated:DeprecationWarning")
@@ -336,42 +358,89 @@ def test_repr(func):
 @pytest.mark.skipif(
     version.parse(np.__version__) < version.parse("2.2"),  # type:ignore[attr-defined]
     reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
-@pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
+@pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs if nfo.public])
 def test_doc(func):
-    """xp_capabilities updates the docstring in place. 
-    Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
+    """xp_capabilities updates the docstring in place.
+    Make sure it does so exactly once.
     """
-    match = "has experimental support for Python Array API"
+    match = "has support for Python Array API"
     assert func.__doc__.count(match) == 1
 
 
 @pytest.mark.parametrize(
-    'func,n_args,int_only,is_ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc)
-     for nfo in _special_funcs]
+    'func,nfo',
+    [(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public and nfo.is_ufunc],
 )
-def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
+def test_ufunc_kwargs(func, nfo):
     """Test that numpy-specific out= and dtype= keyword arguments
-    of ufuncs still work when SCIPY_ARRAY_API is set.
+    of ufuncs still work even though ufuncs have been replaced.
     """
-    if not is_ufunc:
-        pytest.skip(f"{func.__name__} is not a ufunc.")
+    if nfo.name in {
+            "pro_ang1", "pro_ang1_cv", "pro_cv", "pro_rad1", "pro_rad1_cv",
+            "pro_rad2", "pro_rad2_cv", "obl_ang1", "obl_ang1_cv", "obl_cv",
+            "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+    }:
+        pytest.skip("input constraints unlikely to be met by random input.")
+
+    ufunc = nfo.func
+    int_only = nfo.int_only
+    if not nfo.is_ufunc:
+        pytest.skip(f"{nfo.func.__name__} is not a ufunc.")
+    func, ufunc = nfo.wrapper, nfo.func
+
+    if isinstance(int_only, dict):
+        int_only = int_only.get("numpy")
     if int_only is None:
-        int_only = (False, ) * n_args
-    # out=
+        int_only = (False,) * nfo.n_args
+
     args = [
         np.asarray([.1, .2]) if not needs_int
         else np.asarray([1, 2])
         for needs_int in int_only
     ]
-    out = np.empty(2)
+
+    nin, nout = ufunc.nin, ufunc.nout
+
+    resolved_dtypes = ufunc.resolve_dtypes(
+        tuple(arg.dtype for arg in args) + (None,) * nout
+    )
+    out_dtypes = resolved_dtypes[nin:]
+
+    if nfo.is_elementwise:
+        out_shapes = (np.broadcast_shapes(*(arg.shape for arg in args)),) * nout
+    else:
+        shape = nfo.shape_mapper(*(arg.shape for arg in args))
+        out_shapes = (shape,) if nout == 1 else shape
+
+    if nout == 1:
+        out = np.empty(out_shapes[0], dtype=out_dtypes[0])
+    else:
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, out_dtypes)
+        )
+
     y = func(*args, out=out)
-    xp_assert_close(y, out)
+    _tuple_aware_xp_assert_close(y, out)
 
     # out= with out.dtype != args.dtype
-    out = np.empty(2, dtype=np.float32)
-    y = func(*args, out=out)
-    xp_assert_close(y, out)
+    lower_dtypes = [
+        np.complex64 if np.issubdtype(dtype, np.complexfloating)
+        else np.float32
+        for dtype in out_dtypes
+    ]
+    if nout == 1:
+        out = np.empty(out_shapes[0], dtype=lower_dtypes[0])
+    else:
+        out = tuple(
+            np.empty(shape, dtype=dtype)
+            for shape, dtype in zip(out_shapes, lower_dtypes)
+        )
+
+    with np.errstate(over="ignore"):
+        # ignore overflow because out may not be representable as float32
+        y = func(*args, out=out)
+    _tuple_aware_xp_assert_close(y, out)
 
     if func.__name__ in {"bdtr", "bdtrc", "bdtri"}:
         # The below function evaluation will trigger a deprecation warning
@@ -379,11 +448,89 @@ def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
         # pulled on the deprecation.
         return
 
+    if func.__name__ in {"poisson_binom_cdf"}:
+        # dtype=np.float32 not available due to mixed integer and floating point inputs.
+        return
+
+    if not any(
+            sig.split("->")[1] == "f" * nout
+            for sig in ufunc.types
+    ):
+        # dtype=np.float32 will not be available if there is no loop
+        # with float32 output.
+        return
+
     # dtype=
-    y = func(*args, dtype=np.float32)
-    assert y.dtype == np.float32
+    with np.errstate(over="ignore"):
+        # ignore overflow because result may not be representable as float32
+        y = func(*args, dtype=np.float32)
+    if nout == 1:
+        assert y.dtype == np.float32
+    else:
+        for y_i in y:
+            assert y_i.dtype == np.float32
 
 
+@pytest.mark.parametrize(
+    'func,nfo',
+    [
+        make_xp_pytest_param(
+            i.wrapper, i,
+            additional_marks=(
+                pytest.mark.filterwarnings(
+                    "ignore::scipy.integrate.IntegrationWarning"
+                )
+                if i.name in {"ellip_harm_2", "ellip_normal"}
+                else None
+            )
+        )
+        for i in _special_funcs if not i.is_ufunc and i.public
+    ]
+)
+@pytest.mark.skip_xp_backends("dask.array", reason="")
+@pytest.mark.parametrize('n_positional', [0, 1])
+def test_non_ufunc_kwargs(xp, func, nfo, n_positional):
+    """Test passing arguments by keyword to non-ufunc wrappers."""
+    sample_args = {
+        'polygamma': (1, [1.5, 2.5]),
+        'multigammaln': ([4., 5.], 2),
+        'ellip_harm': (5., 8., 2, 1, [10., 11.]),
+        'ellip_harm_2': (5., 8., 2, 1, [10., 11.]),
+        'ellip_normal': (5., 8., 2, [1, 2]),
+        'lambertw': ([1.5, -0.25], [0, -1], 1e-8),
+        'zeta': ([2.5, 3.5], [1.5, 2.5]),
+        'sinc': ([0.25, 0.75],),
+    }
+
+    if n_positional >= len(sample_args[nfo.name]):
+        pytest.skip("No keyword arguments to test.")
+
+    python_int_only = nfo.python_int_only
+    if isinstance(python_int_only, dict):
+        python_int_only = python_int_only.get(get_native_namespace_name(xp))
+    if python_int_only is None:
+        python_int_only = (False,) * nfo.n_args
+
+    args_np = tuple(
+        arg if needs_python_int else np.asarray(arg)
+        for arg, needs_python_int in zip(sample_args[nfo.name], python_int_only)
+    )
+    args_xp = tuple(
+        xp.asarray(arg) if isinstance(arg, np.ndarray) else arg
+        for arg in args_np
+    )
+
+    names = list(inspect.signature(nfo.func).parameters)
+    kwargs_np = dict(zip(names[n_positional:], args_np[n_positional:]))
+    kwargs_xp = dict(zip(names[n_positional:], args_xp[n_positional:]))
+
+    ref = nfo.func(*args_np[:n_positional], **kwargs_np)
+    res = nfo.wrapper(*args_xp[:n_positional], **kwargs_xp)
+
+    xp_assert_close(res, xp.asarray(ref))
+
+
+@pytest.mark.xfail_xp_backends("dask.array", reason="scipy/scipy#25343")
 @make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
@@ -402,3 +549,161 @@ def test_mixed_arrays_and_python_scalars(xp):
     res = special.fdtrc(1.1, 2., xp.asarray(1., dtype=xp.float32))
     ref = xp.asarray(0.4349004, dtype=xp.float32)
     xp_assert_close(res, ref)
+
+
+# gufuncs are currently rare enough that they can have their own tests rather than
+# relying on the machinery above.
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("int_dtype", [np.int32, np.int64])
+@pytest.mark.parametrize("float_dtype", [np.float32, np.float64])
+def test_poisson_binom_cdf(xp, int_dtype, float_dtype):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=int_dtype)[:, None]
+    p = np.asarray(
+        [
+            [0.2, 0.4, 0.6, 0.8],
+            [0.1, 0.3, 0.5, 0.7],
+        ],
+        dtype=float_dtype,
+    )
+    ref = special.poisson_binom_cdf(k, p)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p))
+    xp_assert_close(res, ref)
+
+
+@make_xp_test_case(special.poisson_binom_cdf)
+@pytest.mark.parametrize("axis", [-1, 0, 1])
+def test_poisson_binom_cdf_axis(xp, axis):
+    k = np.asarray([0, 1, 2, 3, 4, 5], dtype=np.int32)[:, None]
+    p = np.asarray(
+        [
+            [0.1, 0.2, 0.3, 0.4],
+            [0.5, 0.6, 0.7, 0.8],
+            [0.15, 0.25, 0.35, 0.45],
+        ],
+        dtype=np.float64,
+    )
+    ref = special.poisson_binom_cdf(k, p, axis=axis)
+    res = special.poisson_binom_cdf(xp.asarray(k), xp.asarray(p), axis=axis)
+    xp_assert_close(res, ref)
+
+
+_spheroidal_funcs = {
+    "pro_ang1", "pro_ang1_cv", "pro_cv",
+    "pro_rad1", "pro_rad1_cv", "pro_rad2", "pro_rad2_cv",
+    "obl_ang1", "obl_ang1_cv", "obl_cv",
+    "obl_rad1", "obl_rad1_cv", "obl_rad2", "obl_rad2_cv",
+}
+
+
+def _spheroidal_args(name):
+    m = np.asarray([[0], [1], [2]], dtype=np.int32)
+    n = np.asarray([[0], [2], [3]], dtype=np.int32)
+    c = np.asarray([0.7, 1.1, 1.5], dtype=np.float64)
+
+    args = [m, n, c]
+
+    if name.endswith("_cv") and name not in {"pro_cv", "obl_cv"}:
+        cv = getattr(special, name[:3] + "_cv")(m, n, c)
+        args.append(cv)
+
+    if "ang1" in name:
+        x = np.asarray([-0.5, 0.1, 0.6])
+        args.append(x)
+    elif "rad" in name:
+        x = (
+            np.asarray([1.3, 1.7, 2.1])
+            if name.startswith("pro_")
+            else np.asarray([0.6, 1.2, 1.8])
+        )
+        args.append(x)
+
+    return args
+
+
+@pytest.mark.parametrize(
+    "func,nfo",
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo)
+        for nfo in _special_funcs
+        if nfo.name in _spheroidal_funcs
+    ],
+)
+@pytest.mark.skip_xp_backends("dask.array", reason="fails to find correct output shape")
+def test_spheroidal_wave_functions(xp, func, nfo):
+    args_np = _spheroidal_args(nfo.name)
+    args_xp = [xp.asarray(arg) for arg in args_np]
+
+    ref = nfo.func(*args_np)
+    res = nfo.wrapper(*args_xp)
+
+    _tuple_aware_xp_assert_close(
+        res,
+        _tuple_aware_to_xp(ref, xp),
+        atol=10 * np.finfo(np.float64).eps,
+        check_0d=nfo.produces_0d,
+    )
+
+
+def test_all_public_funcs_registered():
+    # These are the private submodules that _support_alternative_backends.py
+    # consumes. i.e., they contain definitions of public functions for which
+    # delegation is set up with alternative backends machinery. Other private
+    # submodules, such as _spherical_bessel.py and _basic.py are consumers of
+    # delegating wrappers from _support_alternative_backends.
+    public_funcs = set(
+        special._ufuncs.__all__
+        + special._ellip_harm.__all__
+        + special._lambertw.__all__
+        + special._mathieu.__all__
+        + special._spfun_stats.__all__
+    )
+    public_funcs -= {"geterr", "seterr", "errstate"}
+
+    missing = public_funcs - set(sab.__all__)
+    assert not missing, f"Missing backend registrations: {sorted(missing)}"
+
+    missing = public_funcs - set(special.__all__)
+    assert not missing, f"Missing public exports: {sorted(missing)}"
+
+
+def test_type_stub_consistency():
+    # Rough check that type stubs in _support_alternative_backends.pyi match
+    # the dynamically generated contents of _support_alternative_backends.py
+    path = Path(sab.__file__).with_suffix(".pyi")
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    annotations = {
+        node.target.id: ast.unparse(node.annotation)
+        for node in tree.body
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+    }
+    wrapper_types = {"_CallableUFuncWrapper", "Callable[..., Any]"}
+    declared = {
+        name: annotation
+        for name, annotation in annotations.items()
+        if annotation in wrapper_types
+    }
+
+    expected = {
+        name: "_CallableUFuncWrapper" if info.is_ufunc else "Callable[..., Any]"
+        for name, info in sab._FUNC_INFO.items()
+    }
+    expected.update({
+        alias: expected[target]
+        for alias, target in sab._aliases.items()
+    })
+
+    assert declared.keys() == expected.keys()
+    assert declared == expected
+
+    all_def = next(
+        node for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "__all__"
+                for target in node.targets)
+    )
+    stub_all = ast.literal_eval(all_def.value)
+
+    assert len(stub_all) == len(set(stub_all))
+    assert set(stub_all) == set(sab.__all__)

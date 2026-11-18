@@ -8,6 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 from numpy import dot, conj
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
@@ -21,6 +23,10 @@ from scipy._lib._gcutils import assert_deallocated
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
+
+
+def _is_32bit():
+    return np.intp(0).itemsize < 8
 
 
 def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
@@ -77,6 +83,11 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
             # missing more cases, from PR 14798
             rtol *= 10
             atol *= 10
+
+    if _is_32bit():
+        # Small tolerance bumps needed on i686 linux after moving
+        # from GCC 10.2 to 14.2
+        rtol *= 2
 
     return tol, rtol, atol
 
@@ -544,6 +555,7 @@ def test_linearoperator_deallocation():
         pass
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_parallel_threads(num_parallel_threads):
     results = []
     rng = np.random.default_rng(1234)

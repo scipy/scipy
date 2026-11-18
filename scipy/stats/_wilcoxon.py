@@ -1,13 +1,13 @@
 import numpy as np
 
-from scipy import stats
+from ._resampling import PermutationMethod, permutation_test
 from ._stats_py import _get_pvalue, _rankdata, _SimpleNormal
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_size, is_jax,
-                                   is_marray, _count_nonmasked)
+                                   is_marray, _count_nonmasked, xp_device)
 import scipy._external.array_api_extra as xpx
 
 
@@ -51,7 +51,7 @@ class WilcoxonDistribution:
     def sf(self, k):
         k, mn, out = self._prep(k)
         return xpx.apply_where(
-            k <= mn, (k, self.n),
+            k > mn, (k, self.n),
             self._sf,
             lambda k, n: 1 - self._cdf(k-1, n))[()]
 
@@ -103,7 +103,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     if alternative not in alternatives:
         raise ValueError(message)
 
-    if not isinstance(method, stats.PermutationMethod):
+    if not isinstance(method, PermutationMethod):
         methods = {"auto", "asymptotic", "exact"}
         message = (f"`method` must be one of {methods} or "
                    "an instance of `stats.PermutationMethod`.")
@@ -235,7 +235,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             # are 2**n, where n is the sample size.
             # if n <= 13, the p-value is deterministic since 2**13 is less
             # than 9999, the default number of n_resamples
-            method = stats.PermutationMethod()
+            method = PermutationMethod()
         else:
             # if there are ties and the sample size is too large to
             # run a deterministic permutation test, fall back to asymptotic
@@ -264,9 +264,9 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             p = 2 * np.minimum(dist.sf(np.floor(r_plus_np)),
                                dist.cdf(np.ceil(r_plus_np)))
             p = np.clip(p, 0, 1)
-        p = xp.asarray(p, dtype=d.dtype)
+        p = xp.asarray(p, dtype=d.dtype, device=xp_device(d))
     else:  # `PermutationMethod` instance (already validated)
-        p = stats.permutation_test(
+        p = permutation_test(
             # permutation_test always uses `axis=-1` as `_wilcoxon_statistic` assumes
             (d,), lambda d, axis: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
             permutation_type='samples', **method._asdict(),

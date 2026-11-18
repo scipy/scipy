@@ -16,7 +16,7 @@ class TestNNLS:
         x, res = nnls(a, y)
         assert res < 1e-7
         assert np.linalg.norm((a @ x) - y) < 1e-7
-        
+
     def test_nnls_empty(self):
         a = np.zeros((2, 0))
         y = np.ones((2,))
@@ -435,6 +435,39 @@ class TestNNLS:
         assert_allclose(sol, np.array([0.0, 0.0, 76.3611306173957, 0.0, 0.0]),
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
+
+    @pytest.mark.parametrize('b1, b2', [(2.0, -1.0), (11.0, -10.0)])
+    def test_nnls_rejected_candidate_unchanged(self, b1, b2):
+        # Column 1 is 0.5 * column 0 up to a 5e-15 perturbation, so it gets
+        # picked with a round-off sized dual and rejected as dependent. It used
+        # to keep the Householder vector from that attempt, enter the solution
+        # later and give a wrong x and rnorm.
+        eps = 5e-15
+        A = np.array([[1.0, 0.5, 0.0],
+                      [0.0, eps, 0.0],
+                      [0.0, eps, 0.0],
+                      [0.0, 0.0, 1.0]])
+        b = np.array([1.0, b1, b2, eps / 2])
+        x, rnorm = nnls(A, b)
+        assert_allclose(x, [1.0, 0.0, 0.0], atol=1e-12)
+        assert_allclose(rnorm, np.hypot(b1, b2))
+        assert_allclose(rnorm, np.linalg.norm(A @ x - b))
+
+    @pytest.mark.parametrize('A, b', [
+        ([[1.0, 1.0], [1.0, 2.0]], [0.0, 5e-324]),
+        ([[-2.0, -1.0], [2.0, -1.0]], [-5e-324, 0.0]),
+    ])
+    def test_nnls_passive_set_emptied(self, A, b):
+        # With subnormal data the interpolation step rounds the coefficient of
+        # the column that just entered the passive set to zero, so that the
+        # last column leaves the set. The removal loop then ran on with a
+        # negative set size, writing out of bounds and crashing.
+        A = np.array(A)
+        b = np.array(b)
+        x, rnorm = nnls(A, b)
+        assert np.all(x >= 0)
+        assert_allclose(x, 0.0, atol=1e-320)
+        assert_allclose(rnorm, np.linalg.norm(b), rtol=0, atol=1e-320)
 
     def test_2D_singleton_RHS_input(self):
         # Test that a 2D singleton RHS input is accepted

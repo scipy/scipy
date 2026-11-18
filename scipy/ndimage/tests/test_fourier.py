@@ -187,7 +187,7 @@ class TestNdimageFourier:
     def test_fourier_zero_length_dims(self, shape, dtype, test_func, xp):
         if (
             is_cupy(xp)
-            and test_func.__name__ == "fourier_ellipsoid" 
+            and test_func.__name__ == "fourier_ellipsoid"
             and math.prod(shape) == 0
         ):
             pytest.xfail("CuPy's fourier_ellipsoid does not accept size==0 arrays")

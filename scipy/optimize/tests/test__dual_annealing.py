@@ -188,6 +188,13 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
+    @pytest.mark.parametrize('maxiter', [0, -1])
+    def test_invalid_maxiter(self, maxiter):
+        # maxiter < 1 previously spun the search loop forever (gh-25879),
+        # since the stopping condition is only ever set inside the loop.
+        assert_raises(ValueError, dual_annealing, self.func,
+                      self.ld_bounds, maxiter=maxiter)
+
     def test_deprecated_local_search_options_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))

@@ -1,10 +1,10 @@
 import math
 import numpy as np
-from . import eigsh
+from .arpack.arpack import eigsh
 
 from scipy._lib._util import _transition_to_rng, check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
+from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._svdp import _svdp
 from scipy.linalg import svd
 

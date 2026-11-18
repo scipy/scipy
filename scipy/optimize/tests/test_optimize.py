@@ -20,6 +20,8 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_no_warnings,
                            assert_array_less)
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
 from scipy._lib._gcutils import assert_deallocated
@@ -1673,7 +1675,7 @@ class TestOptimizeSimple(CheckOptimize):
                     callback()
             callback_interface = Callback()
         else:
-            def callback_interface(xk, *args):  # type: ignore[misc]
+            def callback_interface(xk, *args):
                 callback()
 
         def callback():
@@ -1720,9 +1722,13 @@ class TestOptimizeSimple(CheckOptimize):
             # call to the callback
             assert res.fun == ref.fun
             assert_equal(res.x, ref.x)
-        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
-        if method != 'cobyqa':
-            assert not res.success
+        if method == 'trust-constr':
+            assert res.status == 3
+        elif method == 'cobyqa':
+            assert res.status == 4
+        else:
+            assert res.status == 99
+        assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -2571,6 +2577,13 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    def test_repr_with_empty_dict_value(self):
+        # gh-25893
+        res = optimize.OptimizeResult(x=1, options={})
+        assert 'options' in repr(res)
+        res = optimize.OptimizeResult(options={}, info={'a': 1})
+        assert 'a: 1' in repr(res)
+
     @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
@@ -2667,8 +2680,9 @@ class TestBrute:
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None)
 
+        workers = 1 if IS_WASM else 2
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
+                                   full_output=True, finish=None, workers=workers)
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
@@ -2693,6 +2707,7 @@ class TestBrute:
 
 
 @pytest.mark.fail_slow(20)
+@pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -3116,6 +3131,23 @@ def test_all_bounds_equal(method):
         assert res.message.startswith(message)
 
 
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal_writable(method):
+    # When all bounds have lb == ub, _optimize_result_for_equal_bounds
+    # must pass a writable x0 to the objective. Previously, x0 was
+    # assigned directly from bounds.lb, which is a non-writable view
+    # produced by np.broadcast_to in _validate_bounds.
+    def f(x):
+        assert x.flags.writeable, "x passed to objective is not writable"
+        return np.linalg.norm(x)
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert res.x.flags.writeable
+
+
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -3169,6 +3201,27 @@ def test_bounds_with_list():
     optimize.minimize(
         optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
     )
+
+
+@pytest.mark.parametrize('method', ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc',
+                                    'slsqp', 'cobyla', 'cobyqa', 'trust-constr'))
+def test_minimize_does_not_mutate_bounds(method):
+    # `minimize` broadcast lb/ub onto the caller's `Bounds`; cf. gh-8419
+    bounds = optimize.Bounds(0., np.inf)
+    lb, ub, keep_feasible = bounds.lb, bounds.ub, bounds.keep_feasible
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method=method, bounds=bounds)
+    assert bounds.lb is lb
+    assert bounds.ub is ub
+    assert bounds.keep_feasible is keep_feasible
+
+
+def test_minimize_bounds_reusable_across_sizes():
+    # consequence of the above: a dimension-agnostic `Bounds` was only usable once
+    bounds = optimize.Bounds(0., np.inf)
+    optimize.minimize(optimize.rosen, [0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
+    optimize.minimize(optimize.rosen, [0.5, 0.5, 0.5], method='trust-constr',
+                      bounds=bounds)
 
 
 @pytest.mark.parametrize('method', (
@@ -3402,6 +3455,7 @@ def test_gh12513_trustregion_exact_infinite_loop():
     assert abs(fun(res.x)) < 1e-5
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])
@@ -3428,7 +3482,11 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [
+    None,
+    pytest.param(2, marks=pytest.mark.xfail(
+        IS_WASM, reason="cannot create process pool in Pyodide/WASM")),
+])
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',
@@ -3588,6 +3646,7 @@ class TestAnnotations:
         assert res.success, f"Unexpected error: {res.message}"
 
 
+@pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
     x0 = np.array([0.9, 0.9])

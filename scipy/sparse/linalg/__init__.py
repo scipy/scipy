@@ -140,9 +140,6 @@ from ._expm_multiply import *
 from ._funm_multiply_krylov import *
 from ._special_sparse_arrays import *
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import isolve, dsolve, interface, eigen, matfuncs
-
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from scipy._lib._testutils import PytestTester

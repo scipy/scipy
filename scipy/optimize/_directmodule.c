@@ -35,7 +35,7 @@ direct(PyObject *self, PyObject *args)
     }
 
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
-    x = (double *) malloc(sizeof(double) * (dimension + 1));
+    x = (double *) PyMem_RawMalloc(sizeof(double) * (dimension + 1));
     if (!x) {
         PyErr_NoMemory();
         return NULL;
@@ -55,7 +55,7 @@ direct(PyObject *self, PyObject *args)
     if (!direct_ret) {
         Py_DECREF(x_seq);
         if (x)
-            free(x);
+            PyMem_RawFree(x);
         /* Some failure paths inside direct_direct_ return NULL without
            setting a Python exception. Surface those here so CPython does not
            raise SystemError for "returned NULL without setting an error". */
@@ -76,7 +76,7 @@ direct(PyObject *self, PyObject *args)
        original reference since the tuple now owns it. */
     Py_DECREF(x_seq);
     if (x)
-        free(x);
+        PyMem_RawFree(x);
     return ret_py;
 }
 

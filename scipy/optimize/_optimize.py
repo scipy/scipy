@@ -41,7 +41,9 @@ from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng,
                               wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_device, xp_promote
+)
 from scipy._external import array_api_extra as xpx
 
 
@@ -235,7 +237,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         derivatives (`fun`, `jac` functions).
     bounds : sequence, optional
         Bounds on variables. 'new-style' bounds are required.
-    eps : float or ndarray
+    epsilon : float or ndarray
         If ``jac is None`` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     finite_diff_rel_step : None or array_like, optional
@@ -465,7 +467,7 @@ def rosen_hess(x):
 
     H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp)
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
-    diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
+    diagonal = xp.zeros(x.shape[0], dtype=x.dtype, device=xp_device(x))
     diagonal = xpx.at(diagonal)[0].set(1200 * x[0]**2 - 400 * x[1] + 2)
     diagonal = xpx.at(diagonal)[-1].set(200)
     diagonal = xpx.at(diagonal)[1:-1].set(202 + 1200 * x[1:-1]**2 - 400 * x[2:])
@@ -508,38 +510,13 @@ def rosen_hess_prod(x, p):
     x = xp_promote(x, force_floating=True, xp=xp)
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     p = xp.asarray(p, dtype=x.dtype)
-    Hp = xp.zeros(x.shape[0], dtype=x.dtype)
+    Hp = xp.zeros(x.shape[0], dtype=x.dtype, device=xp_device(x))
     Hp = xpx.at(Hp)[0].set((1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1])
     Hp = xpx.at(Hp)[1:-1].set(-400 * x[:-2] * p[:-2] +
                               (202 + 1200 * x[1:-1]**2 - 400 * x[2:]) * p[1:-1] -
                               400 * x[1:-1] * p[2:])
     Hp = xpx.at(Hp)[-1].set(-400 * x[-2] * p[-2] + 200*p[-1])
     return Hp
-
-
-def _wrap_scalar_function(function, args):
-    # wraps a minimizer function to count number of evaluations
-    # and to easily provide an args kwd.
-    ncalls = [0]
-    if function is None:
-        return ncalls, None
-
-    def function_wrapper(x, *wrapper_args):
-        ncalls[0] += 1
-        # A copy of x is sent to the user function (gh13740)
-        fx = function(np.copy(x), *(wrapper_args + args))
-        # Ideally, we'd like to a have a true scalar returned from f(x). For
-        # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
-        if not np.isscalar(fx):
-            _dt = getattr(fx, "dtype", np.float64)
-            try:
-                fx = _dt.type(np.asarray(fx).item())
-            except (TypeError, ValueError) as e:
-                raise ValueError("The user-provided objective function "
-                                 "must return a scalar value.") from e
-        return fx
-
-    return ncalls, function_wrapper
 
 
 class _MaxFuncCallError(RuntimeError):

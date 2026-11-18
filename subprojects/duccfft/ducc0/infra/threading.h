@@ -93,7 +93,7 @@ static_assert(false, "DUCC0_STDCXX_LOWLEVEL_THREADING must not be defined extern
 // no headers needed
 #endif
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 namespace detail_threading {
 
 using std::size_t;
@@ -111,6 +111,9 @@ class thread_pool
       { MR_fail("Resizing is not supported by this thread pool"); }
     virtual size_t adjust_nthreads(size_t nthreads_in) const = 0;
     virtual void submit(std::function<void()> work) = 0;
+    // NB: "work" needs to be "noexcept", but std::function doesn't allow to specify this
+    virtual void parallel_for(size_t nthreads,
+                              std::function<void(size_t)> work);
   };
 
 }}
@@ -119,7 +122,7 @@ class thread_pool
 #include "ducc0_custom_lowlevel_threading.h"
 #endif
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_threading {
 
@@ -332,6 +335,6 @@ using detail_threading::execGuided;
 using detail_threading::execParallel;
 using detail_threading::execWorklist;
 
-} // end of namespace ducc0
+} // end of namespace DUCC0_NAMESPACE
 
 #endif

@@ -7,7 +7,7 @@ from scipy._lib._array_api import xp_capabilities
 try:
     import platformdirs
 except ImportError:
-    platformdirs = None  # type: ignore[assignment]
+    platformdirs = None
 
 
 def _clear_cache(datasets, cache_dir=None, method_map=None):

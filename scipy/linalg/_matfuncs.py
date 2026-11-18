@@ -8,16 +8,16 @@ from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 
 # Local imports
-from scipy.linalg import LinAlgError, LinAlgWarning
-from ._misc import norm
+from ._misc import LinAlgError, LinAlgWarning, norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
-from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
+from ._linalg_pythran import _funm_loops
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -95,7 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->complex(i,i)')
 def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.
@@ -143,7 +143,7 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature='(i,i)->(i,i)')
 def logm(A):
     """
     Compute matrix logarithm.
@@ -389,7 +389,7 @@ def sqrtm(A):
     a = np.asarray(A)
     _deprecate_dtypes('sqrtm', a)
     if a.size == 1 and a.ndim < 2:
-        return np.array([[np.exp(a.item())]])
+        return np.array([[np.sqrt(a.item())]])
 
     if a.ndim < 2:
         raise LinAlgError('The input array must be at least two-dimensional')
@@ -434,7 +434,7 @@ def sqrtm(A):
     return res
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def cosm(A):
     """
     Compute the matrix cosine.
@@ -475,7 +475,7 @@ def cosm(A):
         return expm(1j*A).real
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinm(A):
     """
     Compute the matrix sine.
@@ -516,7 +516,7 @@ def sinm(A):
         return expm(1j*A).imag
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -556,7 +556,7 @@ def tanm(A):
     return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def coshm(A):
     """
     Compute the hyperbolic matrix cosine.
@@ -596,7 +596,7 @@ def coshm(A):
     return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -636,7 +636,7 @@ def sinhm(A):
     return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -676,7 +676,11 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
-@_apply_over_batch(('A', 2))
+def _funm_signature(*args, **kwargs):
+    return "(i,i)->(i,i),float()" if not kwargs.get('disp') else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('A', 2), signature=_funm_signature)
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.
@@ -771,7 +775,7 @@ def funm(A, func, disp=True):
         return F, err
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def signm(A):
     """
     Matrix sign function.
@@ -827,7 +831,7 @@ def signm(A):
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = A + c*np.identity(A.shape[0])
+    S0 = A + c*np.identity(A.shape[0], dtype=A.dtype)
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)
@@ -842,7 +846,8 @@ def signm(A):
     return S0
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+@xp_capabilities()
+@_apply_over_batch(('a', 2), ('b', 2), signature="(i,k),(j,k)->(i*j,k)")
 def khatri_rao(a, b):
     r"""
     Khatri-Rao product of two matrices.
@@ -888,8 +893,9 @@ def khatri_rao(a, b):
            [ 8, 15, 54]])
 
     """
-    a = np.asarray(a)
-    b = np.asarray(b)
+    xp = array_namespace(a, b)
+    a = xp.asarray(a)
+    b = xp.asarray(b)
 
     if not (a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
@@ -899,11 +905,11 @@ def khatri_rao(a, b):
                          "should be equal.")
 
     # accommodate empty arrays
-    if a.size == 0 or b.size == 0:
+    if xp_size(a) == 0 or xp_size(b) == 0:
         m = a.shape[0] * b.shape[0]
         n = a.shape[1]
-        return np.empty_like(a, shape=(m, n))
+        return xp.empty_like(a, shape=(m, n))
 
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
-    c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
-    return c.reshape((-1,) + c.shape[2:])
+    c = a[..., :, xp.newaxis, :] * b[..., xp.newaxis, :, :]
+    return xp.reshape(c, (-1,) + c.shape[2:])

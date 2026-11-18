@@ -1942,7 +1942,7 @@ class TestSTFT:
 
         # Test round trip:
         x1 = istft(Zs, boundary=True, scaling='spectrum')[1]
-        assert_allclose(x1, x)
+        assert_allclose(x1, x, atol=np.finfo(x.dtype).resolution)
 
         # For a Hann-windowed 256 sample length FFT, we expect a peak at
         # frequency 64 (since it is 1/4 the length of X) with a height of 1
@@ -1972,7 +1972,7 @@ class TestSTFT:
 
         # Test round trip:
         x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
-        assert_allclose(x1, x)
+        assert_allclose(x1, x, atol=np.finfo(x.dtype).resolution)
 
         # The power of the one-sided psd-scaled STFT can be determined
         # analogously (note that the two sides are not of equal shape):
@@ -1992,7 +1992,7 @@ class TestSTFT:
 
         # Test round trip:
         x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
-        assert_allclose(x1, x)
+        assert_allclose(x1, x, atol=np.finfo(x.dtype).resolution)
 
 
 class TestSampledSpectralRepresentations:

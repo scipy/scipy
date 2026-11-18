@@ -1,12 +1,15 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
+import functools
 import itertools
 from types import GenericAlias
 
 import numpy as np
 
 import scipy.sparse.linalg as ssl
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_result_device
+)
 from scipy._external.array_api_compat import is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
@@ -163,6 +166,14 @@ class RegularGridInterpolator:
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
 
+    In particular, the default solver stops once the residual is below
+    ``rtol=1e-5`` relative to the norm of `values`. If `values` have a large
+    constant offset compared to how much they vary (say, values near 1000
+    that vary by 1), the interpolant may then miss the data points by much
+    more than expected. Subtracting the mean of `values` before interpolating
+    and adding it back afterwards takes the offset out of the solve; a smaller
+    ``rtol`` in `solver_args`, or the direct solver, also help.
+
     Alternatively, you may instead use the legacy methods, "slinear_legacy",
     "cubic_legacy" and "quintic_legacy". These methods allow faster construction
     but evaluations will be much slower.
@@ -307,7 +318,9 @@ class RegularGridInterpolator:
                 if xp_v != xp:
                     raise e
 
-        self._asarray = xp.asarray
+        # the NumPy round-trip must return results on the inputs' device
+        device = xp_result_device(*points, values)
+        self._asarray = functools.partial(xp.asarray, device=device)
         self.method = method
         self._spline = None
         self.bounds_error = bounds_error
@@ -766,7 +779,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> x = np.array([0.0]) # x axis has length 1
     >>> y = np.linspace(0, 10, 11)
-    >>> points = (x, y) 
+    >>> points = (x, y)
     >>> values = value_func_2d(*np.meshgrid(*points, indexing='ij'))
     >>> xi = np.array([[1.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
@@ -777,7 +790,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     >>> xi = np.array([[0.0, 0.5]])
     >>> interpn(points, values, xi, method='linear', bounds_error=False,
-    ...         fill_value = 42) 
+    ...         fill_value = 42)
     array([-1.5])   # interpolation as normal along y
 
     """

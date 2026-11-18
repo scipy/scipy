@@ -411,19 +411,19 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     nfilt = na > nb ? na : nb;
 
-    azfilled = (char *)malloc(nal * nfilt);
+    azfilled = (char *)PyMem_RawMalloc(nal * nfilt);
     if (azfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
         goto clean_itzf;
     }
-    bzfilled = (char *)malloc(nbl * nfilt);
+    bzfilled = (char *)PyMem_RawMalloc(nbl * nfilt);
     if (bzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
         goto clean_azfilled;
     }
 
     nxl = PyArray_ITEMSIZE(x);
-    zfzfilled = (char *)malloc(nxl * (nfilt - 1));
+    zfzfilled = (char *)PyMem_RawMalloc(nxl * (nfilt - 1));
     if (zfzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
         goto clean_bzfilled;
@@ -485,9 +485,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     }
 
     /* Free up allocated memory */
-    free(zfzfilled);
-    free(bzfilled);
-    free(azfilled);
+    PyMem_RawFree(zfzfilled);
+    PyMem_RawFree(bzfilled);
+    PyMem_RawFree(azfilled);
 
     if (zi != NULL) {
         Py_DECREF(itzf);
@@ -499,11 +499,11 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     return 0;
 
 clean_zfzfilled:
-    free(zfzfilled);
+    PyMem_RawFree(zfzfilled);
 clean_bzfilled:
-    free(bzfilled);
+    PyMem_RawFree(bzfilled);
 clean_azfilled:
-    free(azfilled);
+    PyMem_RawFree(azfilled);
 clean_itzf:
     if (zf != NULL) {
         Py_DECREF(itzf);

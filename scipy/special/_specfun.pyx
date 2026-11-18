@@ -3,28 +3,27 @@ from libcpp.complex cimport complex as ccomplex
 cimport numpy as cnp
 cnp.import_array()
 
-cdef extern from "xsf/airy.h" nogil:
+cdef extern from "xsf/cpu/airy.h" nogil:
     void specfun_airyzo 'xsf::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
-cdef extern from "xsf/fresnel.h" nogil:
+cdef extern from "xsf/cpu/fresnel.h" nogil:
     void specfun_fcszo 'xsf::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
-cdef extern from "xsf/kelvin.h" nogil:
+cdef extern from "xsf/cpu/kelvin.h" nogil:
     void specfun_klvnzo 'xsf::klvnzo'(int nt, int kd, double *zo)
 
-cdef extern from "xsf/par_cyl.h" nogil:
+cdef extern from "xsf/cpu/par_cyl.h" nogil:
     void specfun_pbdv 'xsf::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'xsf::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
-cdef extern from "xsf/specfun/specfun.h" namespace "xsf::specfun":
+cdef extern from "xsf/cpu/specfun/specfun.h" namespace "xsf::specfun":
 
     cpdef enum class Status:
         OK = 0
         NoMemory
         Other
 
-cdef extern from "xsf/specfun/specfun.h" nogil:
-    void specfun_bernob 'xsf::specfun::bernob'(int n, double *bn)
+cdef extern from "xsf/cpu/specfun/specfun.h" nogil:
     void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
     void specfun_cpbdn 'xsf::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
     void specfun_cyzo 'xsf::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
@@ -72,20 +71,6 @@ def airyzo(int nt, int kf):
     specfun_airyzo(nt, kf, xxa, xxb, xxc, xxd)
 
     return xa, xb, xc, xd
-
-
-def bernob(int n):
-    """
-    Compute Bernoulli number Bn for n >= 2. This is a wrapper for the
-    function 'specfun_bernob'.
-    """
-    cdef double *bbn
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-    bn = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    bbn = <cnp.float64_t *>cnp.PyArray_DATA(bn)
-    specfun_bernob(n, bbn)
-    return bn
 
 
 def cerzo(int nt):
@@ -196,20 +181,20 @@ def jdzo(int nt):
 
          nt between     required array size
         -----------------------------------
-          0  -  100   ->    (nt + 10)
-        100  -  200   ->    (nt + 14)
-        200  -  300   ->    (nt + 16)
-        300  -  400   ->    (nt + 18)
-        400  -  500   ->    (nt + 21)
-        500  -  600   ->    (nt + 25)
-        600  -  700   ->    (nt + 11)
-        700  -  800   ->    (nt +  9)
-        800  -  900   ->    (nt +  9)
-        900  - 1000   ->    (nt + 10)
-        1000 - 1100   ->    (nt + 10)
-        1100 - 1200   ->    (nt + 11)
+          0  -  100   ->    (nt + 11)
+        100  -  200   ->    (nt + 15)
+        200  -  300   ->    (nt + 17)
+        300  -  400   ->    (nt + 20)
+        400  -  500   ->    (nt + 22)
+        500  -  600   ->    (nt + 26)
+        600  -  700   ->    (nt + 12)
+        700  -  800   ->    (nt + 10)
+        800  -  900   ->    (nt + 10)
+        900  - 1000   ->    (nt + 11)
+        1000 - 1100   ->    (nt + 11)
+        1100 - 1200   ->    (nt + 12)
 
-    It can be made a bit more granular but a generic +25 slack seems
+    It can be made a bit more granular but a generic +32 slack seems
     like an easy option instead of costly 1400-long arrays as Fortran
     code did originally, independent from the value of 'nt'.
     """
@@ -220,7 +205,7 @@ def jdzo(int nt):
     cdef int *pp
     cdef cnp.npy_intp dims[1]
 
-    dims[0] = nt + 25
+    dims[0] = nt + 32
 
     zo = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
     n = cnp.PyArray_ZEROS(1, dims, cnp.NPY_INT32, 0)
@@ -346,24 +331,6 @@ def pbvv(double v, double x):
     dvp = <cnp.float64_t *>cnp.PyArray_DATA(vp)
     specfun_pbvv(x, v, dvv, dvp, &pvf, &pvd)
     return vv, vp, pvf, pvd
-
-
-def sdmn(int m, int n, double c, double cv, int kd):
-    """
-    Compute the expansion coefficients of the prolate and oblate
-    spheroidal functions, dk. This is a wrapper for the function
-    'specfun_sdmn'.
-    """
-    cdef double *ddf
-    cdef int nm = 25 + (int)(0.5 * (n - m) + c);
-    cdef cnp.npy_intp dims[1]
-    dims[0] = nm + 1
-
-    df = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    ddf = <cnp.float64_t *>cnp.PyArray_DATA(df)
-    if specfun_sdmn(m, n, c, cv, kd, ddf) == Status.NoMemory:
-        raise MemoryError('sdmn: failed to allocate working memory.')
-    return df
 
 
 def segv(int m, int n, double c, int kd):

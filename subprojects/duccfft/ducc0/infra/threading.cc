@@ -75,7 +75,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 namespace detail_threading {
 
@@ -644,6 +644,50 @@ template <class Func> YCombinatorImpl<std::decay_t<Func>> YCombinator(Func&& fun
 
 #endif
 
+void thread_pool::parallel_for(size_t nthreads,
+                               std::function<void(size_t)> work) {
+  if (nthreads == 0) return;
+  if (nthreads == 1) {
+    work(0);
+    return;
+  }
+
+#ifdef DUCC0_HIERARCHICAL_SUBMISSION
+
+  latch counter(nthreads);
+  // distribute work to helper threads, in a recursive fashion
+  auto new_f = YCombinator([this, &work, &counter, nthreads](
+                               auto& new_f, size_t istart,
+                               size_t step) -> void {
+    for (; step > 0; step >>= 1)
+      if (istart + step < nthreads)
+        submit([&new_f, istart, step]() { new_f(istart + step, step >> 1); });
+    work(istart);
+    counter.count_down();
+  });
+
+  size_t biggest_step = 1;
+  while (biggest_step * 2 < nthreads) biggest_step <<= 1;
+  new_f(0, biggest_step);
+
+#else  // sequential submission
+
+    latch counter(nthreads - 1);
+    for (size_t i = 1; i < nthreads; ++i) {
+      submit([&work, i, &counter] {
+        work(i);
+        counter.count_down();
+      });
+    }
+    // do remaining work directly on this thread
+    work(0);
+
+#endif
+#undef DUCC0_HIERARCHICAL_SUBMISSION
+
+  counter.wait();
+}
+
 void Distribution::thread_map(std::function<void(Scheduler &)> f)
   {
   if (nthreads_ == 1)
@@ -663,67 +707,18 @@ void Distribution::thread_map(std::function<void(Scheduler &)> f)
   // threads, which executes everything sequentially on its own thread,
   // automatically prohibiting nested parallelism.
   auto *pool = get_active_pool();
-
-#ifdef DUCC0_HIERARCHICAL_SUBMISSION
-
-  latch counter(nthreads_);
-  // distribute work to helper threads, in a recursive fashion
-  auto new_f = YCombinator([this, &f, &counter, &ex, &ex_mut, pool](auto &new_f, size_t istart, size_t step) -> void {
+  pool->parallel_for(nthreads_, [&](size_t i) {
     try
       {
       ScopedValueChanger<bool> changer(in_parallel_region, true);
       ScopedUseThreadPool guard(*pool);
-      for(; step>0; step>>=1)
-        if(istart+step<nthreads_)
-          pool->submit([&new_f, istart, step]()
-            {new_f(istart+step, step>>1);});
-      MyScheduler sched(*this, istart);
+      MyScheduler sched(*this, i);
       f(sched);
-      }
-    catch (...)
-      {
+    } catch (...) {
       LockGuard lock(ex_mut);
       ex = std::current_exception();
-      }
-    counter.count_down();
-    });
-
-  size_t biggest_step=1;
-  while (biggest_step*2<nthreads_) biggest_step<<=1;
-  new_f(0, biggest_step);
-
-#else  // sequential submission
-
-  latch counter(nthreads_-1);
-  for (size_t i=1; i<nthreads_; ++i)
-    {
-    pool->submit(
-      [this, &f, i, &counter, &ex, &ex_mut, pool] {
-      try
-        {
-        ScopedUseThreadPool guard(*pool);
-        MyScheduler sched(*this, i);
-        f(sched);
-        }
-      catch (...)
-        {
-        LockGuard lock(ex_mut);
-        ex = std::current_exception();
-        }
-      counter.count_down();
-      });
     }
-  {
-  // do remaining work directly on this thread
-  ScopedValueChanger<bool> changer(in_parallel_region, true);
-  MyScheduler sched(*this, 0);
-  f(sched);
-  }
-
-#endif
-#undef DUCC0_HIERARCHICAL_SUBMISSION
-
-  counter.wait();
+  });
   if (ex)
     std::rethrow_exception(ex);
   }

@@ -5,14 +5,12 @@ from scipy import stats
 from scipy.stats._quantile import (_xp_searchsorted, _estimated_cdf_methods,
     _estimated_cdf_discontinuous_methods, _estimated_cdf_continuous_methods)
 from scipy._lib._array_api import (
-    xp_default_dtype,
     is_numpy,
     is_torch,
     is_jax,
     is_cupy,
     is_array_api_strict,
     make_xp_test_case,
-    SCIPY_ARRAY_API,
     xp_size,
     xp_copy,
 )
@@ -20,6 +18,11 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 import scipy._external.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays
+
+pytestmark = [
+    pytest.mark.filterwarnings(r"ignore:^`scipy\.stats\.mstats\.[^`]+` is deprecated:DeprecationWarning"),  # noqa: E501
+    pytest.mark.filterwarnings("ignore:`scipy.stats.mstats` is deprecated:DeprecationWarning"),  # noqa: E501
+]
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -49,7 +52,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
     return res
 
 
-@np.vectorize(excluded={0, 2})  # type: ignore[call-arg]
+@np.vectorize(excluded={0, 2})
 def winsor_reference_1d(y, p, method):
     # Adapted directly from the documentation
     # Note: `y` is the sorted data array
@@ -164,7 +167,7 @@ class TestQuantile:
         if weights and (method.startswith('_') or method.startswith('round')
                         or method=='harrell-davis'):
             pytest.skip('`weights` not supported by private (legacy) methods.')
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
@@ -227,8 +230,6 @@ class TestQuantile:
             weights, x_rep = None, x
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if weights is not None:
                 pytest.skip("MArray is not yet compatible with weights")
             marray = pytest.importorskip('marray')
@@ -249,7 +250,7 @@ class TestQuantile:
 
     def test_integer_input_output_dtype(self, xp):
         res = stats.quantile(xp.arange(10, dtype=xp.int64), 0.5)
-        assert res.dtype == xp_default_dtype(xp)
+        assert res.dtype == xpx.default_dtype(xp)
 
     @pytest.mark.parametrize('x, p, ref, kwargs',
         [([], 0.5, np.nan, {}),
@@ -269,7 +270,7 @@ class TestQuantile:
          # See https://github.com/scipy/scipy/pull/23941#issuecomment-3503554361
          ])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
-        default_dtype = xp_default_dtype(xp)
+        default_dtype = xpx.default_dtype(xp)
         x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref, dtype=default_dtype)
         res = stats.quantile(x, p, **kwargs)
         xp_assert_equal(res, ref)
@@ -302,9 +303,9 @@ class TestQuantile:
 
     @pytest.mark.parametrize('zero_weights', [False, True])
     def test_weights_against_numpy(self, zero_weights, xp):
-        if is_numpy(xp) and xp.__version__ < "2.1.3" and zero_weights:
+        if np.__version__ < "2.1.3" and zero_weights:
             pytest.skip('`Bug in np.quantile (numpy/numpy#27563) fixed in 2.1.3')
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         rng = np.random.default_rng(85468924398205602)
         method = 'inverted_cdf'
         x = rng.random(size=100)
@@ -509,7 +510,7 @@ class TestEstimatedCDF:
     @pytest.mark.parametrize('ties', [False, True])
     def test_against_quantile(self, method, x_shape, y_shape, ties, xp):
         discontinuous = method in _estimated_cdf_discontinuous_methods
-        dtype = xp_default_dtype(xp)  # removed parameterization to speed up tests
+        dtype = xpx.default_dtype(xp)  # removed parameterization to speed up tests
         rng = np.random.default_rng(394529872549827485)
         y_shape = x_shape if y_shape is None else y_shape
 
@@ -585,8 +586,6 @@ class TestEstimatedCDF:
         dtype = getattr(xp, dtype)
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=meth)
             mxp = marray._get_namespace(xp)
@@ -628,7 +627,7 @@ class TestEstimatedCDF:
     def test_against_ecdf_percentileofscore(self, ties, xp):
         rng = np.random.default_rng(853945298725498274)
         n = 50
-        dtype = xp_default_dtype(xp)
+        dtype = xpx.default_dtype(xp)
         x = rng.integers(10, size=n) if ties else rng.standard_normal(size=n)
         y = rng.integers(10, size=25) if ties else rng.standard_normal(size=25)
         ref = stats.ecdf(x).cdf.evaluate(y)
@@ -642,7 +641,7 @@ class TestEstimatedCDF:
     def test_integer_input_output_dtype(self, xp):
         x = xp.arange(10, dtype=xp.int64)
         res = stats.estimated_cdf(x, x)
-        assert res.dtype == xp_default_dtype(xp)
+        assert res.dtype == xpx.default_dtype(xp)
 
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
     @pytest.mark.parametrize('method', _estimated_cdf_methods_list)
@@ -667,8 +666,6 @@ class TestEstimatedCDF:
         elif nan_policy == 'marray':
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             mxp = marray._get_namespace(xp)
             mask = (x > 0.)
@@ -696,8 +693,6 @@ class TestEstimatedCDF:
             x = xpx.at(x)[:].set(xp.nan)
             kwargs = {'nan_policy': 'omit'}
         elif nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
             marray = pytest.importorskip('marray')
@@ -750,7 +745,7 @@ class TestEstimatedCDF:
             pytest.skip('data-apis/array-api-compat#360')
         if kwargs.get('axis', None) == -1 and is_cupy(xp):
             pytest.skip('Fails; need to investigate.')
-        default_dtype = xp_default_dtype(xp)
+        default_dtype = xpx.default_dtype(xp)
         x, y, ref = xp.asarray(x), xp.asarray(y), xp.asarray(ref, dtype=default_dtype)
         res = stats.estimated_cdf(x, y, **kwargs)
         xp_assert_close(res, ref, rtol=1e-15)

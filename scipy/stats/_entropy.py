@@ -8,7 +8,7 @@ import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
-from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
+from scipy._lib._array_api import (array_namespace, xp_promote, xp_device, is_marray,
                                    _masked_apply, _share_masks, xp_capabilities)
 
 __all__ = ['entropy', 'differential_entropy']
@@ -156,6 +156,7 @@ def entropy(pk: np.typing.ArrayLike,
         vec = _masked_apply(special.rel_entr, args=(pk, qk), xp=xp)
 
     S = xp.sum(vec, axis=axis)
+    S = xp.asarray(S.data) if is_marray(xp) else S  # entropy of empty sample is 0?
     if base is not None:
         S /= math.log(base)
     return S
@@ -324,7 +325,7 @@ def differential_entropy(
     xp = array_namespace(values)
     values = xp_promote(values, force_floating=True, xp=xp)
     values = xp.moveaxis(values, axis, -1)
-    n = values.shape[-1]  # type: ignore[union-attr]
+    n = values.shape[-1]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)
@@ -365,7 +366,7 @@ def differential_entropy(
 
     # avoid dtype changes due to data-apis/array-api-compat#152
     # can be removed when data-apis/array-api-compat#152 is resolved
-    return xp.astype(res, values.dtype)  # type: ignore[union-attr]
+    return xp.astype(res, values.dtype)
 
 
 def _pad_along_last_axis(X, m, *, xp):

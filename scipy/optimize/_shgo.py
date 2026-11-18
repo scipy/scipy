@@ -8,7 +8,9 @@ import sys
 import numpy as np
 
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize, Bounds
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
+from scipy.optimize._constraints import Bounds
 from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
 from scipy.optimize._minimize import standardize_constraints

@@ -5,11 +5,29 @@ from scipy import stats
 from scipy import special as sc
 from ._qmc import (check_random_state as check_random_state_qmc,
                    Halton, QMCEngine)
-from ._unuran.unuran_wrapper import NumericalInversePolynomial
+from ._unuran.unuran_wrapper import (
+    DiscreteAliasUrn,
+    DiscreteGuideTable,
+    NumericalInverseHermite,
+    NumericalInversePolynomial,
+    SimpleRatioUniforms,
+    TransformedDensityRejection,
+)
 from scipy._lib._util import check_random_state
+from scipy._lib._array_api import xp_capabilities
 
 
 __all__ = ['FastGeneratorInversion', 'RatioUniforms']
+
+
+# The UNU.RAN generators are Cython extension types, which cannot carry a
+# Python decorator in Cython; register their capabilities here instead.
+xp_capabilities(np_only=True)(TransformedDensityRejection)
+xp_capabilities(np_only=True)(DiscreteAliasUrn)
+xp_capabilities(np_only=True)(DiscreteGuideTable)
+xp_capabilities(np_only=True)(NumericalInversePolynomial)
+xp_capabilities(np_only=True)(NumericalInverseHermite)
+xp_capabilities(np_only=True)(SimpleRatioUniforms)
 
 
 # define pdfs and other helper functions to create the generators
@@ -420,6 +438,7 @@ class CustomDistPINV:
         return self._pdf(x)
 
 
+@xp_capabilities(np_only=True)
 class FastGeneratorInversion:
     """
     Fast sampling by numerical inversion of the CDF for a large class of
@@ -882,11 +901,11 @@ class FastGeneratorInversion:
         - After `d` is determined according to the rules above, the output
           shape is ``tuple_shape + d_shape``, where:
 
-              - ``tuple_shape = tuple()`` if `size` is ``None``,
-              - ``tuple_shape = (size,)`` if `size` is an ``int``,
-              - ``tuple_shape = size`` if `size` is a sequence,
-              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
-              - ``d_shape = (d,)`` if `d` is greater than 1.
+          - ``tuple_shape = tuple()`` if `size` is ``None``,
+          - ``tuple_shape = (size,)`` if `size` is an ``int``,
+          - ``tuple_shape = size`` if `size` is a sequence,
+          - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+          - ``d_shape = (d,)`` if `d` is greater than 1.
 
         The elements of the returned array are part of a low-discrepancy
         sequence. If `d` is 1, this means that none of the samples are truly
@@ -1127,6 +1146,7 @@ class FastGeneratorInversion:
         return np.clip(x, self._domain_adj[0], self._domain_adj[1])
 
 
+@xp_capabilities(np_only=True)
 class RatioUniforms:
     """
     Generate random samples from a probability density function using the

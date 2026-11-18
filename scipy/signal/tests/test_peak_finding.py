@@ -616,7 +616,7 @@ class TestPeakWidths:
         # Test with special prominence data that cause zero division error
         # regression test for gh-20720
         # note this is probably isn't a realistic input but reproduces
-        # the original issue 
+        # the original issue
         x = np.array([0, 1, 1])
         peak = np.array([1])
         prominence_data = (np.array([-1.0]), np.array([0]), np.array([2]))

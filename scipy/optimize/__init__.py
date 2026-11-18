@@ -116,6 +116,7 @@ Global optimization
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
    direct - DIRECT (Dividing Rectangles) optimizer.
+   biteopt - BiteOpt derivative-free global optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -240,7 +241,7 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
-   
+
 Elementwise Minimization and Root Finding
 =========================================
 
@@ -445,13 +446,8 @@ from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
 from ._direct_py import direct
+from ._biteopt_py import biteopt
 from ._milp import milp
-
-# Deprecated namespaces, to be removed in v2.0.0
-from . import (
-    cobyla, lbfgsb, linesearch, minpack, minpack2, moduleTNC, nonlin, optimize,
-    slsqp, tnc, zeros
-)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

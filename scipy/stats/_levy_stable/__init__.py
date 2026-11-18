@@ -281,8 +281,8 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
             for exp_height in [100, 10, 5]
             # exp_height = 1 is handled by peak
         ]
-        # Symmetry is used to ensure x > zeta as above. Integration 
-        # becomes numerically unstable so let `quad` handle 
+        # Symmetry is used to ensure x > zeta as above. Integration
+        # becomes numerically unstable so let `quad` handle
         # integration points
         if beta != -1:
             intg_points = [0, peak] + tail_points

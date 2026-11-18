@@ -65,11 +65,6 @@ python_sources = [
   '_morphology.py',
   '_ni_docstrings.py',
   '_ni_support.py',
-  'filters.py',
-  'fourier.py',
-  'interpolation.py',
-  'measurements.py',
-  'morphology.py'
 ]
 
 py3.install_sources(

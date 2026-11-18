@@ -60,8 +60,9 @@ mxUINT32_CLASS = 13
 mxINT64_CLASS = 14
 mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
-# Not doing anything with these at the moment.
-mxOPAQUE_CLASS = 17  # This appears to be a function workspace
+# MATLAB classdef objects (e.g. string, table, user classes) and the
+# workspace of anonymous functions; read and written as MatlabOpaque
+mxOPAQUE_CLASS = 17
 # Thread 'saving/loading symbol table of annymous functions',
 # octave-maintainers, April-May 2007
 # https://lists.gnu.org/archive/html/octave-maintainers/2007-04/msg00031.html

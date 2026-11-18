@@ -383,7 +383,7 @@ def _mode(a, axis=0, keepdims=True):
 def _betai(a, b, x):
     x = np.asanyarray(x)
     x = ma.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
-    return special.betainc(a, b, x)
+    return np.ma.masked_array(special.betainc(a, b, x.data), mask=x.mask)
 
 
 def msign(x):
@@ -1109,7 +1109,10 @@ def linregress(x, y=None):
 
     Perform the linear regression:
 
-    >>> res = stats.mstats.linregress(x, y)
+    >>> import warnings
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore", category=DeprecationWarning)
+    ...     res = stats.mstats.linregress(x, y)
 
     Coefficient of determination (R-squared):
 

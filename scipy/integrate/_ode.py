@@ -86,6 +86,7 @@ import warnings
 
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
+from scipy._lib._array_api import xp_capabilities
 
 from scipy.linalg.blas import HAS_ILP64
 
@@ -100,6 +101,7 @@ _iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 # ------------------------------------------------------------------------------
 
 
+@xp_capabilities(out_of_scope=True)
 class ode:
     """
     A generic interface class to numeric integrators.
@@ -416,15 +418,9 @@ class ode:
         else:
             mth = self._integrator.run
 
-        try:
-            self._y, self.t = mth(self.f, self.jac or (lambda: None),
-                                  self._y, self.t, t,
-                                  self.f_params, self.jac_params)
-        except SystemError as e:
-            # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError(
-                'Function to integrate must not return a tuple.'
-            ) from e
+        self._y, self.t = mth(self.f, self.jac or (lambda: None),
+                              self._y, self.t, t,
+                              self.f_params, self.jac_params)
 
         return self._y
 
@@ -579,6 +575,7 @@ def _transform_banded_jac(bjac):
     return newjac
 
 
+@xp_capabilities(out_of_scope=True)
 class complex_ode(ode):
     """
     A wrapper of ode for complex systems.
@@ -768,11 +765,11 @@ class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
-    supports_run_relax = None
-    supports_step = None
+    supports_run_relax: int | None = None
+    supports_step: int | None = None
     supports_solout = False
-    integrator_classes = []
-    scalar = float
+    integrator_classes: list[type] = []
+    scalar: type = float
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(types.GenericAlias)
@@ -1136,6 +1133,11 @@ class dopri5(IntegratorBase):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for dopri5, got {method}')
+
         self.rtol = rtol
         self.atol = atol
         self.nsteps = nsteps
@@ -1213,6 +1215,11 @@ class dop853(dopri5):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for dop853, got {method}')
+
         super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
                          ifactor, dfactor, beta, method, verbosity)
 
@@ -1266,6 +1273,10 @@ class lsoda(IntegratorBase):
                  max_order_s=5,
                  method=None
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for lsoda, got {method}')
 
         self.with_jacobian = with_jacobian
         self.rtol = rtol

@@ -1,12 +1,17 @@
 import numpy as np
 from scipy._lib._util import _apply_over_batch
-from scipy.linalg import svd
+from scipy.linalg._decomp_svd import svd
 
 
 __all__ = ['polar']
 
 
-@_apply_over_batch(('a', 2))
+def _polar_signature(a, side='right'):
+    return ("(i,j)->(i,j),(i,i)" if side == 'left'
+            else "(i,j)->(i,j),(j,j)")
+
+
+@_apply_over_batch(('a', 2), signature=_polar_signature, zero_size_fill=0.0)
 def polar(a, side="right"):
     """
     Compute the polar decomposition.

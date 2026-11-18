@@ -175,6 +175,7 @@ def test_duplicate_timestamps():
     assert_equal(sol.status, 1)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -241,6 +242,7 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -287,6 +289,7 @@ def test_integration_complex():
         assert np.all(e < 5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_complex_sparse():
     # Regression test for gh-24671: solve_ivp with a complex ODE and
     # jac_sparsity should not emit ComplexWarning.
@@ -303,6 +306,7 @@ def test_integration_complex_sparse():
     assert np.all(e < 5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.fail_slow(5)
 def test_integration_sparse_difference():
     n = 200
@@ -331,6 +335,7 @@ def test_integration_sparse_difference():
         assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 def test_integration_const_jac():
     rtol = 1e-3
     atol = 1e-6
@@ -656,6 +661,25 @@ def test_max_step(num_parallel_threads):
                 assert_equal(solver.status, 'failed')
                 assert_("step size is less" in message)
                 assert_raises(RuntimeError, solver.step)
+
+
+def test_min_step():
+    def fun(t, y):
+        return -0.5 * y
+
+    res = solve_ivp(fun, [1, 8], [1.0], min_step=0,
+                    method='LSODA', rtol=1e-7, atol=1e-9)
+    assert res.success
+    assert_equal(res.status, 0)
+
+    with pytest.warns(UserWarning, match='lsoda: Repeated convergence failures'):
+        res = solve_ivp(fun, [1, 8], [1.0], min_step=2,
+                        method='LSODA', rtol=1e-7, atol=1e-9)
+    assert not res.success
+    assert_equal(res.status, -1)
+
+    with pytest.raises(ValueError, match='`min_step` must be nonnegative'):
+        LSODA(fun, 1, [1.0], 8, min_step=-1)
 
 
 def test_first_step(num_parallel_threads):
@@ -1024,6 +1048,7 @@ def test_num_jac():
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
+@pytest.mark.filterwarnings("ignore:.* is being repl:DeprecationWarning")
 @pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
 def test_num_jac_sparse(structure_type):
     def fun(t, y):

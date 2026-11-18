@@ -24,7 +24,6 @@ py3.install_sources([
     '_rotation_groups.py',
     '_rotation_spline.py',
     '_rotation_xp.py',
-    'rotation.py'
   ],
   subdir: 'scipy/spatial/transform'
 )

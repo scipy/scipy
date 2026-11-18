@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_, assert_equal, HAS_REFCOUNT
 import pytest
+
+from scipy._lib._testutils import IS_WASM
 from pytest import raises as assert_raises
 
 import scipy.special as sc
@@ -144,6 +146,7 @@ def test_errstate_all_but_one():
     assert_equal(olderr, sc.geterr())
 
 
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
 def test_check_overflow_message():
     # Regression test for a bug where the overflow and underflow
     # messages were switched.
@@ -151,3 +154,11 @@ def test_check_overflow_message():
         with sc.errstate(all='raise'):
             # This should trigger an overflow:
             sc.yn(3, 1e-105)
+
+
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
+def test_check_overflow_message_xsf():
+    # Same as above for functions using the XSF ufunc machinery.
+    with pytest.raises(sc.SpecialFunctionError, match="overflow"):
+        with sc.errstate(overflow='raise'):
+            sc.expm1(800)

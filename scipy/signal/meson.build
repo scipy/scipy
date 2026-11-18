@@ -84,16 +84,6 @@ py3.install_sources([
     '_waveforms.py',
     '_wavelets.py',
     '_whittaker.py',
-    'bsplines.py',
-    'filter_design.py',
-    'fir_filter_design.py',
-    'lti_conversion.py',
-    'ltisys.py',
-    'signaltools.py',
-    'spectral.py',
-    'spline.py',
-    'waveforms.py',
-    'wavelets.py',
   ],
   subdir: 'scipy/signal'
 )

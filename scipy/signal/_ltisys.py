@@ -871,19 +871,6 @@ class TransferFunction(LinearTimeInvariant):
     def den(self, den):
         self._den = atleast_1d(den)
 
-    def _copy(self, system):
-        """
-        Copy the parameters of another `TransferFunction` object
-
-        Parameters
-        ----------
-        system : `TransferFunction`
-            The `StateSpace` system that is to be copied
-
-        """
-        self.num = system.num
-        self.den = system.den
-
     def to_tf(self):
         """
         Return a copy of the current `TransferFunction` system.
@@ -1279,20 +1266,6 @@ class ZerosPolesGain(LinearTimeInvariant):
     @gain.setter
     def gain(self, gain):
         self._gain = gain
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `ZerosPolesGain` system.
-
-        Parameters
-        ----------
-        system : instance of `ZerosPolesGain`
-            The zeros, poles gain system that is to be copied
-
-        """
-        self.poles = system.poles
-        self.zeros = system.zeros
-        self.gain = system.gain
 
     def to_tf(self):
         """
@@ -1843,21 +1816,6 @@ class StateSpace(LinearTimeInvariant):
     @D.setter
     def D(self, D):
         self._D = np.atleast_2d(D) if D is not None else None
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `StateSpace` system.
-
-        Parameters
-        ----------
-        system : instance of `StateSpace`
-            The state-space system that is to be copied
-
-        """
-        self.A = system.A
-        self.B = system.B
-        self.C = system.C
-        self.D = system.D
 
     def to_tf(self, **kwargs):
         """
@@ -2661,6 +2619,8 @@ def _order_complex_poles(poles):
     real_poles, complex_i, conjugate complex_i, ....
     The lexicographic sort on the complex poles is added to help the user to
     compare sets of poles.
+
+    Currently, this helper is only used by `_valid_inputs` and `place_poles`.
     """
     ordered_poles = np.sort(poles[np.isreal(poles)])
     im_poles = []
@@ -3100,7 +3060,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-
+    ...
     >>> A = np.array([[ 1.380,  -0.2077,  6.715, -5.676  ],
     ...               [-0.5814, -4.290,   0,      0.6750 ],
     ...               [ 1.067,   4.273,  -6.654,  5.893  ],
@@ -3122,7 +3082,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     >>> fsf2 = signal.place_poles(A, B, P)  # uses YT method
     >>> fsf2.computed_poles
-    array([-8.6659, -5.0566, -0.5   , -0.2   ])
+    array([-8.6659+0.j, -5.0566+0.j, -0.5   +0.j, -0.2   +0.j])
+
 
     >>> fsf3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
     >>> fsf3.X
@@ -3328,8 +3289,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback = Bunch()
     full_state_feedback.gain_matrix = gain_matrix
     full_state_feedback.computed_poles = _order_complex_poles(
-        np.linalg.eig(A - np.dot(B, gain_matrix))[0]
-        )
+        linalg.eigvals(A - np.dot(B, gain_matrix)))  # complex-valued poles
     full_state_feedback.requested_poles = poles
     full_state_feedback.X = transfer_matrix
     full_state_feedback.rtol = cur_rtol
