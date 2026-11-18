@@ -3310,6 +3310,12 @@ class TestNonNativeInput:
             _batched_linalg._solve(a, b)
         with pytest.raises(ValueError, match="same dtype"):
             _batched_linalg._lstsq(a, b, 0.0, "gelsd")
+        # the generalized eig and eigh (driver gv)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eig(a, False, False, False, False, b)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eigh(a, False, True, 0, True, 0.0, 0.0, 0, 0, 10,
+                                  b, False, 1)
 
     def test_compiled_entry_points_refuse_row_mismatch(self):
         # The Python layer checks that b has as many rows as a; the compiled code
@@ -3319,6 +3325,13 @@ class TestNonNativeInput:
             _batched_linalg._solve(np.eye(3), b)
         with pytest.raises(ValueError, match="shape mismatch"):
             _batched_linalg._lstsq(np.ones((3, 2)), b, 0.0, "gelsd")
+        # the generalized eig and eigh (driver gv) need b of the shape of a
+        b = np.eye(2)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eig(np.eye(3), False, False, False, False, b)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eigh(np.eye(3), False, True, 0, True, 0.0, 0.0, 0, 0, 10,
+                                  b, False, 1)
 
 
 class TestOverwrite:
