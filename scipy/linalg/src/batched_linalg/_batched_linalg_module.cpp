@@ -33,8 +33,6 @@
 
 using namespace sp_linalg;
 
-static PyObject* _linalg_inv_error;
-
 
 PyObject*
 convert_vec_status(SliceStatusVec& vec_status);
@@ -1143,16 +1141,8 @@ static struct PyMethodDef module_methods[] = {
 };
 
 
-static int module_exec(PyObject *module) {
+static int module_exec(PyObject *Py_UNUSED(module)) {
     if (_import_array() < 0) { return -1; }
-
-    _linalg_inv_error = PyErr_NewException("_batched_linalg.error", NULL, NULL);
-    if (_linalg_inv_error == NULL) { return -1; }
-    if (PyModule_AddObject(module, "error", _linalg_inv_error) < 0) {
-        Py_DECREF(_linalg_inv_error);
-        return -1;
-    }
-
     return 0;
 }
 
