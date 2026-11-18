@@ -2098,6 +2098,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_chebyt, ["n", "x"],
@@ -2113,6 +2114,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_chebyu, ["n", "x"],
@@ -2137,6 +2139,7 @@ _special_funcs = (
         ),
         test_large_ints=False,
         torch_native=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_chebys, ["n", "x"],
@@ -2170,6 +2173,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_genlaguerre, ["n", "alpha", "x"],
@@ -2209,6 +2213,7 @@ _special_funcs = (
         int_only=(True, False),
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_gegenbauer, ["n", "alpha", "x"],
@@ -2242,6 +2247,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_sh_chebyu, ["n", "x"],
@@ -2257,6 +2263,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars_ignore_idx={0},
     ),
     _FuncInfo(
         _ufuncs.eval_sh_jacobi, ["n", "p", "q", "x"],
