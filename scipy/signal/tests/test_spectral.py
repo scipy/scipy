@@ -1,4 +1,5 @@
 import sys
+import tracemalloc
 import warnings
 
 import numpy as np
@@ -1039,6 +1040,39 @@ class TestSpectrogram:
         assert_allclose(p1, p3)
 
 class TestLombscargle:
+    @pytest.mark.thread_unsafe
+    def test_memory_usage(self):
+        # gh-26748: do not retain full sample-by-frequency intermediates.
+        rng = np.random.default_rng(26748)
+        x = rng.uniform(0, 10*np.pi, 1024)
+        y = np.cos(x)
+        freqs = np.linspace(0.25, 10, 4097)
+        tracemalloc.start()
+        try:
+            lombscargle(x, y, freqs)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        assert peak < 4 * x.size * freqs.size * x.itemsize
+
+    @pytest.mark.parametrize('normalize', ['power', 'normalize', 'amplitude'])
+    @pytest.mark.parametrize('floating_mean', [False, True])
+    def test_frequency_batches(self, normalize, floating_mean):
+        rng = np.random.default_rng(26748)
+        x = rng.uniform(0, 10*np.pi, 1024)
+        y = np.cos(x) + 0.5
+        weights = rng.uniform(0, 1, x.size)
+        freqs = rng.uniform(-10, 10, 2049)
+        kwargs = dict(normalize=normalize, weights=weights,
+                      floating_mean=floating_mean)
+        expected = np.concatenate([
+            np.atleast_1d(lombscargle(x, y, f, **kwargs))
+            for f in np.array_split(freqs, 17)
+        ])
+        actual = lombscargle(x, y, freqs, **kwargs)
+        assert_equal(actual.shape, freqs.shape)
+        assert_allclose(actual, expected, rtol=1e-12, atol=1e-12)
+
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.

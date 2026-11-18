@@ -52,6 +52,8 @@ def lombscargle(
     Input arrays should be 1-D of a real floating data type, which are converted into
     float64 arrays before processing.
 
+    Frequencies are processed in batches to limit temporary memory usage.
+
     Parameters
     ----------
     x : array_like
@@ -246,6 +248,22 @@ def lombscargle(
     # weight vector must sum to 1
     weights = weights * (1.0 / weights.sum())
 
+    # Bound the sample-by-frequency intermediates to about 8 MiB each.
+    batch_size = max(1, 2**20 // x.size)
+    if freqs.size <= batch_size:
+        return _lombscargle(x, y, freqs, normalize, weights, floating_mean)
+
+    dtype = np.complex128 if normalize == "amplitude" else np.float64
+    pgram = np.empty(freqs.shape, dtype=dtype)
+    for start in range(0, freqs.size, batch_size):
+        stop = start + batch_size
+        pgram[start:stop] = _lombscargle(
+            x, y, freqs[start:stop], normalize, weights, floating_mean
+        )
+    return pgram
+
+
+def _lombscargle(x, y, freqs, normalize, weights, floating_mean):
     # transform arrays
     # row vector
     freqs = freqs.reshape(1, -1)

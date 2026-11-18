@@ -8,6 +8,23 @@ with safe_import():
     import scipy.signal as signal
 
 
+class LombScargle(Benchmark):
+    param_names = ['nin', 'nout']
+    params = [[100, 10000], [100, 3000]]
+
+    def setup(self, nin, nout):
+        rng = np.random.default_rng(26748)
+        self.x = rng.uniform(0, 10*np.pi, nin)
+        self.y = np.cos(self.x)
+        self.freqs = np.linspace(0.25, 10, nout)
+
+    def time_lombscargle(self, nin, nout):
+        signal.lombscargle(self.x, self.y, self.freqs)
+
+    def peakmem_lombscargle(self, nin, nout):
+        signal.lombscargle(self.x, self.y, self.freqs)
+
+
 class Resample(Benchmark):
 
     # Some slow (prime), some fast (in radix)
