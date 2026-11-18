@@ -98,7 +98,8 @@ class TestAAA:
 
     def test_output_iteration(self):
         f=np.abs(UNIT_INTERVAL)
-        r=AAA(UNIT_INTERVAL,f,max_terms=4)
+        with pytest.warns(RuntimeWarning, match="AAA failed"):
+            r=AAA(UNIT_INTERVAL,f,max_terms=4)
         assert_equal(r.support_values.shape[0], np.argmin(r.errors)+1)
 
 
