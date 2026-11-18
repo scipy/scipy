@@ -145,6 +145,10 @@ bool checked_narrow(const From v, To *out) noexcept
  * PyArrayObject fields (PyArray_DATA, PyArray_SHAPE, ...) but must not create objects, change
  * reference counts or set exceptions.
  *
+ * Meanwhile other threads run. Keeping them away from the arrays the call reads, or writes with
+ * overwrite_a or overwrite_b, is up to the caller, as with NumPy functions that write into
+ * `out=` without the GIL.
+ *
  * @param typenum  NumPy type number; NPY_FLOAT32, NPY_FLOAT64, NPY_COMPLEX64 and NPY_COMPLEX128 are
  *                 dispatched.
  * @param f        Callable invoked as `f(f32{})`, `f(f64{})`, `f(c64{})` or `f(c128{})`, returning a
