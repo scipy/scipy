@@ -469,6 +469,10 @@ class AAA(_BarycentricRational):
         atol = rtol * np.linalg.norm(f, ord=np.inf)
         zj = np.empty(max_terms, dtype=dtype)
         fj = np.empty(max_terms, dtype=dtype)
+        # Best approximation found
+        best_error=np.inf
+        best_wj = None
+        best_m=-1
         # Cauchy matrix
         C = np.empty((M, max_terms), dtype=dtype)
         # Loewner matrix
@@ -477,6 +481,7 @@ class AAA(_BarycentricRational):
         R = np.repeat(np.mean(f), M)
         ill_conditioned = False
         ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
+        
 
         # AAA iteration
         for m in range(max_terms):
@@ -497,7 +502,7 @@ class AAA(_BarycentricRational):
             # Ignore errors as inf values will be masked out in SVD call
             with np.errstate(invalid="ignore"):
                 A[:, m] = (f - fj[m]) * C[:, m]
-
+            
             # Compute weights
             rows = mask.sum()
             if rows >= m + 1:
@@ -546,6 +551,12 @@ class AAA(_BarycentricRational):
             # Check if converged
             max_error = np.linalg.norm(f - R, ord=np.inf)
             errors[m] = max_error
+            # Save if better than current best approximation
+            if max_error < best_error:
+                best_error=max_error
+                best_wj=wj.copy()
+                best_m=m
+
             if max_error <= atol:
                 break
 
@@ -554,8 +565,9 @@ class AAA(_BarycentricRational):
                           RuntimeWarning, stacklevel=2)
 
         # Trim off unused array allocation
-        zj = zj[: m + 1]
-        fj = fj[: m + 1]
+        zj = zj[: best_m + 1]
+        fj = fj[: best_m + 1]
+        wj=best_wj
 
         # Remove support points with zero weight
         i_non_zero = wj != 0
