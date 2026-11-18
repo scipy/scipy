@@ -104,6 +104,14 @@ struct OwnedArrayDeleter {
 
 /**
  * @brief Owning reference to a NumPy array; `release()` hands the reference to the caller.
+ *
+ * Pass it to the "N" format of Py_BuildValue with `release()`, not `get()`, because "N" takes
+ * over the reference.
+ *
+ * For the same reason a missing output goes to "N" as Py_NewRef(Py_None). None is immortal since
+ * Python 3.12, but code built with the limited API against Python 3.11 or older headers still
+ * decrements its reference count, and None can become mortal again:
+ * https://github.com/python/cpython/issues/158401
  */
 using OwnedArray = std::unique_ptr<PyArrayObject, OwnedArrayDeleter>;
 

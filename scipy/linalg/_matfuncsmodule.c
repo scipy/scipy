@@ -12,6 +12,11 @@ void matrix_squareroot_z(const PyArrayObject* ap_Am, scipy_c128* restrict ap_ret
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 
+// Py_None: "N" takes over the reference it is given, so None gets one of its own first. None is
+// immortal since Python 3.12, but code built with the limited API against Python 3.11 or older
+// headers still decrements its reference count, and None can become mortal again:
+// https://github.com/python/cpython/issues/158401
+
 static PyObject* matfuncs_error;
 
 
@@ -123,7 +128,7 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
     {
         // Internal failure memory or LAPACK error, fail and return the error code in info
         PyMem_RawFree(mem_ret);
-        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);   // see the note on Py_None at the top of this file
         return Py_BuildValue(
             "Niin", Py_None, isIllconditioned,
             isSingular, (Py_ssize_t)info
@@ -222,7 +227,7 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     const npy_intp n = shape[ndim - 1];
     if (n > 0 && n > CBLAS_INT_MAX / n)
     {
-        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);   // see the note on Py_None at the top of this file
         return Py_BuildValue("Nn", Py_None, (Py_ssize_t)-10);
     }
 
@@ -260,7 +265,7 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     {
         // Internal failure memory or LAPACK error, fail and return the error code in info
         PyMem_RawFree(mem_ret);
-        Py_INCREF(Py_None);
+        Py_INCREF(Py_None);   // see the note on Py_None at the top of this file
         return Py_BuildValue("Nn", Py_None, (Py_ssize_t)info);
     }
 
