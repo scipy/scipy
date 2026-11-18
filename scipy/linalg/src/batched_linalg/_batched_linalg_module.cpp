@@ -74,6 +74,13 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
 }
 
 
+/// The real type number of the same precision: float32 for complex64, float64 for complex128.
+static int
+real_typenum(const int typenum) {
+    return (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
+}
+
+
 /**
  * @brief Raise the Python exception for a failed batched call.
  *
@@ -455,9 +462,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // Allocate the output(s)
 
     // S.dtype is real if A.dtype is complex
-    npy_intp typenum_S = typenum;
-    if (typenum_S == NPY_COMPLEX64) { typenum_S = NPY_FLOAT32; }
-    else if (typenum_S == NPY_COMPLEX128) { typenum_S = NPY_FLOAT64; }
+    int typenum_S = real_typenum(typenum);
 
     // S.shape = (..., k)
     npy_intp shape_1[NPY_MAXDIMS];
@@ -571,7 +576,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // S is real and (..., min(m, n)); gelsy computes no singular values
     OwnedArray ap_S;
     if (driver != LstsqDriver::gelsy) {
-        int typenum_S = (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
+        int typenum_S = real_typenum(typenum);
         shape_1[ndim - 2] = min_mn;
         ap_S.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, typenum_S));
         if (!ap_S) { return NULL; }
@@ -736,7 +741,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // w is real and (..., m); Z is (..., n, m), or the F-contiguous input itself when overwriting
-    int w_typenum = (typenum == NPY_COMPLEX64) ? NPY_FLOAT32 : (typenum == NPY_COMPLEX128) ? NPY_FLOAT64 : typenum;
+    int w_typenum = real_typenum(typenum);
     npy_intp m = (range == 'I') ? iu + 1 - il : n;
     npy_intp shape_1[NPY_MAXDIMS];
     std::copy(shape, shape + ndim, shape_1);
