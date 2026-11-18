@@ -3202,6 +3202,18 @@ class TestFieldViewStrides:
         one = as_strided(np.array([[5.0]]), (1, 1), strides=(imin, imin))
         assert_equal(qr(col), qr(np.ascontiguousarray(col)))
         assert_equal(inv(one), inv(np.ascontiguousarray(one)))
+        # The same strides through solve(..., assume_a="banded"). Before solving, each
+        # matrix is copied into LAPACK's banded storage, reading element (r, c) at
+        # byte offset r * s0 + c * s1. The copy must not add the row and column
+        # strides together since two most negative strides overflow when added, which
+        # is undefined behaviour in C++. We use a stack of two 1x1 matrices, because a
+        # single 1x1 matrix is solved in Python and never reaches that copy. This check
+        # confirms the result; it cannot catch the overflow itself, which only a build
+        # with -fsanitize=undefined reports.
+        batch = as_strided(np.array([5.0, 6.0]), (2, 1, 1), strides=(8, imin, imin))
+        b = np.ones((2, 1, 1))
+        assert_equal(solve(batch, b, assume_a="banded"),
+                     solve(np.ascontiguousarray(batch), b, assume_a="banded"))
 
 
 class TestNonNativeInput:

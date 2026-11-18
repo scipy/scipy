@@ -738,9 +738,8 @@ to_tridiag(const T *data, const npy_intp N, T *du, T *d, T *dl) {
 
 /*
  * Helper function for reshuffling a banded slice into the appropriate
- * structure for ?gbcon and ?gbtrf. `s0` and `s1` contain the strides in
- * the column and row direction (`ndim` - 2 and `ndim` - 1, respectively).
- * The result is stored in `ab` in Fortran order.
+ * structure for ?gbcon and ?gbtrf. `s0` and `s1` are the byte strides between
+ * rows and between columns of `data`. The result is stored in `ab` in Fortran order.
  *
  * It is assumed that `ab` provides at least `ldab` x `n` memory elements,
  * where ldab >= 2 * `kl` + `ku` + 1
@@ -750,27 +749,26 @@ to_tridiag(const T *data, const npy_intp N, T *du, T *d, T *dl) {
 template<typename T>
 inline void
 to_banded(const T *data, const npy_intp n, const npy_intp kl, const npy_intp ku, const npy_intp ldab, T *ab, const npy_intp s0, const npy_intp s1) {
-    // s0, s1 are byte strides: address elements through a char pointer
     const char *base = reinterpret_cast<const char *>(data);
-    auto at = [&](npy_intp byte_offset) { return *reinterpret_cast<const T *>(base + byte_offset); };
+    auto at = [&](npy_intp r, npy_intp c) { return *reinterpret_cast<const T *>(base + r * s0 + c * s1); };
     npy_intp i, j;
 
     // main diagonal
     for (i = 0; i < n; i++) {
-        ab[(i + 1) * ldab - kl - 1] = at(i * (s0 + s1));
+        ab[(i + 1) * ldab - kl - 1] = at(i, i);
     }
 
     // lower bands
     for (i = 0; i < kl; i++) {
         for (j = 0; j < n - i - 1; j++) {
-            ab[(j + 1) * ldab - kl + i] = at((i + 1) * s0 + j * (s0 + s1));
+            ab[(j + 1) * ldab - kl + i] = at(j + i + 1, j);
         }
     }
 
     // upper bands
     for (i = 0; i < ku; i++) {
         for (j = i + 1; j < n; j++) {
-            ab[(j + 1) * ldab - kl - i - 2] = at((i + 1) * s1 + (j - i - 1) * (s0 + s1));
+            ab[(j + 1) * ldab - kl - i - 2] = at(j - i - 1, j);
         }
     }
 }
