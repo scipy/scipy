@@ -835,6 +835,13 @@ def test_broadcast_to(actual_shape, broadcast_shape):
     assert_equal(res.toarray(), exp)
 
 
+def test_broadcast_to_incompatible_shape():
+    arr = coo_array(np.ones((2, 3)))
+    msg = r"shape \(2, 3\) cannot be broadcast to new shape \(4, 3\)"
+    with pytest.raises(ValueError, match=msg):
+        arr._broadcast_to((4, 3))
+
+
 @pytest.mark.parametrize(('shape'), [(4,5,6,7,8), (6,4),
                                      (5,9,3,2), (9,5,2,3,4),])
 def test_block_diag(shape):

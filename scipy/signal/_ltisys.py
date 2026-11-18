@@ -871,19 +871,6 @@ class TransferFunction(LinearTimeInvariant):
     def den(self, den):
         self._den = atleast_1d(den)
 
-    def _copy(self, system):
-        """
-        Copy the parameters of another `TransferFunction` object
-
-        Parameters
-        ----------
-        system : `TransferFunction`
-            The `StateSpace` system that is to be copied
-
-        """
-        self.num = system.num
-        self.den = system.den
-
     def to_tf(self):
         """
         Return a copy of the current `TransferFunction` system.
@@ -1279,20 +1266,6 @@ class ZerosPolesGain(LinearTimeInvariant):
     @gain.setter
     def gain(self, gain):
         self._gain = gain
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `ZerosPolesGain` system.
-
-        Parameters
-        ----------
-        system : instance of `ZerosPolesGain`
-            The zeros, poles gain system that is to be copied
-
-        """
-        self.poles = system.poles
-        self.zeros = system.zeros
-        self.gain = system.gain
 
     def to_tf(self):
         """
@@ -1843,21 +1816,6 @@ class StateSpace(LinearTimeInvariant):
     @D.setter
     def D(self, D):
         self._D = np.atleast_2d(D) if D is not None else None
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `StateSpace` system.
-
-        Parameters
-        ----------
-        system : instance of `StateSpace`
-            The state-space system that is to be copied
-
-        """
-        self.A = system.A
-        self.B = system.B
-        self.C = system.C
-        self.D = system.D
 
     def to_tf(self, **kwargs):
         """

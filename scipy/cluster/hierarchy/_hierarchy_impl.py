@@ -36,7 +36,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import warnings
-import bisect
 from collections import deque
 
 import numpy as np
@@ -1188,6 +1187,9 @@ def _order_cluster_tree(Z):
     """
     Return clustering nodes in bottom-up order by distance.
 
+    Nodes are ordered by their monotonized height (see `maxdists`), so that
+    every node comes after its children even when the linkage has inversions.
+
     Parameters
     ----------
     Z : scipy.cluster.linkage array
@@ -1206,10 +1208,15 @@ def _order_cluster_tree(Z):
     while q:
         node = q.popleft()
         if not node.is_leaf():
-            bisect.insort_left(nodes, node)
+            nodes.append(node)
             q.append(node.get_right())
             q.append(node.get_left())
-    return nodes
+
+    # Sorting the reversed list stably keeps tied nodes in the order an
+    # insertion with `bisect.insort_left` would give them.
+    nobs = num_obs_linkage(Z)
+    heights = maxdists(Z)
+    return sorted(reversed(nodes), key=lambda node: heights[node.id - nobs])
 
 
 @xp_capabilities(np_only=True, reason="non-standard indexing")
@@ -1224,8 +1231,11 @@ def cut_tree(Z, n_clusters=None, height=None):
     n_clusters : array_like, optional
         Number of clusters in the tree at the cut point.
     height : array_like, optional
-        The height at which to cut the tree. Only possible for ultrametric
-        trees.
+        The height at which to cut the tree. Only merges at heights strictly
+        below `height` are applied, whereas ``fcluster(Z, height,
+        criterion='distance')`` also applies merges at `height`, so the two
+        agree unless `height` equals a merge height. For non-monotonic
+        linkages, see Notes.
 
     Returns
     -------
@@ -1236,6 +1246,15 @@ def cut_tree(Z, n_clusters=None, height=None):
         singleton and non-singleton clusters are in one group. If `n_clusters`
         or `height` are given, the columns correspond to the columns of
         `n_clusters` or `height`.
+
+    Notes
+    -----
+    Linkages from the ``'centroid'`` and ``'median'`` methods can be
+    non-monotonic: a cluster can be formed at a lower distance than one of
+    its children (see `is_monotonic`). In that case the merges are ordered,
+    and `height` is compared, using the monotonized heights returned by
+    `maxdists`, the same heights `fcluster` uses. A merge is then never
+    processed before the merges that formed its children.
 
     Examples
     --------
@@ -1270,7 +1289,7 @@ def cut_tree(Z, n_clusters=None, height=None):
         cols_idx = xp.arange(nobs, device=xp_device(Z))
     elif height is not None:
         height = xp.asarray(height)
-        heights = xp.asarray([x.dist for x in nodes])
+        heights = xp.sort(maxdists(Z))
         cols_idx = xp.searchsorted(heights, height)
     else:
         n_clusters = xp.asarray(n_clusters)
