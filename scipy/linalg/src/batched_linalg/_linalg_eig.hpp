@@ -287,10 +287,6 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     const CBLAS_INT int_itype = itype, int_il = il + 1, int_iu = iu + 1;   // LAPACK indices are 1-based
     const real_type r_vl = (real_type)vl, r_vu = (real_type)vu, abstol = 0;
 
-    // ev, evd, gv and gvd leave the eigenvectors in A; evr, evx and gvx write them to Z
-    const bool vectors_in_a = (driver == Eigh_driver::EV || driver == Eigh_driver::EVD ||
-                               driver == Eigh_driver::GV || driver == Eigh_driver::GVD);
-    const bool expert = (driver == Eigh_driver::EVX || driver == Eigh_driver::GVX);
     const char *routine = nullptr;
     switch (driver) {
         case Eigh_driver::EV:  routine = is_complex_v<T> ? "heev"  : "syev";  break;
@@ -317,7 +313,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
         }
     }
 
-    // query lwork; the divide-and-conquer and RRR drivers also report lrwork and liwork
+    // query lwork; evd, gvd and evr also report lrwork and liwork
     T tmp_work = 0.0;
     real_type tmp_rwork = 0.0;
     CBLAS_INT tmp_iwork = 0;
@@ -379,12 +375,13 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     CBLAS_INT lwork = _calc_lwork(tmp_work, 1.0, &size);
     if (lwork < 0) { return {BatchCode::too_large, routine, size}; }
 
-    // real work, complex flavors only: fixed for ev/gv (3n - 2) and evx/gvx (7n), queried otherwise
+    // rwork is needed by the complex flavors only: ev and gv need 3n - 2, evx and gvx need 7n,
+    // and evd, gvd and evr report their size in the query
     std::uint64_t lrwork = 0;
     if constexpr (is_complex_v<T>) {
         if (driver == Eigh_driver::EV || driver == Eigh_driver::GV) {
             lrwork = 3 * (std::uint64_t)n - 2;
-        } else if (expert) {
+        } else if (driver == Eigh_driver::EVX || driver == Eigh_driver::GVX) {
             lrwork = 7 * (std::uint64_t)n;
         } else {
             CBLAS_INT queried = _calc_lwork(tmp_rwork, 1.0, &size);
@@ -392,11 +389,11 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
             lrwork = queried;
         }
     }
-    // integer work: none for ev/gv, 5n plus an n-long ifail for evx/gvx, queried otherwise; evr also
-    // needs 2m for isuppz
+    // iwork: ev and gv take none, evx and gvx need 5n, and evd, gvd and evr report their size in
+    // the query. evr also writes isuppz (2m), and evx and gvx write ifail (n).
     std::uint64_t liwork = 0, isuppz_size = 0, ifail_size = 0;
     if (driver == Eigh_driver::EVD || driver == Eigh_driver::GVD || driver == Eigh_driver::EVR) { liwork = tmp_iwork; }
-    if (expert) { liwork = 5 * (std::uint64_t)n; ifail_size = n; }
+    if (driver == Eigh_driver::EVX || driver == Eigh_driver::GVX) { liwork = 5 * (std::uint64_t)n; ifail_size = n; }
     if (driver == Eigh_driver::EVR) { isuppz_size = 2 * (std::uint64_t)m; }
 
     CBLAS_INT int_lrwork, int_liwork;
@@ -405,15 +402,33 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     }
 
     /*
-     * Three buffers, chopped into parts:
+     * Allocate three buffers and slice them into parts
      *
-     *   T:          work (lwork) | Z (n*m, evr/evx/gvx) | A (n*n unless in place) | B (n*n, generalized unless in place)
-     *   real_type:  w (n, when range 'I' wants fewer than n values: LAPACK still writes n) | rwork (lrwork)
-     *   CBLAS_INT:  iwork (liwork) | isuppz (2m, evr) | ifail (n, evx/gvx)
+     *    lwork      z_size       a_size       b_size
+     * |----------|------------|------------|------------|
+     * ^          ^            ^            ^
+     * work       buf_Z        buf_A        buf_B
+     *
+     *    w_size     lrwork
+     * |----------|------------|
+     * ^          ^
+     * buf_w      rwork
+     *
+     *    liwork     isuppz_size   ifail_size
+     * |----------|-------------|------------|
+     * ^          ^             ^
+     * iwork      isuppz        ifail
+     *
+     * - `buf_Z` holds the eigenvectors of evr, evx and gvx; ev, evd, gv and gvd write them over A
+     * - `buf_A` and `buf_B` are F-ordered copies of the slices, absent with overwrite_a or overwrite_b
+     * - `buf_w` holds the eigenvalues when range 'I' asks for fewer than n, as LAPACK writes n
+     * - `isuppz` (evr) is ignored due to issues at low precision, and `ifail` (evx, gvx) because
+     *   a failure to converge is also reported in info
      */
     // each count is bounded by an existing array or by CBLAS_INT, so the 64-bit sums are exact
     const std::uint64_t nn = (std::uint64_t)n * n;
-    const std::uint64_t z_size = (ptr_Z && !vectors_in_a) ? (std::uint64_t)n * m : 0;
+    const std::uint64_t z_size = (ptr_Z && (driver == Eigh_driver::EVR || driver == Eigh_driver::EVX ||
+                                            driver == Eigh_driver::GVX)) ? (std::uint64_t)n * m : 0;
     const std::uint64_t a_size = overwrite_a ? 0 : nn;
     const std::uint64_t b_size = (generalized && !overwrite_b) ? nn : 0;
     const std::uint64_t w_size = (m < n) ? (std::uint64_t)n : 0;
@@ -523,11 +538,13 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
         ptr_w += m;
 
         if (ptr_Z) {
-            T *vectors = vectors_in_a ? buf_A : buf_Z;
+            // evr, evx and gvx wrote the eigenvectors to buf_Z, the others over A; isuppz and ifail
+            // are ignored (see above)
+            T *vectors = buf_Z ? buf_Z : buf_A;
             if (overwrite_a) {
                 // Z is the F-contiguous input itself: it already holds the vectors, or receives
-                // the first m columns from the Z buffer
-                if (!vectors_in_a) { std::copy_n(buf_Z, z_size, ptr_Z); }
+                // the first m columns from buf_Z
+                if (buf_Z) { std::copy_n(buf_Z, z_size, ptr_Z); }
             } else {
                 copy_slice_F_to_C(ptr_Z, vectors, n, m, n);
                 ptr_Z += (npy_intp)n * m;
