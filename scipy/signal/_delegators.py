@@ -180,7 +180,9 @@ dbode_signature = bode_signature
 def freqresp_signature(system, w=None, n=10000):
     return array_namespace(*_skip_if_lti(system), w)
 
-dfreqresp_signature = freqresp_signature
+
+def dfreqresp_signature(system, w=None, n=10000, whole=False):
+    return array_namespace(*_skip_if_lti(system), w)
 
 
 def impulse_signature(system, X0=None, T=None, N=None):
