@@ -481,7 +481,7 @@ class AAA(_BarycentricRational):
         R = np.repeat(np.mean(f), M)
         ill_conditioned = False
         ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
-        
+
 
         # AAA iteration
         for m in range(max_terms):
@@ -502,7 +502,7 @@ class AAA(_BarycentricRational):
             # Ignore errors as inf values will be masked out in SVD call
             with np.errstate(invalid="ignore"):
                 A[:, m] = (f - fj[m]) * C[:, m]
-            
+
             # Compute weights
             rows = mask.sum()
             if rows >= m + 1:
