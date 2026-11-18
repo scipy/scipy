@@ -502,7 +502,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
-        the algorithm jump to a more distant region. Must be higher than 1.1.
+        the algorithm jump to a more distant region. Must be in the range
+        [1.1, 3).
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
@@ -655,8 +656,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     if restart_temp_ratio <= 0. or restart_temp_ratio >= 1.:
         raise ValueError('Restart temperature ratio has to be in range (0, 1)')
     # Below 1.1 the visiting distribution overflows double precision
-    if not visit >= 1.1:
-        raise ValueError('visit has to be greater than or equal to 1.1')
+    if not (1.1 <= visit < 3):
+        raise ValueError('visit has to be in the range [1.1, 3).')
     # Checking bounds are valid
     if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or np.any(
             np.isnan(lower)) or np.any(np.isnan(upper))):

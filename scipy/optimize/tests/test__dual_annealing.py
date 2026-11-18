@@ -65,8 +65,6 @@ class TestDualAnnealing:
         self.ngev.c += 1
         return rosen_der(x, *args)
 
-    # FIXME: there are some discontinuities in behaviour as a function of `qv`,
-    #        this needs investigating - see gh-12384
     @pytest.mark.parametrize('qv', [1.1, 1.41, 2, 2.62, 2.9])
     def test_visiting_stepping(self, qv):
         rng = np.random.default_rng(1234)
@@ -421,7 +419,7 @@ class TestDualAnnealing:
         assert_allclose(res3.fun, res2.fun, rtol=1e-6)
         assert_allclose(res4.fun, res2.fun, rtol=1e-6)
 
-    @pytest.mark.parametrize("visit", [1.09, 1.0, 0.0, -1.0, np.nan])
+    @pytest.mark.parametrize("visit", [1.09, 3, np.nan])
     def test_wrong_visit(self, visit):
         with pytest.raises(ValueError, match="visit"):
             dual_annealing(self.func, self.ld_bounds, visit=visit)
