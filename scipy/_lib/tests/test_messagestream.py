@@ -6,11 +6,8 @@ from scipy._lib.messagestream import MessageStream
 # Number of streams kept for reuse (`_MAX_SPARE` in messagestream.pyx)
 MAX_SPARE = 16
 
-pytestmark = pytest.mark.thread_unsafe(
-    reason="changes the global state of MessageStream")
 
-
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def tempfile_streams():
     # Use temporary files, as on platforms without open_memstream, and start
     # with no streams kept for reuse.
@@ -23,6 +20,8 @@ def tempfile_streams():
         messagestream._close_spares()
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 def test_stream_is_reused():
     stream = MessageStream()
     assert messagestream._spare_count() == 0
@@ -35,12 +34,16 @@ def test_stream_is_reused():
     assert messagestream._spare_count() == 1
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 def test_dealloc_keeps_stream():
     stream = MessageStream()
     del stream
     assert messagestream._spare_count() == 1
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 def test_close_twice():
     stream = MessageStream()
     stream.close()
@@ -48,6 +51,8 @@ def test_close_twice():
     assert messagestream._spare_count() == 1
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 @pytest.mark.parametrize("tempfile", [True, False])
 def test_closed_stream(tempfile):
     messagestream._force_tempfile(tempfile)
@@ -59,6 +64,8 @@ def test_closed_stream(tempfile):
         stream.clear()
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 def test_number_of_kept_streams_is_limited():
     n = MAX_SPARE + 4
     for _ in range(2):
@@ -69,6 +76,8 @@ def test_number_of_kept_streams_is_limited():
         assert messagestream._spare_count() == MAX_SPARE
 
 
+@pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+@pytest.mark.usefixtures("tempfile_streams")
 def test_empty_stream():
     stream = MessageStream()
     assert stream.get() == ""
