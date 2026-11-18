@@ -3227,6 +3227,7 @@ class TestNonNativeInput:
         return y
 
     def misaligned(self, x):
+        # a copy of x in a byte buffer, starting one byte in so that it is not aligned
         buf = np.zeros(x.nbytes + 1, dtype=np.uint8)
         y = np.frombuffer(buf.data, dtype=x.dtype, count=x.size, offset=1)
         y = y.reshape(x.shape)
