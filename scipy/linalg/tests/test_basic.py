@@ -1819,8 +1819,8 @@ class TestDet:
     def test_single_precision_range(self, value, expected, dtype):
         # The determinant of single precision input is computed and returned in double
         # precision, so it neither overflows nor underflows the single precision range.
-        # The entries themselves are normal float32 numbers; a subnormal one such as
-        # 1e-38 tests the LAPACK library instead, and ATLAS ?getrf gets it wrong.
+        # The entries are normal float32 numbers. Subnormal entries would test the
+        # LAPACK library rather than det, and ATLAS ?getrf gets them wrong.
         a = np.diag(np.full(2, value, dtype=dtype))
         for x in (a, np.stack([a, a])):
             d = det(x)
