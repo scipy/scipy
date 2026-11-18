@@ -326,6 +326,10 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
             shape_R[ndim-1] = N;
             break;
         }
+
+        default:
+            // an unknown mode would leave the output shapes unset
+            return PyErr_Format(PyExc_ValueError, "scipy.linalg.qr: unknown mode index %zd.", (Py_ssize_t)mode);
     }
 
     /*

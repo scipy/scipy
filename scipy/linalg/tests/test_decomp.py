@@ -18,6 +18,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           subspace_angles, hadamard, eigvalsh_tridiagonal,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
+from scipy.linalg import _batched_linalg
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -1978,6 +1979,12 @@ class TestQR:
             x, y = (x, y) if isinstance(x, tuple) else ((x,), (y,))
             for p, q in zip(x, y):
                 assert_equal(p, q)
+
+    def test_compiled_qr_refuses_unknown_mode(self):
+        # qr passes its mode to the compiled code as an integer; an unknown one is
+        # refused instead of leaving the output shapes unset.
+        with pytest.raises(ValueError, match="unknown mode"):
+            _batched_linalg._qr(np.eye(3), False, 99, False)
 
     def test_simple_left(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
