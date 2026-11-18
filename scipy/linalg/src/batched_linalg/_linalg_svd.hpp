@@ -132,8 +132,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
             if (min_lwork > (std::uint64_t)CBLAS_INT_MAX) {
                 return {BatchCode::too_large, routine, static_cast<int64_t>(min_lwork)};
             }
-        }
-        if constexpr (is_complex_v<T>) {
+        } else {
             // without vectors LAPACK <= 3.6 needs 7*min(m, n), later versions 5*min(m, n)
             rwork_size = (jobz == 'N') ? 7 * k : std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
             // ?gesdd addresses rwork with CBLAS_INT offsets
