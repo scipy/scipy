@@ -1814,35 +1814,40 @@ class TestMahalanobis:
     def test_invariance(self, xp):
         # We cannot test invariance with the standard helpers because VI is a matrix
         rng = np.random.default_rng(1)
+        dtype = xpx.default_dtype(xp, "real floating")
         n = 5
         u, v = rng.random(n), rng.random(n)
         A = rng.random((n, n))
         VI = A @ A.T + np.eye(n)  # positive definite
-        expected = xp.asarray(0.8507644608189677)  # For seed 1
+        expected = xp.asarray(0.8507644608189677, dtype=dtype)  # For seed 1
         # Case 1: Zero-weighted elements (zero rows and columns in VI)
-        _u, _v = np.concat([u, rng.random(3)]), np.concat([v, rng.random(3)])
-        _VI = block_diag(VI, np.zeros((3, 3)))
-        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        _u = xp.asarray(np.concatenate([u, rng.random(3)]), dtype=dtype)
+        _v = xp.asarray(np.concatenate([v, rng.random(3)]), dtype=dtype)
+        _VI = xp.asarray(block_diag(VI, np.zeros((3, 3))), dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
         xp_assert_close(result, expected)
         # Case 2: Duplicated elements at half weight
-        _u, _v = np.concat([u, u]), np.concat([v, v])
-        _VI = block_diag(VI, VI) / 2
-        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        _u = xp.asarray(np.concatenate([u, u]), dtype=dtype)
+        _v = xp.asarray(np.concatenate([v, v]), dtype=dtype)
+        _VI = xp.asarray(block_diag(VI, VI) / 2, dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
         xp_assert_close(result, expected)
         # Case 3: Permuted elements
         p = rng.permutation(n)
-        _u, _v = u[p], v[p]
-        _VI = VI[p][:, p]
-        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        _u = xp.asarray(u[p], dtype=dtype)
+        _v = xp.asarray(v[p], dtype=dtype)
+        _VI = xp.asarray(VI[p][:, p], dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
         xp_assert_close(result, expected)
         # Case 4: Mahalanobis is invariant to M @ x + c (if M has an inverse and VI is
         # scaled accordingly)
         c = rng.random(n)
         M = rng.random((n, n)) + n * np.eye(n)
         M_inv = np.linalg.inv(M)
-        _u, _v = M @ u + c, M @ v + c
-        _VI = M_inv.T @ VI @ M_inv
-        result = mahalanobis(xp.asarray(_u), xp.asarray(_v), xp.asarray(_VI))
+        _u = xp.asarray(M @ u + c, dtype=dtype)
+        _v = xp.asarray(M @ v + c, dtype=dtype)
+        _VI = xp.asarray(M_inv.T @ VI @ M_inv, dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
         xp_assert_close(result, expected)
 
     @pytest.mark.parametrize("u_shape, v_shape, VI_shape", [
