@@ -552,7 +552,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     npy_intp m = shape[ndim - 2], n = shape[ndim - 1], nrhs = shape_b[ndim - 1];
-    npy_intp min_mn = m < n ? m : n, max_mn = m < n ? n : m;
+    const auto [min_mn, max_mn] = std::minmax(m, n);
 
     // x is (..., max(1, m, n), nrhs): the solvers write x over the first n rows of b
     npy_intp shape_1[NPY_MAXDIMS];

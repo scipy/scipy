@@ -56,7 +56,7 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     npy_intp outer_size = 1;
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
 
-    const npy_intp min_mn = m < n ? m : n, max_mn = m < n ? n : m;
+    const auto [min_mn, max_mn] = std::minmax(m, n);
 
     CBLAS_INT intm, intn, int_nrhs, ldb;
     if (!checked_narrow<CBLAS_INT>(m, &intm) || !checked_narrow<CBLAS_INT>(n, &intn) ||
