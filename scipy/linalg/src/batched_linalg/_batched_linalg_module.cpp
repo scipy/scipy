@@ -743,6 +743,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // w is real and (..., m); Z is (..., n, m), or the F-contiguous input itself when overwriting
     int w_typenum = real_typenum(typenum);
+    // eigenvalues per slice: iu - il + 1 for range 'I', otherwise n, which for range 'V' is only
+    // the room reserved
     npy_intp m = (range == 'I') ? iu + 1 - il : n;
     npy_intp shape_1[NPY_MAXDIMS];
     std::copy(shape, shape + ndim, shape_1);
@@ -761,6 +763,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
     if (!ap_w || (jobz != 'N' && !ap_Z)) { return NULL; }
 
+    // the number of eigenvalues found, which the driver sets; less than m only for range 'V'
     npy_intp m_found = m;
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
