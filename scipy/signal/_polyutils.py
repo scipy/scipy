@@ -8,7 +8,7 @@ To distinguish the two sets, the "new-style" routine names start with `npp_`
 import warnings
 import scipy._external.array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_promote, xp_size, xp_device, is_numpy
+    xp_promote, xp_size, xp_device, is_numpy, is_cupy
 )
 
 from numpy.exceptions import RankWarning
@@ -33,10 +33,12 @@ def polyroots(coef, *, xp):
     if coef.shape[0] < 2:
         return xp.asarray([], dtype=coef.dtype, device=xp_device(coef))
 
+    if is_cupy(xp):  # cupy.roots only supports symmetric companion matrices
+        import numpy as np
+        return xp.asarray(np.roots(coef.get()), device=xp_device(coef))
+
     root_func = getattr(xp, 'roots', None)
     if root_func:
-        # NB: cupy.roots is broken in CuPy 13.x, but CuPy is handled via delegation
-        # so we never hit this code path with xp being cupy
         return root_func(coef)
 
     # companion matrix
