@@ -75,6 +75,9 @@ def backtracking(A, g, x, p, theta, p_dot_g, lb, ub):
         cost_change = -evaluate_quadratic(A, g, step)
         if cost_change > -0.1 * alpha * p_dot_g:
             break
+        # The step is too small to change `x`, and smaller `alpha` can't help.
+        if not np.any(step):
+            break
         alpha *= 0.5
 
     active = find_active_constraints(x_new, lb, ub)
