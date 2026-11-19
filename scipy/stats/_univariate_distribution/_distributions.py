@@ -55,7 +55,7 @@ class Normal(ContinuousDistribution):
     -----
 
     This distribution is a subclass of the :class:`UnivariateDistribution
-    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
+    <scipy.stats._univariate_distribution._core.UnivariateDistribution>` class.
 
     """
     # `ShiftedScaledDistribution` allows this to be generated automatically from
@@ -73,7 +73,7 @@ class Normal(ContinuousDistribution):
         docstring="The location parameter, which is also the mean, median, and mode. "\
                   "Default: 0.0.",
     )
-    
+
     _sigma_param = _RealParameter(
         'sigma',
         symbol=r'\sigma',
@@ -457,7 +457,7 @@ class Uniform(ContinuousDistribution):
     -----
 
     This distribution is a subclass of the :class:`UnivariateDistribution
-    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
+    <scipy.stats._univariate_distribution._core.UnivariateDistribution>` class.
 
     """
 
@@ -578,7 +578,7 @@ class Binomial(DiscreteDistribution):
     -----
 
     This distribution is a subclass of the :class:`DiscreteDistribution
-    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
+    <scipy.stats._univariate_distribution._core.UnivariateDistribution>` class.
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(True, False))

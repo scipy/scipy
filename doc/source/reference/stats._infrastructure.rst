@@ -7,5 +7,5 @@ used by other classes in :mod:`scipy.stats`.
 .. autosummary::
     :toctree: generated/
 
-    scipy.stats._distribution_infrastructure.UnivariateDistribution
-    scipy.stats._distribution_infrastructure.CircularDistribution
+    scipy.stats._univariate_distribution._core.UnivariateDistribution
+    scipy.stats._univariate_distribution._core.CircularDistribution

@@ -658,7 +658,9 @@ class InheritanceAwareAutosummary(Autosummary):
         new_items = []
         for name, signature, summary, orig_name in items:
             real_name = orig_name
-            newdist = importlib.import_module("scipy.stats._new_distributions")
+            newdist = importlib.import_module(
+                "scipy.stats._univariate_distribution._distributions"
+            )
             try:
                 # Extract the class and method name
                 module_name, class_name, obj_name = self._parse_name(orig_name)
@@ -772,7 +774,9 @@ def custom_generate_autosummary_docs(
                 continue
 
         # Custom autosummary for scipy.stats
-        newdist = importlib.import_module("scipy.stats._new_distributions")
+        newdist = importlib.import_module(
+            "scipy.stats._univariate_distribution._distributions"
+        )
         inherited = False
         if inspect.isfunction(obj) or isinstance(obj, property):
             if qualname.split(".")[0] in newdist.__all__:
@@ -782,7 +786,7 @@ def custom_generate_autosummary_docs(
                         # file for it
                         inherited = True
                         app.config.autosummary_filename_map[f"{name}"] = (
-                            f"scipy.stats._distribution_infrastructure.{obj.__qualname__}"
+                            f"{obj.__module__}.{obj.__qualname__}"
                         )
                 elif isinstance(obj, property):
                     # Check if the property is inherited from a parent class
@@ -797,7 +801,7 @@ def custom_generate_autosummary_docs(
                         # file for it
                         inherited = True
                         app.config.autosummary_filename_map[f"{name}"] = (
-                            f"scipy.stats._distribution_infrastructure.{obj.fget.__qualname__}"
+                            f"{obj.fget.__module__}.{obj.fget.__qualname__}"
                         )
 
         if inherited:
