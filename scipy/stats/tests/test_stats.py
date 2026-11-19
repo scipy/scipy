@@ -8500,6 +8500,50 @@ class TestWassersteinDistanceND:
         assert_allclose(d2, d1)
         assert_allclose(d3, d1)
 
+    @pytest.mark.parametrize(
+        'L, u_weights, v_weights',
+        [(2**24, [2**23, 2**23], [2**23 - 1, 2**23 + 1]),
+         (2**24, [2**24 - 1, 1], [2**24 - 2, 2]),
+         (2**40, [2**24 - 1, 1], [2**24 - 2, 2]),
+         (1, [2**29, 2**29], [2**29 - 1, 2**29 + 1]),
+         (1e-3, [2**23, 2**23], [2**23 - 1, 2**23 + 1]),
+         (1, [2**39, 2**39], [2**39 - 1, 2**39 + 1])])
+    def test_nearly_equal_weights_gh26490(self, L, u_weights, v_weights):
+        # gh-26490: the distance was negative or zero for nearly equal weights.
+        # Same two points, so the exact distance is |u_0 - v_0| * L.
+        from fractions import Fraction
+        u0 = Fraction(u_weights[0], sum(u_weights))
+        v0 = Fraction(v_weights[0], sum(v_weights))
+        ref = float(abs(u0 - v0) * Fraction(L))
+        values = [[0, 0], [L, 0]]
+        for u_w, v_w in [(u_weights, v_weights), (v_weights, u_weights)]:
+            res = stats.wasserstein_distance_nd(values, values, u_w, v_w)
+            assert res >= 0
+            assert_allclose(res, ref, rtol=1e-8, atol=1e-9 * L)
+
+    def test_small_distances(self):
+        # Distances below the solver tolerance used to come out several times
+        # too large.
+        rng = np.random.default_rng(2649)
+        u_values, v_values = rng.random(23) * 1e-8, rng.random(50) * 1e-8
+        u_weights, v_weights = rng.random(23) ** 3, rng.random(50) ** 3
+        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        res = stats.wasserstein_distance_nd(u_values[:, np.newaxis],
+                                            v_values[:, np.newaxis],
+                                            u_weights, v_weights)
+        assert_allclose(res, ref, rtol=1e-8)
+
+    def test_solver_failure(self, monkeypatch):
+        from scipy.stats import _stats_py
+
+        def failed_linprog(*args, **kwargs):
+            return optimize.OptimizeResult(success=False, status=4, fun=None,
+                                           message="Numerical difficulties")
+
+        monkeypatch.setattr(_stats_py, "linprog", failed_linprog)
+        with pytest.raises(RuntimeError, match="Optimization failed"):
+            stats.wasserstein_distance_nd([[0, 0], [1, 1]], [[1, 0], [0, 1]])
+
 
 class TestWassersteinDistance:
     """ Tests for wasserstein_distance() output values.
