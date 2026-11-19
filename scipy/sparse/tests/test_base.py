@@ -4746,6 +4746,32 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
         M.sum_duplicates()
         assert_equal(2, len(M.indices))  # still has duplicates!!!!
 
+    def test_has_canonical_format_after_sort_indices(self):
+        # gh-19106: a has_canonical_format value cached before sorting
+        # must not survive sort_indices. After sorting, an array/matrix
+        # with no duplicate entries is in canonical format.
+        for container in (self.csr_container, self.csc_container):
+            data = np.array(list(range(5)))
+            indices = np.array([3, 1, 2, 0, 1])
+            indptr = np.array([0, 3, 5])
+            M = container((data, indices, indptr))
+            assert_equal(False, M.has_sorted_indices)
+            assert_equal(False, M.has_canonical_format)  # caches False
+            M.sort_indices()
+            assert_equal(True, M.has_sorted_indices)
+            assert_equal(True, M.has_canonical_format)
+
+            # with duplicate entries, sorting alone is not enough, so
+            # the recomputed value must remain False
+            data = np.array([1, 1, 1])
+            indices = np.array([1, 0, 0])
+            indptr = np.array([0, 3])
+            M = container((data, indices, indptr))
+            assert_equal(False, M.has_canonical_format)  # caches False
+            M.sort_indices()
+            assert_equal(True, M.has_sorted_indices)
+            assert_equal(False, M.has_canonical_format)
+
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
         # passed to sparsetools, including the scalar ones
@@ -5874,6 +5900,21 @@ class TestBSR(sparse_test_class(getset=False,
         assert_equal(2, len(M.indices))  # dups but has_canonical_format is True
         M.sum_duplicates()
         assert_equal(2, len(M.indices))  # still has duplicates!!!!
+
+    def test_has_canonical_format_after_sort_indices(self):
+        # gh-19106: a has_canonical_format value cached before sorting
+        # must not survive sort_indices (BSR overrides sort_indices but
+        # shares the flag properties with CSR/CSC).
+        A = np.array([[2, 3], [0, 2]])
+        data = np.array([A, A * 2])
+        indices = np.array([1, 0])  # unsorted, no duplicates
+        indptr = np.array([0, 2])
+        M = self.bsr_container((data, indices, indptr), shape=(2, 4))
+        assert_equal(False, M.has_sorted_indices)
+        assert_equal(False, M.has_canonical_format)  # caches False
+        M.sort_indices()
+        assert_equal(True, M.has_sorted_indices)
+        assert_equal(True, M.has_canonical_format)
 
     def test_bsr_matvec(self):
         A = self.bsr_container(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
