@@ -1,6 +1,6 @@
 py3.extension_module('_rotation_cy',
   [cython_gen.process('_rotation_cy.pyx')],
-  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  c_args: [cython_c_args, Wno_maybe_uninitialized, '-freciprocal-math'],
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
