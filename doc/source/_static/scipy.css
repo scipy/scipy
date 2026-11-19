@@ -103,3 +103,14 @@ div.empty + section>h1 {
 .sig-prename {
   display: none;
 }
+
+
+/* Display math: let wide equations scroll horizontally on narrow screens.
+   pydata-sphinx-theme sets div.math {overflow: hidden} and re-enables
+   scrolling only for MathJax 3's mjx-container; we use MathJax 2 (SVG). */
+div.math > .MathJax_SVG_Display,
+div.math > .MathJax_Display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+}
