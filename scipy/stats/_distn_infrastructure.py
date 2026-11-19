@@ -653,8 +653,11 @@ def argsreduce(cond, *args):
 
     if np.all(cond):
         # broadcast arrays with cond
-        *newargs, cond = np.broadcast_arrays(*newargs, cond)
-        return [arg.ravel() for arg in newargs]
+        # NumPy >= 2.6 returns read-only views even for arrays that did not
+        # need broadcasting; keep those arrays so the results stay writeable.
+        *bargs, cond = np.broadcast_arrays(*newargs, cond)
+        return [(arg if arg.shape == barg.shape else barg).ravel()
+                for arg, barg in zip(newargs, bargs)]
 
     s = cond.shape
     # np.extract returns flattened arrays, which are not broadcastable together
