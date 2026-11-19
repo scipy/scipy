@@ -291,7 +291,7 @@ inline void solve_slice_diagonal(
 // cluttering the main loop in `_solve` by branching to this function early.
 template<typename T>
 BatchStatus
-_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, const char trans, const bool overwrite_a, const bool overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
+_solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, const char trans, const bool overwrite_a, const bool overwrite_b, SliceStatus slice_status, SliceStatusVec &vec_status)
 {
     // --------------------------------------------------------------------
     // Input Array Attributes, duplicate of `_solve()`
@@ -313,6 +313,9 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
+
+    // the output is C-contiguous, or ap_b itself when overwrite_b
+    T *ret_data = static_cast<T *>(PyArray_DATA(ap_x));
 
     CBLAS_INT intn, int_nrhs;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(nrhs, &int_nrhs)) {
@@ -395,7 +398,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, T *ret_data, con
 
 template<typename T>
 BatchStatus
-_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structure, const bool lower, const bool transposed, const bool overwrite_a, const bool overwrite_b, SliceStatusVec& vec_status)
+_solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, const St structure, const bool lower, const bool transposed, const bool overwrite_a, const bool overwrite_b, SliceStatusVec& vec_status)
 {
     char trans = transposed ? 'T' : 'N';
     int64_t lower_band = 0, upper_band = 0;
@@ -407,7 +410,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
 
     // branch early for `assume_a = banded`
     if (structure == St::BANDED) {
-        return _solve_assume_banded(ap_Am, ap_b, ret_data, trans, overwrite_a, overwrite_b, slice_status, vec_status);
+        return _solve_assume_banded<T>(ap_Am, ap_b, ap_x, trans, overwrite_a, overwrite_b, slice_status, vec_status);
     }
 
 
@@ -432,6 +435,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, const St structur
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
 
+    // the output is C-contiguous, or ap_b itself when overwrite_b
+    T *ret_data = static_cast<T *>(PyArray_DATA(ap_x));
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation

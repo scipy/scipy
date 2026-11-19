@@ -203,7 +203,7 @@ inline void invert_slice_diagonal(
 
 template<typename T>
 BatchStatus
-_inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower, const bool overwrite_a, SliceStatusVec& vec_status)
+_inverse(PyArrayObject* ap_Am, PyArrayObject *ap_Ainv, const St structure, const bool lower, const bool overwrite_a, SliceStatusVec& vec_status)
 {
     int64_t lower_band = 0, upper_band = 0;
     bool is_symm = false, is_herm = false;
@@ -226,6 +226,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
     {
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
+
+    // the output is C-contiguous, or ap_Am itself when overwrite_a
+    T *ret_data = static_cast<T *>(PyArray_DATA(ap_Ainv));
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
@@ -269,7 +272,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, const St structure, const bool lower
      *       - copy-and-transpose the result back to the C-ordered result array
      *
      * For `overwrite_a=True`, we assume that
-     *   - `ret_data` may point to the same memory as `ap_Am` array
+     *   - `ap_Ainv` is the `ap_Am` array itself
      *   - the caller had ensured that the input array is Fortran-ordered
      *   - the caller wants to get the result also Fortran ordered
      *

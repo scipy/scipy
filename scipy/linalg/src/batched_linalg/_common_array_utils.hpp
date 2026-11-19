@@ -25,6 +25,7 @@ enum class BatchCode {
     too_large,            ///< A dimension or workspace size passed to LAPACK does not fit CBLAS_INT.
     lapack_error,         ///< A LAPACK routine rejected an argument (info < 0).
     bad_dtype,            ///< The array dtype is not float32, float64, complex64 or complex128.
+    unexpected_exception, ///< A driver threw a C++ exception other than std::bad_alloc.
 };
 
 
@@ -74,6 +75,9 @@ using Workspace = std::unique_ptr<T[], WorkspaceDeleter>;
  * LP64 builds this can overflow into a size that is too small. checked_narrow cannot see that,
  * so for these routines the drivers evaluate the Reference-LAPACK formulas in 64 bits first and
  * return too_large if the result does not fit.
+ *
+ * A LAPACK library that asks for more than Reference-LAPACK, for example with larger block
+ * sizes, can still overflow for sizes just below this limit.
  */
 
 
@@ -154,7 +158,8 @@ bool checked_narrow(const From v, To *out) noexcept
  * @param f        Callable invoked as `f(f32{})`, `f(f64{})`, `f(c64{})` or `f(c128{})`, returning a
  *                 BatchStatus; it may throw std::bad_alloc, e.g. from alloc_workspace.
  * @return The result of @p f; BatchCode::bad_dtype for any other @p typenum;
- *         BatchCode::no_memory if @p f throws std::bad_alloc.
+ *         BatchCode::no_memory if @p f throws std::bad_alloc; BatchCode::unexpected_exception
+ *         if it throws anything else, since an exception must not leave this function.
  */
 template <class F>
 BatchStatus dispatch_dtype(const int typenum, F &&f) noexcept
@@ -169,6 +174,8 @@ BatchStatus dispatch_dtype(const int typenum, F &&f) noexcept
         }
     } catch (const std::bad_alloc &) {
         return {BatchCode::no_memory};
+    } catch (...) {
+        return {BatchCode::unexpected_exception};
     }
 }
 
@@ -197,7 +204,7 @@ enum QR_mode : Py_ssize_t
     ECONOMIC = 31
 };
 
-// Eigh driver tags; pythn side maps driver strings to these values
+// Eigh driver tags; python side maps driver strings to these values
 enum Eigh_driver : Py_ssize_t
 {
     EV = 1,

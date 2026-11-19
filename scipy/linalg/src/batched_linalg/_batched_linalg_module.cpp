@@ -82,6 +82,22 @@ real_typenum(const int typenum) {
 
 
 /**
+ * @brief Whether a driver may work on an input array in place instead of on a copy.
+ *
+ * The drivers hand such an array to LAPACK as it is, so it has to be 2-D, writeable and
+ * F-contiguous. The Python layer checks this too, but memory safety depends on it.
+ *
+ * @param ap            The input array.
+ * @param c_order_too   Also accept a C-contiguous array, for drivers that can work on the transpose.
+ */
+static bool
+usable_in_place(PyArrayObject *ap, const bool c_order_too = false) {
+    if (PyArray_NDIM(ap) != 2 || !PyArray_ISWRITEABLE(ap)) { return false; }
+    return PyArray_IS_F_CONTIGUOUS(ap) || (c_order_too && PyArray_IS_C_CONTIGUOUS(ap));
+}
+
+
+/**
  * @brief Raise the Python exception for a failed batched call.
  *
  * @param status   The failure; any code except BatchCode::ok.
@@ -123,11 +139,15 @@ set_batch_error(const BatchStatus status, const char *func, const int typenum) {
                 "scipy.linalg.%s: a LAPACK routine rejected one of its arguments.", func);
         case BatchCode::bad_dtype:
             return PyErr_Format(PyExc_TypeError, "scipy.linalg.%s: unsupported array dtype.", func);
+        case BatchCode::unexpected_exception:
+            return PyErr_Format(PyExc_RuntimeError,
+                "scipy.linalg.%s: internal error, an unexpected C++ exception was thrown.", func);
         case BatchCode::ok:
             break;
         // no default label, so that the compiler warns about a missing code; see BatchCode
     }
-    return PyErr_Format(PyExc_SystemError, "scipy.linalg.%s: no error to report.", func);
+    return PyErr_Format(PyExc_SystemError,
+        "scipy.linalg.%s: internal error, a failure was signalled without an error code.", func);
 }
 
 
@@ -158,6 +178,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "Last two dimensions of the input must be the same.");
         return NULL;
     }
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
 
     // The output: a new array, or the input array itself when overwriting it
     OwnedArray ap_Ainv;
@@ -174,7 +195,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _inverse<T>(ap_Am, static_cast<T *>(PyArray_DATA(ap_Ainv.get())), structure, lower, overwrite_a, vec_status);
+        return _inverse<T>(ap_Am, ap_Ainv.get(), structure, lower, overwrite_a, vec_status);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "inv", typenum); }
@@ -240,6 +261,8 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` shape mismatch.");
         return NULL;
     }
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
+    overwrite_b = overwrite_b && usable_in_place(ap_b);
 
     // The output: a new array, or the input array `b` itself when overwriting it
     OwnedArray ap_x;
@@ -256,7 +279,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _solve<T>(ap_Am, ap_b, static_cast<T *>(PyArray_DATA(ap_x.get())), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
+        return _solve<T>(ap_Am, ap_b, ap_x.get(), structure, lower, transposed, overwrite_a, overwrite_b, vec_status);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "solve", typenum); }
@@ -290,6 +313,7 @@ _linalg_qr(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int typenum = PyArray_TYPE(ap_A);
     int ndim = PyArray_NDIM(ap_A);
     npy_intp* shape = PyArray_SHAPE(ap_A);
+    overwrite_a = overwrite_a && usable_in_place(ap_A);
 
     // -------------------------------------------------------------------
     // Conditionally allocate return objects
@@ -459,6 +483,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp m = shape[ndim - 2];
     npy_intp n = shape[ndim - 1];
     npy_intp k = m < n ? m : n;
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
 
     // Allocate the output(s)
 
@@ -474,14 +499,14 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     OwnedArray ap_S((PyArrayObject *)PyArray_SimpleNew(ndim-1, shape_1, typenum_S));
     if (!ap_S) { return NULL; }
 
-    char jobz = compute_uv ? (full_matrices ? 'A' : 'S') : 'N';
+    const SvdJob job = compute_uv ? (full_matrices ? SvdJob::full : SvdJob::economic) : SvdJob::none;
 
-    // U.shape = (..., m, m) or (..., m, k) or not referenced (for jobz='N')
-    // Vh.shape = (..., n, n) or (..., k, n) or not referenced (for jobz='N')
+    // U.shape = (..., m, m) or (..., m, k) or not referenced (for SvdJob::none)
+    // Vh.shape = (..., n, n) or (..., k, n) or not referenced (for SvdJob::none)
     OwnedArray ap_U, ap_Vh;
-    if (jobz != 'N') {
+    if (job != SvdJob::none) {
         npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
-        u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
+        u_vh_shapes(m, n, job, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
         shape_1[ndim-2] = u_shape0;
         shape_1[ndim-1] = u_shape1;
@@ -498,7 +523,7 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _svd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), jobz, use_gesdd, overwrite_a, vec_status);
+        return _svd<T>(ap_Am, ap_U.get(), ap_S.get(), ap_Vh.get(), job, use_gesdd, overwrite_a, vec_status);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "svd", typenum); }
@@ -565,6 +590,9 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
     std::copy(shape, shape + ndim, shape_1);
     shape_1[ndim - 2] = max_mn > 1 ? max_mn : 1;
     shape_1[ndim - 1] = nrhs;
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
+    // b can receive x in place only if it has the rows of x
+    overwrite_b = overwrite_b && usable_in_place(ap_b) && (m == shape_1[ndim - 2]);
     OwnedArray ap_x;
     if (overwrite_b) {
         // b is 2-D, F-contiguous with m >= n: the solution is computed in place
@@ -639,6 +667,8 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same shape and dtype.");
         return NULL;
     }
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
+    overwrite_b = overwrite_b && ap_Bm && usable_in_place(ap_Bm);
 
     // Eigenvalues and eigenvectors are complex even for real input; the Python wrapper casts
     // them back to real when every eigenvalue is real. w and beta are (..., n), vl and vr (..., n, n).
@@ -740,6 +770,8 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same shape and dtype.");
         return NULL;
     }
+    overwrite_a = overwrite_a && usable_in_place(ap_Am);
+    overwrite_b = overwrite_b && ap_Bm && usable_in_place(ap_Bm);
 
     // w is real and (..., m); Z is (..., n, m), or the F-contiguous input itself when overwriting
     int w_typenum = real_typenum(typenum);
@@ -807,6 +839,8 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "Expected a square matrix");
         return NULL;
     }
+    // potrf works on either order, with the triangle swapped for C order
+    overwrite_a = overwrite_a && usable_in_place(ap_Am, true);
 
     // The output: a new zero-filled C-ordered array, or the input array itself when overwriting it
     OwnedArray ap_Cm;
@@ -892,14 +926,13 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (!ap_perm || !ap_l || !ap_u) { return NULL; }
 
     // A 2-D F-contiguous writeable input is the getrf workspace itself: no copy is made.
-    overwrite_a = overwrite_a && (ndim == 2) && PyArray_ISFARRAY_RO(ap_a) && PyArray_ISWRITEABLE(ap_a);
+    overwrite_a = overwrite_a && usable_in_place(ap_a);
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _lu<T>(ap_a, static_cast<T *>(PyArray_DATA(ap_l.get())), static_cast<T *>(PyArray_DATA(ap_u.get())),
-                      static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm.get())), (bool)permute_l, (bool)overwrite_a);
+        return _lu<T>(ap_a, ap_l.get(), ap_u.get(), ap_perm.get(), permute_l, overwrite_a);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "lu", typenum); }
@@ -946,14 +979,13 @@ _linalg_det(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // A 2-D contiguous writeable input is the getrf workspace itself; det(A^T) = det(A), so
     // either order works.
-    overwrite_a = overwrite_a && (ndim == 2) && PyArray_ISWRITEABLE(ap_a)
-                  && (PyArray_ISFARRAY_RO(ap_a) || PyArray_ISCARRAY_RO(ap_a));
+    overwrite_a = overwrite_a && usable_in_place(ap_a, true);
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
     status = dispatch_dtype(typenum, [&](auto tag) {
         using T = decltype(tag);
-        return _det<T>(ap_a, static_cast<det_type_t<T> *>(PyArray_DATA(ap_det.get())), (bool)overwrite_a);
+        return _det<T>(ap_a, ap_det.get(), overwrite_a);
     });
     Py_END_ALLOW_THREADS
     if (status.code != BatchCode::ok) { return set_batch_error(status, "det", typenum); }
@@ -1072,7 +1104,7 @@ static char doc_det[] = (
     "Returns\n"
     "-------\n"
     "det : (...) ndarray\n"
-    "    Determinant values with the same dtype as the input.\n"
+    "    Determinant values, in double precision also for single precision input.\n"
 );
 
 static char doc_lu[] = (
