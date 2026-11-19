@@ -3896,6 +3896,7 @@ class _TestFancyMultidimAssign:
                 assert_array_equal(A.toarray(), B,
                                    err_msg=f"key={key}, rhs_shape={rhs_shape}")
 
+
 class _TestArithmetic:
     """
     Test real/complex arithmetic

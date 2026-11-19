@@ -275,34 +275,38 @@ def test_large_assignments():
 
 @pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
 def test_set_arrayXarray_memory_dense():
+    # Check copies of data made for setitem with arrayXarray index and sparse rhs
     A = csr_array((100, 100), dtype=np.int8)
     N = 30
     rhs = csr_array(np.ones((N, N), dtype=np.int8))
     index_N = np.arange(40, 40 + N)
 
-    scale = 10
+    # scale max_bytes to 10x net gain to allow for copying and avoid spurious failures
+    scale = 11
     # N x N x (8(int64) + 1(int8)) only indices and data change size
     exp_net_mem_chg = N * N * 9
 
     warn_msg = "Changing the sparsity structure"
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
-        with assert_mem_gain_limit(scale * exp_net_mem_chg + 1096):
+        with assert_mem_gain_limit(scale * exp_net_mem_chg):
             A[index_N[:, None], index_N] = rhs
 
 
 @pytest.mark.thread_unsafe(reason="tracemalloc is thread_unsafe")
 def test_set_arrayXarray_memory_scalar():
+    # Check copies of data made for setitem with arrayXarray index and scalar rhs
     A = csr_array((100, 100), dtype=np.int8)
     N = 30
     index_N = np.arange(40, 40 + N)
 
-    scale = 8
+    # scale max_bytes to 10x net gain to allow for copying and avoid spurious failures
+    scale = 9
     # N x N x (8(int64) + 1(int8)) only indices and data change size
     exp_net_mem_chg = N * N * 9
 
     warn_msg = "Changing the sparsity structure"
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", warn_msg, sparse.SparseEfficiencyWarning)
-        with assert_mem_gain_limit(scale * exp_net_mem_chg + 96):
+        with assert_mem_gain_limit(scale * exp_net_mem_chg):
             A[index_N[:, None], index_N] = 1

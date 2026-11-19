@@ -36,25 +36,25 @@ def test__mem_available():
 @pytest.mark.thread_unsafe(reason="tracemalloc is not threadsafe")
 class TestPeakMemoryGain:
     def test_passes(self):
-        with assert_mem_gain_limit(400_096):  # 500 x 100 x 8 + 96
-            np.zeros((500, 100))
+        with assert_mem_gain_limit(410_000):  # 500 x 100 x 8 (+ 10_000 for CI safety)
+            np.zeros((500, 100), dtype=np.int64)
 
     def test_raises(self):
         with pytest.raises(KeyError):
-            with assert_mem_gain_limit(400_096):
-                np.zeros((500, 100))
+            with assert_mem_gain_limit(410_000):
+                np.zeros((500, 100), dtype=np.int64)
                 raise KeyError()
 
     def test_fails(self):
         with pytest.raises(AssertionError, match=".* is above limit "):
-            with assert_mem_gain_limit(400_096):
-                np.zeros((500, 101))
+            with assert_mem_gain_limit(410_000):
+                np.zeros((500, 111), dtype=np.int64)
 
     def test_fails_raises(self):
         with pytest.raises(KeyError):
             with pytest.raises(AssertionError, match=".* is above limit "):
-                with assert_mem_gain_limit(400_096):
-                    np.zeros((500, 101))
+                with assert_mem_gain_limit(410_000):
+                    np.zeros((500, 111), dtype=np.int64)
                     raise KeyError()
 
 

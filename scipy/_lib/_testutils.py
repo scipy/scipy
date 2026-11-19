@@ -298,11 +298,16 @@ def assert_mem_gain_limit(max_bytes):
     """Context manager that asserts a specified peak memory gain
 
     Assert that peak traced memory during the block grows by at most max_bytes.
+    The gap between expected bytes and max bytes should be large enough to avoid
+    spurious CI failures on diverse hardware / configurations. Do not expect
+    to check precise memory limits on CI.
 
     Only allocations visible to tracemalloc are counted (Python allocator
     domains plus NumPy data buffers); native allocations in C/C++ code are not.
 
     Warning that tests using tracemalloc can be slow. use small examples.
+
+    Warning that tracemalloc is not threadsafe so mark any tests as unsafe.
     """
     _was_tracing = tracemalloc.is_tracing()
     if not _was_tracing:
