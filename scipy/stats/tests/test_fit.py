@@ -84,7 +84,7 @@ mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                   'truncexpon', 'vonmises', 'vonmises_line']
 
 # these pass but are XSLOW (>1s)
-mm_Xslow_fits = ['wrapcauchy']
+mm_Xslow_fits = ['logitnorm', 'wrapcauchy']
 
 failing_fits = {"MM": mm_failing_fits + mm_XXslow_fits, "MLE": mle_failing_fits}
 xslow_fits = {"MM": mm_Xslow_fits, "MLE": mle_Xslow_fits}
@@ -248,7 +248,8 @@ def cases_test_fit_mle():
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
                       'gompertz', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
-                      'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
+                      'kstwobign', 'logitnorm', 'loglaplace', 'lognorm', 'lomax',
+                      'mielke',
                       'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
                       'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
@@ -303,7 +304,7 @@ def cases_test_fit_mse():
                       'genlogistic', 'genpareto', 'gompertz',
                       'hypergeom', 'invweibull',
                       'johnsonsu', 'kappa3', 'kstwobign',
-                      'laplace_asymmetric', 'loggamma', 'loglaplace',
+                      'laplace_asymmetric', 'loggamma', 'logitnorm', 'loglaplace',
                       'lognorm', 'lomax',
                       'maxwell', 'nhypergeom',
                       'pareto', 'powernorm', 'randint', 'recipinvgauss',

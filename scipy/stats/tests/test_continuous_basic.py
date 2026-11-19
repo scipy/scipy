@@ -62,7 +62,8 @@ skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz',
-                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'trapezoid',
+                'johnsonsb', 'kstwobign', 'logitnorm', 'ncx2', 'norminvgauss',
+                'trapezoid',
                 'truncnorm', 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'dpareto_lognorm', 'exponweib', 'f', 'fisk',
@@ -85,7 +86,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
                'geninvgauss', 'gennorm', 'genpareto',
                'halfcauchy', 'halfgennorm', 'invgamma', 'irwinhall', 'jf_skew_t',
                'ksone', 'kstwo', 'kstwobign', 'landau', 'levy_l', 'loggamma',
-               'logistic', 'loguniform', 'maxwell', 'nakagami',
+               'logistic', 'logitnorm', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
                'powerlaw', 'rdist', 'reciprocal', 'rice',
                'skewnorm', 't', 'truncpareto', 'truncweibull_min',

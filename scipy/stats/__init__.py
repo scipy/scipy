@@ -114,6 +114,7 @@ Continuous distributions
    levy_l
    levy_stable
    logistic          -- Logistic
+   logitnorm         -- Logit-Normal
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
