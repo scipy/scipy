@@ -1441,9 +1441,10 @@ def rogerstanimoto(u, v, w=None):
     return (2.0 * (ntf + nft))/(ntt + nff + (2.0 * (ntf + nft)))
 
 
+@xp_capabilities()
 def russellrao(u, v, w=None):
     """
-    Compute the Russell-Rao dissimilarity between two boolean 1-D arrays.
+    Compute the Russell-Rao dissimilarity between two boolean arrays.
 
     The Russell-Rao dissimilarity between two boolean 1-D arrays, `u` and
     `v`, is defined as
@@ -1469,7 +1470,7 @@ def russellrao(u, v, w=None):
 
     Returns
     -------
-    russellrao : double
+    russellrao : float or array
         The Russell-Rao dissimilarity between vectors `u` and `v`.
 
     Examples
@@ -1480,20 +1481,25 @@ def russellrao(u, v, w=None):
     >>> distance.russellrao([1, 0, 0], [1, 1, 0])
     0.6666666666666666
     >>> distance.russellrao([1, 0, 0], [2, 0, 0])
-    0.3333333333333333
+    0.6666666666666666
 
     """
-    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum(axis=-1)
-        n = u.shape[-1]
-    elif w is None:
-        ntt = (u * v).sum(axis=-1)
-        n = u.shape[-1]
+    xp = array_namespace(u, v, w)
+    u, v = xp.asarray(u, dtype=xp.bool), xp.asarray(v, dtype=xp.bool)
+    if not broadcastable(u.shape, v.shape):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    tt = u & v
+    if w is None:
+        ntt = xp.count_nonzero(tt, axis=-1)
+        n = tt.shape[-1]
     else:
-        w = _validate_weights(w)
-        ntt = (u * v * w).sum(axis=-1)
-        n = w.sum(axis=-1)
+        w = xp_promote(w, force_floating=True, xp=xp)
+        if not broadcastable(w.shape, tt.shape):
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+        w = _validate_weights(w, xp=xp)
+        ntt = xp.sum(xp.astype(tt, w.dtype) * w, axis=-1)
+        n = xp.sum(xp.broadcast_arrays(w, tt)[0], axis=-1)
+    ntt = xp.astype(ntt, xpx.default_dtype(xp, "real floating"))
     return (n - ntt) / n
 
 

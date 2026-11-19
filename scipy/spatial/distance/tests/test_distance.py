@@ -468,7 +468,6 @@ wdice = _weight_checked(dice)
 wcityblock = _weight_checked(cityblock)
 wbraycurtis = _weight_checked(braycurtis)
 wsokalsneath = _weight_checked(sokalsneath)
-wrussellrao = _weight_checked(russellrao)
 
 
 class TestCdist:
@@ -1483,22 +1482,6 @@ class TestRogersTanimoto:
         xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
         xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
 
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
-
 
 @make_xp_test_case(euclidean)
 class TestEuclidean:
@@ -2058,22 +2041,40 @@ class TestIsValidY:
                     is_valid_y(xp.asarray(rng.random(i)), throw=True)
 
 
+@make_xp_test_case(russellrao)
 class TestRussellrao:
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+    @pytest.mark.parametrize("dtype", ["float32", "float64", "int32", "int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_russellrao(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(russellrao(x, y), xp.asarray(expected))
 
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_russellrao_array_like(self, x, y, expected):
+        xp_assert_close(russellrao(x, y), np.asarray(expected))
+
+    @pytest.mark.parametrize("dtype", ["float32", "float64", "int32", "int64", "bool"])
+    def test_weight_invariance(self, xp, dtype):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        y = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        xp_assert_ones_weight(russellrao, x, y)
+        xp_assert_scaling_weight(russellrao, x, y)
+        xp_assert_zero_weight(russellrao, x, y)
+        xp_assert_duplication_weight(russellrao, x, y)
+        xp_assert_split_weight(russellrao, x, y)
+
+    def test_non_01_input(self, xp):
+        x, y = xp.asarray([-10, 2.5, 0]), xp.asarray([2, -5, 2])
+        xp_assert_close(russellrao(x, y), xp.asarray(1 / 3))
 
 
 class TestSokalsneath:
@@ -2688,7 +2689,7 @@ class TestChebyshev:
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
-        (russellrao, None),
+        make_xp_pytest_param(russellrao, None),
         (sokalsneath, None),
     ],
 )
