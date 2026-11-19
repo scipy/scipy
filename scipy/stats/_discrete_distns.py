@@ -999,8 +999,32 @@ class poisson_gen(rv_discrete):
         return random_state.poisson(mu, size)
 
     def _logpmf(self, k, mu):
-        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
-        return Pk
+        # The naive form ``k*log(mu) - gammaln(k+1) - mu`` cancels
+        # catastrophically when mu is large and k ~ mu. Use the saddle-point
+        # decomposition instead (Loader, 2000):
+        #   log pmf = -0.5*log(2*pi*k) - stirlerr(k) - bd0(k, mu)
+        # where bd0(k, mu) = k*log(k/mu) + mu - k, computed as
+        # k*log1p((k-mu)/mu) - (k-mu) so that it is accurate near k = mu.
+        k, mu = np.broadcast_arrays(np.asarray(k, dtype=float),
+                                    np.asarray(mu, dtype=float))
+        ok = (k > 0) & (mu > 0)
+        kk = np.where(ok, k, 1.0)
+        mm = np.where(ok, mu, 1.0)
+
+        # stirlerr(k) = log(k!) - (k*log(k) - k + 0.5*log(2*pi*k))
+        small = kk < 15
+        ks = np.where(small, 1.0, kk)
+        series = (1/(12*ks) - 1/(360*ks**3) + 1/(1260*ks**5)
+                  - 1/(1680*ks**7))
+        exact = gamln(kk + 1) - (kk*log(kk) - kk + 0.5*log(2*np.pi*kk))
+        stirl = np.where(small, exact, series)
+
+        bd0 = kk*log1p((kk - mm)/mm) - (kk - mm)
+        res = -0.5*log(2*np.pi*kk) - stirl - bd0
+
+        # k == 0 or mu == 0: the original expression is exact here.
+        fallback = special.xlogy(k, mu) - gamln(k + 1) - mu
+        return np.where(ok, res, fallback)
 
     def _pmf(self, k, mu):
         # poisson.pmf(k) = exp(-mu) * mu**k / k!

@@ -745,3 +745,17 @@ class TestRandInt:
         assert (res > 0).all()
         ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
         assert_allclose(res, ref)
+
+
+def test_poisson_logpmf_large_mu_precision():
+    # gh-25625: the naive k*log(mu) - gammaln(k+1) - mu cancels catastrophically
+    # for large mu with k close to mu.
+    mu = 5e15
+    assert_allclose(stats.poisson.logpmf(mu, mu), -18.993045686877064,
+                    rtol=1e-12)
+    assert_allclose(stats.poisson.logpmf(mu + 1e8, mu),
+                    -0.5*np.log(2*np.pi*mu) - 0.5*(1e8)**2/mu, rtol=1e-6)
+    # k == 0 and mu == 0 edge cases are unchanged
+    assert_allclose(stats.poisson.logpmf(0, 3.0), -3.0)
+    assert stats.poisson.logpmf(0, 0.0) == 0
+    assert stats.poisson.logpmf(2, 0.0) == -np.inf
