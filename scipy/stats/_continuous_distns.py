@@ -4552,6 +4552,15 @@ class halfcauchy_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Folded-t and half-t distributions", Wikipedia,
+           https://en.wikipedia.org/wiki/Folded-t_and_half-t_distributions
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, pp. 317-318.
+    .. [3] Gelman, A. (2006). "Prior distributions for variance parameters in
+           hierarchical models". Bayesian Analysis, 1(3), pp. 515-534.
+
     %(example)s
 
     """
@@ -4775,6 +4784,13 @@ class halfnorm_gen(rv_continuous):
     `halfnorm` is a special case of `chi` with ``df=1``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Half-normal distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Half-normal_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, pp. 156-160.
 
     %(example)s
 
@@ -10157,6 +10173,13 @@ class triang_gen(rv_continuous):
     The location parameter shifts the start to `loc`.
     The scale parameter changes the width from 1 to `scale`.
 
+    References
+    ----------
+    .. [1] "Triangular distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Triangular_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 2, 2nd ed. John Wiley & Sons, 1995, ch. 26.
+
     %(example)s
 
     """
@@ -11452,6 +11475,13 @@ class wald_gen(invgauss_gen):
     `wald` is a special case of `invgauss` with ``mu=1``.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Inverse Gaussian distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution
+    .. [2] Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate
+           Distributions*, Vol. 1, 2nd ed. John Wiley & Sons, 1994, ch. 15.
 
     %(example)s
     """
