@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
 from scipy import sparse
 
@@ -371,7 +371,6 @@ def test_format_error_message():
 
 
 # Regression tests for scipy/scipy#26549: requested wider dtype
-from numpy.testing import assert_array_equal
 
 
 def _apply_laplacian_operator(operator, v):
