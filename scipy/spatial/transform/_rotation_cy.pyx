@@ -358,23 +358,43 @@ cdef inline void _set_elementary_quat(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:, :] _elementary_quat_compose(
-    const uchar[:] seq, const double[:, :] angles, bint intrinsic=False
+cdef inline void _set_axis_angle_quat(
+    double[:] quat, const double[:] axis, double angle
 ) noexcept:
+    cdef double half_sin = sin(angle / 2)
+    quat[0] = half_sin * axis[0]
+    quat[1] = half_sin * axis[1]
+    quat[2] = half_sin * axis[2]
+    quat[3] = cos(angle / 2)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double[:, :] _elementary_quat_compose(
+    const uchar[:] seq, const double[:, :] angles, bint intrinsic=False,
+    const double[:, :] axes=None
+) noexcept:
+    # Rotate about the basis axes in seq, or about the rows of axes if given
+    cdef bint elementary = axes is None
     cdef Py_ssize_t num_rotations = angles.shape[0]
-    cdef Py_ssize_t seq_len = seq.shape[0]
+    cdef Py_ssize_t seq_len = angles.shape[1]
     cdef double[:, :] result = _empty2(num_rotations, 4)  # Batched output
-    cdef double[:] elementary = _empty1(4)  # Intermediate for the current rotation
+    cdef double[:] axis_quat = _empty1(4)  # Intermediate for the current rotation
     cdef double[:] product = _empty1(4)  # Intermediate for accumulated rotations
 
     for ind in range(num_rotations):
-        _set_elementary_quat(result[ind], seq[0], angles[ind, 0])
+        if elementary:
+            _set_elementary_quat(result[ind], seq[0], angles[ind, 0])
+        else:
+            _set_axis_angle_quat(result[ind], axes[0], angles[ind, 0])
         for idx in range(1, seq_len):
-            _set_elementary_quat(elementary, seq[idx], angles[ind, idx])
-            if intrinsic:
-                _compose_quat_single(result[ind], elementary, product)
+            if elementary:
+                _set_elementary_quat(axis_quat, seq[idx], angles[ind, idx])
             else:
-                _compose_quat_single(elementary, result[ind], product)
+                _set_axis_angle_quat(axis_quat, axes[idx], angles[ind, idx])
+            if intrinsic:
+                _compose_quat_single(result[ind], axis_quat, product)
+            else:
+                _compose_quat_single(axis_quat, result[ind], product)
             result[ind, 0] = product[0]
             result[ind, 1] = product[1]
             result[ind, 2] = product[2]
@@ -1339,13 +1359,7 @@ def from_davenport(axes, order: str, angles, bint degrees=False):
         raise ValueError("Expected `angles` to match number of axes, got "
                          f"{angles.shape[1]} angles and {axes.shape[0]} axes.")
 
-    q = identity(len(angles))
-    for i in range(num_axes):
-        qi = from_rotvec(angles[:, i, np.newaxis] * axes[i])
-        if extrinsic:
-            q = compose_quat(qi, q)
-        else:
-            q = compose_quat(q, qi)
+    q = _elementary_quat_compose(None, angles, not extrinsic, axes)
 
     if is_single:
         return np.asarray(q, dtype=float)[0]
