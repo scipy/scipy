@@ -66,13 +66,11 @@ cdef class _PyWalleniusNCHypergeometric:
         return mean, var
 
 
-cdef bitgen_t* _glob_rng
-cdef double next_double() noexcept nogil:
-    global _glob_rng
-    return _glob_rng.next_double(_glob_rng.state)
-cdef double next_normal(const double m, const double s) noexcept nogil:
-    global _glob_rng
-    return random_normal(_glob_rng, m, s)
+cdef double next_double(void *rng_state) noexcept nogil:
+    cdef bitgen_t *rng = <bitgen_t *>rng_state
+    return rng.next_double(rng.state)
+cdef double next_normal(void *rng_state, const double m, const double s) noexcept nogil:
+    return random_normal(<bitgen_t *>rng_state, m, s)
 
 cdef object make_rng(random_state=None):
     # get a bit_generator object
@@ -112,8 +110,7 @@ cdef class _PyStochasticLib3:
         if not PyCapsule_IsValid(self.capsule, capsule_name):
             raise ValueError("Invalid pointer to anon_func_state")
         self.bit_generator = <bitgen_t *> PyCapsule_GetPointer(self.capsule, capsule_name)
-        global _glob_rng
-        _glob_rng = self.bit_generator
+        self.c_sl3.get().rng_state = <void *>self.bit_generator
 
     def rvs_fisher(self, int n, int m, int N, double odds, int size, random_state=None):
         # handle random state
