@@ -286,6 +286,31 @@ def test_unknown_solvers_and_options():
                 options={"rr_method": 'ekki-ekki-ekki'})
 
 
+@pytest.mark.thread_unsafe(reason="HiGHS writes to a file")
+def test_highs_options_passed_verbatim(tmp_path):
+    # `HighsOptions` exposes only some of HiGHS's options as attributes;
+    # the others raised AttributeError when passed through verbatim
+    path = tmp_path / "improving.sol"
+    options = {"mip_improving_solution_save": True,
+               "mip_improving_solution_file": str(path)}
+    c = -np.array([10, 13, 7, 8, 9, 11])
+    A_ub = [[5, 6, 3, 4, 4, 5]]
+    message = "Unrecognized options detected"
+    with pytest.warns(OptimizeWarning, match=message):
+        res = linprog(c, A_ub=A_ub, b_ub=[14], bounds=(0, 1),
+                      integrality=[1] * 6, method='highs', options=options)
+    _assert_success(res, desired_fun=-31)
+    assert path.stat().st_size > 0
+
+
+def test_highs_option_values_as_numpy_scalars():
+    # each option is set as the type it holds, whatever type it is given in
+    options = {"time_limit": np.float32(60), "maxiter": np.int64(100)}
+    res = linprog([1, 1], A_ub=[[-1, -1]], b_ub=[-1], method='highs',
+                  options=options)
+    _assert_success(res, desired_fun=1)
+
+
 def test_choose_solver():
     # 'highs' chooses 'dual'
     c = np.array([-3, -2])

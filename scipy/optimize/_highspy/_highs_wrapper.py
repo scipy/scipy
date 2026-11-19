@@ -134,8 +134,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
 
     # Make a Highs object and pass it everything
     highs = _h._Highs()
-    highs_options = _h.HighsOptions()
     hoptmanager = hopt.HighsOptionsManager()
+    opt_status = _h.HighsStatus.kOk
     for key, val in options.items():
         # handle filtering of unsupported and default options
         if val is None or key in ("sense",):
@@ -179,9 +179,16 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
             if status != 0:
                 warn(msg, OptimizeWarning, stacklevel=2)
             else:
-                setattr(highs_options, key, val)
+                # `HighsOptions` exposes only some options as attributes, so
+                # each is set by name, as the type the option holds: given
+                # another type, `setOptionValue` can pick the wrong overload
+                if opt_type == _h.HighsOptionType.kInt:
+                    val = int(val)
+                elif opt_type == _h.HighsOptionType.kDouble:
+                    val = float(val)
+                if highs.setOptionValue(key, val) == _h.HighsStatus.kError:
+                    opt_status = _h.HighsStatus.kError
 
-    opt_status = highs.passOptions(highs_options)
     if opt_status == _h.HighsStatus.kError:
         res.update(
             {
