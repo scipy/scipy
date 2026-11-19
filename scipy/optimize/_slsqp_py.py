@@ -221,7 +221,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
                     eps=_epsilon, callback=None, finite_diff_rel_step=None,
                     workers=None, **unknown_options):
-    """
+    r"""
     Minimize a scalar function of one or more variables using Sequential
     Least Squares Programming (SLSQP).
 
@@ -277,6 +277,19 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     are not returned. See [1]_ pp. 321 or [2]_ for an explanation of how to interpret
     these multipliers. The internal QP problem is solved using the methods given
     in [3]_ Chapter 25.
+
+    The multipliers follow the sign convention of [1]_, in which the Lagrangian
+    is
+
+    .. math::
+
+        \mathcal{L}(x, \lambda) = f(x) - \sum_i \lambda_i c_i(x)
+
+    where the constraints are :math:`c_i(x) = 0` for equality constraints and
+    :math:`c_i(x) \geq 0` for inequality constraints, matching the ``'eq'`` and
+    ``'ineq'`` constraint types. With this convention, the inequality
+    multipliers are non-negative. Formulations that add the constraint terms
+    to :math:`f(x)` instead give multipliers with the opposite sign.
 
     Note that if new-style `NonlinearConstraint` or `LinearConstraint` were
     used, then ``minimize`` converts them first to old-style constraint dicts.
