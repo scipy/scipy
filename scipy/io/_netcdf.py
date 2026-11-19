@@ -267,14 +267,24 @@ class netcdf_file:
 
         self._mm = None
         self._mm_buf = None
-        if self.use_mmap:
-            self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
-            self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
+        try:
+            if self.use_mmap:
+                self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
+                self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = {}
+            self._attributes = {}
 
-        if mode in 'ra':
-            self._read()
+            if mode in 'ra':
+                self._read()
+        except BaseException:
+            # Release the file now rather than leaving it to ``__del__``,
+            # which would also flush and, in append mode, write a header
+            # into a file that was never read successfully.
+            self.variables = {}
+            self._mm_buf = None
+            self._mm = None
+            self.fp.close()
+            raise
 
     def __setattr__(self, attr, value):
         # Store user defined attributes in a separate dict,
