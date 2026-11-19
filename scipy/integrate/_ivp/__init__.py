@@ -2,6 +2,7 @@
 from .ivp import solve_ivp
 from .rk import RK23, RK45, DOP853
 from .radau import Radau
+from .trbdf2 import TRBDF2
 from .bdf import BDF
 from .lsoda import LSODA
 from .common import OdeSolution
