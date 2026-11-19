@@ -155,7 +155,7 @@ py3.extension_module('_decomp_interpolative',
 # batched linalg module
 py3.extension_module('_batched_linalg',
   [
-    'src/batched_linalg/_batched_linalg_module.cc',
+    'src/batched_linalg/_batched_linalg_module.cpp',
   ],
   include_directories: ['src/batched_linalg', 'src/lapack', 'src/wrapper'],
   cpp_args: simd_args,
