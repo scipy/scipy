@@ -10,7 +10,7 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray, is_jax_array,
     is_jax, xp_promote, xp_capabilities, get_native_namespace_name,
-    is_array_api_obj, xp_result_device,
+    is_array_api_obj, xp_result_device, is_torch, xp_result_type
 )
 import scipy._external.array_api_extra as xpx
 from . import _ellip_harm
@@ -69,6 +69,30 @@ def _ufunc_kwargs_extra_note(
         "    ``out`` is never supported for JAX because JAX arrays are immutable.\n"
         f"    {out_note}\n"
         f"    {additional_note}\n\n"
+    )
+
+
+def _torch_promote_scalars(args, xp):
+    """Promote Python scalars to arrays to workaround torch limitation
+
+    Most PyTorch special functions currently do not accept Python scalars
+    as arguments. Do our best to get something like NEP50 promotion rules.
+    """
+
+
+    if not any(type(arg) in (int, float, complex) for arg in args):
+        return args
+
+    # Casting to the result type should be wholly unsatisfactory in the
+    # general case, (consider for instance the "dddD->D" loop for hyp2f1),
+    # but currently happens to work for all existing native PyTorch functions
+    # available here that are relevant (i.e. take multiple arguments).
+    dtype = xp_result_type(*args, xp=xp)
+    device = xp_result_device(*args)
+
+    return tuple(
+        xp.asarray(arg, dtype=dtype, device=device)
+        if type(arg) in (int, float, complex) else arg for arg in args
     )
 
 
@@ -147,6 +171,12 @@ class _FuncInfo:
     backends_with_func_in_xp: tuple[str, ...] = ()
     # is this part of the public API?
     public: bool = True
+    # True for special functions for which torch does not accept mixed
+    # scalar / tensor inputs. This will signal a helper to promote scalars
+    # to tensors in a way that approximates NEP50 rules. Most members of
+    # torch.special do not accept mixed scalar/tensor inputs, so the default is
+    # True.
+    torch_promote_scalars: set[int] | bool = True
 
     @property
     def name(self):
@@ -181,6 +211,8 @@ class _FuncInfo:
         if self.is_ufunc:
             def wrapped(*args, **kwargs):
                 xp = array_namespace(*args)
+                if is_torch(xp) and self.torch_native and self.torch_promote_scalars:
+                    args = _torch_promote_scalars(args, xp)
                 return self._wrapper_for(xp)(*args, **kwargs)
 
             func = _make_ufunc_wrapper(
@@ -1698,6 +1730,7 @@ _special_funcs = (
         _ufuncs.rel_entr, ["x", "y"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note("rel_entr", ["torch"])),
         generic_impl=_rel_entr,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.kl_div, ["x", "y"],
@@ -2059,6 +2092,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_chebyt, ["n", "x"],
@@ -2074,6 +2108,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_chebyu, ["n", "x"],
@@ -2089,6 +2124,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_chebyc, ["n", "x"],
@@ -2098,6 +2134,7 @@ _special_funcs = (
         ),
         test_large_ints=False,
         torch_native=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_chebys, ["n", "x"],
@@ -2131,6 +2168,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_genlaguerre, ["n", "alpha", "x"],
@@ -2155,6 +2193,7 @@ _special_funcs = (
         int_only=(True, False),
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_hermitenorm, ["n", "x"],
@@ -2170,6 +2209,7 @@ _special_funcs = (
         int_only=(True, False),
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_gegenbauer, ["n", "alpha", "x"],
@@ -2203,6 +2243,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_sh_chebyu, ["n", "x"],
@@ -2218,6 +2259,7 @@ _special_funcs = (
         int_only={"torch": (True, False)},
         positive_only={"torch": (True, False)},
         test_large_ints=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.eval_sh_jacobi, ["n", "p", "q", "x"],
@@ -2766,6 +2808,7 @@ _special_funcs = (
         positive_only={"jax.numpy": True, "torch": (True, False)},
         test_large_ints=False,
         public=False,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs._riemann_zeta, ["z"],
@@ -2910,10 +2953,12 @@ _special_funcs = (
         _ufuncs.xlogy, ["x", "y"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note("xlogy", ["torch"])),
         generic_impl=_xlogy,
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.xlog1py, ["x", "y"],
         xp_capabilities(extra_note=_ufunc_kwargs_extra_note()),
+        torch_promote_scalars=False,
     ),
     _FuncInfo(
         _ufuncs.exprel, ["x"],
