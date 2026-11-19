@@ -129,6 +129,24 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
+    @pytest.mark.parametrize("dtype", [np.uint8, np.int8, np.uint16, np.int16,
+                                       np.uint32, np.uint64, np.int64])
+    def test_tmean_integer_no_overflow(self, dtype):
+        # The sum was accumulated in the dtype of the input array, so integer
+        # input wrapped around instead of being promoted to floating point.
+        max_ = np.iinfo(dtype).max
+        x = np.array([max_, max_, max_], dtype=dtype)
+        xp_assert_close(stats.tmean(x), np.asarray(max_, dtype=np.float64))
+        xp_assert_close(stats.tmean(x, limits=(np.iinfo(dtype).min, max_)),
+                        np.asarray(max_, dtype=np.float64))
+
+    def test_tmean_uint8_no_count_overflow(self):
+        # The number of elements was accumulated in the dtype of the input as
+        # well, so the count of 256 uint8 values wrapped to zero and the result
+        # was nan.
+        x = np.ones(256, dtype=np.uint8)
+        xp_assert_close(stats.tmean(x), np.asarray(1.0))
+
     @make_xp_test_case(stats.tvar)
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in divide:RuntimeWarning:dask"
