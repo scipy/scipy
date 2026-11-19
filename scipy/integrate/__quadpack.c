@@ -158,11 +158,20 @@
 
 typedef double quadpack_w_func(const double,const double,const double,const double,const double,const int);
 
+// Outermost two unweighted samples of a 15-point rule at one end of a panel.
+typedef struct {
+    double x, value;
+} fourier_sample;
+
+typedef struct {
+    fourier_sample nearest, adjacent;
+} fourier_edge;
+
 // Internal functions
 static void dqc25c(double(*)(double*),const double,const double,const double,double*,double*,int*,int*);
 static void dqc25f(double(*)(double*),const double,const double,const double,
                    const int,const int,const int, const int, double*,double*,
-                   int*,double*,double*,int*,double*);
+                   int*,double*,double*,int*,double*,fourier_edge*);
 static void dqc25s(double(*)(double*),const double,const double,const double,
                    const double,const double,const double,double*,double*,double*,
                    double*,double*,double*,double*,const int,int*);
@@ -172,7 +181,7 @@ static void dqk15(double(*)(double*),const double,const double,double*,double*,d
 static void dqk15i(double(*)(double*),const double,const int,const double,const double,double*,double*,double*,double*);
 static void dqk15w(double(*)(double*),quadpack_w_func,const double,const double,
                    const double,const double,const int,const double,const double,
-                   double*,double*,double*,double*);
+                   double*,double*,double*,double*,fourier_edge*);
 static void dqk21(double(*)(double*),const double,const double,double*,double*,double*,double*);
 static void dqk31(double(*)(double*),const double,const double,double*,double*,double*,double*);
 static void dqk41(double(*)(double*),const double,const double,double*,double*,double*,double*);
@@ -1918,6 +1927,13 @@ dqawce(double(*fcn)(double* x), const double a, const double b, const double c,
 }
 
 
+static void
+dqawoe_impl(double(*fcn)(double* x), const double a, const double b, const double omega,
+       const int integr, const double epsabs, const double epsrel, const int limit,
+       const int icall, const int maxp1, double* result, double* abserr, int* neval,
+       int* ier, int* last, double* alist, double* blist, double* rlist,
+       double* elist, int* iord, int* nnlog, int* momcom, double* chebmo, int check_edges);
+
 void
 dqawfe(double(*fcn)(double* x), const double a, const double omega, const int integr,
        const double epsabs, const int limlst, const int limit, const int maxp1,
@@ -2201,9 +2217,10 @@ dqawfe(double(*fcn)(double* x), const double a, const double omega, const int in
         *lst = iter + 1;
 
         epsa = eps*fact;
-        dqawoe(fcn, c1, c2, omega, integr, epsa, 0.0, limit, *lst, maxp1,
+        // Only the first cycle borders the supplied integration limit.
+        dqawoe_impl(fcn, c1, c2, omega, integr, epsa, 0.0, limit, *lst, maxp1,
                &rslst[iter], &erlst[iter], &nev, &ierlst[iter], &last,
-               alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+               alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo, iter == 0);
 
         *neval += nev;
         fact = fact*p;
@@ -2273,12 +2290,50 @@ LINE80:
 }
 
 
-void
-dqawoe(double(*fcn)(double* x), const double a, const double b, const double omega,
+
+/* Check the gap from the boundary to the nearest Kronrod sample using
+ * strictly interior points. Compare the unweighted envelope: in particular,
+ * a sine weight can vanish at the boundary of the first Fourier cycle. */
+static int
+check_fourier_edge(double (*f)(double *), double start, double end, double omega,
+                   int integr, const fourier_edge *edge, double tol,
+                   int *neval, double *error)
+{
+    const double x1 = edge->nearest.x, x2 = edge->adjacent.x;
+    if (!((start < x1 && x1 < x2 && x2 < end) ||
+          (start > x1 && x1 > x2 && x2 > end))) { return 0; }
+    const double f1 = edge->nearest.value, f2 = edge->adjacent.value;
+    const double gap = fabs(x1 - start);
+    const double w = integr == 1 ? cos(start*omega) : sin(start*omega);
+    const double max_weight = fmin(1.0, fabs(w) + omega*gap);
+    const double variation = 2.0*fabs(f2 - f1) + 32.0*epmach*fmax(fabs(f2), fabs(f1));
+    // Probe successively closer to the integration limit, covering several
+    // length scales without evaluating a possibly singular boundary value.
+    double previous = x1;
+    for (int exponent = 16; exponent <= 40; exponent += 12) {
+        double p = start + ldexp(end - start, -exponent);
+        if (p == start) { p = nextafter(start, x1); }
+        if (p == previous) { continue; }
+        if (!((start < p && p < x1) || (start > p && p > x1))) { break; }
+        previous = p;
+        const double delta = fabs(f(&p) - f1) - variation;
+        ++*neval;
+        const double missing = delta*gap*max_weight;
+        if (missing > tol) {
+            *error = fmax(*error, missing);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+static void
+dqawoe_impl(double(*fcn)(double* x), const double a, const double b, const double omega,
        const int integr, const double epsabs, const double epsrel, const int limit,
        const int icall, const int maxp1, double* result, double* abserr, int* neval,
        int* ier, int* last, double* alist, double* blist, double* rlist,
-       double* elist, int* iord, int* nnlog, int* momcom, double* chebmo)
+       double* elist, int* iord, int* nnlog, int* momcom, double* chebmo, int check_edges)
 {
     //***begin prologue  dqawoe
     //***date written   800101   (yymmdd)
@@ -2564,11 +2619,21 @@ dqawoe(double(*fcn)(double* x), const double a, const double b, const double ome
     domega = fabs(omega);
     nrmom = 0;
     if (icall < 2) { *momcom = 0; }
-    dqc25f(fcn, a, b, domega, integr, nrmom, maxp1, 0, result, abserr, neval, &defabs, &resabs, momcom, chebmo);
+    fourier_edge edges[2];
+    dqc25f(fcn, a, b, domega, integr, nrmom, maxp1, 0, result, abserr,
+           neval, &defabs, &resabs, momcom, chebmo, check_edges ? edges : NULL);
 
     // Test on accuracy
     dres = fabs(*result);
     errbnd = fmax(epsabs, epsrel*dres);
+    int check_left = 0, check_right = 0;
+    // A smooth-looking initial rule may miss a boundary layer even when
+    // its absolute error still exceeds the requested tolerance.
+    if (check_edges && *neval == 15 && a < b && errbnd > 0.0 &&
+        *abserr <= fmax(errbnd, sqrt(epmach) * defabs)) {
+        check_left = check_fourier_edge(fcn, a, b, domega, integr, &edges[0], errbnd, neval, abserr);
+        check_right = check_fourier_edge(fcn, b, a, domega, integr, &edges[1], errbnd, neval, abserr);
+    }
     rlist[0] = *result;
     elist[0] = *abserr;
     iord[0] = 0;
@@ -2590,7 +2655,9 @@ dqawoe(double(*fcn)(double* x), const double a, const double b, const double ome
     *abserr = oflow;
     nrmax = 0;
     extrap = 0;
-    noext = 0;
+    // An extrapolation table seeded before the boundary layer was detected
+    // can converge to the same incorrect value before that layer is resolved.
+    noext = check_left || check_right;
     ierror = 0;
     iroff1 = 0;
     iroff2 = 0;
@@ -2627,15 +2694,30 @@ dqawoe(double(*fcn)(double* x), const double a, const double b, const double ome
         a2 = b1;
         b2 = blist[maxerr];
         erlast = errmax;
-        dqc25f(fcn, a1, b1, domega, integr, nrmom, maxp1, 0, &area1, &error1, &nev, &resabs, &defab1, momcom, chebmo);
+        int left = check_left && a1 == a;
+        int right = check_right && b2 == b;
+        dqc25f(fcn, a1, b1, domega, integr, nrmom, maxp1, 0, &area1, &error1,
+               &nev, &resabs, &defab1, momcom, chebmo, left ? edges : NULL);
         *neval += nev;
-        dqc25f(fcn, a2, b2, domega, integr, nrmom, maxp1, 1, &area2, &error2, &nev, &resabs, &defab2, momcom, chebmo);
+        if (left && error1 <= errbnd) {
+            check_fourier_edge(fcn, a1, b1, domega, integr, &edges[0], errbnd, neval, &error1);
+        }
+        dqc25f(fcn, a2, b2, domega, integr, nrmom, maxp1, 1, &area2, &error2,
+               &nev, &resabs, &defab2, momcom, chebmo, right ? edges : NULL);
         *neval += nev;
+        if (right && error2 <= errbnd) {
+            check_fourier_edge(fcn, b2, a2, domega, integr, &edges[1], errbnd, neval, &error2);
+        }
 
         // Improve previous approximations to integral and error and test for accuracy.
         area12 = area1 + area2;
         error12 = error1 + error2;
-        errsum = errsum + error12 - errmax;
+        if (check_left || check_right) {
+            // Remove the possibly large boundary estimate before adding the children.
+            errsum = (errsum - errmax) + error12;
+        } else {
+            errsum = errsum + error12 - errmax;
+        }
         area = area + area12 - rlist[maxerr];
         if ((defab1 != error1) && (defab2 != error2))
         {
@@ -2797,6 +2879,19 @@ LINE190:
     if ((integr == 2) && (omega < 0.0)) { *result= -*result; }
 
     return;
+}
+
+
+void
+dqawoe(double(*fcn)(double* x), const double a, const double b, const double omega,
+       const int integr, const double epsabs, const double epsrel, const int limit,
+       const int icall, const int maxp1, double* result, double* abserr, int* neval,
+       int* ier, int* last, double* alist, double* blist, double* rlist,
+       double* elist, int* iord, int* nnlog, int* momcom, double* chebmo)
+{
+    dqawoe_impl(fcn, a, b, omega, integr, epsabs, epsrel, limit, icall, maxp1,
+                result, abserr, neval, ier, last, alist, blist, rlist, elist,
+                iord, nnlog, momcom, chebmo, 1);
 }
 
 
@@ -3252,7 +3347,7 @@ dqc25c(double(*fcn)(double* x), const double a, const double b, const double c,
     {
         // Apply the 15-point Gauss-Kronrod scheme.
         *krul -= 1;
-        dqk15w(fcn, dqwgtc, c, 0.0, 0.0, 0.0, kp, a, b, result, abserr, &resabs, &resasc);
+        dqk15w(fcn, dqwgtc, c, 0.0, 0.0, 0.0, kp, a, b, result, abserr, &resabs, &resasc, NULL);
         *neval = 15;
         if (resasc == *abserr) { *krul += 1; }
         return;
@@ -3319,7 +3414,7 @@ void
 dqc25f(double(*fcn)(double* x), const double a, const double b, const double omega,
        const int integr, const int nrmom, const int maxp1, const int ksave,
        double* result, double* abserr, int* neval, double* resabs, double* resasc,
-       int* momcom, double* chebmo)
+       int* momcom, double* chebmo, fourier_edge *edges)
 {
     // ***begin prologue  dqc25f
     // ***date written   810101   (yymmdd)
@@ -3444,7 +3539,7 @@ dqc25f(double(*fcn)(double* x), const double a, const double b, const double ome
     // Compute the integral using the 15-point gauss-kronrod formula if the
     // value of the parameter in the integrand is small.
     if (fabs(parint) <= 2.0) {
-        dqk15w(fcn, dqwgtf, omega, 0.0, 0.0, 0.0, integr, a, b, result, abserr, resabs, resasc);
+        dqk15w(fcn, dqwgtf, omega, 0.0, 0.0, 0.0, integr, a, b, result, abserr, resabs, resasc, edges);
         *neval = 15;
         return;
     }
@@ -4099,7 +4194,7 @@ dqc25s(double(*fcn)(double* x), const double a, const double b, const double bl,
     }
 
     // If a > bl and b < br, apply the 15-point gauss-kronrod scheme.
-    dqk15w(fcn, dqwgts, a, b, alfa, beta, integr, bl, br, result, abserr, &resabs, resasc);
+    dqk15w(fcn, dqwgts, a, b, alfa, beta, integr, bl, br, result, abserr, &resabs, resasc, NULL);
     *nev = 15;
     return;
 
@@ -4873,7 +4968,7 @@ dqk15i(double(*fcn)(double* x), const double boun, const int inf, const double a
 void
 dqk15w(double(*fcn)(double* x), quadpack_w_func w, const double p1, const double p2,
        const double p3, const double p4, const int kp, const double a, const double b,
-       double* result, double* abserr, double* resabs, double* resasc)
+       double* result, double* abserr, double* resabs, double* resasc, fourier_edge *edges)
 {
     // ***begin prologue  dqk15w
     // ***date written   810101   (yymmdd)
@@ -5001,8 +5096,14 @@ dqk15w(double(*fcn)(double* x), quadpack_w_func w, const double p1, const double
         absc1 = centr - absc;
         absc2 = centr + absc;
 
-        fval1 = (*fcn)(&absc1) * (*w)(absc1, p1, p2, p3, p4, kp);
-        fval2 = (*fcn)(&absc2) * (*w)(absc2, p1, p2, p3, p4, kp);
+        fval1 = (*fcn)(&absc1);
+        fval2 = (*fcn)(&absc2);
+        if (j == 0 && edges != NULL) {
+            edges[0].adjacent = (fourier_sample){absc1, fval1};
+            edges[1].adjacent = (fourier_sample){absc2, fval2};
+        }
+        fval1 *= (*w)(absc1, p1, p2, p3, p4, kp);
+        fval2 *= (*w)(absc2, p1, p2, p3, p4, kp);
 
         fv1[jtw] = fval1;
         fv2[jtw] = fval2;
@@ -5018,8 +5119,14 @@ dqk15w(double(*fcn)(double* x), quadpack_w_func w, const double p1, const double
         absc1 = centr - absc;
         absc2 = centr + absc;
 
-        fval1 = (*fcn)(&absc1) * (*w)(absc1, p1, p2, p3, p4, kp);
-        fval2 = (*fcn)(&absc2) * (*w)(absc2, p1, p2, p3, p4, kp);
+        fval1 = (*fcn)(&absc1);
+        fval2 = (*fcn)(&absc2);
+        if (j == 0 && edges != NULL) {
+            edges[0].nearest = (fourier_sample){absc1, fval1};
+            edges[1].nearest = (fourier_sample){absc2, fval2};
+        }
+        fval1 *= (*w)(absc1, p1, p2, p3, p4, kp);
+        fval2 *= (*w)(absc2, p1, p2, p3, p4, kp);
 
         fv1[jtwm1] = fval1;
         fv2[jtwm1] = fval2;

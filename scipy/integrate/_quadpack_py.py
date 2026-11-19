@@ -428,6 +428,19 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> integrate.quad(y, -1, 10000)
     (0.0, 0.0)
 
+    For a weighted integral over a wide finite interval, split the interval
+    if the scale of an important feature is known. For example, the envelope
+    ``exp(-x)`` has almost all its mass in the first 40 units. The absolute
+    integral beyond 40 is bounded by ``exp(-40)`` for either sine or cosine
+    weighting. Integrate each part with the same weight:
+
+    >>> f = lambda x: np.exp(-x)
+    >>> opts = dict(weight='cos', wvar=1e-4)
+    >>> near, _ = integrate.quad(f, 0, 40, **opts)
+    >>> far, _ = integrate.quad(f, 40, 10000, **opts)
+    >>> float(np.round(near + far, 12))
+    0.99999999
+
     """
     if not isinstance(args, tuple):
         args = (args,)

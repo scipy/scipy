@@ -193,6 +193,59 @@ class TestQuad:
         assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
+    @pytest.mark.parametrize("weight", ["cos", "sin"])
+    @pytest.mark.parametrize("tail_mass", [0, 1])
+    def test_fourier_low_frequency(self, weight, tail_mass):
+        # gh-12684: the first Fourier cycle is much wider than exp(-x).
+        omega = 1e-5
+        epsabs = 1e-8
+
+        def f(x):
+            return math.exp(-x) + tail_mass * omega * math.exp(-omega*x)
+
+        # The broader exponential contributes 1/2 for either weight.
+        expected = (1 if weight == "cos" else omega) / (1 + omega**2)
+        expected += tail_mass / 2
+        value, error = quad(f, 0, np.inf, weight=weight, wvar=omega, epsabs=epsabs)
+        assert_allclose(value, expected, atol=epsabs, rtol=0)
+        assert error <= epsabs
+
+    @pytest.mark.parametrize("weight", ["cos", "sin"])
+    @pytest.mark.parametrize("right", [False, True])
+    def test_fourier_finite_boundary_layer(self, weight, right):
+        omega, b = 1e-5, 10000.0
+        def f(x):
+            return math.exp(x - b if right else -x)
+
+        if right:
+            transform = (np.exp(1j*omega*b) - exp(-b)) / (1 + 1j*omega)
+        else:
+            transform = -np.expm1((-1 + 1j*omega)*b) / (1 - 1j*omega)
+        expected = transform.real if weight == "cos" else transform.imag
+        value, error = quad(f, 0, b, weight=weight, wvar=omega, epsabs=1e-8)
+        assert_allclose(value, expected, atol=1e-8, rtol=0)
+        assert error <= 1e-8
+
+    def test_fourier_error_update_multiscale(self):
+        # The two components have unit mass, separated by ten orders of magnitude.
+        omega = 1e-10
+
+        def f(x):
+            return math.exp(-x) + omega*math.exp(-omega*x)
+
+        value, error = quad(f, 0, np.inf, weight="cos", wvar=omega, epsabs=1e-8)
+        assert_allclose(value, 1/(1 + omega**2) + 0.5, atol=1e-8, rtol=0)
+        assert error <= 1e-8
+
+    def test_fourier_low_frequency_conditional_tail(self):
+        # The sine transform of x/(1+x**2) converges only by cancellation.
+        omega = 1e-5
+        epsabs = 1e-8
+        value, error = quad(lambda x: x/(1 + x*x), 0, np.inf,
+                            weight="sin", wvar=omega, epsabs=epsabs)
+        assert_allclose(value, pi/2 * exp(-omega), atol=epsabs, rtol=0)
+        assert error <= epsabs
+
     def test_algebraic_log_weight(self):
         # 6) Algebraic-logarithmic weight.
         def myfunc(x, a):
