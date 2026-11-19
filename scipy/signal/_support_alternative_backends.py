@@ -51,6 +51,12 @@ def delegate_xp(delegator, module_name):
                     # CuPy < 14 exposes this under the old SciPy name.
                     cupyx_func = cupyx_module.sosfreqz
                 kwds.pop('xp', None)
+                # LTI instances hold a cupyx twin, hand that over (gh-25072)
+                args = tuple(
+                    getattr(a, '_delegate_to', None)
+                    if getattr(a, '_delegate_to', None) is not None else a
+                    for a in args
+                )
                 # cupyx functions have no `device` kwarg (cupy#9848); they create on the
                 # current cuda device, so honor a device request via the
                 # cupy.cuda.Device context manager
@@ -86,10 +92,6 @@ untested = {
     "csd",
     "czt",
     "czt_points",
-    "dbode",
-    "dfreqresp",
-    "dlsim",
-    "dstep",
     "find_peaks",
     "find_peaks_cwt",
     "freqresp",
@@ -231,9 +233,18 @@ capabilities_overrides = {
     "decimate": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "detrend": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
                                allow_dask_compute=True),
-    "dimpulse": xp_capabilities(np_only=True, exceptions=["cupy"]),
-    "dlti": xp_capabilities(np_only=True,
-                            reason="works in CuPy but delegation isn't set up yet"),
+    "dbode": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
+                             jax_jit=False, allow_dask_compute=True),
+    "dfreqresp": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
+                                 jax_jit=False, allow_dask_compute=True),
+    "dimpulse": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                                jax_jit=False, allow_dask_compute=True),
+    "dlsim": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                             jax_jit=False, allow_dask_compute=True),
+    "dstep": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                             jax_jit=False, allow_dask_compute=True),
+    "dlti": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                            jax_jit=False, allow_dask_compute=True),
     "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                              allow_dask_compute=True,
                              reason="scipy.special.ellipk"),
