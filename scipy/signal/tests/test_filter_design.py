@@ -24,7 +24,8 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           findfreqs, firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
-                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
+                          iirnotch, iirpeak, invfreqz, lp2bp, lp2bs, lp2hp, lp2lp,
+                          normalize,
                           sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
@@ -5194,3 +5195,242 @@ class TestFindFreqs:
         zp = findfreqs(zeros, poles, N=30, kind="zp")
 
         xp_assert_close(ba, zp)
+
+
+class TestInvfreqz:
+    # invfreqz is NumPy-only (np.roots/np.poly, scipy.linalg), so these
+    # tests deliberately take no xp fixture.
+
+    def _response(self, b, a, n, fs=2 * np.pi):
+        # H on the inclusive uniform grid invfreqz requires (dc to Nyquist).
+        w = np.linspace(0, fs / 2, n)
+        _, H = freqz(b, a, worN=w, fs=fs)
+        return w, H
+
+    @pytest.mark.parametrize("b_true, a_true, n_zeros, n_poles", [
+        (*butter(3, 0.25), 3, 3),
+        (*cheby1(4, 1, 0.35), 4, 4),
+        (*butter(1, 0.5, btype='high'), 1, 1),
+    ])
+    def test_exact_recovery_direct(self, b_true, a_true, n_zeros, n_poles):
+        _, H = self._response(b_true, a_true, 65)
+        b, a = invfreqz(H, n_zeros, n_poles)
+        xp_assert_close(b, b_true, atol=1e-8)
+        xp_assert_close(a, a_true, atol=1e-8)
+
+    def test_exact_recovery_iterative(self):
+        b_true, a_true = butter(3, 0.25)
+        _, H = self._response(b_true, a_true, 65)
+        # Model-complete: the initial solve is exact, so the first
+        # refinement converges.
+        b, a = invfreqz(H, 3, 3, maxiter=10)
+        xp_assert_close(b, b_true, atol=1e-8)
+        xp_assert_close(a, a_true, atol=1e-8)
+
+    @pytest.mark.parametrize("scale", [1e-8, 1e-3, 1e3, 1e8, 1e150])
+    def test_scale_invariance(self, scale):
+        # The normal-equation blocks scale as 1, |H|, |H|**2; the fit
+        # must not depend on the units of H.
+        b_true, a_true = butter(3, 0.25)
+        _, H = self._response(b_true, a_true, 65)
+        b, a = invfreqz(scale * H, 3, 3)
+        xp_assert_close(b, scale * b_true, rtol=1e-8)
+        xp_assert_close(a, a_true, atol=1e-8)
+        b, a = invfreqz(scale * H, 2, 2, maxiter=30)
+        b1, a1 = invfreqz(H, 2, 2, maxiter=30)
+        xp_assert_close(b / scale, b1, rtol=1e-6)
+        xp_assert_close(a, a1, rtol=1e-6)
+
+    def test_uniform_weighting_default(self):
+        b_true, a_true = butter(3, 0.25)
+        _, H = self._response(b_true, a_true, 65)
+        b0, a0 = invfreqz(H, 3, 3)
+        b1, a1 = invfreqz(H, 3, 3, U=np.ones(65))
+        xp_assert_close(b0, b1, atol=1e-8)
+        xp_assert_close(a0, a1, atol=1e-8)
+
+    def test_weighting_changes_reduced_order_fit(self):
+        b_true, a_true = cheby1(4, 1, 0.35)
+        _, H = self._response(b_true, a_true, 129)
+        b0, a0 = invfreqz(H, 2, 2)
+        # Emphasize the high-frequency half of the fit.
+        weight = np.linspace(0.1, 10.0, 129)
+        b1, a1 = invfreqz(H, 2, 2, U=np.sqrt(weight))
+        assert not np.allclose(b0, b1)
+
+    def test_weighting_uses_only_magnitude(self):
+        # U enters the fit only through |U|**2, so its phase (and its
+        # overall scale) must not matter; complex dc/Nyquist are fine.
+        b_true, a_true = cheby1(4, 1, 0.35)
+        w, H = self._response(b_true, a_true, 129)
+        U = np.linspace(0.1, 10.0, 129) * np.exp(1j * (w + 0.3))
+        b0, a0 = invfreqz(H, 2, 2, U=np.abs(U))
+        b1, a1 = invfreqz(H, 2, 2, U=U)
+        b2, a2 = invfreqz(H, 2, 2, U=1e4 * U)
+        xp_assert_close(b1, b0, atol=1e-12)
+        xp_assert_close(a1, a0, atol=1e-12)
+        xp_assert_close(b2, b0, atol=1e-12)
+        xp_assert_close(a2, a0, atol=1e-12)
+
+    def test_fir_truncated_impulse_response(self):
+        b_true, a_true = butter(3, 0.25)
+        _, H = self._response(b_true, a_true, 65)
+        b, a = invfreqz(H, 8, 0)
+        imp = np.fft.irfft(H, n=128)[:9]
+        xp_assert_close(b, imp, atol=1e-12)
+        xp_assert_close(a, np.asarray([1.0]))
+
+    def test_all_pole_recovery(self):
+        _, a_true = butter(3, 0.25)
+        b_true = np.asarray([0.5])
+        _, H = self._response(b_true, a_true, 65)
+        b, a = invfreqz(H, 0, 3)
+        xp_assert_close(b, b_true, atol=1e-8)
+        xp_assert_close(a, a_true, atol=1e-8)
+
+    def test_steiglitz_mcbride_improves_reduced_order(self):
+        b_true, a_true = cheby1(4, 1, 0.35)
+        w, H = self._response(b_true, a_true, 129)
+        b0, a0 = invfreqz(H, 2, 2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            b1, a1 = invfreqz(H, 2, 2, maxiter=30, tol=1e-10)
+        _, H0 = freqz(b0, a0, worN=w)
+        _, H1 = freqz(b1, a1, worN=w)
+        assert np.linalg.norm(H - H1) < np.linalg.norm(H - H0)
+
+    def test_maxiter_counts_refinements(self):
+        # maxiter=1 must perform one refinement beyond the direct design.
+        b_true, a_true = cheby1(4, 1, 0.35)
+        _, H = self._response(b_true, a_true, 129)
+        b0, a0 = invfreqz(H, 2, 2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            b1, a1 = invfreqz(H, 2, 2, maxiter=1)
+        assert not np.allclose(a1, a0)
+
+    def test_stabilize(self):
+        # Max-phase target: pole outside the unit circle.
+        a_unstable = np.real(np.poly([1.3, -0.4]))
+        b_target = np.asarray([1.0, 0.2])
+        w, H = self._response(b_target, a_unstable, 65)
+        b, a = invfreqz(H, 1, 2)
+        assert np.any(np.abs(np.roots(a)) > 1)  # matches unstable target
+        b_s, a_s = invfreqz(H, 1, 2, stabilize=True)
+        assert np.all(np.abs(np.roots(a_s)) < 1)
+        assert a_s[0] == pytest.approx(1.0)
+        # Reflection preserves the magnitude response.
+        _, H_u = freqz(b, a, worN=w)
+        _, H_s = freqz(b_s, a_s, worN=w)
+        xp_assert_close(np.abs(H_s), np.abs(H_u), atol=1e-10)
+
+    def test_excess_order_near_constant(self):
+        # A nearly constant H fit with (2, 2) admits near pole-zero
+        # cancellations, making the normal equations ill-conditioned
+        # (cond ~ 3e7); the SVD-based solve must still return a usable fit.
+        w = np.linspace(0, np.pi, 257)
+        H = (0.98 - 0.01 * w / np.pi).astype(complex)
+        b, a = invfreqz(H, 2, 2)
+        _, H_fit = freqz(b, a, worN=w)
+        rel_err = np.linalg.norm(H - H_fit) / np.linalg.norm(H)
+        assert rel_err < 1e-2
+
+    def test_singular_pure_delay(self):
+        # A unit delay fit with (2, 2) has a rank-deficient block system
+        # (cond ~ 1e16): lstsq must pick the minimum-norm exact solution
+        # where a plain solve would return coefficients ~ 1e15.
+        w = np.linspace(0, np.pi, 65)
+        b, a = invfreqz(np.exp(-1j * w), 2, 2)
+        xp_assert_close(b, np.asarray([0.0, 1.0, 0.0]), atol=1e-10)
+        xp_assert_close(a, np.asarray([1.0, 0.0, 0.0]), atol=1e-10)
+
+    @pytest.mark.parametrize("n_zeros, n_poles", [(4, 4), (4, 2), (6, 4)])
+    def test_pure_delay_equal_to_order(self, n_zeros, n_poles):
+        # Contrast with test_singular_pure_delay: with d >= n_zeros the
+        # numerator and denominator columns are disjoint delays,
+        # orthogonal on the FFT grid, so the block system is perfectly
+        # conditioned (cond = 1) and z**-d is recovered exactly.
+        d = n_zeros
+        w = np.linspace(0, np.pi, 257)
+        b, a = invfreqz(np.exp(-1j * d * w), n_zeros, n_poles)
+        b_true = np.zeros(n_zeros + 1)
+        b_true[d] = 1.0
+        a_true = np.zeros(n_poles + 1)
+        a_true[0] = 1.0
+        xp_assert_close(b, b_true, atol=1e-12)
+        xp_assert_close(a, a_true, atol=1e-12)
+
+    def test_allpass_at_own_order(self):
+        # An allpass target fit at its own order is well conditioned and
+        # recovered to near machine precision.
+        a_true = np.poly([0.8 * np.exp(0.7j), 0.8 * np.exp(-0.7j),
+                          0.6 * np.exp(2.1j), 0.6 * np.exp(-2.1j)]).real
+        b_true = a_true[::-1]
+        _, H = self._response(b_true, a_true, 257)
+        b, a = invfreqz(H, 4, 4)
+        xp_assert_close(b, b_true, atol=1e-11)
+        xp_assert_close(a, a_true, atol=1e-11)
+
+    def test_real_H_accepted(self):
+        # A real (zero-phase target) H is legitimate input.
+        b_true, a_true = butter(3, 0.25)
+        _, H = self._response(b_true, a_true, 65)
+        b, a = invfreqz(np.abs(H), 3, 3)
+        assert b.shape == (4,) and a.shape == (4,)
+        assert np.all(np.isfinite(b)) and np.all(np.isfinite(a))
+
+    def test_nonconvergence_warns(self):
+        b_true, a_true = cheby1(4, 1, 0.35)
+        _, H = self._response(b_true, a_true, 129)
+        with pytest.warns(UserWarning, match="did not converge"):
+            invfreqz(H, 2, 2, maxiter=2, tol=1e-15)
+
+    @pytest.mark.parametrize("fs", [2 * np.pi, 1.0, 48000.0])
+    def test_w_grid_accepted(self, fs):
+        b_true, a_true = butter(3, 0.25)
+        w, H = self._response(b_true, a_true, 65, fs=fs)
+        b, a = invfreqz(H, 3, 3, w=w, fs=fs)
+        xp_assert_close(b, b_true, atol=1e-8)
+        b, a = invfreqz(H, 3, 3, w=w.astype(np.float32), fs=fs)
+        xp_assert_close(b, b_true, atol=1e-8)
+
+    @pytest.mark.parametrize("bad_w", [
+        np.linspace(0, 0.5, 65),           # does not reach pi
+        np.linspace(0, 22050, 65),         # Hz instead of rad/sample
+        np.linspace(0, np.pi, 64),         # wrong length
+        np.geomspace(1e-3, np.pi, 65),     # non-uniform
+        np.linspace(0, np.pi, 65) * (1 + 1e-6),  # slightly off scale
+    ])
+    def test_bad_w_grid_rejected(self, bad_w):
+        _, H = self._response(*butter(3, 0.25), 65)
+        with pytest.raises(ValueError, match="uniform grid"):
+            invfreqz(H, 3, 3, w=bad_w)
+
+    def test_input_validation(self):
+        _, H = self._response(*butter(3, 0.25), 65)
+        with pytest.raises(ValueError, match="one-dimensional"):
+            invfreqz(np.ones((4, 4)), 1, 1)
+        with pytest.raises(ValueError, match="non-negative"):
+            invfreqz(H, -1, 3)
+        with pytest.raises(ValueError, match="non-negative"):
+            invfreqz(H, 3, 3, maxiter=-1)
+        with pytest.raises(ValueError, match="tol"):
+            invfreqz(H, 3, 3, tol=0.0)
+        with pytest.raises(ValueError, match="too short"):
+            invfreqz(H[:5], 3, 3)
+        with pytest.raises(ValueError, match="finite"):
+            invfreqz(np.concatenate([H[:-1], [np.inf]]), 3, 3)
+        with pytest.raises(ValueError, match="identically zero"):
+            invfreqz(np.zeros(65), 3, 3)
+        with pytest.raises(ValueError, match="same shape"):
+            invfreqz(H, 3, 3, U=np.ones(64))
+        with pytest.raises(ValueError, match="finite"):
+            invfreqz(H, 3, 3, U=np.full(65, np.nan))
+        with pytest.raises(ValueError, match="identically zero"):
+            invfreqz(H, 3, 3, U=np.zeros(65))
+        with pytest.raises(ValueError, match="must be real"):
+            invfreqz(H + 0.1j, 3, 3)
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            invfreqz(H, 3, 3, fs=np.asarray([10, 20]))
+        with pytest.raises(TypeError):
+            invfreqz(H, 1.5, 3)
