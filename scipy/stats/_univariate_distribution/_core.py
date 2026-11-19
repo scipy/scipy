@@ -2463,7 +2463,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         xp = self._xp
         k = xp.arange(order, dtype=self._dtype, device=self._device)
         k = xp.moveaxis(xpx.atleast_nd(k, ndim=self._ndim + 1), -1, 0)
-        E = order_statistic(self, r=order-k, n=order).mean()
+        Xr = order_statistic(self, r=order-k, n=order)
+        Xr.tol = self.tol
+        E = Xr.mean()
         bc = xp.astype(special.binom(order-1, k), self._dtype)
         return xp.sum((-1)**k * bc * E, axis=0) / order
 

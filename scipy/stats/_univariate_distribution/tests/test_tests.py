@@ -48,4 +48,6 @@ class TestMyNormal(DistributionsTest):
     @pytest.mark.xslow
     @pytest.mark.thread_unsafe(reason="tests cache of shared `case.dist`")
     def test_lmoment(self, case, xp):
+        # Cancellation in the order-statistic reference requires accurate means.
+        case.dist.tol = 1e-12
         return super().test_lmoment(case, tol_override={'atol': 1e-9}, xp=xp)
