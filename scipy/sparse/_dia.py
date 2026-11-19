@@ -598,6 +598,9 @@ class dia_array(_dia_base, sparray):
     Note that if ``offsets`` is provided in decreasing order, this format
     matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
 
+    Trailing all-zero columns of ``data`` may be omitted; entries beyond
+    the stored data width are treated as zeros.
+
     Examples
     --------
 
@@ -710,6 +713,9 @@ class dia_matrix(spmatrix, _dia_base):
 
     Note that if ``offsets`` is provided in decreasing order, this format
     matches the BLAS/LAPACK general band format (e.g., as used in ``dgbmv``).
+
+    Trailing all-zero columns of ``data`` may be omitted; entries beyond
+    the stored data width are treated as zeros.
 
     Examples
     --------
