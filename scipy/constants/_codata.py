@@ -2083,13 +2083,13 @@ for k in _physical_constants_2002:
         _aliases[k] = k.replace('magn.', 'mag.')
 for k in _physical_constants_2006:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')
+        _aliases[k.replace('momentum', 'mom.um')] = k
 for k in _physical_constants_2018:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')
+        _aliases[k.replace('momentum', 'mom.um')] = k
 for k in _physical_constants_2022:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')
+        _aliases[k.replace('momentum', 'mom.um')] = k
 
 # CODATA 2018 and 2022: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'

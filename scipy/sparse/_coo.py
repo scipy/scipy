@@ -1418,7 +1418,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(shape, new_shape)):
             raise ValueError(f"current shape {old_shape} cannot be "
-                             "broadcast to new shape {new_shape}")
+                             f"broadcast to new shape {new_shape}")
 
         # Reshape the COO array to match the new dimensions
         self = self.reshape(shape)

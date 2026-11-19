@@ -164,14 +164,14 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
             # Make sure this works if the user uses the axis keywords
             # to apply the norm to the transpose.
             if ord == 1:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = '1', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = 'i', a.T
             elif ord == np.inf:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = 'i', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = '1', a.T
             if lange_args:
                 lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
@@ -192,6 +192,20 @@ def _datacopied(arr, original):
     if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
         return False
     return arr.base is None
+
+
+# "np.isdtype" lookup is 20x-25x slower than the set lookup and for smaller
+# arrays creates a large overhead;
+# np.isdtype: 0.69-1.25 us, set lookup 0.04-0.05 us for a _bandwidth call
+# that takes around 0.2-0.3 us for small n. Hence types are collected here
+# for a set lookup.
+_BANDWIDTH_SUPPORTED_DTYPES = {
+    np.bool_,
+    np.int8, np.int16, np.int32, np.int64,
+    np.uint8, np.uint16, np.uint32, np.uint64,
+    np.float32, np.float64,
+    np.complex64, np.complex128,
+}
 
 
 def bandwidth(a):
@@ -253,12 +267,8 @@ def bandwidth(a):
     if a.ndim < 2:
         raise ValueError('Input array must be at least 2D.')
 
-    if np.isdtype(a.dtype, (np.float16, np.longdouble, np.clongdouble)):
+    if a.dtype.type not in _BANDWIDTH_SUPPORTED_DTYPES:
         raise TypeError(f'Input array with {a.dtype} dtype is not supported.')
-
-    # Now that the problematic numeric types are tested, test for numeric or bool.
-    elif not np.isdtype(a.dtype, ("numeric", "bool")):
-        raise TypeError(f'Input array must have a numeric dtype, got {a.dtype}.')
 
     # Empty array bandwidth is defined to be zero.
     if a.size == 0:

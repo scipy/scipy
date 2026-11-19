@@ -9,7 +9,6 @@ import numpy as np
 from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
-from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import xp_assert_equal, make_xp_test_case, xp_isscalar
 from scipy._lib._testutils import IS_WASM
@@ -355,20 +354,6 @@ class TestContainsNaN:
         assert _contains_nan(np.array([np.nan, 2., np.nan]))
         assert not _contains_nan(np.array([[1., 2.], [3., 4.]]))
         assert _contains_nan(np.array([[1., 2.], [3., np.nan]]))
-
-    @skip_xp_invalid_arg
-    def test_contains_nan_with_strings(self):
-        data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        assert not _contains_nan(data1)
-
-        data2 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data2)
-
-        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        assert not _contains_nan(data3)
-
-        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data4)
 
     @pytest.mark.skip_xp_backends(eager_only=True,
                                   reason="lazy backends tested separately")

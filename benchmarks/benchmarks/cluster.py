@@ -85,7 +85,7 @@ class KMeans2(Benchmark):
     param_names = ['k', 'init']
 
     def __init__(self):
-        self.rng = np.random.RandomState(0)
+        self.rng = np.random.default_rng(0)
         self.obs = self.rng.rand(1000, 5)
 
     def time_kmeans2(self, k, init):

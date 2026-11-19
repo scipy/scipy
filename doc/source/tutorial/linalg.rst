@@ -725,7 +725,7 @@ functions of matrices.
 The following example illustrates the Schur decomposition:
 
     >>> from scipy import linalg
-    >>> A = np.asmatrix('[1 3 2; 1 4 5; 2 3 6]')
+    >>> A = np.asarray([[1, 3, 2], [1, 4, 5], [2, 3, 6]])
     >>> T, Z = linalg.schur(A)
     >>> T1, Z1 = linalg.schur(A, 'complex')
     >>> T2, Z2 = linalg.rsf2csf(T, Z)

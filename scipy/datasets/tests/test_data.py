@@ -23,7 +23,8 @@ def _has_hash(path, expected_hash):
 class TestDatasets:
 
     @pytest.fixture(scope='module', autouse=True)
-    def test_download_all(self):
+    @classmethod
+    def test_download_all(cls):
         # This fixture requires INTERNET CONNECTION
 
         # test_setup phase

@@ -121,6 +121,10 @@ scipy_config_h = configure_file(
 )
 
 
+# Passed only to targets that contain runtime-dispatched SIMD kernels
+simd_args = get_option('use-simd') ? [] : ['-DSCIPY_DISABLE_SIMD']
+
+
 # Start of BLAS/LAPACK detection
 
 blas_name = get_option('blas')

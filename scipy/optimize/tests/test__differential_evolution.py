@@ -530,11 +530,11 @@ class TestDifferentialEvolutionSolver:
             # use `seed` to check that DeprecationWarning is emitted
             with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
                 differential_evolution(self.quadratic,
-                                    [(-100, 100)],
-                                    polish=False,
-                                    seed=rng,
-                                    tol=0.5,
-                                    init=init)
+                                       [(-100, 100)],
+                                       polish=False,
+                                       seed=rng,
+                                       tol=0.5,
+                                       init=init)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs

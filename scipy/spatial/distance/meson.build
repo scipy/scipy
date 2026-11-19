@@ -27,7 +27,6 @@ py3.extension_module('_hausdorff',
 
 py3.install_sources([
     '__init__.py',
-    '_distance.pyi',
     '_distance.py'
   ],
   subdir: 'scipy/spatial/distance'

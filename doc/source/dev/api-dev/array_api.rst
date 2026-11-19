@@ -24,19 +24,6 @@ In the following, an array API compatible namespace is noted as ``xp``.
 Using array API standard support
 --------------------------------
 
-To enable the array API standard support, an environment variable must be set
-before importing SciPy:
-
-.. code:: bash
-
-   export SCIPY_ARRAY_API=1
-
-This both enables array API standard support and the more strict input
-validation for array-like arguments. *Note that this environment variable is
-meant to be temporary, as a way to make incremental changes and merge them into
-``main`` without affecting backwards compatibility immediately. We do not
-intend to keep this environment variable around long-term.*
-
 This clustering example shows usage with PyTorch tensors as inputs and return
 values:
 
@@ -60,7 +47,7 @@ CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
 uses compiled code in its implementation, which won't work on GPU, and there
 are currently no GPU specific implementations to delegate to.
 
-More strict array input validation will reject ``np.matrix`` and
+More strict array input validation now rejects ``np.matrix`` and
 ``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
 
 .. code:: python
@@ -76,7 +63,7 @@ More strict array input validation will reject ``np.matrix`` and
     (array([1, 1, 0], dtype=int32), array([0.43588989, 0.73484692, 0.83066239]))
 
     >>> # The above uses numpy arrays; trying to use np.matrix instances or object
-    >>> # arrays instead will yield an exception with `SCIPY_ARRAY_API=1`:
+    >>> # arrays instead will raise an exception
     >>> vq(np.asmatrix(features), code_book)
     ...
     TypeError: 'numpy.matrix' are not supported
@@ -624,7 +611,7 @@ GPU.
 .. dropdown:: Functions with JAX JIT support but no GPU support
   :icon: alert
   :color: warning
-	      
+
   It's possible for a function to be natively available in JAX,
   support ``jax.jit``, but not be supported on GPU. Thus, it may be
   possible for JAX delegation to be set up in a function which has
@@ -980,18 +967,6 @@ markers).
   xfail certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to xfail tests.
-* ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
-  are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
-  `scipy.stats` functions pass masked arrays to the function being tested, but
-  masked arrays are incompatible with the array API. Use of the
-  ``skip_xp_invalid_arg`` decorator allows these tests to protect against
-  regressions when ``SCIPY_ARRAY_API`` is not used without resulting in failures
-  when ``SCIPY_ARRAY_API`` is used. In time, we will want these functions to emit
-  deprecation warnings when they receive array API invalid input, and this
-  decorator will check that the deprecation warning is emitted without it
-  causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
-  default and only behavior, these tests (and the decorator itself) will be
-  removed.
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
@@ -1071,7 +1046,6 @@ Examples
 The following examples demonstrate how to use direct markers together with
 ``make_xp_test_case``::
 
-  from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close, make_xp_test_case
 
   @make_xp_test_case(toto)
@@ -1089,11 +1063,6 @@ The following examples demonstrate how to use direct markers together with
       def test_toto2(self, xp):
           ...
   ...
-      # Do not run when SCIPY_ARRAY_API=1 is used since calling toto on masked
-      # arrays will raise in this case.
-      @skip_xp_invalid_arg
-      def test_toto_masked_array(self):
-          ...
 
 
 Running tests
@@ -1402,128 +1371,37 @@ helped during the development phase:
 
 API Coverage
 ------------
-The below tables show the current state of alternative backend support across
-SciPy's modules. Public functions, function-like callables, and classes are
-included in the tables. Parts of the public API which are deemed out-of-scope
-are excluded from consideration when calculating coverage percentages. If a
-module or submodule contains no in-scope functions, it is excluded from the
-tables. For example, `scipy.datasets` is excluded because its contents are
-considered out-of-scope.
 
-.. toctree::
-   :hidden:
+The state of alternative backend support across SciPy's modules is summarized in the
+following tables: :ref:`array-api-coverage`.
 
-   array_api_modules_tables/cluster_vq
-   array_api_modules_tables/cluster_hierarchy
-   array_api_modules_tables/constants
-   array_api_modules_tables/differentiate
-   array_api_modules_tables/fft
-   array_api_modules_tables/integrate
-   array_api_modules_tables/interpolate
-   array_api_modules_tables/linalg
-   array_api_modules_tables/linalg_interpolative
-   array_api_modules_tables/ndimage
-   array_api_modules_tables/optimize
-   array_api_modules_tables/optimize_elementwise
-   array_api_modules_tables/signal
-   array_api_modules_tables/signal_windows
-   array_api_modules_tables/sparse
-   array_api_modules_tables/sparse_linalg
-   array_api_modules_tables/sparse_csgraph
-   array_api_modules_tables/spatial
-   array_api_modules_tables/spatial_distance
-   array_api_modules_tables/spatial_transform
-   array_api_modules_tables/special
-   array_api_modules_tables/stats
-   array_api_modules_tables/stats_contingency
-   array_api_modules_tables/stats_qmc
 
-Support on CPU
-``````````````
+.. _array_api_support_signal_caveats:
 
-.. array-api-support-per-module::
-   :backend_type: cpu
-   :cluster.vq: array_api_support_cluster_vq_cpu
-   :cluster.hierarchy: array_api_support_cluster_hierarchy_cpu
-   :constants: array_api_support_constants_cpu
-   :differentiate: array_api_support_differentiate_cpu
-   :fft: array_api_support_fft_cpu
-   :integrate: array_api_support_integrate_cpu
-   :interpolate: array_api_support_interpolate_cpu
-   :linalg: array_api_support_linalg_cpu
-   :linalg.interpolative: array_api_support_linalg_interpolative_cpu
-   :ndimage: array_api_support_ndimage_cpu
-   :optimize: array_api_support_optimize_cpu
-   :optimize.elementwise: array_api_support_optimize_elementwise_cpu
-   :signal: array_api_support_signal_cpu
-   :signal.windows: array_api_support_signal_windows_cpu
-   :sparse: array_api_support_sparse_cpu
-   :sparse.linalg: array_api_support_sparse_linalg_cpu
-   :sparse.csgraph: array_api_support_sparse_csgraph_cpu
-   :spatial: array_api_support_spatial_cpu
-   :spatial.distance: array_api_support_spatial_distance_cpu
-   :spatial.transform: array_api_support_spatial_transform_cpu
-   :special: array_api_support_special_cpu
-   :stats: array_api_support_stats_cpu
-   :stats.contingency: array_api_support_stats_contingency_cpu
-   :stats.qmc: array_api_support_stats_qmc_cpu
+``scipy.signal`` specific caveats
+---------------------------------
 
-Support on GPU
-``````````````
+`JAX <https://docs.jax.dev/en/latest/jax.scipy.html>`__ and `CuPy
+<https://docs.cupy.dev/en/stable/reference/scipy_signal.html>`__ provide alternative
+implementations for some `~scipy.signal` functions. When such a function is called, a
+decorator decides which implementation to use by inspecting the `xp` parameter.
 
-.. array-api-support-per-module::
-   :backend_type: gpu
-   :cluster.vq: array_api_support_cluster_vq_gpu
-   :cluster.hierarchy: array_api_support_cluster_hierarchy_gpu
-   :constants: array_api_support_constants_gpu
-   :differentiate: array_api_support_differentiate_gpu
-   :fft: array_api_support_fft_gpu
-   :integrate: array_api_support_integrate_gpu
-   :interpolate: array_api_support_interpolate_gpu
-   :linalg: array_api_support_linalg_gpu
-   :linalg.interpolative: array_api_support_linalg_interpolative_gpu
-   :ndimage: array_api_support_ndimage_gpu
-   :optimize: array_api_support_optimize_gpu
-   :optimize.elementwise: array_api_support_optimize_elementwise_gpu
-   :signal: array_api_support_signal_gpu
-   :signal.windows: array_api_support_signal_windows_gpu
-   :sparse: array_api_support_sparse_gpu
-   :sparse.linalg: array_api_support_sparse_linalg_gpu
-   :sparse.csgraph: array_api_support_sparse_csgraph_gpu
-   :spatial: array_api_support_spatial_gpu
-   :spatial.distance: array_api_support_spatial_distance_gpu
-   :spatial.transform: array_api_support_spatial_transform_gpu
-   :special: array_api_support_special_gpu
-   :stats: array_api_support_stats_gpu
-   :stats.contingency: array_api_support_stats_contingency_gpu
-   :stats.qmc: array_api_support_stats_qmc_gpu
+Hence, there can be, especially during CI testing, discrepancies in behavior between
+the default NumPy-based implementation and the JAX and CuPy backends. Skipping the
+incompatible backends in unit tests, as described in the
+:ref:`dev-arrayapi_adding_tests` section, is the currently recommended workaround.
 
-Support with JIT
-````````````````
+The functions are decorated by the code in file
+``scipy/signal/_support_alternative_backends.py``:
 
-.. array-api-support-per-module::
-   :backend_type: jit
-   :cluster.vq: array_api_support_cluster_vq_jit
-   :cluster.hierarchy: array_api_support_cluster_hierarchy_jit
-   :constants: array_api_support_constants_jit
-   :differentiate: array_api_support_differentiate_jit
-   :fft: array_api_support_fft_jit
-   :integrate: array_api_support_integrate_jit
-   :interpolate: array_api_support_interpolate_jit
-   :linalg: array_api_support_linalg_jit
-   :linalg.interpolative: array_api_support_linalg_interpolative_jit
-   :ndimage: array_api_support_ndimage_jit
-   :optimize: array_api_support_optimize_jit
-   :optimize.elementwise: array_api_support_optimize_elementwise_jit
-   :signal: array_api_support_signal_jit
-   :signal.windows: array_api_support_signal_windows_jit
-   :sparse: array_api_support_sparse_jit
-   :sparse.linalg: array_api_support_sparse_linalg_jit
-   :sparse.csgraph: array_api_support_sparse_csgraph_jit
-   :spatial: array_api_support_spatial_jit
-   :spatial.distance: array_api_support_spatial_distance_jit
-   :spatial.transform: array_api_support_spatial_transform_jit
-   :special: array_api_support_special_jit
-   :stats: array_api_support_stats_jit
-   :stats.contingency: array_api_support_stats_contingency_jit
-   :stats.qmc: array_api_support_stats_qmc_jit
+.. literalinclude:: ../../../../scipy/signal/_support_alternative_backends.py
+    :lineno-match:
+
+Note that a function will only be decorated if its signature is listed in the file
+``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
+function looks like this:
+
+.. literalinclude:: ../../../../scipy/signal/_delegators.py
+    :pyobject: firwin_signature
+    :lineno-match:
+
