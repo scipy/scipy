@@ -1294,7 +1294,10 @@ class TestBarnardExact:
             ([[5, 15], [20, 20]], (-1.974771239528, 0.063038448651)),
             ([[5, 16], [20, 25]], (-1.722122973346, 0.133329494287)),
             ([[10, 5], [10, 1]], (-1.765469659009, 0.250566655215)),
-            ([[5, 0], [1, 4]], (5.477225575052, 0.007812500000)),
+            # R's Barnard package gives 0.0078125 here because it drops the
+            # table [[1, 4], [5, 0]], whose statistic is the same up to
+            # rounding (gh-18798). The value is from R's Exact package.
+            ([[5, 0], [1, 4]], (5.477225575052, 0.013671875000)),
             ([[0, 1], [3, 2]], (-1.224744871392, 0.509667991877)),
             ([[0, 2], [6, 4]], (-1.732050807569, 0.197019618792)),
             ([[2, 7], [8, 2]], (-3.079373904042, 0.020172119141)),
@@ -1397,6 +1400,17 @@ class TestBarnardExact:
         assert_allclose(
             [statistic, pvalue], [expected_stat, less_pvalue_expect], atol=1e-7
         )
+
+    @pytest.mark.parametrize("pooled", [True, False])
+    def test_numerically_tied_statistics(self, pooled):
+        # gh-18798: tables whose Wald statistic equals the observed one up to
+        # rounding must count as at least as extreme. Reference values are
+        # from R's Exact package:
+        # exact.test(matrix(c(7, 8, 12, 3), 2), method="z-pooled",
+        #            model="Binomial", cond.row=FALSE, npNumbers=100000)
+        # and the same with method="z-unpooled".
+        res = barnard_exact([[7, 12], [8, 3]], pooled=pooled)
+        assert_allclose(res.pvalue, 0.0682183093232, rtol=1e-9)
 
 
 class TestBoschlooExact:
@@ -2098,6 +2112,16 @@ class TestPoissonMeansTest:
         message = 'Alternative must be one of ...'
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
+
+    @pytest.mark.parametrize("k1, n1, k2, n2", [(3, 7.3, 0, 5.5),
+                                                (0, 5.5, 3, 7.3)])
+    def test_observed_outcome_included(self, k1, n1, k2, n2):
+        # gh-18798: the observed outcome was dropped from its own p-value when
+        # its statistic and the same point on the grid rounded differently,
+        # giving 0.0377. Reference from statsmodels:
+        # test_poisson_2indep(3, 7.3, 0, 5.5, method="etest-wald").pvalue
+        res = stats.poisson_means_test(k1, n1, k2, n2)
+        assert_allclose(res.pvalue, 0.09706072230989986, rtol=1e-12)
 
 
 @make_xp_test_case(stats.bws_test)

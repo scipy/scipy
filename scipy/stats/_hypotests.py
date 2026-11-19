@@ -198,6 +198,15 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
 
 
 @xp_capabilities(np_only=True)
+def _tie_tolerance(observed):
+    # Relative tolerance for treating numerically distinct but theoretically
+    # equal statistics as ties, as in `permutation_test` (gh-18798).
+    observed = abs(observed)
+    if not np.isfinite(observed):
+        return 0.0
+    return observed * np.finfo(np.float64).eps * 100
+
+
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
     Performs the Poisson means test, AKA the "E-test".
@@ -370,12 +379,13 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
 
     # `[indicator]` implements the "I[.] ... the indicator function" per
     # the paragraph following equation (3.5).
+    gamma = _tie_tolerance(t_k1k2)
     if alternative == 'two-sided':
-        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2) - gamma
     elif alternative == 'less':
-        indicator = t_x1x2 <= t_k1k2
+        indicator = t_x1x2 <= t_k1k2 + gamma
     else:
-        indicator = t_x1x2 >= t_k1k2
+        indicator = t_x1x2 >= t_k1k2 - gamma
 
     # Multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
@@ -1207,12 +1217,13 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     wald_stat_obs = wald_statistic[table[0, 0], table[0, 1]]
 
+    gamma = _tie_tolerance(wald_stat_obs)
     if alternative == "two-sided":
-        index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs)
+        index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs) - gamma
     elif alternative == "less":
-        index_arr = wald_statistic <= wald_stat_obs
+        index_arr = wald_statistic <= wald_stat_obs + gamma
     elif alternative == "greater":
-        index_arr = wald_statistic >= wald_stat_obs
+        index_arr = wald_statistic >= wald_stat_obs - gamma
     else:
         msg = (
             "`alternative` should be one of {'two-sided', 'less', 'greater'},"
