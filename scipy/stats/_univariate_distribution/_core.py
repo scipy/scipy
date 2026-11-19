@@ -16,7 +16,7 @@ from scipy._lib._array_api import (
     is_torch, xp_device, xp_result_device, xp_result_type,
     xp_compat_namespace
 )
-from scipy._lib._docscrape import ClassDoc, NumpyDocString
+from scipy._lib._docscrape import ClassDoc, NumpyDocString, Parameter
 from scipy._lib._util import _rng_spawn
 from scipy._external import array_api_extra as xpx
 from scipy import special
@@ -359,8 +359,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     Attributes
     ----------
-    Parameters `tol`, `validation_policy`, and `cache_policy` are available
-    as attributes.
+    tol, validation_policy, cache_policy :
+        All parameters are available as attributes.
 
     Methods
     -------
@@ -572,7 +572,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             if hasattr(self.__class__, name):
                 continue
             setattr(self.__class__, name, property(lambda self_, name_=name:
-                                                   xp_copy(self_._parameters[name_])[()]))
+                                                   xp_copy(self_._parameters[name_])[()],
+                                                   doc=self._get_parameter_doc(name)))
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -714,6 +715,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
         return f"{{{', '.join(parameters.keys())}}}"
+
+    def _get_parameter_doc(self, param):
+        # Get the __doc__ string of a parameterization parameter.
+        return self._parameterizations[0].get_param_doc(param)
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
@@ -3674,9 +3679,15 @@ def _combine_docs(dist_family, *, include_examples=True):
 
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(UnivariateDistribution)
+    dist_params = _distribution_parameters_doc(dist_family)
     for field in fields:
-        if field in {"Methods", "Attributes"}:
+        if field == "Methods":
             doc[field] = superdoc[field]
+        elif field == "Attributes":
+            # Distribution parameters are also exposed as attributes
+            doc[field] = dist_params + superdoc[field]
+        elif field == "Parameters":
+            doc[field] = dist_params + doc[field] + superdoc[field]
         elif field in {"Summary"}:
             pass
         elif field == "Extended Summary":
@@ -3690,6 +3701,18 @@ def _combine_docs(dist_family, *, include_examples=True):
         else:
             doc[field] += superdoc[field]
     return str(doc)
+
+
+def _distribution_parameters_doc(dist_family):
+    # numpydoc entries for the parameters of all parameterizations of
+    # `dist_family`, in order of first appearance, without duplicates.
+    params = {}
+    for parameterization in getattr(dist_family, '_parameterizations', []):
+        for name, param in parameterization.parameters.items():
+            params.setdefault(name, param)
+    return [Parameter(name, "array_like",
+                      [param.docstring] if param.docstring else [])
+            for name, param in params.items()]
 
 
 def _generate_example(dist_family):
