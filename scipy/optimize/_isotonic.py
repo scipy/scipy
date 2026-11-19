@@ -138,6 +138,9 @@ def isotonic_regression(
         wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
+    if n == 0:
+        r[0] = 0
+        return OptimizeResult(x=x, weights=wx, blocks=r)
     x, wx, r, b = pava(x, wx, r)
     # Now that we know the number of blocks b, we only keep the relevant part
     # of r and wx.
