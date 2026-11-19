@@ -465,8 +465,6 @@ wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
 wrogerstanimoto = _weight_checked(rogerstanimoto)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
-wcityblock = _weight_checked(cityblock)
-wbraycurtis = _weight_checked(braycurtis)
 wsokalsneath = _weight_checked(sokalsneath)
 wrussellrao = _weight_checked(russellrao)
 
@@ -2099,11 +2097,42 @@ class TestSokalsneath:
         xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
 
 
+@make_xp_test_case(braycurtis)
 class TestBrayCurtis:
-    def test_braycurtis(self):
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_braycurtis(self, xp, kind):
         # Regression test for ticket #1430.
-        assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
-        assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+        dtype = xpx.default_dtype(xp, kind)
+        u = xp.asarray([1, 2, 3], dtype=dtype)
+        v = xp.asarray([2, 4, 6], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(1. / 3), atol=1e-15)
+        u = xp.asarray([1, 1, 0, 0], dtype=dtype)
+        v = xp.asarray([1, 0, 1, 0], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(0.5), atol=1e-15)
+
+    def test_braycurtis_array_like(self):
+        xp_assert_close(braycurtis([1, 2, 3], [2, 4, 6]), np.asarray(1. / 3))
+        xp_assert_close(braycurtis([1, 1, 0, 0], [1, 0, 1, 0]), np.asarray(0.5))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(braycurtis, x, y)
+        xp_assert_scaling_weight(braycurtis, x, y)
+        xp_assert_zero_weight(braycurtis, x, y)
+        xp_assert_duplication_weight(braycurtis, x, y)
+        xp_assert_split_weight(braycurtis, x, y)
+
+    @pytest.mark.filterwarnings("ignore:invalid value")
+    def test_braycurtis_nan(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
+        u, v = xp.asarray([0, 0]), xp.asarray([0, 0])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
 
 
 @make_xp_test_case(canberra)
@@ -2684,7 +2713,7 @@ class TestChebyshev:
         make_xp_pytest_param(chebyshev, None),
         make_xp_pytest_param(canberra, None),
         # jensenshannon takes no w vector. Tested in TestJensenShannon
-        (braycurtis, None),
+        make_xp_pytest_param(braycurtis, None),
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
