@@ -1278,6 +1278,19 @@ class TestCephes:
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
 
+class TestOblateSpheroidal:
+    def test_obl_rad2_gh3777(self):
+        # Reference values generate in Mathematica:
+        # values = N[{
+        #    SpheroidalS2[1, 0, -I/5, 3 I/4],
+        #    I SpheroidalS2Prime[1, 0, -I/5, 3 I/4]
+        # }];
+        # NumberForm[values, 17]
+        ref = (-23.23849788798814, 33.40183608565515)
+        res = special.obl_rad2(0, 1, 0.2, 0.75)
+        assert_allclose(res, ref, atol=5e-13, rtol=0)
+
+
 class TestAiry:
     def test_airy(self):
         # This tests the airy function to ensure 8 place accuracy in computation
