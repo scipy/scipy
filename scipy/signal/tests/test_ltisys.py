@@ -1328,3 +1328,40 @@ class Test_freqresp:
 )
 def test_subscriptable_generic_types(cls):
     assert isinstance(cls[np.float64], GenericAlias)
+
+
+@pytest.mark.parametrize('start', [0.25, 5.0])
+@pytest.mark.parametrize('initial', [None, 3.0, [3.0]])
+def test_delayed_first_order(start, initial):
+    times = start + np.arange(5) / 4
+    tout, y = step(([1.0], [1.0, 1.0]), X0=initial, T=times)
+    x0 = 0 if initial is None else 3
+    np.testing.assert_array_equal(tout, times)
+    np.testing.assert_allclose(y, 1 + (x0 - 1) * np.exp(-times), atol=1e-14)
+
+
+@pytest.mark.parametrize('den, expected', [
+    ([1., 0.], lambda t: t),
+    ([1., 0., 0.], lambda t: t * t / 2),
+])
+def test_delayed_integrators(den, expected):
+    times = np.array([1.25, 1.5, 1.75])
+    tout, y = step(([1.], den), T=times)
+    np.testing.assert_array_equal(tout, times)
+    np.testing.assert_allclose(y, expected(times), atol=1e-14)
+
+
+@pytest.mark.parametrize('times', [[2.], [2., 3., 4.]])
+def test_delayed_feedthrough(times):
+    times = np.array(times)
+    tout, y = step(([-1.], [1.], [1.], [2.]), T=times)
+    np.testing.assert_array_equal(tout, times)
+    np.testing.assert_allclose(y, 3 - np.exp(-times), atol=1e-14)
+
+
+def test_delayed_multistate_initial_condition():
+    system = ([[0., 1.], [0., 0.]], [[0.], [1.]], [[1., 0.]], [[2.]])
+    times = np.array([1., 1.5, 2.])
+    tout, y = step(system, X0=[3., 4.], T=times)
+    np.testing.assert_array_equal(tout, times)
+    np.testing.assert_allclose(y, 5 + 4 * times + times**2 / 2, atol=1e-14)
