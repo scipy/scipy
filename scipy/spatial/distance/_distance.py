@@ -1497,7 +1497,7 @@ def russellrao(u, v, w=None):
     else:
         w = xp_promote(w, force_floating=True, xp=xp)
         if not broadcastable(w.shape, tt.shape):
-            raise ValueError("Array shapes are incompatible for broadcasting.")
+            raise ValueError("Weight shape is incompatible for broadcasting.")
         w = _validate_weights(w, xp=xp)
         ntt = xp.sum(xp.astype(tt, w.dtype) * w, axis=-1)
         n = xp.sum(xp.broadcast_arrays(w, tt)[0], axis=-1)
