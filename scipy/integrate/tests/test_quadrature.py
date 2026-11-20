@@ -56,10 +56,26 @@ class TestFixedQuad:
             fixed_quad(lambda x: x**(2*n - 1), xp.asarray(0.), xp.asarray(xp.inf), n=n)
 
 
+def _narrow_int_data(dtype, xp):
+    # samples and abscissae whose neighbouring sums and differences do not
+    # fit in `dtype`
+    info = np.iinfo(dtype)
+    y = np.asarray([info.max, info.max, info.min, info.max, info.max], dtype=dtype)
+    x = np.asarray([info.max, info.min, info.max, info.min, info.max], dtype=dtype)
+    y, x = xp.asarray(y), xp.asarray(x)
+    dt = xpx.default_dtype(xp)
+    return y, x, xp.astype(y, dt), xp.astype(x, dt)
+
+
 @make_xp_test_case(romb)
 class TestRomb:
     def test_romb(self, xp):
         xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0, dtype=xp.float64))
+
+    @pytest.mark.parametrize("dtype", ["int8", "uint8", "int16"])
+    def test_narrow_integer_no_overflow(self, dtype, xp):
+        y, _, y_float, _ = _narrow_int_data(dtype, xp)
+        xp_assert_close(romb(y), romb(y_float))
 
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
@@ -208,6 +224,23 @@ class TestSimpson:
 
 @make_xp_test_case(cumulative_trapezoid)
 class TestCumulative_trapezoid:
+    @pytest.mark.skip_xp_backends('array_api_strict', reason="no int->float promotion")
+    def test_int64_x_not_converted(self, xp):
+        t0 = 1767225600000000000
+        n = xp.arange(5, dtype=xp.int64)
+        y = xp.ones(5, dtype=xpx.default_dtype(xp))
+        res = cumulative_trapezoid(y, x=t0 + 1000 * n)
+        xp_assert_close(res, xp.astype(1000 * n[1:], y.dtype))
+
+    @pytest.mark.parametrize("dtype", ["int8", "uint8", "int16"])
+    def test_narrow_integer_no_overflow(self, dtype, xp):
+        y, x, y_float, x_float = _narrow_int_data(dtype, xp)
+        xp_assert_close(cumulative_trapezoid(y), cumulative_trapezoid(y_float))
+        xp_assert_close(cumulative_trapezoid(y, x=x),
+                        cumulative_trapezoid(y_float, x=x_float))
+        xp_assert_close(cumulative_trapezoid(y, x=x, initial=0),
+                        cumulative_trapezoid(y_float, x=x_float, initial=0))
+
     def test_1d(self, xp):
         x = xp.linspace(-2, 2, num=5)
         y = x
@@ -375,6 +408,24 @@ class TestTrapezoid(CommonTrapezoidSimpsonTests):
             trapezoid(y, x=xp.linspace(0, 9, 10), axis=1),
             out1
         )
+
+    @pytest.mark.parametrize("dtype", ["int8", "uint8", "int16"])
+    def test_narrow_integer_no_overflow(self, dtype, xp):
+        y, x, y_float, x_float = _narrow_int_data(dtype, xp)
+        xp_assert_close(trapezoid(y), trapezoid(y_float))
+        xp_assert_close(trapezoid(y, x=x), trapezoid(y_float, x=x_float))
+        xp_assert_close(trapezoid(y, x=x, axis=0),
+                        trapezoid(y_float, x=x_float, axis=0))
+
+    @pytest.mark.skip_xp_backends('array_api_strict', reason="no int->float promotion")
+    def test_int64_x_not_converted(self, xp):
+        # nanosecond timestamps: converting to a float would lose the steps
+        t0 = 1767225600000000000
+        n = xp.arange(5, dtype=xp.int64)
+        y = xp.ones(5, dtype=xpx.default_dtype(xp))
+        xp_assert_close(trapezoid(y, x=t0 + n), xp.asarray(4.0, dtype=y.dtype))
+        xp_assert_close(trapezoid(y, x=t0 + 1000 * n),
+                        xp.asarray(4000.0, dtype=y.dtype))
 
     def test_array_like(self):  # array_like is np only
         x = list(range(5))
