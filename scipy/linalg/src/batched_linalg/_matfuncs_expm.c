@@ -2233,6 +2233,7 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
     // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
     const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
     if (ws_count > SIZE_MAX / sizeof(float)) { *info = -100; return; }
+    // after this check the offsets into the workspace, at most 6*nn + 4*n, also fit npy_intp
     float* restrict Am = PyMem_RawMalloc(sizeof(float)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
@@ -2395,6 +2396,7 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
     // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
     const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
     if (ws_count > SIZE_MAX / sizeof(double)) { *info = -100; return; }
+    // after this check the offsets into the workspace, at most 6*nn + 4*n, also fit npy_intp
     double* restrict Am = PyMem_RawMalloc(sizeof(double)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
@@ -2557,6 +2559,7 @@ matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* in
     // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
     const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
     if (ws_count > SIZE_MAX / sizeof(scipy_c64)) { *info = -100; return; }
+    // after this check the offsets into the workspace, at most 6*nn + 4*n, also fit npy_intp
     scipy_c64* restrict Am = PyMem_RawMalloc(sizeof(scipy_c64)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);
@@ -2766,6 +2769,7 @@ matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* i
     // counted in uint64_t, since size_t is 32 bits wide on 32-bit platforms
     const uint64_t ws_count = 6*(uint64_t)nn + 4*(uint64_t)n;
     if (ws_count > SIZE_MAX / sizeof(scipy_c128)) { *info = -100; return; }
+    // after this check the offsets into the workspace, at most 6*nn + 4*n, also fit npy_intp
     scipy_c128* restrict Am = PyMem_RawMalloc(sizeof(scipy_c128)*(size_t)ws_count);
     if (Am == NULL) { *info = -100; return; }
     CBLAS_INT* ipiv = PyMem_RawMalloc(sizeof(CBLAS_INT)*n);

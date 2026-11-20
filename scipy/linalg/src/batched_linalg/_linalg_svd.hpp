@@ -5,38 +5,48 @@
 
 namespace sp_linalg {
 
+/// Which singular vectors to compute. The values are the job characters of ?gesdd and ?gesvd.
+enum class SvdJob : char {
+    none = 'N',       ///< No U and Vh, singular values only.
+    full = 'A',       ///< All m columns of U and all n rows of Vh.
+    economic = 'S',   ///< The first min(m, n) columns of U and rows of Vh.
+};
+
+
 /**
  * @brief Shapes of U and Vh for an m-by-n input: U is (m, m) or (m, k), Vh is (n, n) or (k, n).
  *
  * @param m          Number of rows of the input.
  * @param n          Number of columns of the input.
- * @param jobz       'N' (no U, Vh), 'A' (full U, Vh) or 'S' (economic U, Vh).
- * @param u_shape0   Receives the number of rows of U, 0 for 'N'.
- * @param u_shape1   Receives the number of columns of U, 0 for 'N'.
- * @param vh_shape0  Receives the number of rows of Vh, 0 for 'N'.
- * @param vh_shape1  Receives the number of columns of Vh, 0 for 'N'.
+ * @param job        Which singular vectors are computed.
+ * @param u_shape0   Receives the number of rows of U, 0 for SvdJob::none.
+ * @param u_shape1   Receives the number of columns of U, 0 for SvdJob::none.
+ * @param vh_shape0  Receives the number of rows of Vh, 0 for SvdJob::none.
+ * @param vh_shape1  Receives the number of columns of Vh, 0 for SvdJob::none.
  */
 inline void
-u_vh_shapes(const npy_intp m, const npy_intp n, const char jobz,
+u_vh_shapes(const npy_intp m, const npy_intp n, const SvdJob job,
             npy_intp *u_shape0, npy_intp *u_shape1,
             npy_intp *vh_shape0, npy_intp *vh_shape1
 ){
     npy_intp k = m < n ? m : n;
 
-    switch(jobz) {
-        case('N') :
-            *u_shape0 = 0;
-            *u_shape1 = 0;
-            *vh_shape0 = 0;
-            *vh_shape1 = 0;
+    *u_shape0 = 0;
+    *u_shape1 = 0;
+    *vh_shape0 = 0;
+    *vh_shape1 = 0;
+
+    // no default label, so that the compiler warns about a missing job
+    switch (job) {
+        case SvdJob::none:
             break;
-        case('A'):
+        case SvdJob::full:
             *u_shape0 = m;
             *u_shape1 = m;
             *vh_shape0 = n;
             *vh_shape1 = n;
             break;
-        default:  // 'S'
+        case SvdJob::economic:
             *u_shape0 = m;
             *u_shape1 = k;
             *vh_shape0 = k;
@@ -52,32 +62,33 @@ u_vh_shapes(const npy_intp m, const npy_intp n, const char jobz,
  * Mirrors MINWRK in LAPACK's sgesdd/dgesdd. A ?gesdd workspace query reports at least this value.
  *
  * @tparam real_type  f32 or f64; the precision ?gesdd evaluates its path threshold in.
- * @param m     Number of rows.
- * @param n     Number of columns.
- * @param jobz  'N', 'S' or 'A'.
+ * @param m    Number of rows.
+ * @param n    Number of columns.
+ * @param job  Which singular vectors are computed.
  * @return The minimum lwork, evaluated without overflow.
  */
 template<typename real_type>
 std::uint64_t
-gesdd_min_lwork(const std::uint64_t m, const std::uint64_t n, const char jobz)
+gesdd_min_lwork(const std::uint64_t m, const std::uint64_t n, const SvdJob job)
 {
     const std::uint64_t k = std::min(m, n), kmax = std::max(m, n);
-    const std::uint64_t bdspac = (jobz == 'N') ? 7*k : 3*k*k + 4*k;
+    const std::uint64_t bdspac = (job == SvdJob::none) ? 7*k : 3*k*k + 4*k;
     // the paths that start with a QR or LQ factorization (MNTHR in ?gesdd)
     const bool tall = kmax >= (std::uint64_t)(real_type(k) * real_type(11) / real_type(6));
     if (!tall) { return 3*k + std::max(kmax, bdspac); }
-    if (jobz == 'N') { return bdspac + k; }
-    if (jobz == 'S') { return bdspac + k*k + 3*k; }
+    if (job == SvdJob::none) { return bdspac + k; }
+    if (job == SvdJob::economic) { return bdspac + k*k + 3*k; }
     return k*k + std::max(3*k + bdspac, k + kmax);
 }
 
 
 template<typename T>
 BatchStatus
-_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, const char jobz, const bool use_gesdd, const bool overwrite_a, SliceStatusVec& vec_status)
+_svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObject *ap_Vh, const SvdJob job, const bool use_gesdd, const bool overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = real_of_t<T>; // f32 if T==c64 etc
     SliceStatus slice_status;
+    const char jobz = static_cast<char>(job);   // as LAPACK takes it
 
     // --------------------------------------------------------------------
     // Input Array Attributes
@@ -101,7 +112,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
 
     // U, Vh shapes ( =0 if compute_uv=False)
     npy_intp u_shape0, u_shape1, vh_shape0, vh_shape1;
-    u_vh_shapes(m, n, jobz, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
+    u_vh_shapes(m, n, job, &u_shape0, &u_shape1, &vh_shape0, &vh_shape1);
 
     CBLAS_INT intn, intm, ldu, ldvh, info = 0;
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm) ||
@@ -128,13 +139,13 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         // the minimum lwork of real ?gesdd, see "Workspace sizes that LAPACK computes itself" in
         // _common_array_utils.hpp
         if constexpr (!is_complex_v<T>) {
-            const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, jobz);
+            const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, job);
             if (min_lwork > (std::uint64_t)CBLAS_INT_MAX) {
                 return {BatchCode::too_large, routine, static_cast<int64_t>(min_lwork)};
             }
         } else {
             // without vectors LAPACK <= 3.6 needs 7*min(m, n), later versions 5*min(m, n)
-            rwork_size = (jobz == 'N') ? 7 * k : std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
+            rwork_size = (job == SvdJob::none) ? 7 * k : std::max(5*k*k + 5*k, 2*kmax*k + 2*k*k + k);
             // ?gesdd addresses rwork with CBLAS_INT offsets
             if (rwork_size > (std::uint64_t)CBLAS_INT_MAX) {
                 return {BatchCode::too_large, routine, static_cast<int64_t>(rwork_size)};
@@ -177,8 +188,8 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
      *
      * Here
      *   - data is m*n if overwrite_a is False (and =0 otherwise)
-     *   - buf_U is u_shape0*u_shape1 if jobz !='N' (and =0 otherwise)
-     *   - buf_Vh is vh_shape0*vh_shapw1 if jobz != 'N' (and =0 otherwise)
+     *   - buf_U is u_shape0*u_shape1 if vectors are computed (and =0 otherwise)
+     *   - buf_Vh is vh_shape0*vh_shape1 if vectors are computed (and =0 otherwise)
      *
      * NB: we do not implement jobz='O' yet, so we never reuse A for U or Vh.
      */
@@ -196,7 +207,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
     T *data = static_cast<T *>(PyArray_DATA(ap_Am));
     if (!overwrite_a) { data = cursor; cursor += data_size; }
     T *buf_U = NULL, *buf_Vh = NULL;
-    if (jobz != 'N') { buf_U = cursor; cursor += u_size; buf_Vh = cursor; }
+    if (job != SvdJob::none) { buf_U = cursor; cursor += u_size; buf_Vh = cursor; }
 
     // --------------------------------------------------------------------
     // Main loop to traverse the slices
@@ -236,7 +247,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
 
         // copy-and-transpose U and Vh slices from temp buffers to the output;
         // Also advance the output pointers: U, S, Vh are C-contiguous by construction
-        if (jobz != 'N') {
+        if (job != SvdJob::none) {
             copy_slice_F_to_C(ptr_U, buf_U, u_shape0, u_shape1);
             ptr_U += u_shape0 * u_shape1;
 
