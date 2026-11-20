@@ -8,7 +8,9 @@ import os
 import warnings
 
 # Local imports
-from .lapack import _normalize_lapack_dtype, get_lapack_funcs
+from .lapack import (
+    _normalize_lapack_dtype, _ensure_aligned_and_native, get_lapack_funcs
+)
 from ._misc import _datacopied
 from ._basic import _format_emit_errors_warnings
 from . import _batched_linalg
@@ -183,6 +185,7 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
 
     # First normalize dtypes to ensure consistent return types
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # accommodate empty arrays
     if a1.size == 0:
@@ -220,10 +223,6 @@ def qr(a, overwrite_a=False, lwork=_NoValue, mode="full", pivoting=False,
             return ((qr, tau),) + Rj
 
         return (Q,) + Rj
-
-    if not (a1.flags['ALIGNED'] and a1.dtype.byteorder == '='):
-        overwrite_a = True
-        a1 = a1.copy()
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]

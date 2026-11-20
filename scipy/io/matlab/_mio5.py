@@ -310,7 +310,9 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+            # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+            name = ('None' if hdr.name is None
+                    else hdr.name.partition(b'\x00')[0].decode('latin1'))
             if name in mdict:
                 msg = (
                     f'Duplicate variable name "{name}" in stream'
@@ -359,7 +361,9 @@ class MatFile5Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+            # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+            name = ('None' if hdr.name is None
+                    else hdr.name.partition(b'\x00')[0].decode('latin1'))
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -433,7 +437,9 @@ def varmats_from_mat(file_obj):
     while not rdr.end_of_stream():
         start_position = next_position
         hdr, next_position = rdr.read_var_header()
-        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+        # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+        name = ('None' if hdr.name is None
+                else hdr.name.partition(b'\x00')[0].decode('latin1'))
         # Read raw variable string
         file_obj.seek(start_position)
         byte_count = next_position - start_position
@@ -717,7 +723,11 @@ class VarWriter5:
     def write_char(self, arr, codec='ascii'):
         ''' Write string array `arr` with given `codec`
         '''
-        if arr.size == 0 or np.all(arr == ''):
+        if arr.dtype.kind == 'S' and not arr.tobytes().isascii():
+            # MATLAB has no byte strings, so non-ASCII bytes must be text in `codec`
+            arr = np.char.decode(arr, codec)
+        # np.asarray: chararray comparisons ignore trailing whitespace
+        if arr.size == 0 or np.all(np.asarray(arr) == arr.dtype.type()):
             # This an empty string array or a string array containing
             # only empty strings. Matlab cannot distinguish between a
             # string array that is empty, and a string array containing

@@ -256,6 +256,7 @@ class errstate:
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
 _bivariate_normal_cdf: np.ufunc
+_trivariate_normal_cdf: np.ufunc
 _cospi: np.ufunc
 _ellip_harm: np.ufunc
 _gen_harmonic: np.ufunc
@@ -268,7 +269,9 @@ _lambertw: np.ufunc
 _lgam1p: np.ufunc
 _log1mexp: np.ufunc
 _log1pmx: np.ufunc
+_mathieu_ce: np.ufunc
 _mathieu_cem: np.ufunc
+_mathieu_se: np.ufunc
 _mathieu_sem: np.ufunc
 _normalized_gen_harmonic: np.ufunc
 _riemann_zeta: np.ufunc

@@ -181,20 +181,20 @@ def jdzo(int nt):
 
          nt between     required array size
         -----------------------------------
-          0  -  100   ->    (nt + 10)
-        100  -  200   ->    (nt + 14)
-        200  -  300   ->    (nt + 16)
-        300  -  400   ->    (nt + 18)
-        400  -  500   ->    (nt + 21)
-        500  -  600   ->    (nt + 25)
-        600  -  700   ->    (nt + 11)
-        700  -  800   ->    (nt +  9)
-        800  -  900   ->    (nt +  9)
-        900  - 1000   ->    (nt + 10)
-        1000 - 1100   ->    (nt + 10)
-        1100 - 1200   ->    (nt + 11)
+          0  -  100   ->    (nt + 11)
+        100  -  200   ->    (nt + 15)
+        200  -  300   ->    (nt + 17)
+        300  -  400   ->    (nt + 20)
+        400  -  500   ->    (nt + 22)
+        500  -  600   ->    (nt + 26)
+        600  -  700   ->    (nt + 12)
+        700  -  800   ->    (nt + 10)
+        800  -  900   ->    (nt + 10)
+        900  - 1000   ->    (nt + 11)
+        1000 - 1100   ->    (nt + 11)
+        1100 - 1200   ->    (nt + 12)
 
-    It can be made a bit more granular but a generic +25 slack seems
+    It can be made a bit more granular but a generic +32 slack seems
     like an easy option instead of costly 1400-long arrays as Fortran
     code did originally, independent from the value of 'nt'.
     """
@@ -205,7 +205,7 @@ def jdzo(int nt):
     cdef int *pp
     cdef cnp.npy_intp dims[1]
 
-    dims[0] = nt + 25
+    dims[0] = nt + 32
 
     zo = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
     n = cnp.PyArray_ZEROS(1, dims, cnp.NPY_INT32, 0)

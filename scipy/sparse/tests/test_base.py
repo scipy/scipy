@@ -5625,6 +5625,32 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert_array_equal(Csp.data, [[24., 0., 0.],
                                       [27., 6., 14.]])
 
+    def test_dia_add_sub_mixed_dtype(self):
+        # gh-26567: check addition and subtraction of dia containers with mixed dtypes
+        # (e.g. integer and float) for both fast paths.
+        A_int = self.dia_container(
+            ([[1, 1, 0], [2, 2, 2], [0, 1, 1]], [-1, 0, 1]), shape=(3, 3), dtype=int
+        )
+        B_float = self.dia_container(
+            ([[1.0, 1.0, 1.0]], [0]), shape=(3, 3), dtype=float
+        )
+        A_int_dense = A_int.toarray()
+        B_float_dense = B_float.toarray()
+
+        for a, b, a_d, b_d in [
+            (A_int, B_float, A_int_dense, B_float_dense),
+            (B_float, A_int, B_float_dense, A_int_dense),
+        ]:
+            res_add = a + b
+            assert isinstance(res_add, self.dia_container)
+            assert res_add.dtype == np.result_type(a.dtype, b.dtype)
+            assert_array_equal(res_add.toarray(), a_d + b_d)
+
+            res_sub = a - b
+            assert isinstance(res_sub, self.dia_container)
+            assert res_sub.dtype == np.result_type(a.dtype, b.dtype)
+            assert_array_equal(res_sub.toarray(), a_d - b_d)
+
 
 @pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 class TestDIAMatrix(_MatrixMixin, TestDIA):

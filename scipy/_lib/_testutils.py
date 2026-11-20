@@ -399,7 +399,7 @@ def mutually_broadcastable_shapes(num_shapes, *, base_shape=(), min_dims=0,
 
     new_base_shape = rng.integers(min_side, max_side)
     if base_shape == () and num_shapes == 1:
-        return [tuple(new_base_shape)]
+        return [tuple(new_base_shape.tolist())]
 
     shapes = np.repeat([new_base_shape], num_shapes, axis=0)
     # make some elements of some shapes 1 (while preserving overall batch shape)
