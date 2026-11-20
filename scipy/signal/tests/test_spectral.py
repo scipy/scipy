@@ -1486,6 +1486,383 @@ class TestLombscargle:
 
         lombscargle(t, y, freqs)
 
+    def test_model_parameter(self):
+        # Verify accepted model values and rejection of invalid inputs
+        t = np.array([0.1, 0.5, 0.8, 1.4, 2.3, 3.0])
+        y = np.cos(1.3*t) + 0.2*np.sin(0.4*t)
+        f = np.array([0.7, 1.3, 2.0])
+
+        # Both models must accept real and complex measurements
+        for y_input in (y, y + 1j*np.sin(0.8*t)):
+            for model in ("sine_cosine", "complex_exponential"):
+                pgram = lombscargle(t, y_input, f, model=model)
+                assert pgram.shape == f.shape
+
+        # Reject unsupported model values
+        for model in ("invalid", None, 2):
+            with pytest.raises(ValueError, match="Model must be"):
+                lombscargle(t, y, f, model=model)
+
+    @pytest.mark.parametrize("normalize", ["power", "normalize", "amplitude"])
+    @pytest.mark.parametrize("model", ["sine_cosine", "complex_exponential"])
+    def test_complex_zero_imaginary(self, normalize, model):
+        # changing only the dtype of y must not change the result for a given model
+        t = np.linspace(0, 10, 100)
+        y = np.cos(1.3*t)
+        f = np.array([0.7, 1.3, 2.0])
+
+        pgram_real = lombscargle(t, y, f, normalize=normalize, model=model)
+        pgram_complex = lombscargle(t, y + 0j, f, normalize=normalize, model=model)
+
+        assert_allclose(pgram_real, pgram_complex)
+
+    @pytest.mark.parametrize("parameter", ["x", "freqs", "weights"])
+    def test_complex_input_validation(self, parameter):
+        # Complex measurements are allowed, but all other inputs must be real
+        t = np.array([0.1, 0.5, 0.8, 1.4, 2.3, 3.0])
+        y = np.exp(1j*1.3*t)
+        f = np.array([0.7, 1.3, 2.0])
+        weights = np.ones_like(t)
+
+        kwargs = {"x": t, "y": y, "freqs": f, "weights": weights}
+        kwargs[parameter] = kwargs[parameter].astype(np.complex128)
+
+        with pytest.raises(ValueError, match="must be real-valued"):
+            lombscargle(**kwargs)
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    def test_complex_sine_cosine(self, floating_mean):
+        # Verify the power of a complex sinusoid with independent
+        # real and imaginary amplitudes and phases
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([-w, w])
+
+        # Generate complex measurements with an optional offset
+        offset = (0.7 - 0.4j) if floating_mean else 0
+        y = ((1.4 + 0.8j)*np.cos(w*t)
+            + (-0.6 + 1.2j)*np.sin(w*t) + offset)
+
+        pgram = lombscargle(t, y, f, weights=weights,
+                            floating_mean=floating_mean,
+                            model="sine_cosine")
+
+        # A perfect fit explains all power relative to the reference model
+        mean = np.average(y, weights=weights) if floating_mean else 0
+        expected = (t.size / 2) * np.average(np.abs(y - mean)**2,
+                                            weights=weights)
+        assert_allclose(pgram, expected)
+
+        # Complex power equals the sum of independently fitted
+        # real and imaginary component powers
+        pgram_real = lombscargle(t, y.real, f, weights=weights,
+                                floating_mean=floating_mean)
+        pgram_imag = lombscargle(t, y.imag, f, weights=weights,
+                                floating_mean=floating_mean)
+        assert_allclose(pgram, pgram_real + pgram_imag)
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("direction", [-1, 1])
+    def test_complex_exponential(self, floating_mean, direction):
+        # Verify the power of a complex exponential, including
+        # positive and negative frequencies
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+        ampl = 1.4 + 0.8j
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([-w, w])
+
+        # Generate a complex exponential with an optional offset
+        offset = (0.7 - 0.4j) if floating_mean else 0
+        y = ampl * np.exp(1j*direction*w*t) + offset
+
+        pgram = lombscargle(t, y, f, weights=weights,
+                            floating_mean=floating_mean,
+                            model="complex_exponential")
+
+        # A perfect fit explains all power relative to the reference model
+        mean = np.average(y, weights=weights) if floating_mean else 0
+        expected = (t.size / 2) * np.average(np.abs(y - mean)**2,
+                                            weights=weights)
+
+        # Full power must be recovered at the correct signed frequency
+        assert_allclose(pgram[f == direction*w], expected)
+
+        # The opposite frequency must have less power
+        assert pgram[f == -direction*w].item() < expected
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("model", ["sine_cosine", "complex_exponential"])
+    def test_complex_amplitude(self, floating_mean, model):
+        # Verify the returned complex amplitude coefficients for both models
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+        ampl_pos = 1.4 + 0.8j
+        ampl_neg = -0.6 + 1.2j
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        offset = (0.7 - 0.4j) if floating_mean else 0
+
+        if model == "sine_cosine":
+            # Fit both rotating components simultaneously
+            y = (ampl_pos*np.exp(1j*w*t)
+                + ampl_neg*np.exp(-1j*w*t) + offset)
+            f = np.array([-w, w])
+
+            pgram = lombscargle(t, y, f, weights=weights,
+                                floating_mean=floating_mean,
+                                normalize="amplitude", model=model)
+
+            # The existing amplitude convention returns twice the
+            # coefficient of the negative-frequency exponential
+            assert_allclose(pgram, [2*ampl_pos, 2*ampl_neg])
+
+        else:
+            # Fit one rotating component at a time
+            for direction in (-1, 1):
+                y = ampl_pos*np.exp(1j*direction*w*t) + offset
+                f = np.array([direction*w])
+
+                pgram = lombscargle(t, y, f, weights=weights,
+                                    floating_mean=floating_mean,
+                                    normalize="amplitude", model=model)
+
+                assert_allclose(pgram, ampl_pos)
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("model", ["sine_cosine", "complex_exponential"])
+    def test_complex_normalization(self, floating_mean, model):
+        # Verify normalized power for complex measurements
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([0.7, w, 2.0])
+
+        # Generate a signal that can be fitted exactly by the selected model
+        offset = (0.7 - 0.4j) if floating_mean else 0
+        if model == "sine_cosine":
+            y = ((1.4 + 0.8j)*np.cos(w*t)
+                + (-0.6 + 1.2j)*np.sin(w*t) + offset)
+        else:
+            y = (1.4 + 0.8j)*np.exp(1j*w*t) + offset
+
+        pgram_power = lombscargle(t, y, f, weights=weights,
+                                floating_mean=floating_mean,
+                                normalize="power", model=model)
+        pgram_norm = lombscargle(t, y, f, weights=weights,
+                                floating_mean=floating_mean,
+                                normalize="normalize", model=model)
+
+        # Calculate the reference-model residual power independently
+        mean = np.average(y, weights=weights) if floating_mean else 0
+        YY = np.average(np.abs(y - mean)**2, weights=weights)
+
+        # Verify the normalization relationship at all frequencies
+        assert_allclose(pgram_norm, 2*pgram_power / (t.size*YY))
+
+        # A perfectly fitted signal must have normalized power of 1
+        assert_allclose(pgram_norm[f == w], 1.0)
+
+        # Normalized power must remain between 0 and 1
+        eps = 10 * np.finfo(pgram_norm.dtype).eps
+        assert np.all((pgram_norm >= -eps) & (pgram_norm <= 1 + eps))
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("model", ["sine_cosine", "complex_exponential"])
+    def test_complex_floating_mean(self, floating_mean, model):
+        # Verify the effect of a complex-valued offset with and without floating_mean
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+        offset = 2.15 - 1.4j
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([0.7, w, 2.0])
+
+        # Generate complex measurements without an offset
+        if model == "sine_cosine":
+            y = ((1.4 + 0.8j)*np.cos(w*t)
+                + (-0.6 + 1.2j)*np.sin(w*t))
+        else:
+            y = (1.4 + 0.8j)*np.exp(1j*w*t)
+
+        pgram = lombscargle(t, y, f, weights=weights,
+                            floating_mean=floating_mean, model=model)
+        pgram_offset = lombscargle(t, y + offset, f, weights=weights,
+                                floating_mean=floating_mean, model=model)
+
+        if floating_mean:
+            # A fitted offset must not affect the power
+            assert_allclose(pgram, pgram_offset)
+        else:
+            # Without a fitted offset, the power should change
+            assert not np.allclose(pgram, pgram_offset)
+
+
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("normalize", ["power", "normalize"])
+    def test_complex_exponential_zero_frequency(self, floating_mean, normalize):
+        # Verify zero-frequency behavior with and without a floating mean
+
+        nin = 100
+        p = 0.7
+        w = 1.3
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([0., w])
+        y = (1.4 + 0.8j)*np.exp(1j*w*t) + (0.7 - 0.4j)
+
+        pgram = lombscargle(t, y, f, weights=weights,
+                            floating_mean=floating_mean,
+                            normalize=normalize, model="complex_exponential")
+
+        if floating_mean:
+            # Zero frequency cannot explain any power beyond the fitted offset
+            expected = 0.
+        else:
+            # At zero frequency, the fitted amplitude is the weighted mean
+            mean = np.average(y, weights=weights)
+            expected = np.abs(mean)**2
+            if normalize == "power":
+                expected *= t.size / 2
+            else:
+                expected /= np.average(np.abs(y)**2, weights=weights)
+
+        eps = 10 * np.finfo(pgram.dtype).eps
+        assert_allclose(pgram[0], expected, atol=eps)
+
+
+    @pytest.mark.parametrize("complex_y", [False, True])
+    @pytest.mark.parametrize("model", ["sine_cosine", "complex_exponential"])
+    @pytest.mark.parametrize("floating_mean", [False, True])
+    @pytest.mark.parametrize("normalize", ["power", "normalize", "amplitude"])
+    def test_off_peak(self, complex_y, model, floating_mean, normalize):
+        """
+        Verify Lomb-Scargle results against an independent weighted least-squares
+        solution at frequencies that do not match the input signal.
+
+        Most other tests use signals constructed to fit the selected model exactly
+        at a known frequency. Those tests can verify perfect recovery, but cannot
+        establish that the algorithm calculates the correct result when the fit is
+        imperfect. At other frequencies, the expected power and amplitude depend
+        on the actual sampling times, their irregular distribution, and the
+        observation weights. There is no simple expected value to assert against.
+
+        This test independently constructs the design matrix for each model and
+        solves the weighted least-squares problem using np.linalg.lstsq, rather
+        than reproducing the Lomb-Scargle algorithm or its intermediate equations.
+
+        The resulting coefficients and residuals provide reference values for
+        all three normalization options. Power is calculated from the reduction
+        in weighted residual error, normalized power from its fraction of the
+        reference-model error, and amplitude from the fitted coefficients.
+
+        Comparing against an independent numerical solution helps detect errors
+        in the frequency-dependent regression, weighting, floating-mean handling,
+        and normalization that might otherwise go undetected by tests using
+        perfectly fitted signals or comparisons between normalization options.
+
+        The test covers both models, real and complex measurements, both
+        floating-mean settings, and all three normalization options.
+        """
+
+        nin = 100
+        p = 0.7
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        weights = np.linspace(0.5, 2., t.size)
+        f = np.array([0.7, 1.3, 2.0])
+
+        # Generate measurements with frequencies outside the tested values
+        y = 1.2*np.cos(0.9*t) + 0.5*np.sin(2.4*t) + 0.2
+        if complex_y:
+            y = y + 1j*(0.7*np.cos(1.9*t) - 0.3*np.sin(0.5*t) + 0.4)
+
+        pgram = lombscargle(t, y, f, weights=weights,
+                            floating_mean=floating_mean,
+                            normalize=normalize, model=model)
+
+        # Independently calculate the weighted least-squares solution
+        weights = weights / weights.sum()
+        sqrt_weights = np.sqrt(weights)
+
+        mean = np.sum(weights*y) if floating_mean else 0
+        reference = np.sum(weights*np.abs(y - mean)**2)
+
+        expected = []
+        for freq in f:
+            if model == "sine_cosine":
+                basis = np.column_stack((np.cos(freq*t), np.sin(freq*t)))
+            else:
+                basis = np.exp(1j*freq*t)[:, None]
+
+            if floating_mean:
+                basis = np.column_stack((basis, np.ones(t.size)))
+
+            coeff = np.linalg.lstsq(sqrt_weights[:, None]*basis,
+                                    sqrt_weights*y, rcond=None)[0]
+
+            residual = np.sum(weights*np.abs(y - basis@coeff)**2)
+
+            if normalize == "power":
+                value = (t.size / 2)*(reference - residual)
+            elif normalize == "normalize":
+                value = (reference - residual) / reference
+            elif model == "sine_cosine":
+                value = coeff[0] + 1j*coeff[1]
+            else:
+                value = coeff[0]
+
+            expected.append(value)
+
+        assert_allclose(pgram, expected)
 
 class TestSTFT:
     def test_input_validation(self):
