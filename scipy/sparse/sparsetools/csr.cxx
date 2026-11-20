@@ -4,9 +4,7 @@
 #include "sparsetools.h"
 #include "csr.h"
 
-extern "C" {
 #include "csr_impl.h"
-}
 
 /* Functions templated on the index type only. */
 #define SPTOOLS_CSR_DEFINE_INDEX_TEMPLATE(I) \
