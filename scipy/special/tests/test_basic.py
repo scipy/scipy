@@ -1457,8 +1457,28 @@ class TestAssocLaguerre:
 
 
 class TestBesselpoly:
-    def test_besselpoly(self):
-        pass
+    @pytest.mark.parametrize(
+        "a, expected",
+        [
+            (1.2024127788478864, 0.21587740350984017),
+            (15.317303234215988, -0.0047059843198877663),
+            (23.170594185830907, 0.002529309303650517),
+            (31.024234595113583, -0.0016324898946886075),
+            (46.731859390972389, -0.000883036352328977),
+        ],
+    )
+    def test_besselpoly_gh13750(self, a, expected):
+        # import mpmath as mp
+        # with mp.workdps(80):
+        #     for n in [1, 10, 15, 20, 30]:
+        #         a = float(mp.besseljzero(0, n) / 2)
+        #         a_mp = mp.mpf(a)
+        #         expected = mp.quad(
+        #             lambda r: r * mp.besselj(0, 2 * a_mp * r), [0, 1]
+        #         )
+        #         print(f"({a:.17g}, {float(expected):.17g}),")
+
+        assert_allclose(special.besselpoly(a, 1, 0), expected, rtol=1e-12, atol=0)
 
 
 class TestKelvin:
