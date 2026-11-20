@@ -178,6 +178,9 @@ class RBFInterpolator:
     shape parameter must be chosen (e.g., through cross validation). Smaller
     values for the shape parameter correspond to wider RBFs. The problem can
     become ill-conditioned or singular when the shape parameter is too small.
+    With NumPy arrays and ``neighbors=None``, a `~scipy.linalg.LinAlgWarning`
+    is emitted when the system is too ill-conditioned for the interpolant to
+    be accurate.
 
     The memory required to solve for the RBF interpolation coefficients
     increases quadratically with the number of data points, which can become
@@ -561,7 +564,8 @@ class RBFInterpolator:
                     self.kernel,
                     self.epsilon,
                     self.powers,
-                    np
+                    np,
+                    check_cond=False
                 )
                 out[xidx] = self._chunk_evaluator(
                     xnbr,
