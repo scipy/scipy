@@ -1181,8 +1181,11 @@ def tf2zpk(b, a):
         Zeros of the transfer function.
     p : ndarray
         Poles of the transfer function.
-    k : float
-        System gain.
+    k : float or complex
+        System gain. For inputs with nonzero leading coefficients, this is
+        ``b[0] / a[0]``; leading coefficients treated as zero are removed
+        during normalization. This is not, in general, the DC gain of the
+        filter.
 
     Notes
     -----
@@ -1223,6 +1226,19 @@ def tf2zpk(b, a):
     in the general case. If `M` and `N` are not equal, the discrete-time
     transfer function coefficients must first be converted to the "positive
     powers" form before finding the poles and zeros.
+
+    The returned `z`, `p` and `k` describe the transfer function in the
+    factored form
+
+    .. math::
+
+        H(s) = k \frac
+        {(s - z_1)(s - z_2) \cdots (s - z_M)}
+        {(s - p_1)(s - p_2) \cdots (s - p_N)}
+
+    Because every factor is monic, `k` generally differs from the DC gain,
+    which is :math:`H(0)` for an analog filter and :math:`H(1)` for a
+    discrete-time filter.
 
     Examples
     --------
