@@ -239,11 +239,12 @@ class TestDunnett:
             sample = rng.integers(-100, 100, size=(10,))
             control = rng.integers(-100, 100, size=(10,))
 
-            # preserve use of old random_state during SPEC 7 transition
-            res = stats.dunnett(
-                sample, control=control,
-                alternative=alternative, random_state=rng
-            )
+            # use `random_state` to check that DeprecationWarning is emitted
+            with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+                res = stats.dunnett(
+                    sample, control=control,
+                    alternative=alternative, random_state=rng
+                )
             ref = stats.ttest_ind(
                 sample, control,
                 alternative=alternative

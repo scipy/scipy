@@ -18,7 +18,7 @@ class Yen(Benchmark):
     def setup(self, n, K):
         # make a random connectivity matrix
         data = scipy.sparse.rand(
-            n, n, density=0.4, format='lil', random_state=42, dtype=np.bool_
+            n, n, density=0.4, format='lil', rng=42, dtype=np.bool_
         )
         data.setdiag(np.zeros(n, dtype=np.bool_))
         self.data = data

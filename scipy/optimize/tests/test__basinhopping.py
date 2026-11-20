@@ -225,7 +225,7 @@ class TestBasinHopping:
 
         res = basinhopping(func2d_nograd, self.x0[i],
                             minimizer_kwargs=minimizer_kwargs,
-                            niter=niter, disp=self.disp, seed=1234)
+                            niter=niter, disp=self.disp, rng=1234)
 
         tol = 2 if method == 'COBYLA' else self.tol
         assert_almost_equal(res.x, self.sol[i], decimal=tol)
@@ -450,13 +450,15 @@ class Test_Metropolis:
         x0 = -4
         limit = 50  # Constrain to func value >= 50
         con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
-        res = basinhopping(
-            func,
-            x0,
-            30,
-            seed=np.random.RandomState(1234),
-            minimizer_kwargs={'constraints': con}
-        )
+        # use `seed` to check that DeprecationWarning is emitted
+        with pytest.warns(DeprecationWarning, match='Use of keyword argument...'):
+            res = basinhopping(
+                func,
+                x0,
+                30,
+                seed=np.random.RandomState(1234),
+                minimizer_kwargs={'constraints': con}
+            )
         assert res.success
         assert_allclose(res.fun, limit, rtol=1e-6)
 

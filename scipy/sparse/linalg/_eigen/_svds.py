@@ -210,7 +210,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With only four singular values/vectors, the SVD approximates the original
     matrix.
 
-    >>> u4, s4, vT4 = svds(A, k=4)
+    >>> u4, s4, vT4 = svds(A, k=4, rng=rng)
     >>> A4 = u4 @ np.diag(s4) @ vT4
     >>> np.allclose(A4, A, atol=1e-3)
     True
@@ -218,7 +218,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     With all five non-zero singular values/vectors, we can reproduce
     the original matrix more accurately.
 
-    >>> u5, s5, vT5 = svds(A, k=5)
+    >>> u5, s5, vT5 = svds(A, k=5, rng=rng)
     >>> A5 = u5 @ np.diag(s5) @ vT5
     >>> np.allclose(A5, A)
     True
@@ -404,7 +404,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> n = 100
     >>> diff0_func_aslo = diff0_func_aslo_def(n)
-    >>> u, s, vT = svds(diff0_func_aslo, k=3, which='SM')
+    >>> u, s, vT = svds(diff0_func_aslo, k=3, which='SM', rng=rng)
 
     The singular values squared and the singular vectors are known
     explicitly; see

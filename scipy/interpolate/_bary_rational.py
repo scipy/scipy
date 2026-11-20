@@ -723,7 +723,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
     ...     return 1/(1 + x**2)
     >>> x = np.linspace(-5, 5, num=15)
     >>> r = FloaterHormannInterpolator(x, f(x))
-    >>> p = BarycentricInterpolator(x, f(x))
+    >>> rng = np.random.default_rng()
+    >>> p = BarycentricInterpolator(x, f(x), rng=rng)
     >>> xx = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()

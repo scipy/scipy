@@ -1,3 +1,4 @@
+import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
@@ -13,7 +14,8 @@ class BenchMatrixPower(Benchmark):
     param_names = ['x', 'N', 'density']
 
     def setup(self, x: int, N: int, density: float):
-        self.A = random(N, N, density=density, format='csr')
+        rng = np.random.default_rng(3185775905)
+        self.A = random(N, N, density=density, format='csr', rng=rng)
 
     def time_matrix_power(self, x: int, N: int, density: float):
         self.A ** x
