@@ -3562,7 +3562,7 @@ class TestHankel:
         # complex(mp.hankel1(0, 1e10))
         res = special.hankel1(0, 1e10)
         ref = (2.175591750246892e-06-7.676508175792937e-06j)
-        assert_allclose(res, ref, atol=1e-16)
+        assert_allclose(res, ref, atol=1e-16, rtol=0)
 
 
 class TestHyper:
@@ -4071,8 +4071,6 @@ class TestHyper:
     def test_hyperu_gh2287(self):
         assert_allclose(special.hyperu(1, 1.5, 20.2), 0.048360918656699191,
                         atol=1.5e-12, rtol=0)
-
-
 
 
 class TestBessel:
