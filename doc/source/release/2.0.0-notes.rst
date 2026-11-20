@@ -52,6 +52,9 @@ New features
 ``scipy.optimize`` improvements
 ===============================
 
+- `scipy.optimize.linprog` accepts a ``callback`` for the HiGHS
+  methods. Return ``True`` or raise ``StopIteration`` to stop with
+  status 5. The number of calls is not specified.
 
 ``scipy.signal`` improvements
 =============================
