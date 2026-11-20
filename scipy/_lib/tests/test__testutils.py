@@ -47,15 +47,14 @@ class TestPeakMemoryGain:
 
     def test_fails(self):
         with pytest.raises(AssertionError, match=".* is above limit "):
-            with assert_mem_gain_limit(410_000):
-                np.ones((500, 111), dtype=np.int64)
-                np.ones((500, 111), dtype=np.int64)
+            with assert_mem_gain_limit(1_000_000):  # 3000 x 3000 x 8 expected
+                np.ones((3000, 3000), dtype=np.int64)
 
     def test_fails_raises(self):
         with pytest.raises(KeyError):
             with pytest.raises(AssertionError, match=".* is above limit "):
-                with assert_mem_gain_limit(410_000):
-                    np.ones((500, 111), dtype=np.int64)
+                with assert_mem_gain_limit(1_000_000):
+                    np.ones((3000, 3000), dtype=np.int64)
                     raise KeyError()
 
 
