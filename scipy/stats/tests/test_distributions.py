@@ -3990,6 +3990,74 @@ class TestInvGamma:
 
 
 class TestF:
+    @pytest.mark.parametrize('dfn, dfd, q, ref', [
+        (10, 10, 1e-7, 64.4065947908192),
+        (10, 10, 1e-10, 261.4032003165994),
+        (10, 10, 1e-15, 2629.050017486649),
+        (10, 10, 1e-20, 26305.501967818313),
+        (10, 10, 1e-300, 2.6307168652587082e60),
+        (2.5, 7.25, 1e-100, 1.2699298625608643e28),
+    ])
+    def test_isf_small_probability(self, dfn, dfd, q, ref):
+        # References obtained by inverting mpmath.betainc with 100 digits.
+        assert_allclose(stats.f.isf(q, dfn, dfd), ref, rtol=1e-13)
+
+    @pytest.mark.parametrize('dfd', [1, 10, 100])
+    def test_isf_closed_form(self, dfd):
+        q = np.array([1e-100, 1e-20, 1e-7, 0.1, np.nextafter(0.5, 0.),
+                      0.5, np.nextafter(0.5, 1.), 0.9,
+                      np.nextafter(1., 0.)])
+        # For dfn=2, sf(x) = (1 + 2*x/dfd)**(-dfd/2).
+        ref = dfd/2 * np.expm1(-2/dfd * np.log(q))
+        assert_allclose(stats.f.isf(q, 2, dfd), ref, rtol=1e-13, atol=0)
+
+    def test_isf_subnormal(self):
+        # Reference from (2/dfn)*p**(2/dfn)/(1-p**(2/dfn)), p=1-q.
+        ref = 1.618954e-318
+        assert_allclose(stats.f.isf(np.nextafter(1., 0.), 0.1, 2), ref,
+                        rtol=1e-6, atol=0)
+
+    @pytest.mark.parametrize('dfn', [1, 2, 10, 1e6])
+    def test_isf_overflow(self, dfn):
+        assert_equal(stats.f.isf(1e-20, dfn, 0.1), np.inf)
+
+    @pytest.mark.parametrize('dfn, q, ref', [
+        (2, 1e-15, 5e298),
+        (1, 4e-16, 2.454931111339157e306),
+        (1e20, 1e-15, 8.554858459851725e298),
+        (1, 3.85e-16, 5.272596610651114e306),
+        (1, 3.9e-16, 4.073305614023329e306),
+        (1e6, 4e-16, 7.780591052085237e306),
+        (1e3, 3.85e-16, 1.6694965842875508e307),
+    ])
+    def test_isf_large_finite(self, dfn, q, ref):
+        # References obtained by inverting mpmath.betainc with 100 digits.
+        assert_allclose(stats.f.isf(q, dfn, 0.1), ref, rtol=1e-12)
+
+    def test_isf_broadcast(self):
+        q = np.array([1e-20, 1e-7, 0.5, 0.9])
+        dfn = np.array([[2], [10], [2.5]])
+        dfd = np.array([[10], [2], [7.25]])
+        x = stats.f.isf(q, dfn, dfd)
+        assert_allclose(stats.f.sf(x, dfn, dfd), np.broadcast_to(q, (3, 4)),
+                        rtol=1e-13, atol=0)
+
+    def test_isf_mixed_tails(self):
+        q = [1e-20, 1e-15, 1e-20, np.nextafter(1., 0.)]
+        dfn = [1, 1e20, 10, 0.1]
+        dfd = [0.1, 0.1, 10, 2]
+        ref = [np.inf, 8.554858459851725e298, 26305.501967818313, 1.618954e-318]
+        assert_allclose(stats.f.isf(q, dfn, dfd), ref, rtol=1e-12, atol=0)
+
+    def test_isf_endpoints(self):
+        assert_equal(stats.f.isf([0, 1, -0.1, 1.1, np.nan], 10, 10),
+                     [np.inf, 0, np.nan, np.nan, np.nan])
+
+    def test_isf_subnormal_shape(self):
+        with np.errstate(invalid='raise'):
+            assert_equal(stats.f.isf([0.1, 0.9], 2, np.nextafter(0., 1.)),
+                         [np.nan, np.nan])
+
     def test_endpoints(self):
         # Compute the pdf at the left endpoint dst.a.
         data = [[stats.f, (2, 1), 1.0]]
