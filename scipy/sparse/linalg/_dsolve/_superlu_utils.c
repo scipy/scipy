@@ -197,9 +197,8 @@ PyTypeObject SuperLUGlobalType = {
  * Stub for error handling; does nothing, as we don't want to spew debug output.
  */
 
-int input_error(char *srname, int *info)
+void input_error(char *srname, int *info)
 {
-    return 0;
 }
 
 /*
