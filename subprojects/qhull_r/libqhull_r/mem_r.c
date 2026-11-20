@@ -30,8 +30,8 @@
     global_r.c (qh_initbuffers) for an example of using mem_r.c
 
   Copyright (c) 1993-2020 The Geometry Center.
-  $Id: //main/2019/qhull/src/libqhull_r/mem_r.c#7 $$Change: 2953 $
-  $DateTime: 2020/05/21 22:05:32 $$Author: bbarber $
+  $Id: //main/2019/qhull/src/libqhull_r/mem_r.c#8 $$Change: 3978 $
+  $DateTime: 2025/08/24 21:38:45 $$Author: bbarber $
 */
 
 #include "libqhull_r.h"  /* includes user_r.h and mem_r.h */
@@ -186,8 +186,8 @@ void qh_memcheck(qhT *qh) {
     qh_exit(qhmem_ERRqhull);  /* can not use qh_errexit() */
   }
   if (qh->qhmem.ferr == 0 || qh->qhmem.IStracing < 0 || qh->qhmem.IStracing > 10 || (((qh->qhmem.ALIGNmask+1) & qh->qhmem.ALIGNmask) != 0)) {
-    qh_fprintf_stderr(6244, "qhull internal error (qh_memcheck): either qh->qhmem is overwritten or qh->qhmem is not initialized.  Call qh_meminit or qh_new_qhull before calling qh_mem routines.  ferr 0x%x, IsTracing %d, ALIGNmask 0x%x\n", 
-          qh->qhmem.ferr, qh->qhmem.IStracing, qh->qhmem.ALIGNmask);
+    qh_fprintf_stderr(6244, "qhull internal error (qh_memcheck): either qh->qhmem is overwritten or qh->qhmem is not initialized.  Call qh_meminit or qh_new_qhull before calling qh_mem routines.  ferr %p, IsTracing %d, ALIGNmask 0x%x\n",
+          (void *) qh->qhmem.ferr, qh->qhmem.IStracing, qh->qhmem.ALIGNmask);
     qh_exit(qhmem_ERRqhull);  /* can not use qh_errexit() */
   }
   if (qh->qhmem.IStracing != 0)
@@ -203,7 +203,7 @@ void qh_memcheck(qhT *qh) {
     qh_errexit(qh, qhmem_ERRqhull, NULL, NULL);
   }
   if (qh->qhmem.IStracing != 0)
-    qh_fprintf(qh, qh->qhmem.ferr, 8144, "qh_memcheck: total size of freelists totfree is the same as qh->qhmem.totfree\n", totfree);
+    qh_fprintf(qh, qh->qhmem.ferr, 8144, "qh_memcheck: total size of freelists totfree (%d) is the same as qh->qhmem.totfree\n", totfree);
 } /* memcheck */
 
 /*-<a                             href="qh-mem_r.htm#TOC"
