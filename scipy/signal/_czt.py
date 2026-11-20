@@ -6,6 +6,7 @@ import cmath
 import numbers
 import numpy as np
 from numpy import pi, arange
+from scipy._lib._array_api import array_namespace, xp_result_device, xp_result_type
 from scipy.fft import fft, ifft, next_fast_len
 
 __all__ = ['czt', 'zoom_fft', 'CZT', 'ZoomFFT', 'czt_points']
@@ -35,10 +36,10 @@ def czt_points(m, w=None, a=1+0j):
     ----------
     m : int
         The number of points desired.
-    w : complex, optional
+    w : complex or array_like, optional
         The ratio between points in each step.
         Defaults to equally spaced points around the entire unit circle.
-    a : complex, optional
+    a : complex or array_like, optional
         The starting point in the complex plane.  Default is 1+0j.
 
     Returns
@@ -46,11 +47,20 @@ def czt_points(m, w=None, a=1+0j):
     out : ndarray
         The points in the Z plane at which `CZT` samples the z-transform,
         when called with arguments `m`, `w`, and `a`, as complex numbers.
+        The shape is determined by broadcasting `a`, `w` (if provided), and
+        an array of shape ``(m,)`` together.
 
     See Also
     --------
     CZT : Class that creates a callable chirp z-transform function.
     czt : Convenience function for quickly calculating CZT.
+
+    Notes
+    -----
+    Array inputs `a` and `w` must be broadcastable with each other and with
+    an array of shape ``(m,)``. For example, an input of shape ``(2, 1)``
+    with the other input scalar produces an output of shape ``(2, m)``,
+    containing two sets of points.
 
     Examples
     --------
@@ -74,18 +84,23 @@ def czt_points(m, w=None, a=1+0j):
     >>> plt.axis('equal')
     >>> plt.show()
     """
+    xp = array_namespace(a, w)
+    device = xp_result_device(a, w)
+
     m = _validate_sizes(1, m)
 
-    k = arange(m)
-
-    a = 1.0 * a  # at least float
+    a = xp.asarray(a, device=device)
+    w = xp.asarray(w, device=device) if w is not None else None
+    dtype = xp_result_type(a, w, force_floating=True, xp=xp)
+    a = xp.astype(a, dtype)
+    w = xp.astype(w, dtype) if w is not None else None
+    k = xp.arange(m, device=device, dtype=xp.float64)
 
     if w is None:
         # Nothing specified, default to FFT
-        return a * np.exp(2j * pi * k / m)
+        return a * xp.exp(2j * xp.pi * k / m)
     else:
         # w specified
-        w = 1.0 * w  # at least float
         return a * w**-k
 
 
