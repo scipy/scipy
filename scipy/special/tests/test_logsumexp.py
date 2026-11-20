@@ -35,6 +35,106 @@ def test_wrap_radians(xp):
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 @make_xp_test_case(logsumexp)
 class TestLogSumExp:
+    @pytest.mark.parametrize('offset', [0., 1000.])
+    @pytest.mark.parametrize('weight', [1., -1.])
+    @pytest.mark.parametrize('axis', [0, 1])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_cancelled_leading_terms(self, xp, offset, weight, axis, keepdims):
+        # gh-26340: equal largest terms cancel, leaving a finite smaller term.
+        a = xp.asarray([[offset, offset, offset - 1],
+                        [offset + 1, offset + 1, offset]])
+        b = xp.asarray([1., -1., weight])
+        if axis == 0:
+            a = xp.permute_dims(a, (1, 0))
+            b = xp.expand_dims(b, axis=1)
+        a_before, b_before = xp.asarray(a, copy=True), xp.asarray(b, copy=True)
+        expected = xp.asarray([offset - 1, offset])
+        if keepdims:
+            expected = xp.expand_dims(expected, axis=axis)
+        result, sign = logsumexp(a, b=b, axis=axis, keepdims=keepdims,
+                                return_sign=True)
+        xp_assert_close(result, expected)
+        xp_assert_equal(sign, xp.full_like(expected, weight))
+        result = logsumexp(a, b=b, axis=axis, keepdims=keepdims)
+        xp_assert_close(result, expected if weight > 0
+                        else xp.full_like(expected, xp.nan))
+        xp_assert_equal(a, a_before)
+        xp_assert_equal(b, b_before)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    @pytest.mark.parametrize('weight', [1., -1.])
+    def test_cancelled_leading_terms_small_remainder(self, xp, dtype, weight):
+        # gh-26340: the remaining terms are far below the cancelled max, so they
+        # underflow if shifted by it.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1000., 1000., 0.], [1., 1., -800.], [1., 1., -120.]],
+                       dtype=dtype)
+        b = xp.asarray([1., -1., weight], dtype=dtype)
+        expected = xp.asarray([0., -800., -120.], dtype=dtype)
+        result, sign = logsumexp(a, b=b, axis=-1, return_sign=True)
+        xp_assert_close(result, expected)
+        xp_assert_equal(sign, xp.full_like(expected, weight))
+        if weight > 0:
+            xp_assert_close(logsumexp(a, b=b, axis=-1), expected)
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_all_terms_cancel(self, xp, dtype):
+        # gh-26340: the sum is exactly zero, even when `exp(a)` overflows.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1000., 1000.], [1., 1.]], dtype=dtype)
+        b = xp.asarray([1., -1.], dtype=dtype)
+        expected = xp.full((2,), -xp.inf, dtype=dtype)
+        result, sign = logsumexp(a, b=b, axis=-1, return_sign=True)
+        xp_assert_equal(result, expected)
+        xp_assert_equal(sign, xp.zeros_like(expected))
+        xp_assert_equal(logsumexp(a, b=b, axis=-1), expected)
+
+        # Infinite terms that cancel are still NaN
+        a = xp.asarray([xp.inf, xp.inf], dtype=dtype)
+        b = xp.asarray([1., -1.], dtype=dtype)
+        xp_assert_equal(logsumexp(a, b=b), xp.asarray(xp.nan, dtype=dtype))
+
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_cancelled_terms_second_level(self, xp, dtype):
+        # gh-26340: the next-largest terms cancel too; the third level remains.
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([1000., 1000., 999., 999., 998.], dtype=dtype)
+        b = xp.asarray([1., -1., 1., -1., 1.], dtype=dtype)
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_close(result, xp.asarray(998., dtype=dtype))
+        xp_assert_equal(sign, xp.asarray(1., dtype=dtype))
+
+    @pytest.mark.parametrize('a, dtype, expected', [
+        ([0., 0., -740.], 'float64', -740.),
+        ([100., 100., 0.], 'float32', 0.),
+    ])
+    def test_cancelled_leading_terms_subnormal_remainder(self, xp, a, dtype,
+                                                         expected):
+        # gh-26340: shifted by the cancelled max, the remaining term would be
+        # subnormal and lose precision (float64) or vanish (float32).
+        dtype = getattr(xp, dtype)
+        a = xp.asarray(a, dtype=dtype)
+        b = xp.asarray([1., -1., 1.], dtype=dtype)
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(expected, dtype=dtype))
+
+    def test_cancelled_leading_terms_nan_with_zero_weight(self, xp):
+        # A NaN with zero weight is ignored; the cancelling terms must not
+        # hide the remaining one.
+        a = xp.asarray([xp.nan, 2., 2., 1.])
+        b = xp.asarray([0., 1., -1., 1.])
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_close(result, xp.asarray(1.))
+        xp_assert_equal(sign, xp.asarray(1.))
+
+    @pytest.mark.xfail(reason="all terms cancel across two levels; "
+                              "out of scope for gh-26340")
+    def test_all_terms_cancel_two_levels(self, xp):
+        a = xp.asarray([1000., 1000., 999., 999.])
+        b = xp.asarray([1., -1., 1., -1.])
+        result, sign = logsumexp(a, b=b, return_sign=True)
+        xp_assert_equal(result, xp.asarray(-xp.inf))
+        xp_assert_equal(sign, xp.asarray(0.))
+
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
