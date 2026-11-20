@@ -96,6 +96,13 @@ class TestAAA:
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
 
+    def test_output_iteration(self):
+        f=np.abs(UNIT_INTERVAL)
+        with pytest.warns(RuntimeWarning, match="AAA failed"):
+            r=AAA(UNIT_INTERVAL,f,max_terms=4)
+        assert_equal(r.support_values.shape[0], np.argmin(r.errors)+1)
+
+
     # The following tests are based on:
     # https://github.com/chebfun/chebfun/blob/master/tests/chebfun/test_aaa.m
     def test_exp(self):
