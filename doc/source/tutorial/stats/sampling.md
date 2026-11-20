@@ -75,7 +75,7 @@ These generators are based on important concepts:
   function. See {class}`~scipy.stats.sampling.SimpleRatioUniforms`.
   Note that there is also {class}`~scipy.stats.sampling.RatioUniforms`,
   a pure Python implementation where the user needs to specify the bounding
-  rectangle.
+  rectangle and the PDF must be vectorized.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that $F$ is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
