@@ -4889,6 +4889,17 @@ class TestBessel:
         iv1 = special.iv(0,.1)*exp(-.1)
         assert_allclose(ive1, iv1, atol=1.5e-10, rtol=0)
 
+    def test_ive_gh18088(self):
+        # import mpmath as mp
+        # with mp.workdps(80):
+        #     for x in [5e8, 1e9, 5e9, 1e10]:
+        #         y = mp.exp(-mp.mpf(x)) * mp.besseli(1, mp.mpf(x))
+        #         print(f"{float(y):.17g},")
+        ref = [1.7841241148146781e-05, 1.2615662605369927e-05,
+               5.6418958350544206e-06, 3.9894228038647233e-06]
+        res = special.ive(1, [5e8, 1e9, 5e9, 1e10])
+        assert_allclose(res, ref, atol=1e-15, rtol=0)
+
     def test_ivp0(self):
         assert_allclose(special.iv(1, 2), special.ivp(0, 2), atol=1.5e-10, rtol=0)
 
