@@ -22,6 +22,8 @@ ci/* export-ignore
 ###########################
 
 * text=auto
+# force LF for shell scripts
+*.sh text eol=lf
 
 # Don't want to convert line endings of this file, causes test failure on
 # Windows

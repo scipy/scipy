@@ -1,6 +1,15 @@
-#!/bin/bash
+# /// conda-script
+# channels = ["https://prefix.dev/conda-forge"]
+# entrypoint = "brush -x ${SCRIPT}"
+#
+# [dependencies]
+# brush = "*"
+# uutils-coreutils = "*"
+# /// end-conda-script
 
 # Vendors pyprima from https://github.com/libprima/prima
+# Can be run via `pixi run --script tools/vendoring/vendor_pyprima.sh`
+# Must be run from the repo root
 
 set -o nounset
 set -o errexit
@@ -8,7 +17,6 @@ set -o errexit
 REPO_URL="https://github.com/libprima/prima"
 COMMIT_HASH="6fbf15d9b4aac20d2e3ee5b3fcb41f0ca17c4330"
 
-# XXX: run this from the repo top level like `./tools/vendoring/vendor_pyprima.sh`
 ROOT_DIR="subprojects/pyprima/pyprima"
 
 rm -rf $ROOT_DIR
