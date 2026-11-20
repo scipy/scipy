@@ -253,6 +253,24 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     .. note:: For data on a regular grid use `interpn` instead.
 
+    For ``method='linear'`` and ``method='cubic'``, the input points are
+    tessellated into simplices using a Delaunay triangulation (via Qhull).
+    When the input points lie on a rectilinear grid, the Delaunay
+    triangulation may not be unique. For example, the four points of a
+    rectangle lie on the same circle and can be triangulated using either
+    diagonal.
+
+    The choice of diagonal can depend on floating-point rounding and may
+    therefore differ across platforms or between SciPy and Qhull versions.
+    This can result in slightly different interpolated values for the same
+    input data, particularly when the query point is near a configuration
+    where the triangulation is ambiguous.
+
+    If the data is defined on a regular grid, consider using
+    `RegularGridInterpolator` (or `interpn`) instead. These methods do
+    not require a Delaunay triangulation and use the structure of the
+    regular grid directly.
+
     Examples
     --------
 
