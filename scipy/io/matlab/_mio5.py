@@ -475,7 +475,8 @@ def to_writeable(source):
     if isinstance(source, np.ndarray):
         return source
     if source is None:
-        return None
+        # Write None as a 0x0 double ([] in MATLAB)
+        return np.empty((0, 0))
     if hasattr(source, "__array__"):
         return np.asarray(source)
     # Objects that implement mappings
