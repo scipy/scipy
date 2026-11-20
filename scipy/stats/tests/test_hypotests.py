@@ -2017,6 +2017,16 @@ class TestGamesHowell:
     # because games_howell leverage _tukey_hsd_iv()
 
 class TestPoissonMeansTest:
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize('case', [str.upper, str.title])
+    @pytest.mark.parametrize('diff', [0, 0.05])
+    def test_alternative_case(self, alternative, case, diff):
+        expected = stats.poisson_means_test(6, 10, 2, 10,
+                                           alternative=alternative, diff=diff)
+        res = stats.poisson_means_test(6, 10, 2, 10,
+                                      alternative=case(alternative), diff=diff)
+        assert_equal(res, expected)
+
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
         # example from [1], 6. Illustrative examples: Example 1
         [0, 100, 3, 100, 0.0884],
