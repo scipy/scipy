@@ -30,7 +30,6 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
-from scipy.signal._filter_design import _logspace
 from scipy.signal import _polyutils as _pu
 from scipy.signal._polyutils import _sort_cmplx
 
@@ -52,6 +51,12 @@ def mpmath_check(min_ver):
         or version.parse(mpmath.__version__) < version.Version(min_ver),
         reason=f"mpmath version >= {min_ver} required",
     )
+
+
+def _logspace(start, stop, num=50, *, xp):
+    """Array API comopatible version of `numpy.logspace`. """
+    y_np = np.logspace(start, stop, num=num, endpoint=True)
+    return xp.asarray(y_np)
 
 
 class TestCplxPair:
@@ -5176,6 +5181,38 @@ class TestGammatone:
 
 @make_xp_test_case(findfreqs)
 class TestFindFreqs:
+    """Tests for function `findfreqs`. """
+
+    def test_exception(self, xp):
+        """Verify that a ValueError is raised for invalid parameters. """
+        with pytest.raises(ValueError, match="^Parameter kind='INVALID"):
+            findfreqs(1, 2, 2, kind='INVALID')
+        with pytest.raises(ValueError, match="^Parameter scale='INVALID'"):
+            findfreqs(1, 2, 2, kind='zp', scale='INVALID')
+        with pytest.raises(ValueError, match="^Parameter `num` and `den` must be"):
+            findfreqs(xp.eye(2), 2, 2)
+        with pytest.raises(ValueError, match="^Parameter `num` and `den` must be"):
+            findfreqs(2, xp.eye(2), 2)
+
+    @pytest.mark.parametrize("z, scale, om_ref", [
+        (1, 'log', (0.01, 10.)), (1j, 'log', (0.1, 10.)), (-1j, 'linear', (100, 3e3)),
+        (1, 'linear', (0.1, 3.0)), (1j, 'linear', (0.2, 1.5))])
+    def test_basic(self, z, scale, om_ref, xp):
+        """Verify that start and end frequencies are correct. """
+        z_xp = xp.asarray([z,], dtype=xp.complex128)
+        om = findfreqs(z_xp, -1j, N=2, kind='zp', scale=scale)
+        om_ref_xp = xp.asarray(om_ref, dtype=om.dtype)
+        xp_assert_close(om, om_ref_xp)
+
+    @pytest.mark.parametrize("z, p", [
+        ([-1j], [-1j]), ([], []), ([-1j], []), ([], [-1j])])
+    def test_degenerated_tf(self, z, p, xp):
+        """Tests for transfer functions with "invalid" zeros and poles. """
+        z_xp, p_xp = (xp.asarray(v_, dtype=xp.complex128) for v_ in (z, p))
+        om_ref = xp.asarray([100, 10e3], dtype=xp.float64)
+        om = findfreqs(z_xp, p_xp, N=2, kind='zp')
+        xp_assert_close(om, om_ref)
+
     @pytest.mark.parametrize("kind", ["ba", "zp"])
     def test_findfreqs_log_spacing(self, xp, kind):
         N = 30

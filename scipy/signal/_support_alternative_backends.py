@@ -20,8 +20,8 @@ JAX_SIGNAL_FUNCS = [
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
 CUPY_BLACKLIST = [
-    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'get_window', 'lfilter_zi',
-    'sosfilt_zi', 'remez',
+    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'findfreqs', 'get_window',
+    'lfilter_zi', 'sosfilt_zi', 'remez',
 ]
 
 def delegate_xp(delegator, module_name):
@@ -253,6 +253,10 @@ capabilities_overrides = {
                                reason="firwin2 uses np.interp"),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
+    "freqs_ss": xp_capabilities(cpu_only=True, skip_backends=[
+        ('jax.numpy', "In-place item assignment and boolean masking are not supported"),
+        ('dask.array',
+         "Needs `mT`, boolean-mask assignment and eager NumPy conversion")]),
     "freqs_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
     "freqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
