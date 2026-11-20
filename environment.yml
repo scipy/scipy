@@ -1,4 +1,4 @@
-# Please refer to https://scipy.github.io/devdocs/building/index.html
+# Please refer to https://scipy.github.io/devdocs/dev/building/index.html
 # To use:
 #   $ conda env create -f environment.yml  # `mamba` works too for this command
 #   $ conda activate scipy-dev

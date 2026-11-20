@@ -495,11 +495,13 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor,
     # Calculate default values of xl0 and/or xr0 if they have not been supplied
     # by the user. We need to be careful to ensure xl0 and xr0 are not outside
     # of (xmin, xmax).
+    # Convert to array for PyTorch: data-apis/array-api-compat/issues/271
+    half = xp.asarray(0.5, dtype=xm0.dtype, device=xm0.device)
     if xl0_not_supplied:
-        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, 0.5)
+        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, half)
         xl0 = xp.astype(xl0, xm0.dtype, copy=False)
     if xr0_not_supplied:
-        xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
+        xr0 = xm0 + xp.minimum((xmax - xm0)/16, half)
         xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter, device=xp_device(xm0))

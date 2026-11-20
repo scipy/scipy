@@ -671,7 +671,7 @@ namespace lapack {
                 CBLAS_INT rwork_len;
                 if (!work_size(3LL * n - 1, &rwork_len)) { return nullptr; }
                 ARRAY_HIDDEN(R, rwork, rwork_len);
-                lapack::syev(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
+                lapack::heev(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
                              w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), &info);
             }
             else {
@@ -697,7 +697,7 @@ namespace lapack {
             T work = 0;
             CBLAS_INT info = 0, lda = std::max<CBLAS_INT>(1, n);
             if constexpr (is_complex_v<T>) {
-                lapack::syev('N', lower ? 'L' : 'U', n, nullptr, lda, nullptr, &work, -1,
+                lapack::heev('N', lower ? 'L' : 'U', n, nullptr, lda, nullptr, &work, -1,
                              static_cast<R *>(nullptr), &info);
             }
             else {
@@ -759,7 +759,7 @@ namespace lapack {
                 SCALAR_OPT(CBLAS_INT, lrwork, minimum_lrwork);
                 CHECK(lrwork >= minimum_lrwork || (n == 1 && lrwork >= 1), lrwork);
                 ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
-                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
+                lapack::heevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, a.data<T>(), lda,
                               w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), lrwork,
                               iwork.data<CBLAS_INT>(), liwork, &info);
             }
@@ -793,7 +793,7 @@ namespace lapack {
              * `heevr_lwork` orders its three the other way round. */
             if constexpr (is_complex_v<T>) {
                 R rwork = 0;
-                lapack::syevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
+                lapack::heevd(compute_v ? 'V' : 'N', lower ? 'L' : 'U', n, nullptr,
                               std::max<CBLAS_INT>(1, n), nullptr, &work, -1, &rwork, -1, &iwork,
                               -1, &info);
                 return make_result(work, static_cast<long long>(iwork), rwork,
@@ -887,7 +887,7 @@ namespace lapack {
                 SCALAR_OPT(CBLAS_INT, lrwork, std::max<CBLAS_INT>(1, 24 * n));
                 CHECK(lrwork >= minimum_lrwork || lrwork == -1, lrwork);
                 ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
-                lapack::syevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
+                lapack::heevr(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(), lda,
                               vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
                               isuppz.data<CBLAS_INT>(), work.data<T>(), lwork, rwork.data<R>(),
                               lrwork, iwork.data<CBLAS_INT>(), liwork, &info);
@@ -923,7 +923,7 @@ namespace lapack {
              * `work, iwork, rwork`.  Both follow their own `.pyf` argument list. */
             if constexpr (is_complex_v<T>) {
                 R rwork = 0;
-                lapack::syevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
+                lapack::heevr('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
                               nullptr, nullptr, ld, nullptr, &work, -1, &rwork, -1, &iwork, -1,
                               &info);
                 return make_result(work, rwork, static_cast<long long>(iwork),
@@ -982,7 +982,7 @@ namespace lapack {
                 CBLAS_INT rwork_len;
                 if (!work_size(7LL * n, &rwork_len)) { return nullptr; }
                 ARRAY_HIDDEN(R, rwork, rwork_len);
-                lapack::syevx(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(),
+                lapack::heevx(compute_v ? 'V' : 'N', range, lower ? 'L' : 'U', n, a.data<T>(),
                               lda, vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
                               work.data<T>(), lwork, rwork.data<R>(), iwork.data<CBLAS_INT>(),
                               ifail.data<CBLAS_INT>(), &info);
@@ -1013,7 +1013,7 @@ namespace lapack {
             T work = 0;
             CBLAS_INT m = 0, info = 0, ld = std::max<CBLAS_INT>(1, n);
             if constexpr (is_complex_v<T>) {
-                lapack::syevx('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
+                lapack::heevx('N', 'A', lower ? 'L' : 'U', n, nullptr, ld, 0, 1, 1, 0, 0, &m,
                               nullptr, nullptr, ld, &work, -1, static_cast<R *>(nullptr),
                               nullptr, nullptr, &info);
             }
@@ -1065,7 +1065,7 @@ namespace lapack {
                 CBLAS_INT rwork_len;
                 if (!work_size(3LL * n - 2, &rwork_len)) { return nullptr; }
                 ARRAY_HIDDEN(R, rwork, rwork_len);
-                lapack::sygv(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
+                lapack::hegv(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
                              w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), &info);
             }
             else {
@@ -1092,7 +1092,7 @@ namespace lapack {
             T work = 0;
             CBLAS_INT info = 0, ld = std::max<CBLAS_INT>(1, n);
             if constexpr (is_complex_v<T>) {
-                lapack::sygv(1, 'N', uplo, n, nullptr, ld, nullptr, ld, nullptr, &work, -1,
+                lapack::hegv(1, 'N', uplo, n, nullptr, ld, nullptr, ld, nullptr, &work, -1,
                              static_cast<R *>(nullptr), &info);
             }
             else {
@@ -1158,7 +1158,7 @@ namespace lapack {
                 SCALAR_OPT(CBLAS_INT, lrwork, default_lrwork);
                 CHECK(lrwork > 0 || lrwork == -1, lrwork);
                 ARRAY_HIDDEN(R, rwork, std::max<CBLAS_INT>(1, lrwork));
-                lapack::sygvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
+                lapack::hegvd(itype, jobz, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
                               w.data<R>(), work.data<T>(), lwork, rwork.data<R>(), lrwork,
                               iwork.data<CBLAS_INT>(), liwork, &info);
             }
@@ -1223,7 +1223,7 @@ namespace lapack {
                 CBLAS_INT rwork_len;
                 if (!work_size(7LL * n, &rwork_len)) { return nullptr; }
                 ARRAY_HIDDEN(R, rwork, rwork_len);
-                lapack::sygvx(itype, jobz, range, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
+                lapack::hegvx(itype, jobz, range, uplo, n, a.data<T>(), lda, b.data<T>(), ldb,
                               vl, vu, il, iu, abstol, &m, w.data<R>(), z.data<T>(), ldz,
                               work.data<T>(), lwork, rwork.data<R>(), iwork.data<CBLAS_INT>(),
                               ifail.data<CBLAS_INT>(), &info);
@@ -1254,7 +1254,7 @@ namespace lapack {
             T work = 0;
             CBLAS_INT m = 0, info = 0, ld = std::max<CBLAS_INT>(1, n);
             if constexpr (is_complex_v<T>) {
-                lapack::sygvx(1, 'N', 'A', uplo, n, nullptr, ld, nullptr, ld, 0, 1, 1, 0, 0, &m,
+                lapack::hegvx(1, 'N', 'A', uplo, n, nullptr, ld, nullptr, ld, 0, 1, 1, 0, 0, &m,
                               nullptr, nullptr, ld, &work, -1, static_cast<R *>(nullptr),
                               nullptr, nullptr, &info);
             }
@@ -1297,8 +1297,13 @@ namespace lapack {
             ARRAY_OUT(T, tau, 1, true, ctx.zeros(nm1));
             ARRAY_HIDDEN(T, work, std::max<CBLAS_INT>(1, lwork));
 
-            lapack::sytrd(lower ? 'L' : 'U', n, a.data<T>(), lda, d.data<R>(), e.data<R>(),
-                          tau.data<T>(), work.data<T>(), lwork, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::sytrd(lower ? 'L' : 'U', n, a.data<T>(), lda, d.data<R>(), e.data<R>(),
+                              tau.data<T>(), work.data<T>(), lwork, &info);
+            } else {
+                lapack::hetrd(lower ? 'L' : 'U', n, a.data<T>(), lda, d.data<R>(), e.data<R>(),
+                              tau.data<T>(), work.data<T>(), lwork, &info);
+            }
             return make_result(a, d, e, tau, static_cast<long long>(info));
         }
 
@@ -1316,8 +1321,13 @@ namespace lapack {
 
             T work = 0;
             CBLAS_INT info = 0;
-            lapack::sytrd(lower ? 'L' : 'U', n, nullptr, std::max<CBLAS_INT>(1, n), nullptr,
-                          nullptr, nullptr, &work, -1, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::sytrd(lower ? 'L' : 'U', n, nullptr, std::max<CBLAS_INT>(1, n), nullptr,
+                              nullptr, nullptr, &work, -1, &info);
+            } else {
+                lapack::hetrd(lower ? 'L' : 'U', n, nullptr, std::max<CBLAS_INT>(1, n), nullptr,
+                              nullptr, nullptr, &work, -1, &info);
+            }
             return make_result(work, static_cast<long long>(info));
         }
 
@@ -1340,7 +1350,11 @@ namespace lapack {
             CHECKARRAY(shape(b, 0) == n && shape(b, 1) == n, b);
             CBLAS_INT ldb = std::max<CBLAS_INT>(1, shape(b, 0));
 
-            lapack::sygst(itype, lower ? 'L' : 'U', n, a.data<T>(), lda, b.data<T>(), ldb, &info);
+            if constexpr (!is_complex_v<T>) {
+                lapack::sygst(itype, lower ? 'L' : 'U', n, a.data<T>(), lda, b.data<T>(), ldb, &info);
+            } else {
+                lapack::hegst(itype, lower ? 'L' : 'U', n, a.data<T>(), lda, b.data<T>(), ldb, &info);
+            }
             return make_result(a, static_cast<long long>(info));
         }
 
