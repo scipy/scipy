@@ -574,6 +574,19 @@ class TestLsim:
 
 
 class TestImpulse:
+    @pytest.mark.parametrize("x0", [
+        (2., -1.), [2., -1.], [[2., -1.]], [[2.], [-1.]],
+    ])
+    def test_initial_state_vector(self, x0):
+        # x'' + 4x' + 5x = u as in gh-7092; the impulse adds B to the initial state
+        system = (np.array([[-4., -5.], [1., 0.]]),
+                  np.array([[1.], [0.]]), np.array([[0., 1.]]), 0.)
+        t = np.linspace(0., 5., 100)
+        tout, actual = impulse(system, X0=x0, T=t)
+        expected = np.exp(-2*t) * (-np.cos(t) + np.sin(t))
+        xp_assert_equal(tout, t)
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-14)
+
     def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
