@@ -1402,6 +1402,80 @@ def test_center_of_mass09(xp):
     xp_assert_equal(xp.asarray(output), xp.asarray(expected))
 
 
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array(xp):
+    # gh-1871: masked elements must not contribute to the center of mass
+    input = np.ma.array([1, 2, 3])
+    input[0] = np.ma.masked
+    # only the unmasked elements (2 at index 1, 3 at index 2) count:
+    # (1 * 2 + 2 * 3) / (2 + 3) = 1.6
+    assert ndimage.center_of_mass(input) == (1.6,)
+
+
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array_no_mask(xp):
+    # gh-1871: a masked array with no masked elements behaves like
+    # a plain array
+    input = np.ma.array([1, 2, 3])
+    assert ndimage.center_of_mass(input) == ndimage.center_of_mass([1, 2, 3])
+
+
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array_labels(xp):
+    # gh-1871: masked elements are ignored also with labels/index
+    input = np.ma.array([[1, 2], [3, 4]])
+    input[0, 0] = np.ma.masked
+    labels = np.asarray([[1, 1], [1, 1]])
+    # unmasked masses 2, 3, 4 sum to 9; row coordinate
+    # (0 * 2 + 1 * 3 + 1 * 4) / 9 = 7 / 9, column coordinate
+    # (1 * 2 + 0 * 3 + 1 * 4) / 9 = 6 / 9
+    assert ndimage.center_of_mass(input, labels, 1) == (7 / 9, 6 / 9)
+
+
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array_float_complex(xp):
+    # gh-1871: the zero fill must not change dtype/value semantics
+    input = np.ma.array([1.0, 2.0, 3.0])
+    input[2] = np.ma.masked
+    # (0 * 1.0 + 1 * 2.0) / (1.0 + 2.0) = 2 / 3
+    assert ndimage.center_of_mass(input) == (2 / 3,)
+    input = np.ma.array([1 + 1j, 2 + 2j, 3 + 3j])
+    input[0] = np.ma.masked
+    # identical to the same array with the masked element set to 0
+    assert (ndimage.center_of_mass(input)
+            == ndimage.center_of_mass(np.array([0j, 2 + 2j, 3 + 3j])))
+
+
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array_0d(xp):
+    # gh-1871: 0-d input raises IndexError already for plain arrays;
+    # a masked 0-d array must fail identically, not differently
+    with assert_raises(IndexError):
+        ndimage.center_of_mass(np.array(5.0))
+    with assert_raises(IndexError):
+        ndimage.center_of_mass(np.ma.array(5.0, mask=True))
+
+
+@skip_xp_backends(np_only=True, reason='masked arrays are NumPy-only')
+@make_xp_test_case(ndimage.center_of_mass)
+def test_center_of_mass_masked_array_all_masked(xp):
+    # gh-1871: a fully masked array has zero total mass, like an
+    # all-zero array: NaN with a RuntimeWarning, not a crash
+    input = np.ma.array([1, 2, 3], mask=[True, True, True])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        expected = ndimage.center_of_mass([0, 0, 0])
+    with pytest.warns(RuntimeWarning):
+        output = ndimage.center_of_mass(input)
+    assert np.isnan(output[0])
+    assert np.isnan(expected[0])
+
+
 @make_xp_test_case(ndimage.histogram)
 def test_histogram01(xp):
     expected = xp.ones(10)
