@@ -3,12 +3,63 @@
 Building SciPy for Contributors
 ```````````````````````````````
 
+Using Pixi
+==========
+
+Development of SciPy is made easy with `Pixi <https://pixi.prefix.dev>`__,
+which removes the need for developers to keep track of development environments
+and installed dependencies.
+
+First, `clone the SciPy repository <https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository>`__::
+
+      git clone https://github.com/scipy/scipy.git
+      cd scipy
+      git submodule update --init
+
+and `install Pixi <https://pixi.prefix.dev/latest/installation>`__.
+
+Next, set up your operating system, following `conda-forge's system setup guide <https://conda-forge.org/docs/user/system_setup_compilers/>`__.
+
+SciPy can then be built with the single command::
+
+    pixi run build
+
+All other common development tasks are also available via ``pixi run``.
+Running a task automatically installs and uses a suitable environment:
+
+.. code-block:: console
+
+    pixi run test               # run the tests
+    pixi run open-docs          # build and preview the docs
+    pixi run lint               # run main lint checks
+    pixi run ipython            # spawn an IPython prompt with SciPy installed
+    pixi run smoke-docs         # run the doctests
+    pixi run test-cpu           # run the tests with all CPU array backends
+    pixi run bench              # run the benchmarks
+    pixi run pre-commit-install # install a pre-commit lint hook
+
+.. tip::
+
+    Run ``pixi task list`` for a full list of available tasks.
+
+.. tip::
+
+    Run ``pixi info`` for a full list of environments and their tasks.
+
+
+Alternative methods
+===================
+
+If not using Pixi, one takes responsibility for one's own virtual environments.
+This section describes how to set up one's system for contributing to SciPy
+when using another tool, such as ``uv``, ``pip``, or ``conda``.
+
 Building SciPy from source to contribute to SciPy can be split into
 two main steps: setting up system-level dependencies, and building SciPy itself.
 
 .. _system-level:
 
-.. include:: system_level.rst
+.. include:: ../../tutorial/building/system_level.rst
 
 .. _the-spin-interface:
 
@@ -20,23 +71,6 @@ First, clone the SciPy repository::
       git clone https://github.com/scipy/scipy.git
       cd scipy
       git submodule update --init
-
-
-.. tip::
-
-    Many of the steps described below can now be accomplished automatically
-    with commands which execute tasks in SciPy's Pixi workspace,
-    like ``pixi run build``.
-    To use this workspace, `install Pixi <https://pixi.sh/latest/installation/>`__
-    and execute ``pixi task list`` in a local clone of SciPy's source to see
-    the various tasks available.
-    
-    This removes the need for developers to keep track of development environments
-    and installed dependencies, as running a task automatically installs and uses
-    a suitable environment.
-    A future update to this guide will provide full details on using the Pixi
-    workspace for SciPy development.
-
 
 Then you want to do the following:
 
@@ -117,10 +151,9 @@ To build SciPy in an activated development environment, run::
 This will install SciPy inside the repository (by default in a
 ``build-install`` directory). You can then run tests (``spin test``),
 drop into IPython (``spin ipython``), or take other development steps
-like build the HTML documentation or running benchmarks. The ``spin``
+such as building the HTML documentation or running benchmarks. The ``spin``
 interface is self-documenting, so please see ``spin --help`` and
 ``spin <subcommand> --help`` for detailed guidance.
-
 
 .. admonition:: IDE support & editable installs
 
@@ -146,20 +179,7 @@ interface is self-documenting, so please see ``spin --help`` and
     regular installations, and have some known limitations like a lack of support
     for static typing.
 
-
 .. _meson-python: https://mesonbuild.com/meson-python/
-
-
-Working with XSF
-^^^^^^^^^^^^^^^^
-
-Many functions in ``scipy.special`` are implemented in the C++ library
-`XSF <https://github.com/scipy/xsf>`_, included as a Git submodule at
-``subprojects/xsf``. To test changes to XSF within SciPy, edit the files
-in that directory, then rebuild SciPy and run the relevant tests.
-See the `XSF contribution guide
-<https://github.com/scipy/xsf/blob/main/CONTRIBUTING.md>`_ for details
-on developing and testing XSF itself.
 
 
 Installing static type stubs
@@ -170,3 +190,15 @@ you can include the ``scipy-stubs`` package in your development environment.
 It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
 
 .. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
+
+
+Working with xsf
+================
+
+Many functions in ``scipy.special`` are implemented in the C++ library
+`xsf <https://github.com/scipy/xsf>`_, included as a Git submodule at
+``subprojects/xsf``. To test changes to XSF within SciPy, edit the files
+in that directory, then rebuild SciPy and run the relevant tests.
+See the `xsf contribution guide
+<https://github.com/scipy/xsf/blob/main/CONTRIBUTING.md>`_ for details
+on developing and testing xsf itself.

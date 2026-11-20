@@ -25,6 +25,6 @@ this package.
 
 ------------
 
-[1] https://scipy.github.io/devdocs/building/blas_lapack.html#bit-integer-ilp64-blas-lapack
+[1] https://scipy.github.io/devdocs/tutorial/building/blas_lapack.html#bit-integer-ilp64-blas-lapack
 [2] https://github.com/scipy/scipy/blob/main/.github/workflows/linux_blas.yml
 

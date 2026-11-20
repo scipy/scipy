@@ -1,15 +1,15 @@
 .. _array-api-coverage:
 
-Array API coverage
+Array API Coverage
 ==================
 
 Many SciPy functions supports multiple array types via the 
 `Python array API standard <https://data-apis.org/array-api/latest/index.html>`_.
 
 This standard allows users to use any array API compatible array library
-with parts of SciPy out of the box, with with the main
+with parts of SciPy out of the box, with the main
 principle being *"array type in equals array type out"*.
-Currently, SciPy supports NumPy, PyTorch, JAX, Dask and CuPy arrays.
+For more information, see :ref:`dev-arrayapi`.
 
 This clustering example shows usage with PyTorch tensors as inputs and return
 values:
@@ -40,30 +40,30 @@ considered out-of-scope.
 .. toctree::
    :hidden:
 
-   array_api_modules_tables/cluster_vq
-   array_api_modules_tables/cluster_hierarchy
-   array_api_modules_tables/constants
-   array_api_modules_tables/differentiate
-   array_api_modules_tables/fft
-   array_api_modules_tables/integrate
-   array_api_modules_tables/interpolate
-   array_api_modules_tables/linalg
-   array_api_modules_tables/linalg_interpolative
-   array_api_modules_tables/ndimage
-   array_api_modules_tables/optimize
-   array_api_modules_tables/optimize_elementwise
-   array_api_modules_tables/signal
-   array_api_modules_tables/signal_windows
-   array_api_modules_tables/sparse
-   array_api_modules_tables/sparse_linalg
-   array_api_modules_tables/sparse_csgraph
-   array_api_modules_tables/spatial
-   array_api_modules_tables/spatial_distance
-   array_api_modules_tables/spatial_transform
-   array_api_modules_tables/special
-   array_api_modules_tables/stats
-   array_api_modules_tables/stats_contingency
-   array_api_modules_tables/stats_qmc
+   cluster.vq <array_api_modules_tables/cluster_vq>
+   cluster.hierarchy <array_api_modules_tables/cluster_hierarchy>
+   constants <array_api_modules_tables/constants>
+   differentiate <array_api_modules_tables/differentiate>
+   fft <array_api_modules_tables/fft>
+   integrate <array_api_modules_tables/integrate>
+   interpolate <array_api_modules_tables/interpolate>
+   linalg <array_api_modules_tables/linalg>
+   linalg.interpolative <array_api_modules_tables/linalg_interpolative>
+   ndimage <array_api_modules_tables/ndimage>
+   optimize <array_api_modules_tables/optimize>
+   optimize.elementwise <array_api_modules_tables/optimize_elementwise>
+   signal <array_api_modules_tables/signal>
+   signal.windows <array_api_modules_tables/signal_windows>
+   sparse <array_api_modules_tables/sparse>
+   sparse.linalg <array_api_modules_tables/sparse_linalg>
+   sparse.csgraph <array_api_modules_tables/sparse_csgraph>
+   spatial <array_api_modules_tables/spatial>
+   spatial.distance <array_api_modules_tables/spatial_distance>
+   spatial.transform <array_api_modules_tables/spatial_transform>
+   special <array_api_modules_tables/special>
+   stats <array_api_modules_tables/stats>
+   stats.contingency <array_api_modules_tables/stats_contingency>
+   stats.qmc <array_api_modules_tables/stats_qmc>
 
 Support on CPU
 --------------

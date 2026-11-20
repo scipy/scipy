@@ -45,6 +45,7 @@ dependencies:
   - matplotlib
   - pydata-sphinx-theme>=0.15.2
   - sphinx-copybutton
+  - sphinx-reredirects
   - sphinx-design
   - jupytext
   - myst-nb>=1.2.0

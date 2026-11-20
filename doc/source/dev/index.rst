@@ -18,7 +18,7 @@ the organization section.
    dev_quickstart
    contributor/development_workflow
    contributor/contributor_toc
-   building/index
+   building/contributor
 
 .. toctree::
    :maxdepth: 1
