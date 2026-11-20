@@ -620,6 +620,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
            Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
            Boundary effects may be visible.
+           If `in2` has an even length along a convolved axis, the output
+           along that axis starts one element earlier in the 'full' output
+           than in MATLAB's ``conv``, ``conv2`` and ``convn`` with ``'same'``.
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
@@ -1418,6 +1421,9 @@ def convolve(in1, in2, mode='full', method='auto'):
            Output size will be ``N``, the same size as `in1`, centered
            with respect to the 'full' output.
            Boundary effects may be visible.
+           If `in2` has an even length along a convolved axis, the output
+           along that axis starts one element earlier in the 'full' output
+           than in MATLAB's ``conv``, ``conv2`` and ``convn`` with ``'same'``.
     method : str {'auto', 'direct', 'fft'}, optional
         A string indicating which method to use to calculate the convolution.
 
