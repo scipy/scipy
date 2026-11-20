@@ -213,8 +213,8 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
                     check_finite=check_finite)
 
     # broadcast `lower` argument for backwards compat
-    batch_shape = a.shape[:-2]
-    ret_lower = np.tile(lower, reps=batch_shape)
+    batch_shape = c.shape[:-2]
+    ret_lower = lower if not batch_shape else np.tile(lower, reps=batch_shape)
 
     return c, ret_lower
 
