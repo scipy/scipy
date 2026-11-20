@@ -56,6 +56,41 @@ typedef enum {
   CONSTANT = 4,
 } Mode;
 
+// Map an index to the corresponding in-range index for the given
+// extension mode. Indices already within [0, arr_len) are returned
+// unchanged, so this is a no-op for the common in-bounds case. The
+// fast 1D path can otherwise read out-of-bounds indices when the
+// footprint is large relative to the array or when origin shifts the
+// window, which returns uninitialized memory (gh-26465).
+inline int mirror_index(int i, int arr_len) {
+  if (arr_len == 1) {
+    return 0;
+  }
+  int period = 2 * arr_len - 2;
+  int p = i % period;
+  if (p < 0) {
+    p += period;
+  }
+  return (p < arr_len) ? p : period - p;
+}
+
+inline int reflect_index(int i, int arr_len) {
+  int period = 2 * arr_len;
+  int p = i % period;
+  if (p < 0) {
+    p += period;
+  }
+  return (p < arr_len) ? p : period - 1 - p;
+}
+
+inline int wrap_index(int i, int arr_len) {
+  int p = i % arr_len;
+  if (p < 0) {
+    p += arr_len;
+  }
+  return p;
+}
+
 /*--- Helper Functions ---*/
 
 // returns 1 if heap[i] < heap[j]
@@ -201,7 +236,7 @@ int _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
   switch (mode) {
   case REFLECT:
     for (i = win_len - lim - 1; i > -1; i--) {
-      MediatorInsert(data.get(), m.get(), in_arr[i]);
+      MediatorInsert(data.get(), m.get(), in_arr[reflect_index(i, arr_len)]);
     }
     break;
   case CONSTANT:
@@ -216,7 +251,7 @@ int _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
     break;
   case MIRROR:
     for (i = win_len - lim; i > 0; i--) {
-      MediatorInsert(data.get(), m.get(), in_arr[i]);
+      MediatorInsert(data.get(), m.get(), in_arr[mirror_index(i, arr_len)]);
     }
     break;
   case WRAP:
@@ -227,7 +262,7 @@ int _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
         offset = 0;
     }
     for (i = arr_len - lim - offset - 2 * origin; i < arr_len; i++) {
-      MediatorInsert(data.get(), m.get(), in_arr[i]);
+      MediatorInsert(data.get(), m.get(), in_arr[wrap_index(i, arr_len)]);
     }
     break;
   }
@@ -263,7 +298,8 @@ int _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
   case MIRROR:
     arr_len_thresh = arr_len - 2;
     for (i = 0; i < lim; i++) {
-      MediatorInsert(data.get(), m.get(), in_arr[arr_len_thresh - i]);
+      MediatorInsert(data.get(), m.get(),
+                     in_arr[mirror_index(arr_len_thresh - i, arr_len)]);
       out_arr[lim2 + i] = data[m->heap[0]];
     }
     break;
