@@ -65,6 +65,7 @@ from scipy._lib._array_api import (
     array_namespace,
     make_xp_pytest_param,
     xp_device,
+    xp_result_type,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
@@ -281,14 +282,16 @@ def _take(xp, a, index, axis):
 def xp_assert_ones_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to weighting by ones."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    dtype = xp_result_type(*arrays, force_floating=True, xp=xp)
+    w = xp.ones(arrays[0].shape[axis], dtype=dtype, device=xp_device(arrays[0]))
     xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
 
 
 def xp_assert_scaling_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to weight scaling."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    dtype = xp_result_type(*arrays, force_floating=True, xp=xp)
+    w = xp.ones(arrays[0].shape[axis], dtype=dtype, device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, w=w, **kwargs)
     for scale in (101.0, 0.101):
         xp_assert_close(fn(*arrays, *rest, w=w * scale, **kwargs), expected)
@@ -297,7 +300,8 @@ def xp_assert_scaling_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
 def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
     """Test invariance to additional zero-weighted elements."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    dtype = xp_result_type(*arrays, force_floating=True, xp=xp)
+    w = xp.ones(arrays[0].shape[axis], dtype=dtype, device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, **kwargs)
     rng = np.random.default_rng(seed)
     n = w.shape[0]
@@ -314,7 +318,8 @@ def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
 def xp_assert_duplication_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
     """Test invariance to duplication of the input at half weight."""
     xp = array_namespace(*arrays)
-    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    dtype = xp_result_type(*arrays, force_floating=True, xp=xp)
+    w = xp.ones(arrays[0].shape[axis], dtype=dtype, device=xp_device(arrays[0]))
     expected = fn(*arrays, *rest, w=w, **kwargs)
     doubled = [xp.concat([a, a], axis=axis) for a in arrays]
     xp_assert_close(fn(*doubled, *rest, w=xp.concat([w, w]) / 2.0, **kwargs), expected)
@@ -325,7 +330,8 @@ def xp_assert_split_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs)
     xp = array_namespace(*arrays)
     device = xp_device(arrays[0])
     n = arrays[0].shape[axis]
-    w = xp.ones(n, device=device)
+    dtype = xp_result_type(*arrays, force_floating=True, xp=xp)
+    w = xp.ones(n, dtype=dtype, device=device)
     expected = fn(*arrays, *rest, w=w, **kwargs)
     rng = np.random.default_rng(seed)
     # Draw index from a geometric distribution to get longer tails
@@ -466,7 +472,6 @@ wrogerstanimoto = _weight_checked(rogerstanimoto)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wsokalsneath = _weight_checked(sokalsneath)
-wrussellrao = _weight_checked(russellrao)
 
 
 class TestCdist:
@@ -1481,22 +1486,6 @@ class TestRogersTanimoto:
         xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
         xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
 
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
-
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
-
 
 @make_xp_test_case(euclidean)
 class TestEuclidean:
@@ -2056,22 +2045,51 @@ class TestIsValidY:
                     is_valid_y(xp.asarray(rng.random(i)), throw=True)
 
 
+@make_xp_test_case(russellrao)
 class TestRussellrao:
-    def test_pdist_russellrao_mtica1(self):
-        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
-                        np.array([1, 1, 0, 1, 1]))
-        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
-                         np.array([1, 1, 0, 1, 1], dtype=bool))
-        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+    @pytest.mark.parametrize("dtype", ["float32", "float64", "int32", "int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_russellrao(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        if not xp.isdtype(dtype, "real floating"):
+            dtype = xpx.default_dtype(xp)
+        xp_assert_close(russellrao(x, y), xp.asarray(expected, dtype=dtype))
 
-    def test_pdist_russellrao_mtica2(self):
-        m = wrussellrao(np.array([1, 0, 1]),
-                        np.array([1, 1, 0]))
-        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
-                         np.array([1, 1, 0], dtype=bool))
-        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
-        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_russellrao_array_like(self, x, y, expected):
+        xp_assert_close(russellrao(x, y), np.asarray(expected))
+
+    @pytest.mark.parametrize("dtype", ["float32", "float64", "int32", "int64", "bool"])
+    def test_weight_invariance(self, xp, dtype):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        y = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        xp_assert_ones_weight(russellrao, x, y)
+        xp_assert_scaling_weight(russellrao, x, y)
+        xp_assert_zero_weight(russellrao, x, y)
+        xp_assert_duplication_weight(russellrao, x, y)
+        xp_assert_split_weight(russellrao, x, y)
+
+    def test_non_01_input(self, xp):
+        x, y = xp.asarray([-10, 2.5, 0]), xp.asarray([2, -5, 2])
+        xp_assert_close(russellrao(x, y), xp.asarray(1 / 3))
+
+    def test_nan_propagates(self, xp):
+        u, v = xp.asarray([xp.nan, 1.0, 0.0]), xp.asarray([1.0, 1.0, 0.0])
+        xp_assert_equal(russellrao(u, v), xp.asarray(xp.nan))
+        xp_assert_equal(russellrao(v, u), xp.asarray(xp.nan))
+        # Weights also propagate NaNs
+        u = xp.asarray([1.0, 1.0, 0.0])
+        w = xp.asarray([xp.nan, 1.0, 1.0])
+        xp_assert_equal(russellrao(u, u, w=w), xp.asarray(xp.nan))
 
 
 class TestSokalsneath:
@@ -2479,6 +2497,15 @@ class TestJaccard:
         xp_assert_close(jaccard(x, y, w=xp.asarray([1.0, 2.0, 3.0])),
                         xp.asarray([0.0, 1.0]))
 
+    def test_nan_propagates(self, xp):
+        u, v = xp.asarray([xp.nan, 1.0, 0.0]), xp.asarray([1.0, 1.0, 0.0])
+        xp_assert_equal(jaccard(u, v), xp.asarray(xp.nan))
+        xp_assert_equal(jaccard(v, u), xp.asarray(xp.nan))
+        # Weights also propagate NaNs
+        u = xp.asarray([1.0, 1.0, 0.0])
+        w = xp.asarray([xp.nan, 1.0, 1.0])
+        xp_assert_equal(jaccard(u, u, w=w), xp.asarray(xp.nan))
+
     @pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
     @pytest.mark.parametrize("weights", [True, False])
     def test_jaccard_nd(self, weights, u_shape, v_shape, w_shape):
@@ -2717,7 +2744,7 @@ class TestChebyshev:
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),
-        (russellrao, None),
+        make_xp_pytest_param(russellrao, None),
         (sokalsneath, None),
     ],
 )
@@ -2749,6 +2776,5 @@ def test_distance_nd(func, p, weights, u_shape, v_shape, w_shape):
     else:
         v = rng.random(5)
 
-    with pytest.raises(ValueError,
-                       match="Array shapes are incompatible for broadcasting."):
+    with pytest.raises(ValueError, match="incompatible for broadcasting"):
         func(u, v, w=w)
