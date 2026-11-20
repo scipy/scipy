@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
+from numpy.testing import (assert_array_almost_equal, assert_array_equal,
+                           assert_allclose, assert_)
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    tril, triu_indices_from, spacing, float32, float64,
                    complex64, complex128)
@@ -134,3 +135,67 @@ def test_ldl_type_size_combinations_complex(n, dtype):
     u, d2, p = ldl(x, lower=0, hermitian=0)
     assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg2)
     assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg2)
+
+
+@pytest.mark.parametrize("dtype, hermitian", [
+    (float32, True), (float64, True),
+    (complex64, True), (complex128, True),
+    (complex64, False), (complex128, False),
+])
+@pytest.mark.parametrize("n", [64, 65, 130])
+@pytest.mark.parametrize("lower", [False, True])
+@pytest.mark.parametrize("overwrite_a", [False, True])
+@pytest.mark.parametrize("order", ["C", "F"])
+def test_singular_factorization(dtype, hermitian, n, lower, overwrite_a, order):
+    # gh-26330: older blocked LAPACK routines leave stale values in D when
+    # a pivot becomes zero during elimination. Include two such pivots,
+    # at opposite ends, as INFO only identifies the first one encountered.
+    a = np.array(np.eye(n) * 0.04, dtype=dtype, order=order)
+    v = np.array([1, 1j] if np.iscomplexobj(a) else [1, 1], dtype=dtype)
+    block = np.outer(v, v.conj() if hermitian else v) * 0.0625
+    a[:2, :2] = a[-2:, -2:] = block
+    # Exercise a two-by-two pivot as well as the singular one-by-one pivots.
+    a[3:5, 3:5] = [[0, 0.125], [0.125, 0]]
+    expected = a.copy()
+
+    lu, d, perm = ldl(a, lower=lower, hermitian=hermitian,
+                      overwrite_a=overwrite_a)
+
+    transpose = lu.conj().T if hermitian else lu.T
+    assert_allclose(lu @ d @ transpose, expected, rtol=0, atol=1e-7)
+    triangular = np.tril if lower else np.triu
+    assert_array_equal(lu[perm], triangular(lu[perm]))
+    assert lu.dtype == d.dtype == a.dtype
+    if not overwrite_a:
+        assert_array_equal(a, expected)
+
+
+@pytest.mark.parametrize("lower", [False, True])
+def test_singular_factorization_selected_triangle(lower):
+    a = np.eye(130)
+    a[:2, :2] = a[-2:, -2:] = 0.25
+    # Scatter the singular blocks so triangularization requires permutation.
+    perm = np.random.default_rng(1749).permutation(len(a))
+    expected = a[np.ix_(perm, perm)]
+    a = np.array(expected, order="F")
+    unused = (np.triu_indices_from(a, 1) if lower
+              else np.tril_indices_from(a, -1))
+    a[unused] = np.nan
+
+    lu, d, perm = ldl(a, lower=lower, overwrite_a=True, check_finite=False)
+
+    assert_allclose(lu @ d @ lu.T, expected, rtol=0, atol=1e-14)
+    triangular = np.tril if lower else np.triu
+    assert_array_equal(lu[perm], triangular(lu[perm]))
+
+
+def test_singular_factorization_batch():
+    a = np.stack([np.eye(65), np.eye(65)])
+    a[0, :2, :2] = 0.25
+    a[1, -2:, -2:] = 0.5
+    expected = a.copy()
+
+    lu, d, perm = ldl(a)
+
+    assert_allclose(lu @ d @ lu.swapaxes(-1, -2), expected, rtol=0, atol=1e-14)
+    assert_array_equal(a, expected)
