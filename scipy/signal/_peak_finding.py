@@ -726,9 +726,41 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
+def _select_by_peak_distance_wrap(peaks, priority, distance, original_size):
+    """
+    Evaluate peak distance taking periodic/wrapped boundaries into account.
+
+    Returns a boolean mask indexed in the same order as `peaks`.
+    """
+    peaks_size = peaks.shape[0]
+    keep = np.ones(peaks_size, dtype=bool)
+
+    # Visit peaks from highest to lowest priority
+    sorted_indices = np.argsort(priority)[::-1]
+
+    for i in range(peaks_size):
+        idx_i = sorted_indices[i]
+        if not keep[idx_i]:
+            continue
+
+        p_i = peaks[idx_i]
+        for j in range(i + 1, peaks_size):
+            idx_j = sorted_indices[j]
+            if not keep[idx_j]:
+                continue
+
+            diff = abs(p_i - peaks[idx_j])
+            circ_dist = min(diff, original_size - diff)
+            if circ_dist < distance:
+                keep[idx_j] = False
+
+    # `keep` is indexed like `peaks`, so no re-sorting is needed
+    return keep
+
+
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5,
-               plateau_size=None):
+               plateau_size=None, wrap=False):
     """
     Find peaks inside a signal based on peak properties.
 
@@ -780,6 +812,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         if supplied as the maximal required plateau size.
 
         .. versionadded:: 1.2.0
+    wrap : bool, optional
+        If `True`, the 1-D signal `x` is treated as periodic/wrapped, allowing
+        peaks to be detected at the boundaries (index 0 and `n - 1`).
+        Default is `False`.
+
+        .. versionadded:: 2.0.0
 
     Returns
     -------
@@ -940,13 +978,36 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
+    n = x.size
+    wrap_active = bool(wrap) and n > 0
+    shift = 0
+
+    if wrap_active:
+        # Rotate the signal so its global minimum is the first sample, then
+        # repeat that sample at the end. Both ends are then minimal values and
+        # can never be peaks, while every periodic peak lies in the interior.
+        shift = int(np.argmin(x))
+        rolled = np.roll(x, -shift)
+        x = np.append(rolled, rolled[0])
+
+    def rotate_arg(arg):
+        # Bring array-valued conditions into the same rotated frame as `x`
+        if not wrap_active:
+            return arg
+        if isinstance(arg, np.ndarray) and arg.size == n:
+            rolled_arg = np.roll(arg, -shift)
+            return np.append(rolled_arg, rolled_arg[0])
+        if isinstance(arg, (tuple, list)):
+            return tuple(rotate_arg(a) for a in arg)
+        return arg
+
     peaks, left_edges, right_edges = _local_maxima_1d(x)
     properties = {}
 
     if plateau_size is not None:
         # Evaluate plateau size
         plateau_sizes = right_edges - left_edges + 1
-        pmin, pmax = _unpack_condition_args(plateau_size, x, peaks)
+        pmin, pmax = _unpack_condition_args(rotate_arg(plateau_size), x, peaks)
         keep = _select_by_property(plateau_sizes, pmin, pmax)
         peaks = peaks[keep]
         properties["plateau_sizes"] = plateau_sizes
@@ -957,7 +1018,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if height is not None:
         # Evaluate height condition
         peak_heights = x[peaks]
-        hmin, hmax = _unpack_condition_args(height, x, peaks)
+        hmin, hmax = _unpack_condition_args(rotate_arg(height), x, peaks)
         keep = _select_by_property(peak_heights, hmin, hmax)
         peaks = peaks[keep]
         properties["peak_heights"] = peak_heights
@@ -965,7 +1026,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if threshold is not None:
         # Evaluate threshold condition
-        tmin, tmax = _unpack_condition_args(threshold, x, peaks)
+        tmin, tmax = _unpack_condition_args(rotate_arg(threshold), x, peaks)
         keep, left_thresholds, right_thresholds = _select_by_peak_threshold(
             x, peaks, tmin, tmax)
         peaks = peaks[keep]
@@ -975,7 +1036,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if distance is not None:
         # Evaluate distance condition
-        keep = _select_by_peak_distance(peaks, x[peaks], distance)
+        if wrap_active:
+            keep = _select_by_peak_distance_wrap(peaks, x[peaks], distance, n)
+        else:
+            keep = _select_by_peak_distance(peaks, x[peaks], distance)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
@@ -989,7 +1053,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if prominence is not None:
         # Evaluate prominence condition
-        pmin, pmax = _unpack_condition_args(prominence, x, peaks)
+        pmin, pmax = _unpack_condition_args(rotate_arg(prominence), x, peaks)
         keep = _select_by_property(properties['prominences'], pmin, pmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
@@ -1002,10 +1066,22 @@ def find_peaks(x, height=None, threshold=None, distance=None,
                          properties['left_bases'], properties['right_bases'])
         ))
         # Evaluate width condition
-        wmin, wmax = _unpack_condition_args(width, x, peaks)
+        wmin, wmax = _unpack_condition_args(rotate_arg(width), x, peaks)
         keep = _select_by_property(properties['widths'], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
+
+    if wrap_active:
+        # Map indices from the rotated frame back to the original signal
+        peaks = (peaks + shift) % n
+        for key in ('left_edges', 'right_edges', 'left_bases', 'right_bases',
+                    'left_ips', 'right_ips'):
+            if key in properties:
+                properties[key] = (properties[key] + shift) % n
+        # Return peaks sorted by position
+        order = np.argsort(peaks)
+        peaks = peaks[order]
+        properties = {key: array[order] for key, array in properties.items()}
 
     return peaks, properties
 
