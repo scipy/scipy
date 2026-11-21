@@ -680,6 +680,7 @@ class hypergeom_gen(rv_discrete):
         return scu._hypergeom_pmf(k, n, N, M)
 
     def _cdf(self, k, M, n, N):
+        k = floor(k)
         return scu._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
@@ -705,9 +706,11 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
+        k = floor(k)
         return scu._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
+        k = floor(k)
         res = []
         for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
@@ -720,6 +723,7 @@ class hypergeom_gen(rv_discrete):
         return np.asarray(res)
 
     def _logcdf(self, k, M, n, N):
+        k = floor(k)
         res = []
         for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
