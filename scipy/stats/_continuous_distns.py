@@ -12023,11 +12023,14 @@ class argus_gen(rv_continuous):
             return A + np.log(x) + 0.5*np.log(y) - (0.5*chi)*(chi*y)
 
     def _pdf(self, x, chi):
-        # only the exponential factor goes through exp; exp(logpdf) would
-        # turn the absolute error of log(x) into a relative error of the pdf
+        # log(x) does not go through exp: exp(logpdf) would turn the absolute
+        # error of log(x) into a relative error of the pdf. sqrt(y) does, so
+        # that x = 1 gives exp(-inf) = 0 also if the normalizing constant
+        # overflows (chi > ~1e102), instead of 0*inf.
         y = (1 - x)*(1 + x)
-        with np.errstate(over='ignore'):
-            return x*np.sqrt(y)*np.exp(self._log_norm_const(chi) - (0.5*chi)*(chi*y))
+        with np.errstate(over='ignore', divide='ignore'):
+            return x*np.exp(self._log_norm_const(chi) + 0.5*np.log(y)
+                            - (0.5*chi)*(chi*y))
 
     def _cdf(self, x, chi):
         # Start from sf = P(b)/P(a) (see _sf), with a = chi**2/2,

@@ -10165,12 +10165,24 @@ class TestArgus:
         assert_allclose(stats.argus.pdf(x, chi), expected, rtol=5e-15)
 
     def test_huge_chi(self):
-        # chi**2 overflows for chi > 1.3e154; the results are the correct
-        # limits and no RuntimeWarning is emitted
-        x = np.array([0.5, 0.99])
-        assert_equal(stats.argus.pdf(x, 1e155), 0)
-        assert_equal(stats.argus.cdf(x, 1e155), 0)
-        assert_equal(stats.argus.sf(x, 1e155), 1)
+        # The mass is concentrated at 1 - x ~ 1/chi**2 (the mode is
+        # sqrt((chi**2 - 2 + sqrt(chi**4 + 4))/(2*chi**2)), i.e.,
+        # approximately 1 - 1/(2*chi**2) for large chi). For chi = 1e155 no
+        # double x < 1 is that close to 1, so the results are 0 or 1. chi**2
+        # overflows; no RuntimeWarning is emitted and pdf(1) is 0, not nan.
+        x = np.array([0.5, 0.99, 1.0])
+        assert_equal(stats.argus.pdf(x, 1e155), [0, 0, 0])
+        assert_equal(stats.argus.cdf(x, 1e155), [0, 0, 1])
+        assert_equal(stats.argus.sf(x, 1e155), [1, 1, 0])
+
+    def test_large_chi_at_mode(self):
+        # chi = 1e7: the mode (approximately 1 - 1/(2*chi**2) = 1 - 5e-15,
+        # see test_huge_chi) is still < 1 as a double; x is the double nearest
+        # to it. Expected values were computed with mpmath.
+        x, chi = 0.999999999999995, 1e7
+        assert_allclose(stats.argus.pdf(x, chi), 48394137170617.998, rtol=5e-15)
+        assert_allclose(stats.argus.cdf(x, chi), 0.80144535872829902, rtol=5e-15)
+        assert_allclose(stats.argus.sf(x, chi), 0.19855464127170098, rtol=5e-15)
 
 
 class TestNakagami:
