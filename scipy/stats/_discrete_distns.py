@@ -942,6 +942,7 @@ class logser_gen(rv_discrete):
         # an unregularized beta function (yet, although we could get it from Boost),
         # and neither technically support `b=0` - despite the function being accurate
         # for `b` super close to zero. See https://github.com/scipy/scipy/issues/3890.
+        k = floor(k)
         return -special.betainc(k+1, tiny, p) * special.beta(k+1, tiny) / np.log1p(-p)
 
     def _stats(self, p):
@@ -1834,13 +1835,16 @@ class yulesimon_gen(rv_discrete):
         return log(alpha) + special.betaln(x, alpha + 1)
 
     def _cdf(self, x, alpha):
-        return 1 - x * special.beta(x, alpha + 1)
+        k = floor(x)
+        return 1 - k * special.beta(k, alpha + 1)
 
     def _sf(self, x, alpha):
-        return x * special.beta(x, alpha + 1)
+        k = floor(x)
+        return k * special.beta(k, alpha + 1)
 
     def _logsf(self, x, alpha):
-        return log(x) + special.betaln(x, alpha + 1)
+        k = floor(x)
+        return log(k) + special.betaln(k, alpha + 1)
 
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
