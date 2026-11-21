@@ -543,6 +543,17 @@ depicted by a continuous blue line.
 The deviations between the desired gains and the calculated response can be reduced
 by increasing the number of taps.
 
+The examples above only *design* FIR filters. The example below also *applies* one:
+it designs a low-pass filter with a Kaiser window, using :func:`kaiserord` to pick the
+number of taps and the ``beta`` parameter that reach a given stop-band attenuation and
+transition width, and then filters a noisy signal with :func:`lfilter`. A linear-phase
+FIR filter with :math:`N` taps delays its input by a constant group delay of
+:math:`(N-1)/2` samples; the filtered signal is shifted by that amount so that it lines
+up with the input.
+
+.. plot:: tutorial/examples/signal_Filtering_firwin_apply_example.py
+    :alt: Example of applying a low-pass FIR filter to a noisy signal with lfilter.
+
 Note that the functions :func:`firwin`, :func:`firwin2` and :func:`freqz` use different
 default sampling frequencies.
 
