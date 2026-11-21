@@ -12043,13 +12043,14 @@ class argus_gen(rv_continuous):
             return x*np.sqrt(y)*np.exp(self._log_norm_const(chi) - (0.5*chi)*(chi*y))
 
     def _cdf(self, x, chi):
-        # With a = chi**2/2 and b = a*(1 - x**2), the cdf equals
-        # (P(a) - P(b))/P(a) = (Q(b) - Q(a))/P(a), where P and Q are the
-        # regularized lower and upper incomplete gamma functions with
-        # parameter 1.5. 1 - sf computes the first form. Both forms divide by
-        # the same difference, and the second one is more accurate if
-        # Q(b) < P(b), i.e., if b is larger than the median of Gamma(1.5)
-        # (approx. 1.18). We switch at b = 1.
+        # Start from sf = P(b)/P(a) (see _sf), with a = chi**2/2,
+        # b = a*(1 - x**2), P(z) = gammainc(1.5, z) and
+        # Q(z) = gammaincc(1.5, z) = 1 - P(z):
+        #     cdf = 1 - P(b)/P(a) = (P(a) - P(b))/P(a) = (Q(b) - Q(a))/P(a).
+        # one_minus_sf computes the first form, gamma_diff the last one.
+        # Both suffer from cancellation when b is close to a (small x); the
+        # second form is more accurate if Q(b) < P(b), i.e., if b is larger
+        # than the median of Gamma(1.5) (approx. 1.18). We switch at b = 1.
         def gamma_diff(x, chi):
             a = 0.5*chi*chi
             b = a*((1 - x)*(1 + x))
@@ -12065,10 +12066,16 @@ class argus_gen(rv_continuous):
             return xpx.apply_where(b >= 1, (x, chi), gamma_diff, one_minus_sf)
 
     def _sf(self, x, chi):
-        # For a = chi**2/2 <= 1, use gammainc(1.5, z) = z**1.5 exp(-z)
-        # hyp1f1(1, 2.5, z) / Gamma(2.5) for the numerator and denominator.
-        # The factor chi**3 cancels, so nothing underflows for tiny chi or
-        # x close to 1.
+        # The sf is Psi(chi*sqrt(1 - x**2)) / Psi(chi) [1], Psi = _argus_phi.
+        # With Psi(t) = gammainc(1.5, t**2/2)/2, this is
+        #     sf = P(b)/P(a),  P(z) = gammainc(1.5, z),
+        # where a = chi**2/2 and b = a*y, y = 1 - x**2 (`large` below).
+        # For chi <= sqrt(2), i.e., a <= 1, insert
+        # P(z) = z**1.5 exp(-z) hyp1f1(1, 2.5, z) / Gamma(2.5) (see _argus_phi):
+        #     sf = (b/a)**1.5 exp(a - b) hyp1f1(1, 2.5, b) / hyp1f1(1, 2.5, a)
+        #        = y**1.5 exp(a*x**2) hyp1f1(1, 2.5, a*y) / hyp1f1(1, 2.5, a).
+        # The factor chi**3 in P(a) and P(b) cancels, so nothing underflows
+        # for tiny chi or x close to 1.
         def small(x, chi):
             a = 0.5*chi*chi
             y = (1 - x)*(1 + x)
