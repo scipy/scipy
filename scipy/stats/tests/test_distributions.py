@@ -5179,6 +5179,14 @@ class TestBeta:
                           Beta(a=a[3], b=b[3]).entropy()])
         assert_allclose(res, ref)
 
+    @pytest.mark.parametrize("q, a, b, ref",
+                             [(1e-09, 0.5, 2, 4.444444444444445e-19),
+                              (1e-16, 0.5, 3, 2.8444444444444443e-33),
+                              (1e-120, 2, 10, 1.3483997249264842e-61),
+                              (1e-300, 2, 1e6, 1.4142128552668442e-156),
+                              (1e-200, 5, 2, 6.9882711877157924e-41)])
+    def test_gh26531(self, q, a, b, ref):
+        assert_allclose(stats.beta(a, b).ppf(q), ref, rtol=1e-13)
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
@@ -9722,57 +9730,62 @@ def test_invweibull_isf(p, c, expected):
     assert_allclose(computed, expected, rtol=1e-15)
 
 
-@pytest.mark.parametrize(
-    'df1,df2,x',
-    [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
-     (4, 11, [-0.5, 0.2, 1.0, 2.3]),
-     (7, 17, [1, 2, 3, 4, 5])]
-)
-def test_ncf_edge_case(df1, df2, x):
-    # Test for edge case described in gh-11660.
-    # Non-central Fisher distribution when nc = 0
-    # should be the same as Fisher distribution.
-    nc = 0
-    expected_cdf = stats.f.cdf(x, df1, df2)
-    calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
-    assert_allclose(expected_cdf, calculated_cdf, rtol=1e-14)
+class TestNonCentralF:
+    @pytest.mark.parametrize(
+        'df1,df2,x',
+        [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
+        (4, 11, [-0.5, 0.2, 1.0, 2.3]),
+        (7, 17, [1, 2, 3, 4, 5])]
+    )
+    def test_ncf_edge_case(self,df1, df2, x):
+        # Test for edge case described in gh-11660.
+        # Non-central Fisher distribution when nc = 0
+        # should be the same as Fisher distribution.
+        nc = 0
+        expected_cdf = stats.f.cdf(x, df1, df2)
+        calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
+        assert_allclose(expected_cdf, calculated_cdf, rtol=1e-14)
 
-    # when ncf_gen._skip_pdf will be used instead of generic pdf,
-    # this additional test will be useful.
-    expected_pdf = stats.f.pdf(x, df1, df2)
-    calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
-    assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
+        # when ncf_gen._skip_pdf will be used instead of generic pdf,
+        # this additional test will be useful.
+        expected_pdf = stats.f.pdf(x, df1, df2)
+        calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
+        assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
 
+    def test_ncf_variance(self):
+        # Regression test for gh-10658 (incorrect variance formula for ncf).
+        # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
+        # example, Wolfram Alpha with the expression
+        #     Variance[NoncentralFRatioDistribution[2, 6, 4]]
+        # or with the implementation of the noncentral F distribution in the C++
+        # library Boost.
+        v = stats.ncf.var(2, 6, 4)
+        assert_allclose(v, 42.75, rtol=1e-14)
 
-def test_ncf_variance():
-    # Regression test for gh-10658 (incorrect variance formula for ncf).
-    # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
-    # example, Wolfram Alpha with the expression
-    #     Variance[NoncentralFRatioDistribution[2, 6, 4]]
-    # or with the implementation of the noncentral F distribution in the C++
-    # library Boost.
-    v = stats.ncf.var(2, 6, 4)
-    assert_allclose(v, 42.75, rtol=1e-14)
+    def test_ncf_cdf_spotcheck(self):
+        # Regression test for gh-15582 testing against values from R/MATLAB
+        # Generate check_val from R or MATLAB as follows:
+        #          R: pf(20, df1 = 6, df2 = 33, ncp = 30.4) = 0.998921
+        #     MATLAB: ncfcdf(20, 6, 33, 30.4) = 0.998921
+        scipy_val = stats.ncf.cdf(20, 6, 33, 30.4)
+        check_val = 0.998921
+        assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
+    def test_ncf_ppf_issue_17026(self):
+        # Regression test for gh-17026
+        x = np.linspace(0, 1, 600)
+        x[0] = 1e-16
+        par = (0.1, 2, 5, 0, 1)
+        q = stats.ncf.ppf(x, *par)
+        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+        assert_allclose(q, q0)
 
-def test_ncf_cdf_spotcheck():
-    # Regression test for gh-15582 testing against values from R/MATLAB
-    # Generate check_val from R or MATLAB as follows:
-    #          R: pf(20, df1 = 6, df2 = 33, ncp = 30.4) = 0.998921
-    #     MATLAB: ncfcdf(20, 6, 33, 30.4) = 0.998921
-    scipy_val = stats.ncf.cdf(20, 6, 33, 30.4)
-    check_val = 0.998921
-    assert_allclose(check_val, np.round(scipy_val, decimals=6))
-
-
-def test_ncf_ppf_issue_17026():
-    # Regression test for gh-17026
-    x = np.linspace(0, 1, 600)
-    x[0] = 1e-16
-    par = (0.1, 2, 5, 0, 1)
-    q = stats.ncf.ppf(x, *par)
-    q0 = [stats.ncf.ppf(xi, *par) for xi in x]
-    assert_allclose(q, q0)
+    def test_gh26188(self):
+        ncf_dist = stats.ncf(dfn=2, dfd=6, nc=0)
+        f_dist = stats.f(dfn=2, dfd=6)
+        x = np.logspace(-2, 10, 10)
+        assert_allclose(ncf_dist.sf(x), f_dist.sf(x), rtol=1e-13)
+        assert_allclose(ncf_dist.cdf(x), f_dist.cdf(x), rtol=1e-13)
 
 
 class TestHistogram:
