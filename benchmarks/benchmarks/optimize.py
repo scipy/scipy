@@ -22,6 +22,30 @@ with safe_import():
     from .cutest.dfoxs import dfoxs
 
 
+class LBFGS(Benchmark):
+    params = ([100, 1000, 10000], [1, 5, 10, 20], ['hess', 'inv_hess'])
+    param_names = ['n', 'memory', 'approx_type']
+    # Each sample must update the original full window, not repeat one pair.
+    number = 1
+
+    def setup(self, n, memory, approx_type):
+        rng = np.random.default_rng(42)
+        self.strategy = scipy.optimize.LBFGS(memory=memory, init_scale=1)
+        self.strategy.initialize(n, approx_type)
+        for _ in range(memory):
+            s = rng.standard_normal(n)
+            self.strategy.update(s, s + 0.01 * rng.standard_normal(n))
+        self.s = rng.standard_normal(n)
+        self.y = self.s + 0.01 * rng.standard_normal(n)
+        self.p = rng.standard_normal(n)
+
+    def time_update(self, n, memory, approx_type):
+        self.strategy.update(self.s, self.y)
+
+    def time_dot(self, n, memory, approx_type):
+        self.strategy.dot(self.p)
+
+
 class _BenchOptimizers(Benchmark):
     """a framework for benchmarking the optimizer
 
