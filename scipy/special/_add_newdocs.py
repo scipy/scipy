@@ -951,63 +951,6 @@ add_newdoc("ncfdtridfn",
 
     """)
 
-add_newdoc("pdtri",
-    """
-    pdtri(k, y, out=None)
-
-    Inverse of `pdtr` with respect to `m`.
-
-    Returns the Poisson variable `m` such that the sum from 0 to `k` of
-    the Poisson density is equal to the given probability `y`:
-    calculated by ``gammainccinv(k + 1, y)``. `k` must be a nonnegative
-    integer and `y` between 0 and 1.
-
-    Parameters
-    ----------
-    k : array_like
-        Number of occurrences (nonnegative, real).
-    y : array_like
-        Probability.
-    out : ndarray, optional
-        Optional output array for the function results.
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the shape parameter `m` such that ``pdtr(k, m) = y``.
-
-    See Also
-    --------
-    pdtr : Poisson cumulative distribution function
-    pdtrc : Poisson survival function
-    pdtrik : Inverse of `pdtr` with respect to `k`
-
-    Examples
-    --------
-    >>> import scipy.special as sc
-
-    Compute the CDF for several values of `m`:
-
-    >>> k = 1
-    >>> m = [0.5, 1, 1.5]
-    >>> p = sc.pdtr(k, m)
-    >>> p
-    array([0.90979599, 0.73575888, 0.5578254 ])
-
-    Invert the CDF with respect to the Poisson mean. We recover the values
-    of `m`, as expected:
-
-    >>> sc.pdtri(k, p)
-    array([0.5, 1. , 1.5])
-
-    Verify the relation with `gammainccinv`:
-
-    >>> sc.gammainccinv(k + 1, p)
-    array([0.5, 1. , 1.5])
-
-
-    """)
-
 add_newdoc("smirnov",
     r"""
     smirnov(n, d, out=None)
