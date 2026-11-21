@@ -82,22 +82,6 @@ real_typenum(const int typenum) {
 
 
 /**
- * @brief Whether a driver may work on an input array in place instead of on a copy.
- *
- * The drivers hand such an array to LAPACK as it is, so it has to be 2-D, writeable and
- * F-contiguous. The Python layer checks this too, but memory safety depends on it.
- *
- * @param ap            The input array.
- * @param c_order_too   Also accept a C-contiguous array, for drivers that can work on the transpose.
- */
-static bool
-usable_in_place(PyArrayObject *ap, const bool c_order_too = false) {
-    if (PyArray_NDIM(ap) != 2 || !PyArray_ISWRITEABLE(ap)) { return false; }
-    return PyArray_IS_F_CONTIGUOUS(ap) || (c_order_too && PyArray_IS_C_CONTIGUOUS(ap));
-}
-
-
-/**
  * @brief Raise the Python exception for a failed batched call.
  *
  * @param status   The failure; any code except BatchCode::ok.

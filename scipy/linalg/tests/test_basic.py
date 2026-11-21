@@ -3453,6 +3453,8 @@ class TestReadOnlyOverwrite:
     def test_compiled_lstsq_keeps_b_shorter_than_x(self):
         # x has max(m, n) rows. With m < n it does not fit in b, so the compiled code
         # returns it in a new array even when asked to overwrite b.
+        # TestLstsq::test_overwrite cannot see this: lstsq itself drops overwrite_b
+        # for m < n, so only a direct call reaches the check in the compiled code.
         a = np.asfortranarray(np.arange(1., 11.).reshape(2, 5))
         b = np.ones((2, 1), order="F")
         x, rank, _, err_lst = _batched_linalg._lstsq(a, b, 1e-12, "gelsd", False, True)

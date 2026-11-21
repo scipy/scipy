@@ -314,7 +314,7 @@ _solve_assume_banded(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *a
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
 
-    // the output is C-contiguous, or ap_b itself when overwrite_b
+    // the output is C-contiguous, or ap_b itself, F-contiguous, when overwrite_b
     T *ret_data = static_cast<T *>(PyArray_DATA(ap_x));
 
     CBLAS_INT intn, int_nrhs;
@@ -435,7 +435,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, const St 
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
 
-    // the output is C-contiguous, or ap_b itself when overwrite_b
+    // the output is C-contiguous, or ap_b itself, F-contiguous, when overwrite_b
     T *ret_data = static_cast<T *>(PyArray_DATA(ap_x));
 
     // --------------------------------------------------------------------

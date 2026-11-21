@@ -227,7 +227,7 @@ _inverse(PyArrayObject* ap_Am, PyArrayObject *ap_Ainv, const St structure, const
         for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
     }
 
-    // the output is C-contiguous, or ap_Am itself when overwrite_a
+    // the output is C-contiguous, or ap_Am itself, F-contiguous, when overwrite_a
     T *ret_data = static_cast<T *>(PyArray_DATA(ap_Ainv));
 
     // --------------------------------------------------------------------

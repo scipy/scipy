@@ -62,22 +62,22 @@ u_vh_shapes(const npy_intp m, const npy_intp n, const SvdJob job,
  * Mirrors MINWRK in LAPACK's sgesdd/dgesdd. A ?gesdd workspace query reports at least this value.
  *
  * @tparam real_type  f32 or f64; the precision ?gesdd evaluates its path threshold in.
- * @param m    Number of rows.
- * @param n    Number of columns.
- * @param job  Which singular vectors are computed.
+ * @param m     Number of rows.
+ * @param n     Number of columns.
+ * @param jobz  'N', 'S' or 'A', as ?gesdd takes it.
  * @return The minimum lwork, evaluated without overflow.
  */
 template<typename real_type>
 std::uint64_t
-gesdd_min_lwork(const std::uint64_t m, const std::uint64_t n, const SvdJob job)
+gesdd_min_lwork(const std::uint64_t m, const std::uint64_t n, const char jobz)
 {
     const std::uint64_t k = std::min(m, n), kmax = std::max(m, n);
-    const std::uint64_t bdspac = (job == SvdJob::none) ? 7*k : 3*k*k + 4*k;
+    const std::uint64_t bdspac = (jobz == 'N') ? 7*k : 3*k*k + 4*k;
     // the paths that start with a QR or LQ factorization (MNTHR in ?gesdd)
     const bool tall = kmax >= (std::uint64_t)(real_type(k) * real_type(11) / real_type(6));
     if (!tall) { return 3*k + std::max(kmax, bdspac); }
-    if (job == SvdJob::none) { return bdspac + k; }
-    if (job == SvdJob::economic) { return bdspac + k*k + 3*k; }
+    if (jobz == 'N') { return bdspac + k; }
+    if (jobz == 'S') { return bdspac + k*k + 3*k; }
     return k*k + std::max(3*k + bdspac, k + kmax);
 }
 
@@ -139,7 +139,7 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         // the minimum lwork of real ?gesdd, see "Workspace sizes that LAPACK computes itself" in
         // _common_array_utils.hpp
         if constexpr (!is_complex_v<T>) {
-            const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, job);
+            const std::uint64_t min_lwork = gesdd_min_lwork<real_type>(m, n, jobz);
             if (min_lwork > (std::uint64_t)CBLAS_INT_MAX) {
                 return {BatchCode::too_large, routine, static_cast<int64_t>(min_lwork)};
             }

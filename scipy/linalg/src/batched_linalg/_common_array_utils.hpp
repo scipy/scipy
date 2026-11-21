@@ -121,6 +121,22 @@ using OwnedArray = std::unique_ptr<PyArrayObject, OwnedArrayDeleter>;
 
 
 /**
+ * @brief Whether a driver may work on an input array in place instead of on a copy.
+ *
+ * The drivers hand such an array to LAPACK as it is, so it has to be 2-D, writeable and
+ * F-contiguous. The Python layer checks this too, but memory safety depends on it.
+ *
+ * @param ap            The input array.
+ * @param c_order_too   Also accept a C-contiguous array, for drivers that can work on the transpose.
+ */
+inline bool
+usable_in_place(PyArrayObject *ap, const bool c_order_too = false) {
+    if (PyArray_NDIM(ap) != 2 || !PyArray_ISWRITEABLE(ap)) { return false; }
+    return PyArray_IS_F_CONTIGUOUS(ap) || (c_order_too && PyArray_IS_C_CONTIGUOUS(ap));
+}
+
+
+/**
  * @brief Convert a nonnegative size to a narrower integer type, detecting loss.
  *
  * @param v    The size; negative values are rejected.
@@ -193,27 +209,6 @@ enum St : Py_ssize_t
     POS_DEF = 101,
     SYM = 201,
     HER = 211
-};
-
-// QR mode tags; python side maps mode strings to these values
-enum QR_mode : Py_ssize_t
-{
-    FULL = 1,
-    R = 11,
-    RAW_MODE = 21,
-    ECONOMIC = 31
-};
-
-// Eigh driver tags; python side maps driver strings to these values
-enum Eigh_driver : Py_ssize_t
-{
-    EV = 1,
-    EVD = 2,
-    EVR = 3,
-    EVX = 4,
-    GV = 10,
-    GVD = 11,
-    GVX = 12
 };
 
 
