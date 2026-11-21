@@ -312,6 +312,14 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Notes
     -----
+    When `deriv` is greater than 0, `window_length` controls the tradeoff
+    between noise amplification and bias. A short window can amplify noise
+    in `x`, while a long window can smooth out features of the signal and
+    bias the derivative estimate. Increasing `window_length` can reduce noise,
+    but it does not necessarily improve the derivative estimate.
+    A suitable window length depends on the input signal-to-noise ratio,
+    `polyorder`, and the number of samples across the features of interest.
+
     Details on the `mode` options:
 
     - 'mirror':
