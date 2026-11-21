@@ -90,7 +90,7 @@
 // Version macros.
 #define TASK_THREAD_POOL_VERSION_MAJOR 1
 #define TASK_THREAD_POOL_VERSION_MINOR 0
-#define TASK_THREAD_POOL_VERSION_PATCH 7
+#define TASK_THREAD_POOL_VERSION_PATCH 10
 
 #include <condition_variable>
 #include <functional>
@@ -109,9 +109,9 @@
 #endif
 
 #if TTP_CXX17
-#define NODISCARD [[nodiscard]]
+#define TTP_NODISCARD [[nodiscard]]
 #else
-#define NODISCARD
+#define TTP_NODISCARD
 #endif
 
 namespace task_thread_pool {
@@ -132,7 +132,8 @@ namespace task_thread_pool {
         /**
          * Create a task_thread_pool and start worker threads.
          *
-         * @param num_threads Number of worker threads. If 0 then number of threads is equal to the number of physical cores on the machine, as given by std::thread::hardware_concurrency().
+         * @param num_threads Number of worker threads. If 0 then number of threads is equal to the
+         *                    number of physical cores on the machine, as given by std::thread::hardware_concurrency().
          */
         explicit task_thread_pool(unsigned int num_threads = 0) {
             if (num_threads < 1) {
@@ -167,7 +168,7 @@ namespace task_thread_pool {
          *
          * @return Number of tasks that have been enqueued but not yet started.
          */
-        NODISCARD size_t get_num_queued_tasks() const {
+        TTP_NODISCARD size_t get_num_queued_tasks() const {
             const std::lock_guard<std::mutex> tasks_lock(task_mutex);
             return tasks.size();
         }
@@ -177,7 +178,7 @@ namespace task_thread_pool {
          *
          * @return Approximate number of tasks currently being processed by worker threads.
          */
-        NODISCARD size_t get_num_running_tasks() const {
+        TTP_NODISCARD size_t get_num_running_tasks() const {
             const std::lock_guard<std::mutex> tasks_lock(task_mutex);
             return num_inflight_tasks;
         }
@@ -187,7 +188,7 @@ namespace task_thread_pool {
          *
          * @return Approximate number of tasks both enqueued and running.
          */
-        NODISCARD size_t get_num_tasks() const {
+        TTP_NODISCARD size_t get_num_tasks() const {
             const std::lock_guard<std::mutex> tasks_lock(task_mutex);
             return tasks.size() + num_inflight_tasks;
         }
@@ -197,9 +198,41 @@ namespace task_thread_pool {
          *
          * @return Number of worker threads.
          */
-        NODISCARD unsigned int get_num_threads() const {
-            const std::lock_guard<std::mutex> threads_lock(thread_mutex);
+        TTP_NODISCARD unsigned int get_num_threads() const {
+            const std::lock_guard<std::recursive_mutex> threads_lock(thread_mutex);
             return static_cast<unsigned int>(threads.size());
+        }
+
+        /**
+         * Set number of worker threads. Will start or stop worker threads as necessary.
+         *
+         * @param num_threads Number of worker threads. If 0 then number of threads is equal to the
+         *                    number of physical cores on the machine, as given by std::thread::hardware_concurrency().
+         * @return Previous number of worker threads.
+         */
+        unsigned int set_num_threads(unsigned int num_threads) {
+            const std::lock_guard<std::recursive_mutex> threads_lock(thread_mutex);
+            unsigned int previous_num_threads = get_num_threads();
+
+            if (num_threads < 1) {
+                num_threads = std::thread::hardware_concurrency();
+                if (num_threads < 1) { num_threads = 1; }
+            }
+
+            if (previous_num_threads <= num_threads) {
+                // expanding the thread pool
+                start_threads(num_threads - previous_num_threads);
+            } else {
+                // contracting the thread pool
+                stop_all_threads();
+                {
+                    const std::lock_guard<std::mutex> tasks_lock(task_mutex);
+                    pool_running = true;
+                }
+                start_threads(num_threads);
+            }
+
+            return previous_num_threads;
         }
 
         /**
@@ -226,7 +259,7 @@ namespace task_thread_pool {
          *
          * @return true if pause() has been called without an intervening unpause().
          */
-        NODISCARD bool is_paused() const {
+        TTP_NODISCARD bool is_paused() const {
             const std::lock_guard<std::mutex> tasks_lock(task_mutex);
             return pool_paused;
         }
@@ -245,10 +278,21 @@ namespace task_thread_pool {
             typename R = typename std::result_of<decay_t<F>(decay_t<A>...)>::type
 #endif
             >
-        NODISCARD std::future<R> submit(F&& func, A&&... args) {
-            std::shared_ptr<std::packaged_task<R()>> ptask = std::make_shared<std::packaged_task<R()>>(std::bind(std::forward<F>(func), std::forward<A>(args)...));
+        TTP_NODISCARD std::future<R> submit(F&& func, A&&... args) {
+#if defined(_MSC_VER)
+            // MSVC's packaged_task is not movable even though it should be.
+            // Discussion about this bug and its future fix:
+            // https://developercommunity.visualstudio.com/t/unable-to-move-stdpackaged-task-into-any-stl-conta/108672
+            std::shared_ptr<std::packaged_task<R()>> ptask =
+                std::make_shared<std::packaged_task<R()>>(std::bind(std::forward<F>(func), std::forward<A>(args)...));
             submit_detach([ptask] { (*ptask)(); });
             return ptask->get_future();
+#else
+            std::packaged_task<R()> task(std::bind(std::forward<F>(func), std::forward<A>(args)...));
+            auto ret = task.get_future();
+            submit_detach(std::move(task));
+            return ret;
+#endif
         }
 
         /**
@@ -343,7 +387,7 @@ namespace task_thread_pool {
          * @param num_threads How many threads to start.
          */
         void start_threads(const unsigned int num_threads) {
-            const std::lock_guard<std::mutex> threads_lock(thread_mutex);
+            const std::lock_guard<std::recursive_mutex> threads_lock(thread_mutex);
 
             for (unsigned int i = 0; i < num_threads; ++i) {
                 threads.emplace_back(&task_thread_pool::worker_main, this);
@@ -354,17 +398,18 @@ namespace task_thread_pool {
          * Stop, join, and destroy all worker threads.
          */
         void stop_all_threads() {
-            const std::lock_guard<std::mutex> threads_lock(thread_mutex);
-
-            pool_running = false;
+            const std::lock_guard<std::recursive_mutex> threads_lock(thread_mutex);
 
             {
                 const std::lock_guard<std::mutex> tasks_lock(task_mutex);
+                pool_running = false;
                 task_cv.notify_all();
             }
 
             for (auto& thread : threads) {
-                thread.join();
+                if (thread.joinable()) {
+                    thread.join();
+                }
             }
             threads.clear();
         }
@@ -379,7 +424,7 @@ namespace task_thread_pool {
         /**
          * A mutex for methods that start/stop threads.
          */
-        mutable std::mutex thread_mutex;
+        mutable std::recursive_mutex thread_mutex;
 
         /**
          * The task queue.
@@ -435,7 +480,7 @@ namespace task_thread_pool {
 }
 
 // clean up
-#undef NODISCARD
+#undef TTP_NODISCARD
 #undef TTP_CXX17
 
 #endif
