@@ -2098,8 +2098,11 @@ class Rotation:
         left_best, right_best: int ndarray
             Indices of elements from `left` and `right` used for reduction.
         """
-        left = left.as_quat() if left is not None else None
-        right = right.as_quat() if right is not None else None
+        # A single rotation is a group with one element
+        if left is not None:
+            left = xpx.atleast_nd(left.as_quat(), ndim=2, xp=self._xp)
+        if right is not None:
+            right = xpx.atleast_nd(right.as_quat(), ndim=2, xp=self._xp)
         reduced, left_idx, right_idx = self._backend.reduce(
             self._quat, left=left, right=right
         )

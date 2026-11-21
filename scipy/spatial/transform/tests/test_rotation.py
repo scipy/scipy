@@ -1475,6 +1475,31 @@ def test_reduction_none_indices(xp):
     assert right_best is None
 
 
+@make_xp_test_case((Rotation, "reduce"), (Rotation, "from_euler"))
+@pytest.mark.parametrize("single_side", ["left", "right", "both"])
+def test_reduction_single_rotation_group(xp, single_side):
+    # `left` and `right` may be single rotations, i.e. groups with one element
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
+    p = Rotation.from_euler("xyz", xp.asarray([[10, 20, 30], [40, 50, 60]],
+                                             dtype=dtype), degrees=True)
+    g = Rotation.from_euler("z", xp.asarray(15, dtype=dtype), degrees=True)
+    g_stack = Rotation.from_euler("z", xp.asarray([15], dtype=dtype), degrees=True)
+    left = g if single_side in ("left", "both") else None
+    right = g if single_side in ("right", "both") else None
+    left_stack = g_stack if left is not None else None
+    right_stack = g_stack if right is not None else None
+
+    reduced, left_best, right_best = p.reduce(left, right, return_indices=True)
+    expected, _, _ = p.reduce(left_stack, right_stack, return_indices=True)
+    xp_assert_close(reduced.as_quat(canonical=True),
+                    expected.as_quat(canonical=True), atol=atol)
+    if left is not None:
+        xp_assert_equal(left_best, xp.zeros(2, dtype=left_best.dtype))
+    if right is not None:
+        xp_assert_equal(right_best, xp.zeros(2, dtype=right_best.dtype))
+
+
 @make_xp_test_case((Rotation, "reduce"), (Rotation, "inv"), (Rotation, "magnitude"))
 def test_reduction_scalar_calculation(xp):
     dtype = xpx.default_dtype(xp)
