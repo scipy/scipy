@@ -11943,25 +11943,12 @@ def _argus_phi(chi):
     gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
     This can be verified directly by noting that the cdf of Gamma(1.5) can
     be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
-    We use gammainc instead of the usual definition because it is more precise
-    for small chi.
-    For chi <= sqrt(2), we use gammainc(1.5, a) = a**1.5 exp(-a)
-    hyp1f1(1, 2.5, a) / Gamma(2.5) with a = chi**2/2, i.e.,
-    _argus_phi(chi) = chi**3 exp(-a) hyp1f1(1, 2.5, a) / (3*sqrt(2*pi)),
-    since gammainc(1.5, z) loses accuracy for small z.
+    We use gammainc instead of the usual definition because the latter
+    suffers from cancellation for small chi.
     """
-    chi = np.asarray(chi, dtype=np.float64)
-
-    def small(chi):
-        a = 0.5*chi*chi
-        return chi**3 * np.exp(-a) * sc.hyp1f1(1, 2.5, a) / (3*np.sqrt(2*np.pi))
-
-    def large(chi):
-        # chi**2 overflows for chi > 1.3e154, but gammainc(1.5, inf) = 1
-        with np.errstate(over='ignore'):
-            return sc.gammainc(1.5, chi**2/2) / 2
-
-    return xpx.apply_where(chi <= np.sqrt(2), chi, small, large)
+    # chi**2 overflows for chi > 1.3e154, but gammainc(1.5, inf) = 1
+    with np.errstate(over='ignore'):
+        return sc.gammainc(1.5, chi**2/2) / 2
 
 
 class argus_gen(rv_continuous):
@@ -12051,19 +12038,18 @@ class argus_gen(rv_continuous):
         # Both suffer from cancellation when b is close to a (small x); the
         # second form is more accurate if Q(b) < P(b), i.e., if b is larger
         # than the median of Gamma(1.5) (approx. 1.18). We switch at b = 1.
-        def gamma_diff(x, chi):
-            a = 0.5*chi*chi
-            b = a*((1 - x)*(1 + x))
+        def gamma_diff(x, chi, a, b):
             return (sc.gammaincc(1.5, b) - sc.gammaincc(1.5, a)) / sc.gammainc(1.5, a)
 
-        def one_minus_sf(x, chi):
+        def one_minus_sf(x, chi, a, b):
             return 1.0 - self._sf(x, chi)
 
         # a and b overflow to inf for chi > 1.3e154; the gamma functions
         # then return the correct limits
         with np.errstate(over='ignore'):
+            a = 0.5*chi*chi
             b = (0.5*chi)*(chi*((1 - x)*(1 + x)))
-            return xpx.apply_where(b >= 1, (x, chi), gamma_diff, one_minus_sf)
+            return xpx.apply_where(b >= 1, (x, chi, a, b), gamma_diff, one_minus_sf)
 
     def _sf(self, x, chi):
         # The sf is Psi(chi*sqrt(1 - x**2)) / Psi(chi) [1], Psi = _argus_phi.
@@ -12071,7 +12057,7 @@ class argus_gen(rv_continuous):
         #     sf = P(b)/P(a),  P(z) = gammainc(1.5, z),
         # where a = chi**2/2 and b = a*y, y = 1 - x**2 (`large` below).
         # For chi <= sqrt(2), i.e., a <= 1, insert
-        # P(z) = z**1.5 exp(-z) hyp1f1(1, 2.5, z) / Gamma(2.5) (see _argus_phi):
+        # P(z) = z**1.5 exp(-z) hyp1f1(1, 2.5, z) / Gamma(2.5) (see _log_norm_const):
         #     sf = (b/a)**1.5 exp(a - b) hyp1f1(1, 2.5, b) / hyp1f1(1, 2.5, a)
         #        = y**1.5 exp(a*x**2) hyp1f1(1, 2.5, a*y) / hyp1f1(1, 2.5, a).
         # The factor chi**3 in P(a) and P(b) cancels, so nothing underflows
