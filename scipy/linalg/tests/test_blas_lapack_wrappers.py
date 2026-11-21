@@ -559,6 +559,8 @@ class TestScalarCoercion:
 
     @pytest.mark.skipif(IS_WASM, reason="overflows the smaller WASM stack before "
                                          "the recursion limit is reached")
+    # TSAN's instrumented frames are large enough to overflow the C stack too
+    @pytest.mark.fail_tsan
     def test_self_referential_sequence_raises_recursion_error(self):
         # Pure-C descent into element 0 would otherwise overflow the C stack; the
         # converters opt into the interpreter's depth accounting instead.

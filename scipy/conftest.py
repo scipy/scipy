@@ -62,6 +62,9 @@ def pytest_configure(config):
         ("fail_asan: mark test as triggering the address sanitizer "
          "(and not covered by the suppressions file)"))
     config.addinivalue_line("markers",
+        ("fail_tsan: mark test as triggering the thread sanitizer "
+         "(and not covered by the suppressions file)"))
+    config.addinivalue_line("markers",
         ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, skip_meta=False, exceptions=None): mark the desired " +
          "skip configuration for the `skip_xp_backends` fixture"))
