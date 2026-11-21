@@ -409,3 +409,198 @@ def test_sg_filter_valid_window_length_3d(xp):
     with pytest.raises(ValueError, match='window_length must be less than'):
         # window_length is more than x.shape[0].
         savgol_filter(x, window_length=11, polyorder=3, axis=0, mode='interp')
+
+#--------------------------------------------------------------------
+# savgol_filter complex tests
+#--------------------------------------------------------------------
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex(xp):
+    # Testing for the different modes that complex filtering is equal to
+    # filtering for the real and imaginary components independently.
+    rng = np.random.default_rng(seed=0)
+
+    z_np = rng.standard_normal(20) + 1j * rng.standard_normal(20)
+    z = xp.asarray(z_np)
+
+    result = savgol_filter(z, 5, 2, mode='mirror')
+    expected_result = (savgol_filter(z_np.real, 5, 2, mode='mirror')
+                        + 1j * (savgol_filter(z_np.imag, 5, 2, mode='mirror')))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+    result = savgol_filter(z, 5, 2, mode='constant')
+    expected_result = (savgol_filter(z_np.real, 5, 2, mode='constant')
+                        + 1j * (savgol_filter(z_np.imag, 5, 2, mode='constant')))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+    result = savgol_filter(z, 5, 2, mode='nearest')
+    expected_result = (savgol_filter(z_np.real, 5, 2, mode='nearest')
+                        + 1j * (savgol_filter(z_np.imag, 5, 2, mode='nearest')))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+    result = savgol_filter(z, 5, 2, mode='wrap')
+    expected_result = (savgol_filter(z_np.real, 5, 2, mode='wrap')
+                        + 1j * (savgol_filter(z_np.imag, 5, 2, mode='wrap')))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+    result = savgol_filter(z, 5, 2, mode='interp')
+    expected_result = (savgol_filter(z_np.real, 5, 2, mode='interp')
+                        + 1j * (savgol_filter(z_np.imag, 5, 2, mode='interp')))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex_cval(xp):
+    # Testing to see that with mode='constant' and a complex cval, the real
+    # component is padded with the real part of cval and the imaginary
+    # component with the imaginary part of cval.
+    rng = np.random.default_rng(seed=0)
+
+    z_np = rng.standard_normal(20) + 1j * rng.standard_normal(20)
+    z = xp.asarray(z_np)
+    cval = 1.5 - 2j
+
+    result = savgol_filter(z, 5, 2, mode='constant', cval=cval)
+    expected_result = (
+        savgol_filter(z_np.real, 5, 2, mode='constant', cval=cval.real)
+        + 1j * savgol_filter(z_np.imag, 5, 2, mode='constant', cval=cval.imag)
+    )
+    xp_assert_close(result, xp.asarray(expected_result))
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex_dtype(xp):
+    # Tests to see if the filtering maintains the complex type
+    # complex64 in -> complex64 out
+    # complex128 in -> complex128 out
+    rng = np.random.default_rng(seed=0)
+
+    z_np = rng.standard_normal(20) + 1j * rng.standard_normal(20)
+
+    z64 = np.complex64(z_np)
+    result = savgol_filter(xp.asarray(z64), 5, 2)
+    assert result.dtype == xp.complex64
+
+    z128 = np.complex128(z_np)
+    result = savgol_filter(xp.asarray(z128), 5, 2)
+    assert result.dtype == xp.complex128
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex_deriv(xp):
+    # Testing to see that the derivatives of the complex filtering are equal
+    # to the derivatives of the filtering of the real and imaginary components
+    # independently.
+    rng = np.random.default_rng(seed=0)
+
+    z_np = rng.standard_normal(20) + 1j * rng.standard_normal(20)
+    z = xp.asarray(z_np)
+
+    result = savgol_filter(z, 7, 3, deriv=1, delta=0.5, mode='mirror')
+    expected_result = (savgol_filter(z_np.real, 7, 3, deriv=1,
+                                     delta=0.5, mode='mirror')
+                    + 1j * (savgol_filter(z_np.imag, 7, 3, deriv=1,
+                                          delta=0.5, mode='mirror')))
+    xp_assert_close(result, xp.asarray(expected_result), atol=1e-12)
+
+    result = savgol_filter(z, 7, 3, deriv=1, delta=0.5, mode='interp')
+    expected_result = (savgol_filter(z_np.real, 7, 3, deriv=1,
+                                     delta=0.5, mode='interp')
+                    + 1j * (savgol_filter(z_np.imag, 7, 3, deriv=1,
+                                          delta=0.5, mode='interp')))
+    xp_assert_close(result, xp.asarray(expected_result), atol=1e-12)
+
+    result = savgol_filter(z, 7, 3, deriv=2, delta=0.5, mode='mirror')
+    expected_result = (savgol_filter(z_np.real, 7, 3, deriv=2,
+                                     delta=0.5, mode='mirror')
+                    + 1j * (savgol_filter(z_np.imag, 7, 3, deriv=2,
+                                          delta=0.5, mode='mirror')))
+    xp_assert_close(result, xp.asarray(expected_result), atol=1e-12)
+
+    result = savgol_filter(z, 7, 3, deriv=2, delta=0.5, mode='interp')
+    expected_result = (savgol_filter(z_np.real, 7, 3, deriv=2,
+                                     delta=0.5, mode='interp')
+                    + 1j * (savgol_filter(z_np.imag, 7, 3, deriv=2,
+                                          delta=0.5, mode='interp')))
+    xp_assert_close(result, xp.asarray(expected_result), atol=1e-12)
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex_2d(xp):
+    # Testing to see that the filtering of a 2-D complex array along each axis
+    # is equal to the filtering of the real and imaginary components
+    # independently.
+    rng = np.random.default_rng(seed=0)
+
+    z_np = rng.standard_normal((6, 10)) + 1j * rng.standard_normal((6, 10))
+    z = xp.asarray(z_np)
+
+    result = savgol_filter(z, 5, 2)
+    expected_result = (savgol_filter(z_np.real, 5, 2)
+                       + 1j * savgol_filter(z_np.imag, 5, 2))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+    result = savgol_filter(z, 5, 2, axis=0)
+    expected_result = (savgol_filter(z_np.real, 5, 2, axis=0)
+                       + 1j * savgol_filter(z_np.imag, 5, 2, axis=0))
+    xp_assert_close(result, xp.asarray(expected_result))
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_complex_polynomial(xp):
+    # Testing that filtering a polynomial with degree at most polyorder returns
+    # the same polynomial.
+    t = np.linspace(-5, 5, 21)
+    delta = float(t[1] - t[0])
+
+    # Polynomial test data with complex coefficients, of degree 1, 2 and 3.
+    x_np = np.stack([(2 - 1j) * t + 1j,
+                     0.5j * t**2 + (1 + 1j) * t,
+                     (1 - 2j) * t**3 - t])
+    dx_np = np.stack([np.full(t.shape, 2 - 1j),
+                      1j * t + (1 + 1j),
+                      3 * (1 - 2j) * t**2 - 1])
+    d2x_np = np.stack([np.zeros(t.shape, dtype=complex),
+                       np.full(t.shape, 1j),
+                       6 * (1 - 2j) * t])
+
+    x = xp.asarray(x_np)
+    dx = xp.asarray(dx_np)
+    d2x = xp.asarray(d2x_np)
+
+    y = savgol_filter(x, 7, 3, mode='interp', deriv=0, delta=delta)
+    xp_assert_close(y, x, atol=1e-12)
+
+    dy = savgol_filter(x, 7, 3, mode='interp', deriv=1, delta=delta)
+    xp_assert_close(dy, dx, atol=1e-12)
+
+    d2y = savgol_filter(x, 7, 3, mode='interp', deriv=2, delta=delta)
+    xp_assert_close(d2y, d2x, atol=1e-12)
+
+
+@make_xp_test_case(savgol_filter)
+def test_sg_filter_real_dtype(xp):
+    # Testing to see that real input is handled as before the complex support:
+    # float32 and float64 keep their type, integers are converted to float64.
+    rng = np.random.default_rng(seed=0)
+
+    x_np = rng.standard_normal(20)
+
+    result = savgol_filter(xp.asarray(x_np.astype(np.float32)), 5, 2)
+    assert result.dtype == xp.float32
+
+    result = savgol_filter(xp.asarray(x_np.astype(np.float64)), 5, 2)
+    assert result.dtype == xp.float64
+
+    x_int = np.asarray([1, 5, 2, 8, 3, 9, 4, 7, 2, 6], dtype=np.int64)
+    result = savgol_filter(xp.asarray(x_int), 5, 2)
+    assert result.dtype == xp.float64
+
+
+def test_sg_filter_float16():
+    # Testing to see that float16 input is still converted to float64, as the
+    # convolution does not support float16. NumPy only, because not every
+    # array library has float16.
+    x = np.asarray([1, 5, 2, 8, 3, 9, 4, 7, 2, 6], dtype=np.float16)
+    result = savgol_filter(x, 5, 2)
+    assert result.dtype == np.float64
