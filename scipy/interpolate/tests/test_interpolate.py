@@ -2143,6 +2143,17 @@ class TestBPolyCalculus:
         xp_assert_close(P.integrate(-9, -10), xp.asarray(I(2) - I(3)))
         xp_assert_close(P.integrate(0, -10), xp.asarray(I(2) - I(3) - 3 * period_int))
 
+    @pytest.mark.parametrize('a, b, expected', [
+        (0, 2, 3.),
+        (2, 0, -3.),
+        (1.5, 2.5, 1.5),
+        (-2, 4, 9.),
+    ])
+    def test_integrate_periodic_decreasing(self, xp, a, b, expected):
+        bpoly = BPoly(xp.asarray([[1., 2.]]), xp.asarray([2., 1., 0.]),
+                      extrapolate='periodic')
+        xp_assert_close(bpoly.integrate(a, b), xp.asarray(expected))
+
     def test_antider_neg(self, xp):
         # .derivative(-nu) ==> .andiderivative(nu) and vice versa
         c = xp.asarray([[1]])
