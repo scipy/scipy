@@ -10327,6 +10327,9 @@ def _log_gauss_mass(a, b):
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
+        # Since (a <= 0 < b) and (a < -1 or b > 1), the mass is at least
+        # _norm_cdf(1) - _norm_cdf(0) = 0.34..., so the expression below does
+        # not cancel either.
         return sc.log1p(-_norm_cdf(a) - _norm_cdf(-b))
 
     # _lazyselect not working; don't care to debug it
