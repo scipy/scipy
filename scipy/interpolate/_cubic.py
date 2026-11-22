@@ -351,6 +351,13 @@ class PchipInterpolator(CubicHermiteSpline):
         return xp.reshape(dk, y_shape)
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False, exceptions=["cupy"],
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """
     Convenience function for pchip interpolation.
