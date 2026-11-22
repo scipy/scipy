@@ -3385,3 +3385,41 @@ def test_median_filter_lim2():
     expected = np.ones(8)
     filtered_samples = ndimage.median_filter(sample_array, size=19, mode="reflect")
     xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
+
+
+def test_rank_filter_1d_footprint_with_zeros():
+    # Regression test for gh-26577: the fast 1-D path only received
+    # footprint.size, so zeros in a 1-D footprint were ignored and the
+    # rank was taken over the full window instead of only the nonzero
+    # footprint entries. The fix falls back to the general path when
+    # the footprint has gaps.
+    x = np.arange(10.)
+    footprint = [1, 0, 1, 0, 1]
+    expected = np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
+    # Issue example: 1-D result must match the 2-D result for the
+    # same footprint, and generic_filter with np.median.
+    assert_array_equal(
+        ndimage.median_filter(x, footprint=footprint, mode='nearest'),
+        expected)
+    assert_array_equal(
+        ndimage.median_filter(x[None], footprint=[footprint],
+                              mode='nearest')[0],
+        expected)
+    assert_array_equal(
+        ndimage.generic_filter(x, np.median, footprint=footprint,
+                               mode='nearest'),
+        expected)
+    # rank_filter and percentile_filter share the same fast path.
+    assert_array_equal(
+        ndimage.rank_filter(x, 1, footprint=footprint, mode='nearest'),
+        expected)
+    assert_array_equal(
+        ndimage.percentile_filter(x, 50, footprint=footprint,
+                                  mode='nearest'),
+        expected)
+    # Other modes must also agree with generic_filter.
+    for mode in ['reflect', 'mirror', 'wrap', 'constant', 'nearest']:
+        assert_array_equal(
+            ndimage.median_filter(x, footprint=footprint, mode=mode),
+            ndimage.generic_filter(x, np.median, footprint=footprint,
+                                   mode=mode))
