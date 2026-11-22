@@ -6,18 +6,6 @@
 namespace sp_linalg {
 
 
-// Which vector norm to compute; python side maps to these values
-enum Vector_norm_ord : Py_ssize_t
-{
-    V_ZERO      = 0,
-    V_ONE       = 1,
-    V_NEG_ONE   = 2,
-    V_TWO       = 3,
-    V_NEG_TWO   = 4,
-    V_INF       = 5,
-    V_NEG_INF   = 6,
-};
-
 // Which matrix norm to compute; python side maps to these values
 enum Matrix_norm_ord : Py_ssize_t
 {
@@ -37,11 +25,11 @@ enum Matrix_norm_ord : Py_ssize_t
  * @param incx  The increment between subsequent elements in bytes.
  * @param neg   Whether to compute the + or - 1 norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(char *data, const CBLAS_INT n, const CBLAS_INT incx) {
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(const char *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
-        T data_ij = *reinterpret_cast<T *>(data + i * incx);
+        const T data_ij = *reinterpret_cast<const T *>(data + i * incx);
 
         if constexpr (neg) {
             res += 1 / std::abs(data_ij);
@@ -67,11 +55,11 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(char *data, c
  * @param incx  The increment between subsequent elements in bytes.
  * @param neg   Whether to compute the + or - 2 norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(char *data, const CBLAS_INT n, const CBLAS_INT incx) {
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(const char *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
-        T data_ij = *reinterpret_cast<T *>(data + i * incx);
+        const T data_ij = *reinterpret_cast<const T *>(data + i * incx);
         real_of_t<T> data_ij_squared;
 
         if constexpr (is_complex_v<T>) {
@@ -92,6 +80,28 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(char *data, c
     } else {
         return std::sqrt(res);
     }
+}
+
+
+/*
+ * @brief compute the general p norm of vector
+ *
+ * @param data  Pointer to the data.
+ * @param p     The exponent used in the computation of the p norm.
+ * @param n     The number of elements in the vector.
+ * @param incx  The increment between subsequent elements in the vector, in bytes.
+ *
+ * @return the p norm
+ */
+template <typename T> inline real_of_t<T> _vector_norm_general(const char *data, const f64 p, const CBLAS_INT n, const CBLAS_INT incx) {
+    real_of_t<T> res = 0.0;
+
+    for (CBLAS_INT i = 0; i < n; i++) {
+        const T data_ij = *reinterpret_cast<const T *>(data + i * incx);
+        res += std::pow(std::abs(data_ij), p);
+    }
+
+    return std::pow(res, 1 / p);
 }
 
 
@@ -167,7 +177,7 @@ template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(char *data, c
 }
 
 
-template <typename T> BatchStatus _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, int ord) {
+template <typename T> BatchStatus _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, f64 ord) {
     using real_type = real_of_t<T>;
 
     // -------------------------------------------------------------------
@@ -193,27 +203,21 @@ template <typename T> BatchStatus _vector_norm(PyArrayObject *ap_av, PyArrayObje
         // The slices are vectors and `compute_slice_ptr` assumes matrices
         slice_ptr_a = compute_slice_ptr<char>(idx, A_data, ndim + 1, shape, strides);
 
-        switch (ord) {
-            case Vector_norm_ord::V_ONE:
-                res_data[idx] = _vector_norm_1<T, false>(slice_ptr_a, intn, incx);
-                break;
-            case Vector_norm_ord::V_NEG_ONE:
-                res_data[idx] = _vector_norm_1<T, true>(slice_ptr_a, intn, incx);
-                break;
-            case Vector_norm_ord::V_TWO:
-                res_data[idx] = _vector_norm_2<T, false>(slice_ptr_a, intn, incx);
-                break;
-            case Vector_norm_ord::V_NEG_TWO:
-                res_data[idx] = _vector_norm_2<T, true>(slice_ptr_a, intn, incx);
-                break;
-            case Vector_norm_ord::V_INF:
-                res_data[idx] = _matrix_norm_1<T, false>(slice_ptr_a, 1, intn, 0, incx);
-                break;
-            case Vector_norm_ord::V_NEG_INF:
-                res_data[idx] = _matrix_norm_1<T, true>(slice_ptr_a, 1, intn, 0, incx);
-                break;
-            default:
-                return {BatchCode::lapack_error, "matrix_norm", -102};
+        // XXX: introduce enum for fast paths & have general case as fallback?
+        if (ord == 1) {
+            res_data[idx] = _vector_norm_1<T, false>(slice_ptr_a, intn, incx);
+        } else if (ord == -1) {
+            res_data[idx] = _vector_norm_1<T, true>(slice_ptr_a, intn, incx);
+        } else if (ord == 2) {
+            res_data[idx] = _vector_norm_2<T, false>(slice_ptr_a, intn, incx);
+        } else if (ord == -2) {
+            res_data[idx] = _vector_norm_2<T, true>(slice_ptr_a, intn, incx);
+        } else if (ord == std::numeric_limits<f64>::infinity()) {
+            res_data[idx] = _matrix_norm_1<T, false>(slice_ptr_a, 1, intn, 0, incx);
+        } else if (ord == -std::numeric_limits<f64>::infinity()) {
+            res_data[idx] = _matrix_norm_1<T, true>(slice_ptr_a, 1, intn, 0, incx);
+        } else {
+            res_data[idx] = _vector_norm_general<T>(slice_ptr_a, ord, intn, incx);
         }
     }
 

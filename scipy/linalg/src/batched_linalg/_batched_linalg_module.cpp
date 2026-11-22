@@ -1,4 +1,5 @@
 #include "Python.h"
+#include <iostream>
 
 #include <algorithm>
 #include <cmath>
@@ -838,9 +839,9 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject*
 _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_av = NULL;
-    Vector_norm_ord ord = Vector_norm_ord::V_TWO;
+    f64 ord = 2;
 
-    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_av, &ord)) {
+    if (!PyArg_ParseTuple(args, "O!|d", &PyArray_Type, (PyArrayObject **)&ap_av, &ord)) {
         return NULL;
     }
 

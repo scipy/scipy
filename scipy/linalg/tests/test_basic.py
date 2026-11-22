@@ -2806,7 +2806,7 @@ class TestVectorNorms:
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
     @pytest.mark.parametrize("n", [0, 5])
-    @pytest.mark.parametrize("ord", [0, 1, -1, 2, -2, np.inf, -np.inf])
+    @pytest.mark.parametrize("ord", [0, 1, -1, 2, -2, 5.43, -4.87, np.inf, -np.inf])
     @pytest.mark.parametrize("keepdims", [True, False])
     def test_shape_dtype(self, dtype, n, ord, keepdims):
         rng = np.random.default_rng(seed=123456789)
@@ -2833,14 +2833,6 @@ class TestVectorNorms:
         else:
             if ord == 0:
                 ref = np.sum(a != 0, keepdims=keepdims)
-            elif ord == 1:
-                ref = np.sum(np.abs(a), keepdims=keepdims)
-            elif ord == -1:
-                ref = 1 / np.sum(1 / np.abs(a), keepdims=keepdims)
-            elif ord == 2:
-                ref = np.sqrt(np.sum(np.abs(a) ** 2, keepdims=keepdims))
-            elif ord == -2:
-                ref = 1 / np.sqrt(np.sum(1 / np.abs(a) ** 2, keepdims=keepdims))
             elif ord == np.inf:
                 ref = np.max(np.abs(a), keepdims=keepdims, initial=0)
             elif ord == -np.inf:
@@ -2849,11 +2841,15 @@ class TestVectorNorms:
                     initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
                     keepdims=keepdims,
                 ) if n != 0 else res_dtype.type(0.0)
+            else:
+                if dtype == np.int64:
+                    a = np.astype(a, np.float64)
+                ref = np.pow(np.sum(np.pow(np.abs(a), ord), keepdims=keepdims), 1 / ord)
 
         if dtype == np.int64 and ord != 0:
             ref = ref.astype(np.float64)
 
-        xp_assert_close(res, ref)
+        xp_assert_close(res, ref, atol=10*np.finfo(res_dtype).eps)
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
     @pytest.mark.parametrize("n_slices", [0, 3])

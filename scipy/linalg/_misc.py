@@ -217,24 +217,10 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
         Vector norm of the input array, dimensions of the output are determined by
         the option keepdims.
     """
-    # keep in sync with C++ side
-    order = {
-        0       : 0,
-        1       : 1,
-        -1      : 2,
-        2       : 3,
-        -2      : 4,
-        np.inf  : 5,
-        -np.inf : 6,
-    }.get(ord, "unknown")
-
     a1 = _asarray_validated(a, check_finite=check_finite)
     _deprecate_dtypes("vector_norm", a1)
     a1, _ = _normalize_lapack_dtype(a1, False)
     a1, _ = _ensure_aligned_and_native(a1, False)
-
-    if order == "unknown": # early fallback to NumPy for unsupported orders
-        return np.linalg.vector_norm(a, keepdims=keepdims, axis=axis, ord=ord)
 
     if axis is None:
         res_shape = () if not keepdims else tuple([1 for _ in range(a1.ndim)])
@@ -264,10 +250,10 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
             a1 = a1.swapaxes(ax, -ind-1)
         a1 = a1.reshape(a1.shape[:-len(axis)] + (-1,))
 
-    if order == 0:
+    if ord == 0:
         res = np.sum(a1 != 0, axis=-1)
     else:
-        res = _vector_norm(a1, order)
+        res = _vector_norm(a1, ord)
     return res.reshape(res_shape)
 
 
