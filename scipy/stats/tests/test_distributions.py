@@ -2114,6 +2114,7 @@ class TestTruncnorm:
         ("logsf", 0.6, 0.5, 1, -0.25973274097832977),
         ("logsf", 1.2, 1.0000001, 2, -0.38670103038015163),
         ("logsf", 3, 2, np.inf, -2.8245418878283175),
+        ("logcdf", 0.25, 0.2, 0.3, -0.686918005517828),
     ])
     def test_logcdf_logsf_endpoint_zero(self, method, x, a, b, ref):
         res = getattr(stats.truncnorm, method)(x, a, b)
@@ -2151,6 +2152,21 @@ class TestTruncnorm:
         assert_allclose(res, ref, rtol=5e-15)
         res = getattr(stats.truncnorm, method)(-x, -b, -a)
         assert_allclose(res, ref, rtol=5e-15)
+
+    @pytest.mark.parametrize("method, x, a, b, ref", [
+        # short intervals inside [-1, 1] away from 0
+        ("pdf", 0.500025, 0.5, 0.5001, 10000.125013282302),
+        ("cdf", 0.500025, 0.5, 0.5001, 0.2500046879107134),
+        ("pdf", -0.500075, -0.5001, -0.5, 9999.874988282296),
+        ("cdf", -0.500075, -0.5001, -0.5, 0.24999531197210695),
+    ])
+    def test_short_interval(self, method, x, a, b, ref):
+        # The mass of [a, b] has a condition number of ~1e4 with respect to
+        # a and b, so the tolerance is ~1e4*eps.
+        res = getattr(stats.truncnorm, method)(x, a, b)
+        assert_allclose(res, ref, rtol=5e-12)
+        res = getattr(stats.truncnorm, self._mirror[method])(-x, -b, -a)
+        assert_allclose(res, ref, rtol=5e-12)
 
     def test_moments_gh18634(self):
         # gh-18634 reported that moments 5 and higher didn't work; check that
