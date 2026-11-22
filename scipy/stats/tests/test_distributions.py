@@ -2086,6 +2086,72 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
         assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
 
+    # Reference values: mpmath with mp.dps = 100, from the normal mass
+    # M(lo, hi) = (erf(hi/sqrt(2)) - erf(lo/sqrt(2)))/2 (or the erfc form
+    # for 0 < lo < hi), e.g. logcdf(x, a, b) = log(M(a, x)/M(a, b)).
+    # Each case is also checked for the mirrored distribution.
+    _mirror = {"logcdf": "logsf", "logsf": "logcdf", "cdf": "sf",
+               "pdf": "pdf", "logpdf": "logpdf"}
+
+    @pytest.mark.parametrize("method, x, a, b, ref", [
+        # endpoint at 0
+        ("logcdf", 1e-300, 0, np.inf, -691.0013192508584),
+        ("logcdf", 1e-20, 0, np.inf, -46.27749321252564),
+        ("logsf", 1e-20, 0, np.inf, -7.978845608028654e-21),
+        ("logcdf", 1e-12, 0, np.inf, -27.856812468573274),
+        ("logsf", 1e-12, 0, np.inf, -7.978845608031836e-13),
+        ("logcdf", 1e-300, 0, 1.0, -690.6196041045563),
+        ("logcdf", 1e-10, 0, 1e-9, -2.302585092994046),
+        # endpoint close to 0
+        ("logcdf", 1e-8, -0.001, 10, -7.13433436462911),
+        # both sides of the switch-overs between the formulas for the mass
+        ("logcdf", 0.5, 0, 2, -0.9133484214032321),
+        ("logcdf", 0.5, -0.2, 2, -0.7205912861119864),
+        ("logcdf", -0.5, -1, 1, -1.516189914711856),
+        ("logcdf", -0.5, -1.0000001, 1, -1.5161897887151101),
+        ("logcdf", -0.9, -1, -0.5, -1.7749092743285995),
+        ("logcdf", -1.4, -1.5, -0.5, -2.8523821448748254),
+        ("logsf", 0.6, 0.5, 1, -0.25973274097832977),
+        ("logsf", 1.2, 1.0000001, 2, -0.38670103038015163),
+        ("logsf", 3, 2, np.inf, -2.8245418878283175),
+    ])
+    def test_logcdf_logsf_endpoint_zero(self, method, x, a, b, ref):
+        res = getattr(stats.truncnorm, method)(x, a, b)
+        assert_allclose(res, ref, rtol=5e-15)
+        res = getattr(stats.truncnorm, self._mirror[method])(-x, -b, -a)
+        assert_allclose(res, ref, rtol=5e-15)
+
+    @pytest.mark.parametrize("x, a, b, ref, rtol", [
+        # endpoint at 0
+        (1e-20, 0, np.inf, 7.978845608028654e-21, 5e-15),
+        (1e-12, 0, np.inf, 7.978845608028653e-13, 5e-15),
+        (1e-8, 0, np.inf, 7.978845608028653e-09, 5e-15),
+        (1e-10, 0, 1e-9, 0.09999999999999999, 5e-15),
+        # cdf = exp(logcdf) with logcdf = -691: condition number 691
+        (1e-300, 0, np.inf, 7.978845608028653e-301, 2e-13),
+        # endpoint close to 0
+        (1e-8, -0.001, 10, 0.0007972562882903231, 5e-15),
+    ])
+    def test_cdf_sf_endpoint_zero(self, x, a, b, ref, rtol):
+        assert_allclose(stats.truncnorm.cdf(x, a, b), ref, rtol=rtol)
+        assert_allclose(stats.truncnorm.sf(-x, -b, -a), ref, rtol=rtol)
+
+    @pytest.mark.parametrize("method, x, a, b, ref", [
+        # short intervals at or around 0
+        ("pdf", 0, -1e-6, 1e-6, 500000.00000008335),
+        ("logpdf", 0, -1e-6, 1e-6, 13.122363377404495),
+        ("pdf", 1e-7, 0, 1e-6, 1000000.0000001617),
+        ("logpdf", 1e-7, 0, 1e-6, 13.815510557964435),
+        ("pdf", -3e-7, -1e-6, -1e-7, 1111111.1111112668),
+        # longer interval ending at 0
+        ("pdf", 0.3, 0, 0.5, 1.9919717574020828),
+    ])
+    def test_pdf_short_interval_zero(self, method, x, a, b, ref):
+        res = getattr(stats.truncnorm, method)(x, a, b)
+        assert_allclose(res, ref, rtol=5e-15)
+        res = getattr(stats.truncnorm, method)(-x, -b, -a)
+        assert_allclose(res, ref, rtol=5e-15)
+
     def test_moments_gh18634(self):
         # gh-18634 reported that moments 5 and higher didn't work; check that
         # this is resolved

@@ -10295,11 +10295,20 @@ def _log_gauss_mass(a, b):
     """Log of Gaussian probability mass within an interval"""
     a, b = np.broadcast_arrays(a, b)
 
+    # For an interval inside [-1, 1], erf(b/sqrt(2)) - erf(a/sqrt(2)) is
+    # more accurate than the difference of the log_ndtr values in the left
+    # and right cases, which lose all accuracy for short intervals that end
+    # at 0, e.g. [-1e-20, 0].
+    case_erf = (a >= -1) & (b <= 1)
+
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_left = b <= 0
-    case_right = a > 0
-    case_central = ~(case_left | case_right)
+    case_left = (b < 0) & ~case_erf
+    case_right = (a > 0) & ~case_erf
+    case_central = ~(case_left | case_right | case_erf)  # contains 0
+
+    def mass_case_erf(a, b):
+        return np.log(0.5*(sc.erf(b/np.sqrt(2)) - sc.erf(a/np.sqrt(2))))
 
     def mass_case_left(a, b):
         return _log_diff(_norm_logcdf(b), _norm_logcdf(a))
@@ -10318,7 +10327,13 @@ def _log_gauss_mass(a, b):
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return sc.log1p(-_norm_cdf(a) - _norm_cdf(-b))
+        # If the mass is below 1/2, use erf instead: log1p(-tails) cancels
+        # for short intervals at 0 (e.g. [0, 1e-20]: log1p(-1) = -inf),
+        # whereas both erf terms have the same sign since a <= 0 <= b.
+        tails = _norm_cdf(a) + _norm_cdf(-b)
+        return xpx.apply_where(tails > 0.5, (a, b, tails),
+                               lambda a, b, tails: mass_case_erf(a, b),
+                               lambda a, b, tails: sc.log1p(-tails))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -10328,6 +10343,8 @@ def _log_gauss_mass(a, b):
         out[case_right] = mass_case_right(a[case_right], b[case_right])
     if a[case_central].size:
         out[case_central] = mass_case_central(a[case_central], b[case_central])
+    if a[case_erf].size:
+        out[case_erf] = mass_case_erf(a[case_erf], b[case_erf])
     return np.real(out)  # discard ~0j
 
 
