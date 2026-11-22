@@ -2608,15 +2608,6 @@ def _get_xp_ndppoly_cls(xp):
     return _NdPPoly, np
 
 
-def _writeable_breakpoints(x):
-    # `_ppoly.evaluate_nd` takes the breakpoints as non-const memoryviews, which
-    # reject read-only arrays, e.g. JAX arrays converted to NumPy
-    return tuple(
-        v.copy() if isinstance(v, np.ndarray) and not v.flags.writeable else v
-        for v in x
-    )
-
-
 _ndppoly_extra_note = (
     """If an ndppoly object is called on input arrays ``x`` with namespace
     different from the namespace ``xp`` of the breakpoints and coefficients
@@ -2713,7 +2704,7 @@ class NdPPoly:
         device = xp_result_device(c, *x)
         if not is_numpy(xp):
             c = xp_internal.asarray(c)
-            x = _writeable_breakpoints(xp_internal.asarray(v) for v in x)
+            x = tuple(xp_internal.asarray(v) for v in x)
         self._delegate_to = xp_ndppoly_cls(c, x, extrapolate=extrapolate)
         self._xp = xp
         self._xp_internal = xp_internal
@@ -2756,7 +2747,7 @@ class NdPPoly:
         xp_ndppoly_cls, xp_internal = _get_xp_ndppoly_cls(xp)
         device = xp_result_device(c, *x)
         c = xp_internal.asarray(c)
-        x = _writeable_breakpoints(xp_internal.asarray(v) for v in x)
+        x = tuple(xp_internal.asarray(v) for v in x)
         return cls._construct_from_xp(
             xp_ndppoly_cls.construct_fast(c, x, extrapolate=extrapolate),
             xp_external=xp,
@@ -2782,7 +2773,7 @@ class NdPPoly:
     @x.setter
     def x(self, x):
         self._delegate_to.x = (
-            _writeable_breakpoints(self._xp_internal.asarray(v) for v in x)
+            tuple(self._xp_internal.asarray(v) for v in x)
             if is_numpy(self._xp_internal) else x
         )
 
