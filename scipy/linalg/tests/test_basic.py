@@ -3316,6 +3316,16 @@ class TestFieldViewStrides:
         for x, y in zip(res, ref):
             assert_equal(x, y)
 
+    @pytest.mark.parametrize("func", [vector_norm, matrix_norm])
+    @pytest.mark.parametrize("ord", [1, -1, np.inf, -np.inf])
+    def test_norms(self, func, ord):
+        a = self.matrices()
+
+        res = func(self.field_view(a), ord=ord)
+        ref = func(a, ord=ord)
+        assert_equal(res, ref)
+
+
     def test_most_negative_stride(self):
         # NumPy accepts any stride for a dimension of length 1, the most negative
         # npy_intp included.

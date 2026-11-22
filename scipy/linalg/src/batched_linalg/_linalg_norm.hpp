@@ -32,16 +32,16 @@ enum Matrix_norm_ord : Py_ssize_t
 /*
  * @brief compute the +- 1 norm of a vector `data`
  *
- * @param data  The array containing the data
- * @param n     The number of elements in the vector
- * @param incx  The increment between subsequent elements
- * @param neg   Whether to compute the + or - 1 norm
+ * @param data  The array containing the data.
+ * @param n     The number of elements in the vector.
+ * @param incx  The increment between subsequent elements in bytes.
+ * @param neg   Whether to compute the + or - 1 norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(char *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
-        T data_ij = data[i * incx];
+        T data_ij = *reinterpret_cast<T *>(data + i * incx);
 
         if constexpr (neg) {
             res += 1 / std::abs(data_ij);
@@ -60,18 +60,18 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(T *data, cons
 
 
 /*
- * @brief compute the +- 2 norm of a vector `data`
+ * @brief compute the +- 2 norm of a vector `data`.
  *
- * @param data  The array containing the data
- * @param n     The number of elements in the vector
- * @param incx  The increment between subsequent elements
- * @param neg   Whether to compute the + or - 2 norm
+ * @param data  The array containing the data.
+ * @param n     The number of elements in the vector.
+ * @param incx  The increment between subsequent elements in bytes.
+ * @param neg   Whether to compute the + or - 2 norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
+template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(char *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
-        T data_ij = data[i * incx];
+        T data_ij = *reinterpret_cast<T *>(data + i * incx);
         real_of_t<T> data_ij_squared;
 
         if constexpr (is_complex_v<T>) {
@@ -101,16 +101,16 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(T *data, cons
  * @param data  Pointer to the data.
  * @param m     The number of rows in the matrix.
  * @param n     The number of columns in the matrix.
- * @param s2    The strides along the row dimension, in elements.
- * @param s1    The strides along the column dimension, in elements.
+ * @param s0    The strides along the row dimension, in bytes.
+ * @param s1    The strides along the column dimension, in bytes.
  * @param neg   Whether to compute the positive or negative norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _matrix_norm_F(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
+template <typename T, bool neg> inline real_of_t<T> _matrix_norm_F(char *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s0, const CBLAS_INT s1) {
     real_of_t<T> res = 0.0;
 
     for (CBLAS_INT i = 0; i < n; i++) {
         for (CBLAS_INT j = 0; j < m; j++) {
-            T data_ij = data[i * s1 + j * s2];
+            T data_ij = *reinterpret_cast<T *>(data + j * s0 + i * s1);
             real_of_t<T> data_ij_squared;
 
             if constexpr (is_complex_v<T>) {
@@ -137,11 +137,11 @@ template <typename T, bool neg> inline real_of_t<T> _matrix_norm_F(T *data, cons
  * @param data  Pointer to the data.
  * @param m     The number of rows in the matrix.
  * @param n     The number of columns.
- * @param s2    Strides along the row dimension in elements.
- * @param s1    Strides along the column dimension in elements.
+ * @param s0    Strides along the row dimension in bytes.
+ * @param s1    Strides along the column dimension in bytes.
  * @param neg   Whether the compute the +1 or -1 norm.
  */
-template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s2, const CBLAS_INT s1) {
+template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(char *data, const CBLAS_INT m, const CBLAS_INT n, const CBLAS_INT s0, const CBLAS_INT s1) {
     real_of_t<T> res;
     if constexpr (neg) {
         res = std::numeric_limits<real_of_t<T>>::infinity();
@@ -153,7 +153,7 @@ template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, cons
         real_of_t<T> tmp = 0.0;
 
         for (CBLAS_INT j = 0; j < m; j++) {
-            tmp += std::abs(data[i * s1 + j * s2]);
+            tmp += std::abs(*reinterpret_cast<T *>(data + j * s0 + i * s1));
         }
 
         if constexpr (neg) {
@@ -186,12 +186,12 @@ template <typename T> BatchStatus _vector_norm(PyArrayObject *ap_av, PyArrayObje
     // -------------------------------------------------------------------
     // Batching loop
     // -------------------------------------------------------------------
-    T *slice_ptr_a = NULL;
+    char *slice_ptr_a = NULL;
     CBLAS_INT intn = shape[ndim-1];
-    CBLAS_INT incx = strides[ndim-1] / sizeof(T);
+    CBLAS_INT incx = strides[ndim-1];
     for (npy_intp idx = 0; idx < outer_size; idx++) {
         // The slices are vectors and `compute_slice_ptr` assumes matrices
-        slice_ptr_a = compute_slice_ptr<T>(idx, A_data, ndim + 1, shape, strides);
+        slice_ptr_a = compute_slice_ptr<char>(idx, A_data, ndim + 1, shape, strides);
 
         switch (ord) {
             case Vector_norm_ord::V_ONE:
@@ -240,32 +240,32 @@ template <typename T> BatchStatus _matrix_norm(PyArrayObject *ap_Am, PyArrayObje
     // -------------------------------------------------------------------
     // Main batching loop
     // -------------------------------------------------------------------
-    T *slice_ptr_A = NULL;
+    char *slice_ptr_A = NULL;
     real_type *res_ptr = res_data;
     CBLAS_INT intm = shape[ndim - 2], intn = shape[ndim - 1];
 
-    CBLAS_INT s2 = strides[ndim - 2] / sizeof(T);
-    CBLAS_INT s1 = strides[ndim - 1] / sizeof(T);
+    CBLAS_INT s0 = strides[ndim - 2];
+    CBLAS_INT s1 = strides[ndim - 1];
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
-        slice_ptr_A = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
+        slice_ptr_A = compute_slice_ptr<char>(idx, A_data, ndim, shape, strides);
 
         switch (ord) {
             case Matrix_norm_ord::M_FRO:
-                res_ptr[idx] = _matrix_norm_F<T, false>(slice_ptr_A, intm, intn, s2, s1);
+                res_ptr[idx] = _matrix_norm_F<T, false>(slice_ptr_A, intm, intn, s0, s1);
                 break;
             case Matrix_norm_ord::M_ONE:
-                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s2, s1);
+                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s0, s1);
                 break;
             case Matrix_norm_ord::M_NEG_ONE:
-                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s2, s1);
+                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s0, s1);
                 break;
             case Matrix_norm_ord::M_INF:
                 // Effectively transpose to iterate over rows instead of columns
-                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s2);
+                res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s0);
                 break;
             case Matrix_norm_ord::M_NEG_INF:
-                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s2);
+                res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s0);
                 break;
             default:
                 return {BatchCode::lapack_error, "matrix_norm", -102};
