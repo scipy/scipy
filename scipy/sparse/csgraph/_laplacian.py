@@ -341,12 +341,14 @@ def laplacian(
     if normed and np.issubdtype(csgraph.dtype, np.integer):
         csgraph = csgraph.astype(np.float64)
 
-    # Widen before arithmetic: a final cast cannot repair overflow in
-    # symmetrization, negation, diagonal assignment or matrix-free products.
+    # Only promote when the requested dtype can represent every input value.
+    # np.promote_types(uint64, int64) selects float64, which may silently
+    # round large integer edge weights.
     if dtype is not None:
-        work_dtype = np.promote_types(csgraph.dtype, dtype)
-        if work_dtype != csgraph.dtype:
-            csgraph = csgraph.astype(work_dtype)
+        requested_dtype = np.dtype(dtype)
+        if np.can_cast(csgraph.dtype, requested_dtype, casting="safe"):
+            if requested_dtype != csgraph.dtype:
+                csgraph = csgraph.astype(requested_dtype)
 
     if form == "array":
         create_lap = (
