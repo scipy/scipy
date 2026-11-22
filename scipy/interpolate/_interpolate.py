@@ -2719,9 +2719,9 @@ class _NdPPoly:
         del swap[ndim + axis + 1]
 
         c = c.transpose(swap)
-        p = PPoly.construct_fast(c.reshape(c.shape[0], c.shape[1], -1),
-                                 self.x[axis],
-                                 extrapolate=extrapolate)
+        p = _PPoly.construct_fast(c.reshape(c.shape[0], c.shape[1], -1),
+                                  self.x[axis],
+                                  extrapolate=extrapolate)
         out = p.integrate(a, b, extrapolate=extrapolate)
 
         # Construct result
@@ -2773,7 +2773,7 @@ class _NdPPoly:
 
             c = c.transpose(swap)
 
-            p = PPoly.construct_fast(c, self.x[n], extrapolate=extrapolate)
+            p = _PPoly.construct_fast(c, self.x[n], extrapolate=extrapolate)
             out = p.integrate(a, b, extrapolate=extrapolate)
             c = out.reshape(c.shape[2:])
 
