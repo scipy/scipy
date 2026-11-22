@@ -112,11 +112,33 @@ class TestBSplines:
               -9.66586399+0.70250005j, -9.87717438-2.0262239j,
               9.93160629+1.5630846j, 4.71948051-2.22050714j,
               9.49550819+7.8995142j]], dtype=xp.complex128)
-        # FIXME: for complex types, the computations are done in
-        # single precision (reason unclear). When this is changed,
-        # this test needs updating.
+        # The reference values were computed in single precision (gh-9209).
         xp_assert_close(signal.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
+
+    def test_spline_filter_complex128_precision(self):
+        data = np.full((32, 32), 1.0 + 1.0j, dtype=np.complex128)
+        perturbation = np.zeros(data.shape, dtype=np.float64)
+        # Keep the perturbation away from the image boundary.
+        perturbation[16, 16] = 2.0**-30
+
+        # This filter is linear with real coefficients, so the imaginary
+        # response to the perturbation equals its real float64 response.
+        reference = signal.spline_filter(perturbation, lmbda=0)
+        unperturbed = signal.spline_filter(data, lmbda=0)
+        perturbed = signal.spline_filter(data + 1j * perturbation, lmbda=0)
+        # Subtracting two results near one incurs float64 roundoff at that scale.
+        atol = 32 * np.finfo(np.float64).eps
+        xp_assert_close((perturbed - unperturbed).imag, reference, rtol=0, atol=atol)
+
+    @pytest.mark.parametrize("size", [7, 8])
+    @pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+    def test_spline_filter_complex_small_image(self, size, dtype):
+        data = np.full((size, size), 1.0 + 2.0j, dtype=dtype)
+        result = signal.spline_filter(data, lmbda=0)
+        assert result.shape == data.shape
+        assert result.dtype == data.dtype
+        assert np.isfinite(result).all()
 
     @make_xp_test_case(signal.gauss_spline)  # type:ignore[attr-defined]
     def test_gauss_spline(self, xp):
