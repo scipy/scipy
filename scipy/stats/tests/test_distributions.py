@@ -2086,9 +2086,9 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
         assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
 
-    # Reference values: mpmath with mp.dps = 100, from the normal mass
-    # M(lo, hi) = (erf(hi/sqrt(2)) - erf(lo/sqrt(2)))/2 (or the erfc form
-    # for 0 < lo < hi), e.g. logcdf(x, a, b) = log(M(a, x)/M(a, b)).
+    # Reference values: mpmath with mp.dps = 400, from the normal mass
+    # M(lo, hi) = ncdf(hi) - ncdf(lo), e.g.
+    # logcdf(x, a, b) = log(M(a, x)/M(a, b)).
     # Each case is also checked for the mirrored distribution.
     _mirror = {"logcdf": "logsf", "logsf": "logcdf", "cdf": "sf",
                "pdf": "pdf", "logpdf": "logpdf"}
