@@ -2507,6 +2507,8 @@ class TestNdPPoly:
         v2 = _ppoly2d_eval(c, (x, y), xi, yi)
         xp_assert_close(v1, xp.asarray(v2))
 
+    @skip_xp_backends("jax.numpy",
+                      reason="JAX devices can't be pickled; same for PPoly")
     def test_pickle(self, xp):
         rng = np.random.RandomState(1234)
 
