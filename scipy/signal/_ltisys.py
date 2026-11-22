@@ -2580,6 +2580,28 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
         raise ValueError("B must be a 2D array/matrix")
     if A.shape[0] != A.shape[1]:
         raise ValueError("A must be square")
+    if B.shape[0] != A.shape[0]:
+        raise ValueError("B must have the same number of rows as A")
+
+    controllability = B
+    controllability_matrix = B
+    for i in range(1, A.shape[0]):
+        controllability = A @ controllability
+        controllability_matrix = np.hstack(
+            (controllability_matrix, controllability)
+        )
+
+    column_scales = np.max(np.abs(controllability_matrix), axis=0)
+    nonzero_columns = column_scales > 0
+    if nonzero_columns.any():
+        scaled_controllability = (
+            controllability_matrix[:, nonzero_columns]
+            / column_scales[nonzero_columns]
+        )
+        if np.linalg.matrix_rank(scaled_controllability) < A.shape[0]:
+            raise ValueError("The system is not controllable")
+    elif A.shape[0]:
+        raise ValueError("The system is not controllable")
     if len(poles) > A.shape[0]:
         raise ValueError(
             f"maximum number of poles is {A.shape[0]} but you asked for {len(poles)}"
