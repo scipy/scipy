@@ -147,15 +147,6 @@ def _binomial_cdf(k, n, p):
     return mpmath.betainc(n - k, k + 1, x2=onemp, regularized=True)
 
 
-def _f_cdf(dfn, dfd, x):
-    if x < 0:
-        return mpmath.mpf(0)
-    dfn, dfd, x = mpmath.mpf(dfn), mpmath.mpf(dfd), mpmath.mpf(x)
-    ub = dfn*x/(dfn*x + dfd)
-    res = mpmath.betainc(dfn/2, dfd/2, x2=ub, regularized=True)
-    return res
-
-
 def _student_t_cdf(df, t, dps=None):
     if dps is None:
         dps = mpmath.mp.dps
