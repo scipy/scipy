@@ -80,7 +80,7 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     jax_jit=False,
     exceptions=["cupy"],
     skip_backends=[
-        ("dask.array", "https://github.com/data-apis/array-api-extra/issues/488")
+        ("dask.array", "https://github.com/scipy/scipy/issues/24205")
     ],
 )
 class CubicHermiteSpline(PPoly):
@@ -179,7 +179,7 @@ class CubicHermiteSpline(PPoly):
     cpu_only=True, jax_jit=False, exceptions=["cupy"],
     skip_backends=[
         ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
+         "https://github.com/scipy/scipy/issues/24205")
     ]
 )
 class PchipInterpolator(CubicHermiteSpline):
@@ -355,7 +355,7 @@ class PchipInterpolator(CubicHermiteSpline):
     cpu_only=True, jax_jit=False, exceptions=["cupy"],
     skip_backends=[
         ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
+         "https://github.com/scipy/scipy/issues/24205")
     ]
 )
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
@@ -647,7 +647,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     jax_jit=False,
     exceptions=["cupy"],
     skip_backends=[
-        ("dask.array", "https://github.com/data-apis/array-api-extra/issues/488")
+        ("dask.array", "https://github.com/scipy/scipy/issues/24205")
     ],
 )
 class CubicSpline(CubicHermiteSpline):
