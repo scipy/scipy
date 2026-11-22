@@ -24,7 +24,8 @@ from scipy._lib._util import _asarray_validated, _apply_over_batch, _deprecate_d
 from ._misc import LinAlgError, _datacopied
 from scipy.linalg._misc import norm   # noqa: F401  (backwards compat)
 from .lapack import (
-    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz
+    _normalize_lapack_dtype, _ensure_aligned_and_native, _ensure_dtype_cdsz,
+    _broadcast_batch
 )
 from .lapack import get_lapack_funcs, _compute_lwork
 from . import _batched_linalg
@@ -106,7 +107,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
         This option is sometimes useful for generalized eigenvalue problems,
         ``b is not None``, where an eigenvalue, :math:`\lambda = \alpha / \beta`  ,
-        can over- or underflow; typically, :\math:`\alpha` and :math:`\beta` are of the
+        can over- or underflow; typically, :math:`\alpha` and :math:`\beta` are of the
         order of ``norm(a)`` and ``norm(b)``, respectively.
 
         Default is False.
@@ -239,9 +240,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             raise ValueError('a and b must have the same shape')
 
         # broadcast batch dimensions of b1 and a1
-        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+        a1, b1 = _broadcast_batch(a1, b1)
 
         # check if we can work in-place (a1 might have been broadcast by b1)
         overwrite_a = overwrite_a and (a1.ndim == 2)
@@ -508,9 +507,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         if type not in [1, 2, 3]:
                     raise ValueError('"type" keyword only accepts 1, 2, and 3.')
 
-        batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-        a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-        b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+        a1, b1 = _broadcast_batch(a1, b1)
 
         a1, b1 = _ensure_dtype_cdsz(a1, b1) # Let `b1` and `a1` upcast each other
         a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)

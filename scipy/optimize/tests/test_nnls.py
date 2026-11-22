@@ -453,6 +453,22 @@ class TestNNLS:
         assert_allclose(rnorm, np.hypot(b1, b2))
         assert_allclose(rnorm, np.linalg.norm(A @ x - b))
 
+    @pytest.mark.parametrize('A, b', [
+        ([[1.0, 1.0], [1.0, 2.0]], [0.0, 5e-324]),
+        ([[-2.0, -1.0], [2.0, -1.0]], [-5e-324, 0.0]),
+    ])
+    def test_nnls_passive_set_emptied(self, A, b):
+        # With subnormal data the interpolation step rounds the coefficient of
+        # the column that just entered the passive set to zero, so that the
+        # last column leaves the set. The removal loop then ran on with a
+        # negative set size, writing out of bounds and crashing.
+        A = np.array(A)
+        b = np.array(b)
+        x, rnorm = nnls(A, b)
+        assert np.all(x >= 0)
+        assert_allclose(x, 0.0, atol=1e-320)
+        assert_allclose(rnorm, np.linalg.norm(b), rtol=0, atol=1e-320)
+
     def test_2D_singleton_RHS_input(self):
         # Test that a 2D singleton RHS input is accepted
         A = np.array([[1.0, 0.5, -1.],

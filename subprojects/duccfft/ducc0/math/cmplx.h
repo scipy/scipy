@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DUCC0_CMPLX_H
 #define DUCC0_CMPLX_H
 
-namespace ducc0 {
+namespace DUCC0_NAMESPACE {
 
 /// Very basic class representing complex numbers
 /** Meant exclusively for internal low-level use, e.g. in FFT routines. */

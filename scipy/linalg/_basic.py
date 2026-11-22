@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz
+    _ensure_aligned_and_native, _ensure_dtype_cdsz, _broadcast_batch
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -230,9 +230,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise ValueError(f"incompatible shapes: {a1.shape=} and {b1.shape=}")
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
 
     # catch empty inputs
     if a1.size == 0 or b1.size == 0:
@@ -490,6 +488,9 @@ def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
+    overwrite_ab = overwrite_ab or _datacopied(a1, ab)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
 
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
@@ -506,7 +507,6 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
         dt = solve(np.eye(1, dtype=a1.dtype), np.ones(1, dtype=b1.dtype)).dtype
         return np.empty_like(b1, dtype=dt)
 
-    overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
@@ -1122,7 +1122,8 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # XXX can relax a1.ndim == 2?
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
+    # keep the numbers in sync with C at
+    # `linalg/src/batched_linalg/_common_array_utils.hpp`
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
@@ -1224,6 +1225,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
@@ -1243,19 +1245,11 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    det = _linalg_det(a1, overwrite_a)
-
-    # Promote single precision to double to prevent overflows
-    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    if det.dtype.char == 'f':
-        det = det.astype(np.float64)
-    elif det.dtype.char == 'F':
-        det = det.astype(np.complex128)
-
-    # Return scalar for 2D input
-    if det.ndim == 0:
-        return det[()]
-    return det
+    # Single precision input gives a double precision determinant, computed in double
+    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not
+    # overflow.
+    # A scalar for 2D input, else an array of the batch shape.
+    return _linalg_det(a1, overwrite_a)
 
 
 # Linear Least Squares
@@ -1442,9 +1436,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                          f' of rows ({m} != {b1.shape[-2]}).')
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
+    batch_shape = a1.shape[:-2]
 
     overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
     overwrite_b = (

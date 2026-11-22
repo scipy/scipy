@@ -22,6 +22,7 @@ from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
         CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
+        make_lsq_ndbspline,
 )
 import scipy.linalg as sl
 import scipy.sparse.linalg as ssl
@@ -2987,8 +2988,6 @@ class TestSmoothingSpline:
                      NotImplementedError, "must be a scalar", id="array-lam"),
         pytest.param(_y_err, dict(t=_t_good, lam=-1.0),
                      ValueError, "non-negative", id="negative-lam"),
-        pytest.param(np.c_[_y_err, _y_err], dict(t=_t_good, lam=0.5),
-                     NotImplementedError, "1-D", id="batched-y"),
         pytest.param(_y_err, dict(t=_t_unsorted, lam=0.5),
                      ValueError, "non-decreasing", id="unsorted-t"),
         pytest.param(_y_err, dict(t=_t_short, lam=0.5),
@@ -3018,6 +3017,48 @@ class TestSmoothingSpline:
         # invalid inputs on the user-knots path raise with a clear message
         with assert_raises(err, match=match):
             make_smoothing_spline(_x_err, y, **kwargs)
+
+    def test_user_defined_knots_batched_y(self):
+        # each column of a batched y gives the same fit as on its own
+        rng = np.random.default_rng(1234)
+        x = np.sort(rng.uniform(0, 4, 30))
+        y = np.stack([np.sin(2 * x), np.cos(x), x**2], axis=1)
+        t = _augknt(np.linspace(x[0], x[-1], 10), 3)
+        lam = 1e-3
+
+        spl = make_smoothing_spline(x, y, lam=lam, t=t)
+        xx = np.linspace(x[0], x[-1], 100)
+        for j in range(y.shape[1]):
+            spl_j = make_smoothing_spline(x, y[:, j], lam=lam, t=t)
+            xp_assert_close(spl(xx)[:, j], spl_j(xx), rtol=1e-13)
+
+    def test_user_defined_knots_batched_y_gcv(self):
+        # with lam=None each column is smoothed independently, so the
+        # result must match fitting the columns one by one
+        rng = np.random.default_rng(1234)
+        x = np.sort(rng.uniform(0, 4, 30))
+        y = np.stack([np.sin(2 * x) + 0.1 * rng.normal(size=30),
+                      np.cos(x) + 0.1 * rng.normal(size=30)], axis=1)
+        t = _augknt(np.linspace(x[0], x[-1], 10), 3)
+
+        spl = make_smoothing_spline(x, y, lam=None, t=t)
+        xx = np.linspace(x[0], x[-1], 100)
+        for j in range(y.shape[1]):
+            spl_j = make_smoothing_spline(x, y[:, j], lam=None, t=t)
+            xp_assert_close(spl(xx)[:, j], spl_j(xx), rtol=1e-12)
+
+    def test_user_defined_knots_batched_y_axis(self):
+        # n-D y with an axis argument gives the same output shape as the
+        # t=None path
+        rng = np.random.default_rng(1234)
+        x = np.sort(rng.uniform(0, 4, 30))
+        y = rng.normal(size=(2, 30, 3))
+        t = _augknt(np.linspace(x[0], x[-1], 10), 3)
+
+        spl = make_smoothing_spline(x, y, lam=1e-3, t=t, axis=1)
+        spl_ref = make_smoothing_spline(x, y, lam=1e-3, axis=1)
+        xx = np.linspace(x[0], x[-1], 50)
+        assert spl(xx).shape == spl_ref(xx).shape
 
     @pytest.mark.parametrize("scale", [
         pytest.param(4.0, id="normal"),
@@ -3104,6 +3145,19 @@ class TestSmoothingSpline:
             _solve_smoothing_spline_coefficients(
                 ab, 0.0, np.zeros_like(ab), np.ones(n))
 
+    def test_gcv_search_warns_at_most_once(self):
+        """The lam values tried during the GCV search must not warn, only
+        the final solve may."""
+        rng = np.random.default_rng(14)
+        x = np.sort(rng.uniform(0, 1, 10))
+        y = 2.0 * x + 1.0 + 0.3 * rng.normal(size=10)
+        t = np.r_[[0.0] * 4, np.linspace(0.01, 0.99, 100), [1.0] * 4]
+        with warnings.catch_warnings(record=True) as rec:
+            warnings.simplefilter("always")
+            make_smoothing_spline(x, y, t=t)
+        n_warns = sum(issubclass(r.category, sl.LinAlgWarning) for r in rec)
+        assert n_warns <= 1
+
     def test_gcv_user_knots_master(self):
         """At clamped t = x, GCV knot-path selection agrees with the t=None path."""
         rng = np.random.default_rng(7)
@@ -3155,10 +3209,9 @@ class TestSmoothingSpline:
         xp_assert_close(f, r_yhat, atol=5e-4)
 
     def test_user_defined_knots_axis(self):
-        # batched (n-D) `y` is not supported on the user-knots path yet,
-        # so for 1-D `y` the only valid axes are 0 and -1 and must give
-        # identical results; -1 must be normalized before being stored on
-        # the BSpline, else evaluation fails
+        # for 1-D `y` the axes 0 and -1 must give identical results, and
+        # -1 must be normalized before being stored on the BSpline, else
+        # evaluation fails
         x = np.linspace(0.0, 1.0, 12)
         y = np.sin(3 * x)
         t = np.r_[[x[0]]*4, x[1:-1], [x[-1]]*4]
@@ -4195,6 +4248,121 @@ class TestMakeLSQNdBSplineFromGrid:
 
         with assert_raises(ValueError, match="`w` must have shape"):
             _make_lsq_ndbspl_from_grid(points, values, t, k=1, w=w[:-1])
+
+
+@pytest.mark.parametrize(
+    "k, degrees",
+    [(1, (1, 1)), (2, (2, 2)), (3, (3, 3)), ((2, 3), (2, 3))],
+)
+@pytest.mark.parametrize("weighted", [False, True])
+@pytest.mark.parametrize(
+    "solver, solver_args",
+    [
+        pytest.param(
+            ssl.lsqr,
+            {"atol": 1e-12, "btol": 1e-12, "iter_lim": 200},
+            id="lsqr",
+        ),
+        pytest.param(
+            ssl.lsmr,
+            {"atol": 1e-12, "btol": 1e-12, "maxiter": 200},
+            id="lsmr",
+        ),
+    ],
+)
+class TestMakeLSQNdBSplinePublicAPI:
+    @staticmethod
+    def _make_test_data(degrees):
+        points = (np.linspace(-1.0, 1.0, 11), np.linspace(-2.0, 2.0, 12))
+        x0, x1 = np.meshgrid(*points, indexing="ij")
+        values = np.stack(
+            (
+                1.0 + 2.0 * x0 - 0.5 * x1 + 0.25 * x0 * x1,
+                -1.0 + 0.5 * x0 + 0.75 * x1,
+            ),
+            axis=-1,
+        )
+        bounds = ((-1.0, 1.0), (-2.0, 2.0))
+        t = tuple(
+            np.r_[
+                [lo] * (degree + 1),
+                0.5 * (lo + hi),
+                [hi] * (degree + 1),
+            ]
+            for degree, (lo, hi) in zip(degrees, bounds)
+        )
+        w_grid = 1.0 + 0.1 * (x0 + 1.0) + 0.05 * (x1 + 2.0)
+        x_eval = np.array([[-0.75, -1.5], [0.0, 0.25], [0.8, 1.25]])
+        expected = np.column_stack(
+            (
+                1.0
+                + 2.0 * x_eval[:, 0]
+                - 0.5 * x_eval[:, 1]
+                + 0.25 * x_eval[:, 0] * x_eval[:, 1],
+                -1.0 + 0.5 * x_eval[:, 0] + 0.75 * x_eval[:, 1],
+            )
+        )
+        return points, x0, x1, values, t, w_grid, x_eval, expected
+
+    @staticmethod
+    def _assert_fit(spl, degrees, x_eval, expected):
+        assert isinstance(spl, NdBSpline)
+        assert spl.k == degrees
+        xp_assert_close(spl(x_eval), expected, atol=1e-10)
+
+    def test_scattered_arguments(
+        self, k, degrees, weighted, solver, solver_args
+    ):
+        data = self._make_test_data(degrees)
+        _, x0, x1, values, t, w_grid, x_eval, expected = data
+        x = np.column_stack((x0.ravel(), x1.ravel()))
+        y = values.reshape((-1, values.shape[-1]))
+        w = w_grid.ravel() if weighted else None
+
+        spl = make_lsq_ndbspline(
+            x, y, t, k=k, w=w, solver=solver, **solver_args
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
+
+    def test_grid_arguments(self, k, degrees, weighted, solver, solver_args):
+        data = self._make_test_data(degrees)
+        points, _, _, values, t, w_grid, x_eval, expected = data
+        w = w_grid if weighted else None
+
+        spl = make_lsq_ndbspline(
+            points,
+            values,
+            t,
+            k=k,
+            w=w,
+            grid=True,
+            solver=solver,
+            **solver_args,
+        )
+
+        self._assert_fit(spl, degrees, x_eval, expected)
+
+
+def test_make_lsq_ndbspline_random_scattered_data():
+    rng = np.random.default_rng(1234)
+    x = rng.uniform([-1.0, -2.0], [1.0, 2.0], size=(200, 2))
+    y = 1.0 + 2.0 * x[:, 0] - 0.5 * x[:, 1] + 0.25 * x[:, 0] * x[:, 1]
+    t = (
+        np.r_[[-1.0] * 4, 0.0, [1.0] * 4],
+        np.r_[[-2.0] * 4, 0.0, [2.0] * 4],
+    )
+
+    spl = make_lsq_ndbspline(x, y, t, atol=1e-12, btol=1e-12)
+
+    x_eval = rng.uniform([-1.0, -2.0], [1.0, 2.0], size=(50, 2))
+    expected = (
+        1.0
+        + 2.0 * x_eval[:, 0]
+        - 0.5 * x_eval[:, 1]
+        + 0.25 * x_eval[:, 0] * x_eval[:, 1]
+    )
+    xp_assert_close(spl(x_eval), expected, atol=1e-10)
 
 
 class TestMakeND:
@@ -5800,6 +5968,8 @@ class TestBatch:
         [(make_interp_spline, {}),
          (make_smoothing_spline, {}),
          (make_smoothing_spline, {'lam': 1.0}),
+         (make_smoothing_spline, {'user_t': True}),
+         (make_smoothing_spline, {'lam': 1.0, 'user_t': True}),
          (make_lsq_spline, {'method': "norm-eq"}),
          (make_lsq_spline, {'method': "qr"}),
          ])
@@ -5818,6 +5988,10 @@ class TestBatch:
             k = 3  # spline degree, if needed
             t = (x[0],) * (k + 1) + (x[-1],) * (k + 1)  # valid knots, if needed
             kwargs = kwargs | dict(t=t, k=k)
+
+        if kwargs.get('user_t'):
+            t = np.concatenate([[x[0]] * 4, x[2:-2:2], [x[-1]] * 4])
+            kwargs = {k: v for k, v in kwargs.items() if k != 'user_t'} | dict(t=t)
 
         res = make_spline(x, y, axis=axis, **kwargs)
         ref = BatchSpline(x, y, axis=axis, spline=make_spline, **kwargs)

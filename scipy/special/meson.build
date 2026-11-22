@@ -5,7 +5,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_legacy.pxd'),
-  fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
@@ -205,12 +204,14 @@ python_sources = [
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_support_alternative_backends.py',
+  '_support_alternative_backends.pyi',
   '_testutils.py',
   '_ufuncs.pyi',
   'cython_special.pxd',
   'cython_special.pyi',
   '_ufunc_tools.py',
-  '_mathieu.py'
+  '_mathieu.py',
+  '_polygamma.py'
 ]
 
 py3.install_sources(

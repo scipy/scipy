@@ -439,6 +439,17 @@ class Test_dfreqresp:
         w, H = dfreqresp(system, n=n)
         assert_almost_equal(w, expected_w)
 
+    def test_whole(self):
+        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        n = 10
+        w, H = dfreqresp(system, n=n, whole=True)
+        expected_w = np.linspace(0, 2*np.pi, n, endpoint=False)
+        assert_almost_equal(w, expected_w)
+
+        w2, H2 = system.freqresp(n=n, whole=True)
+        assert_almost_equal(w, w2)
+        assert_almost_equal(H, H2)
+
     def test_pole_one(self):
         # Test that freqresp() doesn't fail on a system with a pole at 0.
         # integrator, pole at zero: H(s) = 1 / s

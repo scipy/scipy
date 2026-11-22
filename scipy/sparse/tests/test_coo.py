@@ -757,7 +757,8 @@ def test_dot_nd(a_shape, b_shape):
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
-    exp = np.dot(arr_a.toarray(), arr_b.toarray())
+    axis_b = -2 if arr_b.ndim >= 2 else 0
+    exp = np.tensordot(arr_a.toarray(), arr_b.toarray(), axes=[-1, axis_b])
     # sparse-dense
     res = arr_a.dot(arr_b.toarray())
     assert_equal(res, exp)
@@ -832,6 +833,13 @@ def test_broadcast_to(actual_shape, broadcast_shape):
     res = arr._broadcast_to(broadcast_shape)
     exp = np.broadcast_to(arr.toarray(), broadcast_shape)
     assert_equal(res.toarray(), exp)
+
+
+def test_broadcast_to_incompatible_shape():
+    arr = coo_array(np.ones((2, 3)))
+    msg = r"shape \(2, 3\) cannot be broadcast to new shape \(4, 3\)"
+    with pytest.raises(ValueError, match=msg):
+        arr._broadcast_to((4, 3))
 
 
 @pytest.mark.parametrize(('shape'), [(4,5,6,7,8), (6,4),

@@ -1231,6 +1231,100 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
+@make_xp_test_case(cut_tree)
+def test_cut_tree_n_clusters_order(xp):
+    # gh-9818: an `n_clusters` entry equal to the number of observations was
+    # written to the first column of the result regardless of its position in
+    # `n_clusters`, leaving the column that requested it filled with zeros.
+    np.random.seed(195)
+    Z = xp.asarray(linkage(np.random.randn(5, 4), method='average'))
+
+    # requesting several cluster counts at once must agree with requesting
+    # them one at a time
+    one_at_a_time = xp.concat([cut_tree(Z, n_clusters=k) for k in range(1, 6)],
+                              axis=1)
+    xp_assert_equal(cut_tree(Z, n_clusters=list(range(1, 6))), one_at_a_time)
+
+    # ... and the column for `n_clusters=5` must not depend on it being the
+    # first entry requested
+    xp_assert_equal(cut_tree(Z, n_clusters=[4, 5])[:, [1]],
+                    cut_tree(Z, n_clusters=[5]))
+
+    # repeating `n_clusters=5` must fill every column that requested it
+    xp_assert_equal(cut_tree(Z, n_clusters=[5, 5]),
+                    xp.concat([cut_tree(Z, n_clusters=5)] * 2, axis=1))
+
+    # `height=0` reaches the same all-singletons case through `height`
+    xp_assert_equal(cut_tree(Z, height=[10, 0]),
+                    xp.concat([cut_tree(Z, height=10),
+                               cut_tree(Z, height=0)], axis=1))
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_non_monotonic(xp):
+    # gh-8063: with inversions in the linkage (centroid/median), a merge was
+    # processed before the merges that formed its children, so fewer clusters
+    # than requested were returned.
+    X = np.array([[0, 0], [2, 0], [1, 1.5]])
+    Z = xp.asarray(centroid(X))
+    assert not is_monotonic(Z)
+
+    xp_assert_equal(cut_tree(Z, n_clusters=2),
+                    xp.asarray([[0], [1], [0]]), check_dtype=False)
+
+    # the full cut tree has exactly one merge per step
+    np.random.seed(23)
+    nobs = 50
+    for method in [centroid, median]:
+        Z = xp.asarray(method(np.random.randn(nobs, 4)))
+        assert not is_monotonic(Z)
+        cutree = np.asarray(cut_tree(Z))
+        assert_equal([len(np.unique(col)) for col in cutree.T],
+                     np.arange(nobs, 0, -1))
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_tied_heights(xp):
+    # Merges at the same height on independent branches must keep the order
+    # the previous `bisect.insort_left` traversal gave them: here (0, 1) is
+    # merged before (2, 3).
+    Z = linkage(np.array([[0.], [1.], [10.], [11.]]), method='single')
+    assert Z[0, 2] == Z[1, 2]
+    expected = [[0, 0, 0, 0],
+                [1, 0, 0, 0],
+                [2, 1, 1, 0],
+                [3, 2, 1, 0]]
+    xp_assert_equal(cut_tree(xp.asarray(Z)), xp.asarray(expected),
+                    check_dtype=False)
+
+
+@make_xp_test_case(cut_tree)
+def test_cut_tree_non_monotonic_height(xp):
+    # gh-8063: on a non-monotonic linkage, `height` is compared against the
+    # monotonized heights (`maxdists`), as in `fcluster(..., 'distance')`.
+    X = np.array([[0, 0], [2, 0], [1, 1.5]])
+    Z_np = centroid(X)
+    Z = xp.asarray(Z_np)
+    # the merges happen at 1.80 and 1.68; both monotonized heights are 1.80
+    xp_assert_equal(cut_tree(Z, height=[1.7, 1.9]),
+                    xp.asarray([[0, 0], [1, 0], [2, 0]]), check_dtype=False)
+
+    # `cut_tree` applies merges strictly below `height`, `fcluster` also
+    # applies merges at the threshold, so they differ at a merge height
+    h = maxdists(Z_np)[0]
+    assert len(np.unique(np.asarray(cut_tree(Z, height=h)))) == 3
+    assert len(np.unique(fcluster(Z_np, h, criterion='distance'))) == 1
+
+    # strictly between merge heights the two agree
+    np.random.seed(23)
+    Z = centroid(np.random.randn(50, 4))
+    # cut halfway between consecutive merge heights to avoid ties
+    heights = np.unique(maxdists(Z))
+    for h in (heights[:-1] + heights[1:])[::5] / 2:
+        assert is_isomorphic(np.asarray(cut_tree(xp.asarray(Z), height=h))[:, 0],
+                             fcluster(Z, h, criterion='distance'))
+
+
 @make_xp_test_case(optimal_leaf_ordering)
 def test_optimal_leaf_ordering(xp):
     # test with the distance vector y

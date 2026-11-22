@@ -37,10 +37,9 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning,
 from scipy.stats._stats_py import (_chk_asarray, _moment,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
-from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_size,
-                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
+                                   make_xp_test_case, xp_ravel,
                                    xp_swapaxes, xp_result_type, is_jax, is_cupy,
                                    xp_copy, xp_promote, make_xp_pytest_param,
                                    is_array_api_strict)
@@ -2863,14 +2862,10 @@ class TestMode:
             def __array__(self, dtype=None, copy=None):
                 return self._x.astype(object)
 
-        message = ("...only boolean and numerical dtypes..." if SCIPY_ARRAY_API
-                   else "Cannot interpret...")
-
+        message = "...only boolean and numerical dtypes..."
         with pytest.raises(TypeError, match=message):
             stats.mode(ArrLike(np.arange(3)))
 
-        message = ("...only boolean and numerical dtypes..." if SCIPY_ARRAY_API
-                   else "Argument `a` is not recognized as numeric.")
         with pytest.raises(TypeError, match=message):
             stats.mode(np.arange(3, dtype=object))
 
@@ -3180,8 +3175,7 @@ class TestZscore:
         z = stats.zscore(x)
         xp_assert_equal(z, x)
 
-    @skip_xp_invalid_arg
-    def test_zscore_masked_element_0_gh19039(self, xp):
+    def test_zscore_masked_element_0_gh19039(self):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
         x = rng.standard_normal(10)
@@ -3213,7 +3207,6 @@ class TestGZscore:
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
 
-    @skip_xp_invalid_arg
     def test_gzscore_masked_array(self):
         x = np.array([1, 2, -1, 3, 4])
         mask = [0, 0, 1, 0, 0]
@@ -6904,7 +6897,10 @@ def check_equal_xmean(*args, xp, mean_fun, axis=None, dtype=None,
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
     args = (array_like,) if len(args) == 2 else (array_like, p)
     x = mean_fun(*args, axis=axis, weights=weights)
-    xp_assert_close(x, desired, rtol=rtol)
+    if xp == np.ma:
+        assert_allclose(x, desired, rtol=rtol)
+    else:
+        xp_assert_close(x, desired, rtol=rtol)
 
 
 def check_equal_gmean(*args, **kwargs):
@@ -7026,8 +7022,7 @@ class TestHMean:
         desired = np.array([3, 7])
         check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5, xp=xp)
 
-    @skip_xp_invalid_arg
-    def test_weights_masked_1d_array(self, xp):
+    def test_weights_masked_1d_array(self):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([2., 10., 6., 42.])
@@ -7139,8 +7134,7 @@ class TestGMean:
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    @skip_xp_invalid_arg
-    def test_weights_masked_1d_array(self, xp):
+    def test_weights_masked_1d_array(self):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
         a = np.array([1., 2., 3., 4., 5., 6.])
@@ -7245,8 +7239,7 @@ class TestPMean:
         res = stats.pmean(a, p, weights=weights)
         xp_assert_close(res, np.asarray(desired), rtol=1e-5)
 
-    @skip_xp_invalid_arg
-    def test_weights_masked_1d_array(self, xp):
+    def test_weights_masked_1d_array(self):
         a, p = np.array([2., 10., 6., 42.]), 1
         weights = np.ma.array([10., 5., 3., 42.], mask=[0, 0, 0, 1])
         desired = np.average(a, weights=weights)
@@ -7332,10 +7325,9 @@ class TestGSTD:
         gstd_actual = stats.gstd(tuple(self.array_1d))
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
-    @skip_xp_invalid_arg
-    def test_raises_error_non_numeric_input(self, xp):
-        message = "could not convert string to float|The DType..."
-        with pytest.raises((ValueError, TypeError), match=message):
+    def test_raises_error_non_numeric_input(self):
+        message = "only boolean and numerical dtypes are supported"
+        with pytest.raises(TypeError, match=message):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
@@ -9547,10 +9539,9 @@ class TestLMoment:
         with pytest.raises(ValueError, match=message):
             stats.lmoment(xp.asarray(self.data, dtype=xp.complex128))
 
-    @skip_xp_invalid_arg
     def test_dtype_iv_non_numeric(self):
-        message = '`sample` must be an array of real numbers.'
-        with pytest.raises(ValueError, match=message):
+        message = 'only boolean and numerical dtypes are supported'
+        with pytest.raises(TypeError, match=message):
             stats.lmoment(np.array(self.data, dtype=object))
 
     @pytest.mark.parametrize('order', not_integers + [0, -1, [], [[1, 2, 3]]])

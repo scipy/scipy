@@ -379,10 +379,13 @@ class _spbase(SparseABC):
 
     @property
     def size(self) -> int:
-        """Number of stored values.
+        """Number of stored values, including explicit zeros.
+
+        This is the same as `nnz`. Implicit zeros are not counted.
 
         See Also
         --------
+        nnz : Number of stored values, including explicit zeros.
         count_nonzero : Number of non-zero values.
         """
         return self._getnnz()
@@ -657,6 +660,13 @@ class _spbase(SparseABC):
 
             - If `other` is a scalar, the result is a sparse array/matrix.
             - If `other` is an ndarray, the result is an ndarray.
+
+        Notes
+        -----
+        Sparse results are not guaranteed to have sorted indices, even when
+        both inputs have sorted indices. For CSR and CSC results, use
+        `has_sorted_indices` to check the ordering and `sort_indices` to
+        sort the indices in place when needed.
 
         Examples
         --------

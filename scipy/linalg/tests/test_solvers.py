@@ -9,8 +9,6 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse._sputils import matrix
-from scipy.conftest import skip_xp_invalid_arg
 from scipy.linalg.lapack import _ensure_dtype_cdsz
 
 
@@ -87,12 +85,6 @@ class TestSolveLyapunov:
                     0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j,
                     0.000+0.j]]),
          np.eye(11)),
-        # https://github.com/scipy/scipy/issues/4176
-        (matrix([[0, 1], [-1/2, -1]]),
-         (matrix([0, 3]).T @ matrix([0, 3]).T.T)),
-        # https://github.com/scipy/scipy/issues/4176
-        (matrix([[0, 1], [-1/2, -1]]),
-         (np.array(matrix([0, 3]).T @ matrix([0, 3]).T.T))),
         ]
 
     def test_continuous_squareness_and_shape(self):
@@ -149,7 +141,6 @@ class TestSolveLyapunov:
         assert_allclose(a @ x  + x @ a.conj().T, q, atol=atol)
         assert x.dtype == dtype
 
-    @skip_xp_invalid_arg
     def test_cases(self):
         for case in self.cases:
             self.check_continuous_case(case[0], case[1])
@@ -630,6 +621,20 @@ class TestSolveCommonAre:
         res = solver(A, B, Q, R, s=S)
         ref = solver(A, B, Q, R, E, S)
         np.testing.assert_allclose(res, ref)
+
+    @pytest.mark.parametrize("solver", [solve_continuous_are, solve_discrete_are])
+    def test_balanced_with_nondiagonal_e_gh26555(self, solver):
+        # gh-26555 reported that balancing with an e that does not commute
+        # with the balancing scaling returned a wrong solution
+        A = np.array([[3.0, -3.0], [-1.0, -1.0]])
+        B = np.array([[3.0], [-2.0]])
+        Q = np.eye(2)
+        R = np.eye(1)
+        E = np.array([[1.0, -2.0], [0.0, 100.0]])
+
+        res = solver(A, B, Q, R, e=E)
+        ref = solver(A, B, Q, R, e=E, balanced=False)
+        assert_allclose(res, ref, rtol=1e-12)
 
 
 def test_solve_generalized_continuous_are():

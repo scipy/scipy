@@ -125,6 +125,10 @@ const char *_bivariate_normal_cdf_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_trivariate_normal_cdf_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_cauchy_isf_doc = R"(
     _cauchy_isf(p, loc, scale)
 
@@ -2089,6 +2093,319 @@ const char *erfinv_doc = R"(
 
     )";
 
+const char *eval_chebyc_doc = R"(
+    eval_chebyc(n, x, out=None)
+
+    Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        C_n(x) = 2 T_n(x/2)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.11 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    C : scalar or ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
+    chebyc : Chebyshev polynomial object
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
+    eval_chebyt : evaluate Chebycshev polynomials of the first kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyc, eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyc(3, [0, 0.25, 0.5])
+    array([-0.      , -0.734375, -1.375   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyc(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$C_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+
+    They are a scaled version of the Chebyshev polynomials of the
+    first kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> eval_chebyc(3, x)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+    >>> 2 * eval_chebyt(3, x / 2)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+    )";
+
+const char *eval_chebys_doc = R"(
+    eval_chebys(n, x, out=None)
+
+    Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = U_n(x/2)
+
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+    See 22.5.13 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    S : scalar or ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
+    chebys : Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebys, eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebys(3, [0, 0.25, 0.5])
+    array([-0.      , -0.484375, -0.875   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-2, 2, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebys(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind on [-2, 2]")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$S_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+
+    They are a scaled version of the Chebyshev polynomials of the
+    second kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> eval_chebys(3, x)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+    >>> eval_chebyu(3, x / 2)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+    )";
+
+const char *eval_chebyt_doc = R"(
+    eval_chebyt(n, x, out=None)
+
+    Evaluate Chebyshev polynomial of the first kind at a point.
+
+    The Chebyshev polynomials of the first kind can be defined via the
+    Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.47 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    T : scalar or ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
+    chebyu : Chebychev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+    hyp2f1 : Gauss hypergeometric function
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
+
+    Notes
+    -----
+    This routine is numerically stable for `x` in ``[-1, 1]`` at least
+    up to order ``10000``.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_2
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyt(3, [0, 0.25, 0.5])
+    array([-0.    , -0.6875, -1.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+    )";
+
+const char *eval_chebyu_doc = R"(
+    eval_chebyu(n, x, out=None)
+
+    Evaluate Chebyshev polynomial of the second kind at a point.
+
+    The Chebyshev polynomials of the second kind can be defined via
+    the Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.48 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    U : scalar or ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
+    chebyu : Chebyshev polynomial object
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_4
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_chebyu(3, [0, 0.25, 0.5])
+    array([-0.   , -0.875, -1.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+    )";
+
 const char *eval_gegenbauer_doc = R"(
     eval_gegenbauer(n, alpha, x, out=None)
 
@@ -2286,7 +2603,7 @@ const char *eval_hermite_doc = R"(
     roots_hermite : roots and quadrature weights of physicist's
                     Hermite polynomials
     hermite : physicist's Hermite polynomial object
-    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    :class:`numpy.polynomial.hermite.Hermite` : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
 
     References
@@ -2358,7 +2675,7 @@ const char *eval_hermitenorm_doc = R"(
     roots_hermitenorm : roots and quadrature weights of probabilist's
                         Hermite polynomials
     hermitenorm : probabilist's Hermite polynomial object
-    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    :class:`numpy.polynomial.hermite_e.HermiteE` : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
 
     References
@@ -2516,7 +2833,7 @@ const char *eval_laguerre_doc = R"(
     roots_laguerre : roots and quadrature weights of Laguerre
                      polynomials
     laguerre : Laguerre polynomial object
-    numpy.polynomial.laguerre.Laguerre : Laguerre series
+    :class:`numpy.polynomial.laguerre.Laguerre` : Laguerre series
     eval_genlaguerre : evaluate generalized Laguerre polynomials
 
     References
@@ -2554,6 +2871,233 @@ const char *eval_laguerre_doc = R"(
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
+    )";
+
+const char *eval_legendre_doc = R"(
+    eval_legendre(n, x, out=None)
+
+    Evaluate Legendre polynomial at a point.
+
+    The Legendre polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. See 22.5.49 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Legendre polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    P : scalar or ndarray
+        Values of the Legendre polynomial
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    legendre : Legendre polynomial object
+    hyp2f1 : Gauss hypergeometric function
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/15.9.E7
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_legendre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the zero-order Legendre polynomial at x = 0
+
+    >>> eval_legendre(0, 0)
+    1.0
+
+    Evaluate the first-order Legendre polynomial between -1 and 1
+
+    >>> x = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
+    >>> eval_legendre(1, x)
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
+
+    Evaluate Legendre polynomials of order 0 through 4 at x = 0
+
+    >>> eval_legendre(range(5), 0)
+    array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
+
+    Plot Legendre polynomials of order 0 through 4
+
+    >>> x = np.linspace(-1, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+    )";
+
+const char *eval_sh_chebyt_doc = R"(
+    eval_sh_chebyt(n, x, out=None)
+
+    Evaluate shifted Chebyshev polynomial of the first kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        T_n^*(x) = T_n(2x - 1)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.14 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    T : scalar or ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyt : roots and quadrature weights of shifted
+                      Chebyshev polynomials of the first kind
+    sh_chebyt : shifted Chebyshev polynomial object
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    :class:`numpy.polynomial.chebyshev.Chebyshev` : Chebyshev series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E7
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyt
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyt(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-1.    ,  0.5625,  1.    ,  0.6875, -0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyt(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the First Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$T_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
+    )";
+
+const char *eval_sh_chebyu_doc = R"(
+    eval_sh_chebyu(n, x, out=None)
+
+    Evaluate shifted Chebyshev polynomial of the second kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        U_n^*(x) = U_n(2x - 1)
+
+    where :math:`U_n` is a Chebyshev polynomial of the first kind. See
+    22.5.15 in [AS]_ (or equivalently [DLMF]_) for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    U : scalar or ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
+    sh_chebyu : shifted Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E8
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_chebyu
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_chebyu(3, [0, 0.125, 0.25, 0.375, 0.5])
+    array([-4.   , -0.375,  1.   ,  0.875, -0.   ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_chebyu(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Chebyshev Polynomials of the Second Kind")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$U_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     )";
 
 const char *eval_sh_jacobi_doc = R"(
@@ -2637,6 +3181,77 @@ const char *eval_sh_jacobi_doc = R"(
     >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
     >>> plt.show()
 
+    )";
+
+const char *eval_sh_legendre_doc = R"(
+    eval_sh_legendre(n, x, out=None)
+
+    Evaluate shifted Legendre polynomial at a point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        P_n^*(x) = P_n(2x - 1)
+
+    where :math:`P_n` is a Legendre polynomial. See 22.2.11 in [AS]_
+    or [DLMF]_ for details.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the value is
+        determined via the relation to `eval_legendre`.
+    x : array_like
+        Points at which to evaluate the shifted Legendre polynomial
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    P : scalar or ndarray
+        Values of the shifted Legendre polynomial
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    sh_legendre : shifted Legendre polynomial object
+    eval_legendre : evaluate Legendre polynomials
+    :class:`numpy.polynomial.legendre.Legendre` : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E10
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import eval_sh_legendre
+    >>> import matplotlib.pyplot as plt
+
+    Evaluate the order 3 polynomial at a few values of x.
+
+    >>> eval_sh_legendre(3, [0, 0.25, 0.5])
+    array([-1.    ,  0.4375,  0.    ])
+
+    Plot the polynomials of order 0 through 4.
+
+    >>> x = np.linspace(0, 1, 800)
+    >>> fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    >>> for n in range(5):
+    ...     y = eval_sh_legendre(n, x)
+    ...     ax.plot(x, y, label=f'{n = }')
+    >>> ax.grid()
+    >>> ax.set_title("Shifted Legendre Polynomials")
+    >>> ax.set_xlabel("$x$")
+    >>> ax.set_ylabel("$P_n^*(x)$")
+    >>> ax.legend(loc='upper left', bbox_to_anchor=(1, 1), shadow=True)
+    >>> plt.show()
     )";
 
 const char *lpmv_doc = R"(
@@ -11706,7 +12321,7 @@ const char *mathieu_a_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a non-negative integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -11715,12 +12330,12 @@ const char *mathieu_a_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the even solution, ``ce_m(z, q)``, of
+        Characteristic value for the even solution, :math:`\mathrm{ce}_m(x, q)`, of
         Mathieu's equation.
 
     See Also
     --------
-    mathieu_b, mathieu_cem, mathieu_sem
+    mathieu_b, mathieu_ce, mathieu_se
 
     References
     ----------
@@ -11737,7 +12352,7 @@ const char *mathieu_b_doc = R"(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function. Must be a positive integer.
     q : array_like
         Parameter of the function
     out : ndarray, optional
@@ -11746,18 +12361,22 @@ const char *mathieu_b_doc = R"(
     Returns
     -------
     scalar or ndarray
-        Characteristic value for the odd solution, ``se_m(z, q)``, of Mathieu's
-        equation.
+        Characteristic value for the odd solution, :math:`\mathrm{se}_m(x, q)`, of
+        Mathieu's equation.
 
     See Also
     --------
-    mathieu_a, mathieu_cem, mathieu_sem
+    mathieu_a, mathieu_ce, mathieu_se
 
     References
     ----------
     .. [1] Stuart Brorson, A New Implementation of the Mathieu Functions for SciPy.
            https://github.com/brorson/ScipyMathieuPaper
 
+    )";
+
+const char *_mathieu_ce_doc = R"(
+    Internal function. Use `mathieu_ce`.
     )";
 
 const char *_mathieu_cem_doc = R"(
@@ -11894,6 +12513,10 @@ const char *mathieu_modsem2_doc = R"(
     --------
     mathieu_modcem2
 
+    )";
+
+const char *_mathieu_se_doc = R"(
+    Internal function. Use `mathieu_se`.
     )";
 
 const char *_mathieu_sem_doc = R"(

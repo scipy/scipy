@@ -189,17 +189,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
             if not HAS_ILP64 and max_mn*max_mn > np.iinfo(np.int32).max:
-                raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
-                                  "would incur integer overflow in LAPACK. "
-                                  "Instead, either use using numpy.linalg.svd or build"
-                                  "SciPy with ILP64 support.")
+                raise ValueError(f"scipy.linalg.svd: the {max_mn} x {max_mn} matrix "
+                                 f"of singular vectors would have {max_mn*max_mn} "
+                                 "elements, more than what a 32-bit integer can "
+                                 "index, hence an ILP64-enabled LAPACK is required.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if not HAS_ILP64 and max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
-                raise ValueError(f"Indexing a matrix of {sz} elements would "
-                                  "incur an in integer overflow in LAPACK. "
-                                  "Instead, either use using numpy.linalg.svd or build"
-                                  "SciPy with ILP64 support.")
+                raise ValueError("scipy.linalg.svd: the matrix of singular vectors "
+                                 f"would have {sz} elements, more than what a 32-bit "
+                                 "integer can index, hence an ILP64-enabled LAPACK is "
+                                 "required.")
 
     res = _batched_linalg._svd(
         a1, lapack_driver, compute_uv, full_matrices, overwrite_a
@@ -482,9 +482,10 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+    M, N = A.shape
+    full = M <= N
+    u, s, vh = svd(A, full_matrices=full, overwrite_a=overwrite_a,
                    check_finite=check_finite, lapack_driver=lapack_driver)
-    M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = np.finfo(s.dtype).eps * max(M, N)
     tol = np.amax(s, initial=0.) * rcond
