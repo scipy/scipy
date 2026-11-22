@@ -2152,7 +2152,7 @@ class TestBPolyCalculus:
     def test_integrate_periodic_decreasing(self, xp, a, b, expected):
         bpoly = BPoly(xp.asarray([[1., 2.]]), xp.asarray([2., 1., 0.]),
                       extrapolate='periodic')
-        xp_assert_close(bpoly.integrate(a, b), xp.asarray(expected))
+        xp_assert_close(bpoly.integrate(a, b), xp.asarray(expected, dtype=xp.float64))
 
     def test_antider_neg(self, xp):
         # .derivative(-nu) ==> .andiderivative(nu) and vice versa
