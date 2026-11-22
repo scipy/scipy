@@ -2814,13 +2814,16 @@ class NdPPoly:
         ``[a, b]``.
 
         """
-        # a tuple of coordinate arrays is not the same as an array of points
+        # NB: `_ndim_coords_from_arrays` special-cases tuples: a tuple holds
+        # one coordinate array per dimension, while an array holds points.
+        # So convert each item of a tuple, and keep it a tuple.
         if isinstance(x, tuple):
             device = xp_result_device(*x)
             x = tuple(self._xp_internal.asarray(v) for v in x)
         else:
             device = xp_result_device(x)
             x = self._xp_internal.asarray(x)
+
         if device is None:
             device = self._device
         return self._xp.asarray(
