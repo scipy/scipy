@@ -29,6 +29,14 @@ enum Matrix_norm_ord : Py_ssize_t
 };
 
 
+/*
+ * @brief compute the +- 1 norm of a vector `data`
+ *
+ * @param data  The array containing the data
+ * @param n     The number of elements in the vector
+ * @param incx  The increment between subsequent elements
+ * @param neg   Whether to compute the + or - 1 norm
+ */
 template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
@@ -51,6 +59,14 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_1(T *data, cons
 }
 
 
+/*
+ * @brief compute the +- 2 norm of a vector `data`
+ *
+ * @param data  The array containing the data
+ * @param n     The number of elements in the vector
+ * @param incx  The increment between subsequent elements
+ * @param neg   Whether to compute the + or - 2 norm
+ */
 template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(T *data, const CBLAS_INT n, const CBLAS_INT incx) {
     real_of_t<T> res = 0.0;
 
@@ -69,7 +85,6 @@ template <typename T, bool neg> inline real_of_t<T> _vector_norm_2(T *data, cons
         } else {
             res += data_ij_squared;
         }
-
     }
 
     if constexpr (neg) {
@@ -152,9 +167,8 @@ template <typename T, bool neg> inline real_of_t<T> _matrix_norm_1(T *data, cons
 }
 
 
-template <typename T> int _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, int ord, SliceStatusVec &vec_status) {
+template <typename T> BatchStatus _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_res, int ord) {
     using real_type = real_of_t<T>;
-    int info = 0;
 
     // -------------------------------------------------------------------
     // Input array attributes
@@ -199,18 +213,16 @@ template <typename T> int _vector_norm(PyArrayObject *ap_av, PyArrayObject *ap_r
                 res_data[idx] = _matrix_norm_1<T, true>(slice_ptr_a, 1, intn, 0, incx);
                 break;
             default:
-                return -102;
+                return {BatchCode::lapack_error, "matrix_norm", -102};
         }
-
     }
 
-    return info;
+    return {};
 }
 
 
-template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_res, Matrix_norm_ord ord) {
+template <typename T> BatchStatus _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_res, Matrix_norm_ord ord) {
     using real_type = real_of_t<T>;
-    int info = 0;
 
     // -------------------------------------------------------------------
     // Input array attributes
@@ -256,12 +268,11 @@ template <typename T> int _matrix_norm(PyArrayObject *ap_Am, PyArrayObject *ap_r
                 res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s2);
                 break;
             default:
-                return -102;
+                return {BatchCode::lapack_error, "matrix_norm", -102};
         }
-
     }
 
-    return info;
+    return {};
 }
 
 

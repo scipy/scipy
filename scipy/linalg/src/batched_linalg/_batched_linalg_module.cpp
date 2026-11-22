@@ -838,11 +838,7 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject*
 _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_av = NULL;
-    PyArrayObject *ap_res = NULL;
     Vector_norm_ord ord = Vector_norm_ord::V_TWO;
-
-    int info = 0;
-    SliceStatusVec vec_status;
 
     if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_av, &ord)) {
         return NULL;
@@ -858,49 +854,27 @@ _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp ndim = PyArray_NDIM(ap_av);
     npy_intp *shape = PyArray_DIMS(ap_av);
 
-    int res_typenum = typenum;
-    if (typenum == NPY_COMPLEX64) { res_typenum = NPY_FLOAT32; }
-    else if (typenum == NPY_COMPLEX128) { res_typenum = NPY_FLOAT64; }
-    ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, res_typenum);
+    OwnedArray ap_res((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, real_typenum(typenum)));
+    if (!ap_res) { return NULL; }
 
     // Heavy lifting
-    switch (typenum) {
-        case NPY_FLOAT32:
-            info = _vector_norm<f32>(ap_av, ap_res, ord, vec_status);
-            break;
-        case NPY_FLOAT64 :
-            info = _vector_norm<f64>(ap_av, ap_res, ord, vec_status);
-            break;
-        case NPY_COMPLEX64:
-            info = _vector_norm<c64>(ap_av, ap_res, ord, vec_status);
-            break;
-        case NPY_COMPLEX128:
-            info = _vector_norm<c128>(ap_av, ap_res, ord, vec_status);
-            break;
-    }
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _vector_norm<T>(ap_av, ap_res.get(), ord);
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "vector_norm", typenum); }
 
-    if (info < 0) {
-        // OOM or internal error
-        PyErr_SetString(PyExc_RuntimeError, "Memory error in scipy.linalg.vector_norm");
-        goto fail;
-    }
-
-    return Py_BuildValue("N", PyArray_Return(ap_res));
-
-
-fail:
-    Py_DECREF(ap_res);
-    return NULL;
+    return Py_BuildValue("N", PyArray_Return(ap_res.release()));
 }
 
 
 static PyObject *
 _linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
-    PyArrayObject *ap_res = NULL;
     Matrix_norm_ord ord = Matrix_norm_ord::M_FRO;
-
-    int info = 0;
 
     if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord)) {
         return NULL;
@@ -916,38 +890,20 @@ _linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     npy_intp ndim = PyArray_NDIM(ap_Am);
     npy_intp *shape = PyArray_SHAPE(ap_Am);
 
-    int res_typenum = typenum;
-    if (typenum == NPY_COMPLEX64) { res_typenum = NPY_FLOAT32; }
-    else if (typenum == NPY_COMPLEX128) { res_typenum = NPY_FLOAT64; }
-    ap_res = (PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, res_typenum);
+    OwnedArray ap_res((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, real_typenum(typenum)));
+    if (!ap_res) { return NULL; }
 
     // Heavy lifting
-    switch (typenum) {
-        case NPY_FLOAT32:
-            info = _matrix_norm<f32>(ap_Am, ap_res, ord);
-            break;
-        case NPY_FLOAT64:
-            info = _matrix_norm<f64>(ap_Am, ap_res, ord);
-            break;
-        case NPY_COMPLEX64:
-            info = _matrix_norm<c64>(ap_Am, ap_res, ord);
-            break;
-        case NPY_COMPLEX128:
-            info = _matrix_norm<c128>(ap_Am, ap_res, ord);
-            break;
-    }
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _matrix_norm<T>(ap_Am, ap_res.get(), ord);
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "matrix_norm", typenum); }
 
-    if (info < 0) {
-        // OOM or internal error
-        PyErr_SetString(PyExc_RuntimeError, "Memory in scipy.linalg.matrix_norm");
-        goto fail;
-    }
-
-    return Py_BuildValue("N", PyArray_Return(ap_res));
-
-fail:
-    Py_DECREF(ap_res);
-    return NULL;
+    return Py_BuildValue("N", PyArray_Return(ap_res.release()));
 }
 
 /*
