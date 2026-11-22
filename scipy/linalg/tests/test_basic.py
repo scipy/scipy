@@ -2851,7 +2851,7 @@ class TestVectorNorms:
                 ) if n != 0 else res_dtype.type(0.0)
 
         if dtype == np.int64 and ord != 0:
-            ref = np.astype(ref, np.float64)
+            ref = ref.astype(np.float64)
 
         xp_assert_close(res, ref)
 
