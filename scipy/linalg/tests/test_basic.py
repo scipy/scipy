@@ -22,7 +22,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm, matrix_norm
 from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
 from scipy.linalg.blas import HAS_ILP64
 
@@ -2811,6 +2811,7 @@ class TestVectorNorms:
     def test_shape_dtype(self, dtype, n, ord, keepdims):
         rng = np.random.default_rng(seed=123456789)
         res_dtype = np.finfo(dtype).dtype if dtype != np.int64 else np.dtype("float64")
+        dtype_zero_norm = np.int64 if HAS_ILP64 else np.int32
 
         if dtype != np.int64:
             a = rng.normal(size=(n, n))
@@ -2829,10 +2830,12 @@ class TestVectorNorms:
                     else res_dtype.type(0.0)
                 )
             else:
-                ref = np.zeros((1, 1), dtype=np.int64) if keepdims else np.int64(0)
+                ref = np.zeros((1, 1), dtype=dtype_zero_norm) if keepdims else (
+                    dtype_zero_norm(0)
+                )
         else:
             if ord == 0:
-                ref = np.sum(a != 0, keepdims=keepdims)
+                ref = np.sum(a != 0, keepdims=keepdims).astype(dtype_zero_norm)
             elif ord == np.inf:
                 ref = np.max(np.abs(a), keepdims=keepdims, initial=0)
             elif ord == -np.inf:
@@ -2849,7 +2852,10 @@ class TestVectorNorms:
         if dtype == np.int64 and ord != 0:
             ref = ref.astype(np.float64)
 
-        xp_assert_close(res, ref, atol=10*np.finfo(res_dtype).eps)
+        if ord == 0:
+            xp_assert_equal(res, ref)
+        else:
+            xp_assert_close(res, ref, atol=10*np.finfo(res_dtype).eps)
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
     @pytest.mark.parametrize("n_slices", [0, 3])

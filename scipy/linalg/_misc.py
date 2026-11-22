@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
 from .lapack import (
-    get_lapack_funcs, _ensure_aligned_and_native, _normalize_lapack_dtype
+    get_lapack_funcs, _ensure_aligned_and_native, _normalize_lapack_dtype, HAS_ILP64
 )
 from ._batched_linalg import _bandwidth, _vector_norm, _matrix_norm
 from scipy._lib._util import _asarray_validated, _deprecate_dtypes
@@ -236,7 +236,9 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
             res_shape = res_shape[mask]
 
     if a.size == 0:
-        res_dtype = np.finfo(a1.dtype).dtype if ord != 0 else np.dtype("int64")
+        res_dtype = np.finfo(a1.dtype).dtype if ord != 0 else (
+            np.dtype("int64") if HAS_ILP64 else np.dtype("int32")
+        )
         if len(res_shape) == 0:
             return res_dtype.type(0)
         else:
@@ -251,7 +253,7 @@ def vector_norm(a, axis=None, keepdims=False, ord=2, check_finite=True):
         a1 = a1.reshape(a1.shape[:-len(axis)] + (-1,))
 
     if ord == 0:
-        res = np.sum(a1 != 0, axis=-1)
+        res = np.sum(a1 != 0, axis=-1).astype(np.int64 if HAS_ILP64 else np.int32)
     else:
         res = _vector_norm(a1, ord)
     return res.reshape(res_shape)
