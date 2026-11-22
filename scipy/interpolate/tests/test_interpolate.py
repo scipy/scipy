@@ -2417,7 +2417,7 @@ class TestNdPPoly:
         v1 = p((xp.asarray(xi),))
 
         v2 = _ppoly_eval_1(c[:,:,None], x, xi).ravel()
-        xp_assert_close(v1, xp.asarray(v2))
+        xp_assert_close(v1, xp.asarray(v2), atol=1e-14, rtol=1e-14)
 
     def test_simple_2d(self, xp):
         rng = np.random.RandomState(1234)
@@ -2446,7 +2446,8 @@ class TestNdPPoly:
         for nu in (None, (0, 0), (0, 1), (1, 0), (2, 3), (9, 2)):
             v1 = p(xp.asarray(np.c_[xi, yi]), nu=nu)
             v2 = _ppoly2d_eval(c, (x, y), xi, yi, nu=nu)
-            xp_assert_close(v1, xp.asarray(v2), err_msg=repr(nu))
+            xp_assert_close(v1, xp.asarray(v2), atol=1e-14, rtol=1e-14,
+                            err_msg=repr(nu))
 
     def test_simple_3d(self, xp):
         rng = np.random.RandomState(1234)
@@ -2466,7 +2467,8 @@ class TestNdPPoly:
                    (6, 0, 2)):
             v1 = p(tuple(xp.asarray(v) for v in (xi, yi, zi)), nu=nu)
             v2 = _ppoly3d_eval(c, (x, y, z), xi, yi, zi, nu=nu)
-            xp_assert_close(v1, xp.asarray(v2), err_msg=repr(nu))
+            xp_assert_close(v1, xp.asarray(v2), atol=1e-14, rtol=1e-14,
+                            err_msg=repr(nu))
 
     def test_simple_4d(self, xp):
         rng = np.random.RandomState(1234)
@@ -2486,7 +2488,7 @@ class TestNdPPoly:
         v1 = p(tuple(xp.asarray(v) for v in (xi, yi, zi, ui)))
 
         v2 = _ppoly4d_eval(c, (x, y, z, u), xi, yi, zi, ui)
-        xp_assert_close(v1, xp.asarray(v2))
+        xp_assert_close(v1, xp.asarray(v2), atol=1e-14, rtol=1e-14)
 
     def test_construct_fast(self, xp):
         rng = np.random.RandomState(1234)
@@ -2505,7 +2507,7 @@ class TestNdPPoly:
 
         v1 = p(xp.asarray(np.c_[xi, yi]))
         v2 = _ppoly2d_eval(c, (x, y), xi, yi)
-        xp_assert_close(v1, xp.asarray(v2))
+        xp_assert_close(v1, xp.asarray(v2), atol=1e-14, rtol=1e-14)
 
     @skip_xp_backends("jax.numpy",
                       reason="JAX devices can't be pickled; same for PPoly")
@@ -2513,8 +2515,8 @@ class TestNdPPoly:
         rng = np.random.RandomState(1234)
 
         c = xp.asarray(rng.rand(4, 5, 6, 7))
-        x = xp.asarray(np.linspace(0, 1, 6+1))
-        y = xp.asarray(np.linspace(0, 1, 7+1)**2)
+        x = xp.linspace(0, 1, 6+1, dtype=xp.float64)
+        y = xp.linspace(0, 1, 7+1, dtype=xp.float64)**2
         xi = xp.asarray(rng.rand(20, 2))
 
         p = NdPPoly(c, (x, y))
@@ -2533,13 +2535,13 @@ class TestNdPPoly:
         dp = p.derivative(nu=[1])
         p1 = PPoly(c, x)
         dp1 = p1.derivative()
-        xp_assert_close(dp.c, dp1.c)
+        xp_assert_close(dp.c, dp1.c, atol=1e-14, rtol=1e-14)
 
         # antiderivative
         dp = p.antiderivative(nu=[2])
         p1 = PPoly(c, x)
         dp1 = p1.antiderivative(2)
-        xp_assert_close(dp.c, dp1.c)
+        xp_assert_close(dp.c, dp1.c, atol=1e-14, rtol=1e-14)
 
     def test_deriv_3d(self, xp):
         rng = np.random.RandomState(1234)
@@ -2556,21 +2558,24 @@ class TestNdPPoly:
         dp = p.derivative(nu=[2])
         dp1 = p1.derivative(2)
         xp_assert_close(dp.c,
-                        xp.permute_dims(dp1.c, (0, 2, 3, 1, 4, 5)))
+                        xp.permute_dims(dp1.c, (0, 2, 3, 1, 4, 5)),
+                        atol=1e-14, rtol=1e-14)
 
         # antidifferentiate vs y
         p1 = PPoly(xp.asarray(c.transpose(1, 4, 0, 2, 3, 5)), xp.asarray(y))
         dp = p.antiderivative(nu=[0, 1, 0])
         dp1 = p1.antiderivative(1)
         xp_assert_close(dp.c,
-                        xp.permute_dims(dp1.c, (2, 0, 3, 4, 1, 5)))
+                        xp.permute_dims(dp1.c, (2, 0, 3, 4, 1, 5)),
+                        atol=1e-14, rtol=1e-14)
 
         # differentiate vs z
         p1 = PPoly(xp.asarray(c.transpose(2, 5, 0, 1, 3, 4)), xp.asarray(z))
         dp = p.derivative(nu=[0, 0, 3])
         dp1 = p1.derivative(3)
         xp_assert_close(dp.c,
-                        xp.permute_dims(dp1.c, (2, 3, 0, 4, 5, 1)))
+                        xp.permute_dims(dp1.c, (2, 3, 0, 4, 5, 1)),
+                        atol=1e-14, rtol=1e-14)
 
     def test_deriv_3d_simple(self, xp):
         # Integrate to obtain function x y**2 z**4 / (2! 4!)
@@ -2590,7 +2595,8 @@ class TestNdPPoly:
         zi = rng.rand(20)
 
         xp_assert_close(ip(tuple(xp.asarray(v) for v in (xi, yi, zi))),
-                        xp.asarray(xi * yi**2 * zi**4 / (gamma(3)*gamma(5))))
+                        xp.asarray(xi * yi**2 * zi**4 / (gamma(3)*gamma(5))),
+                        atol=1e-14, rtol=1e-14)
 
     def test_integrate_2d(self, xp):
         rng = np.random.RandomState(1234)
@@ -2643,21 +2649,24 @@ class TestNdPPoly:
 
         px = p.integrate_1d(a, b, axis=0)
         pax = p.antiderivative((1, 0, 0))
-        xp_assert_close(px((u, v)), pax((b, u, v)) - pax((a, u, v)))
+        xp_assert_close(px((u, v)), pax((b, u, v)) - pax((a, u, v)),
+                        atol=1e-14, rtol=1e-14)
 
         py = p.integrate_1d(a, b, axis=1)
         pay = p.antiderivative((0, 1, 0))
-        xp_assert_close(py((u, v)), pay((u, b, v)) - pay((u, a, v)))
+        xp_assert_close(py((u, v)), pay((u, b, v)) - pay((u, a, v)),
+                        atol=1e-14, rtol=1e-14)
 
         pz = p.integrate_1d(a, b, axis=2)
         paz = p.antiderivative((0, 0, 1))
-        xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
+        xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)),
+                        atol=1e-14, rtol=1e-14)
 
         # for a 1-D polynomial, integrate_1d returns an array
         c1, x1 = xp.asarray(rng.rand(4, 16)), xp.asarray(x)
         p1 = NdPPoly(c1, (x1,))
         xp_assert_close(p1.integrate_1d(a, b, axis=0),
-                        PPoly(c1, x1).integrate(a, b))
+                        PPoly(c1, x1).integrate(a, b), atol=1e-14, rtol=1e-14)
 
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
