@@ -242,8 +242,19 @@ class TestPlacePoles:
                       [1., 1.]])
         P = np.array([-1.-1j, -1.+1j])
 
+        controllability = np.hstack((B, A @ B))
+        assert np.linalg.matrix_rank(B) == 1
+        assert np.linalg.matrix_rank(controllability) == A.shape[0]
+
         fsf = self._check(A, B, P, method="YT")
         assert fsf.gain_matrix.shape == (B.shape[1], A.shape[0])
+        assert np.isrealobj(fsf.gain_matrix)
+        assert np.all(np.isfinite(fsf.gain_matrix))
+
+        K = fsf.gain_matrix
+        closed_loop = A - B @ K
+        residual = closed_loop @ fsf.X - fsf.X @ np.diag(fsf.requested_poles)
+        assert np.linalg.norm(residual) < 1e-10
 
     @pytest.mark.parametrize("method", ["YT", "KNV0"])
     def test_nearly_rank_deficient_full_column_rank(self, method):
@@ -266,8 +277,21 @@ class TestPlacePoles:
                       [1., 1.]])
         P = np.array([0., -1.])
 
+        controllability = np.hstack((B, A @ B))
+        assert np.linalg.matrix_rank(B) == 1
+        assert np.linalg.matrix_rank(controllability) == A.shape[0]
+
         fsf = self._check(A, B, P, method="YT")
         assert fsf.gain_matrix.shape == (2, 2)
+        assert np.isrealobj(fsf.gain_matrix)
+        assert np.all(np.isfinite(fsf.gain_matrix))
+
+        K = fsf.gain_matrix
+        closed_loop = A - B @ K
+        _assert_poles_close(np.linalg.eigvals(closed_loop),
+                            fsf.requested_poles)
+        residual = closed_loop @ fsf.X - fsf.X @ np.diag(fsf.requested_poles)
+        assert np.linalg.norm(residual) < 1e-10
 
     @pytest.mark.parametrize("method", ["YT", "KNV0"])
     def test_rank_deficient_tall_B(self, method):
