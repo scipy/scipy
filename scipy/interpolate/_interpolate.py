@@ -16,8 +16,6 @@ from scipy._lib._array_api import (
     xp_result_device
 )
 
-from scipy._lib.doccer import inherit_docstring_from
-
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
@@ -2346,67 +2344,7 @@ class BPoly:
 
 
 class _NdPPoly:
-    """
-    Piecewise tensor product polynomial.
-
-    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
-    computing the interval indices `i` such that::
-
-        x[0][i[0]] <= x' < x[0][i[0]+1]
-        x[1][i[1]] <= y' < x[1][i[1]+1]
-        ...
-
-    and then computing::
-
-        S = sum(c[k0-m0-1,...,kn-mn-1,i[0],...,i[n]]
-                * (xp[0] - x[0][i[0]])**m0
-                * ...
-                * (xp[n] - x[n][i[n]])**mn
-                for m0 in range(k[0]+1)
-                ...
-                for mn in range(k[n]+1))
-
-    where ``k[j]`` is the degree of the polynomial in dimension j. This
-    representation is the piecewise multivariate power basis.
-
-    Parameters
-    ----------
-    c : ndarray, shape (k0, ..., kn, m0, ..., mn, ...)
-        Polynomial coefficients, with polynomial order `kj` and
-        `mj+1` intervals for each dimension `j`.
-    x : ndim-tuple of ndarrays, shapes (mj+1,)
-        Polynomial breakpoints for each dimension. These must be
-        sorted in increasing order.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
-
-    Attributes
-    ----------
-    x : tuple of ndarrays
-        Breakpoints.
-    c : ndarray
-        Coefficients of the polynomials.
-
-    Methods
-    -------
-    __call__
-    derivative
-    antiderivative
-    integrate
-    integrate_1d
-    construct_fast
-
-    See Also
-    --------
-    PPoly : piecewise polynomials in 1D
-
-    Notes
-    -----
-    High-order polynomials in the power basis can be numerically
-    unstable.
-
-    """
+    """NumPy backend for NdPPoly."""
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
@@ -2435,15 +2373,6 @@ class _NdPPoly:
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None):
-        """
-        Construct the piecewise polynomial without making checks.
-
-        Takes the same parameters as the constructor. Input arguments
-        ``c`` and ``x`` must be arrays of the correct shape and type.  The
-        ``c`` array can only be of dtypes float and complex, and ``x``
-        array must have dtype float.
-
-        """
         self = object.__new__(cls)
         self.c = c
         self.x = x
@@ -2466,34 +2395,6 @@ class _NdPPoly:
             self.x = tuple(self.x)
 
     def __call__(self, x, nu=None, extrapolate=None):
-        """
-        Evaluate the piecewise polynomial or its derivative
-
-        Parameters
-        ----------
-        x : array-like
-            Points to evaluate the interpolant at.
-        nu : tuple, optional
-            Orders of derivatives to evaluate. Each must be non-negative.
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-
-        Returns
-        -------
-        y : array-like
-            Interpolated values. Shape is determined by replacing
-            the interpolation axis in the original array with the shape of x.
-
-        Notes
-        -----
-        Derivatives are evaluated piecewise for each polynomial
-        segment, even if the polynomial is not differentiable at the
-        breakpoints. The polynomial intervals are considered half-open,
-        ``[a, b)``, except for the last interval which is closed
-        ``[a, b]``.
-
-        """
         if extrapolate is None:
             extrapolate = self.extrapolate
         else:
@@ -2605,30 +2506,6 @@ class _NdPPoly:
         self.c = c2
 
     def derivative(self, nu):
-        """
-        Construct a new piecewise polynomial representing the derivative.
-
-        Parameters
-        ----------
-        nu : ndim-tuple of int
-            Order of derivatives to evaluate for each dimension.
-            If negative, the antiderivative is returned.
-
-        Returns
-        -------
-        pp : NdPPoly
-            Piecewise polynomial of orders (k[0] - nu[0], ..., k[n] - nu[n])
-            representing the derivative of this polynomial.
-
-        Notes
-        -----
-        Derivatives are evaluated piecewise for each polynomial
-        segment, even if the polynomial is not differentiable at the
-        breakpoints. The polynomial intervals in each dimension are
-        considered half-open, ``[a, b)``, except for the last interval
-        which is closed ``[a, b]``.
-
-        """
         p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
 
         for axis, n in enumerate(nu):
@@ -2638,31 +2515,6 @@ class _NdPPoly:
         return p
 
     def antiderivative(self, nu):
-        """
-        Construct a new piecewise polynomial representing the antiderivative.
-
-        Antiderivative is also the indefinite integral of the function,
-        and derivative is its inverse operation.
-
-        Parameters
-        ----------
-        nu : ndim-tuple of int
-            Order of derivatives to evaluate for each dimension.
-            If negative, the derivative is returned.
-
-        Returns
-        -------
-        pp : PPoly
-            Piecewise polynomial of order k2 = k + n representing
-            the antiderivative of this polynomial.
-
-        Notes
-        -----
-        The antiderivative returned by this function is continuous and
-        continuously differentiable to order n-1, up to floating point
-        rounding error.
-
-        """
         p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
 
         for axis, n in enumerate(nu):
@@ -2672,36 +2524,6 @@ class _NdPPoly:
         return p
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
-        r"""
-        Compute NdPPoly representation for one dimensional definite integral.
-
-        The result is a piecewise polynomial representing the integral:
-
-        .. math::
-
-           p(y, z, ...) = \int_a^b dx\, p(x, y, z, ...)
-
-        where the dimension integrated over is specified with the
-        `axis` parameter.
-
-        Parameters
-        ----------
-        a, b : float
-            Lower and upper bound for integration.
-        axis : int
-            Dimension over which to compute the 1-D integrals
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-
-        Returns
-        -------
-        ig : NdPPoly or array-like
-            Definite integral of the piecewise polynomial over [a, b].
-            If the polynomial was 1D, an array is returned,
-            otherwise, an NdPPoly object.
-
-        """
         if extrapolate is None:
             extrapolate = self.extrapolate
         else:
@@ -2733,25 +2555,6 @@ class _NdPPoly:
             return self.construct_fast(c, x, extrapolate=extrapolate)
 
     def integrate(self, ranges, extrapolate=None):
-        """
-        Compute a definite integral over a piecewise polynomial.
-
-        Parameters
-        ----------
-        ranges : ndim-tuple of 2-tuples float
-            Sequence of lower and upper bounds for each dimension,
-            ``[(a[0], b[0]), ..., (a[ndim-1], b[ndim-1])]``
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-
-        Returns
-        -------
-        ig : array_like
-            Definite integral of the piecewise polynomial over
-            [a[0], b[0]] x ... x [a[ndim-1], b[ndim-1]]
-
-        """
         ndim = len(self.x)
 
         if extrapolate is None:
@@ -2827,7 +2630,67 @@ _ndppoly_extra_note = (
     extra_note=_ndppoly_extra_note,
 )
 class NdPPoly:
-    __doc__ = _NdPPoly.__doc__
+    """
+    Piecewise tensor product polynomial.
+
+    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
+    computing the interval indices `i` such that::
+
+        x[0][i[0]] <= x' < x[0][i[0]+1]
+        x[1][i[1]] <= y' < x[1][i[1]+1]
+        ...
+
+    and then computing::
+
+        S = sum(c[k0-m0-1,...,kn-mn-1,i[0],...,i[n]]
+                * (xp[0] - x[0][i[0]])**m0
+                * ...
+                * (xp[n] - x[n][i[n]])**mn
+                for m0 in range(k[0]+1)
+                ...
+                for mn in range(k[n]+1))
+
+    where ``k[j]`` is the degree of the polynomial in dimension j. This
+    representation is the piecewise multivariate power basis.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k0, ..., kn, m0, ..., mn, ...)
+        Polynomial coefficients, with polynomial order `kj` and
+        `mj+1` intervals for each dimension `j`.
+    x : ndim-tuple of ndarrays, shapes (mj+1,)
+        Polynomial breakpoints for each dimension. These must be
+        sorted in increasing order.
+    extrapolate : bool, optional
+        Whether to extrapolate to out-of-bounds points based on first
+        and last intervals, or to return NaNs. Default: True.
+
+    Attributes
+    ----------
+    x : tuple of ndarrays
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    integrate_1d
+    construct_fast
+
+    See Also
+    --------
+    PPoly : piecewise polynomials in 1D
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable.
+
+    """
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
@@ -2869,8 +2732,16 @@ class NdPPoly:
         return self
 
     @classmethod
-    @inherit_docstring_from(_NdPPoly)
     def construct_fast(cls, c, x, extrapolate=None):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
+        array must have dtype float.
+
+        """
         x = tuple(x)
         xp = array_namespace(c, *x)
         xp_ndppoly_cls, xp_internal = _get_xp_ndppoly_cls(xp)
@@ -2914,8 +2785,35 @@ class NdPPoly:
     def extrapolate(self, extrapolate):
         self._delegate_to.extrapolate = extrapolate
 
-    @inherit_docstring_from(_NdPPoly)
     def __call__(self, x, nu=None, extrapolate=None):
+        """
+        Evaluate the piecewise polynomial or its derivative
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at.
+        nu : tuple, optional
+            Orders of derivatives to evaluate. Each must be non-negative.
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        y : array-like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+
+        """
         # a tuple of coordinate arrays is not the same as an array of points
         if isinstance(x, tuple):
             device = xp_result_device(*x)
@@ -2930,24 +2828,100 @@ class NdPPoly:
             device=device,
         )
 
-    @inherit_docstring_from(_NdPPoly)
     def derivative(self, nu):
+        """
+        Construct a new piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        nu : ndim-tuple of int
+            Order of derivatives to evaluate for each dimension.
+            If negative, the antiderivative is returned.
+
+        Returns
+        -------
+        pp : NdPPoly
+            Piecewise polynomial of orders (k[0] - nu[0], ..., k[n] - nu[n])
+            representing the derivative of this polynomial.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals in each dimension are
+        considered half-open, ``[a, b)``, except for the last interval
+        which is closed ``[a, b]``.
+
+        """
         return self._construct_from_xp(
             self._delegate_to.derivative(nu),
             xp_external=self._xp,
             device=self._device,
         )
 
-    @inherit_docstring_from(_NdPPoly)
     def antiderivative(self, nu):
+        """
+        Construct a new piecewise polynomial representing the antiderivative.
+
+        Antiderivative is also the indefinite integral of the function,
+        and derivative is its inverse operation.
+
+        Parameters
+        ----------
+        nu : ndim-tuple of int
+            Order of derivatives to evaluate for each dimension.
+            If negative, the derivative is returned.
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k + n representing
+            the antiderivative of this polynomial.
+
+        Notes
+        -----
+        The antiderivative returned by this function is continuous and
+        continuously differentiable to order n-1, up to floating point
+        rounding error.
+
+        """
         return self._construct_from_xp(
             self._delegate_to.antiderivative(nu),
             xp_external=self._xp,
             device=self._device,
         )
 
-    @inherit_docstring_from(_NdPPoly)
     def integrate_1d(self, a, b, axis, extrapolate=None):
+        r"""
+        Compute NdPPoly representation for one dimensional definite integral.
+
+        The result is a piecewise polynomial representing the integral:
+
+        .. math::
+
+           p(y, z, ...) = \int_a^b dx\, p(x, y, z, ...)
+
+        where the dimension integrated over is specified with the
+        `axis` parameter.
+
+        Parameters
+        ----------
+        a, b : float
+            Lower and upper bound for integration.
+        axis : int
+            Dimension over which to compute the 1-D integrals
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        ig : NdPPoly or array-like
+            Definite integral of the piecewise polynomial over [a, b].
+            If the polynomial was 1D, an array is returned,
+            otherwise, an NdPPoly object.
+
+        """
         out = self._delegate_to.integrate_1d(a, b, axis, extrapolate=extrapolate)
         if len(self._delegate_to.x) == 1:
             return self._xp.asarray(out, device=self._device)
@@ -2955,8 +2929,26 @@ class NdPPoly:
             out, xp_external=self._xp, device=self._device
         )
 
-    @inherit_docstring_from(_NdPPoly)
     def integrate(self, ranges, extrapolate=None):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        ranges : ndim-tuple of 2-tuples float
+            Sequence of lower and upper bounds for each dimension,
+            ``[(a[0], b[0]), ..., (a[ndim-1], b[ndim-1])]``
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        ig : array_like
+            Definite integral of the piecewise polynomial over
+            [a[0], b[0]] x ... x [a[ndim-1], b[ndim-1]]
+
+        """
         return self._xp.asarray(
             self._delegate_to.integrate(ranges, extrapolate=extrapolate),
             device=self._device,
