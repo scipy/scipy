@@ -269,6 +269,19 @@ class TestPlacePoles:
         fsf = self._check(A, B, P, method="YT")
         assert fsf.gain_matrix.shape == (2, 2)
 
+    @pytest.mark.parametrize("method", ["YT", "KNV0"])
+    def test_rank_deficient_tall_B(self, method):
+        A = np.array([[0., 1., 0.],
+                      [0., 0., 1.],
+                      [1., 0., 0.]])
+        B = np.array([[1., 1.],
+                      [0., 0.],
+                      [0., 0.]])
+        P = np.array([-1., -2., -3.])
+
+        fsf = self._check(A, B, P, method=method)
+        assert fsf.gain_matrix.shape == (B.shape[1], A.shape[0])
+
     def test_errors(self):
         # Test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
