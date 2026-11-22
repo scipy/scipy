@@ -1492,6 +1492,7 @@ cdef extern from r"cython_special_wrappers.h":
     double boost_fdtrc_double(double dfn, double dfd, double x) nogil
     float boost_fdtri_float(float dfn, float dfd, float p) nogil
     double boost_fdtri_double(double dfn, double dfd, double p) nogil
+    double boost_fdtridfd(double dfn, double p, double f) nogil
     double boost_hyp1f1_double(double a, double b, double x) nogil
     float boost_log_gammainc_float(float a, float x) nogil
     double boost_log_gammainc_double(double a, double x) nogil
@@ -1504,6 +1505,8 @@ cdef extern from r"cython_special_wrappers.h":
     float boost_ncfdtri_float(float dfn, float dfd, float nc, float p) nogil
     double boost_ncfdtri_double(double dfn, double dfd, double nc, double p) nogil
     double boost_ncfdtrinc(double dfn, double dfd, double p, double f) nogil
+    double boost_ncfdtridfd(double dfn, double p, double nc, double f) nogil
+    double boost_ncfdtridfn(double p, double dfd, double nc, double f) nogil
     float boost_nctdtr_float(float df, float nc, float t) nogil
     double boost_nctdtr_double(double df, double nc, double t) nogil
     double boost_nctdtridf(double p, double nc, double t) nogil
@@ -1545,10 +1548,6 @@ cdef _proto_expn_unsafe_t *_proto_expn_unsafe_t_var = &_func_expn_unsafe
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_expn "expn"(npy_int, npy_double)nogil
 
-from ._cdflib_wrappers cimport fdtridfd as _func_fdtridfd
-ctypedef double _proto_fdtridfd_t(double, double, double) noexcept nogil
-cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
-
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
@@ -1583,14 +1582,6 @@ cdef _proto_nbdtrc_unsafe_t *_proto_nbdtrc_unsafe_t_var = &_func_nbdtrc_unsafe
 from ._legacy cimport nbdtri_unsafe as _func_nbdtri_unsafe
 ctypedef double _proto_nbdtri_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_nbdtri_unsafe_t *_proto_nbdtri_unsafe_t_var = &_func_nbdtri_unsafe
-
-from ._cdflib_wrappers cimport ncfdtridfd as _func_ncfdtridfd
-ctypedef double _proto_ncfdtridfd_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtridfd_t *_proto_ncfdtridfd_t_var = &_func_ncfdtridfd
-
-from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
-ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
 
 
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
@@ -2231,9 +2222,9 @@ cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
     elif df_number_t is double:
         return boost_fdtri_double(x0, x1, x2)
 
-cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil:
+cpdef double fdtridfd(double dfn, double p, double f) noexcept nogil:
     """See the documentation for scipy.special.fdtridfd"""
-    return _func_fdtridfd(x0, x1, x2)
+    return boost_fdtridfd(dfn, p, f)
 
 cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil:
     """See the documentation for scipy.special.fresnel"""
@@ -2789,17 +2780,17 @@ cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_num
     elif df_number_t is double:
         return boost_ncfdtri_double(x0, x1, x2, x3)
 
-cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.ncfdtridfd"""
-    return _func_ncfdtridfd(x0, x1, x2, x3)
-
-cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.ncfdtridfn"""
-    return _func_ncfdtridfn(x0, x1, x2, x3)
-
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtrinc"""
     return boost_ncfdtrinc(x0, x1, x2, x3)
+
+cpdef double ncfdtridfd(double dfn, double p, double nc, double f) noexcept nogil:
+    """See the documentation for scipy.special.ncfdtridfd"""
+    return boost_ncfdtridfd(dfn, p, nc, f)
+
+cpdef double ncfdtridfn(double p, double dfd, double nc, double f) noexcept nogil:
+    """See the documentation for scipy.special.ncfdtridfn"""
+    return boost_ncfdtridfn(p, dfd, nc, f)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""

@@ -955,6 +955,8 @@ float boost_fdtri_float(float dfn, float dfd, float p) { return f_ppf_float(dfn,
 
 double boost_fdtri_double(double dfn, double dfd, double p) { return f_ppf_double(dfn, dfd, p); }
 
+double boost_fdtridfd(double dfn, double p, double f) { return f_find_dfd_double(dfn, p, f); }
+
 double boost_hyp1f1_double(double a, double b, double x) { return hyp1f1_double(a, b, x); }
 
 float boost_log_gammainc_float(float a, float x) { return lgamma_p_float(a, x); }
@@ -986,6 +988,16 @@ double boost_ncfdtri_double(double dfn, double dfd, double nc, double p)
 double boost_ncfdtrinc(double dfn, double dfd, double p, double f)
 {
     return ncf_find_non_centrality_double(dfn, dfd, p, f);
+}
+
+double boost_ncfdtridfd(double dfn, double p, double nc, double f)
+{
+    return ncf_find_dfd_double(dfn, p, nc, f);
+}
+
+double boost_ncfdtridfn(double p, double dfd, double nc, double f)
+{
+    return ncf_find_dfn_double(p, dfd, nc, f);
 }
 
 float boost_nctdtr_float(float df, float nc, float t) { return nct_cdf_float(df, nc, t); }

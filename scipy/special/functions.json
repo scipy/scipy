@@ -39,10 +39,6 @@
             "cephes_expn_wrap": "pd->d"
         }
     },
-    "fdtridfd": {
-        "_cdflib_wrappers.pxd": {
-            "fdtridfd": "ddd->d"        }
-    },
     "kn": {
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
@@ -74,15 +70,6 @@
         "cython_special_wrappers.h": {
             "cephes_nbdtri_wrap": "ppd->d"
         }
-    },
-    "ncfdtridfd": {
-        "_cdflib_wrappers.pxd": {
-            "ncfdtridfd": "dddd->d"
-        }
-    },
-    "ncfdtridfn": {
-        "_cdflib_wrappers.pxd": {
-            "ncfdtridfn": "dddd->d"        }
     },
     "pdtri": {
         "_legacy.pxd": {

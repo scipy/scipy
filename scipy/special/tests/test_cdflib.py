@@ -1,11 +1,6 @@
 """
 Test cdflib functions versus mpmath, if available.
 
-The following functions still need tests:
-
-- ncfdtridfn
-- ncfdtridfd
-
 """
 import itertools
 
@@ -224,15 +219,6 @@ class TestCDFlib:
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-7,
             endpt_atol=[None, 1e-18, 1e-15])
-
-    @pytest.mark.xfail(run=False)
-    def test_fdtridfd(self):
-        _assert_inverts(
-            sp.fdtridfd,
-            _f_cdf,
-            1,
-            [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
-            rtol=1e-7)
 
     def test_gdtria(self):
         _assert_inverts(
@@ -476,7 +462,7 @@ class TestNoncentralF:
         [1e-100, 3, 1.5, 1e100, 0.611815287345399]
         ]
     )
-    def test_all(self, dfn, dfd, nc, f, expected_cdf):
+    def test_ncfdtr_ncfdtri_ncfdtrinc(self, dfn, dfd, nc, f, expected_cdf):
         # Reference values computed with mpmath with the following script
         #
         # import numpy as np
@@ -524,7 +510,7 @@ class TestNoncentralF:
         # of a CDF as they are not bijective in these regions
         if 0 < expected_cdf < 1:
             assert_allclose(sp.ncfdtri(dfn, dfd, nc, expected_cdf), f, rtol=5e-11)
-            assert_allclose(sp.ncfdtrinc(dfn, dfd, expected_cdf, f), nc, rtol=1e-10)
+            assert_allclose(sp.ncfdtrinc(dfn, dfd, expected_cdf, f), nc, rtol=5e-11)
 
     @pytest.mark.parametrize(
         "args",
@@ -546,6 +532,62 @@ class TestNoncentralF:
         # ncfdtrinc should return 0.
         p = sp.fdtr(dfn, dfd, f)
         assert_allclose(sp.ncfdtrinc(dfn, dfd, p, f), 0.0, atol=1e-10, rtol=0)
+
+    @pytest.mark.parametrize(
+        "dfn,dfd,nc,f,expected_cdf",
+        [[100.0, 0.1, 0.1, 100.0, 0.29787396410092676],
+        [100.0, 100.0, 0.01, 0.1, 4.4344737598690424e-26],
+        [100.0, 0.01, 0.1, 0.01, 0.002848616633080384],
+        [10.0, 0.01, 1.0, 0.1, 0.012339557729057956],
+        [100.0, 100.0, 0.01, 0.01, 1.8926477420964936e-72],
+        [1.0, 100.0, 100.0, 0.1, 1.7925940526821304e-22],
+        [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
+        ]
+    )
+    def test_ncfdtridfn_accuracy(self, dfn, dfd, nc, f, expected_cdf):
+        # test cases are taken from test_all, except the ones where
+        # the inverse with respect to dfn is ambiguous
+        assert_allclose(sp.ncfdtridfn(expected_cdf, dfd, nc, f), dfn, rtol=5e-12)
+
+    def test_ncfdtridfn_returns_nan_for_ambiguous_input(self):
+        # Ambiguous inputs for ncfdtridfn should return NaN
+        # example taken from Boost.Math tests for ambiguous input
+        assert np.isnan(sp.ncfdtridfn(.498458420116863580, 2, 1, 1.5))
+
+    @pytest.mark.parametrize(
+        "dfn,dfd,nc,f,expected_cdf",
+        [[10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
+        [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+        ]
+    )
+    def test_ncfdtridfd_accuracy(self, dfn, dfd, nc, f, expected_cdf):
+        # test cases are taken from test_all, except the ones where
+        # the inverse with respect to dfd is ambiguous
+        assert_allclose(sp.ncfdtridfd(dfn, expected_cdf, nc, f), dfd, rtol=5e-12)
+
+    @pytest.mark.parametrize(
+        "dfn, nc, f, expected_cdf",
+        [[100.0, 0.1, 100.0, 0.29787396410092676],
+         [1.0, 0.01, 0.01, 0.00021944525290299],
+        ]
+    )
+    def test_ncfdtridfd_returns_nan_for_ambiguous_input(
+            self, dfn, nc, f, expected_cdf):
+        # Ambiguous inputs for ncfdtridfd should return NaN
+        assert np.isnan(sp.ncfdtridfd(dfn, expected_cdf, nc, f))
+
+    def test_gh7695(self):
+        dfn = 5
+        dfd = 3
+        nc = 1.5
+        f = 1.25
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        # two possible solutions for dfn exist, so we return NaN
+        assert np.isnan(sp.ncfdtridfn(p, dfd, nc, f))
+        dfn = 2
+        dfd = 2
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        assert_allclose(sp.ncfdtridfd(dfn, p, nc, f), dfd, rtol=5e-12)
 
 
 class TestNoncentralTFunctions:
@@ -1042,3 +1084,21 @@ def test_nrdtrimn_edge_cases(p, std, x, ref):
 ])
 def test_nrdtrisd_edge_cases(mn, p, x, ref):
     assert_equal(sp.nrdtrisd(mn, p, x), ref)
+
+@pytest.mark.parametrize("dfn, dfd, x", [
+    (10, 5, 2),
+    (100, 50, 3),
+    (10, 5, 5)
+])
+def test_fdtr_fdtridfd_roundtrip(dfn, dfd, x):
+    cdf_value = sp.fdtr(dfn, dfd, x)
+    assert_allclose(sp.fdtridfd(dfn, cdf_value, x), dfd, rtol=1e-11)
+
+
+def test_fdtridfd_returns_nan_in_ambiguous_case():
+    # two possible dfd values for the given cdf_value and x, should return NaN
+    dfn = 6
+    dfd = 4
+    x = 0.5
+    cdf_value = sp.fdtr(dfn, dfd, x)
+    assert np.isnan(sp.fdtridfd(dfn, cdf_value, x))
