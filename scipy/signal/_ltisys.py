@@ -3276,7 +3276,13 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         try:
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
-            gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
+            rhs = np.dot(u0.T, m-A)
+            if z.shape[0] == z.shape[1]:
+                gain_matrix = np.linalg.solve(z, rhs)
+            else:
+                # With dependent input columns, choose the minimum-norm K
+                # solving Z @ K = rhs.
+                gain_matrix = np.linalg.lstsq(z, rhs, rcond=-1)[0]
         except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "

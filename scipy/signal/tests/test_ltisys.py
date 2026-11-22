@@ -222,6 +222,53 @@ class TestPlacePoles:
         assert fsf.rtol == 0
         assert fsf.nb_iter == 0
 
+    @pytest.mark.parametrize("method", ["YT", "KNV0"])
+    def test_rank_deficient_dependent_columns(self, method):
+        A = np.array([[0., 1., 0.],
+                      [0., 0., 1.],
+                      [1., 0., 0.]])
+        B = np.array([[1., 0., 1., 0.],
+                      [0., 1., 1., 1.],
+                      [0., 0., 0., 0.]])
+        P = np.array([-1., -2., -3.])
+
+        fsf = self._check(A, B, P, method=method)
+        assert fsf.gain_matrix.shape == (B.shape[1], A.shape[0])
+
+    def test_rank_deficient_complex_poles_yt(self):
+        A = np.array([[0., 1.],
+                      [1., 0.]])
+        B = np.array([[0., 0.],
+                      [1., 1.]])
+        P = np.array([-1.-1j, -1.+1j])
+
+        fsf = self._check(A, B, P, method="YT")
+        assert fsf.gain_matrix.shape == (B.shape[1], A.shape[0])
+
+    @pytest.mark.parametrize("method", ["YT", "KNV0"])
+    def test_nearly_rank_deficient_full_column_rank(self, method):
+        A = np.array([[0., 1., 0.],
+                      [0., 0., 1.],
+                      [1., 0., 0.]])
+        B = np.array([[1., 1.],
+                      [0., 1e-4],
+                      [0., 0.]])
+        P = np.array([-1., -2., -3.])
+
+        assert np.linalg.matrix_rank(B) == B.shape[1]
+        fsf = self._check(A, B, P, method=method)
+        assert fsf.gain_matrix.shape == (B.shape[1], A.shape[0])
+
+    def test_rank_deficient_B_issue_26785(self):
+        A = np.array([[0., 1.],
+                      [0., 0.]])
+        B = np.array([[0., 0.],
+                      [1., 1.]])
+        P = np.array([0., -1.])
+
+        fsf = self._check(A, B, P, method="YT")
+        assert fsf.gain_matrix.shape == (2, 2)
+
     def test_errors(self):
         # Test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
