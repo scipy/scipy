@@ -3349,6 +3349,41 @@ class TestInvgauss:
     def setup_method(self):
         self.rng = np.random.default_rng(5422839947)
 
+    def test_isf_far_tail(self):
+        # gh-26796: reference from high-precision inversion of the analytic
+        # survival probability, at the exact binary values of p and mu.
+        p = [1e-62, 1e-65, 1e-100, 1e-300, np.nextafter(0., 1.)]
+        ref = [98.12463456966217, 103.04590941153709, 160.59573030200382,
+               490.9658249797906, 529.5228148090168]
+        x = stats.invgauss.isf(p, 0.6)
+        assert_allclose(x, ref, rtol=4e-13)
+        assert np.all(np.diff(x) > 0)
+
+    @pytest.mark.parametrize("q, mu, ref", [
+        (1e-80, 0.01, 0.0539832191483780394),
+        (1e-180, 1e-6, 1.02905489536370496e-6),
+        (1e-300, 1e-9, 1.00117221799394442e-9),
+        (1e-200, 1e6, 872630051883973.6545),
+        (1e-16, 1e20, 6.364924715603815e31),
+        (1e-155, 1e150, 1.42552713569514623e301),
+        (1e-300, 1e150, 6.70789679796613108e302),
+        (1e-90, np.inf, 6.3661977236758135e179),
+        (1e-155, np.inf, np.inf),
+    ])
+    def test_isf_far_tail_shapes(self, q, mu, ref):
+        assert_allclose(stats.invgauss.isf(q, mu), ref, rtol=4e-13, atol=0)
+
+    def test_isf_far_tail_mixed(self):
+        # Exercise broadcasting, ordinary Boost probabilities, and the
+        # separate loc/scale transformation with tail and non-tail elements.
+        q = np.array([0.25, 1e-300])
+        mu = np.array([[0.6], [1.]])
+        x = stats.invgauss.isf(q, mu, loc=3., scale=2.)
+        expected = [[stats.invgauss.isf(0.25, 0.6), 490.9658249797906],
+                    [stats.invgauss.isf(0.25, 1.), 1361.4454371385302]]
+        assert_allclose(x, 3 + 2*np.asarray(expected), rtol=4e-13)
+        assert_allclose(stats.wald.isf(q[1]), expected[1][1], rtol=4e-13)
+
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (4.635, 4.362, 6.303)])
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):

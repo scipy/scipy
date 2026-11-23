@@ -5083,7 +5083,8 @@ class invgauss_gen(rv_continuous):
     ``loc = 0``, and ``scale = lam``.
 
     This distribution uses routines from the Boost Math C++ library for
-    the computation of the ``ppf`` and ``isf`` methods. [1]_
+    the computation of the ``ppf`` and ``isf`` methods. [1]_ Very small
+    survival probabilities are inverted in the log domain.
 
     References
     ----------
@@ -5140,13 +5141,82 @@ class invgauss_gen(rv_continuous):
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
 
+    @staticmethod
+    def _isf_log_tail(x, mu):
+        # For b = a + 2/sqrt(x), b**2 - a**2 = 4/mu. Factor out the
+        # shared Gaussian exponential before subtracting the two terms.
+        out = np.zeros_like(x)
+        positive = x > 0
+        if not np.any(positive):
+            return out
+        x, mu = x[positive], mu[positive]
+        t = np.sqrt(x)
+        a = np.where(np.isinf(mu), -1, (x-mu)/mu)/t
+        m = t/mu
+        h = 2/t
+        # For a < -5, the survival probability is > 0.99, well above
+        # any target in this solver. Avoid exponentiating a large negative a.
+        useful = a >= -5
+        a, m, h = a[useful], m[useful], h[useful]
+        diff = np.empty_like(a)
+        small = h <= 1e-3
+        reg = ~small
+        diff[reg] = (sc.erfcx(a[reg]/np.sqrt(2))
+                     - sc.erfcx((m[reg] + h[reg]/2)/np.sqrt(2))) / 2
+        # When h is small, subtracting almost equal erfcx evaluations loses
+        # precision. With r(t) = sqrt(pi/2)*erfcx(t/sqrt(2)), use the
+        # midpoint expansion r(m-h/2) - r(m+h/2) through O(h**3).
+        z, dh = m[small], h[small]
+        zr = z * np.sqrt(np.pi/2) * sc.erfcx(z/np.sqrt(2))
+        third = (z*z + 3)*zr - (z*z + 2)
+        diff[small] = dh * (1 - zr - dh**2*third/24) / np.sqrt(2*np.pi)
+        value = np.zeros_like(t)
+        value[useful] = np.maximum(np.log(diff) - 0.5*a*a, -np.finfo(float).max)
+        out[positive] = value
+        return out
+
+    def _isf_tail(self, p, mu):
+        logp = np.log(p)
+        # S(x) <= Phi(-a), so exp(-a**2/2) <= p gives an upper
+        # bracket. S(x) is also bounded by the Levy survival function
+        # (the no-drift hitting time), which is <= sqrt(2/(pi*x)).
+        r = np.sqrt(mu)
+        ar = np.sqrt(-2*logp)*r
+        upper = np.nextafter((r*(ar + np.hypot(ar, 2))/2)**2, np.inf)
+        # Widen the Levy bound to leave room for rounding in log survival.
+        upper = np.minimum(upper, 2*(_SQRT_2_OVER_PI/p)**2)
+        upper = np.minimum(upper, np.finfo(float).max)
+        result = np.full_like(upper, np.inf)
+        finite = self._isf_log_tail(upper, mu) <= logp
+        if np.any(finite):
+            # Normalize the bracket to avoid absolute stopping tolerances
+            # on near-subnormal or very large quantiles.
+            def residual(t, upper, mu, logp):
+                return self._isf_log_tail(t*upper, mu) - logp
+
+            upper, mu, logp = upper[finite], mu[finite], logp[finite]
+            sol = optimize.elementwise.find_root(
+                residual, (np.zeros_like(upper), np.ones_like(upper)),
+                args=(upper, mu, logp))
+            result[finite] = np.where(sol.success, upper*sol.x, np.nan)
+        return result
+
     def _isf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            isf = scu._invgauss_isf(x, mu, 1)
+            # Do not call the Boost solver once complementing x starts
+            # losing essentially all relative accuracy. That solver can
+            # return a finite unconverged guess here rather than NaN.
+            tail = x < np.finfo(float).eps
+            if np.any(tail):
+                isf = np.empty_like(x, dtype=np.float64)
+                isf[tail] = self._isf_tail(x[tail], mu[tail])
+                isf[~tail] = scu._invgauss_isf(x[~tail], mu[~tail], 1)
+            else:
+                isf = scu._invgauss_isf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             isf[i_wt] = scu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
-            i_nan = np.isnan(isf)
+            i_nan = np.isnan(isf) & ~tail
             isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
 
