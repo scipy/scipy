@@ -777,7 +777,7 @@ def make_lsq_ndbspline(
 
 
 def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
-    """Construct an interpolating NdBspline.
+    r"""Construct an interpolating NdBspline.
 
     Parameters
     ----------
@@ -790,16 +790,15 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
     k : int, optional
         The spline degree. Must be positive. Default is cubic, k=3
     solver : a `scipy.sparse.linalg` solver (iterative or direct), optional.
-        An iterative solver from `scipy.sparse.linalg` or a direct one,
-        `scipy.sparse.linalg.spsolve`.
-        If given, it is used to solve the sparse linear system
-        ``design_matrix @ coefficients = rhs`` for the coefficients.
-        Default is None: no sparse system is assembled and the coefficients
-        are computed with one banded solve per dimension.
+        By default, the coefficients are computed with a separable solver,
+        see Notes. If given, the full sparse linear system
+        ``design_matrix @ coefficients = rhs`` is assembled and solved with
+        `solver`, either an iterative solver from `scipy.sparse.linalg` or the
+        direct solver `scipy.sparse.linalg.spsolve`.
     solver_args : dict, optional
         Additional arguments for the solver. The call signature is
         ``solver(csr_array, rhs_vector, **solver_args)``.
-        If given without `solver`, `scipy.sparse.linalg.gcrotmk` is used.
+        Only allowed if `solver` is given.
 
     Returns
     -------
@@ -808,6 +807,39 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
     Notes
     -----
     Boundary conditions are not-a-knot in all dimensions.
+
+    Let :math:`A_d` be the collocation matrix in dimension :math:`d`, with
+    :math:`(A_d)_{ri}` the value of the :math:`i`-th B-spline at the
+    :math:`r`-th grid point ``points[d][r]``. The interpolation conditions on
+    the grid are
+
+    .. math::
+
+        (A_1 \otimes A_2 \otimes \cdots \otimes A_N) \, \mathrm{vec}(c)
+        = \mathrm{vec}(v),
+
+    where :math:`\otimes` is the Kronecker product and :math:`\mathrm{vec}`
+    ravels the coefficients :math:`c` and the `values` :math:`v` in C order.
+    The inverse of a Kronecker product is the Kronecker product of the
+    inverses, so :math:`c` is obtained by applying :math:`A_d^{-1}` along each
+    axis :math:`d` in turn, in any order. This is the Lemma on p. 174 of [1]_.
+    Each step is a one-dimensional interpolation problem with a banded matrix,
+    solved by `make_interp_spline` for all grid lines along that axis at once.
+    The result is exact up to rounding, and the full design matrix is never
+    assembled. A step-by-step derivation is in
+    https://github.com/scipy/scipy/issues/26427.
+
+    .. versionchanged:: 2.0.0
+        The separable solver is the default. Previously, the default was
+        `scipy.sparse.linalg.gcrotmk`, which only solves the system up to its
+        tolerance, and `solver_args` given without `solver` were passed to
+        it. Now passing `solver_args` without `solver` raises a `TypeError`.
+
+    References
+    ----------
+    .. [1] C. de Boor, "Efficient Computer Manipulation of Tensor Products",
+           ACM Trans. Math. Softw., 5(2), pp. 173-182, 1979.
+           :doi:`10.1145/355826.355831`
     """
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
@@ -828,7 +860,13 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))
 
-    if solver is None and not solver_args:
+    if solver is None:
+        if solver_args:
+            raise TypeError(
+                f"Got solver arguments {sorted(solver_args)} without a "
+                "`solver`. Pass a `scipy.sparse.linalg` solver as well."
+            )
+
         # With the 1D collocation matrices A_d[r, i] = B(x_d[r]; i, t_d), the
         # interpolation conditions on the grid are
         #
@@ -847,8 +885,6 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
             c = make_interp_spline(points[d], c, k=k[d], t=t[d], axis=d).c
             c = np.moveaxis(c, 0, d)
         return NdBSpline(t, c, k)
-    elif solver is None:
-        solver = ssl.gcrotmk
 
     xvals = np.asarray([xv for xv in itertools.product(*points)], dtype=float)
 

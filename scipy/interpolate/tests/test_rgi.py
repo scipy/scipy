@@ -19,7 +19,7 @@ from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
 from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import gcrotmk, spsolve
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -814,12 +814,15 @@ class TestRegularGridInterpolator:
                                          solver=spsolve)
         xp_assert_close(default(xi), direct(xi), atol=1e-11)
 
-        # `solver_args` are still passed on without a `solver`
         iterative = RegularGridInterpolator(
-            points, values, method=method,
+            points, values, method=method, solver=gcrotmk,
             solver_args={"rtol": 1e-12, "atol": 1e-14, "maxiter": 10000}
         )
         xp_assert_close(default(xi), iterative(xi), atol=1e-8)
+
+        with assert_raises(TypeError, match="rtol"):
+            RegularGridInterpolator(points, values, method=method,
+                                    solver_args={"rtol": 1e-12})
 
     @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
     def test_spline_methods_override(self, method):

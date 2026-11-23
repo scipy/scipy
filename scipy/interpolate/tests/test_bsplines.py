@@ -4513,10 +4513,11 @@ class TestMakeND:
         x, y, z = self._get_sample_2d_data()
         solver_args = {'maxiter': 1}
         with assert_raises(ValueError, match='solver'):
-            make_ndbspl((x, y), z, k=3, **solver_args)
+            make_ndbspl((x, y), z, k=3, solver=ssl.gcrotmk, **solver_args)
 
         with assert_raises(ValueError, match='solver'):
-            make_ndbspl((x, y), np.dstack((z, z)), k=3, **solver_args)
+            make_ndbspl((x, y), np.dstack((z, z)), k=3, solver=ssl.gcrotmk,
+                        **solver_args)
 
     def _get_nonuniform_grid(self, shape, seed=1234):
         rng = np.random.default_rng(seed)
@@ -4640,19 +4641,10 @@ class TestMakeND:
         make_ndbspl(points, values, k=3, solver=solver, maxiter=1000)
         assert calls == [((42, 42), {'maxiter': 1000, 'atol': 1e-6})]
 
-    def test_solver_args_without_solver(self):
-        # `solver_args` alone keep selecting `gcrotmk`
+    def test_solver_args_need_solver(self):
         points, values = self._get_nonuniform_grid((8, 9))
-        spl = make_ndbspl(points, values, k=3, rtol=1e-3, atol=0)
-        expected = make_ndbspl(points, values, k=3, solver=ssl.gcrotmk,
-                               rtol=1e-3, atol=0)
-        # not bitwise: two runs differ by rounding with some BLAS
-        xp_assert_close(spl.c, expected.c, rtol=1e-12)
-        separable = make_ndbspl(points, values, k=3)
-        assert not np.allclose(separable.c, expected.c, rtol=1e-12, atol=0)
-
-        with assert_raises(TypeError, match="woof"):
-            make_ndbspl(points, values, k=3, woof=42)
+        with assert_raises(TypeError, match="rtol"):
+            make_ndbspl(points, values, k=3, rtol=1e-3)
 
     def test_quintic_random_grid(self):
         # gcrotmk does not converge here within its default `maxiter`
