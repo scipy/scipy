@@ -972,8 +972,9 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    // Get y0 array
-    ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
+    // LSODA updates y in place; keep the input and previous results unchanged.
+    ap_y = (PyArrayObject *) PyArray_FROMANY(y0, NPY_DOUBLE, 0, 0,
+                                            NPY_ARRAY_ENSURECOPY | NPY_ARRAY_CARRAY);
     if (ap_y == NULL) {
         goto fail;
     }

@@ -40,6 +40,18 @@ def test_lsoda_does_not_leak_work_arrays():
     assert sys.getrefcount(rwork) == rwork_refcount
     assert sys.getrefcount(iwork) == iwork_refcount
 
+
+def test_lsoda_keeps_previous_step():
+    # gh-26794
+    solver = ode(lambda t, y: -y).set_integrator('lsoda')
+    solver.set_initial_value([1.0], 0.0)
+    first = solver.integrate(1.0)
+    second = solver.integrate(2.0)
+
+    assert_allclose(first, [exp(-1)], rtol=1e-5)
+    assert_allclose(second, [exp(-2)], rtol=1e-5)
+    assert not np.shares_memory(first, second)
+
 #------------------------------------------------------------------------------
 # Test ODE integrators
 #------------------------------------------------------------------------------
