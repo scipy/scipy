@@ -4,14 +4,21 @@ from scipy.sparse import block_array, csc_array, eye_array, issparse
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
+
 try:
-    from sksparse.cholmod import cholesky_AAt, CholmodTypeConversionWarning
-    sksparse_available = True
+    from sksparse import cholmod
+    cholmod_available = True
 except ImportError:
-    import warnings
-    sksparse_available = False
+    cholmod_available = False
+
+try:
+    from sksparse.umfpack import UMFPACKSingularMatrixWarning
+    umfpack_available = True
+except ImportError:
+    umfpack_available = False
+
 import numpy as np
-from warnings import warn, catch_warnings
+import warnings
 
 __all__ = [
     'orthogonality',
@@ -58,15 +65,11 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization
-    # TODO: revert this once the warning bug fix in sksparse is merged/released
-    # Add suppression of spurious warning bug from sksparse with csc_array gh-22089
-    # factor = cholesky_AAt(A)
-    with catch_warnings(action='ignore', category=CholmodTypeConversionWarning):
-        factor = cholesky_AAt(A)
+    factor = cholmod.cho_factor(A, sym_kind="row")
 
     # z = x - A.T inv(A A.T) A x
     def null_space(x):
-        v = factor(A.dot(x))
+        v = factor.solve(A.dot(x))
         z = x - A.T.dot(v)
 
         # Iterative refinement to improve roundoff
@@ -76,7 +79,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
             if k >= max_refin:
                 break
             # z_next = z - A.T inv(A A.T) A z
-            v = factor(A.dot(z))
+            v = factor.solve(A.dot(z))
             z = z - A.T.dot(v)
             k += 1
 
@@ -84,11 +87,11 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
 
     # z = inv(A A.T) A x
     def least_squares(x):
-        return factor(A.dot(x))
+        return factor.solve(A.dot(x))
 
     # z = A.T inv(A A.T) x
     def row_space(x):
-        return A.T.dot(factor(x))
+        return A.T.dot(factor.solve(x))
 
     return null_space, least_squares, row_space
 
@@ -101,10 +104,15 @@ def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     # TODO: Use a symmetric indefinite factorization
     #       to solve the system twice as fast (because
     #       of the symmetry).
+
+    warning_categories = (UMFPACKSingularMatrixWarning) if umfpack_available else ()
+
     try:
-        solve = scipy.sparse.linalg.factorized(K)
-    except RuntimeError:
-        warn("Singular Jacobian matrix. Using dense SVD decomposition to "
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=warning_categories)
+            solve = scipy.sparse.linalg.factorized(K)
+    except (RuntimeError, *warning_categories):
+        warnings.warn("Singular Jacobian matrix. Using dense SVD decomposition to "
              "perform the factorizations.",
              stacklevel=3)
         return svd_factorization_projections(A.toarray(),
@@ -183,7 +191,7 @@ def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
     Q, R, P = scipy.linalg.qr(A.T, pivoting=True, mode='economic')
 
     if np.linalg.norm(R[-1, :], np.inf) < tol:
-        warn('Singular Jacobian matrix. Using SVD decomposition to ' +
+        warnings.warn('Singular Jacobian matrix. Using SVD decomposition to ' +
              'perform the factorizations.',
              stacklevel=3)
         return svd_factorization_projections(A, m, n,
@@ -379,9 +387,9 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
             method = "AugmentedSystem"
         if method not in ("NormalEquation", "AugmentedSystem"):
             raise ValueError("Method not allowed for sparse array.")
-        if method == "NormalEquation" and not sksparse_available:
+        if method == "NormalEquation" and not cholmod_available:
             warnings.warn("Only accepts 'NormalEquation' option when "
-                          "scikit-sparse is available. Using "
+                          "scikit-sparse cholmod is available. Using "
                           "'AugmentedSystem' option instead.",
                           ImportWarning, stacklevel=3)
             method = 'AugmentedSystem'
