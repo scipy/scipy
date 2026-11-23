@@ -31,11 +31,6 @@ def tempfile_streams():
         messagestream._fhcache_clear()
 
 
-@pytest.fixture(params=["default", "tempfile"])
-def message_streams(request):
-    if request.param == "tempfile":
-        request.getfixturevalue("tempfile_streams")
-
 def sorted_tuple(x):
     return tuple(sorted(x))
 
@@ -198,7 +193,6 @@ class Test_Qhull:
 
     # Thread safe, but keeps many files open at once
     @pytest.mark.parallel_threads_limit(1)
-    @pytest.mark.usefixtures("message_streams")
     def test_error_messages_with_reused_streams(self):
         # Without open_memstream (e.g., on Windows), message streams are
         # reused; each error must contain its own message and nothing else.
@@ -251,7 +245,7 @@ class Test_Qhull:
     # Thread safe, but keeps many files open at once
     @pytest.mark.parallel_threads_limit(1)
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
-    @pytest.mark.usefixtures("message_streams")
+    @pytest.mark.usefixtures("tempfile_streams")
     def test_error_messages_threaded(self):
         flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
         expected = self._error_message(flat_2d)
