@@ -303,6 +303,10 @@ def expm(A):
         a = a.astype(np.float64)
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
+    elif a.dtype.char == 'G':
+        a = a.astype(np.complex128)
+    elif a.dtype.char == 'g':
+        a = a.astype(np.float64)
     a, _ = _ensure_aligned_and_native(a, False)
 
     # An explicit formula for 2x2 case exists (formula (2.2) in [1]_). However, without

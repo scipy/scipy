@@ -15,24 +15,23 @@ inline void solve_slice_general(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_(data, (npy_intp)N);
 
     lapack::getrf(N, N, data, N, ipiv, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
-        // getrf success, check the condition number
+        // getrf success, check the condition number. For an infinite or NaN anorm, gecon
+        // returns info = -5 with rcond = 0 or NaN, which flags the slice; the solve still runs.
         lapack::gecon(norm, N, data, N, anorm, &rcond, work, irwork, &info);
 
         status.rcond = (double)rcond;
-        if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
+        status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
-            // finally, solve
-            lapack::getrs(trans, N, NRHS, data, N, ipiv, b_data, N, &info);
-            status.is_singular = (info > 0);
-        }
+        // finally, solve
+        lapack::getrs(trans, N, NRHS, data, N, ipiv, b_data, N, &info);
+        if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
     }
     else if (info > 0) {
         // trf detected singularity
@@ -51,7 +50,7 @@ inline void solve_slice_triangular(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
 
     lapack::trtrs(uplo, trans, diag, N, NRHS, data, N, b_data, N, &info);
 
@@ -77,7 +76,7 @@ inline void solve_slice_cholesky(
     using real_type = real_of_t<T>;
 
     CBLAS_INT info = 0;
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     lapack::potrf(uplo, N, data, N, &info);
@@ -93,7 +92,7 @@ inline void solve_slice_cholesky(
 
             // finally, solve
             lapack::potrs(uplo, N, NRHS, data, N, b_data, N, &info);
-            status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -113,7 +112,7 @@ void solve_slice_sym_herm(
     using real_type = real_of_t<T>;
 
     CBLAS_INT info = 0;
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     if constexpr (!is_complex_v<T>) {
@@ -154,7 +153,7 @@ void solve_slice_sym_herm(
                 }
             }
 
-            status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -184,7 +183,7 @@ void solve_slice_tridiag(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_tridiag(dl, d, du, work2, (npy_intp)N);
 
     lapack::gttrf(N, dl, d, du, du2, ipiv, &info);
@@ -204,7 +203,7 @@ void solve_slice_tridiag(
 
             // finally, solve
             lapack::gttrs(trans, N, NRHS, dl, d, du, du2, ipiv, b_data, N, &info);
-            status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -225,7 +224,7 @@ inline void solve_slice_banded(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_banded(ab, kl, ku, work2, N);
 
     lapack::gbtrf(N, N, kl, ku, ab, ldab, ipiv, &info);
@@ -240,7 +239,7 @@ inline void solve_slice_banded(
 
             // finally, solve
             lapack::gbtrs(trans, N, kl, ku, NRHS, ab, ldab, ipiv, b_data, N, &info);
-            status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -566,6 +565,13 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, const St 
             }
         }
 
+        // potrs and hetrs have no transposed mode, and A^T = conj(A) != A for complex Hermitian A
+        if constexpr (is_complex_v<T>) {
+            if ((trans != 'N') && ((slice_structure == St::POS_DEF) || (slice_structure == St::HER))) {
+                slice_structure = St::GENERAL;
+            }
+        }
+
         init_status(slice_status, idx, slice_structure);
 
         switch(slice_structure) {
@@ -600,7 +606,12 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_x, const St 
             {
                 solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork.get(), slice_status);
 
-                if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
+                if (slice_status.lapack_info < 0) {
+                    // an argument error, which no fallback can fix
+                    vec_status.push_back(slice_status);
+                    return {};
+                }
+                if (!slice_status.is_singular) {
                     // success (maybe ill-conditioned)
                     if(slice_status.is_ill_conditioned) {
                         vec_status.push_back(slice_status);

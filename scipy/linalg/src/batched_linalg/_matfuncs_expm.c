@@ -1,4 +1,5 @@
 #include "_common_array_utils.h"
+#include <float.h>
 #include "_linalg_bandwidth.h"
 
 static float snorm1(float*, const Py_ssize_t);
@@ -213,7 +214,8 @@ static void
 pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    int lm = 0;
+    int s_norm, fallback;
+    float ell;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     const npy_intp nn = (npy_intp)n * n;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
@@ -277,9 +279,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
-    if ((eta0 < theta[0]) && lm == 0)
+    // ell(m) of Al-Mohy and Higham is zero exactly when this ratio is at most 1; an
+    // overflowed |A| spin (inf or NaN) moves on to the next order
+    if ((eta0 < theta[0]) && (temp/normA/coeff[0] <= 1.0))
     {
         *m = 3;
         return;
@@ -296,10 +298,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta1 < theta[1]) && lm == 0)
+    if ((eta1 < theta[1]) && (temp/normA/coeff[1] <= 1.0))
     {
         *m = 5;
         return;
@@ -329,10 +328,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[2]) && lm == 0)
+    if ((eta2 < theta[2]) && (temp/normA/coeff[2] <= 1.0))
     {
         *m = 7;
         return;
@@ -349,10 +345,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[3]) && lm == 0)
+    if ((eta2 < theta[3]) && (temp/normA/coeff[3] <= 1.0))
     {
         if (n >= 400) {
             BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
@@ -377,8 +370,19 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmaxf(d8, d10);
     eta4 = fminf(eta2, eta3);
-    *s = (int)ceilf(log2f(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    // normA is the 1-norm of A, which bounds every eta, so s_norm squarings always suffice
+    if (normA <= theta[4])      { s_norm = 0; }
+    else if (normA <= FLT_MAX)  { s_norm = (int)ceilf(log2f(normA / theta[4])); }
+    else
+    {
+        // the column sums overflowed, or A has an inf entry; only the former needs scaling
+        s_norm = 0;
+        for (i = 0; i < nn; i++) { if (!(absA[i] <= FLT_MAX)) { break; } }
+        if (i == nn) { s_norm = FLT_MAX_EXP + (int)ceilf(log2f((float)n)); }
+    }
+    // eta4 is inf or NaN when a power of A overflowed or A is not finite
+    fallback = !(eta4 <= FLT_MAX);
+    *s = (fallback || eta4 <= theta[4]) ? 0 : (int)ceilf(log2f(eta4 / theta[4]));
 
     if (*s != 0)
     {
@@ -400,8 +404,14 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    ell = ceilf(log2f(temp/normA/coeff[4])/26.0);
+    if (fallback || !(ell <= FLT_MAX)) {
+        // eta4 or ell is inf or NaN: scale by the 1-norm instead
+        fallback = 1;
+        *s = (s_norm > 0) ? s_norm : 0;
+    } else if (ell > 0) {
+        *s += (int)ell;
+    }
     *m = 13;
 
     if (*s != 0)
@@ -422,6 +432,14 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
+    if (fallback)
+    {
+        // the stored powers may have overflowed; form them again from the scaled A
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*nn], &n, &Am[0*nn], &n, &dbl0, &Am[1*nn], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*nn], &n, &Am[1*nn], &n, &dbl0, &Am[2*nn], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[1*nn], &n, &dbl0, &Am[3*nn], &n);
+    }
+
     return;
 }
 
@@ -430,7 +448,8 @@ static void
 pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    int lm = 0;
+    int s_norm, fallback;
+    double ell;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     const npy_intp nn = (npy_intp)n * n;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
@@ -494,9 +513,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
-    if ((eta0 < theta[0]) && lm == 0)
+    // ell(m) of Al-Mohy and Higham is zero exactly when this ratio is at most 1; an
+    // overflowed |A| spin (inf or NaN) moves on to the next order
+    if ((eta0 < theta[0]) && (temp/normA/coeff[0] <= 1.0))
     {
         *m = 3;
         return;
@@ -513,10 +532,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta1 < theta[1]) && lm == 0)
+    if ((eta1 < theta[1]) && (temp/normA/coeff[1] <= 1.0))
     {
         *m = 5;
         return;
@@ -546,10 +562,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[2]) && lm == 0)
+    if ((eta2 < theta[2]) && (temp/normA/coeff[2] <= 1.0))
     {
         *m = 7;
         return;
@@ -566,10 +579,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[3]) && lm == 0)
+    if ((eta2 < theta[3]) && (temp/normA/coeff[3] <= 1.0))
     {
         if (n >= 400) {
             BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[2*nn], &n, &dbl0, &Am[4*nn], &n);
@@ -594,8 +604,19 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmax(d8, d10);
     eta4 = fmin(eta2, eta3);
-    *s = (int)ceil(log2(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    // normA is the 1-norm of A, which bounds every eta, so s_norm squarings always suffice
+    if (normA <= theta[4])      { s_norm = 0; }
+    else if (normA <= DBL_MAX)  { s_norm = (int)ceil(log2(normA / theta[4])); }
+    else
+    {
+        // the column sums overflowed, or A has an inf entry; only the former needs scaling
+        s_norm = 0;
+        for (i = 0; i < nn; i++) { if (!(absA[i] <= DBL_MAX)) { break; } }
+        if (i == nn) { s_norm = DBL_MAX_EXP + (int)ceil(log2((double)n)); }
+    }
+    // eta4 is inf or NaN when a power of A overflowed or A is not finite
+    fallback = !(eta4 <= DBL_MAX);
+    *s = (fallback || eta4 <= theta[4]) ? 0 : (int)ceil(log2(eta4 / theta[4]));
 
     if (*s != 0)
     {
@@ -617,8 +638,14 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    ell = ceil(log2(temp/normA/coeff[4])/26.0);
+    if (fallback || !(ell <= DBL_MAX)) {
+        // eta4 or ell is inf or NaN: scale by the 1-norm instead
+        fallback = 1;
+        *s = (s_norm > 0) ? s_norm : 0;
+    } else if (ell > 0) {
+        *s += (int)ell;
+    }
     *m = 13;
 
     if (*s != 0)
@@ -639,6 +666,14 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
+    if (fallback)
+    {
+        // the stored powers may have overflowed; form them again from the scaled A
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[0*nn], &n, &Am[0*nn], &n, &dbl0, &Am[1*nn], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[1*nn], &n, &Am[1*nn], &n, &dbl0, &Am[2*nn], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, &Am[1*nn], &n, &dbl0, &Am[3*nn], &n);
+    }
+
     return;
 }
 
@@ -647,7 +682,8 @@ static void
 pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    int lm = 0;
+    int s_norm, fallback;
+    float ell;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     const npy_intp nn = (npy_intp)n * n;
     float normA;
@@ -714,9 +750,9 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
-    if ((eta0 < theta[0]) && lm == 0)
+    // ell(m) of Al-Mohy and Higham is zero exactly when this ratio is at most 1; an
+    // overflowed |A| spin (inf or NaN) moves on to the next order
+    if ((eta0 < theta[0]) && (temp/normA/coeff[0] <= 1.0))
     {
         *m = 3;
         return;
@@ -733,10 +769,7 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta1 < theta[1]) && lm == 0)
+    if ((eta1 < theta[1]) && (temp/normA/coeff[1] <= 1.0))
     {
         *m = 5;
         return;
@@ -766,10 +799,7 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[2]) && lm == 0)
+    if ((eta2 < theta[2]) && (temp/normA/coeff[2] <= 1.0))
     {
         *m = 7;
         return;
@@ -786,10 +816,7 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[3]) && lm == 0)
+    if ((eta2 < theta[3]) && (temp/normA/coeff[3] <= 1.0))
     {
         if (n >= 400) {
             BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[2*nn], &n, &cdbl0, &Am[4*nn], &n);
@@ -814,8 +841,19 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmaxf(d8, d10);
     eta4 = fminf(eta2, eta3);
-    *s = (int)ceilf(log2f(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    // normA is the 1-norm of A, which bounds every eta, so s_norm squarings always suffice
+    if (normA <= theta[4])      { s_norm = 0; }
+    else if (normA <= FLT_MAX)  { s_norm = (int)ceilf(log2f(normA / theta[4])); }
+    else
+    {
+        // the column sums overflowed, or A has an inf entry; only the former needs scaling
+        s_norm = 0;
+        for (i = 0; i < nn; i++) { if (!(absA[i] <= FLT_MAX)) { break; } }
+        if (i == nn) { s_norm = FLT_MAX_EXP + (int)ceilf(log2f((float)n)); }
+    }
+    // eta4 is inf or NaN when a power of A overflowed or A is not finite
+    fallback = !(eta4 <= FLT_MAX);
+    *s = (fallback || eta4 <= theta[4]) ? 0 : (int)ceilf(log2f(eta4 / theta[4]));
 
     if (*s != 0)
     {
@@ -837,8 +875,14 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    ell = ceilf(log2f(temp/normA/coeff[4])/26.0);
+    if (fallback || !(ell <= FLT_MAX)) {
+        // eta4 or ell is inf or NaN: scale by the 1-norm instead
+        fallback = 1;
+        *s = (s_norm > 0) ? s_norm : 0;
+    } else if (ell > 0) {
+        *s += (int)ell;
+    }
     *m = 13;
 
     if (*s != 0)
@@ -866,6 +910,14 @@ pick_pade_structure_c(scipy_c64* Am, const Py_ssize_t size_n, int* m, int* s)
         }
     }
 
+    if (fallback)
+    {
+        // the stored powers may have overflowed; form them again from the scaled A
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*nn], &n, &Am[0*nn], &n, &cdbl0, &Am[1*nn], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[2*nn], &n);
+        BLAS_FUNC(cgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[3*nn], &n);
+    }
+
     return;
 }
 
@@ -874,7 +926,8 @@ static void
 pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
-    int lm = 0;
+    int s_norm, fallback;
+    double ell;
     CBLAS_INT int1 = 1, n = (CBLAS_INT)size_n;
     const npy_intp nn = (npy_intp)n * n;
     double normA;
@@ -941,9 +994,9 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
-    if ((eta0 < theta[0]) && lm == 0)
+    // ell(m) of Al-Mohy and Higham is zero exactly when this ratio is at most 1; an
+    // overflowed |A| spin (inf or NaN) moves on to the next order
+    if ((eta0 < theta[0]) && (temp/normA/coeff[0] <= 1.0))
     {
         *m = 3;
         return;
@@ -960,10 +1013,7 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta1 < theta[1]) && lm == 0)
+    if ((eta1 < theta[1]) && (temp/normA/coeff[1] <= 1.0))
     {
         *m = 5;
         return;
@@ -993,10 +1043,7 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[2]) && lm == 0)
+    if ((eta2 < theta[2]) && (temp/normA/coeff[2] <= 1.0))
     {
         *m = 7;
         return;
@@ -1013,10 +1060,7 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
-
-    if ((eta2 < theta[3]) && lm == 0)
+    if ((eta2 < theta[3]) && (temp/normA/coeff[3] <= 1.0))
     {
         // Add the deferred matmul for m=9
         if (n >= 400)
@@ -1043,8 +1087,19 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmax(d8, d10);
     eta4 = fmin(eta2, eta3);
-    *s = (int)ceil(log2(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    // normA is the 1-norm of A, which bounds every eta, so s_norm squarings always suffice
+    if (normA <= theta[4])      { s_norm = 0; }
+    else if (normA <= DBL_MAX)  { s_norm = (int)ceil(log2(normA / theta[4])); }
+    else
+    {
+        // the column sums overflowed, or A has an inf entry; only the former needs scaling
+        s_norm = 0;
+        for (i = 0; i < nn; i++) { if (!(absA[i] <= DBL_MAX)) { break; } }
+        if (i == nn) { s_norm = DBL_MAX_EXP + (int)ceil(log2((double)n)); }
+    }
+    // eta4 is inf or NaN when a power of A overflowed or A is not finite
+    fallback = !(eta4 <= DBL_MAX);
+    *s = (fallback || eta4 <= theta[4]) ? 0 : (int)ceil(log2(eta4 / theta[4]));
 
     if (*s != 0)
     {
@@ -1066,8 +1121,14 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    ell = ceil(log2(temp/normA/coeff[4])/26.0);
+    if (fallback || !(ell <= DBL_MAX)) {
+        // eta4 or ell is inf or NaN: scale by the 1-norm instead
+        fallback = 1;
+        *s = (s_norm > 0) ? s_norm : 0;
+    } else if (ell > 0) {
+        *s += (int)ell;
+    }
     *m = 13;
 
     if (*s != 0)
@@ -1093,6 +1154,14 @@ pick_pade_structure_z(scipy_c128* Am, const Py_ssize_t size_n, int* m, int* s)
 #endif
             }
         }
+    }
+
+    if (fallback)
+    {
+        // the stored powers may have overflowed; form them again from the scaled A
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[0*nn], &n, &Am[0*nn], &n, &cdbl0, &Am[1*nn], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[1*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[2*nn], &n);
+        BLAS_FUNC(zgemm)("N", "N", &n, &n, &n, &cdbl1, &Am[2*nn], &n, &Am[1*nn], &n, &cdbl0, &Am[3*nn], &n);
     }
 
     return;
@@ -1297,7 +1366,7 @@ pade_UV_calc_s(float* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t si
 
         // U = K @ (L @ M + N)
         BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*nn], &n, &dbl1, &Am[2*nn], &n);
-        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl1, &Am[3*nn], &n);
+        BLAS_FUNC(sgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     }
 
@@ -1517,7 +1586,7 @@ pade_UV_calc_d(double* restrict Am, CBLAS_INT* restrict ipiv, const Py_ssize_t s
 
         // U = K @ (L @ M + N)
         BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, work, &n, &Am[3*nn], &n, &dbl1, &Am[2*nn], &n);
-        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl1, &Am[3*nn], &n);
+        BLAS_FUNC(dgemm)("N", "N", &n, &n, &n, &dbl1, &Am[2*nn], &n, Am, &n, &dbl0, &Am[3*nn], &n);
 
     }
 
@@ -2327,7 +2396,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
                             float d_i = diag_aw[i] * scale;
                             float d_ip1 = diag_aw[i + 1] * scale;
                             float diff = d_ip1 - d_i;
-                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : (expf(d_ip1) - expf(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / diff without cancellation, anchored at the larger exponent
+                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : expf(fmaxf(d_i, d_ip1)) * -expm1f(-fabsf(diff)) / fabsf(diff);
                             temp1[i * n + i] = expf(d_i);                       // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
                         }
@@ -2340,7 +2410,8 @@ matrix_exponential_s(PyArrayObject* a, float* restrict result, CBLAS_INT* info)
                             float d_i = diag_aw[i] * scale;
                             float d_ip1 = diag_aw[i + 1] * scale;
                             float diff = d_ip1 - d_i;
-                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : (expf(d_ip1) - expf(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / diff without cancellation, anchored at the larger exponent
+                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : expf(fmaxf(d_i, d_ip1)) * -expm1f(-fabsf(diff)) / fabsf(diff);
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = expf(d_ip1);         // diagonal
                         }
@@ -2490,7 +2561,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
                             double d_i = diag_aw[i] * scale;
                             double d_ip1 = diag_aw[i + 1] * scale;
                             double diff = d_ip1 - d_i;
-                            double exp_sinch = (diff == 0.0) ? exp(d_i) : (exp(d_ip1) - exp(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / diff without cancellation, anchored at the larger exponent
+                            double exp_sinch = (diff == 0.0) ? exp(d_i) : exp(fmax(d_i, d_ip1)) * -expm1(-fabs(diff)) / fabs(diff);
                             temp1[i * n + i] = exp(d_i);                        // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
                         }
@@ -2503,7 +2575,8 @@ matrix_exponential_d(PyArrayObject* a, double* restrict result, CBLAS_INT* info)
                             double d_i = diag_aw[i] * scale;
                             double d_ip1 = diag_aw[i + 1] * scale;
                             double diff = d_ip1 - d_i;
-                            double exp_sinch = (diff == 0.0) ? exp(d_i) : (exp(d_ip1) - exp(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / diff without cancellation, anchored at the larger exponent
+                            double exp_sinch = (diff == 0.0) ? exp(d_i) : exp(fmax(d_i, d_ip1)) * -expm1(-fabs(diff)) / fabs(diff);
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = exp(d_ip1);          // diagonal
                         }
@@ -2659,20 +2732,30 @@ matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* in
 #if defined(_MSC_VER)
                             scipy_c64 d_i = _FCmulcr(diag_aw[i], scale);
                             scipy_c64 d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
-                            scipy_c64 diff = CMPLXF(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
                             scipy_c64 exp_d_i = cexpf(d_i);
                             scipy_c64 exp_d_ip1 = cexpf(d_ip1);
-                            scipy_c64 exp_diff = CMPLXF(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
-                            float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
-                            scipy_c64 diff_inv = CMPLXF(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
-                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (crealf(d_ip1) >= crealf(d_i));
+                            float wr = ip1_larger ? crealf(d_i) - crealf(d_ip1) : crealf(d_ip1) - crealf(d_i);
+                            float wi = ip1_larger ? cimagf(d_i) - cimagf(d_ip1) : cimagf(d_ip1) - cimagf(d_i);
+                            float hs = sinf(0.5f*wi);
+                            scipy_c64 expm1_w = CMPLXF(expm1f(wr)*cosf(wi) - 2.0f*hs*hs, expf(wr)*sinf(wi));
+                            float w_abs2 = wr*wr + wi*wi;
+                            scipy_c64 w_inv = CMPLXF(wr/w_abs2, -wi/w_abs2);
+                            scipy_c64 exp_sinch = (w_abs2 == 0.0f) ? exp_d_i : _FCmulcc(_FCmulcc(ip1_larger ? exp_d_ip1 : exp_d_i, expm1_w), w_inv);
                             temp1[i * n + i] = exp_d_i;                                            // diagonal
                             temp1[i * n + (i + 1)] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale);  // subdiagonal
 #else
                             scipy_c64 d_i = diag_aw[i] * scale;
                             scipy_c64 d_ip1 = diag_aw[i + 1] * scale;
-                            scipy_c64 diff = d_ip1 - d_i;
-                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (crealf(d_ip1) >= crealf(d_i));
+                            scipy_c64 w = ip1_larger ? d_i - d_ip1 : d_ip1 - d_i;
+                            float hs = sinf(0.5f*cimagf(w));
+                            scipy_c64 expm1_w = CMPLXF(expm1f(crealf(w))*cosf(cimagf(w)) - 2.0f*hs*hs, expf(crealf(w))*sinf(cimagf(w)));
+                            scipy_c64 exp_sinch = (cabsf(w) == 0.0f) ? cexpf(d_i) : cexpf(ip1_larger ? d_ip1 : d_i) * expm1_w / w;
                             temp1[i * n + i] = cexpf(d_i);                      // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
 #endif
@@ -2694,20 +2777,30 @@ matrix_exponential_c(PyArrayObject* a, scipy_c64* restrict result, CBLAS_INT* in
 #if defined(_MSC_VER)
                             scipy_c64 d_i = _FCmulcr(diag_aw[i], scale);
                             scipy_c64 d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
-                            scipy_c64 diff = CMPLXF(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
                             scipy_c64 exp_d_i = cexpf(d_i);
                             scipy_c64 exp_d_ip1 = cexpf(d_ip1);
-                            scipy_c64 exp_diff = CMPLXF(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
-                            float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
-                            scipy_c64 diff_inv = CMPLXF(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
-                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (crealf(d_ip1) >= crealf(d_i));
+                            float wr = ip1_larger ? crealf(d_i) - crealf(d_ip1) : crealf(d_ip1) - crealf(d_i);
+                            float wi = ip1_larger ? cimagf(d_i) - cimagf(d_ip1) : cimagf(d_ip1) - cimagf(d_i);
+                            float hs = sinf(0.5f*wi);
+                            scipy_c64 expm1_w = CMPLXF(expm1f(wr)*cosf(wi) - 2.0f*hs*hs, expf(wr)*sinf(wi));
+                            float w_abs2 = wr*wr + wi*wi;
+                            scipy_c64 w_inv = CMPLXF(wr/w_abs2, -wi/w_abs2);
+                            scipy_c64 exp_sinch = (w_abs2 == 0.0f) ? exp_d_i : _FCmulcc(_FCmulcc(ip1_larger ? exp_d_ip1 : exp_d_i, expm1_w), w_inv);
                             temp1[(i + 1) * n + i] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale); // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                             // diagonal
 #else
                             scipy_c64 d_i = diag_aw[i] * scale;
                             scipy_c64 d_ip1 = diag_aw[i + 1] * scale;
-                            scipy_c64 diff = d_ip1 - d_i;
-                            scipy_c64 exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (crealf(d_ip1) >= crealf(d_i));
+                            scipy_c64 w = ip1_larger ? d_i - d_ip1 : d_ip1 - d_i;
+                            float hs = sinf(0.5f*cimagf(w));
+                            scipy_c64 expm1_w = CMPLXF(expm1f(crealf(w))*cosf(cimagf(w)) - 2.0f*hs*hs, expf(crealf(w))*sinf(cimagf(w)));
+                            scipy_c64 exp_sinch = (cabsf(w) == 0.0f) ? cexpf(d_i) : cexpf(ip1_larger ? d_ip1 : d_i) * expm1_w / w;
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = cexpf(d_ip1);        // diagonal
 #endif
@@ -2869,20 +2962,30 @@ matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* i
 #if defined(_MSC_VER)
                             scipy_c128 d_i = _Cmulcr(diag_aw[i], scale);
                             scipy_c128 d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
-                            scipy_c128 diff = CMPLX(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
                             scipy_c128 exp_d_i = cexp(d_i);
                             scipy_c128 exp_d_ip1 = cexp(d_ip1);
-                            scipy_c128 exp_diff = CMPLX(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
-                            double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
-                            scipy_c128 diff_inv = CMPLX(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
-                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (creal(d_ip1) >= creal(d_i));
+                            double wr = ip1_larger ? creal(d_i) - creal(d_ip1) : creal(d_ip1) - creal(d_i);
+                            double wi = ip1_larger ? cimag(d_i) - cimag(d_ip1) : cimag(d_ip1) - cimag(d_i);
+                            double hs = sin(0.5*wi);
+                            scipy_c128 expm1_w = CMPLX(expm1(wr)*cos(wi) - 2.0*hs*hs, exp(wr)*sin(wi));
+                            double w_abs2 = wr*wr + wi*wi;
+                            scipy_c128 w_inv = CMPLX(wr/w_abs2, -wi/w_abs2);
+                            scipy_c128 exp_sinch = (w_abs2 == 0.0) ? exp_d_i : _Cmulcc(_Cmulcc(ip1_larger ? exp_d_ip1 : exp_d_i, expm1_w), w_inv);
                             temp1[i * n + i] = exp_d_i;                                          // diagonal
                             temp1[i * n + (i + 1)] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // subdiagonal
 #else
                             scipy_c128 d_i = diag_aw[i] * scale;
                             scipy_c128 d_ip1 = diag_aw[i + 1] * scale;
-                            scipy_c128 diff = d_ip1 - d_i;
-                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (creal(d_ip1) >= creal(d_i));
+                            scipy_c128 w = ip1_larger ? d_i - d_ip1 : d_ip1 - d_i;
+                            double hs = sin(0.5*cimag(w));
+                            scipy_c128 expm1_w = CMPLX(expm1(creal(w))*cos(cimag(w)) - 2.0*hs*hs, exp(creal(w))*sin(cimag(w)));
+                            scipy_c128 exp_sinch = (cabs(w) == 0.0) ? cexp(d_i) : cexp(ip1_larger ? d_ip1 : d_i) * expm1_w / w;
                             temp1[i * n + i] = cexp(d_i);                       // diagonal
                             temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
 #endif
@@ -2904,20 +3007,30 @@ matrix_exponential_z(PyArrayObject* a, scipy_c128* restrict result, CBLAS_INT* i
 #if defined(_MSC_VER)
                             scipy_c128 d_i = _Cmulcr(diag_aw[i], scale);
                             scipy_c128 d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
-                            scipy_c128 diff = CMPLX(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
                             scipy_c128 exp_d_i = cexp(d_i);
                             scipy_c128 exp_d_ip1 = cexp(d_ip1);
-                            scipy_c128 exp_diff = CMPLX(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
-                            double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
-                            scipy_c128 diff_inv = CMPLX(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
-                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (creal(d_ip1) >= creal(d_i));
+                            double wr = ip1_larger ? creal(d_i) - creal(d_ip1) : creal(d_ip1) - creal(d_i);
+                            double wi = ip1_larger ? cimag(d_i) - cimag(d_ip1) : cimag(d_ip1) - cimag(d_i);
+                            double hs = sin(0.5*wi);
+                            scipy_c128 expm1_w = CMPLX(expm1(wr)*cos(wi) - 2.0*hs*hs, exp(wr)*sin(wi));
+                            double w_abs2 = wr*wr + wi*wi;
+                            scipy_c128 w_inv = CMPLX(wr/w_abs2, -wi/w_abs2);
+                            scipy_c128 exp_sinch = (w_abs2 == 0.0) ? exp_d_i : _Cmulcc(_Cmulcc(ip1_larger ? exp_d_ip1 : exp_d_i, expm1_w), w_inv);
                             temp1[(i + 1) * n + i] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                           // diagonal
 #else
                             scipy_c128 d_i = diag_aw[i] * scale;
                             scipy_c128 d_ip1 = diag_aw[i + 1] * scale;
-                            scipy_c128 diff = d_ip1 - d_i;
-                            scipy_c128 exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            // (exp(d_ip1) - exp(d_i)) / (d_ip1 - d_i) = exp(e) * expm1(w) / w without cancellation,
+                            // e the endpoint with the larger real part, w = (other endpoint) - e
+                            int ip1_larger = (creal(d_ip1) >= creal(d_i));
+                            scipy_c128 w = ip1_larger ? d_i - d_ip1 : d_ip1 - d_i;
+                            double hs = sin(0.5*cimag(w));
+                            scipy_c128 expm1_w = CMPLX(expm1(creal(w))*cos(cimag(w)) - 2.0*hs*hs, exp(creal(w))*sin(cimag(w)));
+                            scipy_c128 exp_sinch = (cabs(w) == 0.0) ? cexp(d_i) : cexp(ip1_larger ? d_ip1 : d_i) * expm1_w / w;
                             temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
                             temp1[(i + 1) * n + (i + 1)] = cexp(d_ip1);         // diagonal
 #endif

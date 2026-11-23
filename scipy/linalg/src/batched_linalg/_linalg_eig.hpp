@@ -28,14 +28,15 @@ enum Eigh_driver : Py_ssize_t
  * @param[in]  v    F-ordered real eigenvectors with leading dimension @p ldv.
  * @param[in]  ldv  Leading dimension of @p v.
  * @param[in]  n    Matrix dimension.
- * @param[in]  wi   Imaginary parts of the eigenvalues; zero marks a real eigenvalue.
+ * @param[in]  wi   Imaginary parts of the eigenvalues; zero marks a real eigenvalue. A nonzero
+ *                  value in the last position (only for non-finite input) gives a real column.
  */
 template<typename real_type>
 void
 transform_eigvecs(complex_of_t<real_type> *dst, const real_type *v, const npy_intp ldv, const npy_intp n, const real_type *wi) {
     using cmplx_type = complex_of_t<real_type>;
     for (npy_intp j = 0; j < n; ) {
-        if (wi[j] == real_type(0)) {
+        if (wi[j] == real_type(0) || j + 1 == n) {
             for (npy_intp i = 0; i < n; i++) {
                 dst[i*n + j] = cmplx_type(v[i + j*ldv], real_type(0));
             }
@@ -280,7 +281,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     npy_intp *shape = PyArray_SHAPE(ap_Am);
     npy_intp *strides = PyArray_STRIDES(ap_Am);
     npy_intp n = shape[ndim - 1];
-    const npy_intp m = (range == 'I') ? iu - il + 1 : n;   // eigenvalues per slice in the outputs
+    const npy_intp m = (range == 'I') ? (npy_intp)iu - il + 1 : n;   // eigenvalues per slice in the outputs
 
     const bool generalized = (ap_Bm != NULL);
     char *B_data = generalized ? PyArray_BYTES(ap_Bm) : NULL;
@@ -297,7 +298,7 @@ _eigh(PyArrayObject *ap_Am, PyArrayObject *ap_Bm, PyArrayObject *ap_w, PyArrayOb
     if (!checked_narrow<CBLAS_INT>(n, &intn) || !checked_narrow<CBLAS_INT>(m, &intm)) {
         return {BatchCode::too_large, nullptr, std::max(n, m)};
     }
-    const CBLAS_INT int_itype = itype, int_il = il + 1, int_iu = iu + 1;   // LAPACK indices are 1-based
+    const CBLAS_INT int_itype = itype, int_il = (CBLAS_INT)il + 1, int_iu = (CBLAS_INT)iu + 1;   // LAPACK indices are 1-based
     const real_type r_vl = (real_type)vl, r_vu = (real_type)vu, abstol = 0;
 
     const char *routine = nullptr;

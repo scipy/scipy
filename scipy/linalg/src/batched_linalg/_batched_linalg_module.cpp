@@ -584,6 +584,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
         ap_x.reset(ap_b);
     } else {
         ap_x.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
+        if (!ap_x) { return NULL; }
     }
 
     // S is real and (..., min(m, n)); gelsy computes no singular values
@@ -597,7 +598,7 @@ _linalg_lstsq(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // rank has the batch shape
     OwnedArray ap_rank((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape_1, NPY_INT64));
-    if (!ap_x || !ap_rank) { return NULL; }
+    if (!ap_rank) { return NULL; }
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
@@ -658,11 +659,20 @@ _linalg_eig(PyObject* Py_UNUSED(dummy), PyObject* args) {
     // them back to real when every eigenvalue is real. w and beta are (..., n), vl and vr (..., n, n).
     int w_typenum = (typenum == NPY_FLOAT32) ? NPY_COMPLEX64 : (typenum == NPY_FLOAT64) ? NPY_COMPLEX128 : typenum;
     OwnedArray ap_w((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, w_typenum));
+    if (!ap_w) { return NULL; }
     OwnedArray ap_beta, ap_vl, ap_vr;
-    if (ap_Bm) { ap_beta.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, typenum)); }
-    if (compute_vl) { ap_vl.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
-    if (compute_vr) { ap_vr.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum)); }
-    if (!ap_w || (ap_Bm && !ap_beta) || (compute_vl && !ap_vl) || (compute_vr && !ap_vr)) { return NULL; }
+    if (ap_Bm) {
+        ap_beta.reset((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, typenum));
+        if (!ap_beta) { return NULL; }
+    }
+    if (compute_vl) {
+        ap_vl.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum));
+        if (!ap_vl) { return NULL; }
+    }
+    if (compute_vr) {
+        ap_vr.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape, w_typenum));
+        if (!ap_vr) { return NULL; }
+    }
 
     BatchStatus status;
     Py_BEGIN_ALLOW_THREADS
@@ -754,6 +764,21 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "`a` and `b` must have the same shape and dtype.");
         return NULL;
     }
+    // the output shapes below depend on the range arguments
+    if (range != 'A' && driver != Eigh_driver::EVR && driver != Eigh_driver::EVX && driver != Eigh_driver::GVX) {
+        PyErr_SetString(PyExc_ValueError, "scipy.linalg.eigh: the ev, evd, gv and gvd drivers compute all eigenvalues.");
+        return NULL;
+    }
+    if (range == 'I' && !(0 <= il && il <= iu && iu < n)) {
+        PyErr_Format(PyExc_ValueError, "scipy.linalg.eigh: eigenvalue indices %d to %d are not in [0, %zd].",
+                     il, iu, (Py_ssize_t)(n - 1));
+        return NULL;
+    }
+    if (range == 'V' && ndim > 2) {
+        // the number of eigenvalues found differs per slice
+        PyErr_SetString(PyExc_ValueError, "scipy.linalg.eigh: a value range needs a single matrix.");
+        return NULL;
+    }
     overwrite_a = overwrite_a && usable_in_place(ap_Am);
     overwrite_b = overwrite_b && ap_Bm && usable_in_place(ap_Bm);
 
@@ -761,11 +786,12 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int w_typenum = real_typenum(typenum);
     // eigenvalues per slice: iu - il + 1 for range 'I', otherwise n, which for range 'V' is only
     // the room reserved
-    npy_intp m = (range == 'I') ? iu + 1 - il : n;
+    npy_intp m = (range == 'I') ? (npy_intp)iu - il + 1 : n;
     npy_intp shape_1[NPY_MAXDIMS];
     std::copy(shape, shape + ndim, shape_1);
     shape_1[ndim - 2] = m;
     OwnedArray ap_w((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape_1, w_typenum));
+    if (!ap_w) { return NULL; }
     OwnedArray ap_Z;
     if (jobz != 'N') {
         if (overwrite_a) {
@@ -777,7 +803,7 @@ _linalg_eigh(PyObject* Py_UNUSED(dummy), PyObject* args) {
             ap_Z.reset((PyArrayObject *)PyArray_SimpleNew(ndim, shape_1, typenum));
         }
     }
-    if (!ap_w || (jobz != 'N' && !ap_Z)) { return NULL; }
+    if (jobz != 'N' && !ap_Z) { return NULL; }
 
     // the number of eigenvalues found, which the driver sets; less than m only for range 'V'
     npy_intp m_found = m;
@@ -900,14 +926,16 @@ _linalg_lu(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // perm (..., m); L (..., m, minmn); U (..., minmn, n)
     OwnedArray ap_perm((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, (sizeof(CBLAS_INT) == 8) ? NPY_INT64 : NPY_INT32));
+    if (!ap_perm) { return NULL; }
     npy_intp l_shape[NPY_MAXDIMS], u_shape[NPY_MAXDIMS];
     std::copy(shape, shape + ndim, l_shape);
     std::copy(shape, shape + ndim, u_shape);
     l_shape[ndim - 1] = minmn;
     u_shape[ndim - 2] = minmn;
     OwnedArray ap_l((PyArrayObject *)PyArray_ZEROS(ndim, l_shape, typenum, 0));
+    if (!ap_l) { return NULL; }
     OwnedArray ap_u((PyArrayObject *)PyArray_ZEROS(ndim, u_shape, typenum, 0));
-    if (!ap_perm || !ap_l || !ap_u) { return NULL; }
+    if (!ap_u) { return NULL; }
 
     // A 2-D F-contiguous writeable input is the getrf workspace itself: no copy is made.
     overwrite_a = overwrite_a && usable_in_place(ap_a);

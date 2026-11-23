@@ -1454,6 +1454,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     )
 
     if err_lst:
+        # gelsd/gelss: info > 0 means the SVD did not converge; the batch stopped there
+        for dct in err_lst:
+            if dct["lapack_info"] > 0:
+                raise LinAlgError("SVD did not converge in Linear Least Squares "
+                                  f"for slice {dct['num']}.")
         _format_emit_errors_warnings(err_lst)
 
     x1 = x[..., :n, :]

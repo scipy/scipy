@@ -471,11 +471,9 @@ norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
     real_type temp = 0.0;
     real_type *rwork = (real_type *)work;
 
-    // Write absolute values of first row of A to work
-    for (i = 0; i < n; i++) { rwork[i] = std::abs(A[i]);
-     }
-    // Add absolute values of remaining rows of A to work
-    for (i = 1; i < n; i++) {
+    for (i = 0; i < n; i++) { rwork[i] = 0.0; }
+
+    for (i = 0; i < n; i++) {
         // only loop over the upper triangle
         rwork[i] += std::abs(A[i*n + i]);
         for (j = i+1; j < n; j++) {
@@ -539,7 +537,7 @@ norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
     for (i=0; i<n-1; i++) {
         rwork[i] += std::abs(dl[i]);
     }
-    for (i=1; i<n-1; i++) {
+    for (i=1; i<n; i++) {
         rwork[i] += std::abs(du[i-1]);
     }
 

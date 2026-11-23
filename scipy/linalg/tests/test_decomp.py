@@ -130,6 +130,18 @@ class TestEigVals:
 
 class TestEig:
 
+    @pytest.mark.parametrize('batch', [(), (64,)])
+    def test_nonfinite_conjugate_pair_bound(self, batch):
+        # ?geev can return info = 0 with NaN imaginary parts for non-finite
+        # input; a NaN in the last position was taken as the start of a
+        # conjugate pair, reading and writing one column past the slice.
+        a = np.full(batch + (1, 1), -np.inf)
+        try:
+            w, v = eig(a, check_finite=False)
+        except LinAlgError:
+            return
+        assert_equal(v.imag, 0)
+
     @pytest.mark.parametrize('generalized', [False, True])
     def test_field_view_strides(self, generalized):
         # A complex128 field of an aligned structured array has a 24-byte element
@@ -1039,6 +1051,26 @@ class TestEigTridiagonal:
 
 
 class TestEigh:
+    def test_compiled_range_validation(self):
+        # The output shapes follow il/iu, so the compiled entry has to check
+        # them itself; the ev driver with range 'I' read past its workspace.
+        a = np.array([[2.0, 1.0], [1.0, 3.0]])
+        inf = np.inf
+        # _eigh(a, overwrite_a, eigvals_only, range, lower, vl, vu, il, iu, driver)
+        with pytest.raises(ValueError, match="compute all eigenvalues"):
+            _batched_linalg._eigh(a, False, False, 2, False, -inf, inf, 0, 20, 1)
+        with pytest.raises(ValueError, match="not in"):
+            _batched_linalg._eigh(a, False, False, 2, False, -inf, inf, 0, 2, 3)
+        with pytest.raises(ValueError, match="not in"):
+            _batched_linalg._eigh(a, False, False, 2, False, -inf, inf, 1, 0, 3)
+        with pytest.raises(ValueError, match="single matrix"):
+            _batched_linalg._eigh(np.stack([a, a]), False, True, 1, False,
+                                  0.0, 2.5, 0, 0, 3)
+        w, _, m, _ = _batched_linalg._eigh(a, False, False, 2, False,
+                                           -inf, inf, 0, 1, 3)
+        assert m == 2
+        assert_allclose(w, np.linalg.eigvalsh(a))
+
     @pytest.mark.parametrize('driver', ['ev', 'evd', 'evr', 'evx', 'gv', 'gvd', 'gvx'])
     def test_field_view_strides(self, driver):
         # A complex128 field of an aligned structured array has a 24-byte element

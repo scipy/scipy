@@ -27,7 +27,6 @@ _skip_names = [
     # _sketches does not use LAPACK
     'clarkson_woodruff_transform',
     # these did not accepted weird dtypes already
-    'expm', 'tanm', 'tanhm', 'sinm', 'cosm', 'sinhm', 'coshm', 'expm_cond',
     'solve_continuous_are',
     'rsf2csf',
 ]
@@ -45,10 +44,10 @@ _skip_dict = {
     'bandwidth': 'egGmM',
     # already raise
     'det': 'gGmM',
-    'expm': 'gG',
 
     # datetime specific + float16 specific
     'cdf2rdf' : 'mM',
+    'expm_cond' : 'mM' + 'e',
     'expm_frechet' : 'mM' + 'e',
     'pinv': 'mM',
     'signm': 'mM',
@@ -74,6 +73,8 @@ _array_api_skip_dict = {
     'cho_solve_banded' : 'mM',
     'cholesky' : 'mM',
     'cholesky_banded' : 'mM',
+    'coshm' : 'mM',
+    'cosm' : 'mM',
     'cossin' : 'mM',
     'diagsvd' : 'mM',
     'eig_banded' : 'mM',
@@ -98,12 +99,16 @@ _array_api_skip_dict = {
     'qz' : 'mM',
     'rq' : 'mM',
     'schur' : 'mM',
+    'sinhm' : 'mM',
+    'sinm' : 'mM',
     'solve_banded' : 'mM',
     'solve_continuous_lyapunov' : 'mM',
     'solve_lyapunov' : 'mM',
     'solve_triangular' : 'mM',
     'solveh_banded' : 'mM',
     'subspace_angles' : 'mM',
+    'tanhm' : 'mM',
+    'tanm' : 'mM',
 }
 
 
@@ -174,6 +179,9 @@ def _patch_args(func_name, args):
     elif func_name == 'solve_toeplitz':
         c = args[0][1]
         args = (c, np.ones_like(c))
+    elif func_name in ('tanhm', 'expm_cond'):
+        # the exponential of the unscaled matrix (1-norm 2184) overflows
+        args = (args[0] / 1000,)
     return args
 
 

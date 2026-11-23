@@ -153,6 +153,11 @@ _svd(PyArrayObject* ap_Am, PyArrayObject *ap_U, PyArrayObject *ap_S, PyArrayObje
         }
     } else {
         if constexpr (is_complex_v<T>) { rwork_size = 5 * k; }
+        // ?gesvd with vectors forms LDA*N (m >= n) or LDA*M (m < n) in CBLAS_INT
+        const std::uint64_t mn = (std::uint64_t)m * (std::uint64_t)n;
+        if ((job != SvdJob::none) && (mn > (std::uint64_t)CBLAS_INT_MAX)) {
+            return {BatchCode::too_large, routine, static_cast<int64_t>(mn)};
+        }
     }
 
     T tmp = 0.0;
