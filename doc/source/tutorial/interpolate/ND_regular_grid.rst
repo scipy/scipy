@@ -106,40 +106,44 @@ controlled by the ``fill_value`` keyword parameter:
 
 .. _tutorial-interpolate_RGI_solver:
 
-Solver tolerance for spline methods
-===================================
+Solvers for spline methods
+==========================
 
-The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a large
-sparse linear system when the interpolator is created. By default this is done
-with the iterative solver `scipy.sparse.linalg.gcrotmk`, which stops once the
-residual is below ``max(rtol * norm(values), atol)``, with ``rtol=1e-5`` and
-``atol=1e-6`` by default. For some data this is not accurate enough, and you
-may want to pass smaller tolerances in ``solver_args``, or a different solver
-in ``solver``, such as the direct solver `scipy.sparse.linalg.spsolve`.
+The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a linear
+system for the spline coefficients when the interpolator is created. On a
+rectilinear grid, the matrix of this system is a Kronecker product of
+one-dimensional banded matrices, so by default it is solved with one banded
+solve per dimension (see `make_ndbspl` for details). The result is exact up to
+rounding.
 
-One illustration is data with a large constant offset compared to how much they
-vary. Consider a bump of height 1 on top of a constant 1000:
+Before SciPy 2.0.0, the default was to assemble one large sparse system and
+solve it with the iterative solver `scipy.sparse.linalg.gcrotmk`. You can still
+do this by passing ``solver``, and options for it in ``solver_args``. An
+iterative solver stops once the residual is small enough, for ``gcrotmk`` below
+``max(rtol * norm(values), atol)``, with ``rtol=1e-5`` and ``atol=1e-6`` by
+default. This matters for data with a large constant offset compared to how
+much they vary. Consider a bump of height 1 on top of a constant 1000:
 
+    >>> from scipy.sparse.linalg import gcrotmk
     >>> x = y = np.linspace(-3, 3, 8)
     >>> X, Y = np.meshgrid(x, y, indexing="ij")
     >>> values = 1000 + np.exp(-(X**2 + Y**2) / 2)
     >>> rgi = RegularGridInterpolator((x, y), values, method="cubic")
     >>> err = np.abs(rgi((X, Y)) - values).max()
     >>> print(f"{err:.1e}")
+    2.3e-13  # may vary
+    >>> rgi_iter = RegularGridInterpolator((x, y), values, method="cubic",
+    ...                                    solver=gcrotmk)
+    >>> err_iter = np.abs(rgi_iter((X, Y)) - values).max()
+    >>> print(f"{err_iter:.1e}")
     1.2e-02  # may vary
 
-The interpolant misses the data points by about 1% of the height of the bump.
-A smaller tolerance fixes this:
-
-    >>> rgi_tight = RegularGridInterpolator((x, y), values, method="cubic",
-    ...                                     solver_args={"rtol": 1e-10})
-    >>> err_tight = np.abs(rgi_tight((X, Y)) - values).max()
-    >>> print(f"{err_tight:.1e}")
-    1.4e-07  # may vary
-
-For this kind of data, subtracting the mean before interpolating and adding it
-back afterwards also works, since splines reproduce constants exactly. See the
-notes on choosing a solver in `RegularGridInterpolator` for more details.
+The iterative solve misses the data points by about 1% of the height of the
+bump. A smaller tolerance, ``solver_args={"rtol": 1e-10}``, or the direct solver
+`scipy.sparse.linalg.spsolve` reduce the error. So does subtracting the mean
+before interpolating and adding it back afterwards, since splines reproduce
+constants exactly. See the notes on choosing a solver in
+`RegularGridInterpolator` for more details.
 
 
 .. _tutorial-interpolate_RGI_batching:

@@ -104,16 +104,24 @@ class RegularGridInterpolator:
     solver : callable, optional
         Only used for methods "slinear", "cubic" and "quintic".
         Sparse linear algebra solver for construction of the NdBSpline instance.
-        Default is None: no sparse system is assembled and the spline
-        coefficients are computed with one banded solve per dimension.
+        By default, a separable solver is used and no sparse system is
+        assembled, see `make_ndbspl`.
 
         .. versionadded:: 1.13
+
+        .. versionchanged:: 2.0.0
+            The default changed from `scipy.sparse.linalg.gcrotmk` to the
+            separable solver.
 
     solver_args : dict, optional
-        Additional arguments to pass to `solver`, if any.
-        If given without `solver`, `scipy.sparse.linalg.gcrotmk` is used.
+        Additional arguments to pass to `solver`. Only allowed if `solver` is
+        given.
 
         .. versionadded:: 1.13
+
+        .. versionchanged:: 2.0.0
+            `solver_args` without `solver` raise a `TypeError`. Previously
+            they were passed to `scipy.sparse.linalg.gcrotmk`.
 
     Methods
     -------
@@ -160,7 +168,16 @@ class RegularGridInterpolator:
     Spline methods, "slinear", "cubic" and "quintic" involve solving a linear
     system at instantiation time. On a rectilinear grid its matrix is a Kronecker
     product of one-dimensional banded matrices, so by default the system is solved
-    with one banded solve per dimension.
+    separably, with one banded solve per dimension. The result is exact up to
+    rounding. See `make_ndbspl` for details.
+
+    .. versionchanged:: 2.0.0
+        The default used to be the iterative solver `scipy.sparse.linalg.gcrotmk`,
+        which stops at a tolerance relative to the norm of `values`. Spline
+        interpolants are therefore more accurate than in older SciPy versions,
+        and their values may differ slightly from the old ones, more so for
+        data with a large constant offset (see below). To get the old results,
+        pass ``solver=scipy.sparse.linalg.gcrotmk``.
 
     You may instead assemble the system as a large sparse matrix and solve it
     with an optional `solver` argument, where you may choose between the direct
