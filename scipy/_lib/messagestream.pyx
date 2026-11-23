@@ -53,8 +53,9 @@ cdef void _close_tempfile(stdio.FILE *handle) noexcept nogil:
     """Close a temporary file stream."""
     global _n_tempfile, _close_errors
     # Even if fclose fails (e.g., when flushing fails), it releases the
-    # stream and its file, so there is nothing left to clean up. The failure
-    # is only counted, for `_fhcache_info`.
+    # stream, which must not be used or closed again. Whether the file is
+    # closed then depends on the OS, and retrying a close is unsafe, so the
+    # failure is only counted, for `_fhcache_info`.
     cdef bint failed = stdio.fclose(handle) != 0
     with _spare_lock:
         _n_tempfile -= 1
