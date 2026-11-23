@@ -164,6 +164,28 @@ class TestSolveLyapunov:
         assert res.shape == (0, 0)
         assert res.dtype == ref.dtype
 
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_continuous_trsyl_scale(self, dtype):
+        """Test a right-hand side large enough that TRSYL rescales.
+
+        TRSYL solves op(A)X + X op(A)' = scale*Q with scale <= 1 chosen to
+        avoid overflow, so the solution of the original equation is the
+        returned matrix divided by scale.
+        """
+        a = np.array([[-0.5, 0.1], [0.0, -0.3]], dtype=dtype)
+        q = -1e295 * np.eye(2, dtype=dtype)
+        x = solve_continuous_lyapunov(a, q)
+        assert_allclose((a @ x + x @ a.conj().T) / 1e295, -np.eye(2),
+                        rtol=1e-12, atol=1e-12)
+
+    def test_discrete_bilinear_trsyl_scale(self):
+        """Test the bilinear method with a TRSYL-rescaled right-hand side."""
+        a = np.array([[0.5, 0.1], [0.0, 0.3]])
+        q = 1e295 * np.eye(2)
+        x = solve_discrete_lyapunov(a, q, method='bilinear')
+        assert_allclose((a @ x @ a.conj().T - x) / 1e295, -np.eye(2),
+                        rtol=1e-12, atol=1e-12)
+
 
 class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')
@@ -877,6 +899,20 @@ class TestSolveSylvester:
         c = np.array([2.0, 2.0]).reshape(-1, 1)
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
+
+    def test_trsyl_scale(self):
+        """Test a right-hand side large enough that TRSYL rescales.
+
+        TRSYL solves op(A)X + X op(B) = scale*C with scale <= 1 chosen to
+        avoid overflow, so the solution of the original equation is the
+        returned matrix divided by scale.
+        """
+        a = np.array([[-0.5, 0.1], [0.0, -0.3]])
+        b = np.array([[-0.7, 0.2], [0.0, -0.4]])
+        c = 1e295 * np.eye(2)
+        x = solve_sylvester(a, b, c)
+        assert_allclose((a @ x + x @ b) / 1e295, np.eye(2),
+                        rtol=1e-12, atol=1e-12)
 
     # Feel free to adjust this to test fewer dtypes or random selections rather than
     # the Cartesian product. It doesn't take very long to test all combinations,
