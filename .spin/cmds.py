@@ -213,9 +213,13 @@ build_cmd = build
         "'jax.numpy', 'dask.array')."
     )
 )
+@click.option(
+    '--tsan', default=False, is_flag=True,
+    help=("Run tests under ThreadSanitizer: adds `tools/tsan-suppressions.txt` "
+          "to `TSAN_OPTIONS`. Requires a `spin build --tsan` build."))
 @spin.util.extend_command(spin.cmds.meson.test, doc="")
 def test(*, parent_callback, pytest_args, tests, coverage,
-         durations, submodule, mode, array_api_backend, **kwargs):
+         durations, submodule, mode, array_api_backend, tsan, **kwargs):
     """🔧 Run tests
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -300,6 +304,14 @@ def test(*, parent_callback, pytest_args, tests, coverage,
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
+
+    if tsan:
+        root = Path(__file__).parent.parent
+        suppressions = root.absolute() / 'tools' / 'tsan-suppressions.txt'
+        tsan_options = [f'suppressions={suppressions}']
+        if os.environ.get('TSAN_OPTIONS'):
+            tsan_options.append(os.environ['TSAN_OPTIONS'])
+        os.environ['TSAN_OPTIONS'] = ':'.join(tsan_options)
 
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
                     "coverage": coverage, **kwargs})

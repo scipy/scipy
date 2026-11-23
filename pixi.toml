@@ -1127,25 +1127,28 @@ env = {
 description = "Build SciPy against a free-threaded CPython and NumPy with thread sanitizer"
 
 [feature.tsan.tasks.test-tsan]
-# TSAN exits non-zero at the end of the run if it reported any race, even
-# with `halt_on_error=0`. OpenBLAS is not instrumented, so TSAN cannot see
-# its internal synchronization and reports its worker threads' writes as
-# races (seen in PROPACK). Single-threaded BLAS avoids that; an instrumented
-# OpenBLAS, as NumPy's TSAN CI builds, is the way to lift this.
-cmd = "spin test --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow'"
+# `halt_on_error=0` only stops TSAN from aborting at the first report; if it
+# reported anything during the run, the process still exits with TSAN's
+# `exitcode` (66 by default) even when every test passed. `spin test --tsan`
+# adds `tools/tsan-suppressions.txt` to `TSAN_OPTIONS`.
+# OpenBLAS is not instrumented, so TSAN cannot see its internal
+# synchronization and reports its worker threads' writes as races (seen in
+# PROPACK). Single-threaded BLAS avoids that; an instrumented OpenBLAS, as
+# NumPy's TSAN CI builds, is the way to lift this.
+cmd = "spin test --tsan --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow'"
 depends-on = "build-tsan"
 env.OPENBLAS_NUM_THREADS = "1"
-env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:suppressions=$PIXI_PROJECT_ROOT/tools/tsan-suppressions.txt:$TSAN_OPTIONS"
+env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:$TSAN_OPTIONS"
 env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
 description = "Test SciPy with thread sanitizer"
 
 [feature.tsan.tasks.test-tsan-parallel]
 # Same as test-parallel-freethreading: run each test in several threads at
 # once, so TSAN sees code paths that are single-threaded in a plain run.
-cmd = "spin test --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow' -- --parallel-threads=4 --skip-thread-unsafe=true"
+cmd = "spin test --tsan --no-build --build-dir=build-tsan -m 'not fail_tsan and not slow' -- --parallel-threads=4 --skip-thread-unsafe=true"
 depends-on = "build-tsan"
 env.OPENBLAS_NUM_THREADS = "1"
-env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:suppressions=$PIXI_PROJECT_ROOT/tools/tsan-suppressions.txt:$TSAN_OPTIONS"
+env.TSAN_OPTIONS = "halt_on_error=0:second_deadlock_stack=1:allocator_may_return_null=1:symbolize=1:$TSAN_OPTIONS"
 env.PYTEST_ADDOPTS = "--capture=no $PYTEST_ADDOPTS"
 description = "Test SciPy with thread sanitizer and pytest-run-parallel"
 
