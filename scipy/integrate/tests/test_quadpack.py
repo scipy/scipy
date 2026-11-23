@@ -193,6 +193,27 @@ class TestQuad:
         assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
+    @pytest.mark.parametrize('bound', [-2.0, 0.0, 2.0])
+    @pytest.mark.parametrize('left_infinite', [False, True])
+    @pytest.mark.parametrize('reverse', [False, True])
+    def test_cosine_weighted_infinite_zero_frequency(
+        self, bound, left_infinite, reverse
+    ):
+        if left_infinite:
+            a, b = -np.inf, bound
+            slope = 1.0
+        else:
+            a, b = bound, np.inf
+            slope = -1.0
+
+        expected = exp(slope * bound)
+        if reverse:
+            a, b = b, a
+            expected = -expected
+
+        assert_quad(quad(lambda x: exp(slope * x), a, b, weight='cos', wvar=0),
+                    expected)
+
     def test_algebraic_log_weight(self):
         # 6) Algebraic-logarithmic weight.
         def myfunc(x, a):
