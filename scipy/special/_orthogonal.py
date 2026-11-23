@@ -246,7 +246,7 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_jacobi(n, alpha, beta, mu=False):
     r"""Gauss-Jacobi quadrature.
 
@@ -446,7 +446,7 @@ def jacobi(n, alpha, beta, monic=False):
 # Jacobi Polynomials shifted         G_n(p,q,x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_sh_jacobi(n, p1, q1, mu=False):
     r"""Gauss-Jacobi (shifted) quadrature.
 
@@ -684,7 +684,7 @@ def sh_jacobi(n, p, q, monic=False):
 # Generalized Laguerre               L^(alpha)_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_genlaguerre(n, alpha, mu=False):
     r"""Gauss-generalized Laguerre quadrature.
 
@@ -931,7 +931,7 @@ def genlaguerre(n, alpha, monic=False):
 # Laguerre                      L_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_laguerre(n, mu=False):
     r"""Gauss-Laguerre quadrature.
 
@@ -1123,7 +1123,7 @@ def laguerre(n, monic=False):
 # Hermite  1                         H_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_hermite(n, mu=False):
     r"""Gauss-Hermite (physicist's) quadrature.
 
@@ -1724,7 +1724,7 @@ def hermite(n, monic=False):
 # Hermite  2                         He_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_hermitenorm(n, mu=False):
     r"""Gauss-Hermite (statistician's) quadrature.
 
@@ -1950,7 +1950,7 @@ def hermitenorm(n, monic=False):
 # Ultraspherical (Gegenbauer)        C^(alpha)_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_gegenbauer(n, alpha, mu=False):
     r"""Gauss-Gegenbauer quadrature.
 
@@ -2182,7 +2182,7 @@ def gegenbauer(n, alpha, monic=False):
 # Computed anew.
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
@@ -2404,7 +2404,7 @@ def chebyt(n, monic=False):
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
@@ -2614,7 +2614,7 @@ def chebyu(n, monic=False):
 # Chebyshev of the first kind        C_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_chebyc(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
@@ -2807,7 +2807,7 @@ def chebyc(n, monic=False):
 # Chebyshev of the second kind       S_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_chebys(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
@@ -3008,7 +3008,7 @@ def chebys(n, monic=False):
 # Shifted Chebyshev of the first kind     T^*_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_sh_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind, shifted) quadrature.
 
@@ -3180,7 +3180,7 @@ def sh_chebyt(n, monic=False):
 
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_sh_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind, shifted) quadrature.
 
@@ -3359,7 +3359,7 @@ def sh_chebyu(n, monic=False):
 # Legendre
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_legendre(n, mu=False):
     r"""Gauss-Legendre quadrature.
 
@@ -3543,7 +3543,7 @@ def legendre(n, monic=False):
 # Shifted Legendre              P^*_n(x)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def roots_sh_legendre(n, mu=False):
     r"""Gauss-Legendre (shifted) quadrature.
 
