@@ -2149,6 +2149,7 @@ class TestBPolyCalculus:
         (1.5, 2.5, 1.5),
         (-2, 4, 9.),
     ])
+    @xfail_xp_backends("cupy", reason="CuPy BPoly uses a negative period")
     def test_integrate_periodic_decreasing(self, xp, a, b, expected):
         bpoly = BPoly(xp.asarray([[1., 2.]]), xp.asarray([2., 1., 0.]),
                       extrapolate='periodic')
