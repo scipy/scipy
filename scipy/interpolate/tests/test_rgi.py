@@ -835,6 +835,37 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values)
         xp_assert_close(interp(xi, method=method), values, atol=1e-11)
 
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_match_legacy(self, method):
+        # the recursive `_legacy` evaluation solves along one axis at a time
+        # for each point, the default does it once for the coefficients:
+        # the interpolant is the same (gh-7903, gh-26427)
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        values = rng.uniform(size=(8, 9, 7))
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        legacy = RegularGridInterpolator(points, values, method=method + "_legacy")
+        xp_assert_close(interp(xi), legacy(xi), atol=1e-9)
+
+    @pytest.mark.parametrize("method", ["cubic", "quintic"])
+    def test_spline_methods_derivatives_of_quadratic(self, method):
+        # a not-a-knot spline of degree >= 2 reproduces a quadratic, so the
+        # values and the first derivatives are exact up to rounding
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        x0 = np.asarray([1.3, 2.9, 0.7])
+        grid = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+        values = ((grid - x0)**2).sum(axis=-1)
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        xp_assert_close(interp(xi), ((xi - x0)**2).sum(axis=-1), atol=1e-10)
+        for d in range(3):
+            nu = tuple(int(i == d) for i in range(3))
+            xp_assert_close(interp(xi, nu=nu), 2 * (xi[:, d] - x0[d]), atol=1e-9)
+
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):
         points, values = self._get_sample_4d(np)
