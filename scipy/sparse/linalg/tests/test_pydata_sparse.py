@@ -230,6 +230,13 @@ def test_inv(matrices):
     assert_allclose(x.todense(), x0.todense())
 
 
+def test_inv_1x1(sparse_cls):
+    # gh-5551: a 1x1 input gave a 1-D ndarray
+    x = splin.inv(sparse_cls(np.array([[4.0]])))
+    assert type(x) is type(splin.inv(sparse_cls(np.array([[4.0, 0], [0, 2.0]]))))
+    assert_allclose(x.todense(), [[0.25]])
+
+
 def test_expm(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.expm(sp.csc_array(A_dense))

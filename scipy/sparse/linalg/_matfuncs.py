@@ -74,6 +74,13 @@ def inv(A):
     # Use sparse direct solver to solve "AX = I" accurately
     I = _ident_like(A)
     Ainv = spsolve(A, I)
+    if Ainv.ndim == 1:
+        # A is 1x1, so spsolve treated I as a vector (gh-5551)
+        Ainv = scipy.sparse.csc_array(Ainv.reshape(1, 1))
+        if is_pydata_spmatrix(I):
+            Ainv = type(I).from_scipy_sparse(Ainv)
+        elif A.format in ("csr", "csc"):
+            Ainv = type(A)(Ainv)
     return Ainv
 
 

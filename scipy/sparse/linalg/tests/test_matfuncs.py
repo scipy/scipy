@@ -8,6 +8,7 @@ import math
 import warnings
 
 import numpy as np
+import pytest
 from numpy import array, eye, exp, random
 from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
@@ -15,7 +16,7 @@ from numpy.testing import (
 
 from scipy.sparse import csc_array, SparseEfficiencyWarning
 from scipy.sparse._construct import eye_array
-from scipy.sparse.linalg._matfuncs import (expm, _expm,
+from scipy.sparse.linalg._matfuncs import (expm, _expm, inv,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm, matrix_power)
 from scipy.sparse._sputils import matrix
@@ -80,6 +81,18 @@ def test_matrix_power():
         Adense_pow = np.linalg.matrix_power(Adense, power)
         assert_allclose(Apow, Adense_pow)
         assert_allclose(Apow, Amat_pow)
+
+
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
+@pytest.mark.filterwarnings("ignore::scipy.sparse.SparseEfficiencyWarning")
+@pytest.mark.parametrize(
+    "cls", [scipy.sparse.csr_array, scipy.sparse.csc_matrix, scipy.sparse.coo_array]
+)
+def test_inv_1x1(cls):
+    # gh-5551: a 1x1 input gave a 1-D ndarray
+    Ainv = inv(cls([[4.0]]))
+    assert type(Ainv) is type(inv(cls([[4.0, 0.0], [0.0, 2.0]])))
+    assert_allclose(Ainv.toarray(), [[0.25]])
 
 
 class TestExpM:
