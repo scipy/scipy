@@ -14,7 +14,7 @@ from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_result_device
 )
 
-from ._bsplines import _not_a_knot, BSpline
+from ._bsplines import _not_a_knot, make_lsq_spline, BSpline
 
 __all__ = [
     "NdBSpline",
@@ -580,9 +580,16 @@ def _make_lsq_ndbspl(
 
 
 def _make_lsq_ndbspl_from_grid(
-    points, values, t, k=3, *, w=None, solver=ssl.lsqr, **solver_args
+    points, values, t, k=3, *, w=None, solver=None, **solver_args
 ):
-    """Construct a least-squares ``NdBSpline`` from gridded data."""
+    """Construct a least-squares ``NdBSpline`` from gridded data.
+
+    Without weights and solver, the coefficients are computed with one
+    one-dimensional least-squares fit per axis, see
+    `_make_lsq_ndbspl_separable`. Otherwise, the grid is converted to
+    scattered points and the full sparse problem is solved with `solver`,
+    `scipy.sparse.linalg.lsqr` by default.
+    """
     if not isinstance(points, tuple):
         raise ValueError("`points` must be a tuple of 1D arrays.")
     if len(points) == 0:
@@ -606,6 +613,11 @@ def _make_lsq_ndbspl_from_grid(
             "points[-1].shape + trailing dimensions."
         )
 
+    if w is None and solver is None and not solver_args:
+        return _make_lsq_ndbspl_separable(points, values, t, k)
+    if solver is None:
+        solver = ssl.lsqr
+
     grids = np.meshgrid(*points, indexing="ij")
     x = np.column_stack([grid.ravel() for grid in grids])
     y = values.reshape((prod(grid_shape),) + values.shape[ndim:])
@@ -619,6 +631,52 @@ def _make_lsq_ndbspl_from_grid(
     return _make_lsq_ndbspl(
         x, y, t, k=k, w=w, solver=solver, **solver_args
     )
+
+
+def _make_lsq_ndbspl_separable(points, values, t, k):
+    """Construct an unweighted least-squares ``NdBSpline`` on a grid.
+
+    `points` and `values` must already be validated by
+    `_make_lsq_ndbspl_from_grid`.
+    """
+    ndim = len(points)
+    if not isinstance(t, tuple):
+        raise ValueError(
+            f"Expect `t` to be a tuple of array-likes. Got {t} instead."
+        )
+    if len(t) != ndim:
+        raise ValueError(
+            f"Data and knots are inconsistent: len(t) = {len(t)} for "
+            f"ndim = {ndim}."
+        )
+    k, _, _ = _preprocess_inputs(k, t)
+    t = tuple(np.asarray(t[d], dtype=float) for d in range(ndim))
+
+    # With the 1D design matrices A_d[r, i] = B(x_d[r]; i, t_d), the design
+    # matrix on the grid is the Kronecker product A_1 kron ... kron A_N, and
+    # the least-squares problem is
+    #
+    #   min_c || (A_1 kron ... kron A_N) @ c.ravel() - values.ravel() ||_2.
+    #
+    # The pseudoinverse of a Kronecker product is the Kronecker product of the
+    # pseudoinverses, so `c` follows from applying pinv(A_d) along each axis d,
+    # in any order, i.e. from one 1D least-squares fit per axis, with
+    # values.size / len(x_d) right-hand sides. The full design matrix is never
+    # assembled. `make_lsq_spline` checks the Schoenberg-Whitney conditions,
+    # so every A_d has full column rank and each fit is unique.
+    # See C. F. Van Loan, The ubiquitous Kronecker product, J. Comput. Appl.
+    # Math. 123, 2000, https://doi.org/10.1016/S0377-0427(00)00393-9
+    c = values
+    for d in range(ndim):
+        x = points[d]
+        if (np.diff(x) < 0).any():
+            # the order of the data points does not change the fit, but
+            # `make_lsq_spline` expects them sorted
+            order = np.argsort(x, kind="stable")
+            x, c = x[order], np.take(c, order, axis=d)
+        c = make_lsq_spline(x, c, t[d], k=int(k[d]), axis=d).c
+        c = np.moveaxis(c, 0, d)
+    return NdBSpline(t, c, tuple(k))
 
 
 def _validate_lsq_weights(w, npts):
@@ -683,7 +741,8 @@ def make_lsq_ndbspline(
         `x` contains the one-dimensional axes of a complete rectilinear grid.
     solver : callable, optional
         Sparse least-squares solver. By default,
-        `scipy.sparse.linalg.lsqr` is currently used. The solver must accept a
+        `scipy.sparse.linalg.lsqr` is currently used, except for unweighted
+        data on a grid, see Notes. The solver must accept a
         sparse design matrix and one-dimensional right-hand side and return a
         result with the coefficients and termination status in its first two
         entries. Status values ``0``, ``1``, and ``2`` indicate successful
@@ -729,9 +788,17 @@ def make_lsq_ndbspline(
     ``t[d][k[d]] <= x[:, d] <= t[d][-k[d] - 1]``; with ``grid=True``, it
     means ``t[d][k[d]] <= x[d] <= t[d][-k[d] - 1]``.
 
-    With ``grid=True``, the grid is converted to scattered coordinate rows
-    internally. Both input forms therefore have the same least-squares and
-    solver semantics.
+    With ``grid=True``, the design matrix is the Kronecker product of the
+    one-dimensional design matrices of the grid axes, and its pseudoinverse is
+    the Kronecker product of their pseudoinverses. So if none of `w`,
+    `solver` and `solver_args` are given, the coefficients are computed with
+    one one-dimensional least-squares fit along each axis, using
+    `make_lsq_spline`. This is exact up to rounding and much faster than
+    solving the full problem. The grid axes and knots must then satisfy the
+    conditions of `make_lsq_spline` in each dimension, including the
+    Schoenberg-Whitney conditions. Otherwise, the grid is converted to
+    scattered coordinate rows internally, so both input forms have the same
+    least-squares and solver semantics.
 
     Examples
     --------
@@ -763,13 +830,13 @@ def make_lsq_ndbspline(
     >>> spl([[0.25, 0.5]])
     array([1.25])
     """
-    if solver is None:
-        solver = ssl.lsqr
-
     if grid:
         return _make_lsq_ndbspl_from_grid(
             x, y, t, k=k, w=w, solver=solver, **solver_args
         )
+
+    if solver is None:
+        solver = ssl.lsqr
 
     return _make_lsq_ndbspl(
         x, y, t, k=k, w=w, solver=solver, **solver_args
