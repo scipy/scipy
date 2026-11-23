@@ -104,7 +104,13 @@ class _BarycentricRational:
             (self._support_values.shape[0], -1)
         )
         weights = self.weights[..., np.newaxis]
-
+        m = self._support_points.size
+        if self.weights.size == 2*m:
+            denominator_weights = self.weights[m:, np.newaxis]
+        elif self.weights.size == m:
+            denominator_weights = self.weights[..., np.newaxis]
+        else:
+            raise ValueError('weight vector must have length=length(support_points), or 2*length(support_points)')
         # Cauchy matrix
         # Ignore errors due to inf/inf at support points, these will be fixed later
         with np.errstate(invalid="ignore", divide="ignore"):
@@ -113,8 +119,8 @@ class _BarycentricRational:
             # NOTE: optimized matrix multiplications are avoided here
             # to prevent the platform-specific deviations noted in
             # gh-23707
-            num = np.einsum('ik,kj->ij', CC, weights * support_values)
-            denom = np.einsum('ik,kj->ij', CC, weights)
+            num = np.einsum('ik,kj->ij', CC, weights[:m] * support_values)
+            denom = np.einsum('ik,kj->ij', CC, denominator_weights)
             r = num / denom
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
@@ -146,13 +152,20 @@ class _BarycentricRational:
             Poles of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
+        m = self._support_points.size
+        if self.weights.size == 2*m:
+            denominator_weights = self.weights[m:]
+        elif self.weights.size == m:
+            denominator_weights = self.weights
+        else:
+            raise ValueError('weight vector must have length = length(support_points) or 2*length(support_points)')
         if self._poles is None:
             # Compute poles via generalized eigenvalue problem
             m = self.weights.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
 
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = np.zeros_like(B, dtype=np.result_type(denominator_weights,
                                                       self._support_points))
             E[0, 1:] = self.weights
             E[1:, 0] = 1
@@ -175,13 +188,20 @@ class _BarycentricRational:
                                       " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
+            m = self._support_points.size
+            if self.weights.size == 2*m:
+                denominator_weights = self.weights[m:]
+            elif self.weights.size == m:
+                denominator_weights = self.weights
+            else:
+                raise ValueError('weight vector must have length=length(support_points) or 2*length(support_points)')
             with np.errstate(divide="ignore", invalid="ignore"):
                 N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
-                    self._support_values * self.weights
+                    self._support_values * self.weights[:m]
                 )
                 Ddiff = (
                     -((1/np.subtract.outer(self.poles(), self._support_points))**2)
-                    @ self.weights
+                    @ denominator_weights
                 )
                 self._residues = N / Ddiff
         return self._residues
@@ -200,13 +220,13 @@ class _BarycentricRational:
                                       " data.")
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
-            m = self.weights.size
+            m = self._support_points.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = np.zeros_like(B, dtype=np.result_type(self.weights[:m],
                                                       self._support_values,
                                                       self._support_points))
-            E[0, 1:] = self.weights * self._support_values
+            E[0, 1:] = self.weights[:m] * self._support_values
             E[1:, 0] = 1
             np.fill_diagonal(E[1:, 1:], self._support_points)
 
