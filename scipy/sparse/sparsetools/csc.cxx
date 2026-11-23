@@ -4,4 +4,8 @@
 #include "sparsetools.h"
 #include "csc.h"
 
-#include "csc_impl.h"
+#define SPTOOLS_CSC_ROUTINES(X_0, X_I, X_IT) \
+  X_IT(csc_matvec)                           \
+  X_IT(csc_matvecs)
+
+SPTOOLS_DEFINE_UNIT(csc, SPTOOLS_CSC_ROUTINES)

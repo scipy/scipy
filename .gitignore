@@ -238,11 +238,6 @@ scipy/sparse/csgraph/_matching.c
 scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
-scipy/sparse/sparsetools/bsr_impl.h
-scipy/sparse/sparsetools/csc_impl.h
-scipy/sparse/sparsetools/csr_impl.h
-scipy/sparse/sparsetools/other_impl.h
-scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/_ckdtree.cxx
 scipy/spatial/ckdtree.h
 scipy/spatial/distance/_hausdorff.c
