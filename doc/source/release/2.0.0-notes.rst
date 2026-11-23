@@ -43,6 +43,7 @@ New features
   creating least-squares spline fits with predefined values at the endpoints of the
   interpolation interval: ``spl = make_lsq_spline(x, y, t, clamp_values=(42, None))``
   will satisfy ``spl(x[0]) == 42``.
+- Batched ``y`` inputs are now supported in `scipy.interpolate.make_smoothing_spline`.
 
 
 ``scipy.linalg`` improvements
@@ -54,6 +55,8 @@ New features
   Reference LAPACK version 3.9.1.
 - The LAPACK function families ``?gesvdx``, ``?pbcon``, ``?lansb`` are now available in
   `scipy.linalg.lapack` namespace.
+- The performance and memory usage of `scipy.linalg.null_space` has been improved for
+  some tall/long matrices.
 
 
 ``scipy.ndimage`` improvements
@@ -78,6 +81,10 @@ New features
 
 ``scipy.spatial`` improvements
 ==============================
+- In `scipy.spatial.transform.rotation`, the performances of ``from_quat``, ``mul``,
+  ``from_mrp``, and ``as_mrp`` have improved.
+- Support for batched inputs was added to most `scipy.spatial.distance` functions
+  mentioned in the Array API standard support section below.
 
 
 ``scipy.special`` improvements
@@ -91,7 +98,22 @@ New features
 
 ``scipy.stats`` improvements
 ============================
+- The accuracy of ``isf`` has been improved for ``powerlaw``, ``recipinvgauss``,
+  ``rdist``, ``semicircular``, and ``moyal``.
 
+***************************************
+Array API standard support improvements
+***************************************
+- Array API standard support is now active by default, and the ``SCIPY_ARRAY_API``
+  environment variable is no longer used.
+- Array API support was added for the following functions in `scipy.spatial.distance`:
+  ``braycurtis``, ``jensenshannon``, ``canberra``, ``chebychev``, ``num_obs_y``,
+  ``jaccard``, ``is_valid_y``, and ``cosine``.
+- Many functions in `scipy.special` now support mixed ``torch.tensor`` and Python
+  scalar inputs. Backend delegation support has been substantially expanded to
+  include: error functions, ellipsoidal harmonics, othogonal polynomial evaluation,
+  spherical bessel functions, zeta functions, Legendre functions, Bessel functions,
+  integrals of Bessel functions, Airy functions, Elliptic functions.
 
 
 *******************
