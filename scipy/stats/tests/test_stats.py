@@ -487,38 +487,43 @@ class TestPearsonr:
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    def test_length_two_pos1(self, xp):
+    @pytest.mark.parametrize('alternative, pvalue',
+                             [('two-sided', 1.), ('less', 1.), ('greater', 0.5)])
+    def test_length_two_pos1(self, alternative, pvalue, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
         x = xp.asarray([1., 2.])
         y = xp.asarray([3., 5.])
-        res = stats.pearsonr(x, y)
+        res = stats.pearsonr(x, y, alternative=alternative)
         r, p = res
         one = xp.asarray(1.)
         xp_assert_equal(r, one)
-        xp_assert_equal(p, one)
+        xp_assert_equal(p, xp.asarray(pvalue))
         low, high = res.confidence_interval()
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    def test_length_two_neg1(self, xp):
+    @pytest.mark.parametrize('alternative, pvalue',
+                             [('two-sided', 1.), ('less', 0.5), ('greater', 1.)])
+    def test_length_two_neg1(self, alternative, pvalue, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
         x = xp.asarray([2., 1.])
         y = xp.asarray([3., 5.])
-        res = stats.pearsonr(x, y)
+        res = stats.pearsonr(x, y, alternative=alternative)
         r, p = res
         one = xp.asarray(1.)
         xp_assert_equal(r, -one)
-        xp_assert_equal(p, one)
+        xp_assert_equal(p, xp.asarray(pvalue))
         low, high = res.confidence_interval()
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
-    def test_length_two_constant_input(self, xp):
+    @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
+    def test_length_two_constant_input(self, alternative, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
         # and https://github.com/scipy/scipy/issues/7730
@@ -526,7 +531,7 @@ class TestPearsonr:
         y = xp.asarray([0.123, 0.456])
         msg = "An input array is constant"
         with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
-            r, p = stats.pearsonr(x, y)
+            r, p = stats.pearsonr(x, y, alternative=alternative)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
 
