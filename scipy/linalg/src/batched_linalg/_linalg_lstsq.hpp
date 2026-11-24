@@ -9,6 +9,58 @@ enum class LstsqDriver { gelsd, gelsy, gelss };
 
 
 /**
+ * @brief The largest workspace size ?gelsd, ?gelsy or ?gelss computes for an m-by-n system.
+ *
+ * Mirrors the sizes Reference-LAPACK evaluates, see "Workspace sizes that LAPACK computes
+ * itself" in _common_array_utils.hpp.
+ *
+ * @tparam T      Element type; the complex ?gelsd also computes the size of its real workspace.
+ * @param m       Number of rows.
+ * @param n       Number of columns.
+ * @param nrhs    Number of right-hand sides.
+ * @param ldb     Leading dimension of b, max(1, m, n).
+ * @param driver  The LAPACK routine.
+ * @return The largest size, evaluated without overflow.
+ */
+template<typename T>
+std::uint64_t
+lstsq_max_work_size(const std::uint64_t m, const std::uint64_t n, const std::uint64_t nrhs,
+                    const std::uint64_t ldb, const LstsqDriver driver)
+{
+    const std::uint64_t k = std::min(m, n), kmax = std::max(m, n);
+    // ILAENV(1, ...) block size of the routines each driver calls: 64 for the ?TZRZF and ?ORMRZ
+    // of gelsy, 32 for the others
+    const std::uint64_t nb = (driver == LstsqDriver::gelsy) ? 64 : 32;
+    const std::uint64_t smlsiz = 25;    // ILAENV(9, ...), the size of the subproblems in gelsd
+    // NLVL = MAX(INT(LOG2(min(m, n) / (smlsiz + 1))) + 1, 0), truncating towards zero
+    const long lvl = (k > 0) ? (long)std::log2(double(k) / double(smlsiz + 1)) + 1 : 0;
+    const std::uint64_t nlvl = lvl > 0 ? (std::uint64_t)lvl : 0;
+    // n >= MNTHR = ILAENV(6, ...) = INT(1.6 * min(m, n)) selects the LQ path when m < n
+    const bool lq_path = (m < n) && n >= (std::uint64_t)(float(m) * 1.6f);
+
+    // the block-size terms: (m + n)*nb from the bidiagonal or QR stage, nrhs*nb from applying
+    // the orthogonal factors to b
+    std::uint64_t need = 3*kmax + 2*k + nb*std::max(m + n + 1, nrhs);
+    if (driver == LstsqDriver::gelsd) {
+        const std::uint64_t wlalsd = 9*k + 2*k*smlsiz + 8*k*nlvl + k*nrhs + (smlsiz + 1)*(smlsiz + 1);
+        need = std::max(need, 3*k + wlalsd);
+        if (lq_path) { need = std::max(need, m*m + 4*m + std::max(wlalsd, m*nrhs + m)); }
+        if constexpr (is_complex_v<T>) {
+            // the complex gelsd computes the size of its real workspace rwork as well
+            const std::uint64_t lrwork = 10*k + 2*k*smlsiz + 8*k*nlvl + 3*smlsiz*nrhs +
+                                         std::max((smlsiz + 1)*(smlsiz + 1), n*(1 + nrhs) + 2*nrhs);
+            need = std::max(need, lrwork);
+        }
+    } else if (driver == LstsqDriver::gelss) {
+        // gelss also compares lwork with ldb*nrhs to choose its path
+        need = std::max(need, ldb*nrhs + 4*kmax + k);
+        if (lq_path) { need = std::max(need, m*m + 4*m + std::max({m, nrhs, n}) + m*nrhs); }
+    }
+    return need;
+}
+
+
+/**
  * @brief Batched least squares, `linalg.lstsq`: minimise ||a @ x - b|| for every slice.
  *
  * @param[in]  ap_Am        Input array of shape (..., m, n), any strides.
@@ -68,39 +120,10 @@ _lstsq(PyArrayObject *ap_Am, PyArrayObject *ap_b, PyArrayObject *ap_S, PyArrayOb
     const real_type r_rcond = (real_type)rcond;
     CBLAS_INT rank = 0, info = 0;
 
-    // the largest workspace size the routine computes, after Reference-LAPACK, see "Workspace
-    // sizes that LAPACK computes itself" in _common_array_utils.hpp
-    {
-        const std::uint64_t um = m, un = n, unrhs = nrhs, uk = min_mn, umx = max_mn, uldb = ldb;
-        // ILAENV(1, ...) block size of the routines each driver calls: 64 for the ?TZRZF and ?ORMRZ
-        // of gelsy, 32 for the others
-        const std::uint64_t nb = (driver == LstsqDriver::gelsy) ? 64 : 32;
-        const std::uint64_t smlsiz = 25;    // ILAENV(9, ...), the size of the subproblems in gelsd
-        // NLVL = MAX(INT(LOG2(min(m, n) / (smlsiz + 1))) + 1, 0), truncating towards zero
-        const long lvl = (uk > 0) ? (long)std::log2(double(uk) / double(smlsiz + 1)) + 1 : 0;
-        const std::uint64_t nlvl = lvl > 0 ? (std::uint64_t)lvl : 0;
-        // n >= MNTHR = ILAENV(6, ...) = INT(1.6 * min(m, n)) selects the LQ path when m < n
-        const bool lq_path = (m < n) && un >= (std::uint64_t)(float(um) * 1.6f);
-
-        // the block-size terms: (m + n)*nb from the bidiagonal or QR stage, nrhs*nb from applying
-        // the orthogonal factors to b
-        std::uint64_t need = 3*umx + 2*uk + nb*std::max(um + un + 1, unrhs);
-        if (driver == LstsqDriver::gelsd) {
-            const std::uint64_t wlalsd = 9*uk + 2*uk*smlsiz + 8*uk*nlvl + uk*unrhs + (smlsiz + 1)*(smlsiz + 1);
-            need = std::max(need, 3*uk + wlalsd);
-            if (lq_path) { need = std::max(need, um*um + 4*um + std::max(wlalsd, um*unrhs + um)); }
-            if constexpr (is_complex_v<T>) {
-                // the complex gelsd computes the size of its real workspace rwork as well
-                const std::uint64_t lrwork = 10*uk + 2*uk*smlsiz + 8*uk*nlvl + 3*smlsiz*unrhs +
-                                             std::max((smlsiz + 1)*(smlsiz + 1), un*(1 + unrhs) + 2*unrhs);
-                need = std::max(need, lrwork);
-            }
-        } else if (driver == LstsqDriver::gelss) {
-            // gelss also compares lwork with ldb*nrhs to choose its path
-            need = std::max(need, uldb*unrhs + 4*umx + uk);
-            if (lq_path) { need = std::max(need, um*um + 4*um + std::max({um, unrhs, un}) + um*unrhs); }
-        }
-        if (need > (std::uint64_t)CBLAS_INT_MAX) { return {BatchCode::too_large, routine, static_cast<int64_t>(need)}; }
+    // see "Workspace sizes that LAPACK computes itself" in _common_array_utils.hpp
+    const std::uint64_t max_work_size = lstsq_max_work_size<T>(m, n, nrhs, ldb, driver);
+    if (max_work_size > (std::uint64_t)CBLAS_INT_MAX) {
+        return {BatchCode::too_large, routine, static_cast<int64_t>(max_work_size)};
     }
 
     // outputs; S is NULL for gelsy

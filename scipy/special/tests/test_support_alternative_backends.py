@@ -176,31 +176,8 @@ def _skip_or_tweak_alternative_backends(
     return positive_only, dtypes
 
 
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
-@pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
-                                    [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-@pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
-@pytest.mark.parametrize(
-    'func,nfo', [
-        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public
-    ]
-)
-def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
-    int_only = nfo.int_only
-    if isinstance(int_only, dict):
-        int_only = int_only.get(get_native_namespace_name(xp))
-    if int_only is None:
-        int_only = (False, ) * nfo.n_args
-
-    dtypes = tuple(
-        'intp' if needs_int else base_dtype for needs_int in int_only
-    )
-
-    positive_only, dtypes = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes, int_only, elementwise_only=True
-    )
-
+def _get_args(xp, nfo, dtypes, shapes, positive_only):
+    """Generate reference and backend inputs for a registered function."""
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
     dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
 
@@ -274,6 +251,36 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         # Try to trigger bugs related to having multiple chunks.
         args_xp = [arg.rechunk(5) for arg in args_xp]
 
+    return args_np, args_xp
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
+@pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
+                                    [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
+@pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
+@pytest.mark.parametrize(
+    'func,nfo', [
+        make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs if nfo.public
+    ]
+)
+def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
+    int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get(get_native_namespace_name(xp))
+    if int_only is None:
+        int_only = (False, ) * nfo.n_args
+
+    dtypes = tuple(
+        'intp' if needs_int else base_dtype for needs_int in int_only
+    )
+
+    positive_only, dtypes = _skip_or_tweak_alternative_backends(
+        xp, nfo, dtypes, int_only, elementwise_only=True
+    )
+
+    args_np, args_xp = _get_args(xp, nfo, dtypes, shapes, positive_only)
+
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
     ref = nfo.func(*args_np)  # Unwrapped ufunc
     ref = _fix_ref_dtype(ref, xp, dtypes)
@@ -289,6 +296,64 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     _tuple_aware_xp_assert_close(
         res, _tuple_aware_to_xp(ref, xp), rtol=rtol, atol=atol,
         check_0d=nfo.produces_0d
+    )
+
+
+@pytest.mark.parametrize("shape", [(), (1,)])
+@pytest.mark.parametrize("base_dtype", ["float32", "float64"])
+@pytest.mark.parametrize(
+    "func,nfo,scalar_index",
+    [
+        make_xp_pytest_param(nfo.wrapper, nfo, i)
+        for nfo in _special_funcs
+        if nfo.public and nfo.is_ufunc and nfo.torch_native and nfo.n_args > 1
+        for i in range(nfo.n_args)
+    ],
+)
+def test_torch_mixed_python_scalars(xp, func, nfo, scalar_index,
+                                    base_dtype, shape):
+    if not is_torch(xp):
+        pytest.skip("PyTorch-specific test")
+
+    if nfo.name in {
+            'eval_chebyt', 'eval_chebyu', 'eval_laguerre', 'eval_hermite',
+            'eval_hermitenorm', 'eval_sh_chebyt', 'eval_sh_chebyu',
+            'eval_legendre'
+    }:
+        pytest.xfail(
+            "SciPy is currently missing loops for int degree and float32 x."
+        )
+
+    int_only = nfo.int_only
+    if isinstance(int_only, dict):
+        int_only = int_only.get("torch")
+    if int_only is None:
+        int_only = (False,) * nfo.n_args
+    dtypes = [
+        np.intp.__name__ if requires_int else base_dtype
+        for requires_int in int_only
+    ]
+
+    positive_only = nfo.positive_only
+    if isinstance(positive_only, dict):
+        positive_only = positive_only.get("torch", False)
+    if isinstance(positive_only, bool):
+        positive_only = [positive_only] * nfo.n_args
+
+    args_np, args_xp = _get_args(
+        xp, nfo, dtypes, [shape] * nfo.n_args, positive_only
+    )
+
+    scalar = np.asarray(args_np[scalar_index]).item()
+    args_np[scalar_index] = scalar
+    args_xp[scalar_index] = scalar
+
+    expected = nfo.func(*args_np)
+    actual = func(*args_xp)
+
+    _tuple_aware_xp_assert_close(
+        actual, _tuple_aware_to_xp(expected, xp),
+        check_0d=True,
     )
 
 

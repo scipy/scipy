@@ -655,8 +655,8 @@ class dlti(LinearTimeInvariant):
             calculated.
         n : int, optional
             Number of frequency points to compute if `w` is not given. The `n`
-            frequencies are logarithmically spaced in an interval chosen to
-            include the influence of the poles and zeros of the system.
+            frequencies are linearly spaced from 0 up to, but not including,
+            the Nyquist frequency.
             Defaults to 100.
 
         Returns
@@ -709,8 +709,9 @@ class dlti(LinearTimeInvariant):
             set will be calculated.
         n : int, optional
             Number of frequency points to compute if `w` is not given. The `n`
-            frequencies are logarithmically spaced in an interval chosen to
-            include the influence of the poles and zeros of the system.
+            frequencies are linearly spaced from 0 up to, but not including,
+            the Nyquist frequency, or up to 2*pi radians/sample if `whole` is
+            True.
         whole : bool, optional
             Normally, if `w` is not given, frequencies are computed from 0 to the
             Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
@@ -3633,8 +3634,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in an interval chosen to
-        include the influence of the poles and zeros of the system.
+        frequencies are linearly spaced from 0 up to, but not including,
+        the Nyquist frequency, or up to 2*pi radians/sample if `whole` is
+        True.
     whole : bool, optional
         Normally, if 'w' is not given, frequencies are computed from 0 to the
         Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
@@ -3738,8 +3740,8 @@ def dbode(system, w=None, n=100):
         value in this array. If not given, a reasonable set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in an interval chosen to
-        include the influence of the poles and zeros of the system.
+        frequencies are linearly spaced from 0 up to, but not including,
+        the Nyquist frequency.
 
     Returns
     -------
