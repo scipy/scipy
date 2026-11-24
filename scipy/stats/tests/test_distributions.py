@@ -4031,6 +4031,30 @@ class TestF:
         k2 = k2num / k2den
         assert_allclose(k, k2)
 
+    def test_f_isf_precision(self):
+        # gh-26692: test upper-tail precision without inf overflow
+        qs = [1e-7, 1e-10, 1e-15, 1e-20]
+        expected = [
+            64.40659479081919,
+            261.40320031659938,
+            2629.050017486649,
+            26305.501967818313,
+        ]
+        actual = stats.f.isf(qs, 10, 10)
+        assert_allclose(actual, expected, rtol=1e-10)
+
+        # Round-trip sf(isf(q)) == q
+        assert_allclose(stats.f.sf(actual, 10, 10), qs, rtol=1e-10)
+
+        # Boundary conditions
+        assert np.isinf(stats.f.isf(0, 10, 10))
+        assert stats.f.isf(1, 10, 10) == 0.0
+
+        # Continuity across q = 0.01 threshold
+        x_left = stats.f.isf(0.01 - 1e-10, 10, 10)
+        x_right = stats.f.isf(0.01 + 1e-10, 10, 10)
+        assert_allclose(x_left, x_right, rtol=1e-8)
+
 
 class TestStudentT:
     def test_rvgeneric_std(self):

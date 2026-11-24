@@ -2632,6 +2632,14 @@ class f_gen(rv_continuous):
     def _ppf(self, q, dfn, dfd):
         return sc.fdtri(dfn, dfd, q)
 
+    def _isf(self, q, dfn, dfd):
+        with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+            z = sc.betaincinv(0.5 * dfd, 0.5 * dfn, q)
+            val = (dfd / dfn) * (1.0 / z - 1.0)
+            fallback = sc.fdtri(dfn, dfd, 1.0 - q)
+            use_val = (q < 0.01) & (z > 0) & np.isfinite(val) & (val >= 0)
+            return np.where(use_val, val, fallback)
+
     def _stats(self, dfn, dfd):
         v1, v2 = 1. * dfn, 1. * dfd
         v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
