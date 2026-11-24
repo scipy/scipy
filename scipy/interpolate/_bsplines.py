@@ -3180,12 +3180,20 @@ def _penalty_matrix_banded(t):
 def _pspline_penalty(n, order=2):
     """P-spline penalty matrix P, with c @ P @ c == sum(diff(c, order)**2).
 
-    See Eilers & Marx, "Why P-splines?",
-    https://psplines.bitbucket.io/Support/WhyPsplines.pdf
+    References
+    ----------
+    .. [1] P. H. C. Eilers and B. D. Marx, "Flexible smoothing with B-splines
+           and penalties", Statist. Sci. 11 (1996), 89-121.
+           :doi:`10.1214/ss/1038425655`
+    .. [2] P. H. C. Eilers and B. D. Marx, "Why P-splines?" (2021),
+           https://psplines.bitbucket.io/Support/WhyPsplines.pdf
     """
     if n <= order:
         raise ValueError(f"Need at least {order + 1} coefficients, got {n}.")
-    # Difference operator is the rows of inv(Pascal)
+    # The order-d difference stencil is the coefficients of (x - 1)**d, i.e.
+    # the signed binomials (-1)**(d-j) * C(d, j), which is the last row of the
+    # signed lower inverse Pascal matrix. Only an (order+1)-sized Pascal matrix
+    # is formed and one row is taken from it. D is sparse and banded.
     d = invpascal(order + 1, kind='lower', exact=True)[-1].astype(float)
     D = diags_array(d, offsets=list(range(order + 1)), shape=(n - order, n))
     return D.T @ D
