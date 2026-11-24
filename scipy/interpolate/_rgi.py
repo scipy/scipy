@@ -119,10 +119,6 @@ class RegularGridInterpolator:
 
         .. versionadded:: 1.13
 
-        .. versionchanged:: 2.0.0
-            `solver_args` without `solver` raise a `TypeError`. Previously
-            they were passed to `scipy.sparse.linalg.gcrotmk`.
-
     Methods
     -------
     __call__
@@ -171,7 +167,8 @@ class RegularGridInterpolator:
     separably, with one banded solve per dimension [4]_: all grid lines along
     an axis are interpolated with one-dimensional splines, as in
     `make_interp_spline`, and the resulting coefficients are passed on to the
-    next axis. The result is exact up to rounding.
+    next axis. The result is exact up to rounding. See
+    :ref:`tutorial-interpolate_RGI_solver` for the details.
 
     .. versionchanged:: 2.0.0
         The default used to be the iterative solver `scipy.sparse.linalg.gcrotmk`,

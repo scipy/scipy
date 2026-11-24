@@ -110,11 +110,26 @@ Solvers for spline methods
 ==========================
 
 The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a linear
-system for the spline coefficients when the interpolator is created. On a
-rectilinear grid, the matrix of this system is a Kronecker product of
-one-dimensional banded matrices, so by default it is solved with one banded
-solve per dimension (see the notes in `RegularGridInterpolator`). The result is
-exact up to rounding.
+system for the spline coefficients when the interpolator is created.
+
+Let :math:`A_d` be the collocation matrix in dimension :math:`d`, with
+:math:`(A_d)_{ri}` the value of the :math:`i`-th B-spline at the :math:`r`-th
+grid point in that dimension. The interpolation conditions on the grid are
+
+.. math::
+
+    (A_1 \otimes A_2 \otimes \cdots \otimes A_N) \, \mathrm{vec}(c)
+    = \mathrm{vec}(v),
+
+where :math:`\otimes` is the Kronecker product and :math:`\mathrm{vec}` ravels
+the spline coefficients :math:`c` and the data values :math:`v` in C order. The
+inverse of a Kronecker product is the Kronecker product of the inverses, so
+:math:`c` is obtained by applying :math:`A_d^{-1}` along each axis :math:`d` in
+turn, in any order [deBoor1979]_. Each step is a one-dimensional interpolation
+problem with a banded matrix: all grid lines along an axis are interpolated at
+once, as in `make_interp_spline`, and the resulting coefficients are passed on
+to the next axis. This is what `RegularGridInterpolator` does by default. The
+result is exact up to rounding, and the full matrix is never assembled.
 
 Before SciPy 2.0.0, the default was to assemble one large sparse system and
 solve it with the iterative solver `scipy.sparse.linalg.gcrotmk`. You can still
@@ -144,6 +159,10 @@ bump. A smaller tolerance, ``solver_args={"rtol": 1e-10}``, or the direct solver
 before interpolating and adding it back afterwards, since splines reproduce
 constants exactly. See the notes on choosing a solver in
 `RegularGridInterpolator` for more details.
+
+.. [deBoor1979] C. de Boor, "Efficient Computer Manipulation of Tensor
+   Products", ACM Trans. Math. Softw., 5(2), pp. 173-182, 1979.
+   :doi:`10.1145/355826.355831`
 
 
 .. _tutorial-interpolate_RGI_batching:

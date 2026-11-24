@@ -808,26 +808,9 @@ def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
     -----
     Boundary conditions are not-a-knot in all dimensions.
 
-    Let :math:`A_d` be the collocation matrix in dimension :math:`d`, with
-    :math:`(A_d)_{ri}` the value of the :math:`i`-th B-spline at the
-    :math:`r`-th grid point ``points[d][r]``. The interpolation conditions on
-    the grid are
-
-    .. math::
-
-        (A_1 \otimes A_2 \otimes \cdots \otimes A_N) \, \mathrm{vec}(c)
-        = \mathrm{vec}(v),
-
-    where :math:`\otimes` is the Kronecker product and :math:`\mathrm{vec}`
-    ravels the coefficients :math:`c` and the `values` :math:`v` in C order.
-    The inverse of a Kronecker product is the Kronecker product of the
-    inverses, so :math:`c` is obtained by applying :math:`A_d^{-1}` along each
-    axis :math:`d` in turn, in any order. This is the Lemma on p. 174 of [1]_.
-    Each step is a one-dimensional interpolation problem with a banded matrix,
-    solved by `make_interp_spline` for all grid lines along that axis at once.
-    The result is exact up to rounding, and the full design matrix is never
-    assembled. A step-by-step derivation is in
-    https://github.com/scipy/scipy/issues/26427.
+    By default, the interpolation conditions are solved separably, with one
+    banded solve per dimension [1]_. The derivation is in the tutorial, see
+    :ref:`tutorial-interpolate_RGI_solver`.
 
     .. versionchanged:: 2.0.0
         The separable solver is the default. Previously, the default was
