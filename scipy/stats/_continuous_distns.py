@@ -31,10 +31,10 @@ from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
+from ._constants import (_XMIN, _LOGXMIN, _LOGXMAX, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
-from scipy.optimize import root_scalar
+from scipy.optimize import elementwise, root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
 
@@ -5140,13 +5140,103 @@ class invgauss_gen(rv_continuous):
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
 
+    @staticmethod
+    def _isf_scaled_sf(a, b, delta):
+        # SF = exp(-a**2) * (erfcx(a) - erfcx(b)) / 2.
+        scaled_sf = 0.5 * (sc.erfcx(a) - sc.erfcx(b))
+        close = delta < 1e-3 * (1 + a)
+        if np.any(close):
+            # Integrate the derivative with the two-point Gauss-Legendre rule
+            # to avoid subtracting close values of erfcx.
+            delta = delta[close]
+            mid = a[close] + delta/2
+            offset = delta / (2*np.sqrt(3))
+            left, right = mid - offset, mid + offset
+            mean = 0.5 * (left * sc.erfcx(left) + right * sc.erfcx(right))
+            scaled_sf[close] = delta * (1/_SQRT_PI - mean)
+        return scaled_sf
+
+    def _isf_accurate(self, x, q, mu):
+        delta = np.sqrt(2) / np.sqrt(x)
+        a = ((x - mu) / mu) * (delta/2)
+        decay = np.exp(-a**2)
+        scaled_sf = self._isf_scaled_sf(a, a + delta, delta)
+        residual = scaled_sf * decay - q
+        # The magnitude of d(SF)/d(log(x)) is x * pdf(x).
+        # Scale the residual tolerance to control relative error in x.
+        tol = (1e-12 / (2*_SQRT_PI)) * delta * decay
+        return np.isfinite(x) & (np.abs(residual) <= tol)
+
+    def _isf_logtail(self, p, mu, *, survival):
+        p = p.astype(float, copy=False)
+        logp = np.log(p)
+        sqrt2 = np.sqrt(2)
+        invsqrtmu = 1 / np.sqrt(mu.astype(float, copy=False))
+
+        # Solve in a = (x/mu - 1)/sqrt(2*x), which increases with x.
+        # For b = (x/mu + 1)/sqrt(2*x), b**2 - a**2 = 2/mu.
+        def arguments(a, invsqrtmu):
+            b = np.hypot(a, sqrt2 * invsqrtmu)
+            # Rationalize b - a when a is nonnegative.
+            delta = np.where(a >= 0, (2*invsqrtmu / (b + np.abs(a))) * invsqrtmu,
+                             b - a)
+            return b, delta
+
+        def objective(a, invsqrtmu, logp):
+            b, delta = arguments(a, invsqrtmu)
+            if survival:
+                scaled_prob = self._isf_scaled_sf(a, b, delta)
+            else:
+                scaled_prob = 0.5 * (sc.erfcx(-a) + sc.erfcx(b))
+            return -a**2 + np.log(scaled_prob) - logp
+
+        if survival:
+            # At a = -p, SF >= erf(p) > p for p <= 0.5 because b >= -a.
+            # At a > 0, SF <= exp(-a**2)/2 and SF <= 1/(mu*a*sqrt(pi)).
+            lower = -p
+            upper = np.minimum(np.sqrt(-logp), (invsqrtmu / p) * invsqrtmu)
+        else:
+            # CDF <= exp(-a**2) for a < 0, and CDF >= 0.5 at a = 0.
+            lower = -np.sqrt(-logp)
+            upper = 0.0
+        result = elementwise.find_root(
+            objective, (lower, upper), args=(invsqrtmu, logp)
+        )
+        _, delta = arguments(result.x, invsqrtmu)
+        return np.where(result.success, (sqrt2 / delta)**2, np.nan)
+
     def _isf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            isf = scu._invgauss_isf(x, mu, 1)
-            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            isf[i_wt] = scu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
-            i_nan = np.isnan(isf)
+            isf = np.empty(x.shape)
+            # The limit as mu tends to infinity is the standard Levy distribution.
+            i_levy = mu == np.inf
+            if i_levy.any():
+                z = sc.erfinv(x[i_levy].astype(float, copy=False))
+                # Divide twice to avoid rounding a subnormal square.
+                isf[i_levy] = (0.5 / z) / z
+            # The generic fallback requires 1 - x to be less than one.
+            i_tail = 1 - x == 1
+            i_logsf = i_tail & ~i_levy
+            i_wt = (x > 0.5) & ~i_levy  # "wrong tail" - sometimes too inaccurate
+            i_boost = ~(i_logsf | i_wt | i_levy)
+            if i_boost.any():
+                q_boost, mu_boost = x[i_boost], mu[i_boost]
+                candidate = scu._invgauss_isf(q_boost, mu_boost, 1, dtype=float)
+                isf[i_boost] = candidate
+                accurate = self._isf_accurate(candidate, q_boost, mu_boost)
+                i_logsf[i_boost] = ~accurate
+            if i_logsf.any():
+                isf[i_logsf] = self._isf_logtail(x[i_logsf], mu[i_logsf],
+                                                survival=True)
+            # The exp(2/mu) factor in Boost's CDF overflows for small mu.
+            i_logcdf = i_wt & (mu <= 2 / _LOGXMAX)
+            if i_logcdf.any():
+                isf[i_logcdf] = self._isf_logtail(1-x[i_logcdf], mu[i_logcdf],
+                                                 survival=False)
+            i_ppf = i_wt & ~i_logcdf
+            isf[i_ppf] = scu._invgauss_ppf(1-x[i_ppf], mu[i_ppf], 1, dtype=float)
+            i_nan = np.isnan(isf) & ~(i_logsf | i_logcdf | i_levy)
             isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
 

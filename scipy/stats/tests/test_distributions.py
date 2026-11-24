@@ -3504,10 +3504,64 @@ class TestInvgauss:
         assert_allclose(dist.ppf(p), dist0.ppf(p))
         assert_allclose(dist.isf(p), dist0.isf(p))
 
+    def test_isf_infinite_mu_tail(self):
+        q = np.r_[1e-300, 1e-154, 1e-62, 2.**-54 * np.array([0.99, 1., 1.01]),
+                  0.5, 0.9]
+        actual = stats.invgauss.isf(q[:, None], [0.6, np.inf])
+        expected = stats.invgamma.isf(q[1:], 0.5, scale=0.5)
+        assert_allclose(actual[1:, 1], expected, rtol=5e-12)
+        assert_equal(actual[0, 1], np.inf)
+        assert_allclose(actual[:, 0], stats.invgauss.isf(q, 0.6), rtol=5e-12)
+        assert np.all(np.diff(actual, axis=0) < 0)
+
+    def test_isf_infinite_mu_overflow(self):
+        q = [5.950894918631797e-155, 5.950894918631801e-155]
+        # Reference from 1/(2*erfinv(q)**2) with mpmath at 180 decimal digits.
+        expected = [np.inf, 1.7976931348623147e308]
+        assert_allclose(stats.invgauss.isf(q, np.inf), expected, rtol=5e-15)
+
     def test_gh25096(self):
         # Regression test for gh-25096: invgauss.ppf should not raise a warning
         # for the given inputs
         stats.invgauss.ppf(0.97969, 66.99652081)
+
+    def test_isf_far_upper_tail(self):
+        q = np.array([1e-62, 1e-65, 1e-100, 1e-200, 1e-300, 1e-320])[:, None]
+        mu = np.array([0.6, 2.0, 1000.0])
+        # Reference quantiles from the survival function evaluated with mpmath
+        # at 130 decimal digits, using the float64 inputs.
+        expected = [
+            [98.12463456966218, 1071.551720489958, 254612975.0076495],
+            [103.04590941153708, 1126.2210628175346, 268272874.45597807],
+            [160.59573030200383, 1765.5810732268124, 428060229.7696601],
+            [325.62201646777254, 3599.131120949275, 886400694.2193472],
+            [490.9658249797906, 5436.25973992284, 1345667578.7896287],
+            [524.0527687129826, 5803.889359422916, 1437573090.0825884],
+        ]
+        actual = stats.invgauss.isf(q, mu)
+        assert_allclose(actual, expected, rtol=5e-12)
+        assert np.all(np.diff(actual, axis=0) > 0)
+
+    def test_isf_upper_tail_large_mu(self):
+        q = 2.**-54 * np.array([0.99, 1.0, 1.01])
+        mu = 4.78630092322638e16
+        # Reference quantiles from the survival function evaluated with mpmath
+        # at 130 decimal digits, using the float64 inputs.
+        expected = [1.1632330022350744e32, 1.1455351088995604e32,
+                    1.1282445864708305e32]
+        actual = stats.invgauss.isf(q, mu)
+        assert_allclose(actual, expected, rtol=5e-12)
+        assert np.all(np.diff(actual) < 0)
+
+    def test_isf_small_mu(self):
+        q = [0.4999, 0.5, 0.5001]
+        mu = 4.6415888336127727e-10
+        # Reference quantiles from the survival function evaluated with mpmath.
+        expected = [4.6415888576018387e-10, 4.6415888325355555e-10,
+                    4.6415888074692724e-10]
+        actual = stats.invgauss.isf(q, mu)
+        assert_allclose(actual, expected, rtol=5e-12)
+        assert np.all(np.diff(actual) < 0)
 
 
 class TestLandau:
