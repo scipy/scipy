@@ -610,134 +610,132 @@ class AAA(_BarycentricRational):
         self._points = z
         self._values = f
         
-        if lawson_iters == 0:
-            return zj[i_non_zero], fj[i_non_zero], wj[i_non_zero]
-        else:
-            # Apply Lawson IRLS optimization iterations
-            # Use support points and values where wj != 0
-            zj_opt = zj[i_non_zero]
-            fj_opt = fj[i_non_zero]
-            wj_num_opt = wj[i_non_zero].copy()
-            wj_den_opt = wj[i_non_zero].copy()  # Start with same as numerator
-            m_opt = len(zj_opt)
-            original_weights=wj.copy()
-            original_error=max_error
-            
-            # Construct the Lawson matrix A for all data points with 2*m columns
-            # (independent numerator and denominator weights)
-            A_lawson = np.zeros((M, 2*m_opt), dtype=dtype)
-            support_row = np.full(M, -1, dtype=int)
-            
-            # Find which rows correspond to support points
-            for j, point in enumerate(zj_opt):
-                matches = np.flatnonzero(np.isclose(z, point, rtol=0, atol=1e-14))
-                support_row[matches] = j
-            
-            # Fill matrix for regular (non-support) points
-            regular = support_row < 0
-            C_lawson = 1.0 / (z[regular, np.newaxis] - zj_opt[np.newaxis, :])
-            A_lawson[regular, :m_opt] = -C_lawson * fj_opt[np.newaxis, :]
-            A_lawson[regular, m_opt:] = f[regular, np.newaxis] * C_lawson
-            
-            # Fill matrix for support points
-            for row in np.flatnonzero(~regular):
-                j = support_row[row]
-                A_lawson[row, j] = -fj_opt[j]
-                A_lawson[row, m_opt+j] = f[row]
-            
-            # Lawson IRLS with damping
-            row_weights = np.ones(M, dtype=dtype)
-            best_wj_num = wj_num_opt.copy()
-            best_wj_den = wj_den_opt.copy()
-            
-            # Compute initial error using Cauchy matrix evaluation
-            #with np.errstate(invalid="ignore", divide="ignore"):
-            #    CC = 1.0 / np.subtract.outer(z, zj_opt)
-            #    r = CC @ (wj_num_opt * fj_opt) / (CC @ wj_den_opt)
-            #best_error = np.max(np.abs(f - r))
-            max_error = original_error
-            #max error already existed
-            
-            # Determine iteration limits based on lawson_iters
-            # If lawson_iters is np.inf, use adaptive mode (Chebfun-style)
-            # Otherwise, use fixed number of iterations
-            is_adaptive = np.isinf(lawson_iters)
-            max_iters = 1000 if is_adaptive else lawson_iters
-            min_iters = 20 if is_adaptive else 1
-            
-            iteration = 0
-            while iteration < max_iters:
-                # Check stopping criteria for adaptive mode
-                if is_adaptive and iteration >= 20:
-                    # Stop if error is not improving (< 0.1% relative improvement)
-                    if max_error / best_error >= 0.999:
-                        break
-                
-                # SVD with weighted rows
-                weighted_A = np.sqrt(row_weights)[:, np.newaxis] * A_lawson
-                
-                # Check for invalid values
-                if not np.all(np.isfinite(weighted_A)):
-                    # If weighted matrix has issues, skip further iterations
+        
+        return zj[i_non_zero], fj[i_non_zero], wj[i_non_zero]
+
+    def lawson_optimization(self,lawson_iters,lawson_damping=1.0, sign_improvement=False):
+        # Apply Lawson IRLS optimization iterations
+        # Use support points and values where wj != 0
+        print(f"Starting Lawson optimization with {lawson_iters} iterations")
+        zj_opt = self.support_points
+        fj_opt = self.support_values
+        original_weights = self.weights.copy()
+        m_opt = len(zj_opt)
+        M = self.support_points.size
+        
+        # Construct the Lawson matrix A for all data points with 2*m columns
+        # (independent numerator and denominator weights)
+        A_lawson = np.zeros((M, 2*m_opt), dtype=self.support_points.dtype)
+        support_row = np.full(M, -1, dtype=int)
+        
+        # Find which rows correspond to support points
+        for j, point in enumerate(zj_opt):
+            matches = np.flatnonzero(np.isclose(self._points, point, rtol=0, atol=1e-14))
+            support_row[matches] = j
+        
+        # Fill matrix for regular (non-support) points
+        regular = support_row < 0
+        C_lawson = 1.0 / (self._points[regular, np.newaxis] - zj_opt[np.newaxis, :])
+        A_lawson[regular, :m_opt] = -C_lawson * fj_opt[np.newaxis, :]
+        A_lawson[regular, m_opt:] = self._values[regular, np.newaxis] * C_lawson
+        
+        # Fill matrix for support points
+        for row in np.flatnonzero(~regular):
+            j = support_row[row]
+            A_lawson[row, j] = -fj_opt[j]
+            A_lawson[row, m_opt+j] = self._values[row]
+        
+        # Lawson IRLS with damping
+        row_weights = np.ones(M, dtype=self.support_points.dtype)
+        
+        # Compute initial error
+        max_error = np.max(np.abs(self._values - self(self._points)))
+        original_error = max_error
+        best_error = max_error
+        
+        
+        # Determine iteration limits based on lawson_iters
+        # If lawson_iters is np.inf, use adaptive mode (Chebfun-style)
+        # Otherwise, use fixed number of iterations
+        is_adaptive = np.isinf(lawson_iters)
+        max_iters = 1000 if is_adaptive else lawson_iters
+        min_iters = 20 if is_adaptive else 1
+        
+        iteration = 0
+        while iteration < max_iters:
+            print(f"Iteration {iteration}: max_error = {max_error}, best_error = {best_error}")
+            # Check stopping criteria for adaptive mode
+            if is_adaptive and iteration >= 20:
+                # Stop if error is not improving (< 0.1% relative improvement)
+                if max_error / best_error >= 0.999:
                     break
-                
-                try:
-                    _, s_values, Vh = scipy.linalg.svd(
-                        weighted_A,
-                        full_matrices=False,
-                        check_finite=False
-                    )
-                except ValueError:
-                    # SVD convergence issues, return best found so far
-                    break
-                
-                # Extract coefficients from right singular vector
-                V = Vh.conj().T  # Convert from row-major to column vectors
-                coefficients = V[:, -1]  # Rightmost singular vector
-                
-                # Apply sign improvement if requested and all singular values positive
-                if sign_improvement and np.all(s_values > 0):
-                    # Weight by inverse square of singular values
-                    coefficients = V @ (1.0 / (s_values ** 2))
-                    coefficients = coefficients / np.linalg.norm(coefficients)
-                
-                wj_num_opt = coefficients[:m_opt]
-                wj_den_opt = coefficients[m_opt:]
-                self.weights=np.concatenate((best_wj_num, best_wj_den))
-                
-                # Evaluate error at all points using Cauchy matrix
-                #with np.errstate(invalid="ignore", divide="ignore"):
-                #    r = CC @ (wj_num_opt * fj_opt) / (CC @ wj_den_opt)
-                absolute_error = np.abs(f - self(z))
-                max_error_old = max_error
-                max_error = np.max(absolute_error)
-                
-                # Track best solution
-                if max_error < best_error:
-                    best_error = max_error
-                    best_wj_num = wj_num_opt.copy()
-                    best_wj_den = wj_den_opt.copy()
-                
-                # Stop if error is zero
-                if max_error == 0:
-                    break
-                
-                # Update row weights for next iteration
-                relative_error = absolute_error / max_error
-                row_weights *= (
-                    (1 - lawson_damping) + lawson_damping * relative_error
+            
+            # SVD with weighted rows
+            weighted_A = np.sqrt(row_weights)[:, np.newaxis] * A_lawson
+            
+            # Check for invalid values
+            if not np.all(np.isfinite(weighted_A)):
+                # If weighted matrix has issues, skip further iterations
+                break
+            
+            try:
+                _, s_values, Vh = scipy.linalg.svd(
+                    weighted_A,
+                    full_matrices=False,
+                    check_finite=False
                 )
-                row_weights /= np.max(row_weights)
-                
-                iteration += 1
-            if(original_error < best_error):
-                best_weights = original_weights
-                warnings.warn("Original weights retained after Lawson optimization.", RuntimeWarning, stacklevel=2)
+            except ValueError:
+                # SVD convergence issues, return best found so far
+                break
             
-            # Return best solution found as concatenated weight vector
-            # This maintains compatibility with the base class expecting a 1D weight array
-            best_weights = np.concatenate((best_wj_num, best_wj_den))
-            return zj_opt, fj_opt, best_weights
+            # Extract coefficients from right singular vector
+            V = Vh.conj().T  # Convert from row-major to column vectors
+            coefficients = V[:, -1]  # Rightmost singular vector
+            
+            # Apply sign improvement if requested and all singular values positive
+            if sign_improvement and np.all(s_values > 0):
+                # Weight by inverse square of singular values
+                coefficients = V @ (1.0 / (s_values ** 2))
+                coefficients = coefficients / np.linalg.norm(coefficients)
+            
+            
+            self.weights = coefficients
+            absolute_error = np.abs(f - self(self._points))
+            max_error = np.max(absolute_error)
+            
+            # Track best solution
+            if max_error < best_error:
+                print(f"Iteration {iteration}: max_error improved from {best_error} to {max_error}")
+                best_error = max_error
+                best_coefficients = coefficients.copy()
+            else:
+                print(f"Iteration {iteration}: max_error did not improve from {best_error}")
+            
+            # Stop if error is zero
+            if max_error == 0:
+                break
+            
+            # Update row weights for next iteration
+            relative_error = absolute_error / max_error
+            row_weights *= (
+                (1 - lawson_damping) + lawson_damping * relative_error
+            )
+            row_weights /= np.max(row_weights)
+            
+            iteration += 1
+
+        if(best_error < original_error):
+            print(f"Best error improved from {original_error} to {best_error}")
+            #new weights change poles, residues, and zeros and they must be recomputed
+            self.weights = best_coefficients
+            self.pole=None
+            self.residues=None
+            self.zeros=None
+        else:
+            print(f"Best error did not improve from {original_error}")
+            self.weights = original_weights
+
+        return
     
     def clean_up(self, cleanup_tol=1e-13):
         """Automatic removal of Froissart doublets.
