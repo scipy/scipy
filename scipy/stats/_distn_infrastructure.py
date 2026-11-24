@@ -33,7 +33,7 @@ from scipy.stats._finite_differences import _derivative
 from scipy.stats._entropy import entropy
 
 from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
-                   logical_and, log, sqrt, place, argmax, vectorize, asarray,
+                   logical_and, log, sqrt, place, vectorize, asarray,
                    nan, inf, isinf, empty)
 
 import numpy as np
@@ -4164,18 +4164,16 @@ class rv_sample(rv_discrete):
         return self.a, self.b
 
     def _pmf(self, x):
-        return np.select([x == k for k in self.xk],
-                         [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
+        indx = np.minimum(np.searchsorted(self.xk, x), len(self.xk) - 1)
+        return np.where(self.xk[indx] == x, self.pk[indx], 0)
 
     def _cdf(self, x):
-        xx, xxk = np.broadcast_arrays(x[:, None], self.xk)
-        indx = np.argmax(xxk > xx, axis=-1) - 1
+        indx = np.searchsorted(self.xk, x, side='right') - 1
         return self.qvals[indx]
 
     def _ppf(self, q):
-        qq, sqq = np.broadcast_arrays(q[..., None], self.qvals)
-        indx = argmax(sqq >= qq, axis=-1)
-        return self.xk[indx]
+        indx = np.searchsorted(self.qvals, q, side='left')
+        return self.xk[np.minimum(indx, len(self.xk) - 1)]
 
     def _rvs(self, size=None, random_state=None):
         # Need to define it explicitly, otherwise .rvs() with size=None

@@ -4215,6 +4215,14 @@ class TestRvDiscrete:
         assert_allclose([rv.ppf(q) for q in q_values],
                         expected, atol=1e-14)
 
+    def test_ppf_almost_one(self):
+        pk = np.full(12, 1/12, dtype=np.float32)
+        rv = stats.rv_discrete(values=(range(1, 13), pk))
+
+        q_values = [0.9, 0.99, 0.9999, 0.99999999, 0.9999999999999999, 1.0]
+        expected = [11, 12, 12, 12, 12, 12]
+        assert_array_equal(rv.ppf(q_values), expected)
+
     def test_cdf_ppf_next(self):
         # copied and special cased from test_discrete_basic
         vals = ([1, 2, 4, 7, 8], [0.1, 0.2, 0.3, 0.3, 0.1])
