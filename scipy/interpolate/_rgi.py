@@ -105,7 +105,7 @@ class RegularGridInterpolator:
         Only used for methods "slinear", "cubic" and "quintic".
         Sparse linear algebra solver for construction of the NdBSpline instance.
         By default, a separable solver is used and no sparse system is
-        assembled, see `make_ndbspl`.
+        assembled, see Notes.
 
         .. versionadded:: 1.13
 
@@ -168,8 +168,10 @@ class RegularGridInterpolator:
     Spline methods, "slinear", "cubic" and "quintic" involve solving a linear
     system at instantiation time. On a rectilinear grid its matrix is a Kronecker
     product of one-dimensional banded matrices, so by default the system is solved
-    separably, with one banded solve per dimension. The result is exact up to
-    rounding. See `make_ndbspl` for details.
+    separably, with one banded solve per dimension [4]_: all grid lines along
+    an axis are interpolated with one-dimensional splines, as in
+    `make_interp_spline`, and the resulting coefficients are passed on to the
+    next axis. The result is exact up to rounding.
 
     .. versionchanged:: 2.0.0
         The default used to be the iterative solver `scipy.sparse.linalg.gcrotmk`,
@@ -301,6 +303,9 @@ class RegularGridInterpolator:
            COMPUT. 50.181 (1988): 189-196.
            https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
            :doi:`10.1090/S0025-5718-1988-0917826-0`
+    .. [4] C. de Boor, "Efficient Computer Manipulation of Tensor Products",
+           ACM Trans. Math. Softw., 5(2), pp. 173-182, 1979.
+           :doi:`10.1145/355826.355831`
 
     """
     # this class is based on code originally programmed by Johannes Buchner,

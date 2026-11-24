@@ -113,8 +113,8 @@ The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a linear
 system for the spline coefficients when the interpolator is created. On a
 rectilinear grid, the matrix of this system is a Kronecker product of
 one-dimensional banded matrices, so by default it is solved with one banded
-solve per dimension (see `make_ndbspl` for details). The result is exact up to
-rounding.
+solve per dimension (see the notes in `RegularGridInterpolator`). The result is
+exact up to rounding.
 
 Before SciPy 2.0.0, the default was to assemble one large sparse system and
 solve it with the iterative solver `scipy.sparse.linalg.gcrotmk`. You can still
