@@ -599,10 +599,7 @@ def reduce(
     # the einsum into a 6D tensor to avoid excessive memory usage. Instead, we compute
     # the cross product between lv and pv and then compute the dot product with rv.
     # First compute cross products between lv and pv
-    lv_expanded, pv_expanded = xp.broadcast_arrays(
-        lv[..., :, None, :], pv[..., None, :, :]
-    )
-    cross_lp = xp.linalg.cross(lv_expanded, pv_expanded)
+    cross_lp = xp.linalg.cross(lv[..., :, None, :], pv[..., None, :, :])
     # Then compute dot product with rv
     term5 = xp.sum(cross_lp[..., :, :, None, :] * rv[..., None, None, :, :], axis=-1)
     # Combine all terms with proper shape alignment

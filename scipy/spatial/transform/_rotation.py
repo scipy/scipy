@@ -2083,10 +2083,14 @@ class Rotation:
         ----------
         left : `Rotation` instance, optional
             Object containing the left rotation(s). Default value (None)
-            corresponds to the identity rotation.
+            corresponds to the identity rotation. A single rotation is a group
+            with one element. The last axis of its shape is the group axis;
+            all leading axes are batch axes that broadcast against the batch
+            axes of this object (all axes of its shape except the last).
         right : `Rotation` instance, optional
             Object containing the right rotation(s). Default value (None)
-            corresponds to the identity rotation.
+            corresponds to the identity rotation. Shape rules are the same as
+            for `left`.
         return_indices : bool, optional
             Whether to return the indices of the rotations from `left` and
             `right` used for reduction.
@@ -2094,9 +2098,13 @@ class Rotation:
         Returns
         -------
         reduced : `Rotation` instance
-            Object containing reduced rotations.
+            Object containing reduced rotations. Its shape is the broadcast
+            batch shape followed by the number of rotations in this object.
         left_best, right_best: int ndarray
-            Indices of elements from `left` and `right` used for reduction.
+            Indices of elements from `left` and `right` used for reduction,
+            with shape ``(*batch, n)``, where ``n`` is the number of rotations
+            in this object. For a single rotation ``n = 1``, so the indices
+            keep a trailing axis of length 1.
         """
         # A single rotation is a group with one element
         if left is not None:
