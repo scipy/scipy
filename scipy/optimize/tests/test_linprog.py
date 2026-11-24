@@ -12,6 +12,7 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_less)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize._linprog_util import _check_result
 from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
@@ -294,6 +295,132 @@ def test_choose_solver():
 
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
+
+
+@pytest.fixture
+def inaccurate_highs_solution(monkeypatch):
+    """Inject the reported residual while retaining native solve metadata."""
+    import scipy.optimize._linprog_highs as linprog_highs
+
+    original_wrapper = linprog_highs._highs_wrapper
+
+    def inaccurate_wrapper(*args, **kwargs):
+        result = original_wrapper(*args, **kwargs)
+        result["x"] = np.array([0.])
+        result["fun"] = 0.
+        result["slack"] = np.array([-5e-4])
+        return result
+
+    monkeypatch.setattr(linprog_highs, "_highs_wrapper", inaccurate_wrapper)
+
+
+@pytest.mark.parametrize("method", ["highs", "highs-ds"])
+def test_highs_primal_feasibility_tolerance(method, inaccurate_highs_solution):
+    res = linprog([1], A_ub=[[-1]], b_ub=[-5e-4], method=method,
+                  options={"presolve": False,
+                           "primal_feasibility_tolerance": 1e-3})
+
+    _assert_success(res, desired_x=[0])
+    assert_allclose(res.slack, [-5e-4])
+    assert not any(key.startswith('_') for key in res)
+
+
+def test_highs_primal_feasibility_tolerance_for_relaxed_integrality(
+        inaccurate_highs_solution):
+    options = {"presolve": False, "primal_feasibility_tolerance": 1e-3}
+    with pytest.warns(OptimizeWarning, match="solve_relaxation"):
+        relaxed = linprog([1], A_ub=[[-1]], b_ub=[-5e-4], method="highs",
+                          integrality=[1],
+                          options={**options, "solve_relaxation": True})
+    semi_continuous = linprog([1], A_ub=[[-1]], b_ub=[-5e-4],
+                              bounds=[(0, 10)], method="highs",
+                              integrality=[2], options=options)
+
+    for res in (relaxed, semi_continuous):
+        _assert_success(res, desired_x=[0])
+        assert_allclose(res.slack, [-5e-4])
+        assert not any(key.startswith('_') for key in res)
+
+
+@pytest.mark.parametrize(
+    "residual", ["inequality", "equality", "lower", "upper"]
+)
+def test_check_result_uses_solver_tolerance(residual):
+    def check(violation, solver_tol):
+        x = np.array([0.])
+        slack = np.empty(0)
+        con = np.empty(0)
+        bounds = np.array([[-np.inf, np.inf]])
+        if residual == "inequality":
+            slack = np.array([-violation])
+        elif residual == "equality":
+            con = np.array([violation])
+        elif residual == "lower":
+            x[0] = -violation
+            bounds[0, 0] = 0
+        else:
+            x[0] = 1 + violation
+            bounds[0, 1] = 1
+        status, _ = _check_result(x, 0., 0, slack, con, bounds, 1e-9, "",
+                                  None, solver_tol=solver_tol)
+        return status
+
+    assert check(5e-4, 1e-3) == 0
+    assert check(2e-3, 1e-3) == 4
+    assert check(5e-4, 1e-7) == 4
+    assert check(5e-4, None) == 4
+
+
+@pytest.mark.parametrize(
+    ("method", "integrality"),
+    [("highs-ipm", None), ("highs", [1])],
+)
+def test_highs_primal_feasibility_tolerance_scope(
+        inaccurate_highs_solution, method, integrality):
+    options = {"presolve": False, "primal_feasibility_tolerance": 1e-3}
+    res = linprog([1], A_ub=[[-1]], b_ub=[-5e-4], method=method,
+                  integrality=integrality, bounds=[(0, 10)], options=options)
+
+    assert res.status == 4
+    assert not res.success
+    assert not any(key.startswith('_') for key in res)
+
+
+def test_highs_invalid_primal_feasibility_tolerance_uses_default(monkeypatch):
+    import scipy.optimize._linprog as linprog_module
+
+    applied_tolerances = []
+    original_check = linprog_module._check_result
+
+    def recording_check(*args, **kwargs):
+        applied_tolerances.append(kwargs["solver_tol"])
+        return original_check(*args, **kwargs)
+
+    monkeypatch.setattr(linprog_module, "_check_result", recording_check)
+    with pytest.warns(OptimizeWarning):
+        res = linprog([1], method="highs",
+                      options={"primal_feasibility_tolerance": -1})
+
+    _assert_success(res)
+    assert_allclose(applied_tolerances, [1e-7])
+    assert not any(key.startswith('_') for key in res)
+
+
+def test_check_result_rejects_missing_and_nan_solutions():
+    bounds = np.array([[0., 1.]])
+    empty = np.empty(0)
+    args = (empty, empty, bounds, 1e-9, "", None)
+
+    status, _ = _check_result(None, None, 0, *args, solver_tol=1e-3)
+    assert status == 4
+    status, _ = _check_result(None, None, 2, *args, solver_tol=1e-3)
+    assert status == 2
+    status, _ = _check_result(None, None, 3, *args, solver_tol=1e-3)
+    assert status == 3
+
+    status, _ = _check_result(np.array([np.nan]), np.nan, 0, *args,
+                              solver_tol=1e-3)
+    assert status == 4
 
 
 def test_deprecation():
