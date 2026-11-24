@@ -718,7 +718,7 @@ def isspmatrix_lil(x):
 # This namespace class separates array from matrix with isinstance
 class lil_array(_lil_base, sparray):
     """
-    Row-based LIst of Lists sparse array.
+    Row-based List of Lists sparse array.
 
     This is a structure for constructing sparse arrays incrementally.
     Note that inserting a single item can take linear time in the worst case;
@@ -790,7 +790,7 @@ class lil_array(_lil_base, sparray):
 
 class lil_matrix(spmatrix, _lil_base):
     """
-    Row-based LIst of Lists sparse matrix.
+    Row-based List of Lists sparse matrix.
 
     This is a structure for constructing sparse matrices incrementally.
     Note that inserting a single item can take linear time in the worst case;
