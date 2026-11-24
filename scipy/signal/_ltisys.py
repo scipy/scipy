@@ -3276,7 +3276,14 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         try:
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
-            gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
+            rhs = np.dot(u0.T, m-A)
+            if z.shape[0] == z.shape[1]:
+                gain_matrix = np.linalg.solve(z, rhs)
+            else:
+                # B may be rank deficient (z is then wider than tall);
+                # a least-squares solution still places the poles whenever
+                # (A, B) is controllable.
+                gain_matrix = np.linalg.lstsq(z, rhs, rcond=None)[0]
         except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "

@@ -188,6 +188,16 @@ class TestPlacePoles:
         with np.errstate(divide='ignore', invalid='ignore'):
             self._check(A, B, P)
 
+    def test_rank_deficient_B(self):
+        # gh-26785: pole placement only needs (A, B) controllable, B need
+        # not have full column rank.
+        A = np.array([[0, 1], [0, 0]])
+        B = np.array([[0, 0], [1, 1]])
+        P = np.array([0, -1])
+        fsf = place_poles(A, B, P)
+        np.testing.assert_allclose(np.sort_complex(linalg.eigvals(A - B @ fsf.gain_matrix)),
+                        np.sort_complex(P.astype(complex)), atol=1e-8)
+
     def test_tricky_B(self):
         # check we handle as we should the 1 column B matrices and
         # n column B matrices (with n such as shape(A)=(n, n))
