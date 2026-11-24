@@ -3423,6 +3423,61 @@ class TestReadOnlyOverwrite:
         assert x.flags.writeable
         assert_equal(x, ref)
 
+    # the compiled functions, called with every overwrite flag set
+    compiled = {
+        "inv": lambda a, b, r: _batched_linalg._inv(a, 0, True, False),
+        "det": lambda a, b, r: _batched_linalg._det(a, True),
+        "lu": lambda a, b, r: _batched_linalg._lu(a, False, True),
+        "qr": lambda a, b, r: _batched_linalg._qr(a, True, 1, False),
+        "svd": lambda a, b, r: _batched_linalg._svd(a, "gesdd", True, True, True),
+        "cholesky": lambda a, b, r: _batched_linalg._cholesky(a, True, True, True),
+        "eig": lambda a, b, r: _batched_linalg._eig(a, False, True, True, True, b),
+        "eigh": lambda a, b, r: _batched_linalg._eigh(
+            a, True, False, 0, True, 0.0, 0.0, 0, 0, 10, b, True, 1),
+        "solve": lambda a, b, r: _batched_linalg._solve(
+            a, r, 0, False, False, True, True),
+        "lstsq": lambda a, b, r: _batched_linalg._lstsq(
+            a, r, 1e-12, "gelsd", True, True),
+    }
+    # cholesky and det can also work in place on a C-ordered array
+    not_in_place = [(func, kind) for func in compiled
+                    for kind in ("read_only", "c_order", "batched")
+                    if not (kind == "c_order" and func in ("cholesky", "det"))]
+
+    @pytest.mark.parametrize("func, kind", not_in_place)
+    def test_compiled_entry_points_keep_input(self, func, kind):
+        # The Python layer sets an overwrite flag only for a writeable, 2-D,
+        # F-contiguous array. The compiled code checks this itself and works on a
+        # copy otherwise, so the input comes back unchanged.
+        native = self.inputs()
+        if kind == "read_only":
+            arrs = {k: v.copy(order="F") for k, v in native.items()}
+            for v in arrs.values():
+                v.setflags(write=False)
+        elif kind == "c_order":
+            arrs = {k: np.ascontiguousarray(v) for k, v in native.items()}
+            assert not any(v.flags.f_contiguous for v in arrs.values())
+        else:
+            arrs = {k: np.stack([v, v]) for k, v in native.items()}
+        kept = {k: v.copy() for k, v in arrs.items()}
+        self.compiled[func](**arrs)
+        for k, v in arrs.items():
+            assert_equal(v, kept[k])
+
+    def test_compiled_lstsq_keeps_b_shorter_than_x(self):
+        # x has max(m, n) rows. With m < n it does not fit in b, so the compiled code
+        # returns it in a new array even when asked to overwrite b.
+        # TestLstsq::test_overwrite cannot see this: lstsq itself drops overwrite_b
+        # for m < n, so only a direct call reaches the check in the compiled code.
+        a = np.asfortranarray(np.arange(1., 11.).reshape(2, 5))
+        b = np.ones((2, 1), order="F")
+        x, rank, _, err_lst = _batched_linalg._lstsq(a, b, 1e-12, "gelsd", False, True)
+        assert x.shape == (5, 1)
+        assert not np.shares_memory(x, b)
+        assert_equal(b, np.ones((2, 1)))
+        assert rank == 2 and not err_lst
+        assert_allclose(a @ x, b, atol=1e-13)
+
 
 @pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")
 @pytest.mark.parametrize("func", ["inv", "det", "cholesky", "lu", "qr", "svd", "eig",
