@@ -1169,17 +1169,17 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     >>> rng = np.random.default_rng(42)
     >>> x = np.linspace(0, 10, 200)
     >>> sin = np.sin(x) * 5
-    >>> noise = 0.8 * rng.standard_normal(x.shape) 
+    >>> noise = 0.8 * rng.standard_normal(x.shape)
     >>> y_noisy = sin + noise
 
     Create an interpolating spline and a smoothing spline:
 
-    >>> spl = make_splrep(x, y_noisy, s=0) 
+    >>> spl = make_splrep(x, y_noisy, s=0)
     >>> spl_smooth = make_splrep(x, y_noisy, s=15)
 
     Plot both splines:
 
-    >>> plt.figure(figsize=(15, 6)) 
+    >>> plt.figure(figsize=(15, 6))
     >>> plt.scatter(x, y_noisy, label='Noisy Data', color='orange')
     >>> plt.plot(x, spl(x), label='Interpolating Spline', color='blue')
     >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
@@ -1347,7 +1347,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """
+    """ #noqa:E501
 
     bc_type = _validate_bc_type(bc_type)
 
