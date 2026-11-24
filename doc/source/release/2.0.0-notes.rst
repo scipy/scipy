@@ -29,6 +29,11 @@ Highlights of this release
 New features
 ************
 
+``scipy.io`` improvements
+=========================
+- `scipy.io.loadmat` now has better performance when reading in data structures
+  with a large number of fields.
+
 ``scipy.cluster`` improvements
 ==============================
 
@@ -44,6 +49,12 @@ New features
   interpolation interval: ``spl = make_lsq_spline(x, y, t, clamp_values=(42, None))``
   will satisfy ``spl(x[0]) == 42``.
 - Batched ``y`` inputs are now supported in `scipy.interpolate.make_smoothing_spline`.
+- The performance of several ``BSpline`` and ``NdBSpline`` routines has improved, as has
+  the performance of the fitting routines including ``make_interp_spline`` and
+  ``make_lsq_spline``, thanks to de Boor recursion algorithm improvements.
+- The performance of ``BSpline.design_matrix`` has been improved.
+- `scipy.interpolate.make_smoothing_spline` is now able to detect and warn when solves
+  become numerically singular.
 
 
 ``scipy.linalg`` improvements
@@ -76,6 +87,8 @@ New features
 
 ``scipy.sparse`` improvements
 =============================
+- The performance of `scipy.sparse.linalg.LaplacianNd.eigenvectors` has been improved
+  by vectorization.
 
 
 
@@ -84,7 +97,8 @@ New features
 - In `scipy.spatial.transform.rotation`, the performances of ``from_quat``, ``mul``,
   ``from_mrp``, and ``as_mrp`` have improved.
 - Support for batched inputs was added to most `scipy.spatial.distance` functions
-  mentioned in the Array API standard support section below.
+  mentioned in the Array API standard support section below, as well as for
+  ``dice``, ``rogerstanimoto``, ``sokalsneath``, and ``russellrao`` functions.
 
 
 ``scipy.special`` improvements
@@ -100,6 +114,10 @@ New features
 ============================
 - The accuracy of ``isf`` has been improved for ``powerlaw``, ``recipinvgauss``,
   ``rdist``, ``semicircular``, and ``moyal``.
+- The performance of ``multivariate_normal.cdf`` has improved.
+- ``axis``, ``nan_policy``, and ``keepdims`` options are now available for
+  `scipy.stats.anderson_ksamp` and `scipy.stats.anderson`.
+
 
 ***************************************
 Array API standard support improvements
@@ -108,12 +126,18 @@ Array API standard support improvements
   environment variable is no longer used.
 - Array API support was added for the following functions in `scipy.spatial.distance`:
   ``braycurtis``, ``jensenshannon``, ``canberra``, ``chebychev``, ``num_obs_y``,
-  ``jaccard``, ``is_valid_y``, and ``cosine``.
+  ``jaccard``, ``is_valid_y``, ``correlation``, ``sqeuclidean``, ``seuclidan``,
+  ``euclidean``, and ``cosine``.
 - Many functions in `scipy.special` now support mixed ``torch.tensor`` and Python
   scalar inputs. Backend delegation support has been substantially expanded to
   include: error functions, ellipsoidal harmonics, othogonal polynomial evaluation,
   spherical bessel functions, zeta functions, Legendre functions, Bessel functions,
   integrals of Bessel functions, Airy functions, Elliptic functions.
+- The new `scipy.stats` distribution infrastructure now has support for the CuPy
+  backend.
+- Array API support is now available for `scipy.stats.anderson_ksamp` and
+  `scipy.stats.anderson`.
+- Array API support is now available for `scipy.linalg.diagsvd`.
 
 
 *******************
@@ -152,6 +176,8 @@ Backwards incompatible changes
 *************
 Other changes
 *************
+- It is once again possible to initialize ``LinearOperator`` without specifying
+  its ``shape``.
 
 
 
