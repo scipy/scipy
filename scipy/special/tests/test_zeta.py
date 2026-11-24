@@ -5,6 +5,10 @@ import numpy as np
 import pytest
 
 from numpy.testing import assert_equal, assert_allclose
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+
+
+lazy_xp_modules = [sc]
 
 
 def test_zeta():
@@ -305,3 +309,73 @@ def test_gh15036():
     # for q=1, the Hurwitz zeta function reduces to the Riemann zeta function
     x = [1, 50, 500]
     assert_equal(sc.zeta(x, 1), sc.zeta(x))
+
+
+
+@pytest.mark.skip_xp_backends("dask.array", reason="fails to find correct output shape")
+@make_xp_test_case(sc.zeta)
+def test_alternative_backends(xp):
+    z = np.logspace(0, 5, 7, base=2) + np.finfo(float).eps
+    z = xp.asarray(z)
+    q = xp.asarray([0.5, 1.0, 10.0, 3/8, xp.pi], dtype=xp.float64)
+
+    actual = sc.zeta(z[:, None], q=q[None, :])
+
+    # computed with mp.zeta from mpmath, setting dps=1000 and then converting to
+    # a float64 array.
+    desired = xp.asarray(
+        [
+            [
+                4503599627370498.0,
+                4503599627370497.0,
+                4503599627370493.5,
+                4503599627370499.0,
+                4503599627370495.0
+            ],
+            [
+                4.657997386218181,
+                1.9101558438864543,
+                0.21991026305148245,
+                7.078534018062905,
+                0.5937595049439891
+            ],
+            [
+                9.401927068636354,
+                1.1707807309995695,
+                0.003426477322592478,
+                22.98229739225044,
+                0.05349079296596681
+            ],
+            [
+                50.56017232857417,
+                1.0223984263702026,
+                5.936940498887179e-06,
+                257.00234226524753,
+                0.002024028745026126
+            ],
+            [
+                1081.9296101690384,
+                1.000940772938208,
+                1.4023929682095272e-10,
+                19656.069300901185,
+                1.043533776328596e-05
+            ],
+            [
+                254868.36313157115,
+                1.0000039263087057,
+                1.3514094515321389e-18,
+                44682737.44627346,
+                1.1873550993010653e-09
+            ],
+            [
+                4294967296.000002,
+                1.000000000232831,
+                1.0505375308441235e-32,
+                42756232765793.71,
+                1.2338626700580943e-16
+            ]
+        ],
+        dtype=xp.float64,
+    )
+
+    xp_assert_close(actual, desired)

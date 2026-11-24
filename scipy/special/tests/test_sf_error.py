@@ -154,3 +154,11 @@ def test_check_overflow_message():
         with sc.errstate(all='raise'):
             # This should trigger an overflow:
             sc.yn(3, 1e-105)
+
+
+@pytest.mark.xfail(IS_WASM, reason="no FPE support, see pyodide#4859")
+def test_check_overflow_message_xsf():
+    # Same as above for functions using the XSF ufunc machinery.
+    with pytest.raises(sc.SpecialFunctionError, match="overflow"):
+        with sc.errstate(overflow='raise'):
+            sc.expm1(800)

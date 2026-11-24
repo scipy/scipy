@@ -9,6 +9,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_
 from scipy.sparse import random_array, coo_array
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize import lsq_linear
+from scipy.optimize._lsq.trf_linear import backtracking
 from scipy.optimize._minimize import Bounds
 
 
@@ -258,6 +259,41 @@ class TestTRF(BaseMixin, SparseMixin):
 class TestBVLS(BaseMixin):
     method = 'bvls'
     lsq_solvers = ['exact']
+
+
+class TestBacktracking:
+    # gh-18908: the line search in `trf_linear` used to halve `alpha` until it
+    # underflowed to zero and then loop forever.
+    lb = np.full(2, -np.inf)
+    ub = np.full(2, np.inf)
+
+    def test_ascent_direction(self):
+        g = p = np.array([1.0, 0.0])
+        _, step, cost_change = backtracking(
+            np.eye(2), g, np.zeros(2), p, 0.995, g @ p, self.lb, self.ub)
+        assert_equal(step, [0.0, 0.0])
+        assert cost_change == 0
+
+    def test_step_absorbed_by_large_x(self):
+        # `p` is a descent direction, but the decrease is only accepted for
+        # alpha below ~1e-20, long after `x + alpha * p` stops changing `x`.
+        x = np.array([1e8, 0.0])
+        g = np.array([-1e-20, 0.0])
+        p = np.array([1.0, 0.0])
+        x_out, step, cost_change = backtracking(
+            np.eye(2), g, x, p, 0.995, g @ p, self.lb, self.ub)
+        assert_equal(x_out, x)
+        assert_equal(step, [0.0, 0.0])
+        assert cost_change == 0
+
+    def test_acceptable_step_unchanged(self):
+        x = np.array([1.0, 2.0])
+        g = np.array([4.0, -2.0])
+        p = -g
+        _, step, cost_change = backtracking(
+            np.eye(2), g, x, p, 0.995, g @ p, self.lb, self.ub)
+        assert_allclose(step, p)
+        assert_allclose(cost_change, 10.0)
 
 
 class TestErrorChecking:

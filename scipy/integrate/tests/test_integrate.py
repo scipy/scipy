@@ -180,6 +180,18 @@ class TestOde(TestODEClass):
         assert_(r.successful())
         assert_allclose(res, [np.e], rtol=1e-5)
 
+    @pytest.mark.parametrize('integrator', ['dopri5', 'dop853', 'vode', 'lsoda'])
+    def test_integrate_keeps_previous_result(self, integrator):
+        # The array returned by integrate() must not be changed by the
+        # next integrate() call (gh-26794).
+        r = ode(lambda t, y: -y).set_integrator(integrator)
+        r.set_initial_value([1.0], 0.0)
+        y1 = r.integrate(1.0)
+        y1_before = y1.copy()
+        y2 = r.integrate(2.0)
+        assert_array_equal(y1, y1_before)
+        assert not np.shares_memory(y1, y2)
+
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers
         # All solvers (vode, zvode, lsoda) now support concurrent usage

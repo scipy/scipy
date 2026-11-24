@@ -3,6 +3,8 @@ import numpy as np
 from ._ufuncs import _ellip_harm
 from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
 
+__all__ = ["ellip_harm", "ellip_harm_2", "ellip_normal"]
+
 
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""

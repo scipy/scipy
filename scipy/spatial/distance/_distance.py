@@ -44,6 +44,7 @@ from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
                                    xp_promote, xp_capabilities, xp_device)
 from scipy._lib._array_api_override import _validate_array_cls
 from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
+from scipy._lib.deprecation import _NoValue
 from scipy._external import array_api_extra as xpx
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
@@ -921,11 +922,12 @@ def seuclidean(u, v, V):
     return euclidean(u, v, w=1/V)
 
 
+@xp_capabilities()
 def cityblock(u, v, w=None):
     """
     Compute the City Block (Manhattan) distance.
 
-    Computes the Manhattan distance between two 1-D arrays `u` and `v`,
+    Computes the Manhattan distance between two arrays `u` and `v`,
     which is defined as
 
     .. math::
@@ -934,37 +936,37 @@ def cityblock(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    cityblock : double
+    cityblock : float or array
         The City Block (Manhattan) distance between vectors `u` and `v`.
 
     Examples
     --------
     >>> from scipy.spatial import distance
     >>> distance.cityblock([1, 0, 0], [0, 1, 0])
-    2
+    2.0
     >>> distance.cityblock([1, 0, 0], [0, 2, 0])
-    3
+    3.0
     >>> distance.cityblock([1, 0, 0], [1, 1, 0])
-    1
+    1.0
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    l1_diff = abs(u - v)
+    xp = array_namespace(u, v, w)
+    u, v, w = xp_promote(u, v, w, force_floating=True, broadcast=True, xp=xp)
+    l1_diff = xp.abs(u - v)
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         l1_diff = w * l1_diff
-    return l1_diff.sum()
+    return xp.sum(l1_diff, axis=-1)
 
 
 @xp_capabilities()
@@ -1082,6 +1084,7 @@ def chebyshev(u, v, w=None):
     return xp.max(xp.abs(u - v), axis=-1)
 
 
+@xp_capabilities()
 def braycurtis(u, v, w=None):
     """
     Compute the Bray-Curtis distance between two vectors.
@@ -1119,19 +1122,21 @@ def braycurtis(u, v, w=None):
     0.33333333333333331
 
     """
-    u, v, w = _promote(u, v, w, xp=np)
-    l1_diff = np.abs(u - v)
-    l1_sum = np.abs(u + v)
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp)
+    l1_diff = xp.abs(u - v)
+    l1_sum = xp.abs(u + v)
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         l1_diff = w * l1_diff
         l1_sum = w * l1_sum
-    return l1_diff.sum(axis=-1) / l1_sum.sum(axis=-1)
+    return xp.sum(l1_diff, axis=-1) / xp.sum(l1_sum, axis=-1)
 
 
+@xp_capabilities()
 def canberra(u, v, w=None):
     """
-    Compute the Canberra distance between two 1-D arrays.
+    Compute the Canberra distance between two arrays.
 
     The Canberra distance is defined as
 
@@ -1142,17 +1147,17 @@ def canberra(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    w : (N,) array_like, optional
+    w : (..., N) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
     Returns
     -------
-    canberra : double
+    canberra : float or array
         The Canberra distance between vectors `u` and `v`.
 
     Notes
@@ -1169,22 +1174,22 @@ def canberra(u, v, w=None):
     1.0
 
     """
-    u = _validate_vector(u, dtype=np.float64)
-    v = _validate_vector(v, dtype=np.float64)
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp)  # TODO: enable float32 for numpy?
     if w is not None:
-        w = _validate_weights(w)
-    with np.errstate(invalid='ignore'):
-        abs_uv = abs(u - v)
-        abs_u = abs(u)
-        abs_v = abs(v)
-        d = abs_uv / (abs_u + abs_v)
-        if w is not None:
-            d = w * d
-        d = np.nansum(d)
-    return d
+        w = _validate_weights(w, xp=xp)
+    abs_uv = xp.abs(u - v)
+    abs_u = xp.abs(u)
+    abs_v = xp.abs(v)
+    abs_uv_plus = abs_u + abs_v
+    d = abs_uv / xp.where(abs_uv_plus == 0, 1, abs_uv_plus)  # Avoid division by zero
+    if w is not None:
+        d = w * d
+    return xp.sum(d, axis=-1)
 
 
-def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
+@xp_capabilities()
+def jensenshannon(p, q, base=None, *, axis=_NoValue, keepdims=False):
     """
     Compute the Jensen-Shannon distance (metric) between
     two probability arrays. This is the square root
@@ -1204,9 +1209,9 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
 
     Parameters
     ----------
-    p : (N,) array_like
+    p : (..., N) array_like
         left probability vector
-    q : (N,) array_like
+    q : (..., N) array_like
         right probability vector
     base : double, optional
         the base of the logarithm used to compute the output
@@ -1217,6 +1222,11 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
         is 0.
 
         .. versionadded:: 1.7.0
+
+        .. deprecated:: 2.0.0
+            The default value for `axis` is changing to -1 in v2.2.
+            That means the distances will be computed along the last axis.
+            For 1-D inputs the result does not change.
     keepdims : bool, optional
         If this is set to `True`, the reduced axes are left in the
         result as dimensions with size one. With this option,
@@ -1257,19 +1267,25 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     array([0.1402339, 0.0399106, 0.0201815])
 
     """
-    p = np.asarray(p)
-    q = np.asarray(q)
-    p = p / np.sum(p, axis=axis, keepdims=True)
-    q = q / np.sum(q, axis=axis, keepdims=True)
+    xp = array_namespace(p, q)
+    p, q = xp_promote(p, q, force_floating=True, broadcast=True, xp=xp)
+    if axis is _NoValue:
+        if p.ndim > 1:  # Only relevant if ndim > 1. For 1-D, -1 and 0 are the same
+            msg = ("The default value for `axis` is changing to -1 in v2.2. "
+                   "Pass `axis` explicitly to silence this warning.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        axis = 0
+    p = p / xp.sum(p, axis=axis, keepdims=True)
+    q = q / xp.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
     left = rel_entr(p, m)
     right = rel_entr(q, m)
-    left_sum = np.sum(left, axis=axis, keepdims=keepdims)
-    right_sum = np.sum(right, axis=axis, keepdims=keepdims)
+    left_sum = xp.sum(left, axis=axis, keepdims=keepdims)
+    right_sum = xp.sum(right, axis=axis, keepdims=keepdims)
     js = left_sum + right_sum
     if base is not None:
-        js /= np.log(base)
-    return np.sqrt(js / 2.0)
+        js /= math.log(base)
+    return xp.sqrt(js / 2.0)
 
 
 def yule(u, v, w=None):

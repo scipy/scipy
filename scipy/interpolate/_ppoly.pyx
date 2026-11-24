@@ -140,9 +140,9 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
     cdef size_t ntot
     cdef ssize_t strides[MAX_DIMS]
     cdef ssize_t kstrides[MAX_DIMS]
-    cdef double* xx[MAX_DIMS]
+    cdef const double* xx[MAX_DIMS]
     cdef size_t nxx[MAX_DIMS]
-    cdef double[::1] y
+    cdef const double[::1] y
     cdef double_or_complex[:,:,::1] c2
     cdef int ip, jp, k, ndim
     cdef int interval[MAX_DIMS]
@@ -180,7 +180,7 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
 
         # grab array pointers
         nxx[ip] = y.shape[0]
-        xx[ip] = <double*>&y[0]
+        xx[ip] = &y[0]
 
     if c.shape[1] != ntot:
         raise ValueError("xs and c have incompatible shapes")

@@ -52,7 +52,6 @@ from scipy.spatial.distance import (
 from scipy.spatial.distance._distance import (
     _validate_vector, _validate_weights, _METRICS_NAMES)
 
-# these were missing: cityblock
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon, mahalanobis,
@@ -467,9 +466,6 @@ wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
 wrogerstanimoto = _weight_checked(rogerstanimoto)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
-wcityblock = _weight_checked(cityblock)
-wbraycurtis = _weight_checked(braycurtis)
-wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
 wrussellrao = _weight_checked(russellrao)
 
@@ -2171,26 +2167,85 @@ class TestSokalsneath:
         xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
 
 
-def test_canberra():
-    # Regression test for ticket #1430.
-    assert wcanberra([1, 2, 3], [2, 4, 6]) == 1
-    assert wcanberra([1, 1, 0, 0], [1, 0, 1, 0]) == 2
-
-
+@make_xp_test_case(braycurtis)
 class TestBrayCurtis:
-    def test_braycurtis(self):
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_braycurtis(self, xp, kind):
         # Regression test for ticket #1430.
-        assert math.isclose(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3,  abs_tol=1e-15)
-        assert math.isclose(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, abs_tol=1e-15)
+        dtype = xpx.default_dtype(xp, kind)
+        u = xp.asarray([1, 2, 3], dtype=dtype)
+        v = xp.asarray([2, 4, 6], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(1. / 3), atol=1e-15)
+        u = xp.asarray([1, 1, 0, 0], dtype=dtype)
+        v = xp.asarray([1, 0, 1, 0], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(0.5), atol=1e-15)
+
+    def test_braycurtis_array_like(self):
+        xp_assert_close(braycurtis([1, 2, 3], [2, 4, 6]), np.asarray(1. / 3))
+        xp_assert_close(braycurtis([1, 1, 0, 0], [1, 0, 1, 0]), np.asarray(0.5))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(braycurtis, x, y)
+        xp_assert_scaling_weight(braycurtis, x, y)
+        xp_assert_zero_weight(braycurtis, x, y)
+        xp_assert_duplication_weight(braycurtis, x, y)
+        xp_assert_split_weight(braycurtis, x, y)
+
+    @pytest.mark.filterwarnings("ignore:invalid value")
+    def test_braycurtis_nan(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
+        u, v = xp.asarray([0, 0]), xp.asarray([0, 0])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
 
 
-def test_canberra_int64_min():
-    # Regression test for gh-26486: integer inputs at the int64 limit
-    # must not overflow to a negative, asymmetric distance in canberra.
-    u = np.array([np.iinfo(np.int64).min])
-    v = np.array([0])
-    assert canberra(u, v) == 1.0
-    assert canberra(v, u) == 1.0
+@make_xp_test_case(canberra)
+class TestCanberra:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    @pytest.mark.parametrize("u, v, expected", [
+        ([1, 2, 3], [2, 4, 6], 1.0),
+        ([1, 1, 0, 0], [1, 0, 1, 0], 2.0),
+    ])
+    def test_canberra(self, xp, kind, u, v, expected):
+        # Regression test for ticket #1430.
+        dtype = xpx.default_dtype(xp, kind)
+        u, v = xp.asarray(u, dtype=dtype), xp.asarray(v, dtype=dtype)
+        xp_assert_close(canberra(u, v), xp.asarray(expected))
+
+    def test_canberra_array_like(self):
+        xp_assert_close(canberra([1, 2, 3], [2, 4, 6]), np.asarray(1.0))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(canberra, x, y)
+        xp_assert_zero_weight(canberra, x, y)
+        xp_assert_duplication_weight(canberra, x, y)
+        xp_assert_split_weight(canberra, x, y)
+        # canberra is linear in the weights, so not invariant to rescaling
+
+    def test_canberra_int64_min(self, xp):
+        # Regression test for gh-26486: integer inputs at the int64 limit
+        # must not overflow to a negative, asymmetric distance in canberra.
+        dtype = xpx.default_dtype(xp, "integral")
+        u = xp.asarray([xp.iinfo(dtype).min], dtype=dtype)
+        v = xp.asarray([0], dtype=dtype)
+        xp_assert_equal(canberra(u, v), xp.asarray(1.0))
+        xp_assert_equal(canberra(v, u), xp.asarray(1.0))
+
+    def test_nan_propagates(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(canberra(u, v), xp.asarray(xp.nan))
 
 
 def test_minkowski_w():
@@ -2306,6 +2361,89 @@ def test_validate_weights(xp):
     xp_assert_close(_validate_weights(xp.asarray([1.0, 2.0, 3.0])),
                     xp.asarray([1.0, 2.0, 3.0]))
 
+
+@make_xp_test_case(jensenshannon)
+class TestJensenShannon:
+
+    @pytest.mark.parametrize("p, q, expected", [
+        ([1.0, 0.0], [0.5, 0.5], 0.46450140402245893),
+        ([1.0, 0.0, 0.0], [1.0, 0.0, 0.0], 0.0),
+    ])
+    def test_jensenshannon(self, xp, p, q, expected):
+        p, q = xp.asarray(p), xp.asarray(q)
+        xp_assert_close(jensenshannon(p, q), xp.asarray(expected), atol=1.5e-7)
+
+    def test_jensenshannon_base(self, xp):
+        p, q = xp.asarray([1.0, 0.0, 0.0]), xp.asarray([0.0, 1.0, 0.0])
+        xp_assert_close(jensenshannon(p, q, 2.0), xp.asarray(1.0), atol=1.5e-7)
+
+    @pytest.mark.parametrize("p, q, expected0, expected1", [
+        ([[1.0, 2.0]], [[0.5, 1.5]], [0.0, 0.0], [0.0649045]),
+        (
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
+            [[13, 14, 15, 16], [17, 18, 19, 20], [21, 22, 23, 24]],
+            [0.1954288, 0.1447697, 0.1138377, 0.0927636],
+            [0.1402339, 0.0399106, 0.0201815],
+        ),
+    ])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_jensenshannon_axis(self, xp, p, q, expected0, expected1, axis):
+        p, q = xp.asarray(p), xp.asarray(q)
+        expected = xp.asarray((expected0, expected1)[axis])
+        xp_assert_close(jensenshannon(p, q, axis=axis), expected, atol=1.5e-7)
+        xp_assert_close(jensenshannon(p, q, axis=axis, keepdims=True),
+                        xp.expand_dims(expected, axis=axis), atol=1.5e-7)
+
+    def test_jensenshannon_array_like(self):
+        xp_assert_close(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                        np.asarray(0.46450140402245893), atol=1.5e-7)
+
+    def test_invariance(self, xp):
+        # We cannot test invariance with the standard helpers because jensenshannon
+        # takes no w vector. The entries of p and q act as the weights instead.
+        rng = np.random.default_rng(1)
+        n = 5
+        p, q = rng.random(n), rng.random(n)
+        expected = jensenshannon(xp.asarray(p), xp.asarray(q))
+        # Case 1: Scaled inputs (should get normalized to 1.0)
+        result = jensenshannon(xp.asarray(3 * p), xp.asarray(0.5 * q))
+        xp_assert_close(result, expected)
+        # Case 2: Zero-weighted elements (zero entries in both p and q)
+        _p, _q = np.concat([p, np.zeros(3)]), np.concat([q, np.zeros(3)])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 3: Duplicated elements
+        _p, _q = np.concat([p, p]), np.concat([q, q])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 4: Permuted elements
+        perm = rng.permutation(n)
+        result = jensenshannon(xp.asarray(p[perm]), xp.asarray(q[perm]))
+        xp_assert_close(result, expected)
+        # Case 5: Swapped inputs
+        result = jensenshannon(xp.asarray(q), xp.asarray(p))
+        xp_assert_close(result, expected)
+
+    def test_jensenshannon_nd(self):
+        # We need to test this separate because jensenshannon takes no "w" and
+        # reduces over axis
+        rng = np.random.default_rng(1)
+        ref_func = _apply_over_batch(('p', 1), ('q', 1))(jensenshannon)
+        p = rng.random((5, 2, 4))
+        q = rng.random((2, 4))
+        xp_assert_close(jensenshannon(p, q, axis=-1), ref_func(p, q))
+
+    def test_jensenshannon_nd_invalid_shapes(self, xp):
+        p, q = xp.ones((5, 2, 4)), xp.ones((3, 4))
+        with pytest.raises(ValueError, match="incompatible for broadcasting"):
+            jensenshannon(p, q, axis=-1)
+
+    def test_default_axis_deprecation(self, xp):
+        p, q = xp.ones((2, 3)), xp.ones((2, 3))
+        with pytest.warns(DeprecationWarning, match="default value for `axis`"):
+            jensenshannon(p, q)
+
+
 class TestYule:
     def test_pdist_yule_mtica1(self):
         m = wyule(np.array([1, 0, 1, 1, 0]),
@@ -2340,43 +2478,6 @@ class TestYule:
         u = np.array([[1, 1, 0, 0], [1, 0, 1, 0]], dtype=bool)
         v = np.array([[1, 1, 0, 0], [0, 1, 0, 1]], dtype=bool)
         xp_assert_equal(yule(u, v), np.asarray([0.0, 2.0]))
-
-
-def test_jensenshannon():
-    assert math.isclose(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0), 1.0)
-    assert math.isclose(jensenshannon([1.0, 0.0], [0.5, 0.5]), 0.46450140402245893)
-    assert math.isclose(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
-
-    xp_assert_close(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
-                    np.asarray([0.0, 0.0]), atol=1.5e-7)
-    xp_assert_close(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
-                    np.asarray([0.0649045]), atol=1.5e-7)
-    xp_assert_close(
-        jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0, keepdims=True),
-        np.asarray([[0.0, 0.0]]),
-        atol=1.5e-7
-    )
-    xp_assert_close(
-        jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1, keepdims=True),
-        np.asarray([[0.0649045]]),
-        atol=1.5e-7
-    )
-
-    a = np.array([[1, 2, 3, 4],
-                  [5, 6, 7, 8],
-                  [9, 10, 11, 12]])
-    b = np.array([[13, 14, 15, 16],
-                  [17, 18, 19, 20],
-                  [21, 22, 23, 24]])
-
-    xp_assert_close(
-        jensenshannon(a, b, axis=0),
-        np.asarray([0.1954288, 0.1447697, 0.1138377, 0.0927636]), atol=1.5e-7
-    )
-    xp_assert_close(
-        jensenshannon(a, b, axis=1),
-        np.asarray([0.1402339, 0.0399106, 0.0201815]), atol=1.5e-7
-    )
 
 
 def test_gh_17703():
@@ -2539,6 +2640,35 @@ class TestJaccard:
         xp_assert_close(np.zeros(10), Y, rtol=eps)
 
 
+@make_xp_test_case(cityblock)
+class TestCityblock:
+    def test_cityblock(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(cityblock(x, y), xp.asarray(3.0))
+
+    def test_cityblock_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(cityblock(x, y), np.asarray(3.0))
+
+    def test_cityblock_uint_wraparound(self, xp):
+        # uint8 does not wrap around and produces asymmetric results
+        u = xp.asarray([1], dtype=xp.uint8)
+        v = xp.asarray([0], dtype=xp.uint8)
+        xp_assert_equal(cityblock(u, v), xp.asarray(1.0))
+        xp_assert_equal(cityblock(v, u), xp.asarray(1.0))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(cityblock, x, y)
+        xp_assert_zero_weight(cityblock, x, y)
+        xp_assert_duplication_weight(cityblock, x, y)
+        xp_assert_split_weight(cityblock, x, y)
+        # cityblock is linear in the weights, so not invariant to rescaling
+
 @make_xp_test_case(chebyshev)
 class TestChebyshev:
 
@@ -2648,10 +2778,13 @@ class TestChebyshev:
         ),
         make_xp_pytest_param(cosine, None),
         make_xp_pytest_param(hamming, None),
+        make_xp_pytest_param(cityblock, None),
         # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
         # mahalanobis uses a VI matrix instead of a w vector. Tested in TestMahalanobis
         make_xp_pytest_param(chebyshev, None),
-        (braycurtis, None),
+        make_xp_pytest_param(canberra, None),
+        # jensenshannon takes no w vector. Tested in TestJensenShannon
+        make_xp_pytest_param(braycurtis, None),
         (yule, None),
         (dice, None),
         (rogerstanimoto, None),

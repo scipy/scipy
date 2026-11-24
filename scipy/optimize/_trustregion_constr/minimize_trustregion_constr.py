@@ -178,7 +178,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Both are used only when inequality constraints are present. For dealing with
         optimization problems ``min_x f(x)`` subject to inequality constraints
         ``c(x) <= 0`` the algorithm introduces slack variables, solving the problem
-        ``min_(x,s) f(x) + barrier_parameter*sum(ln(s))`` subject to the equality
+        ``min_(x,s) f(x) - barrier_parameter*sum(ln(s))`` subject to the equality
         constraints  ``c(x) + s = 0`` instead of the original problem. This subproblem
         is solved for decreasing values of ``barrier_parameter`` and with decreasing
         tolerances for the termination, starting with ``initial_barrier_parameter``
