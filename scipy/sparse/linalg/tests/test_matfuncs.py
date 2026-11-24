@@ -83,10 +83,9 @@ def test_matrix_power():
         assert_allclose(Apow, Amat_pow)
 
 
-@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
 @pytest.mark.filterwarnings("ignore::scipy.sparse.SparseEfficiencyWarning")
 @pytest.mark.parametrize(
-    "cls", [scipy.sparse.csr_array, scipy.sparse.csc_matrix, scipy.sparse.coo_array]
+    "cls", [scipy.sparse.csr_array, scipy.sparse.coo_array]
 )
 def test_inv_1x1(cls):
     # gh-5551: a 1x1 input gave a 1-D ndarray
