@@ -9447,6 +9447,12 @@ class rice_gen(rv_continuous):
     def _ppf(self, q, b):
         return np.sqrt(sc.chndtrix(q, 2, np.square(b)))
 
+    def _sf(self, x, b):
+        return ncx2._sf(np.square(x), 2, np.square(b))
+
+    def _isf(self, q, b):
+        return np.sqrt(ncx2._isf(q, 2, np.square(b)))
+
     def _pdf(self, x, b):
         # rice.pdf(x, b) = x * exp(-(x**2+b**2)/2) * I[0](x*b)
         #

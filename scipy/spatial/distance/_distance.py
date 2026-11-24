@@ -1078,6 +1078,7 @@ def chebyshev(u, v, w=None):
     return xp.max(xp.abs(u - v), axis=-1)
 
 
+@xp_capabilities()
 def braycurtis(u, v, w=None):
     """
     Compute the Bray-Curtis distance between two vectors.
@@ -1115,14 +1116,15 @@ def braycurtis(u, v, w=None):
     0.33333333333333331
 
     """
-    u, v, w = _promote(u, v, w, xp=np)
-    l1_diff = np.abs(u - v)
-    l1_sum = np.abs(u + v)
+    xp = array_namespace(u, v, w)
+    u, v, w = _promote(u, v, w, xp=xp)
+    l1_diff = xp.abs(u - v)
+    l1_sum = xp.abs(u + v)
     if w is not None:
-        w = _validate_weights(w)
+        w = _validate_weights(w, xp=xp)
         l1_diff = w * l1_diff
         l1_sum = w * l1_sum
-    return l1_diff.sum(axis=-1) / l1_sum.sum(axis=-1)
+    return xp.sum(l1_diff, axis=-1) / xp.sum(l1_sum, axis=-1)
 
 
 @xp_capabilities()

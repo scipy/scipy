@@ -796,6 +796,7 @@ from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 # Contains dynamically generated wrappers which enable alternative
 # backend support.
+from . import _support_alternative_backends
 from ._support_alternative_backends import *
 
 from . import _ufuncs
