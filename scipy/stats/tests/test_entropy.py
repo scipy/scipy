@@ -63,6 +63,22 @@ class TestEntropy:
         ref = xp.asarray(.5*math.log(9./8.), dtype=dtype)
         xp_assert_close(stats.entropy(pk, qk), ref)
 
+    def test_entropy_overflow_with_negative_weight(self, xp):
+        dtype = xp.float64
+        large = .75 * xp.finfo(dtype).max
+        # Both rows have an overflowing sum, but only the second is valid.
+        pk = xp.asarray([[large, large, -.1*large], [large, large, -0.]],
+                        dtype=dtype)
+        qk = xp.asarray([1., 1., 0.], dtype=dtype)
+        ref = xp.asarray([0., math.log(2.)], dtype=dtype)
+        xp_assert_close(stats.entropy(pk, axis=-1), ref)
+
+        # When pk or qk is invalid, keep that input's previous normalization.
+        ref = xp.asarray([0., 0.], dtype=dtype)
+        xp_assert_close(stats.entropy(pk, qk, axis=-1), ref)
+        ref = xp.asarray([xp.inf, 0.], dtype=dtype)
+        xp_assert_close(stats.entropy(qk, pk, axis=-1), ref)
+
     def test_entropy_2d(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])

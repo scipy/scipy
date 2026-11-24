@@ -16,18 +16,19 @@ __all__ = ['entropy', 'differential_entropy']
 
 
 def _normalize_entropy_weights(weights, axis, *, xp):
-    # The probabilities stay the same if finite weights are scaled by a
-    # common positive factor before summing them.
+    # The probabilities stay the same if finite, nonnegative weights are
+    # scaled by a common positive factor before summing them.
     with np.errstate(over='ignore', invalid='ignore'):
         total = xp.sum(weights, axis=axis, keepdims=True)
         overflow = total == xp.inf
         lazy_or_masked = is_lazy_array(total) or is_marray(xp)
         if xp_size(weights) != 0 and (lazy_or_masked or xp.any(overflow)):
             maximum = xp.max(weights, axis=axis, keepdims=True)
-            scale = xp.where(overflow & xp.isfinite(maximum) & (maximum > 0),
-                             maximum, 1)
-            weights = weights / scale
-            total = xp.sum(weights, axis=axis, keepdims=True)
+            minimum = xp.min(weights, axis=axis, keepdims=True)
+            rescale = overflow & xp.isfinite(maximum) & (maximum > 0) & (minimum >= 0)
+            weights = weights / xp.where(rescale, maximum, 1)
+            scaled_total = xp.sum(weights, axis=axis, keepdims=True)
+            total = xp.where(rescale, scaled_total, total)
         return weights / total
 
 
