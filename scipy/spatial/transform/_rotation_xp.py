@@ -559,13 +559,17 @@ def reduce(
         return quat, None, None
     # DECISION: We cannot have variable number of return arguments for jit compiled
     # functions. We therefore always return the indices, and filter out later.
-    # TODO: Properly support broadcasting.
+    # The last leading axis of `quat` is the axis of rotations to reduce, and the last
+    # leading axis of `left` and `right` is the group axis. All preceding leading
+    # axes are batch axes that broadcast against each other.
     xp = array_namespace(quat)
     quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
     if left is None:
-        left = xp.ones_like(quat)
+        left = _identity_group(quat, xp)
     if right is None:
-        right = xp.ones_like(quat)
+        right = _identity_group(quat, xp)
+    left = xpx.atleast_nd(left, ndim=2, xp=xp)
+    right = xpx.atleast_nd(right, ndim=2, xp=xp)
 
     # We want to calculate the real components of q = l * p * r. It can
     # be shown that:
@@ -578,7 +582,8 @@ def reduce(
     ls, lv = _split_rotation(left, xp)
     rs, rv = _split_rotation(right, xp)
 
-    # Compute each term without einsum (not accessible in the Array API)
+    # Compute each term without einsum (not accessible in the Array API). Each term
+    # has shape (..., n_left, n_quat, n_right).
     # First term: np.einsum("i,j,k", ls, ps, rs)
     term1 = ls[..., :, None, None] * ps[..., None, :, None] * rs[..., None, None, :]
     # Second term: np.einsum('i,jx,kx', ls, pv, rv)
@@ -594,35 +599,48 @@ def reduce(
     # the einsum into a 6D tensor to avoid excessive memory usage. Instead, we compute
     # the cross product between lv and pv and then compute the dot product with rv.
     # First compute cross products between lv and pv
-    lv_expanded = lv[..., :, None, :]
-    pv_expanded = pv[..., None, :, :]
+    lv_expanded, pv_expanded = xp.broadcast_arrays(
+        lv[..., :, None, :], pv[..., None, :, :]
+    )
     cross_lp = xp.linalg.cross(lv_expanded, pv_expanded)
     # Then compute dot product with rv
     term5 = xp.sum(cross_lp[..., :, :, None, :] * rv[..., None, None, :, :], axis=-1)
     # Combine all terms with proper shape alignment
     qs = xp.abs(term1 - term2 - term3 - term4 - term5)
-    qs = xp.reshape(xp.moveaxis(qs, 1, 0), (qs.shape[1], -1))
+    # (..., n_left, n_quat, n_right) -> (..., n_quat, n_left * n_right)
+    qs = xp.moveaxis(qs, -2, -3)
+    qs = xp.reshape(qs, (*qs.shape[:-2], -1))
 
     # Find best indices from scalar components
-    max_ind = xp.argmax(xp.reshape(qs, (qs.shape[0], -1)), axis=1)
-    left_best = max_ind // rv.shape[0]
-    right_best = max_ind % rv.shape[0]
-    # Array API limitation: Integer index arrays are only allowed with integer indices
-    # TODO: Can we somehow avoid this?
-    all_idx = xp.reshape(xp.arange(left.shape[-1], device=xp_device(left)), (1, -1))
-    left_idx = xp.reshape(left_best, (-1, 1))
-    left = left[left_idx, all_idx]
-    right_idx = xp.reshape(right_best, (-1, 1))
-    right = right[right_idx, all_idx]
+    max_ind = xp.argmax(qs, axis=-1)
+    n_right = right.shape[-2]
+    left_best = max_ind // n_right
+    right_best = max_ind % n_right
+    left = _select_group_element(left, left_best, xp)
+    right = _select_group_element(right, right_best, xp)
 
     # Reduce the rotation using the best indices
     reduced = compose_quat(left, compose_quat(p, right))
-
-    if left is None:
-        left_best = None
-    if right is None:
-        right_best = None
     return reduced, left_best, right_best
+
+
+def _identity_group(quat: Array, xp) -> Array:
+    """A group with the identity as its only element."""
+    return xp.asarray([[0.0, 0.0, 0.0, 1.0]], dtype=quat.dtype, device=xp_device(quat))
+
+
+def _select_group_element(group: Array, idx: Array, xp) -> Array:
+    """Pick group[..., idx[..., i], :] for each i, broadcasting the batch axes.
+
+    `group` has shape (..., n_group, 4) and `idx` has shape (..., n_quat). Integer
+    array indexing is not available for batched indices in the Array API, so we mask
+    and sum over the group axis (all but one term are zero).
+    """
+    positions = xp.arange(group.shape[-2], device=xp_device(group))
+    mask = idx[..., None] == positions  # (..., n_quat, n_group)
+    group = group[..., None, :, :]
+    picked = xp.where(mask[..., None], group, xp.zeros_like(group))
+    return xp.sum(picked, axis=-2)
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:

@@ -2103,12 +2103,21 @@ class Rotation:
             left = xpx.atleast_nd(left.as_quat(), ndim=2, xp=self._xp)
         if right is not None:
             right = xpx.atleast_nd(right.as_quat(), ndim=2, xp=self._xp)
-        reduced, left_idx, right_idx = self._backend.reduce(
+        # The Cython backend only supports 2D quaternions
+        cython_compatible = (
+            self._quat.ndim < 3
+            and (left is None or left.ndim < 3)
+            and (right is None or right.ndim < 3)
+        )
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
+        reduced, left_idx, right_idx = backend.reduce(
             self._quat, left=left, right=right
         )
-        if self._single:
-            reduced = reduced[0, ...]
-        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=self._backend)
+        # Backends return reduced quaternions with an axis for the rotations to reduce
+        no_groups = left is None and right is None
+        if self._single or (self._quat.ndim == 1 and not no_groups):
+            reduced = reduced[..., 0, :]
+        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=backend)
         if return_indices:
             left_idx = left_idx if left is not None else None
             right_idx = right_idx if right is not None else None
