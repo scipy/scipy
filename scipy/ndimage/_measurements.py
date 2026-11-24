@@ -214,8 +214,13 @@ def label(input, structure=None, output=None):
         else:
             return output, maxlabel
 
+    label_output = output
+    if output.dtype == np.bool_:
+        # Delay writing to boolean output until the label count is known.
+        label_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
+
     try:
-        max_label = _ni_label._label(input, structure, output)
+        max_label = _ni_label._label(input, structure, label_output)
     except _ni_label.NeedMoreBits as e:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
@@ -227,6 +232,13 @@ def label(input, structure=None, output=None):
             raise RuntimeError(
                 "insufficient bit-depth in requested output type"
             ) from e
+
+    if label_output is not output:
+        if max_label > 1:
+            raise RuntimeError(
+                "insufficient bit-depth in requested output type"
+            )
+        output[...] = label_output
 
     if caller_provided_output:
         # result was written in-place

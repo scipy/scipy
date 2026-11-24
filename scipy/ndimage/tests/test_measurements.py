@@ -381,6 +381,44 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
+@skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
+@make_xp_test_case(ndimage.label)
+def test_label_output_bool_dtype_insufficient_bits(xp):
+    # gh-24502: boolean output cannot represent two separate components.
+    data = xp.asarray([True, False, True])
+    with pytest.raises(RuntimeError, match="insufficient bit-depth"):
+        ndimage.label(data, output=xp.bool)
+
+
+@skip_xp_backends(np_only=True, reason="in-place output is numpy-specific")
+@make_xp_test_case(ndimage.label)
+@pytest.mark.parametrize("inplace", [True, False])
+def test_label_output_bool_array_insufficient_bits(xp, inplace):
+    data = xp.asarray([True, False, True])
+    output = data if inplace else xp.ones(6, dtype=xp.bool)[::2]
+    original = output.copy()
+    with pytest.raises(RuntimeError, match="insufficient bit-depth"):
+        ndimage.label(data, output=output)
+    # Check the raw bytes in case noncanonical boolean values were written.
+    xp_assert_equal(output.view(xp.uint8), original.view(xp.uint8))
+
+
+@skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
+@make_xp_test_case(ndimage.label)
+@pytest.mark.parametrize("data, count", [([0, 0, 0], 0), ([[2, 0, 3], [4, 5, 6]], 1)])
+def test_label_output_bool(xp, data, count):
+    data = xp.asarray(data)
+    expected = data != 0
+    output, n = ndimage.label(data, output=xp.bool)
+    xp_assert_equal(output, expected)
+    assert n == count
+
+    output = xp.ones_like(expected)
+    n = ndimage.label(data, output=output)
+    xp_assert_equal(output, expected)
+    assert n == count
+
+
 @skip_xp_backends(np_only=True, reason="in-place output is numpy-specific")
 @make_xp_test_case(ndimage.label)
 def test_label_output_wrong_size(xp):

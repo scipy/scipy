@@ -229,7 +229,7 @@ cpdef _label(np.ndarray input,
     if input.dtype == np.bool_:
         input = input.view(dtype=np.uint8)
     if output.dtype == np.bool_:
-        # XXX - trigger special check for bit depth?
+        # The public API checks boolean output using an integer temporary.
         output = output.view(dtype=np.uint8)
 
     cdef:
