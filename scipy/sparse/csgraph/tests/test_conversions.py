@@ -1,8 +1,11 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 from scipy.sparse import csr_array
-from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense, reconstruct_path
+from scipy.sparse.csgraph import (
+    csgraph_from_dense, csgraph_masked_from_dense, csgraph_to_dense,
+    reconstruct_path,
+)
 
 
 def test_csgraph_from_dense():
@@ -27,6 +30,28 @@ def test_csgraph_from_dense():
 
         G[all_nulls] = 0
         assert_array_almost_equal(G, G_csr.toarray())
+
+
+def test_csgraph_from_dense_small_nonzero_edges():
+    graph = np.array([[0, 5e-9, 1e-7],
+                      [-5e-9, 0, 5e-9],
+                      [0, 0, 0]])
+
+    assert_array_equal(csgraph_from_dense(graph).toarray(), graph)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_csgraph_masked_from_dense_custom_null_value(dtype):
+    null_value = dtype(1)
+    below = np.nextafter(null_value, dtype(-np.inf), dtype=dtype)
+    above = np.nextafter(null_value, dtype(np.inf), dtype=dtype)
+    graph = np.array([[null_value, below],
+                      [above, null_value]], dtype=dtype)
+
+    masked = csgraph_masked_from_dense(graph, null_value=null_value)
+
+    assert_array_equal(masked.mask, [[True, False], [False, True]])
+    assert_array_equal(masked.compressed(), [below, above])
 
 
 def test_csgraph_to_dense():

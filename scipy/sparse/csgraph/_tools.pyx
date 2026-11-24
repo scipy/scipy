@@ -161,7 +161,8 @@ def csgraph_masked_from_dense(graph,
         mask = np.zeros(graph.shape, dtype='bool')
         graph = np.ma.masked_array(graph, mask, copy=False)
     else:
-        graph = np.ma.masked_values(graph, null_value, copy=False)
+        graph = np.ma.masked_values(graph, null_value, rtol=0, atol=0,
+                                    copy=False)
 
     if infinity_null:
         graph.mask |= np.isinf(graph)
