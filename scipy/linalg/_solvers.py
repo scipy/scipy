@@ -108,7 +108,7 @@ def solve_sylvester(a, b, q):
 
     # TRSYL solves op(A)*X + X*op(B) = scale*C with scale <= 1 chosen to
     # avoid overflow, so the solution of the original equation is X/scale.
-    y = y/scale
+    y /= scale
 
     if info < 0:
         raise LinAlgError(f"Illegal value encountered in the {-info} term")
