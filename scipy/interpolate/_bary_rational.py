@@ -476,6 +476,9 @@ class AAA(_BarycentricRational):
         if clean_up:
             self.clean_up(clean_up_tol)
 
+        if lawson_iters > 0:
+            self.lawson_optimization(lawson_iters=lawson_iters, lawson_damping=lawson_damping)
+
     # pyrefly:ignore[bad-override]
     def _input_validation(self, x, y, rtol=None, max_terms=100, clean_up=True,
                           clean_up_tol=1e-13, lawson_iters=0, lawson_damping=1.0,
