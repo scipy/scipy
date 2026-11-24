@@ -785,10 +785,13 @@ class TestRegularGridInterpolator:
 
     @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
     def test_spline_methods_at_nodes(self, method):
-        # regression test for the default solve being accurate only to a tolerance
+        # Regression test for gh-23356: data with a large constant offset.
+        # The spline must reproduce the data at the grid points up to rounding.
+        # Before SciPy 2.0.0 the default solver was gcrotmk, which stops at a
+        # residual relative to norm(values): here, errors were ~5e-2 for cubic
+        # and quintic.
         rng = np.random.default_rng(1234)
         points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
-        # a large offset, the default iterative solve used to miss these values
         values = 1000 + rng.uniform(size=(8, 9, 7))
 
         interp = RegularGridInterpolator(points, values, method=method)
