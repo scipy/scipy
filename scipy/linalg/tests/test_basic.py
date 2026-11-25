@@ -17,8 +17,8 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm, matrix_norm,
                           vector_norm, solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
-                          cholesky, expm, sqrtm, bandwidth)
+                          matrix_balance, qr, lu, LinAlgWarning, svd, svdvals, eig,
+                          eigh, cholesky, expm, sqrtm, bandwidth)
 from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
@@ -2934,7 +2934,7 @@ class TestMatrixNorms:
         assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
 
     @pytest.mark.parametrize("dtype", _test_dtypes)
-    @pytest.mark.parametrize("ord", ["fro", 1, -1, np.inf, -np.inf])
+    @pytest.mark.parametrize("ord", ["fro", "nuc", 1, -1, 2, -2, np.inf, -np.inf])
     @pytest.mark.parametrize("keepdims", [True, False])
     @pytest.mark.parametrize("n", [0, 5])
     def test_shape_dtype(self, dtype, ord, keepdims, n):
@@ -2950,6 +2950,9 @@ class TestMatrixNorms:
 
         if ord == "fro":
             ref = np.sqrt(np.sum(np.abs(a) ** 2))
+        elif ord == "nuc":
+            s = svdvals(a)
+            ref = np.sum(s)
         elif ord == 1:
             ref = np.max(np.sum(np.abs(a), axis=0), initial=0)
         elif ord == -1:
@@ -2957,6 +2960,12 @@ class TestMatrixNorms:
                 np.sum(np.abs(a), axis=0),
                 initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
             ) if n != 0 else res_dtype.type(0.0)
+        elif ord == 2:
+            s = svdvals(a)
+            ref = np.max(s, initial=0)
+        elif ord == -2:
+            s = svdvals(a)
+            ref = np.min(s, initial=np.inf) if n != 0 else res_dtype.type(0.0)
         elif ord == np.inf:
             ref = np.max(np.sum(np.abs(a), axis=1), initial=0)
         elif ord == -np.inf:
@@ -2971,7 +2980,7 @@ class TestMatrixNorms:
         if dtype is np.int64:
             ref = ref.astype(np.float64)
 
-        xp_assert_close(res, ref)
+        xp_assert_close(res, ref, atol=10 * np.finfo(res_dtype).eps)
 
 
 class TestOverwrite:

@@ -9,11 +9,14 @@ namespace sp_linalg {
 // Which matrix norm to compute; python side maps to these values
 enum Matrix_norm_ord : Py_ssize_t
 {
-    M_FRO     = 0,
-    M_ONE     = 1,
-    M_NEG_ONE = 2,
-    M_INF     = 3,
-    M_NEG_INF = 4,
+    m_fro       = 0,
+    m_nuc       = 1,
+    m_one       = 10,
+    m_neg_one   = 11,
+    m_two       = 20,
+    m_neg_two   = 21,
+    m_inf       = 30,
+    m_neg_inf   = 31,
 };
 
 
@@ -241,10 +244,71 @@ template <typename T> BatchStatus _matrix_norm(PyArrayObject *ap_Am, PyArrayObje
     npy_intp outer_size = 1;
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
 
+    bool needs_svd = (ord == Matrix_norm_ord::m_nuc || ord == Matrix_norm_ord::m_two || ord == Matrix_norm_ord::m_neg_two);
+
+    // -------------------------------------------------------------------
+    // Workspace allocation (when norms require SVD)
+    // -------------------------------------------------------------------
+
+    char jobu = 'N', jobvt = 'N';
+    char range = (ord == Matrix_norm_ord::m_nuc) ? 'A' : 'I';
+    CBLAS_INT m = shape[ndim - 2], n = shape[ndim - 1];
+    CBLAS_INT min_mn = std::min(m, n);
+    real_of_t<T> vl = 0, vu = 0;
+    CBLAS_INT il = (ord == Matrix_norm_ord::m_two) ? 1 : min_mn;
+    CBLAS_INT iu = il;
+    CBLAS_INT ns = 0;
+    T tmp = 0;
+    CBLAS_INT info = 0;
+
+    std::uint64_t rwork_size = 0;
+    CBLAS_INT lwork = 0;
+    if constexpr (is_complex_v<T>) { rwork_size = 17 * min_mn * min_mn; }
+    Workspace<real_of_t<T>> rwork;
+    Workspace<CBLAS_INT> iwork;
+
+    if (needs_svd) {
+        rwork = alloc_workspace<real_of_t<T>>(rwork_size);
+        iwork = alloc_workspace<CBLAS_INT>(12 * min_mn);
+
+        if constexpr (!is_complex_v<T>) {
+            lapack::gesvdx(jobu, jobvt, range, m, n, NULL, m, vl, vu, il, iu, &ns, NULL, NULL, m, NULL, n, &tmp, -1, iwork.get(), &info);
+        } else {
+            lapack::gesvdx(jobu, jobvt, range, m, n, NULL, m, vl, vu, il, iu, &ns, NULL, NULL, m, NULL, n, &tmp, -1, rwork.get(), iwork.get(), &info);
+        }
+
+        if (info != 0) { return {BatchCode::lapack_error, "gesvdx", info}; }
+
+        int64_t size = 0;
+        lwork = _calc_lwork(tmp, 1.0, &size);
+        if (lwork < 0) { return {BatchCode::too_large, "gesvdx", size}; }
+    }
+
+    /*
+     * Allocate memory and chop buffer into parts
+     *
+     *   lwork   mn
+     * |-------|----|
+     * ^       ^
+     * work    data_A
+     */
+    const std::uint64_t mn = (std::uint64_t)m * n;
+    auto buf = alloc_workspace<T>(lwork + mn);
+    auto S = alloc_workspace<real_of_t<T>>(min_mn + 1); // XXX: temporary shim, see gh-26824
+
+    // Partition buffer
+    T *cursor = buf.get();
+    T *work = cursor; cursor += lwork;
+    T *data_A = cursor;
+    real_of_t<T> *data_S = S.get();
+
+
     // -------------------------------------------------------------------
     // Main batching loop
     // -------------------------------------------------------------------
     char *slice_ptr_A = NULL;
+    T *slice_ptr_tmp = NULL; // XXX: copy_strided_to_f requires pointers to T and deals with char internally, follow the same pattern here?
+    real_of_t<T> res = 0;
     real_type *res_ptr = res_data;
     CBLAS_INT intm = shape[ndim - 2], intn = shape[ndim - 1];
 
@@ -255,22 +319,62 @@ template <typename T> BatchStatus _matrix_norm(PyArrayObject *ap_Am, PyArrayObje
         slice_ptr_A = compute_slice_ptr<char>(idx, A_data, ndim, shape, strides);
 
         switch (ord) {
-            case Matrix_norm_ord::M_FRO:
+            case Matrix_norm_ord::m_fro:
                 res_ptr[idx] = _matrix_norm_F<T, false>(slice_ptr_A, intm, intn, s0, s1);
                 break;
-            case Matrix_norm_ord::M_ONE:
+
+            case Matrix_norm_ord::m_nuc:
+                slice_ptr_tmp = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
+                copy_strided_to_f(data_A, slice_ptr_tmp, m, n, s0, s1, m);
+                if constexpr (!is_complex_v<T>) {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, iwork.get(), &info);
+                } else {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, rwork.get(), iwork.get(), &info);
+                }
+                res = 0;
+                for (npy_intp i = 0; i < min_mn; i++) { res += data_S[i]; }
+                res_ptr[idx] = res;
+                break;
+
+            case Matrix_norm_ord::m_one:
                 res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intm, intn, s0, s1);
                 break;
-            case Matrix_norm_ord::M_NEG_ONE:
+
+            case Matrix_norm_ord::m_neg_one:
                 res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intm, intn, s0, s1);
                 break;
-            case Matrix_norm_ord::M_INF:
+
+            case Matrix_norm_ord::m_two:
+                slice_ptr_tmp = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
+                copy_strided_to_f(data_A, slice_ptr_tmp, m, n, s0, s1, m);
+                if constexpr (!is_complex_v<T>) {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, iwork.get(), &info);
+                } else {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, rwork.get(), iwork.get(), &info);
+                }
+                res_ptr[idx] = data_S[0];
+                break;
+
+            case Matrix_norm_ord::m_neg_two:
+                slice_ptr_tmp = compute_slice_ptr<T>(idx, A_data, ndim, shape, strides);
+                copy_strided_to_f(data_A, slice_ptr_tmp, m, n, s0, s1, m);
+                if constexpr (!is_complex_v<T>) {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, iwork.get(), &info);
+                } else {
+                    lapack::gesvdx(jobu, jobvt, range, m, n, data_A, m, vl, vu, il, iu, &ns, data_S, NULL, m, NULL, n, work, lwork, rwork.get(), iwork.get(), &info);
+                }
+                res_ptr[idx] = data_S[0];
+                break;
+
+            case Matrix_norm_ord::m_inf:
                 // Effectively transpose to iterate over rows instead of columns
                 res_ptr[idx] = _matrix_norm_1<T, false>(slice_ptr_A, intn, intm, s1, s0);
                 break;
-            case Matrix_norm_ord::M_NEG_INF:
+
+            case Matrix_norm_ord::m_neg_inf:
                 res_ptr[idx] = _matrix_norm_1<T, true>(slice_ptr_A, intn, intm, s1, s0);
                 break;
+
             default:
                 return {BatchCode::lapack_error, "matrix_norm", -102};
         }

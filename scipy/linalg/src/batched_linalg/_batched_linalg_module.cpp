@@ -1,5 +1,4 @@
 #include "Python.h"
-#include <iostream>
 
 #include <algorithm>
 #include <cmath>
@@ -875,7 +874,7 @@ _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject *
 _linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
-    Matrix_norm_ord ord = Matrix_norm_ord::M_FRO;
+    Matrix_norm_ord ord = Matrix_norm_ord::m_fro;
 
     if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord)) {
         return NULL;

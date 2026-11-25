@@ -290,10 +290,13 @@ def matrix_norm(a, keepdims=False, ord="fro", check_finite=True):
     # keep in sync with the C++ side
     order = {
         "fro"   : 0,
-        1       : 1,
-        -1      : 2,
-        np.inf  : 3,
-        -np.inf : 4,
+        "nuc"   : 1,
+        1       : 10,
+        -1      : 11,
+        2       : 20,
+        -2      : 21,
+        np.inf  : 30,
+        -np.inf : 31,
     }.get(ord, None)
 
     a1 = _asarray_validated(a, check_finite=check_finite)
