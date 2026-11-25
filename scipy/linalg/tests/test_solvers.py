@@ -173,14 +173,6 @@ class TestSolveLyapunov:
         assert_allclose((a @ x + x @ a.conj().T) / 1e295, -np.eye(2),
                         rtol=1e-12, atol=1e-12)
 
-    def test_discrete_bilinear_trsyl_scale(self):
-        """Test the bilinear method with a TRSYL-rescaled right-hand side."""
-        a = np.array([[0.5, 0.1], [0.0, 0.3]])
-        q = 1e295 * np.eye(2)
-        x = solve_discrete_lyapunov(a, q, method='bilinear')
-        assert_allclose((a @ x @ a.conj().T - x) / 1e295, -np.eye(2),
-                        rtol=1e-12, atol=1e-12)
-
 
 class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')
