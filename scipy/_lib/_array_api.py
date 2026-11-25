@@ -441,8 +441,8 @@ def xp_swapaxes(a, axis1, axis2, xp=None):
     return a
 
 
-# utility to find common dtype with option to force floating
-def xp_result_type(*args, force_floating=False, xp):
+# utility to find common dtype with option to force floating or real
+def xp_result_type(*args, force_floating=False, force_real=False, xp):
     """
     Returns the dtype that results from applying type promotion rules
     (see Array API Standard Type Promotion Rules) to the arguments. Augments
@@ -455,6 +455,8 @@ def xp_result_type(*args, force_floating=False, xp):
       of the default float and any other floats passed. See
       https://github.com/scipy/scipy/pull/22695/files#r1997905891
       for rationale.
+    - There is a `force_real` argument that turns a complex result type into the
+      real floating type of the same precision, e.g. complex64 into float32.
     - This function accepts array-like iterables, which are immediately converted
       to the namespace's arrays before result type calculation. Consequently, the
       result dtype may be different when an argument is `1.` vs `[1.]`.
@@ -472,11 +474,11 @@ def xp_result_type(*args, force_floating=False, xp):
         args_not_none.append(1.0)
 
     try:  # follow library's preferred promotion rules
-        return xp.result_type(*args_not_none)
+        dtype = xp.result_type(*args_not_none)
     except (ValueError, AttributeError):  # all scalars; need at least one array/dtype
         if not force_floating:
             raise
-        return xp.result_type(*(args_not_none + [xp.asarray(1.0)])) # skip device check
+        dtype = xp.result_type(*(args_not_none + [xp.asarray(1.0)])) # skip device check
     except TypeError:  # mixed type promotion isn't defined
         if not force_floating:
             raise
@@ -490,7 +492,10 @@ def xp_result_type(*args, force_floating=False, xp):
             dtype = getattr(arg_array, 'dtype', arg)
             if xp.isdtype(dtype, ('real floating', 'complex floating')):
                 float_args.append(arg)
-        return xp.result_type(*float_args, xpx.default_dtype(xp))
+        dtype = xp.result_type(*float_args, xpx.default_dtype(xp))
+    if force_real and xp.isdtype(dtype, 'complex floating'):
+        dtype = xp.float32 if dtype == xp.complex64 else xp.float64
+    return dtype
 
 
 def xp_promote(*args, broadcast=False, force_floating=False, order=None, xp):

@@ -2117,7 +2117,9 @@ class TestIsValidY:
 
 @make_xp_test_case(russellrao)
 class TestRussellrao:
-    @pytest.mark.parametrize("dtype", ["float32", "float64", "int32", "int64", "bool"])
+    @pytest.mark.parametrize("dtype", [
+        "float32", "float64", "complex64", "complex128", "int32", "int64", "bool"
+    ])
     @pytest.mark.parametrize("x, y, expected", [
         ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
         ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
@@ -2126,8 +2128,7 @@ class TestRussellrao:
         dtype = getattr(xp, dtype)
         x = xp.asarray(x, dtype=dtype)
         y = xp.asarray(y, dtype=dtype)
-        if not xp.isdtype(dtype, "real floating"):
-            dtype = xpx.default_dtype(xp)
+        dtype = xp_result_type(x, force_floating=True, force_real=True, xp=xp)
         xp_assert_close(russellrao(x, y), xp.asarray(expected, dtype=dtype))
 
     @pytest.mark.parametrize("x, y, expected", [
@@ -2531,7 +2532,9 @@ def test_gh_23109():
 
 @make_xp_test_case(jaccard)
 class TestJaccard:
-    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("dtype", [
+        "float32", "float64", "complex64", "complex128", "int32", "int64", "bool"
+    ])
     @pytest.mark.parametrize("x, y, expected", [
         ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
         ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
@@ -2540,7 +2543,8 @@ class TestJaccard:
         dtype = getattr(xp, dtype)
         x = xp.asarray(x, dtype=dtype)
         y = xp.asarray(y, dtype=dtype)
-        xp_assert_close(jaccard(x, y), xp.asarray(expected))
+        dtype = xp_result_type(x, force_floating=True, force_real=True, xp=xp)
+        xp_assert_close(jaccard(x, y), xp.asarray(expected, dtype=dtype))
 
     @pytest.mark.parametrize("x, y, expected", [
         ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1

@@ -856,8 +856,9 @@ def jaccard(u, v, w=None):
     """
     xp = array_namespace(u, v, w)
     u, v = xp.asarray(u), xp.asarray(v)
-    dtype = xp_result_type(u, v, w, force_floating=True, xp=xp)
-    u_b, v_b = xp.asarray(u, dtype=xp.bool), xp.asarray(v, dtype=xp.bool)
+    dtype = xp_result_type(u, v, w, force_floating=True, force_real=True, xp=xp)
+    u_b = u if u.dtype == xp.bool else u != 0
+    v_b = v if v.dtype == xp.bool else v != 0
     if not broadcastable(u.shape, v.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
     zero = xp.zeros((), dtype=xp.bool, device=xp_device(u))
@@ -1498,8 +1499,9 @@ def russellrao(u, v, w=None):
     """
     xp = array_namespace(u, v, w)
     u, v = xp.asarray(u), xp.asarray(v)
-    dtype = xp_result_type(u, v, w, force_floating=True, xp=xp)
-    u_b, v_b = xp.asarray(u, dtype=xp.bool), xp.asarray(v, dtype=xp.bool)
+    dtype = xp_result_type(u, v, w, force_floating=True, force_real=True, xp=xp)
+    u_b = u if u.dtype == xp.bool else u != 0
+    v_b = v if v.dtype == xp.bool else v != 0
     if not broadcastable(u.shape, v.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
     tt = u_b & v_b
