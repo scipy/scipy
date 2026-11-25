@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+
 from .common import Benchmark, safe_import
 
 with safe_import():
@@ -83,11 +84,11 @@ class Convolve2D(Benchmark):
 
 
 class FFTConvolve(Benchmark):
-    param_names = ['mode', 'size']
+    param_names = ["mode", "size"]
     params = [
-        ['full', 'valid', 'same'],
-        [(a,b) for a,b in product((1, 2, 8, 36, 60, 150, 200, 500), repeat=2)
-         if b <= a]
+        ["full", "valid", "same"],
+        [(a,b) for a,b in product((8, 36, 65, 151, 500, 2000, 4000), repeat=2)
+         if a >= b]
     ]
 
     def setup(self, mode, size):
@@ -95,24 +96,10 @@ class FFTConvolve(Benchmark):
         self.a = rng.standard_normal(size[0])
         self.b = rng.standard_normal(size[1])
 
-    def time_convolve2d(self, mode, size):
+    def time_fftconvolve_1d(self, mode, size):
         signal.fftconvolve(self.a, self.b, mode=mode)
 
-
-class OAConvolve(Benchmark):
-    param_names = ['mode', 'size']
-    params = [
-        ['full', 'valid', 'same'],
-        [(a, b) for a, b in product((40, 200, 3000), repeat=2)
-         if b < a]
-    ]
-
-    def setup(self, mode, size):
-        rng = np.random.default_rng(1234)
-        self.a = rng.standard_normal(size[0])
-        self.b = rng.standard_normal(size[1])
-
-    def time_convolve2d(self, mode, size):
+    def time_oaconvolve_1d(self, mode, size):
         signal.oaconvolve(self.a, self.b, mode=mode)
 
 

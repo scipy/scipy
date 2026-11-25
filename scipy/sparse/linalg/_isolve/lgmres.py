@@ -3,6 +3,7 @@
 
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy._lib._array_api import xp_capabilities
 from scipy.linalg import get_blas_funcs
 from .iterative import _get_atol_rtol
 from .utils import make_system
@@ -12,6 +13,7 @@ from ._gcrotmk import _fgmres
 __all__ = ['lgmres']
 
 
+@xp_capabilities(np_only=True)
 def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
            prepend_outer_v=False):

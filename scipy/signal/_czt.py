@@ -1,29 +1,6 @@
 # This program is public domain
 # Authors: Paul Kienzle, Nadav Horesh
-"""
-Chirp z-transform.
-
-We provide two interfaces to the chirp z-transform: an object interface
-which precalculates part of the transform and can be applied efficiently
-to many different data sets, and a functional interface which is applied
-only to the given data set.
-
-Transforms
-----------
-
-CZT : callable (x, axis=-1) -> array
-   Define a chirp z-transform that can be applied to different signals.
-ZoomFFT : callable (x, axis=-1) -> array
-   Define a Fourier transform on a range of frequencies.
-
-Functions
----------
-
-czt : array
-   Compute the chirp z-transform for a signal.
-zoom_fft : array
-   Compute the Fourier transform on a range of frequencies.
-"""
+"""Chirp z-transform and zoom-FFT implementations. """
 
 import cmath
 import numbers
@@ -491,9 +468,13 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     >>> a = np.exp(-f1/fs)  # Starting point of the circle, radius < 1
     >>> w = np.exp(-1j*np.pi/M)  # "Step size" of circle
     >>> points = czt_points(M + 1, w, a)  # M + 1 to include Nyquist
-    >>> plt.plot(points.real, points.imag, '.')
-    >>> plt.gca().add_patch(plt.Circle((0,0), radius=1, fill=False, alpha=.3))
-    >>> plt.axis('equal'); plt.axis([-1.05, 1.05, -0.05, 1.05])
+    >>> from matplotlib.patches import Arc
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(points.real, points.imag, '.')
+    >>> ax.add_patch(Arc((0, 0), width=2, height=2, theta1=0,
+    ...                  theta2=180, alpha=.3))
+    >>> ax.set_aspect('equal')
+    >>> ax.set_xlim(-1.05, 1.05)
     >>> plt.show()
 
     With the correct radius, this transforms the decaying sinusoid (and others

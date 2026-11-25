@@ -1,9 +1,10 @@
 from warnings import warn
 
 import numpy as np
-import scipy.optimize._highspy._core as _h # type: ignore[import-not-found]
-from scipy.optimize._highspy import _highs_options as hopt  # type: ignore[attr-defined]
-from scipy.optimize import OptimizeWarning
+import scipy.optimize._highspy._core as _h
+# pyrefly: ignore[missing-module-attribute]
+from scipy.optimize._highspy import _highs_options as hopt
+from scipy.optimize._optimize import OptimizeWarning
 
 
 def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):

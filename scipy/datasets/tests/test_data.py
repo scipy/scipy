@@ -10,7 +10,7 @@ import pytest
 pooch = pytest.importorskip("pooch")
 
 
-data_dir = data_fetcher.path  # type: ignore
+data_dir = data_fetcher.path
 
 
 def _has_hash(path, expected_hash):
@@ -23,7 +23,8 @@ def _has_hash(path, expected_hash):
 class TestDatasets:
 
     @pytest.fixture(scope='module', autouse=True)
-    def test_download_all(self):
+    @classmethod
+    def test_download_all(cls):
         # This fixture requires INTERNET CONNECTION
 
         # test_setup phase

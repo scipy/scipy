@@ -1,5 +1,6 @@
 from types import GenericAlias
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 
 
 def check_arguments(fun, y0, support_complex):
@@ -26,6 +27,7 @@ def check_arguments(fun, y0, support_complex):
     return fun_wrapped, y0
 
 
+@xp_capabilities(np_only=True)
 class OdeSolver:
     """Base class for ODE solvers.
 
@@ -62,7 +64,7 @@ class OdeSolver:
     9. By convention, the function evaluations used to compute a finite
        difference approximation of the Jacobian should not be counted in
        `nfev`, thus use ``fun_single(self, t, y)`` or
-       ```fun_vectorized(self, t, y)`` when computing a finite difference
+       ``fun_vectorized(self, t, y)`` when computing a finite difference
        approximation of the Jacobian.
 
     Parameters
@@ -130,7 +132,7 @@ class OdeSolver:
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
                  support_complex=False):
@@ -234,6 +236,7 @@ class OdeSolver:
         raise NotImplementedError
 
 
+@xp_capabilities(np_only=True)
 class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 
@@ -255,7 +258,7 @@ class DenseOutput:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, t_old, t):
         self.t_old = t_old

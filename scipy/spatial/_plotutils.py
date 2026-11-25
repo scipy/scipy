@@ -1,5 +1,7 @@
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 
@@ -17,6 +19,7 @@ def _adjust_bounds(ax, points):
     ax.set_ylim(xy_min[1], xy_max[1])
 
 
+@xp_capabilities(out_of_scope=True)
 def delaunay_plot_2d(tri, ax=None):
     """
     Plot the given Delaunay triangulation in 2-D.
@@ -75,6 +78,7 @@ def delaunay_plot_2d(tri, ax=None):
     return ax.figure
 
 
+@xp_capabilities(out_of_scope=True)
 def convex_hull_plot_2d(hull, ax=None):
     """
     Plot the given convex hull diagram in 2-D.
@@ -135,6 +139,7 @@ def convex_hull_plot_2d(hull, ax=None):
     return ax.figure
 
 
+@xp_capabilities(out_of_scope=True)
 def voronoi_plot_2d(vor, ax=None, **kw):
     """
     Plot the given Voronoi diagram in 2-D.

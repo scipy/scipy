@@ -13,14 +13,15 @@ at the top-level directory.
  * \brief Header file for real operations
  * 
  * <pre> 
- * -- SuperLU routine (version 4.1) --
+ * -- SuperLU routine (version 7.0.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November, 2010
+ * August 2024
  * 
  * Global data structures used in LU factorization -
  * 
- *   nsuper: #supernodes = nsuper + 1, numbered [0, nsuper].
+ *   nsuper: \#supernodes = nsuper + 1, numbered [0, nsuper].
  *   (xsup,supno): supno[i] is the supernode no to which i belongs;
  *	xsup(s) points to the beginning of the s-th supernode.
  *	e.g.   supno 0 1 2 2 3 3 3 4 4 4 4 4   (n=12)
@@ -54,7 +55,7 @@ at the top-level directory.
  *	values.
  *
  *	The last column structures (for pruning) will be removed
- *	after the numercial LU factorization phase.
+ *	after the numerical LU factorization phase.
  *
  *   (xlusup,lusup): lusup[*] contains the numerical values of the
  *	rectangular supernodes; xlusup[j] points to the starting
@@ -175,7 +176,7 @@ extern void    creadmt (int *, int *, int_t *, singlecomplex **, int_t **, int_t
 extern void    cGenXtrue (int, int, singlecomplex *, int);
 extern void    cFillRHS (trans_t, int, singlecomplex *, int, SuperMatrix *,
 			  SuperMatrix *);
-extern void    cgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
+extern void    cgstrs (trans_t, SuperMatrix *, SuperMatrix *, const int *, const int *,
                         SuperMatrix *, SuperLUStat_t*, int *);
 /* ILU */
 extern void    cgsitrf (superlu_options_t*, SuperMatrix*, int, int, int*,
@@ -246,6 +247,7 @@ extern int     ilu_cQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern void    creadhb(FILE *, int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    creadrb(int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    creadtriple(int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
+extern void    creadtriple_noheader(int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    creadMM(FILE *, int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    cfill (singlecomplex *, int, singlecomplex);
 extern void    cinf_norm_error (int, SuperMatrix *, singlecomplex *);
@@ -257,20 +259,22 @@ extern void    cPrint_CompCol_Matrix(char *, SuperMatrix *);
 extern void    cPrint_SuperNode_Matrix(char *, SuperMatrix *);
 extern void    cPrint_Dense_Matrix(char *, SuperMatrix *);
 extern void    cprint_lu_col(char *, int, int, int_t *, GlobalLU_t *);
-extern int     print_double_vec(char *, int, double *);
+extern int     print_singlecomplex_vec(const char *, int, const singlecomplex *);
 extern void    ccheck_tempv(int, singlecomplex *);
 
 /*! \brief BLAS */
 
-extern int cgemm_(const char*, const char*, const int*, const int*, const int*,
-                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
-		  const int*, const singlecomplex*, singlecomplex*, const int*);
-extern int ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
-                  singlecomplex*, int*);
-extern int ctrsm_(char*, char*, char*, char*, int*, int*,
-                  singlecomplex*, singlecomplex*, int*, singlecomplex*, int*);
-extern int cgemv_(char *, int *, int *, singlecomplex *, singlecomplex *a, int *,
-                  singlecomplex *, int *, singlecomplex *, singlecomplex *, int *);
+extern void ccopy_(slu_blasint *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+extern void caxpy_(slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *, singlecomplex *, slu_blasint *);
+extern void cgemm_(const char*, const char*, const slu_blasint*, const slu_blasint*, const slu_blasint*,
+                  const singlecomplex*, const singlecomplex*, const slu_blasint*, const singlecomplex*,
+		  const slu_blasint*, const singlecomplex*, singlecomplex*, const slu_blasint*);
+extern void ctrsv_(char*, char*, char*, slu_blasint*, singlecomplex*, slu_blasint*,
+                  singlecomplex*, slu_blasint*);
+extern void ctrsm_(char*, char*, char*, char*, slu_blasint*, slu_blasint*,
+                  singlecomplex*, singlecomplex*, slu_blasint*, singlecomplex*, slu_blasint*);
+extern void cgemv_(char *, slu_blasint *, slu_blasint *, singlecomplex *, singlecomplex *a, slu_blasint *,
+                  singlecomplex *, slu_blasint *, singlecomplex *, singlecomplex *, slu_blasint *);
 
 extern void cusolve(int, int, singlecomplex*, singlecomplex*);
 extern void clsolve(int, int, singlecomplex*, singlecomplex*);

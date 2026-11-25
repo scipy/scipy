@@ -26,19 +26,19 @@ kernelspec:
 
 The physical process of kinetic energy loss in charged particles, as they pass
 through matter and ionize electrons, was first characterized [^1] by Lev Landau
-using this distribution that bears his namesake. This distribution is of limited
+using this distribution that now bears his name. This distribution is of limited
 use in practice because it is idealized in that: its support has no upper bound,
 while physically the energy loss cannot exceed the total energy of the incident
 particle, corrected by Vavilov [^2]; and that it assumes an idealized
 probability of single scattering proportional to {math}`1/r^2`. The latter
 idealization has had improvements made by numerous researchers, see e.g.
-[^3]. For further discussion on the modeling of passage of particles through matter,
+[^3]. For further discussion on modeling the passage of particles through matter,
 see [^4], Section 34.2.9.
 
 In typical use in the context of energy loss in matter, the Landau distribution
 is parameterized by its most probable energy loss value `E_mpv` and a width
 parameter `xi` ({math}`\Delta_p` and {math}`\xi`, respectively, in Ref. [^4],
-Eqn. 34.12). The `loc` and `scale` parameters of the implementation in
+Eq. 34.12). The `loc` and `scale` parameters of the implementation in
 {func}`scipy.stats.landau` are related to these parameters as demonstrated
 below:
 
@@ -65,7 +65,7 @@ def landau_energy_loss(E, E_mpv, xi):
 ```
 
 In the below script, we use this parameterization to predict the distribution of
-energy lost by a muon traversing a silicon detector, recreating Fig. 34.7 of Ref.
+energy loss by a muon traversing a silicon detector, recreating Fig. 34.7 of Ref.
 [^4]. The constants used in this example, namely {math}`E_\mathrm{mpv} = 0.5268`
 MeV and {math}`\xi = 0.03031` MeV, are derived from Eqn. 34.12 of Ref. [^4] for
 a 10 GeV muon traversing 1.7 mm of silicon. We omit the details of this

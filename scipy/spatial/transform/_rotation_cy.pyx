@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state, _transition_to_rng
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, acos, hypot, isnan, NAN, pi
+from libc.math cimport sqrt, sin, cos, atan2, isnan, NAN, pi
 
 np.import_array()
 
@@ -25,13 +25,6 @@ cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
     if n1 == 0:
         return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
-    if n1 == 0:
-        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
-    cdef double[:, :] arr = array(shape=(n1, n2),
-        itemsize=sizeof(double), format=b"d")
-    arr[:, :] = 0
-    return arr
 
 # flat implementations of numpy functions
 @cython.boundscheck(False)
@@ -144,7 +137,9 @@ cdef inline int _get_angles(
 
     # Step 2
     # Compute second angle...
-    angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+    # Quaternion elements are in [-1, 1], so sqrt of the square is safe and much faster
+    # than hypot
+    angles[1] = 2 * atan2(sqrt(c**2 + d**2), sqrt(a**2 + b**2))
 
     # ... and check if equal to is 0 or pi, causing a singularity
     if abs(angles[1]) <= 1e-7:
@@ -251,8 +246,7 @@ cdef double[:, :] _compute_euler_from_quat(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_davenport_from_quat(
-    np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
-    np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
+    const double[:, :] quat, const double[:] n1, const double[:] n2, const double[:] n3,
     bint extrinsic,
     bint suppress_warnings
 ):
@@ -271,7 +265,7 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef int correct_set = False
     if lamb < 0:
         # alternative set of angles compatible with as_euler implementation
-        n2 = -n2
+        n2 = -np.asarray(n2)
         lamb = -lamb
         n_cross[0] = -n_cross[0]
         n_cross[1] = -n_cross[1]
@@ -319,12 +313,10 @@ cdef double[:, :] _compute_davenport_from_quat(
 @cython.wraparound(False)
 cdef inline void _compose_quat_single( # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
-) noexcept:
-    cdef double[:] cross = _cross3(p[:3], q[:3])
-
-    r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
-    r[1] = p[3]*q[1] + q[3]*p[1] + cross[1]
-    r[2] = p[3]*q[2] + q[3]*p[2] + cross[2]
+) noexcept nogil:
+    r[0] = p[3]*q[0] + q[3]*p[0] + p[1]*q[2] - p[2]*q[1]
+    r[1] = p[3]*q[1] + q[3]*p[1] + p[2]*q[0] - p[0]*q[2]
+    r[2] = p[3]*q[2] + q[3]*p[2] + p[0]*q[1] - p[1]*q[0]
     r[3] = p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]
 
 @cython.boundscheck(False)
@@ -355,39 +347,58 @@ def compose_quat(p, q):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double[:, :] _make_elementary_quat(
-    uchar axis, const double[:] angles
+cdef inline void _set_elementary_quat(
+    double[:] quat, uchar axis, double angle
 ) noexcept:
-    cdef Py_ssize_t n = angles.shape[0]
-    cdef double[:, :] quat = _zeros2(n, 4)
+    quat[0] = 0
+    quat[1] = 0
+    quat[2] = 0
+    quat[3] = cos(angle / 2)
+    quat[_elementary_basis_index(axis)] = sin(angle / 2)
 
-    cdef int axis_ind
-    if axis == b'x':   axis_ind = 0
-    elif axis == b'y': axis_ind = 1
-    elif axis == b'z': axis_ind = 2
-
-    for ind in range(n):
-        quat[ind, 3] = cos(angles[ind] / 2)
-        quat[ind, axis_ind] = sin(angles[ind] / 2)
-    return quat
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _set_axis_angle_quat(
+    double[:] quat, const double[:] axis, double angle
+) noexcept:
+    cdef double half_sin = sin(angle / 2)
+    quat[0] = half_sin * axis[0]
+    quat[1] = half_sin * axis[1]
+    quat[2] = half_sin * axis[2]
+    quat[3] = cos(angle / 2)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _elementary_quat_compose(
-    const uchar[:] seq, const double[:, :] angles, bint intrinsic=False
+    const uchar[:] seq, const double[:, :] angles, bint intrinsic=False,
+    const double[:, :] axes=None
 ) noexcept:
-    cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
-    cdef Py_ssize_t seq_len = seq.shape[0]
+    # Rotate about the basis axes in seq, or about the rows of axes if given
+    cdef bint elementary = axes is None
+    cdef Py_ssize_t num_rotations = angles.shape[0]
+    cdef Py_ssize_t seq_len = angles.shape[1]
+    cdef double[:, :] result = _empty2(num_rotations, 4)  # Batched output
+    cdef double[:] axis_quat = _empty1(4)  # Intermediate for the current rotation
+    cdef double[:] product = _empty1(4)  # Intermediate for accumulated rotations
 
-    for idx in range(1, seq_len):
-        if intrinsic:
-            result = _compose_quat(
-                result,
-                _make_elementary_quat(seq[idx], angles[:, idx]))
+    for ind in range(num_rotations):
+        if elementary:
+            _set_elementary_quat(result[ind], seq[0], angles[ind, 0])
         else:
-            result = _compose_quat(
-                _make_elementary_quat(seq[idx], angles[:, idx]),
-                result)
+            _set_axis_angle_quat(result[ind], axes[0], angles[ind, 0])
+        for idx in range(1, seq_len):
+            if elementary:
+                _set_elementary_quat(axis_quat, seq[idx], angles[ind, idx])
+            else:
+                _set_axis_angle_quat(axis_quat, axes[idx], angles[ind, idx])
+            if intrinsic:
+                _compose_quat_single(result[ind], axis_quat, product)
+            else:
+                _compose_quat_single(axis_quat, result[ind], product)
+            result[ind, 0] = product[0]
+            result[ind, 1] = product[1]
+            result[ind, 2] = product[2]
+            result[ind, 3] = product[3]
     return result
 
 
@@ -580,7 +591,7 @@ def from_rotvec(rotvec, bint degrees=False):
     # If a single vector is given, convert it to a 2D 1 x 3 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `as_...` methods
-    cdef double[:, :] crotvec
+    cdef const double[:, :] crotvec
     if rotvec.shape == (3,):
         crotvec = rotvec[None, :]
         is_single = True
@@ -713,10 +724,13 @@ def as_rotvec(double[:, :] quat, bint degrees=False) -> double[:, :]:
     cdef Py_ssize_t num_rotations = len(quat)
     cdef double angle, scale, angle2
     cdef double[:, :] rotvec = _empty2(num_rotations, 3)
-    cdef double[:] quat_single
+    cdef double[:] quat_single = _empty1(4)
 
     for ind in range(num_rotations):
-        quat_single = quat[ind, :].copy()
+        quat_single[0] = quat[ind, 0]
+        quat_single[1] = quat[ind, 1]
+        quat_single[2] = quat[ind, 2]
+        quat_single[3] = quat[ind, 3]
         _quat_canonical_single(quat_single)  # w > 0 ensures that 0 <= angle <= pi
 
         angle = 2 * atan2(_norm3(quat_single), quat_single[3])
@@ -731,10 +745,10 @@ def as_rotvec(double[:, :] quat, bint degrees=False) -> double[:, :]:
         rotvec[ind, 1] = scale * quat_single[1]
         rotvec[ind, 2] = scale * quat_single[2]
 
+    result = np.asarray(rotvec)
     if degrees:
-        rotvec = np.rad2deg(rotvec)
-
-    return np.asarray(rotvec)
+        np.rad2deg(result, out=result)
+    return result
 
 
 @cython.embedsignature(True)
@@ -1345,13 +1359,7 @@ def from_davenport(axes, order: str, angles, bint degrees=False):
         raise ValueError("Expected `angles` to match number of axes, got "
                          f"{angles.shape[1]} angles and {axes.shape[0]} axes.")
 
-    q = identity(len(angles))
-    for i in range(num_axes):
-        qi = from_rotvec(angles[:, i, np.newaxis] * axes[i])
-        if extrinsic:
-            q = compose_quat(qi, q)
-        else:
-            q = compose_quat(q, qi)
+    q = _elementary_quat_compose(None, angles, not extrinsic, axes)
 
     if is_single:
         return np.asarray(q, dtype=float)[0]

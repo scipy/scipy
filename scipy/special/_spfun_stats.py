@@ -1,3 +1,5 @@
+# The portion below involving multigammaln has the following copyright
+# information:
 # Last Change: Sat Mar 21 02:00 PM 2009 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
@@ -29,14 +31,19 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
+# The Poisson binomial distribution functions copyright SciPy developers 2026.
+
 """Some more special functions which may be useful for multivariate statistical
 analysis."""
 
 import numpy as np
-from scipy.special import gammaln as loggam
+
+import scipy.special._gufuncs as _gufuncs
+from scipy.special._ufuncs import gammaln as loggam
+from scipy.special._ufunc_tools import _with_cache_optimization
 
 
-__all__ = ['multigammaln']
+__all__ = ['multigammaln', 'poisson_binom_cdf']
 
 
 def multigammaln(a, d):
@@ -106,3 +113,111 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+_poisson_binom_pmf_doc = (
+    r"""Returns pmf of Poisson Binomial distribution.
+
+    Parameters
+    ----------
+    k : array
+        Number of successes at which to evaluate pmf.
+
+    p : array
+        Success probabilities of independent Bernoulli trials.
+
+
+    """
+)
+
+
+_poisson_binom_pmf = _with_cache_optimization(
+    name="_poisson_binom_pmf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_pmf_doc,
+    ufunc=_gufuncs._poisson_binom_pmf,
+    cache_arg_indices=[1],
+)
+
+
+_poisson_binom_cdf_doc = (
+    r"""Poisson binomial cumulative distribution function.
+
+    The Poisson binomial distribution is the discrete probability
+    distribution of a sum of independent Bernoulli trials that are not
+    necessarily identically distributed [1]_.
+
+    Parameters
+    ----------
+    k : array_like of int
+        Number of successes at which to evaluate the CDF.
+    p : array_like of float
+        Success probabilities of independent Bernoulli trials.
+    out : ndarray, optional
+        Optional output array for the function results.
+    **kwargs
+        For other keyword-only arguments, see the
+        `NumPy ufunc docs <https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments>`_.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson binomial cumulative distribution function.
+
+    See Also
+    --------
+    scipy.stats.poisson_binom
+
+    Notes
+    -----
+    For :math:`\mathbf{p} = \left(p_1, p_2, \ldots, p_n\right)` giving
+    the success probabilities for a sequence of :math:`n` independent Bernoulli
+    trials
+
+    .. math::
+
+        \mathrm{CDF}(k, \mathbf{p}) =
+        \sum_{l=0}^{k}\sum_{A \in F_l}\prod_{i \in A} p_i \prod_{j \in A^c} (1 - p_j)
+
+    where :math:`F_l` is the set of all subsets of size :math:`l` of
+    :math:`\{1, 2, \ldots, n\}` and :math:`A^c` is the complement of :math:`A` in
+    :math:`\{1, 2, \ldots, n\}`.
+
+    .. versionadded:: 2.0.0
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import poisson_binom_cdf
+
+    A batch of two Poisson binomial distributions involving three trials
+    each.
+
+    >>> p = np.asarray([[0.2, 0.4, 0.6], [0.3, 0.3, 0.1]])
+
+    Evaluate the cdf across the entire support. An extra dimension is added
+    to ``k`` to broadcast against the batch dimension of ``p``.
+
+    >>> k = np.asarray([0, 1, 2, 3])[:, None]
+    >>> poisson_binom_cdf(k, p)
+    array([[0.192, 0.441],
+           [0.656, 0.868],
+           [0.952, 0.991],
+           [1.   , 1.   ]])
+
+
+    """
+)
+
+poisson_binom_cdf = _with_cache_optimization(
+    name="poisson_binom_cdf",
+    arg_names=["k", "p"],
+    docstring=_poisson_binom_cdf_doc,
+    ufunc=_gufuncs._poisson_binom_cdf,
+    cache_arg_indices=[1],
+    module="scipy.special._spfun_stats",
+)

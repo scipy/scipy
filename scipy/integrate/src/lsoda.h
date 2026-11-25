@@ -75,7 +75,7 @@ lsoda(
     int* iopt,
     double* restrict rwork,
     int lrw,
-    int* restrict iwork,
+    CBLAS_INT* restrict iwork,
     int liw,
     lsoda_jac_t jac,
     const int jt,

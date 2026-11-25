@@ -75,7 +75,7 @@ dvode(
     int* iopt,
     double* restrict rwork,
     int lrw,
-    int* restrict iwork,
+    CBLAS_INT* restrict iwork,
     int liw,
     vode_jac_t jac,
     int mf,

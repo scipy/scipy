@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse import csr_array
-from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense
+from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense, reconstruct_path
 
 
 def test_csgraph_from_dense():
@@ -59,3 +60,16 @@ def test_multiple_edges():
     Xdense = csgraph_to_dense(Xcsr)
     assert_array_almost_equal(Xdense[:, 1::2],
                               np.minimum(X[:, ::2], X[:, 1::2]))
+
+
+class TestReconstructPath:
+    def test_gh23577(self):
+        row_indices = [0, 1, 1, 3, 3]
+        col_indices = [0, 2, 3, 1, 4]
+        data = [9, -6, -8, 6, 8]
+        matrix = csr_array((data, (row_indices, col_indices)), shape=(5, 5),
+                           dtype=np.int64)
+        predecessors = np.array([np.nan, np.nan, np.nan])
+        with pytest.raises(ValueError, match="integral"):
+            reconstruct_path(matrix, predecessors)
+

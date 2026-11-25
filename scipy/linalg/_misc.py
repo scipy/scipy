@@ -1,9 +1,11 @@
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _ensure_aligned_and_native
+from ._batched_linalg import _bandwidth
+from scipy._lib._util import _deprecate_dtypes
 
-__all__ = ['LinAlgError', 'LinAlgWarning', 'norm']
+__all__ = ['LinAlgError', 'LinAlgWarning', 'norm', 'bandwidth']
 
 
 class LinAlgWarning(RuntimeWarning):
@@ -146,6 +148,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
+    _deprecate_dtypes('norm', a)
 
     if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
@@ -161,14 +164,14 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
             # Make sure this works if the user uses the axis keywords
             # to apply the norm to the transpose.
             if ord == 1:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = '1', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = 'i', a.T
             elif ord == np.inf:
-                if np.isfortran(a):
+                if a.flags.fnc:
                     lange_args = 'i', a
-                elif np.isfortran(a.T):
+                elif a.T.flags.fnc:
                     lange_args = '1', a.T
             if lange_args:
                 lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
@@ -189,3 +192,95 @@ def _datacopied(arr, original):
     if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
         return False
     return arr.base is None
+
+
+# "np.isdtype" lookup is 20x-25x slower than the set lookup and for smaller
+# arrays creates a large overhead;
+# np.isdtype: 0.69-1.25 us, set lookup 0.04-0.05 us for a _bandwidth call
+# that takes around 0.2-0.3 us for small n. Hence types are collected here
+# for a set lookup.
+_BANDWIDTH_SUPPORTED_DTYPES = {
+    np.bool_,
+    np.int8, np.int16, np.int32, np.int64,
+    np.uint8, np.uint16, np.uint32, np.uint64,
+    np.float32, np.float64,
+    np.complex64, np.complex128,
+}
+
+
+def bandwidth(a):
+    """Return the lower and upper bandwidth of a numeric array.
+
+    Parameters
+    ----------
+    a : (..., N, M) array_like
+        Input array of at least 2 dimensions.
+
+    Returns
+    -------
+    lower : int | ndarray
+        Lower bandwidth. A scalar ``np.int64`` is assigned per
+        2D slice of the input array of last two dimensions. A value of 0
+        means the slice is upper triangular; ``N - 1`` means the lower part
+        is full. If the input array is 2D then an :class:`int` is returned.
+    upper : int | ndarray
+        Upper bandwidth. Same shape rules as `lower`. A value of 0
+        means the slice is lower triangular; ``M - 1`` means the upper
+        part is full. If the input array is 2D then a scalar :class:`int` is returned.
+
+    Raises
+    ------
+    TypeError
+        If the dtype of the array is not supported, in particular, for NumPy
+        float16, float128 and complex256 and other NumPy non-numeric types.
+
+    Notes
+    -----
+    This helper function simply runs over the array looking for the nonzero
+    entries whether there exists a banded structure in the array or not. Hence,
+    the performance depends on the density of nonzero entries and also
+    memory-layout. Fortran- or C- contiguous arrays are handled best and
+    otherwise suffers from extra random memory access cost.
+
+    The strategy is to look for only untested band elements in the upper
+    and lower triangular parts separately; depending on the memory layout
+    we scan row-wise or column-wise. Moreover, say we are scanning rows
+    and in the 6th row, 4th entry is nonzero then, on the succeeding rows
+    the horizontal search is done only up to that band entries since we know
+    that band is occupied. Therefore, a completely dense matrix scan cost is
+    in the order of n.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import bandwidth
+    >>> A = np.array([[3., 0., 0., 0., 0.],
+    ...               [0., 4., 0., 0., 0.],
+    ...               [0., 0., 5., 1., 0.],
+    ...               [8., 0., 0., 6., 2.],
+    ...               [0., 9., 0., 0., 7.]])
+    >>> bandwidth(A)
+    (3, 1)
+
+    """
+    a = np.asarray(a)
+    if a.ndim < 2:
+        raise ValueError('Input array must be at least 2D.')
+
+    if a.dtype.type not in _BANDWIDTH_SUPPORTED_DTYPES:
+        raise TypeError(f'Input array with {a.dtype} dtype is not supported.')
+
+    # Empty array bandwidth is defined to be zero.
+    if a.size == 0:
+        if a.ndim == 2:
+            return (np.int64(0), np.int64(0))
+
+        batch_shape = a.shape[:-2]
+        return (
+            np.zeros(batch_shape, dtype=np.int64),
+            np.zeros(batch_shape, dtype=np.int64)
+        )
+
+    a, _ = _ensure_aligned_and_native(a, False)
+    return _bandwidth(a)
+

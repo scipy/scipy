@@ -41,7 +41,7 @@ X[l]\in\IC`, with :math:`k, l \in\{0, \ldots, N-1\}`, are defined by
 .. math::
     :label: eq_FFT_DFT
 
-    X[l] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[n] \e^{-\jj 2 \pi l k / N}\,,\qquad
+    X[l] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[k] \e^{-\jj 2 \pi l k / N}\,,\qquad
     x[k] = \frac{\gamma}{N}\sum_{l=0}^{N-1} X[l] \e^{\jj 2 \pi k l / N}\,,
 
 which are implemented by the :func:`~scipy.fft.fft` / :func:`~scipy.fft.ifft`
@@ -136,7 +136,7 @@ component, i.e.,
 
 .. math::
 
-    X[0] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[n]\,,\qquad
+    X[0] = \frac{1}{\gamma} \sum_{k=0}^{N-1} x[k]\,,\qquad
     x[0] = \frac{\gamma}{N}\sum_{l=0}^{N-1} X[l]\,.
 
 The circular convolution of two sequences of length :math:`N`, i.e.,
@@ -152,7 +152,7 @@ can be expressed as a multiplication of their DFTs and vice versa, i.e.,
        z[k] &= x[k] \ast y[k] & \Leftrightarrow &&
        Z[l] &= \gamma\, X[l]\, Y[l] \,,\\
        Z[l] &= X[l] \ast Y[l]  & \Leftrightarrow &&
-       z[l] &= \frac{N}{\gamma} x[k] \,y[k] \,.
+       z[k] &= \frac{N}{\gamma} x[k] \,y[k] \,.
     \end{align}
 
 Here, the circular convolution is defined over finite length sequences, whereas in
@@ -264,6 +264,7 @@ and its support extends over the complete real axis. The DFT may be interpreted 
 sampling the continuous Fourier transform due to
 
 .. math::
+    :label: eq_FFT_SamplingFourierTrafo
 
     Z(l \Delta f) = \tau\frac{\gamma}{N} c_l = T \gamma c_l
                                                          \quad\text{ for }\quad l\in\IZ
@@ -351,7 +352,7 @@ determine the periodic components, a magnitude spectrum of :math:`x(t)` and of
 
 The signal's trend manifests as a decreasing slope in the spectrum's low-frequency part.
 Removing the linear trend steepens this slope significantly, making the peaks at
-:math:`100`, :math:`200`, and :math:`300\,`\ Hz much better distinguishable. These peaks, which
+:math:`200`, :math:`300`, and :math:`400\,`\ Hz much better distinguishable. These peaks, which
 correspond to the sinusoidal components of :math:`x(t)`, would have a magnitude of
 :math:`0.5` in a noise- and trend-free signal.
 
@@ -373,7 +374,7 @@ its non-negative frequencies. The gray stems represent the periodic continuation
 left and to the right. The center row shows the :func:`~scipy.fft.fft` with the shifted
 frequencies produced by :func:`~scipy.fft.fftfreq`, where the two highest frequencies
 are shifted to the negative side. The last row depicts the one-sided
-:func:`~scipy.fft.rfft`, which only produces only the non-negative frequencies of the
+:func:`~scipy.fft.rfft`, which produces only the non-negative frequencies of the
 (two-sided) :func:`~scipy.fft.fft`.
 
 .. plot:: tutorial/examples/fft_compare_DFT_fft_rfft.py
@@ -722,6 +723,7 @@ or, for ``norm='ortho'``:
     y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N,
 
+.. _tutorial_FFT_DST_and_IDST:
 
 DST and IDST
 ------------

@@ -59,7 +59,7 @@ class Covariance:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self):
         message = ("The `Covariance` class cannot be instantiated directly. "
@@ -490,7 +490,7 @@ class Covariance:
 
 class CovViaPrecision(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, precision, covariance=None):
         precision = self._validate_matrix(precision, 'precision')
@@ -541,11 +541,11 @@ class CovViaDiagonal(Covariance):
         positive_diagonal[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_diagonal), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_diagonal)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_diagonal)
+        pseudo_reciprocals[i_zero] = 0
 
         self._sqrt_diagonal = np.sqrt(diagonal)
-        self._LP = psuedo_reciprocals
+        self._LP = pseudo_reciprocals
         self._rank = positive_diagonal.shape[-1] - i_zero.sum(axis=-1)
         self._covariance = np.apply_along_axis(np.diag, -1, diagonal)
         self._i_zero = i_zero
@@ -567,7 +567,7 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, cholesky):
         L = self._validate_matrix(cholesky, 'cholesky')
@@ -593,7 +593,7 @@ class CovViaCholesky(Covariance):
 
 class CovViaEigendecomposition(Covariance):
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, eigendecomposition):
         eigenvalues, eigenvectors = eigendecomposition
@@ -615,10 +615,10 @@ class CovViaEigendecomposition(Covariance):
         positive_eigenvalues[i_zero] = 1  # ones don't affect determinant
         self._log_pdet = np.sum(np.log(positive_eigenvalues), axis=-1)
 
-        psuedo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
-        psuedo_reciprocals[i_zero] = 0
+        pseudo_reciprocals = 1 / np.sqrt(positive_eigenvalues)
+        pseudo_reciprocals[i_zero] = 0
 
-        self._LP = eigenvectors * psuedo_reciprocals
+        self._LP = eigenvectors * pseudo_reciprocals
         self._LA = eigenvectors * np.sqrt(eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
@@ -654,7 +654,7 @@ class CovViaPSD(Covariance):
     Representation of a covariance provided via an instance of _PSD
     """
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, psd):
         self._LP = psd.U

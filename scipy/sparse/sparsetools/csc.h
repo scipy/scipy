@@ -1,7 +1,7 @@
 #ifndef __CSC_H__
 #define __CSC_H__
 
-#include "csr.h"
+#include "dense.h"
 
 /*
  * Compute Y += A*X for CSC matrix A and dense vectors X,Y

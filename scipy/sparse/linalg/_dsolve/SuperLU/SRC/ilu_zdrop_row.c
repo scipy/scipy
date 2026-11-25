@@ -23,14 +23,14 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_zdefs.h"
 
-extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
-extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
-extern void dcopy_(int *, double [], int *, double [], int *);
-extern double dzasum_(int *, doublecomplex *, int *);
-extern double dznrm2_(int *, doublecomplex *, int *);
-extern double dnrm2_(int *, double [], int *);
-extern int izamax_(int *, doublecomplex [], int *);
+extern void zswap_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
+extern void zaxpy_(slu_blasint *, doublecomplex *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
+extern void zcopy_(slu_blasint *, doublecomplex [], slu_blasint *, doublecomplex [], slu_blasint *);
+extern void dcopy_(slu_blasint *, double [], slu_blasint *, double [], slu_blasint *);
+extern double dzasum_(slu_blasint *, doublecomplex *, slu_blasint *);
+extern double dznrm2_(slu_blasint *, doublecomplex *, slu_blasint *);
+extern double dnrm2_(slu_blasint *, double [], slu_blasint *);
+extern slu_blasint izamax_(slu_blasint *, doublecomplex [], slu_blasint *);
 
 #if 0
 static double *A;  /* used in _compare_ only */
@@ -71,10 +71,10 @@ int ilu_zdrop_row(
 			     * if lastc == 1, there is one more column after
 			     * the working supernode. */ )
 {
-    register int i, j, k, m1;
+    register int i, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
     int_t xlusup_first, xlsub_first;
-    int m, n; /* m x n is the size of the supernode */
+    slu_blasint m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register double *temp;
     register doublecomplex *lusup = (doublecomplex *) Glu->lusup;
@@ -87,8 +87,8 @@ int ilu_zdrop_row(
     norm_t nrm = options->ILU_Norm;
     doublecomplex one = {1.0, 0.0};
     doublecomplex none = {-1.0, 0.0};
-    int i_1 = 1;
-    int inc_diag; /* inc_diag = m + 1 */
+    slu_blasint i_1 = 1;
+    slu_blasint inc_diag; /* inc_diag = m + 1 */
     int nzp = 0;  /* number of zero pivots */
     double alpha = pow((double)(Glu->n), -1.0 / options->ILU_MILU_Dim);
 
@@ -144,7 +144,7 @@ int ilu_zdrop_row(
 				&lusup[xlusup_first + m - 1], &m);
 			break;
 		    case SMILU_3:
-			for (j = 0; j < n; j++)
+			for (int j = 0; j < n; j++)
 			    lusup[xlusup_first + (m - 1) + j * m].r +=
 				    z_abs1(&lusup[xlusup_first + i + j * m]);
 			break;
@@ -160,7 +160,7 @@ int ilu_zdrop_row(
 		zswap_(&n, &lusup[xlusup_first + m1], &m,
 			&lusup[xlusup_first + i], &m);
 		if (milu == SMILU_3)
-		    for (j = 0; j < n; j++) {
+		    for (int j = 0; j < n; j++) {
 			lusup[xlusup_first + m1 + j * m].r =
 				z_abs1(&lusup[xlusup_first + m1 + j * m]);
 			lusup[xlusup_first + m1 + j * m].i = 0.0;
@@ -194,7 +194,7 @@ int ilu_zdrop_row(
 	    }
 	    else /* by quick select */
 	    {
-		int len = m1 - n + 1;
+		slu_blasint len = m1 - n + 1;
 		dcopy_(&len, dwork, &i_1, dwork2, &i_1);
 		tol = dqselect(len, dwork2, quota - n);
 #if 0
@@ -211,7 +211,6 @@ int ilu_zdrop_row(
 	{
 	    if (temp[i] <= tol)
 	    {
-		register int j;
 		r++;
 		/* drop the current row and move the last undropped row here */
 		if (r > 1) /* add to last row */
@@ -225,7 +224,7 @@ int ilu_zdrop_row(
 				    &lusup[xlusup_first + m - 1], &m);
 			    break;
 			case SMILU_3:
-			    for (j = 0; j < n; j++)
+			    for (int j = 0; j < n; j++)
 				lusup[xlusup_first + (m - 1) + j * m].r +=
    				  z_abs1(&lusup[xlusup_first + i + j * m]);
 			    break;
@@ -241,7 +240,7 @@ int ilu_zdrop_row(
 		    zswap_(&n, &lusup[xlusup_first + m1], &m,
 			    &lusup[xlusup_first + i], &m);
 		    if (milu == SMILU_3)
-			for (j = 0; j < n; j++) {
+			for (int j = 0; j < n; j++) {
 			    lusup[xlusup_first + m1 + j * m].r =
 				    z_abs1(&lusup[xlusup_first + m1 + j * m]);
 			    lusup[xlusup_first + m1 + j * m].i = 0.0;
@@ -267,13 +266,12 @@ int ilu_zdrop_row(
 	return 0;
     }
 
-    /* add dropped entries to the diagnal */
+    /* add dropped entries to the diagonal */
     if (milu != SILU)
     {
-	register int j;
 	doublecomplex t;
 	double omega;
-	for (j = 0; j < n; j++)
+	for (int j = 0; j < n; j++)
 	{
 	    t = lusup[xlusup_first + (m - 1) + j * m];
             if (t.r == 0.0 && t.i == 0.0) continue;
@@ -323,7 +321,7 @@ int ilu_zdrop_row(
 
     /* Remove dropped entries from the memory and fix the pointers. */
     m1 = m - r;
-    for (j = 1; j < n; j++)
+    for (int j = 1; j < n; j++)
     {
 	register int tmp1, tmp2;
 	tmp1 = xlusup_first + j * m1;

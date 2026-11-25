@@ -1,6 +1,12 @@
 #ifndef __SPTOOLS_UTIL_H__
 #define __SPTOOLS_UTIL_H__
 
+#include <algorithm>
+#include <numpy/ndarrayobject.h>
+
+#include "bool_ops.h"
+#include "complex_ops.h"
+
 /*
  * Same as std::divides, except return x/0 == 0 for integer types, without
  * raising a SIGFPE.
@@ -46,6 +52,10 @@ struct minimum {
         return std::min(x, y);
     }
 };
+
+#define SPTOOLS_FOR_EACH_INDEX_TYPE(X) \
+  X(npy_int32)                         \
+  X(npy_int64)
 
 #define SPTOOLS_FOR_EACH_DATA_TYPE_CODE(X)      \
   X(NPY_BOOL, npy_bool_wrapper)                 \

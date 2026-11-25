@@ -187,11 +187,14 @@ class TestSparseUtils:
             assert indices is A.indices
             assert indptr is A.indptr
 
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="dtype <class 'numpy.int32'>"):
             sputils.safely_cast_index_arrays(C64, np.int32)
         indices, indptr = sputils.safely_cast_index_arrays(C64, np.int64)
         assert indices is C64.indices
         assert indptr is C64.indptr
+
+        with assert_raises(ValueError, match="indptr.*<class 'numpy.int8'>"):
+            sputils.safely_cast_index_arrays(container(np.ones((128, 1))), np.int8)
 
     def test_safely_cast_index_coo(self):
         # This is slow to test completely as nnz > imax is big
@@ -333,6 +336,19 @@ class TestSparseUtils:
             np.dtype(sputils.get_index_dtype((a1, a2), maxval=too_big)),
             np.dtype('int64')
         )
+
+    @pytest.mark.parametrize("dtype,expected", [
+        (np.dtype('uint32'), np.dtype(np.uint)),
+        (np.dtype('int32'), np.dtype(np.int_)),
+        (np.dtype(np.uint), np.dtype(np.uint)),
+        (np.dtype(np.int_), np.dtype(np.int_)),
+        (np.dtype('float64'), np.dtype('float64')),
+        (np.dtype('complex64'), np.dtype('complex64')),
+    ])
+    def test_get_sum_dtype(self, dtype, expected):
+        result = sputils.get_sum_dtype(dtype)
+        assert isinstance(result, np.dtype)
+        assert_equal(result, expected)
 
     # tests public broadcast_shapes largely from
     # numpy/numpy/lib/tests/test_stride_tricks.py

@@ -1,9 +1,11 @@
 import numpy as np
-from scipy.integrate import ode
+from scipy._lib._array_api import xp_capabilities
+from scipy.integrate._ode import ode
 from .common import validate_tol, validate_first_step, warn_extraneous
 from .base import OdeSolver, DenseOutput
 
 
+@xp_capabilities(np_only=True)
 class LSODA(OdeSolver):
     """Adams/BDF method with automatic stiffness detection and switching.
 
@@ -167,10 +169,9 @@ class LSODA(OdeSolver):
 
         if solver.successful():
             self.t = solver.t
-            # IMPORTANT: Must copy solver._y because the C code reuses the same
-            # array object across calls (for in-place modification). Without copy,
-            # solve_ivp would store references to the same array.
-            self.y = solver._y.copy()
+            # The LSODA wrapper copies y0 on every call, so the array it
+            # returns is new each step and later steps do not modify it.
+            self.y = solver._y
             # From LSODA Fortran source njev is equal to nlu.
             self.njev = integrator.iwork[12]
             self.nlu = integrator.iwork[12]

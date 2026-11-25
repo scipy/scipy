@@ -7,12 +7,15 @@
 #include "numpy/arrayobject.h"
 #include "arnaud/include/arnaud/arnaud.h"
 
-#if defined(_MSC_VER)
-    #define ARNAUD_cplx(real, imag) ((_Dcomplex){real, imag})
-    #define ARNAUD_cplxf(real, imag) ((_Fcomplex){real, imag})
+/* ARNAUD_cplx/ARNAUD_cplxf are now defined in arnaud/types.h
+   (included via arnaud.h) using CMPLX/CMPLXF to handle NaN correctly. */
+
+#ifdef HAVE_BLAS_ILP64
+    #define ARNAUD_PyLong_As(obj)   (ARNAUD_INT)PyLong_AsLongLong(obj)
+    #define ARNAUD_PyLong_From(val) PyLong_FromLongLong((long long)(val))
 #else
-    #define ARNAUD_cplx(real, imag) ((real) + (imag)*I)
-    #define ARNAUD_cplxf(real, imag) ((real) + (imag)*I)
+    #define ARNAUD_PyLong_As(obj)   (ARNAUD_INT)PyLong_AsLong(obj)
+    #define ARNAUD_PyLong_From(val) PyLong_FromLong((long)(val))
 #endif
 
 static PyObject* arpack_error_obj;
@@ -61,7 +64,7 @@ pack_dict_to_state_s(PyObject* dict, struct ARNAUD_state_s* vars, const char* fu
         do { \
             PyObject* field_obj = PyDict_GetItemString(dict, #name); \
             if (!field_obj) { ARPACK_ERROR(func_name, #name, "Missing required");  return -1; } \
-            vars->name = (int)PyLong_AsLong(field_obj); \
+            vars->name = ARNAUD_PyLong_As(field_obj); \
             if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
         } while(0);
     STRUCT_INT_FIELD_NAMES
@@ -95,7 +98,7 @@ pack_dict_to_state_d(PyObject* dict, struct ARNAUD_state_d* vars, const char* fu
         do { \
             PyObject* field_obj = PyDict_GetItemString(dict, #name); \
             if (!field_obj) { ARPACK_ERROR(func_name, #name, "Missing required"); return -1; } \
-            vars->name = (int)PyLong_AsLong(field_obj); \
+            vars->name = ARNAUD_PyLong_As(field_obj); \
             if (PyErr_Occurred()) { ARPACK_ERROR(func_name, #name, "Failed to convert"); return -1; } \
         } while(0);
     STRUCT_INT_FIELD_NAMES
@@ -130,7 +133,7 @@ unpack_state_s_to_dict(const struct ARNAUD_state_s* vars, PyObject* dict, const 
     // Unpack integer fields
     #define X(name) \
         do { \
-            PyObject* tmp_obj = PyLong_FromLong((long)vars->name); \
+            PyObject* tmp_obj = ARNAUD_PyLong_From(vars->name); \
             if ((!tmp_obj) || (PyDict_SetItemString(dict, #name, tmp_obj) < 0)) { \
                 Py_XDECREF(tmp_obj); \
                 ARPACK_ERROR(func_name, #name, "Failed to set"); \
@@ -145,7 +148,7 @@ unpack_state_s_to_dict(const struct ARNAUD_state_s* vars, PyObject* dict, const 
 }
 
 
-static int 
+static int
 unpack_state_d_to_dict(const struct ARNAUD_state_d* vars, PyObject* dict, const char* func_name)
 {
     if ((!dict) || (!vars) || (!func_name)) {
@@ -170,7 +173,7 @@ unpack_state_d_to_dict(const struct ARNAUD_state_d* vars, PyObject* dict, const 
     // Unpack integer fields
     #define X(name) \
         do { \
-            PyObject* tmp_obj = PyLong_FromLong((long)vars->name); \
+            PyObject* tmp_obj = ARNAUD_PyLong_From(vars->name); \
             if ((!tmp_obj) || (PyDict_SetItemString(dict, #name, tmp_obj) < 0)) { \
                 Py_XDECREF(tmp_obj); \
                 ARPACK_ERROR(func_name, #name, "Failed to set"); \
@@ -209,7 +212,7 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = PyArray_DATA(ap_ipntr);
     float* resid = PyArray_DATA(ap_resid);
     float* v = PyArray_DATA(ap_v);
     float* workd = PyArray_DATA(ap_workd);
@@ -252,7 +255,7 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
     double* resid = (double*)PyArray_DATA(ap_resid);
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
@@ -297,7 +300,7 @@ cnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
     ARNAUD_CPLXF_TYPE* resid = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_resid);
     ARNAUD_CPLXF_TYPE* v = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_v);
     ARNAUD_CPLXF_TYPE* workd = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workd);
@@ -343,7 +346,7 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
     ARNAUD_CPLX_TYPE* resid = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_resid);
     ARNAUD_CPLX_TYPE* v = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_v);
     ARNAUD_CPLX_TYPE* workd = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workd);
@@ -368,7 +371,8 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     float sigmar = 0.0;
     float sigmai = 0.0;
@@ -405,8 +409,8 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     float* dr = (float*)PyArray_DATA(ap_dr);
     float* di = (float*)PyArray_DATA(ap_di);
     float* workev = (float*)PyArray_DATA(ap_workev);
@@ -415,8 +419,8 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     float* v = (float*)PyArray_DATA(ap_v);
     float* workd = (float*)PyArray_DATA(ap_workd);
     float* workl = (float*)PyArray_DATA(ap_workl);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
 
     struct ARNAUD_state_s Vars = {0};
     if (pack_dict_to_state_s(input_dict, &Vars, "sneupd_wrap") != 0) { return NULL; }
@@ -435,7 +439,8 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
 
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     double sigmar = 0.0;
     double sigmai = 0.0;
@@ -472,8 +477,8 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     double* dr = (double*)PyArray_DATA(ap_dr);
     double* di = (double*)PyArray_DATA(ap_di);
     double* workev = (double*)PyArray_DATA(ap_workev);
@@ -482,8 +487,8 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
     double* workl = (double*)PyArray_DATA(ap_workl);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
 
     struct ARNAUD_state_d Vars = {0};
     if (pack_dict_to_state_d(input_dict, &Vars, "dneupd_wrap") != 0) { return NULL; }
@@ -502,7 +507,8 @@ static PyObject*
 cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     Py_complex sigma = { .real = 0.0, .imag = 0.0 };
     PyArrayObject* ap_d = NULL;
@@ -537,8 +543,8 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     ARNAUD_CPLXF_TYPE* d = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_d);
     ARNAUD_CPLXF_TYPE* workev = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workev);
     ARNAUD_CPLXF_TYPE* z = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_z);
@@ -547,8 +553,8 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     ARNAUD_CPLXF_TYPE* workd = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workd);
     ARNAUD_CPLXF_TYPE* workl = (ARNAUD_CPLXF_TYPE*)PyArray_DATA(ap_workl);
     float* rwork = PyArray_DATA(ap_rwork);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
     ARNAUD_CPLXF_TYPE sigmaC = ARNAUD_cplxf((float)sigma.real, (float)sigma.imag);
 
     struct ARNAUD_state_s Vars = {0};
@@ -567,7 +573,8 @@ static PyObject*
 zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     Py_complex sigma = { .real = 0.0, .imag = 0.0 };
     PyArrayObject* ap_d = NULL;
@@ -602,8 +609,8 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     ARNAUD_CPLX_TYPE* d = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_d);
     ARNAUD_CPLX_TYPE* workev = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workev);
     ARNAUD_CPLX_TYPE* z = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_z);
@@ -612,8 +619,8 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     ARNAUD_CPLX_TYPE* workd = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workd);
     ARNAUD_CPLX_TYPE* workl = (ARNAUD_CPLX_TYPE*)PyArray_DATA(ap_workl);
     double* rwork = PyArray_DATA(ap_rwork);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
     ARNAUD_CPLX_TYPE sigmaC = ARNAUD_cplx(sigma.real, sigma.imag);
 
     struct ARNAUD_state_d Vars = {0};
@@ -652,7 +659,7 @@ ssaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = PyArray_DATA(ap_ipntr);
     float* resid = PyArray_DATA(ap_resid);
     float* v = PyArray_DATA(ap_v);
     float* workd = PyArray_DATA(ap_workd);
@@ -694,7 +701,7 @@ dsaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
     double* resid = (double*)PyArray_DATA(ap_resid);
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
@@ -716,7 +723,8 @@ static PyObject*
 sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     float sigma = 0.0;
     PyArrayObject* ap_d = NULL;
@@ -747,16 +755,16 @@ sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     float* d = (float*)PyArray_DATA(ap_d);
     float* z = (float*)PyArray_DATA(ap_z);
     float* resid = (float*)PyArray_DATA(ap_resid);
     float* v = (float*)PyArray_DATA(ap_v);
     float* workd = (float*)PyArray_DATA(ap_workd);
     float* workl = (float*)PyArray_DATA(ap_workl);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
 
     struct ARNAUD_state_s Vars = {0};
     if (pack_dict_to_state_s(input_dict, &Vars, "sseupd_wrap") != 0) { return NULL; }
@@ -774,7 +782,8 @@ static PyObject*
 dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     PyObject* input_dict = NULL;
-    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    int want_ev = 0, howmny = 0;
+    ARNAUD_INT ldv = 0, ldz = 0;
     PyArrayObject* ap_select = NULL;
     double sigma = 0.0;
     PyArrayObject* ap_d = NULL;
@@ -805,16 +814,16 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
-    int* select = (int*)PyArray_DATA(ap_select);
+    ARNAUD_INT* ipntr = (ARNAUD_INT*)PyArray_DATA(ap_ipntr);
+    ARNAUD_INT* select = (ARNAUD_INT*)PyArray_DATA(ap_select);
     double* d = (double*)PyArray_DATA(ap_d);
     double* z = (double*)PyArray_DATA(ap_z);
     double* resid = (double*)PyArray_DATA(ap_resid);
     double* v = (double*)PyArray_DATA(ap_v);
     double* workd = (double*)PyArray_DATA(ap_workd);
     double* workl = (double*)PyArray_DATA(ap_workl);
-    ldv = (int)PyArray_DIMS(ap_v)[0];
-    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ldv = (ARNAUD_INT)PyArray_DIMS(ap_v)[0];
+    ldz = (ARNAUD_INT)PyArray_DIMS(ap_z)[0];
 
     struct ARNAUD_state_d Vars = {0};
     if (pack_dict_to_state_d(input_dict, &Vars, "dseupd_wrap") != 0) { return NULL; }

@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import qr, solve_triangular
 from scipy.sparse.linalg import lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import OptimizeResult
 
 from .givens_elimination import givens_elimination
 from .common import (
@@ -74,6 +74,9 @@ def backtracking(A, g, x, p, theta, p_dot_g, lb, ub):
         step = x_new - x
         cost_change = -evaluate_quadratic(A, g, step)
         if cost_change > -0.1 * alpha * p_dot_g:
+            break
+        # The step is too small to change `x`, and smaller `alpha` can't help.
+        if not np.any(step):
             break
         alpha *= 0.5
 

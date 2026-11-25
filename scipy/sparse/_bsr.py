@@ -4,11 +4,11 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
 
+import os
 from warnings import warn
 
 import numpy as np
 
-from scipy._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
@@ -83,7 +83,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                                   check_contents=True)
                 if not copy:
-                    copy = copy_if_needed
+                    copy = None
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)
@@ -623,6 +623,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?
 
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+
     Parameters
     ----------
     x
@@ -636,13 +645,24 @@ def isspmatrix_bsr(x):
     Examples
     --------
     >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_matrix([[5]]))
+    >>> isspmatrix_bsr(bsr_matrix([[5]]))  # doctest: +SKIP
     True
-    >>> isspmatrix_bsr(bsr_array([[5]]))
+    >>> isspmatrix_bsr(bsr_array([[5]]))  # doctest: +SKIP
     False
-    >>> isspmatrix_bsr(csr_matrix([[5]]))
+    >>> isspmatrix_bsr(csr_matrix([[5]]))  # doctest: +SKIP
     False
     """
+    msg = """`isspmatrix_bsr` is being replaced by `self.format == "bsr" and issparse`.
+
+        All sparse matrix classes (*_matrix) are being deprecated in favor of
+        sparse arrays (*_array), which have a NumPy-compatible API, e.g. `*`
+        is elementwise multiplication. See the spmatrix to sparray migration guide
+        https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+
+        The isspmatrix_bsr function will be removed no earlier than v2.2
+        """
+    prefixes = (os.path.dirname(__file__),)
+    warn(msg, category=DeprecationWarning, skip_file_prefixes=prefixes)
     return isinstance(x, bsr_matrix)
 
 
@@ -769,6 +789,15 @@ class bsr_array(_bsr_base, sparray):
 class bsr_matrix(spmatrix, _bsr_base):
     """
     Block Sparse Row format sparse matrix.
+
+    .. warning::
+
+       SciPy sparse is shifting from a sparse matrix interface to a sparse
+       array interface. In the next few releases we expect to deprecate the
+       sparse matrix interface. For documentation of the matrix
+       interface, see the :ref:`spmatrix interface docs <spmatrix_api>`.
+       For guidance on converting existing code to sparse arrays, see
+       :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])

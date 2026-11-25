@@ -97,7 +97,8 @@ from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info, mat_struct)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct,
+                          mxOPAQUE_CLASS, MatlabOpaque)
 
 from ._streams import ZlibInputStream
 
@@ -309,7 +310,9 @@ class MatFile5Reader(MatFileReader):
         mdict['__globals__'] = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+            # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+            name = ('None' if hdr.name is None
+                    else hdr.name.partition(b'\x00')[0].decode('latin1'))
             if name in mdict:
                 msg = (
                     f'Duplicate variable name "{name}" in stream'
@@ -358,12 +361,18 @@ class MatFile5Reader(MatFileReader):
         vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
-            name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+            # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+            name = ('None' if hdr.name is None
+                    else hdr.name.partition(b'\x00')[0].decode('latin1'))
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
 
-            shape = self._matrix_reader.shape_from_header(hdr)
+            if hdr.mclass == mxOPAQUE_CLASS:
+                # MATLAB objects (e.g. string, table) store no dims in the header
+                shape = ()
+            else:
+                shape = self._matrix_reader.shape_from_header(hdr)
             if hdr.is_logical:
                 info = 'logical'
             else:
@@ -428,7 +437,9 @@ def varmats_from_mat(file_obj):
     while not rdr.end_of_stream():
         start_position = next_position
         hdr, next_position = rdr.read_var_header()
-        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+        # MATLAB ends names at the first NUL, non-MATLAB writers may pad with NULs
+        name = ('None' if hdr.name is None
+                else hdr.name.partition(b'\x00')[0].decode('latin1'))
         # Read raw variable string
         file_obj.seek(start_position)
         byte_count = next_position - start_position
@@ -515,10 +526,12 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
-    mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX
 
     def __init__(self, file_writer):
+        # Per instance, not per class: update_matrix_tag writes the byte count
+        # into it, so a shared array breaks concurrent savemat calls (gh-7260)
+        self.mat_tag = np.zeros((), NDT_TAG_FULL)
+        self.mat_tag['mdtype'] = miMATRIX
         self.file_stream = file_writer.file_stream
         self.unicode_strings = file_writer.unicode_strings
         self.long_field_names = file_writer.long_field_names
@@ -598,10 +611,11 @@ class VarWriter5:
         af['nzmax'] = nzmax
         self.write_bytes(af)
         # shape
-        self.write_element(np.array(shape, dtype='i4'))
+        if shape is not None:
+            self.write_element(np.array(shape, dtype='i4'))
         # write name
         name = np.asarray(name)
-        if name == '':  # empty string zero-terminated
+        if name == '' or name == b'':  # empty string zero-terminated
             self.write_smalldata_element(name, miINT8, 0)
         else:
             self.write_element(name, miINT8)
@@ -659,7 +673,9 @@ class VarWriter5:
         narr = to_writeable(arr)
         if narr is None:
             raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
-        if isinstance(narr, MatlabObject):
+        if isinstance(narr, MatlabOpaque):
+            self.write_opaque(narr)
+        elif isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
@@ -707,7 +723,11 @@ class VarWriter5:
     def write_char(self, arr, codec='ascii'):
         ''' Write string array `arr` with given `codec`
         '''
-        if arr.size == 0 or np.all(arr == ''):
+        if arr.dtype.kind == 'S' and not arr.tobytes().isascii():
+            # MATLAB has no byte strings, so non-ASCII bytes must be text in `codec`
+            arr = np.char.decode(arr, codec)
+        # np.asarray: chararray comparisons ignore trailing whitespace
+        if arr.size == 0 or np.all(np.asarray(arr) == arr.dtype.type()):
             # This an empty string array or a string array containing
             # only empty strings. Matlab cannot distinguish between a
             # string array that is empty, and a string array containing
@@ -813,6 +833,17 @@ class VarWriter5:
                            mdtype=miINT8)
         self._write_items(arr)
 
+    def write_opaque(self, arr):
+        '''Array Flags, Var Name, Type System, Class Name, Metadata'''
+        self.write_header(None, mxOPAQUE_CLASS)
+        # Write Type System
+        self.write_element(np.array(arr['_TypeSystem'].item(), dtype='S'),
+                           mdtype=miINT8)
+        # Write Classname
+        self.write_element(np.array(arr['_Class'].item(), dtype='S'),
+                           mdtype=miINT8)
+        self.write(arr['_ObjectMetadata'].item())
+
 
 class MatFile5Writer:
     ''' Class for writing mat5 files '''
@@ -881,7 +912,9 @@ class MatFile5Writer:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
-            if name[0] == '_':
+            if name == '__function_workspace__':
+                name = ''
+            elif name[0] == '_':
                 msg = (f"Starting field name with a "
                        f"underscore ({name}) is ignored")
                 warnings.warn(msg, MatWriteWarning, stacklevel=2)

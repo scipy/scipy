@@ -1,13 +1,21 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
+import warnings
+import os
+
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
+from ._ckdtree import cKDTree, cKDTreeNode
+from .distance import minkowski
+from scipy._lib._array_api import xp_capabilities
+
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
            'Rectangle', 'KDTree']
 
 
+@xp_capabilities(out_of_scope=True)
 def minkowski_distance_p(x, y, p=2.0):
     """Compute the pth power of the L**p distance between two arrays.
 
@@ -17,6 +25,10 @@ def minkowski_distance_p(x, y, p=2.0):
 
     The last dimensions of `x` and `y` must be the same length.  Any
     other dimensions must be compatible for broadcasting.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.minkowski`
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -39,6 +51,11 @@ def minkowski_distance_p(x, y, p=2.0):
     array([2., 1.])
 
     """
+    msg = ("`minkowski_distance_p` is deprecated in favor of "
+           "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 2.1.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     y = np.asarray(y)
 
@@ -60,11 +77,16 @@ def minkowski_distance_p(x, y, p=2.0):
         return np.sum(np.abs(y-x)**p, axis=-1)
 
 
+@xp_capabilities(out_of_scope=True)
 def minkowski_distance(x, y, p=2.0):
     """Compute the L**p distance between two arrays.
 
     The last dimensions of `x` and `y` must be the same length.  Any
     other dimensions must be compatible for broadcasting.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.minkowski`
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -87,6 +109,11 @@ def minkowski_distance(x, y, p=2.0):
     array([ 1.41421356,  1.        ])
 
     """
+    msg = ("`minkowski_distance` is deprecated in favor of "
+           "`scipy.spatial.distance.minkowski` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 2.1.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     y = np.asarray(y)
     if p == np.inf or p == 1:
@@ -95,6 +122,7 @@ def minkowski_distance(x, y, p=2.0):
         return minkowski_distance_p(x, y, p)**(1./p)
 
 
+@xp_capabilities(np_only=True)
 class Rectangle:
     """Hyperrectangle class.
 
@@ -186,10 +214,8 @@ class Rectangle:
         dist : ndarray
             Minimum distance.
         """
-        return minkowski_distance(
-            0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - x, x - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_point(self, x, p=2.0):
         """
@@ -207,7 +233,8 @@ class Rectangle:
         dist : ndarray
             Maximum distance.
         """
-        return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
+        delta = np.maximum(self.maxes - x, x - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def min_distance_rectangle(self, other, p=2.0):
         """
@@ -225,12 +252,9 @@ class Rectangle:
         dist : float
             Minimum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0,
-            np.maximum(0, np.maximum(self.mins-other.maxes,
-                                     other.mins-self.maxes)),
-            p
-        )
+        delta = np.maximum(0, np.maximum(self.mins - other.maxes,
+                                         other.mins - self.maxes))
+        return minkowski(np.zeros_like(delta), delta, p)
 
     def max_distance_rectangle(self, other, p=2.0):
         """
@@ -248,10 +272,16 @@ class Rectangle:
         dist : float
             Maximum distance between the two hyperrectangles.
         """
-        return minkowski_distance(
-            0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
+        delta = np.maximum(self.maxes - other.mins, other.maxes - self.mins)
+        return minkowski(np.zeros_like(delta), delta, p)
 
 
+# `cKDTree` is a Cython extension type, which cannot carry a Python decorator
+# in Cython; register its capabilities here instead.
+xp_capabilities(out_of_scope=True)(cKDTree)
+
+
+@xp_capabilities(np_only=True)
 class KDTree(cKDTree):
     """
     kd-tree for quick nearest-neighbor lookup.
@@ -265,9 +295,12 @@ class KDTree(cKDTree):
     data : array_like, shape (n,m)
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
-        array of doubles, and so modifying this data will result in
-        bogus results. The data are also copied if the kd-tree is built
-        with copy_data=True.
+        array of doubles. The data are also copied if the kd-tree is built
+        with copy_data=True. Concurrently modifying the data while constructing
+        a KDTree is not well-defined and may lead to crashes or data
+        corruption. If no copy happens, modifying the data *after* creating
+        the KDTree may lead to data corruption or incorrect answers when
+        searching the tree.
     leafsize : positive int, optional
         The number of points at which the algorithm switches over to
         brute-force.  Default: 10.
@@ -310,6 +343,9 @@ class KDTree(cKDTree):
         The minimum value in each dimension of the n data points.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
@@ -857,7 +893,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2.0, output_type='dok_matrix'):
+            self, other, max_distance, p=2.0, output_type=_NoValue):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -883,10 +919,10 @@ class KDTree(cKDTree):
 
                All new code using scipy sparse should use sparse array
                types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
+               `output_type` will be deprecated at v2.0 and switch from
+               'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
-               to work, but will go away eventually.
+               to work now, but will go away too.
 
             .. versionadded:: 1.6.0
 
@@ -919,8 +955,8 @@ class KDTree(cKDTree):
 
         You can check distances above the `max_distance` are zeros:
 
-        >>> from scipy.spatial import distance_matrix
-        >>> distance_matrix(points1, points2)
+        >>> from scipy.spatial.distance import cdist
+        >>> cdist(points1, points2)
         array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
            [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
            [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
@@ -928,13 +964,55 @@ class KDTree(cKDTree):
            [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
+        def_msg = """The default value for `output_type` will become `dok_array` in v2.2
+             That means the default return type will become a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set `output_type="dok_array"`.
+             """
+        dok_msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
+             The intended replacement is output_type="dok_array".
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "dok_array" and, if needed, wrap the
+             return in dok_matrix().
+             """
+        coo_msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
+             The intended replacement is output_type="coo_array".
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "coo_array" and, if needed, wrap the
+             return in coo_matrix().
+             """
+        prefixes = (os.path.dirname(__file__),)
+        if output_type == _NoValue:
+            warnings.warn(def_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            warnings.warn(dok_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            output_type = "caught_dok_matrix"
+        elif output_type == "dok_matrix":
+            warnings.warn(dok_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            output_type = "caught_dok_matrix"
+        elif output_type == "coo_matrix":
+            warnings.warn(coo_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            output_type = "caught_coo_matrix"
         return super().sparse_distance_matrix(other, max_distance, p, output_type)
 
 
+@xp_capabilities(out_of_scope=True)
 def distance_matrix(x, y, p=2.0, threshold=1000000):
     """Compute the distance matrix.
 
     Returns the matrix of all pair-wise distances.
+
+    .. deprecated:: 1.18.0
+        This function is deprecated in favor of `scipy.spatial.distance.cdist`
+        and will be removed in SciPy 2.1.0.
 
     Parameters
     ----------
@@ -962,7 +1040,11 @@ def distance_matrix(x, y, p=2.0, threshold=1000000):
            [ 1.41421356,  1.        ]])
 
     """
-
+    msg = ("`distance_matrix` is deprecated in favor of "
+           "`scipy.spatial.distance.cdist` as of SciPy 1.18.0 and will be removed "
+           "in SciPy 2.1.0.")
+    warnings.warn(msg, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     x = np.asarray(x)
     m, k = x.shape
     y = np.asarray(y)

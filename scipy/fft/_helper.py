@@ -1,7 +1,7 @@
 from functools import update_wrapper, lru_cache
 import inspect
 
-from ._pocketfft import helper as _helper
+from ._duccfft import helper as _helper
 
 import numpy as np
 from scipy._lib._array_api import array_namespace
@@ -190,13 +190,9 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
 
     """
     xp = np if xp is None else xp
-    # numpy does not yet support the `device` keyword
-    # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
-    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+    if hasattr(xp, 'fft'):
         return xp.fft.fftfreq(n, d=d, device=device)
-    if device is not None:
-        raise ValueError('device parameter is not supported for input array type')
-    return np.fft.fftfreq(n, d=d)
+    return np.fft.fftfreq(n, d=d, device=device)
 
 
 @xp_capabilities()
@@ -250,13 +246,9 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
 
     """
     xp = np if xp is None else xp
-    # numpy does not yet support the `device` keyword
-    # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
-    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+    if hasattr(xp, 'fft'):
         return xp.fft.rfftfreq(n, d=d, device=device)
-    if device is not None:
-        raise ValueError('device parameter is not supported for input array type')
-    return np.fft.rfftfreq(n, d=d)
+    return np.fft.rfftfreq(n, d=d, device=device)
 
 
 @xp_capabilities()

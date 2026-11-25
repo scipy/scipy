@@ -460,6 +460,17 @@ class TestBinom:
         res = stats.binom.pmf(3, 2000, 0.999)
         assert_allclose(res, 0, atol=1e-16)
 
+    def test_gh22622(self):
+        # check that gh-22622 is resolved:
+        # for extreme values of n and p the survival and inverse survival
+        # functions most pass a roundtrip test
+        k = 16
+        n = 10000
+        p = 4e-5
+        sf_res = stats.binom.sf(k, n, p)
+        isf_res = stats.binom.isf(sf_res, n, p)
+        assert_allclose(isf_res, k, rtol=1e-15)
+
 
 class TestArcsine:
 
@@ -886,35 +897,37 @@ class TestNBinom:
 
 
 class TestGenInvGauss:
-    def setup_method(self):
-        self.rng = np.random.default_rng(6473281180)
-
     @pytest.mark.slow
     def test_rvs_with_mode_shift(self):
+        rng = np.random.default_rng(6473281180)
         # ratio_unif w/ mode shift
         gig = stats.geninvgauss(2.3, 1.5)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_without_mode_shift(self):
+        rng = np.random.default_rng(6473281180)
         # ratio_unif w/o mode shift
         gig = stats.geninvgauss(0.9, 0.75)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_new_method(self):
+        rng = np.random.default_rng(6473281180)
         # new algorithm of Hoermann / Leydold
         gig = stats.geninvgauss(0.1, 0.2)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_p_zero(self):
+        rng = np.random.default_rng(6473281180)
+
         def my_ks_check(p, b):
             gig = stats.geninvgauss(p, b)
-            rvs = gig.rvs(size=1500, random_state=self.rng)
+            rvs = gig.rvs(size=1500, random_state=rng)
             return stats.kstest(rvs, gig.cdf)[1] > 0.05
         # boundary cases when p = 0
         assert_equal(my_ks_check(0, 0.2), True)  # new algo
@@ -1413,6 +1426,29 @@ class TestGennorm:
         assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
 
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 1000
+    #
+    # def mp_gennorm_logcdf(x, beta):
+    #     q = mp.gammainc(mp.one / beta, abs(x)**beta, mp.inf, regularized=True)
+    #     return mp.log1p(-q / 2) if x > 0 else (mp.log(q) - mp.log(2))
+    @pytest.mark.parametrize('x, beta, ref', [
+        (-1000, 0.5, -28.83091306906317),
+        (-1000, 1, -1000.6931471805599),
+        (-1000, 1.5, -31627.226787319527),
+        (-1000, 2, -1000008.1732679025),
+        (-1000, 3, -1000000015.4940784),
+        (40, 0.5, -0.006583557130600504),
+        (40, 1, -2.1241771276457944e-18),
+        (40, 1.5, -7.887417946755972e-112),
+        (20, 2, -2.6979328058039506e-176),
+        (5, 3, -3.836763028961752e-57),
+        (5, 4, -4.056091233666129e-275),
+    ])
+    def test_logcdf(self, x, beta, ref):
+        assert_allclose(stats.gennorm.logcdf(x, beta), ref, rtol=1e-13)
+
 
 class TestGibrat:
 
@@ -1705,6 +1741,55 @@ class TestHalfgennorm:
         pdf1 = stats.halfgennorm.pdf(points, .497324)
         pdf2 = stats.gennorm.pdf(points, .497324)
         assert_almost_equal(pdf1, 2*pdf2)
+
+    # Reference values (e.g. for n=3, beta=1.25)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    n = 3
+    #    beta = mp.mpf(1.25)
+    #    ref = float(mp.rf(1/beta, n/beta))
+    @pytest.mark.parametrize('n, beta, ref',
+                             [(0, 2.25, 1),
+                              (1, 0.5, 6.0),
+                              (2, 12.5, 0.3155489903298712),
+                              (3, 0.125, 1.631515605987683e+30)])
+    def test_munp(self, n, beta, ref):
+        munp = stats.halfgennorm._munp(n, beta)
+        assert_allclose(munp, ref, rtol=5e-15)
+
+    # Reference values (e.g. for beta=0.02)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    beta = mp.mpf(0.02)
+    #    ref = float(mp.rf(1/beta, 1/beta))
+    @pytest.mark.parametrize('beta, ref',
+                             [(0.02, 1.5342593781274747e+93),
+                              (0.125, 259459200.0),
+                              (0.5, 6.0),
+                              (10.0, 0.48256057149575027),
+                              (125.0, 0.49777435261046765),
+                              (15000.0, 0.49998076533051666)])
+    def test_mean(self, beta, ref):
+        m = stats.halfgennorm.mean(beta)
+        assert_allclose(m, ref, rtol=1e-14)
+
+    # Reference values (e.g. for beta=0.02)
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    beta = mp.mpf(0.02)
+    #    mu = mp.rf(1/beta, 1/beta)
+    #    # var = E(X**2) - E(X)**2:
+    #    ref = float(mp.rf(1/beta, 2/beta) - mu**2)
+    @pytest.mark.parametrize('beta, ref',
+                             [(0.02, 6.261772482175519e+197),
+                              (0.125, 5.062049324107776e+18),
+                              (0.5, 84.0),
+                              (10.0, 0.08159018176717249),
+                              (125.0, 0.0826270885971827),
+                              (15000.0, 0.08332692433644018)])
+    def test_var(self, beta, ref):
+        v = stats.halfgennorm.var(beta)
+        assert_allclose(v, ref, rtol=1.5e-14)
 
 
 class TestLaplaceasymmetric:
@@ -3035,6 +3120,25 @@ class TestPoisson:
         expected = (mu, mu, [np.inf, 1, 1/np.sqrt(2)], [np.inf, 1, 0.5])
         assert_allclose(result, expected)
 
+    @pytest.mark.parametrize("k, mu, logcdf_reference, logsf_reference",
+        [(5, 1000, -970.243707846241, -0.0),
+         (50, 10, -3.620001580923151e-20, -44.765227397324225),
+         (1000, 10, -0.0, -3624.1392251073903),
+         (1, 300, -294.29288973525115, -1.5496082669460162e-128)])
+    def test_gh8424(self, k, mu, logcdf_reference, logsf_reference):
+        # test extreme cases where the naive log(cdf) and log(sf) would fail
+        # reference values were computed with mpmath with 1000 digits of precision
+        # from mpmath import mp
+        # mp.dps = 1000
+        # logcdf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), a=mp.mpf(mu),
+        #                                             regularized=True)))
+        # logsf_reference = float(mp.log(mp.gammainc(mp.mpf(k+1), b=mp.mpf(mu),
+        #                                            regularized=True)))
+        assert_allclose(stats.poisson.logcdf(k, mu), logcdf_reference,
+                        rtol=1e-15, atol=1e-300)
+        assert_allclose(stats.poisson.logsf(k, mu), logsf_reference,
+                        rtol=1e-15, atol=1e-300)
+
 
 class TestKSTwo:
 
@@ -3400,6 +3504,11 @@ class TestInvgauss:
         assert_allclose(dist.ppf(p), dist0.ppf(p))
         assert_allclose(dist.isf(p), dist0.isf(p))
 
+    def test_gh25096(self):
+        # Regression test for gh-25096: invgauss.ppf should not raise a warning
+        # for the given inputs
+        stats.invgauss.ppf(0.97969, 66.99652081)
+
 
 class TestLandau:
     @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])
@@ -3611,6 +3720,14 @@ class TestPowerlaw:
                               (0.99609375, 1/256, 1.528855235208108e-05)])
     def test_sf(self, x, a, sf):
         assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
+
+    # Reference values: isf(q, a) = (1 - q)**(1/a), computed with mpmath.
+    @pytest.mark.parametrize('q, a, ref',
+                             [(1e-13, 1e-12, 0.9048374180359551),
+                              (1e-17, 1e-6, 0.99999999999),
+                              (1e-10, 2.5, 0.99999999996)])
+    def test_isf(self, q, a, ref):
+        assert_allclose(stats.powerlaw.isf(q, a), ref, rtol=5e-16)
 
     @pytest.fixture(scope='function')
     def rng(self):
@@ -4679,7 +4796,7 @@ class TestExponNorm:
         dist_norm = stats.norm()
         assert_allclose(dist.logpdf(x), dist_norm.logpdf(x))
         assert_allclose(dist.cdf(x), dist_norm.cdf(x))
-        assert_allclose(dist.sf(x), dist_norm.sf(x)) 
+        assert_allclose(dist.sf(x), dist_norm.sf(x))
 
 class TestGenExpon:
     def test_pdf_unity_area(self):
@@ -5574,9 +5691,6 @@ class TestGumbelR:
 
 
 class TestLevyStable:
-    def setup_method(self):
-        self.rng = np.random.default_rng(7195199371)
-
     @pytest.fixture(autouse=True)
     def reset_levy_stable_params(self):
         """Setup default parameters for levy_stable generator"""
@@ -5698,12 +5812,13 @@ class TestLevyStable:
             delta,
             sample_size,
     ):
+        rng = np.random.default_rng(7195199371)
         stats.levy_stable.parameterization = parameterization
         ls = stats.levy_stable(
             alpha=alpha, beta=beta, scale=gamma, loc=delta
         )
         _, p = stats.kstest(
-            ls.rvs(size=sample_size, random_state=self.rng), ls.cdf
+            ls.rvs(size=sample_size, random_state=rng), ls.cdf
         )
         assert p > 0.05
 
@@ -5711,11 +5826,12 @@ class TestLevyStable:
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
+        rng = np.random.default_rng(7195199371)
         alpha = 1.0
         loc = 0.5
         scale = 1.5
         x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
-                                  size=5000, random_state=self.rng)
+                                  size=5000, random_state=rng)
         stat, p = stats.kstest(x, 'levy_stable',
                                args=(alpha, beta, loc, scale))
         assert p > 0.01
@@ -5757,9 +5873,10 @@ class TestLevyStable:
     )
     def test_fit_rvs(self, alpha, beta, delta, gamma, parametrization):
         """Test that fit agrees with rvs for each parametrization."""
+        rng = np.random.default_rng(7195199371)
         stats.levy_stable.parametrization = parametrization
         data = stats.levy_stable.rvs(
-            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=self.rng
+            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=rng
         )
         fit = stats.levy_stable._fitstart(data)
         alpha_obs, beta_obs, delta_obs, gamma_obs = fit
@@ -5827,7 +5944,8 @@ class TestLevyStable:
         ]
     )
     def test_pdf_nolan_samples(
-            self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
+        self, nolan_pdf_sample_data, pct_range,
+        alpha_range, beta_range, levy_stable_lock
     ):
         """Test pdf values against Nolan's stablec.exe output"""
         data = nolan_pdf_sample_data
@@ -5978,20 +6096,21 @@ class TestLevyStable:
         # fmt: on
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             msg = "Density calculations experimental for FFT method"
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", msg, RuntimeWarning)
                 # occurs in FFT methods only
-                p = stats.levy_stable.pdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.pdf_default_method = default_method
+                    p = stats.levy_stable.pdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,
@@ -6040,7 +6159,8 @@ class TestLevyStable:
         ]
     )
     def test_cdf_nolan_samples(
-            self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
+        self, nolan_cdf_sample_data, pct_range,
+        alpha_range, beta_range, levy_stable_lock
     ):
         """ Test cdf values against Nolan's stablec.exe output."""
         data = nolan_cdf_sample_data
@@ -6123,7 +6243,6 @@ class TestLevyStable:
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
-            stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             with warnings.catch_warnings():
@@ -6132,13 +6251,15 @@ class TestLevyStable:
                     ('Cumulative density calculations experimental for FFT'
                      ' method. Use piecewise method instead.'),
                     RuntimeWarning)
-                p = stats.levy_stable.cdf(
-                    subdata['x'],
-                    subdata['alpha'],
-                    subdata['beta'],
-                    scale=1,
-                    loc=0
-                )
+                with levy_stable_lock:
+                    stats.levy_stable.cdf_default_method = default_method
+                    p = stats.levy_stable.cdf(
+                        subdata['x'],
+                        subdata['alpha'],
+                        subdata['beta'],
+                        scale=1,
+                        loc=0
+                    )
                 with np.errstate(over="ignore"):
                     subdata2 = rec_append_fields(
                         subdata,
@@ -7283,6 +7404,16 @@ class TestRecipInvGauss:
         expected = 2.699819200556787e-18
         assert_allclose(p, expected, 5e-15)
 
+    # Reference values computed with mpmath by inverting the sf (see
+    # test_cdf_small_x, with sf = ncdf(isqx*trm1) + exp(2/mu)*ncdf(-isqx*trm2)).
+    @pytest.mark.parametrize('q, mu, ref',
+                             [(1e-20, 1, 89.1289139343137),
+                              (1e-17, 3, 74.16905813968064),
+                              (1e-12, 0.5, 54.70285594611544),
+                              (0.3, 1, 2.3269780446175887)])
+    def test_isf(self, q, mu, ref):
+        assert_allclose(stats.recipinvgauss.isf(q, mu), ref, rtol=5e-15)
+
 
 class TestRice:
     def setup_method(self):
@@ -7354,6 +7485,27 @@ class TestRice:
                    100.00499995833597, 110.00454542324384, 120.00416664255323,
                    130.00384613488120, 140.00357141338748]
         assert_allclose(ppf, ppf_exp)
+
+    def test_sf_isf_right_tail(self):
+        # gh-26797: sf was computed as 1 - cdf, which underflowed to 0 in the
+        # right tail. Reference values were computed with mpmath:
+        # from mpmath import mp, mpf, quad, exp, besseli, inf, log, findroot
+        # mp.dps = 50
+        # def sf(x, b):
+        #     x, b = mpf(x), mpf(b)
+        #     f = lambda t: t*exp(-(t*t + b*b)/2)*besseli(0, b*t)
+        #     return quad(f, [x, x + 5, x + 20, inf])
+        # isf(q, b) = findroot(lambda x: log(sf(x, b)) - log(q), x0)
+        b = 1.5
+        x = [8.0, 10.0, 14.38449888287663]
+        sf_ref = [9.4597754804605183e-11, 2.4826430762144744e-17,
+                  8.5941331417799894e-38]
+        assert_allclose(stats.rice.sf(x, b), sf_ref, rtol=1e-13)
+        assert_allclose(stats.rice.logsf(x, b), np.log(sf_ref), rtol=1e-13)
+
+        q = [1e-20, 1e-37]
+        isf_ref = [10.868790855980559, 14.372773738008033]
+        assert_allclose(stats.rice.isf(q, b), isf_ref, rtol=1e-13)
 
 
 class TestErlang:
@@ -7941,6 +8093,36 @@ class TestRdist:
     def test_rdist_sf(self, x, c, ref):
         assert_allclose(stats.rdist.sf(x, c), ref, rtol=5e-14)
 
+    # Reference values computed with mpmath by bisection on sf(x) = q, with
+    # sf(x) = cdf(-x) = mp.betainc(c/2, c/2, 0, (1 - x)/2, regularized=True)
+    # (mp.dps = 50).
+    @pytest.mark.parametrize(
+        "q, c, ref",
+        [
+            (1e-20, 1000, 0.286797866281768),
+            (1e-18, 50, 0.887223924640435),
+            (1e-20, 3, 0.9999999999999347),
+            (0.3, 2.5, 0.3533946790853331),
+        ]
+    )
+    def test_rdist_isf(self, q, c, ref):
+        assert_allclose(stats.rdist.isf(q, c), ref, rtol=5e-15)
+
+
+class TestSemicircular:
+    # Reference values computed with mpmath by inverting the closed-form sf,
+    # sf(x) = (acos(x) - x*sqrt(1 - x**2))/pi.
+    @pytest.mark.parametrize(
+        "q, ref",
+        [
+            (1e-20, 0.9999999999999347),
+            (1e-10, 0.9999996972174989),
+            (0.3, 0.31969150979050387),
+        ]
+    )
+    def test_isf(self, q, ref):
+        assert_allclose(stats.semicircular.isf(q), ref, rtol=1e-15)
+
 
 class TestTrapezoid:
     def test_reduces_to_triang(self):
@@ -8107,6 +8289,21 @@ class TestMaxwell:
         ref = -2.6596152026762177e-25
         logsf = stats.maxwell.logsf(1e-8)
         assert_allclose(logsf, ref, rtol=5e-15)
+
+
+class TestMoyal:
+    # Reference values: isf(q) = -log(2*erfinv(q)**2), computed with mpmath.
+    @pytest.mark.parametrize(
+        "q, ref",
+        [
+            (1e-20, 91.65182101447238),
+            (1e-12, 54.81045952656764),
+            (1e-5, 22.574268224598644),
+            (0.9, -0.9953027993634331),
+        ]
+    )
+    def test_isf(self, q, ref):
+        assert_allclose(stats.moyal.isf(q), ref, rtol=5e-15)
 
 
 class TestMielke:
@@ -8523,7 +8720,6 @@ class TestTukeyLambda:
         expected = [0, 2.11029702221450250, 0, -0.02708377353223019456]
         assert_almost_equal(mv, expected, decimal=10)
 
-    @pytest.mark.xfail(reason="Precision in tail hasn't been fixed in xsf")
     def test_large_argument_ticket_21370(self):
         # Check that survival function goes to 0 as x gets large
         x = [1e4, 1e6, 1e8, 1e10, 1e12, 1e24]
@@ -8536,10 +8732,10 @@ class TestTukeyLambda:
 
         cdf = stats.tukeylambda.cdf(x, lam)
         assert cdf[-1] == 1.0
-        # Check that the cdf is always increasing except when it saturates 
+        # Check that the cdf is always increasing except when it saturates
         # to 1.0
         assert np.all(np.diff(cdf[cdf < 1]) > 0)
-        
+
 class TestLevy:
 
     def test_levy_cdf_ppf(self):

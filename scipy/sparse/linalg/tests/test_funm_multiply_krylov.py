@@ -56,7 +56,7 @@ class TestKrylovFunmv:
         nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
-            D = scipy.sparse.diags(rng.standard_normal(n))
+            D = scipy.sparse.diags_array(rng.standard_normal(n))
             A = scipy.sparse.random_array((n, n), density = 0.01, rng = rng) + D
             denseA = A.todense()
             b = rng.standard_normal(n)
@@ -95,7 +95,7 @@ class TestKrylovFunmv:
         nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
-            D = scipy.sparse.diags(rng.standard_normal(n))
+            D = scipy.sparse.diags_array(rng.standard_normal(n))
             A = scipy.sparse.random_array((n, n), density = 0.01, rng = rng)
             R = scipy.sparse.triu(A)
             A = R + R.T + D
@@ -138,23 +138,23 @@ class TestKrylovFunmv:
 
             # Test for invalid 'b' (not 1D)
             b_invalid = np.array([[1.0], [2.0]])  # 2D array
-            with pytest.raises(ValueError, 
-                    match="argument 'b' must be a 1D array."): 
+            with pytest.raises(ValueError,
+                    match="argument 'b' must be a 1D array."):
                 funm_multiply_krylov(np.exp, A, b_invalid)
 
             # Test for invalid restart parameter
-            with pytest.raises(ValueError, 
-                    match="argument 'restart_every_m' must be positive."): 
+            with pytest.raises(ValueError,
+                    match="argument 'restart_every_m' must be positive."):
                 funm_multiply_krylov(np.exp, A, b, restart_every_m=0)
 
             # Test for invalid max_restarts
-            with pytest.raises(ValueError, 
-                    match="argument 'max_restarts' must be positive."): 
+            with pytest.raises(ValueError,
+                    match="argument 'max_restarts' must be positive."):
                 funm_multiply_krylov(np.exp, A, b, max_restarts=0)
 
             # Test for invalid 'assume_a' string
-            with pytest.raises(ValueError, 
-                    match="is not a recognized matrix structure"): 
+            with pytest.raises(ValueError,
+                    match="is not a recognized matrix structure"):
                 funm_multiply_krylov(np.exp, A, b, assume_a='invalid')
 
 

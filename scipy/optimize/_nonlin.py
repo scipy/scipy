@@ -13,7 +13,7 @@ from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
-from scipy._lib._util import copy_if_needed, _dedent_for_py313
+from scipy._lib._util import _dedent_for_py313
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 from inspect import signature
@@ -210,7 +210,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     # Solver tolerance selection
     gamma = 0.9
     eta_max = 0.9999
-    eta_treshold = 0.1
+    eta_threshold = 0.1
     eta = 1e-3
 
     for n in range(maxiter):
@@ -244,7 +244,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Adjust forcing parameters for inexact methods
         eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        if gamma * eta**2 < eta_threshold:
             eta = min(eta_max, eta_A)
         else:
             eta = min(eta_max, max(eta_A, gamma*eta**2))
@@ -428,7 +428,7 @@ class Jacobian:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
@@ -449,13 +449,13 @@ class Jacobian:
     def aspreconditioner(self):
         return InverseJacobian(self)
 
-    def solve(self, v, tol=0):
+    def solve(self, v, /, tol=0):
         raise NotImplementedError
 
-    def update(self, x, F):
+    def update(self, x, F, /):
         pass
 
-    def setup(self, x, F, func):
+    def setup(self, x, F, func, /):
         self.func = func
         self.shape = (F.size, x.size)
         self.dtype = F.dtype
@@ -487,7 +487,7 @@ class InverseJacobian:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, jacobian):
         self.jacobian = jacobian
@@ -605,9 +605,9 @@ def asjacobian(J):
 
 class GenericBroyden(Jacobian):
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
-    def setup(self, x0, f0, func):
+    def setup(self, x0, f0, func, /):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
         self.last_x = x0
@@ -644,7 +644,7 @@ class LowRankMatrix:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, alpha, n, dtype):
         self.alpha = alpha
@@ -746,7 +746,7 @@ class LowRankMatrix:
 
     def collapse(self):
         """Collapse the low-rank matrix to a full-rank one."""
-        self.collapsed = np.array(self, copy=copy_if_needed)
+        self.collapsed = np.array(self, copy=None)
         self.cs = None
         self.ds = None
         self.alpha = None

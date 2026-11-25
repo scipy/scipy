@@ -22,7 +22,7 @@ Parts of the codebase to watch out for:
 - DIRECT_, at ``scipy/optimize/_direct``
 - SuperLU_, at ``scipy/sparse/linalg/_dsolve/SuperLU``
 - trlib_, at ``scipy/optimize/_trlib``
-- `Cython/Tempita`_, at ``scipy/_build_utils/tempita``
+- `Cython/Tempita`_, at ``tools/building/tempita``
 - `fast_matrix_market`_, at ``scipy/io/_fast_matrix_market``
 - `numpydoc/docscrape`_, at ``scipy/_lib/_docscrape.py``
 - `uarray`_, at ``scipy/_lib/_uarray``

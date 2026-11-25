@@ -643,7 +643,7 @@ def factorized(A):
 
         def solve(b):
             with np.errstate(divide="ignore", invalid="ignore"):
-                # Ignoring warnings with numpy >= 1.23.0, see gh-16523
+                # Ignoring warnings, see gh-16523
                 result = umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
 
             return result
@@ -810,12 +810,12 @@ def is_sptriangular(A):
 
     If ``A`` is not square, the portions outside the upper left square of the
     matrix do not affect its triangular structure. You probably want to work
-    with the square portion of the matrix, though it is not requred here.
+    with the square portion of the matrix, though it is not required here.
 
     Parameters
     ----------
     A : SciPy sparse array or matrix
-        A sparse matrix preferrably in CSR or CSC format.
+        A sparse matrix preferably in CSR or CSC format.
 
     Returns
     -------
@@ -889,7 +889,7 @@ def spbandwidth(A):
     Parameters
     ----------
     A : SciPy sparse array or matrix
-        A sparse matrix preferrably in CSR or CSC format.
+        A sparse matrix preferably in CSR or CSC format.
 
     Returns
     -------

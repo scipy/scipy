@@ -4,10 +4,6 @@ py3.install_sources([
     '_idl.py',
     '_mmio.py',
     '_netcdf.py',
-    'harwell_boeing.py',
-    'idl.py',
-    'mmio.py',
-    'netcdf.py',
     'wavfile.py'
   ],
   subdir: 'scipy/io'

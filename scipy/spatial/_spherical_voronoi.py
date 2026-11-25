@@ -14,7 +14,8 @@ Spherical Voronoi Code
 import numpy as np
 import scipy
 from . import _voronoi
-from scipy.spatial import cKDTree  # type: ignore[attr-defined]
+from scipy.spatial._ckdtree import cKDTree
+from scipy._lib._array_api import xp_capabilities
 
 __all__ = ['SphericalVoronoi']
 
@@ -33,6 +34,7 @@ def calculate_solid_angles(R):
     return np.abs(2 * np.arctan2(numerator, denominator))
 
 
+@xp_capabilities(np_only=True)
 class SphericalVoronoi:
     """
     Voronoi diagrams on the surface of a sphere.
@@ -216,16 +218,16 @@ class SphericalVoronoi:
         # for 3D input tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices] * self._dim).ravel()
         # for 3D input point_indices will have shape: (6N-12,)
-        point_indices = self._simplices.ravel()
+        self._point_indices = self._simplices.ravel()
         # for 3D input indices will have shape: (6N-12,)
-        indices = np.argsort(point_indices, kind='mergesort')
+        self._indices = np.argsort(self._point_indices, kind='mergesort')
         # for 3D input flattened_groups will have shape: (6N-12,)
-        flattened_groups = tri_indices[indices].astype(np.intp)
+        flattened_groups = tri_indices[self._indices].astype(np.intp)
         # intervals will have shape: (N+1,)
-        intervals = np.cumsum(np.bincount(point_indices + 1))
+        self._intervals = np.cumsum(np.bincount(self._point_indices + 1))
         # split flattened groups to get nested list of unsorted regions
-        groups = [list(flattened_groups[intervals[i]:intervals[i + 1]])
-                  for i in range(len(intervals) - 1)]
+        groups = [list(flattened_groups[self._intervals[i]:self._intervals[i + 1]])
+                  for i in range(len(self._intervals) - 1)]
         self.regions = groups
 
     def sort_vertices_of_regions(self):
@@ -262,39 +264,33 @@ class SphericalVoronoi:
 
     def _calculate_areas_3d(self):
         self.sort_vertices_of_regions()
-        sizes = [len(region) for region in self.regions]
-        csizes = np.cumsum(sizes)
-        num_regions = csizes[-1]
+        starts, ends = self._intervals[:-1], self._intervals[1:]
 
         # We create a set of triangles consisting of one point and two Voronoi
         # vertices. The vertices of each triangle are adjacent in the sorted
         # regions list.
-        point_indices = [i for i, size in enumerate(sizes)
-                         for j in range(size)]
+        point_indices = self._point_indices[self._indices]
 
         nbrs1 = np.array([r for region in self.regions for r in region])
 
         # The calculation of nbrs2 is a vectorized version of:
         # np.array([r for region in self.regions for r in np.roll(region, 1)])
         nbrs2 = np.roll(nbrs1, 1)
-        indices = np.roll(csizes, 1)
-        indices[0] = 0
-        nbrs2[indices] = nbrs1[csizes - 1]
+        nbrs2[starts] = nbrs1[ends - 1]
 
         # Normalize points and vertices.
         pnormalized = (self.points - self.center) / self.radius
         vnormalized = (self.vertices - self.center) / self.radius
 
         # Create the complete set of triangles and calculate their solid angles
-        triangles = np.hstack([pnormalized[point_indices],
-                               vnormalized[nbrs1],
-                               vnormalized[nbrs2]
-                               ]).reshape((num_regions, 3, 3))
+        triangles = np.stack([pnormalized[point_indices],
+                              vnormalized[nbrs1],
+                              vnormalized[nbrs2]
+                              ], axis=1)
         triangle_solid_angles = calculate_solid_angles(triangles)
 
         # Sum the solid angles of the triangles in each region
-        solid_angles = np.cumsum(triangle_solid_angles)[csizes - 1]
-        solid_angles[1:] -= solid_angles[:-1]
+        solid_angles = np.add.reduceat(triangle_solid_angles, starts)
 
         # Get polygon areas using A = omega * r**2
         return solid_angles * self.radius**2

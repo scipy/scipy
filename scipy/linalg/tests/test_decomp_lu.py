@@ -4,6 +4,7 @@ from pytest import raises as assert_raises
 import numpy as np
 from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
+from scipy._lib._util import HAS_ILP64
 
 
 REAL_DTYPES = [np.float32, np.float64]
@@ -14,6 +15,17 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 class TestLU:
     def setup_method(self):
         self.rng = np.random.default_rng(1682281250228846)
+
+    @pytest.mark.parametrize('shape', [(4, 3), (3, 4), (3, 3)])
+    @pytest.mark.parametrize('permute_l', [False, True])
+    def test_overwrite_f_contiguous(self, shape, permute_l):
+        # A 2-D F-contiguous input with overwrite_a=True is factored in place; the
+        # factors must equal those computed from a copy.
+        a = self.rng.standard_normal(shape)
+        ref = lu(a, permute_l=permute_l)
+        res = lu(np.asfortranarray(a), permute_l=permute_l, overwrite_a=True)
+        for x, y in zip(res, ref):
+            assert_array_equal(x, y)
 
     def test_old_lu_smoke_tests(self):
         "Tests from old fortran based lu test suite"
@@ -125,6 +137,7 @@ class TestLU:
         assert_allclose(l, np.ones(shape=(4, 5, 1, 1), dtype=np.complex64))
         assert_allclose(u, a)
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_empty_edge_cases(self):
         a = np.empty([0, 0])
         p, l, u = lu(a)
@@ -258,7 +271,11 @@ class TestLUFactor:
         assert_equal(lu.shape, (m, n))
         assert_equal(lu.dtype, dtype)
         assert_equal(p.shape, (k,))
-        assert_equal(p.dtype, np.int32)
+        if m == 0 or n == 0:
+            # See https://github.com/scipy/scipy/issues/25964#issuecomment-5521651145
+            pytest.xfail("see discussion in gh-25964")
+        else:
+            assert_equal(p.dtype, np.int64 if HAS_ILP64 else np.int32)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
@@ -294,7 +311,7 @@ class TestLUSolve:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt, dt_b):
-        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([]))
+        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([], dtype=int))
         b = np.asarray([], dtype=dt_b)
         x = lu_solve(lu_and_piv, b)
         assert x.shape == (0,)

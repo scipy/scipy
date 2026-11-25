@@ -7,7 +7,8 @@ import warnings
 
 import numpy as np
 
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize._optimize import OptimizeResult
+from scipy.optimize._minimize import minimize
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.optimize._optimize import _status_message, _wrap_callback
@@ -303,9 +304,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``population`` the solution vectors present in the population, and
         ``population_energies`` the value of the objective function for each
         entry in ``population``.
-        See `OptimizeResult` for a description of other attributes. If `polish`
-        was employed, and a lower minimum was obtained by the polishing, then
-        OptimizeResult also contains the ``jac`` attribute.
+        See `OptimizeResult` for a description of other attributes.
+        If `polish` was employed, and a lower minimum was obtained by the polishing,
+        then OptimizeResult also contains the ``jac`` attribute. The minimum is only
+        updated if the polishing minimization was successful.
         If the eventual solution does not satisfy the applied constraints
         ``success`` will be `False`.
 
@@ -694,7 +696,7 @@ class DifferentialEvolutionSolver:
         user's responsibility to ensure that the polishing function obeys
         bounds, any constraints (including integrality constraints), and that
         appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
-        ```x``, ``nfev``, ``jac``.
+        ``x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -995,7 +997,7 @@ class DifferentialEvolutionSolver:
             x0_scaled = self._unscale_parameters(np.asarray(x0))
             if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
                 raise ValueError(
-                    "Some entries in x0 lay outside the specified bounds"
+                    "Some entries in x0 lie outside the specified bounds"
                 )
             self.population[0] = x0_scaled
 

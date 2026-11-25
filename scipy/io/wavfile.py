@@ -27,8 +27,8 @@ __all__ = [
 class WavFileWarning(UserWarning):
     """
     Warning for WAV files with format issues that can still be read.
-    
-    Raised when a WAV file has problems like missing metadata or 
+
+    Raised when a WAV file has problems like missing metadata or
     non-standard formatting, but can still be processed successfully.
     """
     pass
@@ -49,7 +49,7 @@ class SeekEmulatingReader:
         data = self.reader.read(size)
         self.pos += len(data)
         return data
-    
+
     def seek(self, offset, whence=os.SEEK_SET, /):
         match whence:
             case os.SEEK_SET if offset >= self.pos:
@@ -62,13 +62,13 @@ class SeekEmulatingReader:
                 raise io.UnsupportedOperation("SeekEmulatingReader was asked to emulate"
                                               " a seek operation it does not support.")
         return self.pos
-    
+
     def tell(self):
         return self.pos
-    
+
     def close(self):
         self.reader.close()
-    
+
     # np.fromfile expects to be able to call flush(), and _read_data_chunk
     # expects to catch io.UnsupportedOperation if np.fromfile fails.
     def flush(self):
@@ -322,7 +322,7 @@ class WAVE_FORMAT(IntEnum):
     SPEEX_VOICE = 0xA109
     VIANIX_MASC = 0xA10A
     WM9_SPECTRUM_ANALYZER = 0xA10B
-    WMF_SPECTRUM_ANAYZER = 0xA10C
+    WMF_SPECTRUM_ANALYZER = 0xA10C
     GSM_610 = 0xA10D
     GSM_620 = 0xA10E
     GSM_660 = 0xA10F
@@ -515,7 +515,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf6
             count = size if dtype == 'V1' else n_samples
             data = np.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
-            fid.seek(start, 0)  # just in case it seeked, though it shouldn't
+            fid.seek(start, 0)  # just in case it sought, though it shouldn't
             data = np.frombuffer(fid.read(size), dtype=dtype)
 
         if dtype == 'V1':
@@ -719,7 +719,7 @@ def read(filename, mmap=False):
         mmap = False
     else:
         fid = open(filename, 'rb')
-    
+
     if not (was_seekable := fid.seekable()):
         fid = SeekEmulatingReader(fid)
 

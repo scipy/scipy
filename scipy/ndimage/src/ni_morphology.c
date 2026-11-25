@@ -295,7 +295,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
 
  exit:
     NPY_END_THREADS;
-    free(offsets);
+    PyMem_RawFree(offsets);
     if (PyErr_Occurred()) {
         if (coordinate_list) {
             NI_FreeCoordinateList(*coordinate_list);
@@ -565,8 +565,8 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
 
  exit:
     NPY_END_THREADS;
-    free(offsets);
-    free(coordinate_offsets);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(coordinate_offsets);
     NI_FreeCoordinateList(list1);
     NI_FreeCoordinateList(list2);
     return PyErr_Occurred() ? 0 : 1;
@@ -617,7 +617,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
 
     for(jj = 0; jj < size; jj++) {
         if (*(npy_int8*)pi < 0) {
-            temp = malloc(sizeof(NI_BorderElement));
+            temp = PyMem_RawMalloc(sizeof(NI_BorderElement));
             if (NPY_UNLIKELY(!temp)) {
                 PyErr_NoMemory();
                 goto exit;
@@ -625,7 +625,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             temp->next = border_elements;
             border_elements = temp;
             temp->index = jj;
-            temp->coordinates = malloc(PyArray_NDIM(input) *
+            temp->coordinates = PyMem_RawMalloc(PyArray_NDIM(input) *
                                        sizeof(npy_intp));
             if (!temp->coordinates) {
                 PyErr_NoMemory();
@@ -740,8 +740,8 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     while (border_elements) {
         temp = border_elements;
         border_elements = border_elements->next;
-        free(temp->coordinates);
-        free(temp);
+        PyMem_RawFree(temp->coordinates);
+        PyMem_RawFree(temp);
     }
     return PyErr_Occurred() ? 0 : 1;
 }
@@ -763,7 +763,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
     /* we only use the first half of the structure data, so we make a
          temporary structure for use with the filter functions: */
-    footprint = malloc(ssize * sizeof(npy_bool));
+    footprint = PyMem_RawMalloc(ssize * sizeof(npy_bool));
     if (!footprint) {
         PyErr_NoMemory();
         goto exit;
@@ -851,9 +851,9 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
  exit:
     NPY_END_THREADS;
-    free(offsets);
-    free(foffsets);
-    free(footprint);
+    PyMem_RawFree(offsets);
+    PyMem_RawFree(foffsets);
+    PyMem_RawFree(footprint);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -1030,9 +1030,9 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     }
 
     /* Some temporaries */
-    f = malloc(mx * sizeof(npy_intp*));
-    g = malloc(mx * sizeof(npy_intp));
-    tmp = malloc(mx * PyArray_NDIM(input) * sizeof(npy_intp));
+    f = PyMem_RawMalloc(mx * sizeof(npy_intp*));
+    g = PyMem_RawMalloc(mx * sizeof(npy_intp));
+    tmp = PyMem_RawMalloc(mx * PyArray_NDIM(input) * sizeof(npy_intp));
     if (!f || !g || !tmp) {
         PyErr_NoMemory();
         goto exit;
@@ -1049,9 +1049,9 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     NPY_END_THREADS;
 
  exit:
-    free(f);
-    free(g);
-    free(tmp);
+    PyMem_RawFree(f);
+    PyMem_RawFree(g);
+    PyMem_RawFree(tmp);
 
     return PyErr_Occurred() ? 0 : 1;
 }

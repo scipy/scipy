@@ -2,9 +2,10 @@
 
 import numpy as np
 from numpy.testing import assert_, assert_equal
+
 from scipy.linalg import clarkson_woodruff_transform
-from scipy.linalg._sketches import cwt_matrix
-from scipy.sparse import issparse, rand
+from scipy.linalg._sketches import _cwt_matrix
+from scipy.sparse import issparse, random_array
 from scipy.sparse.linalg import norm
 
 
@@ -27,21 +28,14 @@ class TestClarksonWoodruffTransform:
     seeds = [1755490010, 934377150, 1391612830, 1752708722, 2008891431,
              1302443994, 1521083269, 1501189312, 1126232505, 1533465685]
 
-    A_dense = rng.random((n_rows, n_cols))
-    A_csc = rand(
-        n_rows, n_cols, density=density, format='csc', random_state=rng,
-    )
-    A_csr = rand(
-        n_rows, n_cols, density=density, format='csr', random_state=rng,
-    )
-    A_coo = rand(
-        n_rows, n_cols, density=density, format='coo', random_state=rng,
-    )
+    shape = (n_rows, n_cols)
+    A_dense = rng.random(shape)
+    A_csc = random_array(shape, density=density, format='csc', rng=rng)
+    A_csr = random_array(shape, density=density, format='csr', rng=rng)
+    A_coo = random_array(shape, density=density, format='coo', rng=rng)
 
     # Collect the test matrices
-    test_matrices = [
-        A_dense, A_csc, A_csr, A_coo,
-    ]
+    test_matrices = [A_dense, A_csc, A_csr, A_coo]
 
     # Test vector with norm ~1
     x = rng.random((n_rows, 1)) / np.sqrt(n_rows)
@@ -58,11 +52,11 @@ class TestClarksonWoodruffTransform:
 
     def test_seed_returns_identical_transform_matrix(self):
         for seed in self.seeds:
-            S1 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, rng=seed
+            S1 = _cwt_matrix(
+                self.n_sketch_rows, self.n_rows, np.float64, rng=seed
             ).toarray()
-            S2 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, rng=seed
+            S2 = _cwt_matrix(
+                self.n_sketch_rows, self.n_rows, np.float64, rng=seed
             ).toarray()
             assert_equal(S1, S2)
 

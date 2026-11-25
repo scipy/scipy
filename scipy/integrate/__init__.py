@@ -112,8 +112,6 @@ from ._tanhsinh import nsum, tanhsinh
 from ._cubature import cubature
 from ._lebedev import lebedev_rule
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import dop, lsoda, vode, odepack, quadpack
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

@@ -94,10 +94,12 @@ sp_strsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     SCformat *Lstore;
     NCformat *Ustore;
     float   *Lval, *Uval;
-    int incx = 1, incy = 1;
+    slu_blasint incx = 1, incy = 1;
     float alpha = 1.0, beta = 1.0;
-    int nrow, irow, jcol;
-    int fsupc, nsupr, nsupc;
+    slu_blasint nrow;
+    int irow, jcol;
+    int fsupc;
+    slu_blasint nsupr, nsupc;
     int_t luptr, istart, i, k, iptr;
     float *work;
     flops_t solve_ops;

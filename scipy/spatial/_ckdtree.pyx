@@ -6,14 +6,17 @@
 
 # cython: cpow=True
 
+import warnings
 
 import numpy as np
 import scipy.sparse
-from scipy._lib._util import copy_if_needed
+
+from scipy._lib.deprecation import _NoValue
 
 cimport numpy as np
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libcpp.mutex cimport py_safe_call_once, py_safe_once_flag
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.math cimport isinf, INFINITY
@@ -235,7 +238,7 @@ cdef class coo_entries:
                                        shape=(m, n))
 
     def dok_matrix(coo_entries self, m, n):
-        return self.coo_matrix(m,n).todok()
+        return scipy.sparse.dok_matrix(self.coo_array(m,n).todok())
 
 
 # ordered_pair wrapper
@@ -285,13 +288,13 @@ cdef class ordered_pairs:
     def set(ordered_pairs self):
         cdef:
             ordered_pair *pair
-            np.intp_t i, n
+            np.intp_t _i, n
             set results
         results = set()
         pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
         # other platforms
-        for i in range(n):
+        for _i in range(n):
             results.add((pair.i, pair.j))
             pair += 1
         return results
@@ -407,6 +410,13 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     return n
 
 
+cdef void init_pytree(void *void_tree):
+    cdef cKDTree tree = <cKDTree>void_tree
+    n = cKDTreeNode()
+    n._setup(tree, node=tree.cself.ctree, level=0)
+    tree._python_tree = n
+
+
 # Main cKDTree class
 # ==================
 
@@ -462,7 +472,11 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with ``copy_data=True``.
+        with ``copy_data=True``. Concurrently modifying the contents of the
+        ``data`` array while the KDTree initializer is running may lead to data
+        corruption or crashes. If the data are not copied, modifying the
+        original ``data`` array after the tree is created may lead to crashes or
+        data corruption when searching the tree.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -481,6 +495,9 @@ cdef class cKDTree:
         query functions in Python.
     size : int
         The number of nodes in the tree.
+    boxsize : None or ndarray, shape (m.)
+        If boxsize is passed to the initializer, this will be set to the bounds
+        of the periodic box. None if no boxsize is passed.
 
     Notes
     -----
@@ -518,6 +535,7 @@ cdef class cKDTree:
         readonly np.ndarray      indices
         readonly object          boxsize
         np.ndarray               boxsize_data
+        py_safe_once_flag        flag
 
     property n:
         def __get__(self): return self.cself.n
@@ -534,15 +552,11 @@ cdef class cKDTree:
     property tree:
         # make the tree viewable from Python
         def __get__(cKDTree self):
-            cdef cKDTreeNode n
-            cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            # cast to void* is safe because it is either used to construct the
+            # python tree and then discarded or immediately discarded
+            cdef void *self_v = <void *>self
+            py_safe_call_once(self.flag, init_pytree, self_v)
+            return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -561,8 +575,13 @@ cdef class cKDTree:
         self._python_tree = None
 
         if not copy_data:
-            copy_data = copy_if_needed
+            copy_data = None
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
+
+        # read-only view so ban people modifying tree.data after the tree is
+        # constructed
+        data = data.view(np.ndarray)
+        data.flags.writeable = False
 
         if data.ndim != 2:
             raise ValueError("data must be of shape (n, m), where there are "
@@ -589,7 +608,8 @@ cdef class cKDTree:
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
-            self.boxsize = boxsize
+            self.boxsize = np.array(boxsize, copy=True)
+            self.boxsize.flags.writeable = False
             periodic_mask = self.boxsize > 0
             if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -599,10 +619,13 @@ cdef class cKDTree:
         self.maxes = np.ascontiguousarray(
             np.amax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.maxes.flags.writeable = False
         self.mins = np.ascontiguousarray(
             np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
+        self.mins.flags.writeable = False
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
+        self.indices.flags.writeable = False
 
         self._pre_init()
 
@@ -1474,7 +1497,7 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.0,
-                               output_type='dok_matrix'):
+                               output_type=_NoValue):
         """
         sparse_distance_matrix(other, max_distance, p=2.0, output_type='dok_matrix')
 
@@ -1503,10 +1526,10 @@ cdef class cKDTree:
 
                All new code using scipy sparse should use sparse array
                types 'dok_array' or 'coo_array'. The default value of
-               `output_type` will be deprecated at v1.19 and switch from
-               'dok_matrix' to 'dok_array' in v1.21.
+               `output_type` will be deprecated at v2.0 and switch from
+               'dok_matrix' to 'dok_array' in v2.2.
                The values 'dok_matrix' and 'coo_matrix' continue
-               to work, but will go away eventually.
+               to work now, but will go away too.
 
         Returns
         -------
@@ -1537,8 +1560,8 @@ cdef class cKDTree:
 
         You can check distances above the `max_distance` are zeros:
 
-        >>> from scipy.spatial import distance_matrix
-        >>> distance_matrix(points1, points2)
+        >>> from scipy.spatial.distance import cdist
+        >>> cdist(points1, points2)
         array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
            [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
            [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
@@ -1560,18 +1583,70 @@ cdef class cKDTree:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
 
+        # handle default and already warned from KDTree (workaround stacklevel issues)
+        if output_type == _NoValue:
+            msg = """The default value for `output_type` will become `dok_array` in v2.2
+             That means the default return type will become a sparse array.
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set `output_type="dok_array"`.
+             """
+            warnings.warn(msg, DeprecationWarning, stacklevel=1)
+            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
+             The intended replacement is output_type="dok_array".
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "dok_array" and, if needed, wrap the
+             return in dok_matrix().
+             """
+            warnings.warn(msg, DeprecationWarning, stacklevel=1)
+            warnings.filterwarnings("ignore", "dok_matrix is being repl")
+            return res.dok_matrix(self.n, other.n)
+        elif output_type == 'caught_dok_matrix':
+            warnings.filterwarnings("ignore", "dok_matrix is being repl")
+            return res.dok_matrix(self.n, other.n)
+        elif output_type == 'caught_coo_matrix':
+            warnings.filterwarnings("ignore", "coo_matrix is being repl")
+            return res.coo_matrix(self.n, other.n)
+
         if output_type == 'dict':
             return res.dict()
         elif output_type == 'ndarray':
             return res.ndarray()
-        elif output_type == 'dok_matrix':
-            return res.dok_matrix(self.n, other.n)
         elif output_type == 'dok_array':
             return res.dok_array(self.n, other.n)
-        elif output_type == 'coo_matrix':
-            return res.coo_matrix(self.n, other.n)
         elif output_type == 'coo_array':
             return res.coo_array(self.n, other.n)
+        elif output_type == 'dok_matrix':
+            msg = """The keyword output_type="dok_matrix" will not be supported in v2.2
+             The intended replacement is output_type="dok_array".
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "dok_array" and, if needed, wrap the
+             return in dok_matrix().
+             """
+            warnings.warn(msg, DeprecationWarning, stacklevel=1)
+            warnings.filterwarnings("ignore", "dok_matrix is being repl")
+            return res.dok_matrix(self.n, other.n)
+        elif output_type == 'coo_matrix':
+            msg = """The keyword output_type="coo_matrix" will not be supported in v2.2
+             The intended replacement is output_type="coo_array".
+             Unless you use * instead of @, ** for matrix power, or you depend
+             on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
+             See the spmatrix to sparray migration guide for details.
+             https://docs.scipy.org/doc/scipy/reference/sparse.migration_to_sparray.html
+             To silence this message, set to "coo_array" and, if needed, wrap the
+             return in coo_matrix().
+             """
+            warnings.warn(msg, DeprecationWarning, stacklevel=1)
+            warnings.filterwarnings("ignore", "coo_matrix is being repl")
+            return res.coo_matrix(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
 

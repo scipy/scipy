@@ -148,7 +148,7 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1, nrow = A->nrow;
+    slu_blasint    ione = 1, nrow = A->nrow;
     double ndone = -1.;
     double done = 1.;
     
@@ -171,13 +171,6 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     int      isave[3];
 
     extern int dlacon2_(int *, double *, double *, int *, double *, int *, int []);
-#ifdef _CRAY
-    extern int SCOPY(int *, double *, int *, double *, int *);
-    extern int SSAXPY(int *, double *, double *, int *, double *, int *);
-#else
-    extern int dcopy_(int *, double *, int *, double *, int *);
-    extern int daxpy_(int *, double *, double *, int *, double *, int *);
-#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;
@@ -412,7 +405,8 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    dlacon2_(&nrow, &work[A->nrow], work,
+	    int nrow_int = (int)nrow;
+	    dlacon2_(&nrow_int, &work[A->nrow], work,
 		    &iwork[A->nrow], &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 

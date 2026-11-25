@@ -12,7 +12,7 @@ class Langermann(Benchmark):
 
     .. math::
 
-        f_{\text{Langermann}}(x) = - \sum_{i=1}^{5} 
+        f_{\text{Langermann}}(x) = - \sum_{i=1}^{5}
         \frac{c_i \cos\left\{\pi \left[\left(x_{1}- a_i\right)^{2}
         + \left(x_{2} - b_i \right)^{2}\right]\right\}}{e^{\frac{\left( x_{1}
         - a_i\right)^{2} + \left( x_{2} - b_i\right)^{2}}{\pi}}}
@@ -166,7 +166,7 @@ class Leon(Benchmark):
 
     .. math::
 
-        f_{\text{Leon}}(\mathbf{x}) = \left(1 - x_{1}\right)^{2} 
+        f_{\text{Leon}}(\mathbf{x}) = \left(1 - x_{1}\right)^{2}
         + 100 \left(x_{2} - x_{1}^{2} \right)^{2}
 
 
@@ -301,7 +301,7 @@ class Levy13(Benchmark):
     .. math::
 
         f_{\text{Levy13}}(x) = \left(x_{1} -1\right)^{2} \left[\sin^{2}
-        \left(3 \pi x_{2}\right) + 1\right] + \left(x_{2} 
+        \left(3 \pi x_{2}\right) + 1\right] + \left(x_{2}
         - 1\right)^{2} \left[\sin^{2}\left(2 \pi x_{2}\right)
         + 1\right] + \sin^{2}\left(3 \pi x_{1}\right)
 

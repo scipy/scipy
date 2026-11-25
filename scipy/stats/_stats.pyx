@@ -9,75 +9,11 @@ from numpy cimport ndarray, int64_t, float64_t, intp_t
 
 import warnings
 import numpy as np
-import scipy.stats, scipy.special
 from scipy.linalg import solve_triangular
 cimport scipy.special.cython_special as cs
 
 np.import_array()
 
-
-cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
-    cdef double s, c, sn, cn, R, V
-    cdef unsigned int n
-    s = math.sin(x)
-    c = math.cos(x)
-    sn = math.sin(p * x)
-    cn = math.cos(p * x)
-    R = 0
-    V = 0
-    for n in range(p - 1, 0, -1):
-        sn, cn = sn * c - cn * s, cn * c + sn * s
-        R = k / (2 * n + k * R)
-        V = R * (sn / n + V)
-
-    with cython.cdivision(True):
-        return 0.5 + x / (2 * PI) + V / PI
-
-
-cdef von_mises_cdf_normalapprox(k, x):
-    cdef double SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
-
-    b = SQRT2_PI / scipy.special.i0e(k)  # Check for negative k
-    z = b * np.sin(x / 2.)
-    return scipy.stats.norm.cdf(z)
-
-
-@cython.boundscheck(False)
-def von_mises_cdf(k_obj, x_obj):
-    cdef double[:] temp, temp_xs, temp_ks
-    cdef unsigned int i, p
-    cdef double a1, a2, a3, a4, CK
-    cdef np.ndarray k = np.asarray(k_obj)
-    cdef np.ndarray x = np.asarray(x_obj)
-    cdef bint zerodim = k.ndim == 0 and x.ndim == 0
-
-    k = np.atleast_1d(k)
-    x = np.atleast_1d(x)
-    ix = np.round(x / (2 * PI))
-    x = x - ix * (2 * PI)
-
-    # These values should give 12 decimal digits
-    CK = 50
-    a1, a2, a3, a4 = 28., 0.5, 100., 5.
-
-    bx, bk = np.broadcast_arrays(x, k)
-    result = np.empty_like(bx, float)
-
-    c_small_k = bk < CK
-    temp = result[c_small_k]
-    temp_xs = bx[c_small_k].astype(float)
-    temp_ks = bk[c_small_k].astype(float)
-    for i in range(len(temp)):
-        p = <int>(1 + a1 + a2 * temp_ks[i] - a3 / (temp_ks[i] + a4))
-        temp[i] = von_mises_cdf_series(temp_ks[i], temp_xs[i], p)
-        temp[i] = 0 if temp[i] < 0 else 1 if temp[i] > 1 else temp[i]
-    result[c_small_k] = temp
-    result[~c_small_k] = von_mises_cdf_normalapprox(bk[~c_small_k], bx[~c_small_k])
-
-    if not zerodim:
-        return result + ix
-    else:
-        return (result + ix)[0]
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -173,11 +109,6 @@ def _toint64(x):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, weigher, bool additive):
-    # y_local and rank_local (declared below) are a work-around for a Cython
-    # bug; see gh-16718.  When we can require Cython 3.0, y_local and
-    # rank_local can be removed, and the closure weigh() can refer directly
-    # to y and rank.
-    cdef const ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -195,8 +126,6 @@ def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, w
         rank = np.empty(n, dtype=np.intp)
         rank[...] = perm[::-1]
         _invert_in_place(rank)
-
-    cdef intp_t[:] rank_local = rank
 
     # weigh joint ties
     first = 0
@@ -246,28 +175,28 @@ def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, w
         cdef float64_t weight, residual
 
         if length == 1:
-            return weigher(rank_local[perm[offset]])
+            return weigher(rank[perm[offset]])
         length0 = length // 2
         length1 = length - length0
         middle = offset + length0
         residual = weigh(offset, length0)
         weight = weigh(middle, length1) + residual
-        if y_local[perm[middle - 1]] < y_local[perm[middle]]:
+        if y[perm[middle - 1]] < y[perm[middle]]:
             return weight
 
         # merging
         i = j = k = 0
 
         while j < length0 and k < length1:
-            if y_local[perm[offset + j]] <= y_local[perm[middle + k]]:
+            if y[perm[offset + j]] <= y[perm[middle + k]]:
                 temp[i] = perm[offset + j]
-                residual -= weigher(rank_local[temp[i]])
+                residual -= weigher(rank[temp[i]])
                 j += 1
             else:
                 temp[i] = perm[middle + k]
-                exchanges_weight[0] += weigher(rank_local[temp[i]]) * (
+                exchanges_weight[0] += weigher(rank[temp[i]]) * (
                     length0 - j) + residual if additive else weigher(
-                    rank_local[temp[i]]) * residual
+                    rank[temp[i]]) * residual
                 k += 1
             i += 1
 

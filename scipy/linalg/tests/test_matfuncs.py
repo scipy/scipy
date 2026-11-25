@@ -13,6 +13,8 @@ from numpy import array, identity, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
                            assert_array_less, assert_array_equal)
 
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close, xp_assert_equal
+import scipy._external.array_api_extra as xpx
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao,
@@ -22,6 +24,8 @@ from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 from scipy.linalg import LinAlgWarning
+from scipy.linalg.blas import HAS_ILP64
+from scipy._lib._testutils import IS_WASM, check_free_memory
 from scipy.optimize import minimize
 
 
@@ -87,6 +91,17 @@ class TestSignM:
                    [0., 0., 0., 0., 0., 0., -3.]])
         signm(a)
         #XXX: what would be the correct result?
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_signm_dtype_preservation(self, dtype):
+        # gh-25657: signm upcast float32/complex64 for defective matrices
+        # (the iterative fall-through branch) while the non-defective branch
+        # preserved dtype. Output dtype must depend on input dtype, not values.
+        non_defective = np.array([[2, 1], [0, 3]], dtype=dtype)  # distinct eigs
+        defective = np.array([[2, 1], [0, 2]], dtype=dtype)      # repeated eig
+        assert signm(non_defective).dtype == dtype
+        assert signm(defective).dtype == dtype
 
 
 class TestLogM:
@@ -491,6 +506,7 @@ class TestSqrtM:
         M = np.array([[2, 4], [0, -2]], dtype=np.int64)
         assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_float_out(self):
         M = np.eye(10, dtype=np.float16)
         assert sqrtm(M).dtype == np.float32
@@ -502,6 +518,7 @@ class TestSqrtM:
             M = np.eye(10, dtype=np.float128)
             assert sqrtm(M).dtype == np.float64
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
         assert sqrtm(M).dtype == np.complex64
@@ -513,6 +530,7 @@ class TestSqrtM:
             M = np.array([[2, 4], [0, -2]], dtype=np.float128)
             assert sqrtm(M).dtype == np.complex128
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
         assert sqrtm(M).dtype == np.complex64
@@ -574,6 +592,12 @@ class TestSqrtM:
         with pytest.warns(LinAlgWarning, match="Matrix is singular."):
             res = sqrtm(a)
             assert np.isinf(res[0, 1:]).all()
+
+    def test_scalar_input(self):
+        assert_allclose(sqrtm(4), [[2.0]])
+
+    def test_1d_single_element_input(self):
+        assert_allclose(sqrtm([4]), [[2.0]])
 
 
 class TestFractionalMatrixPower:
@@ -763,6 +787,19 @@ class TestFractionalMatrixPower:
 
 
 class TestExpM:
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    def test_lp64_size_limit(self):
+        # n*n is passed to BLAS as an element count, so with 32-bit LAPACK integers expm
+        # must refuse n = 46341 rather than overflow. The input has zero strides and
+        # nothing is computed.
+        check_free_memory(free_mb=10000)
+        a = np.broadcast_to(np.float32(1), (46341, 46341))
+        with pytest.raises(ValueError, match="ILP64"):
+            expm(a)
+
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -836,6 +873,26 @@ class TestExpM:
         for i in range(5):
             next_res = expm(A)
             np.testing.assert_array_almost_equal(first_res, next_res)
+
+    @pytest.mark.parametrize('dt', [np.float32, np.float64,
+                                    np.complex64, np.complex128])
+    def test_gh25924(self, dt):
+        # The scaling exponent of a slice that needed scaling and squaring
+        # leaked into the following slices that did not, squaring their
+        # unscaled results and returning expm(2**s * A) instead of expm(A).
+        rng = np.random.default_rng(1234)
+        n, batch = 6, 4
+        A = rng.standard_normal((batch, n, n))
+        if np.issubdtype(dt, np.complexfloating):
+            A = A + 1j*rng.standard_normal((batch, n, n))
+        A = A.astype(dt)
+        # First slice needs scaling and squaring, the remaining ones do not.
+        A[0] *= 8
+        A[1:] /= np.abs(A[1:]).sum(axis=1).max(axis=-1)[:, None, None]
+
+        one_at_a_time = np.stack([expm(x) for x in A])
+        assert_allclose(expm(A), one_at_a_time,
+                        rtol=10*np.finfo(dt).eps, atol=0)
 
 
 class TestExpmFrechet:
@@ -1046,39 +1103,41 @@ class TestExpmConditionNumber:
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
 
+@make_xp_test_case(khatri_rao)
 class TestKhatriRao:
+    @pytest.mark.parametrize('dtype', ["float32", "float64", "complex64", "complex128"])
+    def test_basic(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        a = khatri_rao(xp.asarray([[1, 2], [3, 4]], dtype=dtype),
+                       xp.asarray([[5, 6], [7, 8]], dtype=dtype))
 
-    def test_basic(self):
-        a = khatri_rao(array([[1, 2], [3, 4]]),
-                       array([[5, 6], [7, 8]]))
+        xp_assert_equal(a, xp.asarray([[5, 12],
+                                      [7, 16],
+                                      [15, 24],
+                                      [21, 32]], dtype=dtype))
 
-        assert_array_equal(a, array([[5, 12],
-                                     [7, 16],
-                                     [15, 24],
-                                     [21, 32]]))
+        b = khatri_rao(xp.empty([2, 2]), xp.empty([2, 2]))
+        assert b.shape == (4, 2)
 
-        b = khatri_rao(np.empty([2, 2]), np.empty([2, 2]))
-        assert_array_equal(b.shape, (4, 2))
-
-    def test_number_of_columns_equality(self):
+    def test_number_of_columns_equality(self, xp):
         with pytest.raises(ValueError):
-            a = array([[1, 2, 3],
-                       [4, 5, 6]])
-            b = array([[1, 2],
-                       [3, 4]])
+            a = xp.asarray([[1, 2, 3],
+                            [4, 5, 6]])
+            b = xp.asarray([[1, 2],
+                            [3, 4]])
             khatri_rao(a, b)
 
-    def test_to_assure_2d_array(self):
+    def test_to_assure_2d_array(self, xp):
         with pytest.raises(ValueError):
             # both arrays are 1-D
-            a = array([1, 2, 3])
-            b = array([4, 5, 6])
+            a = xp.asarray([1, 2, 3])
+            b = xp.asarray([4, 5, 6])
             khatri_rao(a, b)
 
         with pytest.raises(ValueError):
             # first array is 1-D
-            a = array([1, 2, 3])
-            b = array([
+            a = xp.asarray([1, 2, 3])
+            b = xp.asarray([
                 [1, 2, 3],
                 [4, 5, 6]
             ])
@@ -1086,30 +1145,46 @@ class TestKhatriRao:
 
         with pytest.raises(ValueError):
             # second array is 1-D
-            a = array([
+            a = xp.asarray([
                 [1, 2, 3],
                 [7, 8, 9]
             ])
-            b = array([4, 5, 6])
+            b = xp.asarray([4, 5, 6])
             khatri_rao(a, b)
 
-    def test_equality_of_two_equations(self):
-        a = array([[1, 2], [3, 4]])
-        b = array([[5, 6], [7, 8]])
+    def test_equality_of_two_equations(self, xp):
+        a = xp.asarray([[1, 2], [3, 4]])
+        b = xp.asarray([[5, 6], [7, 8]])
 
         res1 = khatri_rao(a, b)
-        res2 = np.vstack([np.kron(a[:, k], b[:, k])
+        res2 = xp.stack([xpx.kron(a[:, k], b[:, k])
                           for k in range(b.shape[1])]).T
 
-        assert_array_equal(res1, res2)
+        xp_assert_equal(res1, res2)
 
-    def test_empty(self):
-        a = np.empty((0, 2))
-        b = np.empty((3, 2))
+    def test_empty(self, xp):
+        a = xp.empty((0, 2))
+        b = xp.empty((3, 2))
         res = khatri_rao(a, b)
-        assert_allclose(res, np.empty((0, 2)))
+        xp_assert_close(res, xp.empty((0, 2)))
 
-        a = np.empty((3, 0))
-        b = np.empty((5, 0))
+        a = xp.empty((3, 0))
+        b = xp.empty((5, 0))
         res = khatri_rao(a, b)
-        assert_allclose(res, np.empty((15, 0)))
+        xp_assert_close(res, xp.empty((15, 0)))
+
+
+@pytest.mark.parametrize("func", [expm, sqrtm])
+@pytest.mark.parametrize("dtype, pad", [(np.complex128, np.float64),
+                                        (np.complex64, np.float32)])
+@pytest.mark.parametrize("shape", [(4, 4), (2, 4, 4)])
+def test_field_view_strides(func, dtype, pad, shape):
+    # A complex field of an aligned structured array has an element stride that is not a
+    # multiple of the itemsize (24 and 12 bytes); it must give the result of a copy.
+    rng = np.random.default_rng(1234)
+    a = ((rng.standard_normal(shape) + 1j*rng.standard_normal(shape)) / 4).astype(dtype)
+    rec = np.zeros(shape, dtype=np.dtype([("z", dtype), ("pad", pad)], align=True))
+    rec["z"] = a
+    view = rec["z"]
+    assert view.strides[-1] % view.itemsize != 0
+    xp_assert_equal(func(view), func(a))

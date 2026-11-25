@@ -27,8 +27,22 @@ This module contains low-level functions from the LAPACK library.
 .. warning::
 
    These functions do little to no error checking.
-   It is possible to cause crashes by mis-using them,
+   It is possible to cause crashes by misusing them,
    so prefer using the higher-level routines in `scipy.linalg`.
+
+.. note::
+
+    Prefer using ``get_lapack_funcs`` to importing the bare functions directly.
+    If you do, for example, ``from scipy.linalg.lapack import dsysv``, the ``dsysv``
+    function may be either LP64 or ILP64, depending on how SciPy is built.
+
+    The following is more robust:
+
+    >>> from scipy.linalg.lapack import get_lapack_funcs
+    >>> dsysv = get_lapack_funcs('sysv', dtype='float64', ilp64='preferred')
+    >>> dsysv.int_dtype
+    dtype('int32')    # may vary
+
 
 Finding functions
 -----------------
@@ -202,10 +216,20 @@ All functions
    cgesvd
    zgesvd
 
+   sgesvdx
+   dgesvdx
+   cgesvdx
+   zgesvdx
+
    sgesvd_lwork
    dgesvd_lwork
    cgesvd_lwork
    zgesvd_lwork
+
+   sgesvdx_lwork
+   dgesvdx_lwork
+   cgesvdx_lwork
+   zgesvdx_lwork
 
    sgesvx
    dgesvx
@@ -372,6 +396,11 @@ All functions
    clange
    zlange
 
+   slansb
+   dlansb
+   clansb
+   zlansb
+
    slantr
    dlantr
    clantr
@@ -429,6 +458,11 @@ All functions
 
    sormrz_lwork
    dormrz_lwork
+
+   spbcon
+   dpbcon
+   cpbcon
+   zpbcon
 
    spbsv
    dpbsv
@@ -871,25 +905,28 @@ from .blas import (
     _get_funcs, _memoize_get_funcs,
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
-from scipy.linalg import _flapack
-from re import compile as regex_compile
-try:
-    from scipy.linalg import _clapack
-except ImportError:
-    _clapack = None
 
-from scipy.__config__ import CONFIG
-HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
-del CONFIG
-_flapack_64 = None
+from scipy._lib._util import HAS_LP64, HAS_ILP64
+
+
+if HAS_LP64:
+    from scipy.linalg import _flapack
+else:
+    _flapack = None
+
 if HAS_ILP64:
     from scipy.linalg import _flapack_64
+else:
+    _flapack_64 = None
 
+if not (HAS_LP64 or HAS_ILP64):
+    raise RuntimeError("SciPy needs either LP64 or ILP64 LAPACK.")
 
-# Expose all functions (only flapack --- clapack is an implementation detail)
-empty_module = None
-from scipy.linalg._flapack import *  # noqa: E402, F403
-del empty_module
+if HAS_LP64:
+    from scipy.linalg._flapack import *  # noqa: F403
+else:
+    from scipy.linalg._flapack_64 import *  # noqa: F403
+
 
 __all__ = ['get_lapack_funcs']
 
@@ -903,32 +940,8 @@ _lapack_alias = {
 }
 
 
-# Place guards against docstring rendering issues with special characters
-p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
-p2 = regex_compile(r'Default: (?P<d>.*?)\n')
-
-
-def backtickrepl(m):
-    if m.group('s'):
-        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
-    else:
-        return f"with bounds ``{m.group('b')}``\n"
-
-
-for routine in [ssyevr, dsyevr, cheevr, zheevr,
-                ssyevx, dsyevx, cheevx, zheevx,
-                ssygvd, dsygvd, chegvd, zhegvd]:
-    if routine.__doc__:
-        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
-        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
-    else:
-        continue
-
-del regex_compile, p1, p2, backtickrepl
-
-
 @_memoize_get_funcs
-def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
+def get_lapack_funcs(names, arrays=(), dtype=None, ilp64="preferred"):
     """Return available LAPACK function objects from names.
 
     Arrays are used to determine the optimal prefix of LAPACK routines.
@@ -949,23 +962,29 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     ilp64 : {True, False, 'preferred'}, optional
         Whether to return ILP64 routine variant.
         Choosing 'preferred' returns ILP64 routine if available, and
-        otherwise the 32-bit routine. Default: False
+        otherwise the 32-bit routine. Default: ``'preferred'``.
 
     Returns
     -------
     funcs : list
         List containing the found function(s).
 
+    Raises
+    ------
+    RuntimeError
+        If the requested LP64/ILP64 variant is not available.
+
+    See Also
+    --------
+    scipy.linalg.blas.get_blas_funcs
+        A similar routine for selecting BLAS functions.
+
     Notes
     -----
-    This routine automatically chooses between Fortran/C
-    interfaces. Fortran code is used whenever possible for arrays with
-    column major order. In all other cases, C code is preferred.
-
     In LAPACK, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
-    types {float32, float64, complex64, complex128} respectively, and
+    matrix. These can be one of ``{'s', 'd', 'c', 'z'}`` for the NumPy
+    types ``{float32, float64, complex64, complex128}`` respectively, and
     are stored in attribute ``typecode`` of the returned functions.
 
     Examples
@@ -978,13 +997,27 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
 
-    >>> a = rng.random((3,2))
+    >>> a = rng.random((3, 2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
-    >>> x_lange = LA.get_lapack_funcs('lange',(a*1j,))
+    >>> x_lange = LA.get_lapack_funcs('lange', (a*1j,))
     >>> x_lange.typecode
     'z'
+
+    If you want to select a specific LAPACK variant instead of relying on array types,
+    use the ``dtype=`` argument:
+
+    >>> LA.get_lapack_funcs('lange', dtype=np.float32)
+    <flapack function slange>
+
+    The ``int_dtype`` attribute stores whether the routine is ILP64 (integer arguments
+    and outputs are 64-bit) or LP64 (integer arguments and outputs are 32-bit):
+
+    >>> x_lange.int_dtype
+    dtype('int32')   # may vary
+
+    **Work size computations**
 
     Several LAPACK routines work best when its internal WORK array has
     the optimal size (big enough for fast computation and small enough to
@@ -1004,20 +1037,18 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
         if ilp64 == 'preferred':
             ilp64 = HAS_ILP64
         else:
-            raise ValueError("Invalid value for 'ilp64'")
+            raise ValueError(f"Invalid value for {ilp64 = }.")
 
     if not ilp64:
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack, _clapack,
-                          "flapack", "clapack", _lapack_alias,
+                          "LAPACK", _flapack, "flapack", _lapack_alias,
                           ilp64=False)
     else:
         if not HAS_ILP64:
             raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
-                               "compiled only with 32-bit BLAS")
+                               "compiled only with 32-bit LAPACK")
         return _get_funcs(names, arrays, dtype,
-                          "LAPACK", _flapack_64, None,
-                          "flapack_64", None, _lapack_alias,
+                          "LAPACK", _flapack_64, "flapack_64", _lapack_alias,
                           ilp64=True)
 
 
@@ -1131,13 +1162,41 @@ def _ensure_dtype_cdsz(*arrays):
         dtype = np.complex64 if complex else np.float32
     elif np.finfo(dtype).bits >= 64:
         dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
+    # .char to tell 'g' from 'd' (and 'G' from 'D') where long double is double: there
+    # astype(copy=False) returns the long double array itself, which is not 'd'
+    dtype = np.dtype(dtype)
+    return (array.astype(dtype, copy=array.dtype.char != dtype.char)
+            for array in arrays)
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
-    """Make sure an input array is aligned and not byteswapped, copy otherwise.
+    """Make sure an input array is aligned and in native byte order, copy otherwise.
+
+    A read-only array is never overwritten.
     """
-    if not (a.flags['ALIGNED'] and a.dtype.byteorder == '='):
+    if not (a.flags['ALIGNED'] and a.dtype.isnative):
         overwrite_a = True
-        a = a.copy()
+        # astype, unlike copy, also converts the byte order. A 2-D copy is F-ordered,
+        # so that the compiled code can work on it in place.
+        a = a.astype(a.dtype.newbyteorder('='), order='F' if a.ndim == 2 else 'C')
+    elif overwrite_a and not a.flags['WRITEABLE']:
+        # only read when needed: for np.broadcast_arrays views it warns
+        overwrite_a = False
     return a, overwrite_a
+
+
+def _broadcast_batch(a, b):
+    """Broadcast the batch dimensions of `a` and `b`, all but the last two.
+
+    An array that already has the full batch shape is returned unchanged rather than
+    passed through np.broadcast_to, because broadcast_to always returns a read-only
+    view, even when the shape stays the same. Wrapping the caller's array in such a
+    view would hide whether it is writeable, and a result written into it (with
+    overwrite_a or overwrite_b) would reach the caller as a read-only array.
+    """
+    batch_shape = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+    if a.shape[:-2] != batch_shape:
+        a = np.broadcast_to(a, batch_shape + a.shape[-2:])
+    if b.shape[:-2] != batch_shape:
+        b = np.broadcast_to(b, batch_shape + b.shape[-2:])
+    return a, b

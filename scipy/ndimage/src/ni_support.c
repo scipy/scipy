@@ -109,7 +109,7 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, npy_intp size1,
     if (*lines > max_lines)
         *lines = max_lines;
     /* allocate data for the buffer: */
-    *buffer = malloc(*lines * line_size);
+    *buffer = PyMem_RawMalloc(*lines * line_size);
     if (!*buffer) {
         PyErr_NoMemory();
         return 0;
@@ -553,13 +553,13 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
     for(ii = 0; ii < rank; ii++)
         offsets_size *= (ashape[ii] < fshape[ii] ? ashape[ii] : fshape[ii]);
     /* allocate offsets data: */
-    *offsets = malloc(offsets_size * footprint_size * sizeof(npy_intp));
+    *offsets = PyMem_RawMalloc(offsets_size * footprint_size * sizeof(npy_intp));
     if (!*offsets) {
         PyErr_NoMemory();
         goto exit;
     }
     if (coordinate_offsets) {
-        *coordinate_offsets = malloc(offsets_size * rank
+        *coordinate_offsets = PyMem_RawMalloc(offsets_size * rank
                                      * footprint_size * sizeof(npy_intp));
         if (!*coordinate_offsets) {
             PyErr_NoMemory();
@@ -609,7 +609,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz2 = 2 * len - 2;
-                                cc = sz2 * (int)(-cc / sz2) + cc;
+                                cc = (npy_intp)sz2 * (int)(-cc / sz2) + cc;
                                 cc = cc <= 1 - len ? cc + sz2 : -cc;
                             }
                         } else if (cc >= len) {
@@ -617,7 +617,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz2 = 2 * len - 2;
-                                cc -= sz2 * (int)(cc / sz2);
+                                cc -= (npy_intp)sz2 * (int)(cc / sz2);
                                 if (cc >= len)
                                     cc = sz2 - cc;
                             }
@@ -630,14 +630,14 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                             } else {
                                 int sz2 = 2 * len;
                                 if (cc < -sz2)
-                                    cc = sz2 * (int)(-cc / sz2) + cc;
+                                    cc = (npy_intp)sz2 * (int)(-cc / sz2) + cc;
                                 cc = cc < -len ? cc + sz2 : -cc - 1;
                             }
                         } else if (cc >= len) {
                             if (len <= 1) {cc = 0;
                             } else {
                                 int sz2 = 2 * len;
-                                cc -= sz2 * (int)(cc / sz2);
+                                cc -= (npy_intp)sz2 * (int)(cc / sz2);
                                 if (cc >= len)
                                     cc = sz2 - cc - 1;
                             }
@@ -650,7 +650,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz = len;
-                                cc += sz * (int)(-cc / sz);
+                                cc += (npy_intp)sz * (int)(-cc / sz);
                                 if (cc < 0)
                                     cc += sz;
                             }
@@ -659,7 +659,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                                 cc = 0;
                             } else {
                                 int sz = len;
-                                cc -= sz * (int)(cc / sz);
+                                cc -= (npy_intp)sz * (int)(cc / sz);
                             }
                         }
                         break;
@@ -733,10 +733,10 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
 
  exit:
     if (PyErr_Occurred()) {
-        free(*offsets);
+        PyMem_RawFree(*offsets);
         *offsets = NULL;
         if (coordinate_offsets) {
-            free(*coordinate_offsets);
+            PyMem_RawFree(*coordinate_offsets);
             *coordinate_offsets = NULL;
         }
         return 0;
@@ -747,7 +747,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
 
 NI_CoordinateList* NI_InitCoordinateList(int size, int rank)
 {
-    NI_CoordinateList *list = malloc(sizeof(NI_CoordinateList));
+    NI_CoordinateList *list = PyMem_RawMalloc(sizeof(NI_CoordinateList));
     if (!list) {
         return NULL;
     }
@@ -777,14 +777,14 @@ int NI_CoordinateListStealBlocks(NI_CoordinateList *list1,
 NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
 {
     NI_CoordinateBlock* block = NULL;
-    block = malloc(sizeof(NI_CoordinateBlock));
+    block = PyMem_RawMalloc(sizeof(NI_CoordinateBlock));
     if (!block) {
         return NULL;
     }
-    block->coordinates = malloc(list->block_size * list->rank
+    block->coordinates = PyMem_RawMalloc((size_t)list->block_size * list->rank
                                 * sizeof(npy_intp));
     if (!block->coordinates) {
-        free(block);
+        PyMem_RawFree(block);
         return NULL;
     }
     block->next = list->blocks;
@@ -799,8 +799,8 @@ NI_CoordinateBlock* NI_CoordinateListDeleteBlock(NI_CoordinateList *list)
     NI_CoordinateBlock* block = list->blocks;
     if (block) {
         list->blocks = block->next;
-        free(block->coordinates);
-        free(block);
+        PyMem_RawFree(block->coordinates);
+        PyMem_RawFree(block);
     }
     return list->blocks;
 }
@@ -812,10 +812,10 @@ void NI_FreeCoordinateList(NI_CoordinateList *list)
         while (block) {
             NI_CoordinateBlock *tmp = block;
             block = block->next;
-            free(tmp->coordinates);
-            free(tmp);
+            PyMem_RawFree(tmp->coordinates);
+            PyMem_RawFree(tmp);
         }
         list->blocks = NULL;
-        free(list);
+        PyMem_RawFree(list);
     }
 }

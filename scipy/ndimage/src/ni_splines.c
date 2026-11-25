@@ -213,15 +213,14 @@ _init_causal_reflect(double *c, const npy_intp n, const double z)
     npy_intp i;
     double z_i = z;
     const double z_n = pow(z, n);
-    const double c0 = c[0];
+    double sum;
 
-    c[0] = c[0] + z_n * c[n - 1];
+    sum = c[0] + z_n * c[n - 1];
     for (i = 1; i < n; ++i) {
-        c[0] += z_i * (c[i] + z_n * c[n - 1 - i]);
+        sum += z_i * (c[i] + z_n * c[n - 1 - i]);
         z_i *= z;
     }
-    c[0] *= z / (1 - z_n * z_n);
-    c[0] += c0;
+    c[0] += sum * z / (1 - z_n * z_n);
 }
 
 

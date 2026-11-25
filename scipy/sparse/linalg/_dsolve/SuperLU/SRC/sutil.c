@@ -428,7 +428,7 @@ void sinf_norm_error(int nrhs, SuperMatrix *X, float *xtrue)
 void
 sPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
            float rpg, float rcond, float *ferr,
-           float *berr, char *equed, SuperLUStat_t *stat)
+           const float *berr, const char *equed, SuperLUStat_t *stat)
 {
     SCformat *Lstore;
     NCformat *Ustore;
@@ -470,7 +470,7 @@ sPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 int
-print_float_vec(char *what, int n, float *vec)
+print_float_vec(const char *what, int n, const float *vec)
 {
     int i;
     printf("%s: n %d\n", what, n);

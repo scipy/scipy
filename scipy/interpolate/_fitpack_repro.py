@@ -17,18 +17,28 @@
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
          :doi:`10.1016/0771-050X(75)90034-0`.
 """
-import warnings
 import operator
+import warnings
+
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
-
-from ._bsplines import (
-    _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
-    _lsq_solve_qr_for_root_rati_periodic, _periodic_knots
+from scipy._lib._array_api import (
+    array_namespace,
+    concat_1d,
+    xp_capabilities,
+    xp_result_device,
 )
-from . import _dierckx      # type: ignore[attr-defined]
 
+from . import _dierckx
+from ._bsplines import (
+    BSpline,
+    _lsq_solve_qr,
+    _lsq_solve_qr_for_root_rati_periodic,
+    _not_a_knot,
+    _periodic_knots,
+    fpcheck,
+    make_interp_spline,
+)
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -71,7 +81,7 @@ def _validate_bc_type(bc_type):
     return bc_type
 
 
-def add_knot(x, t, k, residuals):
+def add_knot(x, t, k, residuals, periodic=False):
     """Add a new knot.
 
     (Approximately) replicate FITPACK's logic:
@@ -88,7 +98,7 @@ def add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    new_knot = _dierckx.fpknot(x, t, k, residuals)
+    new_knot = _dierckx.fpknot(x, t, k, residuals, periodic)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
@@ -105,6 +115,15 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         x = x.copy()
     if not y.flags.c_contiguous:
         y = y.copy()
+
+    if x.ndim != 1 or (x[1:] < x[:-1]).any():
+        raise ValueError("Expect `x` to be an ordered 1D sequence.")
+
+    if x.shape[0] < k + 1:
+        raise ValueError(
+            f"Need at least k+1={k+1} data points for a degree-{k} spline, "
+            f"got {x.shape[0]}."
+        )
 
     if w is None:
         w = np.ones_like(x, dtype=float)
@@ -138,10 +157,11 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
 
     if x.shape[0] != y.shape[0]:
         raise ValueError(f"Data is incompatible: {x.shape = } and {y.shape = }.")
-    if x.ndim != 1 or (x[1:] < x[:-1]).any():
-        raise ValueError("Expect `x` to be an ordered 1D sequence.")
 
     k = operator.index(k)
+
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got k={k}")
 
     if s < 0:
         raise ValueError(f"`s` must be non-negative. Got {s = }")
@@ -151,17 +171,13 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     if xe is None:
         xe = max(x)
 
-    if periodic and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match which is required "
-                         "for `bc_type='periodic'`.")
-
     return x, y, w, k, s, xb, xe
 
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
-    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satisfied.
 
     Parameters
     ----------
@@ -176,7 +192,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
         The boundary of the approximation interval. If None (default),
         is set to ``x[-1]``.
     k : int, optional
-        The spline degree. Default is cubic, ``k = 3``.
+        The spline degree. Must be >= 1. Default is cubic, ``k = 3``.
     s : float, optional
         The smoothing factor. Default is ``s = 0``.
     nest : int, optional
@@ -248,6 +264,8 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
 
     """
     xp = array_namespace(x, y, w)
+    # the NumPy round-trip must return the results on the inputs' device
+    device = xp_result_device(x, y, w)
     bc_type = _validate_bc_type(bc_type)
     periodic = bc_type == 'periodic'
 
@@ -260,7 +278,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
             t = _periodic_knots(x, k)
         else:
             t = _not_a_knot(x, k)
-        yield xp.asarray(t)
+        yield xp.asarray(t, device=device)
         return
 
     x, y, w, k, s, xb, xe = _validate_inputs(
@@ -268,10 +286,11 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
         periodic=periodic
     )
 
-    yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=xp)
+    yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic,
+                                    xp=xp, device=device)
 
 
-def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
+def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np, device=None):
 
     acc = s * TOL
     m = x.size    # the number of data points
@@ -302,7 +321,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
     # Computes fp0 for constant function
     if periodic:
         t = np.zeros(nmin, dtype=float)
-        for i in range(0, k + 1):
+        for i in range(k + 1):
             t[i] = x[0] - (k - i) * per
             t[i + k + 1] = x[m - 1] + i * per
         _, fp = _get_residuals(x, y, t, k, w, periodic=periodic)
@@ -350,7 +369,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
             for j in range(1, k + 1):
                 t[k - j] = t[n - k - j - 1] - per
                 t[n - k + j - 1] = t[k + j] + per
-        yield xp.asarray(t)
+        yield xp.asarray(t, device=device)
 
         # construct the LSQ spline with this set of knots
         fpold = fp
@@ -376,7 +395,7 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
 
         # actually add knots
         for j in range(nplus):
-            t = add_knot(x, t, k, residuals)
+            t = add_knot(x, t, k, residuals, periodic)
 
             # check if we have enough knots already
 
@@ -388,13 +407,13 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
                     t = _not_a_knot(x, k)
                 else:
                     t = _periodic_knots(x, k)
-                yield xp.asarray(t)
+                yield xp.asarray(t, device=device)
                 return
 
             # c  if n=nest we cannot increase the number of knots because of
             # c  the storage capacity limitation.
             if n >= nest:
-                yield xp.asarray(t)
+                yield xp.asarray(t, device=device)
                 return
 
             # recompute if needed
@@ -480,7 +499,7 @@ def disc(t, k):
            :doi:`10.1016/0146-664X(82)90043-0`
 
     .. [2] Tom Lyche and Knut Morken, Spline methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
+        https://web.archive.org/web/20221205112612/https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v05/undervisningsmateriale/hele.pdf
 
     """
     n = t.shape[0]
@@ -822,7 +841,7 @@ condition abs(fp-s)/s < tol.
 }
 
 
-def root_rati(f, p0, bracket, acc):
+def root_rati(f, p0, bracket, acc, maxit=MAXIT):
     """Solve `f(p) = 0` using a rational function approximation.
 
     In a nutshell, since the function f(p) is known to be monotonically decreasing, we
@@ -838,7 +857,7 @@ def root_rati(f, p0, bracket, acc):
     https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fppara.f#L290
 
     Note that the latter is for parametric splines and the former is for 1D spline
-    functions. The minimization is indentical though [modulo a summation over the
+    functions. The minimization is identical though [modulo a summation over the
     dimensions in the computation of f(p)], so we reuse the minimizer for both
     d=1 and d>1.
     """
@@ -855,7 +874,7 @@ def root_rati(f, p0, bracket, acc):
     (p1, f1), (p3, f3)  = bracket
     p = p0
 
-    for it in range(MAXIT):
+    for it in range(maxit):
         p2, f2 = p, f(p)
 
         # c  test whether the approximation sp(x) is an acceptable solution.
@@ -871,7 +890,7 @@ def root_rati(f, p0, bracket, acc):
                 f3 = f2
                 p = p*con4
                 if p <= p1:
-                     p = p1*con9 + p2*con1
+                    p = p1*con9 + p2*con1
                 continue
             else:
                 if f2 < 0:
@@ -884,7 +903,7 @@ def root_rati(f, p0, bracket, acc):
                 f1 = f2
                 p = p/con4
                 if p3 != np.inf and p <= p3:
-                     p = p2*con1 + p3*con9
+                    p = p2*con1 + p3*con9
                 continue
             else:
                 if f2 > 0:
@@ -914,7 +933,8 @@ def root_rati(f, p0, bracket, acc):
 
     return Bunch(converged=converged, root=p, iterations=it, ier=ier)
 
-def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
+def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np,
+                      device=None):
     """Shared infra for make_splrep and make_splprep.
     """
     acc = s * TOL
@@ -943,7 +963,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     if t.shape[0] == 2 * (k + 1):
         # nothing to optimize
         _, _, c, _, _ = _lsq_solve_qr(x, y, t, k, w, periodic=periodic)
-        t, c = xp.asarray(t), xp.asarray(c)
+        t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
         return BSpline(t, c, k)
 
     ### solve ###
@@ -978,7 +998,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
         # in case of periodic splines
         per = xe - xb
         tc = np.zeros(2*(k + 1), dtype=float)
-        for i in range(0, k + 1):
+        for i in range(k + 1):
             tc[i] = x[0] - (k - i) * per
             tc[i + k + 1] = x[m - 1] + i * per
         _, fp0 = _get_residuals(x, y, tc, k, w, periodic=periodic)
@@ -1003,7 +1023,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     # f.spl is the spline corresponding to the found `p` value
     t, c, k = f.spl.tck
     axis, extrap = f.spl.axis, f.spl.extrapolate
-    t, c = xp.asarray(t), xp.asarray(c)
+    t, c = xp.asarray(t, device=device), xp.asarray(c, device=device)
     spl = BSpline.construct_fast(t, c, k, axis=axis, extrapolate=extrap)
     return spl
 
@@ -1030,9 +1050,10 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         The interval to fit.  If None, these default to ``x[0]`` and ``x[-1]``,
         respectively.
     k : int, optional
-        The degree of the spline fit. It is recommended to use cubic splines,
-        ``k=3``, which is the default. Even values of `k` should be avoided,
-        especially with small `s` values.
+        The degree of the spline fit. Must be >= 1, except when ``s=0``,
+        in which case ``k=0`` is also supported. It is recommended to use
+        cubic splines, ``k=3``, which is the default. Even values of `k`
+        should be avoided, especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
         satisfying the LSQ (least-squares) constraint::
@@ -1047,6 +1068,9 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         represent the inverse of the standard deviation of `y`, then a good `s`
         value should be found in the range ``(m-sqrt(2*m), m+sqrt(2*m))`` where
         ``m`` is the number of datapoints in `x`, `y`, and `w`.
+        Scaling `y` with fixed `w` and `s` changes the amount of smoothing;
+        see the :ref:`smoothing spline scaling tutorial
+        <tutorial-make-splrep-scaling>` for an example.
         Default is ``s = 0.0``, i.e. interpolation.
     t : array_like, optional
         The spline knots. If None (default), the knots will be constructed
@@ -1137,10 +1161,39 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """  # noqa:E501
+
+    Examples
+    --------
+    Create a noisy sine wave:
+
+    >>> from scipy.interpolate import make_splrep
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(42)
+    >>> x = np.linspace(0, 10, 200)
+    >>> sin = np.sin(x) * 5
+    >>> noise = 0.8 * rng.standard_normal(x.shape)
+    >>> y_noisy = sin + noise
+
+    Create an interpolating spline and a smoothing spline:
+
+    >>> spl = make_splrep(x, y_noisy, s=0)
+    >>> spl_smooth = make_splrep(x, y_noisy, s=15)
+
+    Plot both splines:
+
+    >>> plt.figure(figsize=(15, 6))
+    >>> plt.scatter(x, y_noisy, label='Noisy Data', color='orange')
+    >>> plt.plot(x, spl(x), label='Interpolating Spline', color='blue')
+    >>> plt.plot(x, spl_smooth(x), label='Smoothing Spline', color='red')
+    >>> plt.legend()
+    >>> plt.show()
+    """ #noqa:E501
     xp = array_namespace(x, y, w, t)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(x, y, w, t)
     if t is not None:
-        t = xp.asarray(t)
+        t = xp.asarray(t, device=device)
     bc_type = _validate_bc_type(bc_type)
 
     if s == 0:
@@ -1153,10 +1206,13 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     x, y, w, k, s, xb, xe = _validate_inputs(x, y, w, k, s, xb, xe,
                                              parametric=False, periodic=periodic)
 
-    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=xp)
+    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=xp,
+                            device=device)
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
+    # make periodic if needed
+    spl.extrapolate = "periodic" if periodic else True
     return spl
 
 
@@ -1191,9 +1247,11 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     ub, ue : float, optional
         The end-points of the parameters interval. Default to ``u[0]`` and ``u[-1]``.
     k : int, optional
-        Degree of the spline. Cubic splines, ``k=3``, are recommended.
-        Even values of `k` should be avoided especially with a small ``s`` value.
-        Default is ``k=3``
+         Degree of the spline. Must be >= 1, except when ``s=0``, in which
+         case ``k=0`` is also supported. Cubic splines, ``k=3``, are
+         recommended. Even values of `k` should be avoided especially with
+         a small ``s`` value.
+         Default is ``k=3``
     s : float, optional
         A smoothing condition.  The amount of smoothness is determined by
         satisfying the conditions::
@@ -1292,7 +1350,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """  # noqa:E501
+    """ #noqa:E501
 
     bc_type = _validate_bc_type(bc_type)
 
@@ -1301,8 +1359,12 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     # x can be either a 2D array or a list of 1D arrays
     if isinstance(x, list):
         xp = array_namespace(*x, w, u, t)
+        x_seq = x
     else:
         xp = array_namespace(x, w, u, t)
+        x_seq = (x,)
+    # the NumPy round-trip must return the result on the inputs' device
+    device = xp_result_device(*x_seq, w, u, t)
 
     x = xp.stack(x, axis=1)
 
@@ -1315,20 +1377,23 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
-        return make_interp_spline(u, x.T, k=k, axis=1), u
+        return make_interp_spline(u, x.T, k=k, bc_type=bc_type, axis=1), u
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue,
                                              parametric=True, periodic=periodic)
 
     if t is not None:
-        t = xp.asarray(t)
+        t = xp.asarray(t, device=device)
 
     spl = _make_splrep_impl(u, x, w, ub, ue, k, s, t,
-                            nest, periodic=periodic, xp=xp)
+                            nest, periodic=periodic, xp=xp, device=device)
 
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
     cc = spl.c.T
-    spl1 = BSpline(spl.t, cc, spl.k, axis=1)
+    spl1 = BSpline(
+        spl.t, cc, spl.k, axis=1,
+        extrapolate='periodic' if periodic else True
+    )
 
-    return spl1, xp.asarray(u)
+    return spl1, xp.asarray(u, device=device)

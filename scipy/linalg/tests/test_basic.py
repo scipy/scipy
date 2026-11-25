@@ -17,12 +17,14 @@ from pytest import raises as assert_raises
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, LinAlgWarning)
+                          matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
+                          cholesky, expm, sqrtm, bandwidth)
+from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._testutils import check_free_memory, IS_MUSL
+from scipy._lib._array_api import xp_assert_close
+from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
 from scipy.linalg.blas import HAS_ILP64
-from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -168,22 +170,35 @@ class TestSolveBanded:
         # Values of (l,u) are not compatible with ab.
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
 
-    def test_1x1(self):
+    _test_dtypes = [np.int64, np.float32, np.float64, np.complex64, np.complex128]
+    @pytest.mark.parametrize("dtype_ab", _test_dtypes)
+    @pytest.mark.parametrize("dtype_b", _test_dtypes)
+    def test_1x1(self, dtype_ab, dtype_b):
+        rng = np.random.default_rng(seed=12345)
+        res_dtype = np.result_type(dtype_ab, dtype_b, np.float32)
         # gh-8906 noted that the case of A@x = b with 1x1 A was handled
         # incorrectly; check that this is resolved. Typical case:
         # nupper == nlower == 0
-        # A = [[2]]
-        b = array([[1., 2., 3.]])
-        ref = array([[0.5, 1.0, 1.5]])
-        x = solve_banded((0, 0), [[2]], b)
-        assert_allclose(x, ref, rtol=1e-15)
+
+        ab = rng.normal(size=(1, 1))
+        if np.isdtype(dtype_ab, "complex floating"):
+            ab = ab + 1j * rng.normal(size=ab.shape)
+        ab = np.astype(ab, dtype_ab)
+
+        b = rng.normal(size=(1, 3))
+        if np.isdtype(dtype_b, "complex floating"):
+            b = b + 1j * rng.normal(size=b.shape)
+        b = np.astype(b, dtype_b)
+
+        x = solve_banded((0, 0), ab, b)
+        ref = np.astype(b / ab, res_dtype)
+        xp_assert_close(x, ref, atol=10 * np.finfo(res_dtype).eps)
 
         # However, the user *can* represent the same system with garbage rows
         # in `ab`. Test the case with `nupper == 1, nlower == 1`.
-        x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_allclose(x, ref, rtol=1e-15)
-        assert_equal(x.dtype, np.dtype('f8'))
-        assert_array_equal(b, [[1.0, 2.0, 3.0]])
+        ab_ext = np.array([[0], [ab[0, 0]], [0]], dtype=dtype_ab)
+        x = solve_banded((1, 1), ab_ext, b)
+        xp_assert_close(x, ref, atol=10 * np.finfo(res_dtype).eps)
 
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
@@ -821,7 +836,7 @@ class TestSolve:
     @pytest.mark.parametrize('b', [0, 1, [0, 1]])
     def test_singular_scalar(self, b):
         # regression test for gh-24355: scalar a=0 is singular
-        # thus should raise the same error 
+        # thus should raise the same error
 
         with pytest.raises(LinAlgError):
             a = np.zeros((1, 1))
@@ -1147,9 +1162,10 @@ class TestSolve:
     @pytest.mark.parametrize('b_order', ['C', 'F'])
     @pytest.mark.parametrize('b_ndim', [1, 2])    # XXX ndim > 2
     @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('assume_a', [None, "banded"]) # separate branches in C code
     def test_overwrite_args(
         self, overwrite_kw, overwrite_b_kw, a_dtype, a_order,
-        b_dtype, b_order, b_ndim, transposed
+        b_dtype, b_order, b_ndim, transposed, assume_a
     ):
         n = 3
         a = np.arange(1, n**2 + 1).reshape(n, n) + np.eye(n)
@@ -1164,7 +1180,8 @@ class TestSolve:
         b_ref = b.copy()
 
         # solve and check that the solution is correct for all parameters
-        x = solve(a, b, **overwrite_kw, **overwrite_b_kw, transposed=transposed)
+        x = solve(a, b, **overwrite_kw, **overwrite_b_kw,
+                transposed=transposed, assume_a=assume_a)
         a_or_aT = a_ref.T if transposed else a_ref
         assert_allclose(a_or_aT @ x, b_ref, atol=1e-14)
 
@@ -1177,8 +1194,9 @@ class TestSolve:
 
         assert np.shares_memory(x, b) == b_inplace
 
+        # for `assume_a="banded"`, the `overwrite_a` argument is ignored for now
         assert (b == b_ref).all() != b_inplace
-        assert (a == a_ref).all() != a_inplace
+        assert (a == a_ref).all() != a_inplace or assume_a == "banded"
 
     def test_posdef_not_posdef(self):
         # the `b` matrix is invertible but not positive definite
@@ -1261,6 +1279,42 @@ class TestSolve:
         A[-1, :] = 0
         with pytest.raises(LinAlgError):
             solve(A, b, assume_a="banded")
+
+    def test_sym_overwrite(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # the issue reported a segfault in `inv` due to a conspiracy between
+        # overwrite_a and try-except-Cholesky routine for a symmetric input;
+        # The same problem exists for solve---which we test for here.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+
+        soln = solve(a3, b3, overwrite_a=True)
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it complex symmetric
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_s = a3 + 1j*a3.T
+
+        soln = solve(a_s, b3, overwrite_a=True)
+        expected = np.asarray([[-1.5+1.5j,  1. -1.j , -0. +0.j ],
+                               [ 1. -1.j , -0.5+0.5j,  0. +0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  0.5-0.5j]])
+        assert_allclose(soln, expected, atol=1e-14)
+
+        # make it hermitian
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], dtype=float, order='F')
+        b3 = np.eye(3, dtype=float, order='F')
+        a_h = a3 + np.triu(a3)*1j - np.tril(a3)*1j
+
+        soln = solve(a_h, b3, overwrite_a=True)
+        expected = np.asarray([[-0.6-0.j ,  0.4+0.4j, -0. -0.j ],
+                               [ 0.4-0.4j, -0.2+0.j ,  0. -0.j ],
+                               [ 0. +0.j ,  0. +0.j ,  1. +0.j ]])
+        assert_allclose(soln, expected, atol=1e-14)
 
 
 class TestSolveTriangular:
@@ -1431,6 +1485,7 @@ class TestInv:
         assert (a == a0).all() != overwrite_a
         assert np.shares_memory(a, a_inv) == overwrite_a
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     @pytest.mark.parametrize(
         "dtyp", [np.float16, np.float32, np.longdouble, np.clongdouble]
     )
@@ -1515,7 +1570,7 @@ class TestInv:
         with assert_raises(LinAlgError):
             inv(np.ones((2, 2)))
 
-        # batched case: If all slices are singlar, raise
+        # batched case: If all slices are singular, raise
         with assert_raises(LinAlgError):
             inv(np.ones((3, 2, 2)))
 
@@ -1722,7 +1777,7 @@ class TestInv:
         y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
         assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
 
-        # repeat for the lower traingular matrix
+        # repeat for the lower triangular matrix
         y_inv_0_l = inv(np.tril(y))
         assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
 
@@ -1751,8 +1806,41 @@ class TestInv:
         with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
 
+    def test_sym_overwrite_a(self):
+        # regression test for https://github.com/scipy/scipy/issues/26045
+        # setting overwrite_a makes it work in-place; for symmetric inputs this
+        # conflicts with trying Cholesky first.
+        a3 = np.asarray([[1, 2, 0], [2, 3, 0], [0, 0, 1]], order='F')
+        a3inv = inv(a3)
+
+        expected = np.asarray([[-3.,  2., -0.],
+                               [ 2., -1.,  0.],
+                               [ 0.,  0.,  1.]])
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # the same bug triggers with a float `a` and an explicit overwrite_a=True
+        a3inv = inv(a3.astype(float), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
+        # for completeness, cover the complex input
+        a3inv = inv(a3.astype(complex), overwrite_a=True)
+        assert_allclose(a3inv, expected, atol=1e-14)
+
 
 class TestDet:
+    @pytest.mark.parametrize("value, expected", [(1e38, 1e76), (1e-30, 1e-60)])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex64])
+    def test_single_precision_range(self, value, expected, dtype):
+        # The determinant of single precision input is computed and returned in double
+        # precision, so it neither overflows nor underflows the single precision range.
+        # The entries are normal float32 numbers. Subnormal entries would test the
+        # LAPACK library rather than det, and ATLAS ?getrf gets them wrong.
+        a = np.diag(np.full(2, value, dtype=dtype))
+        for x in (a, np.stack([a, a])):
+            d = det(x)
+            assert np.asarray(d).dtype == np.result_type(dtype, np.float64)
+            assert_allclose(d, expected, rtol=1e-6)
+
     def test_1x1_all_singleton_dims(self):
         a = np.array([[1]])
         deta = det(a)
@@ -1835,12 +1923,14 @@ class TestDet:
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
                                      if x not in 'gG'])
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_sample_compatible_dtype_input(self, typ):
         rng = np.random.default_rng(1680305949878959)
         n = 4
         a = rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64 | np.complex128))
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
@@ -1912,8 +2002,32 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
+
+    @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+    @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+    @pytest.mark.skipif(HAS_ILP64, reason="the limit is that of 32-bit LAPACK integers")
+    @pytest.mark.slow
+    @pytest.mark.parametrize("lapack_driver, m, n, nrhs, dtype", [
+        ("gelsd", 1000, 1000, 2_147_400, np.float32),  # min(m, n)*nrhs
+        ("gelss", 1000, 1000, 2_147_484, np.float32),  # ldb*nrhs
+        ("gelsd", 46341, 74200, 1, np.float32),        # m*m, on the path for n >= 1.6*m
+        ("gelss", 46341, 74200, 1, np.float32),
+        ("gelsd", 2, 2, 55_000_000, np.complex64),     # 3*smlsiz*nrhs in rwork
+    ])
+    def test_lp64_workspace_overflow(self, lapack_driver, m, n, nrhs, dtype):
+        # gelsd and gelss evaluate their workspace in LAPACK integers; with 32-bit
+        # integers these sizes overflow, and the call must be refused rather than run
+        # with a workspace that is too small. The inputs have zero strides and nothing
+        # is computed; the solution is allocated but never touched.
+        itemsize = np.dtype(dtype).itemsize
+        check_free_memory(free_mb=max(m, n) * nrhs * itemsize // 2**20 + 1000)
+        a = np.broadcast_to(np.ones((), dtype=dtype), (m, n))
+        b = np.broadcast_to(np.ones((), dtype=dtype), (m, nrhs))
+        with pytest.raises(ValueError, match="ILP64"):
+            lstsq(a, b, lapack_driver=lapack_driver, check_finite=False)
 
     def test_simple_exact(self):
         for dtype in REAL_DTYPES:
@@ -2270,11 +2384,15 @@ class TestLstsq:
         x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
 
         assert rank == n
-        assert resid.ndim == 0   # it's numpy scalar, in fact
 
-        delta = b - a @ x
-        manual_residuals = np.sum(delta * delta.conj(), axis=0)
-        assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        if driver != "gelsy":
+            assert resid.ndim == 0   # it's numpy scalar, in fact
+
+            delta = b - a @ x
+            manual_residuals = np.sum(delta * delta.conj(), axis=0)
+            assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 2. b.shape == (n, nrhs)
         b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
@@ -2282,10 +2400,14 @@ class TestLstsq:
         x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
 
         assert rank2 == n
-        assert resid2.shape == (nrhs,)
-        delta2 = b2 - a @ x2
-        manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
-        assert_allclose(resid2, manual_residuals2, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid2.shape == (nrhs,)
+            delta2 = b2 - a @ x2
+            manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+            assert_allclose(resid2, manual_residuals2, atol=1e-14)
+        else:
+            assert resid.ndim == 1 and resid.size == 0
 
         # 3. b.shape == (n,), and a has batch shape (2,)
         a3 = np.stack((a, 2*a))
@@ -2294,8 +2416,12 @@ class TestLstsq:
 
         x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
         assert_equal(ranks3, np.asarray([n, n]))
-        assert resid3.shape == (n,)
-        assert_allclose(resid3, [resid]*n, atol=1e-14)
+
+        if driver != "gelsy":
+            assert resid3.shape == (n,)
+            assert_allclose(resid3, [resid]*n, atol=1e-14)
+        else:
+            assert resid3.shape == (2, 0)
 
         # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
         a4 = np.stack((a, 2*a))
@@ -2304,11 +2430,49 @@ class TestLstsq:
         x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
 
         assert_equal(rank4, np.asarray([n, n]))
-        assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
 
-        delta4 = b4 - a4 @ x4
-        manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
-        assert_allclose(resid4, manual_residual4, atol=1e-14)
+        if driver != "gelsy":
+            assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+            delta4 = b4 - a4 @ x4
+            manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+            assert_allclose(resid4, manual_residual4, atol=1e-14)
+        else:
+            assert resid4.shape == (2, 0)
+
+    @pytest.mark.parametrize("driver", ["gelsd", "gelss", "gelsy"])
+    @pytest.mark.parametrize("shape_a", [(3, 2), (4, 3, 2)])
+    @pytest.mark.parametrize("shape_b", [(3,), (3, 1), (3, 5)])
+    def test_rank_deficient_residuals(self, driver, shape_a, shape_b):
+        rng = np.random.default_rng(seed=42)
+
+        # Insert one rank-deficient slice to check if `NaN` is returned
+        if len(shape_a) == 2:
+            a = np.zeros(shape_a)
+        else:
+            a = np.zeros(shape_a)
+            a[1:, :, 0] = 1
+            a[1:, :, 1:] = rng.normal(size=(shape_a[0]-1, shape_a[1], shape_a[-1]-1))
+
+        b = rng.normal(size=shape_b)
+
+        x, res, rank, _ = lstsq(a, b, lapack_driver=driver)
+
+        # Validate that the residuals are correct for full-rank slices and that `NaN` is
+        # inserted otherwise.
+        if driver != "gelsy":
+            if b.ndim == 1:
+                b = b[:, None]
+                x = x[..., None]
+                res = res[..., None]
+            res_ref = a @ x - b
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+
+            mask = rank == shape_a[-1]
+            assert_allclose(res[mask], res_ref[mask])
+            assert np.all(np.isnan(res[~mask]))
+        else:
+            assert res.shape == (a.shape[:-2] + (0,))
+
 
     def test_errors(self):
         a = np.ones((3, 4))
@@ -2322,6 +2486,70 @@ class TestLstsq:
 
         with pytest.raises(ValueError, match="Input array"):
             lstsq(np.ones(3), np.ones(3))
+
+    @parametrize_overwrite_arg
+    @parametrize_overwrite_b_arg
+    @pytest.mark.parametrize("driver", ["gelss", "gelsd", "gelsy"])
+    @pytest.mark.parametrize("dtype", [int, float])
+    @pytest.mark.parametrize("shape", [(2, 4, 3), (4, 3), (3, 4)])
+    @pytest.mark.parametrize("nrhs", [1, 5])
+    @pytest.mark.parametrize("order", ["C", "F"])
+    def test_overwrite(
+        self, overwrite_kw, overwrite_b_kw, driver, dtype, shape, nrhs, order
+    ):
+        rng = np.random.default_rng(seed=123456)
+        if dtype is not int:
+            a = np.asarray(rng.normal(size=shape), order=order)
+            b = np.asarray(rng.normal(size=(*shape[:-1], nrhs)), order=order)
+        else: # avoid issues with singularity
+            a = np.asarray(rng.integers(1000, size=shape), order=order)
+            b = np.asarray(rng.integers(1000, size=(*shape[:-1], nrhs)), order=order)
+
+        a_ref = np.copy(a)
+        b_ref = np.copy(b)
+
+        x, res, rank, S = lstsq(
+            a, b, **overwrite_kw, **overwrite_b_kw, lapack_driver=driver
+        )
+
+        # validate solution and residuals
+        a_T = a_ref.swapaxes(-2, -1)
+        if shape[-2] >= shape[-1]:
+            x_ref = solve(a_T @ a_ref, a_T @ b_ref)
+        else:
+            x_ref = a_T @ solve(a_ref @ a_T, b_ref)
+
+        assert_allclose(x_ref, x, atol=1e-12)
+
+        if driver != "gelsy" and shape[-2] >= shape[-1]:
+            res_ref = a_ref @ x - b_ref
+            res_ref = np.sum(res_ref * res_ref.conj(), axis=-2)
+            assert_allclose(res_ref, res, atol=1e-12)
+        else:
+            assert_allclose(np.zeros(shape[:-2] + (0,), x.dtype), res)
+
+        overwrite_a = overwrite_kw.get("overwrite_a", False)
+        overwrite_a = (
+            overwrite_a and
+            (dtype is not int) and
+            a.flags["F_CONTIGUOUS"] and
+            a.ndim <= 2
+        )
+
+        # Classical conditions: F_contiguity + should not be overwritten internally.
+        # Complemented by the fact that LAPACK requires a `b` of at least `max(m, n)`,
+        # hence if this is not the case `b` can not be used directly.
+        overwrite_b = overwrite_b_kw.get("overwrite_b", False)
+        overwrite_b = (
+            overwrite_b and
+            (dtype is not int) and
+            b.flags["F_CONTIGUOUS"] and
+            shape[0] >= shape[1]
+        )
+
+        assert np.all(a_ref == a) != overwrite_a
+        assert np.all(b_ref == b) != overwrite_b
+        assert np.shares_memory(x, b) == overwrite_b
 
 
 class TestPinv:
@@ -2434,6 +2662,9 @@ class TestPinvSymmetric:
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+        aa = np.stack([a, 2*a])
+        assert_equal(pinv(aa), np.stack([pinv(aa[0]), pinv(aa[1])]))
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -2476,6 +2707,26 @@ class TestPinvSymmetric:
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
 
+    def test_rank(self):
+        a = np.diag([0, 1, 2])
+        a_p, rank = pinvh(a, return_rank=True)
+        assert rank == 2
+        assert_allclose(
+            a_p,
+            np.asarray([[0. , 0. , 0. ],
+                        [0. , 1. , 0. ],
+                        [0. , 0. , 0.5]]),
+            atol=1e-15
+        )
+
+        aa = np.stack([a, 2*a, np.diag([1, 2, 3])])
+        _, rank = pinvh(aa, return_rank=True)
+        assert_equal(rank, np.asarray([2, 2, 3]))
+
+        aaa = np.stack([aa, aa])
+        _, rank = pinvh(aaa, return_rank=True)
+        assert_equal(rank, np.asarray([[2, 2, 3], [2, 2, 3]]))
+
     @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
         a = np.empty((0, 0), dtype=dt)
@@ -2495,6 +2746,7 @@ def test_auto_rcond(scale, pinv_):
 
 class TestVectorNorms:
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_types(self):
         for dtype in np.typecodes['AllFloat']:
             x = np.array([1, 2, 3], dtype=dtype)
@@ -2742,9 +2994,9 @@ class TestSolveCirculant:
 
 
 class TestMatrix_Balance:
-    @skip_xp_invalid_arg
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_string_arg(self):
-        assert_raises(ValueError, matrix_balance, 'Some string for fail')
+        assert_raises(TypeError, matrix_balance, 'Some string for fail')
 
     def test_infnan_arg(self):
         assert_raises(ValueError, matrix_balance,
@@ -2828,6 +3080,7 @@ class TestMatrix_Balance:
         assert perm.dtype == perm_n.dtype
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDTypes:
     """Check backwards compatibility for dtypes vs scipy 1.16."""
 
@@ -2835,6 +3088,8 @@ class TestDTypes:
         # return a valid 2D array for the typecode
         if tcode == 'M':
             return np.eye(2, dtype='datetime64[ms]')
+        elif tcode == 'm':
+            return np.eye(2, dtype='timedelta64[ms]')
         elif tcode == 'V':
             return np.asarray([[b'a', b'b'], [b'c', b'd']], dtype='V')
         else:
@@ -2844,6 +3099,8 @@ class TestDTypes:
         # return a valid 1D array for the typecode
         if tcode == 'M':
             return np.ones(2, dtype='datetime64[ms]')
+        elif tcode =='m':
+            return np.ones(2, dtype='timedelta64[ms]')
         elif tcode == 'V':
             return np.asarray([b'a', b'b'], dtype='V')
         else:
@@ -2865,7 +3122,7 @@ class TestDTypes:
     def test_det(self, tcode):
         a = self.get_arr2D(tcode)
 
-        is_arm = platform.machine() == 'arm64'
+        is_arm = platform.machine().startswith('arm')   # gh-24831
         is_windows = os.name == 'nt'
 
         failing_tcodes = 'SUVOmM'
@@ -2902,3 +3159,345 @@ class TestDTypes:
                 solve(a, b)
         else:
             solve(a, b)
+
+
+class TestFieldViewStrides:
+    # A complex128 field of an aligned structured array has a 24-byte element stride,
+    # which is not a multiple of the 16-byte itemsize. Results must match the same
+    # values in a contiguous array exactly.
+
+    def field_view(self, values):
+        dt = np.dtype([("z", np.complex128), ("pad", np.float64)], align=True)
+        rec = np.zeros(values.shape, dtype=dt)
+        rec["z"] = values
+        view = rec["z"]
+        assert view.strides[-1] == 24
+        return view
+
+    def matrices(self, n=5):
+        rng = np.random.default_rng(1234)
+        a = rng.standard_normal((3, n, n)) + 1j*rng.standard_normal((3, n, n))
+        return a + 4*np.eye(n)
+
+    @pytest.mark.parametrize("func", [inv, det])
+    def test_inv_det(self, func):
+        a = self.matrices()
+        assert_equal(func(self.field_view(a)), func(a))
+
+    def test_lu(self):
+        a = self.matrices()
+        for x, y in zip(lu(self.field_view(a)), lu(a)):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("assume_a", [None, "general", "banded", "pos"])
+    def test_solve(self, assume_a):
+        a = self.matrices()
+        if assume_a == "pos":
+            a = a @ a.conj().swapaxes(-1, -2)
+        b = self.matrices()[..., :2]
+        assert_equal(solve(self.field_view(a), self.field_view(b), assume_a=assume_a),
+                     solve(a, b, assume_a=assume_a))
+
+    @pytest.mark.parametrize("lapack_driver", ["gelsd", "gelsy", "gelss"])
+    def test_lstsq(self, lapack_driver):
+        a = self.matrices()[..., :3]
+        b = self.matrices()[..., :2]
+        res = lstsq(self.field_view(a), self.field_view(b), lapack_driver=lapack_driver)
+        ref = lstsq(a, b, lapack_driver=lapack_driver)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    def test_most_negative_stride(self):
+        # NumPy accepts any stride for a dimension of length 1, the most negative
+        # npy_intp included.
+        imin = np.iinfo(np.intp).min
+        as_strided = np.lib.stride_tricks.as_strided
+        col = as_strided(np.array([[3.0], [4.0]]), (2, 1), strides=(8, imin))
+        one = as_strided(np.array([[5.0]]), (1, 1), strides=(imin, imin))
+        assert_equal(qr(col), qr(np.ascontiguousarray(col)))
+        assert_equal(inv(one), inv(np.ascontiguousarray(one)))
+        # The same strides through solve(..., assume_a="banded"). Before solving, each
+        # matrix is copied into LAPACK's banded storage, reading element (r, c) at
+        # byte offset r * s0 + c * s1. The copy must not add the row and column
+        # strides together since two most negative strides overflow when added, which
+        # is undefined behaviour in C++. We use a stack of two 1x1 matrices, because a
+        # single 1x1 matrix is solved in Python and never reaches that copy. This check
+        # confirms the result; it cannot catch the overflow itself, which only a build
+        # with -fsanitize=undefined reports.
+        batch = as_strided(np.array([5.0, 6.0]), (2, 1, 1), strides=(8, imin, imin))
+        b = np.ones((2, 1, 1))
+        assert_equal(solve(batch, b, assume_a="banded"),
+                     solve(np.ascontiguousarray(batch), b, assume_a="banded"))
+
+
+class TestNonNativeInput:
+    # Byte-swapped and misaligned arrays are copied into aligned arrays in native byte
+    # order before they reach the compiled code, so the results must match those of
+    # the native arrays exactly.
+
+    def byteswapped(self, x):
+        y = x.astype(x.dtype.newbyteorder())
+        assert not y.dtype.isnative
+        return y
+
+    def misaligned(self, x):
+        # a copy of x in a byte buffer, starting one byte in so that it is not aligned
+        buf = np.zeros(x.nbytes + 1, dtype=np.uint8)
+        y = np.frombuffer(buf.data, dtype=x.dtype, count=x.size, offset=1)
+        y = y.reshape(x.shape)
+        y[...] = x
+        assert not y.flags.aligned
+        return y
+
+    def inputs(self, dtype):
+        rng = np.random.default_rng(1234)
+        xy = rng.standard_normal((2, 2, 4, 4)) / 2
+        r = rng.standard_normal((2, 4, 3))
+        if np.issubdtype(dtype, np.complexfloating):
+            xy = xy + 1j*rng.standard_normal((2, 2, 4, 4)) / 2
+            r = r + 1j*rng.standard_normal((2, 4, 3))
+        x, y = xy
+        # a and b Hermitian positive definite, r right-hand sides, t upper
+        # triangular with a -0.0 below the diagonal, which counts as zero
+        a = x @ x.conj().swapaxes(-1, -2) + np.eye(4)
+        b = y @ y.conj().swapaxes(-1, -2) + np.eye(4)
+        t = np.triu(a)
+        t[..., 3, 0] = -0.0
+        return {k: v.astype(dtype) for k, v in dict(a=a, b=b, r=r, t=t).items()}
+
+    funcs = {
+        "solve": lambda a, b, r, t: solve(a, r),
+        "inv": lambda a, b, r, t: inv(a),
+        "det": lambda a, b, r, t: det(a),
+        "lstsq": lambda a, b, r, t: lstsq(a, r),
+        "lu": lambda a, b, r, t: lu(a),
+        "qr": lambda a, b, r, t: qr(a),
+        "svd": lambda a, b, r, t: svd(a),
+        "eig": lambda a, b, r, t: eig(a),
+        "eig_generalized": lambda a, b, r, t: eig(a, b),
+        "eigh": lambda a, b, r, t: eigh(a),
+        "eigh_generalized": lambda a, b, r, t: eigh(a, b),
+        "cholesky": lambda a, b, r, t: cholesky(a),
+        "expm": lambda a, b, r, t: expm(a),
+        "sqrtm": lambda a, b, r, t: sqrtm(a),
+        "bandwidth": lambda a, b, r, t: bandwidth(t),
+    }
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_matches_native(self, func, dtype, kind):
+        native = self.inputs(dtype)
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        converted = {k: convert(v) for k, v in native.items()}
+        res = self.funcs[func](**converted)
+        ref = self.funcs[func](**native)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        assert len(res) == len(ref)
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("kind", ["byteswapped", "misaligned"])
+    def test_compiled_entry_points_refuse(self, kind):
+        # The compiled functions refuse such arrays instead of misreading them.
+        convert = {"byteswapped": self.byteswapped, "misaligned": self.misaligned}[kind]
+        a = convert(np.eye(3))
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._det(a, False)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._bandwidth(a)
+        # the right-hand side too
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._solve(np.eye(3), a)
+        with pytest.raises(TypeError, match="native byte order"):
+            _batched_linalg._lstsq(np.eye(3), a, 0.0, "gelsd")
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.matrix_exponential(a)
+        with pytest.raises(_internal_matfuncs.error, match="native byte order"):
+            _internal_matfuncs.recursive_schur_sqrtm(a)
+
+    def test_compiled_entry_points_refuse_mixed_dtypes(self):
+        # The Python layer gives a and b a common dtype; the compiled code checks it.
+        a, b = np.eye(3), np.eye(3, dtype=np.float32)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._solve(a, b)
+        with pytest.raises(ValueError, match="same dtype"):
+            _batched_linalg._lstsq(a, b, 0.0, "gelsd")
+        # the generalized eig and eigh (driver gv)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eig(a, False, False, False, False, b)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eigh(a, False, True, 0, True, 0.0, 0.0, 0, 0, 10,
+                                  b, False, 1)
+
+    def test_compiled_entry_points_refuse_row_mismatch(self):
+        # The Python layer checks that b has as many rows as a; the compiled code
+        # checks it too, instead of reading past the end of b.
+        b = np.ones((2, 1))
+        with pytest.raises(ValueError, match="shape mismatch"):
+            _batched_linalg._solve(np.eye(3), b)
+        with pytest.raises(ValueError, match="shape mismatch"):
+            _batched_linalg._lstsq(np.ones((3, 2)), b, 0.0, "gelsd")
+        # the generalized eig and eigh (driver gv) need b of the shape of a
+        b = np.eye(2)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eig(np.eye(3), False, False, False, False, b)
+        with pytest.raises(ValueError, match="same shape and dtype"):
+            _batched_linalg._eigh(np.eye(3), False, True, 0, True, 0.0, 0.0, 0, 0, 10,
+                                  b, False, 1)
+
+
+class TestReadOnlyOverwrite:
+    # overwrite_a and overwrite_b let a function reuse an input array, but never a
+    # read-only one: writing into a read-only memory map raises SIGSEGV. Where a
+    # function returns its result in a reused input, the result is as writeable as
+    # that input. Either way the result must be the one computed without overwriting.
+
+    def inputs(self):
+        rng = np.random.default_rng(1234)
+        x, y = rng.standard_normal((2, 4, 4))
+        a = x @ x.T + np.eye(4)   # symmetric positive definite
+        b = y @ y.T + np.eye(4)
+        r = rng.standard_normal((4, 3))
+        return {k: np.asfortranarray(v) for k, v in dict(a=a, b=b, r=r).items()}
+
+    funcs = {
+        "inv": lambda a, b, r, ow: inv(a, overwrite_a=ow),
+        "det": lambda a, b, r, ow: det(a, overwrite_a=ow),
+        "lu": lambda a, b, r, ow: lu(a, overwrite_a=ow),
+        "qr": lambda a, b, r, ow: qr(a, overwrite_a=ow),
+        "qr_r": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="r"),
+        "qr_economic": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="economic"),
+        "qr_raw": lambda a, b, r, ow: qr(a, overwrite_a=ow, mode="raw"),
+        "svd": lambda a, b, r, ow: svd(a, overwrite_a=ow),
+        "cholesky": lambda a, b, r, ow: cholesky(a, overwrite_a=ow),
+        "eig": lambda a, b, r, ow: eig(a, overwrite_a=ow),
+        "eig_generalized": lambda a, b, r, ow: eig(a, b, overwrite_a=ow,
+                                                   overwrite_b=ow),
+        "eigh": lambda a, b, r, ow: eigh(a, overwrite_a=ow),
+        "eigh_generalized": lambda a, b, r, ow: eigh(a, b, overwrite_a=ow,
+                                                     overwrite_b=ow),
+        "solve": lambda a, b, r, ow: solve(a, r, overwrite_a=ow, overwrite_b=ow),
+        "lstsq": lambda a, b, r, ow: lstsq(a, r, overwrite_a=ow, overwrite_b=ow),
+    }
+
+    @pytest.mark.parametrize("kind", ["flag", "memmap"])
+    @pytest.mark.parametrize("func", list(funcs))
+    def test_read_only_input_kept(self, func, kind, tmp_path):
+        native = self.inputs()
+        if kind == "flag":
+            read_only = {k: v.copy(order="F") for k, v in native.items()}
+            for v in read_only.values():
+                v.setflags(write=False)
+        else:
+            read_only = {}
+            for k, v in native.items():
+                np.save(tmp_path / f"{k}.npy", v)
+                read_only[k] = np.load(tmp_path / f"{k}.npy", mmap_mode="r")
+        assert all(v.flags.f_contiguous and not v.flags.writeable
+                   for v in read_only.values())
+        res = self.funcs[func](**read_only, ow=True)
+        for k, v in native.items():
+            assert_equal(read_only[k], v)
+        ref = self.funcs[func](**native, ow=False)
+        res, ref = (res, ref) if isinstance(ref, tuple) else ((res,), (ref,))
+        for x, y in zip(res, ref):
+            assert_equal(x, y)
+
+    @pytest.mark.parametrize("b_ndim", [1, 2])
+    @pytest.mark.parametrize("func", ["solve", "lstsq"])
+    def test_solution_in_b_is_writeable(self, func, b_ndim):
+        # With overwrite_b=True, solve and lstsq may write the solution into b itself
+        # and return a view of b. The caller's b is writeable, so the solution they
+        # get back must be writeable too.
+        f = {"solve": solve, "lstsq": lambda a, b, **kw: lstsq(a, b, **kw)[0]}[func]
+        native = self.inputs()
+        a, r = native["a"], native["r"]
+        if b_ndim == 1:
+            r = r[:, 0].copy()
+        ref = f(a, r)
+        b = r.copy(order="F")
+        x = f(a, b, overwrite_b=True)
+        assert np.shares_memory(x, b)   # the solution was computed in place
+        assert x.flags.writeable
+        assert_equal(x, ref)
+
+    # the compiled functions, called with every overwrite flag set
+    compiled = {
+        "inv": lambda a, b, r: _batched_linalg._inv(a, 0, True, False),
+        "det": lambda a, b, r: _batched_linalg._det(a, True),
+        "lu": lambda a, b, r: _batched_linalg._lu(a, False, True),
+        "qr": lambda a, b, r: _batched_linalg._qr(a, True, 1, False),
+        "svd": lambda a, b, r: _batched_linalg._svd(a, "gesdd", True, True, True),
+        "cholesky": lambda a, b, r: _batched_linalg._cholesky(a, True, True, True),
+        "eig": lambda a, b, r: _batched_linalg._eig(a, False, True, True, True, b),
+        "eigh": lambda a, b, r: _batched_linalg._eigh(
+            a, True, False, 0, True, 0.0, 0.0, 0, 0, 10, b, True, 1),
+        "solve": lambda a, b, r: _batched_linalg._solve(
+            a, r, 0, False, False, True, True),
+        "lstsq": lambda a, b, r: _batched_linalg._lstsq(
+            a, r, 1e-12, "gelsd", True, True),
+    }
+    # cholesky and det can also work in place on a C-ordered array
+    not_in_place = [(func, kind) for func in compiled
+                    for kind in ("read_only", "c_order", "batched")
+                    if not (kind == "c_order" and func in ("cholesky", "det"))]
+
+    @pytest.mark.parametrize("func, kind", not_in_place)
+    def test_compiled_entry_points_keep_input(self, func, kind):
+        # The Python layer sets an overwrite flag only for a writeable, 2-D,
+        # F-contiguous array. The compiled code checks this itself and works on a
+        # copy otherwise, so the input comes back unchanged.
+        native = self.inputs()
+        if kind == "read_only":
+            arrs = {k: v.copy(order="F") for k, v in native.items()}
+            for v in arrs.values():
+                v.setflags(write=False)
+        elif kind == "c_order":
+            arrs = {k: np.ascontiguousarray(v) for k, v in native.items()}
+            assert not any(v.flags.f_contiguous for v in arrs.values())
+        else:
+            arrs = {k: np.stack([v, v]) for k, v in native.items()}
+        kept = {k: v.copy() for k, v in arrs.items()}
+        self.compiled[func](**arrs)
+        for k, v in arrs.items():
+            assert_equal(v, kept[k])
+
+    def test_compiled_lstsq_keeps_b_shorter_than_x(self):
+        # x has max(m, n) rows. With m < n it does not fit in b, so the compiled code
+        # returns it in a new array even when asked to overwrite b.
+        # TestLstsq::test_overwrite cannot see this: lstsq itself drops overwrite_b
+        # for m < n, so only a direct call reaches the check in the compiled code.
+        a = np.asfortranarray(np.arange(1., 11.).reshape(2, 5))
+        b = np.ones((2, 1), order="F")
+        x, rank, _, err_lst = _batched_linalg._lstsq(a, b, 1e-12, "gelsd", False, True)
+        assert x.shape == (5, 1)
+        assert not np.shares_memory(x, b)
+        assert_equal(b, np.ones((2, 1)))
+        assert rank == 2 and not err_lst
+        assert_allclose(a @ x, b, atol=1e-13)
+
+
+@pytest.mark.skipif(np.intp(0).itemsize < 8, reason="needs 64-bit array sizes")
+@pytest.mark.parametrize("func", ["inv", "det", "cholesky", "lu", "qr", "svd", "eig",
+                                  "eigh", "solve", "lstsq"])
+def test_output_allocation_error_from_numpy(func):
+    # The 2**55 x 2 x 2 output cannot be allocated; NumPy's MemoryError, which states
+    # the requested size, reaches the caller unchanged.
+    a = np.broadcast_to(np.eye(2), (2**55, 2, 2))
+    b = np.broadcast_to(np.ones((2, 1)), (2**55, 2, 1))
+    calls = {
+        "inv": lambda: inv(a, check_finite=False),
+        "det": lambda: det(a, check_finite=False),
+        "cholesky": lambda: cholesky(a, check_finite=False),
+        "lu": lambda: lu(a, check_finite=False),
+        "qr": lambda: qr(a, check_finite=False),
+        "svd": lambda: svd(a, check_finite=False),
+        "eig": lambda: eig(a, check_finite=False),
+        "eigh": lambda: eigh(a, check_finite=False),
+        "solve": lambda: solve(a, b, check_finite=False),
+        "lstsq": lambda: lstsq(a, b, check_finite=False),
+    }
+    with pytest.raises(MemoryError, match="Unable to allocate"):
+        calls[func]()

@@ -10,6 +10,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,xm,fm,fa,fb;
     solver_stats->error_num = INPROGRESS;
+    solver_stats->iterations = 0;
 
     fa = (*f)(xa, func_data_param);
     fb = (*f)(xb, func_data_param);
@@ -27,7 +28,6 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         return 0.;
     }
     dm = xb - xa;
-    solver_stats->iterations = 0;
     for (i=0; i<iter; i++) {
         solver_stats->iterations++;
         dm *= .5;

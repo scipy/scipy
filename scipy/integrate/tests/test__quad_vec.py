@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 
 from scipy.integrate import quad_vec
 from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._testutils import IS_WASM
 
 from multiprocessing.dummy import Pool
 
@@ -112,6 +113,7 @@ class TestQuadVec:
         res, err = quad_vec(f, 0, 1, args=(a,))
         assert_allclose(res, exact, rtol=0, atol=1e-4)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     @pytest.mark.fail_slow(10)
     def test_quad_vec_pool(self):
         f = _lorenzian
@@ -125,6 +127,7 @@ class TestQuadVec:
                               workers=pool.map)
             assert_allclose(res, np.pi, rtol=0, atol=1e-4)
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('extra_args', [2, (2,)])
     @pytest.mark.parametrize(

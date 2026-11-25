@@ -71,6 +71,7 @@ SciPy:
 
 - https://llvm.org/docs/AIToolPolicy.html
 - https://blog.scientific-python.org/scientific-python/community-considerations-around-ai/
+- https://github.com/melissawm/open-source-ai-contribution-policies
 
 Acknowledgements
 ----------------

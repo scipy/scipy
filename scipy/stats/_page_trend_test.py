@@ -7,7 +7,7 @@ import numpy as np
 
 from ._continuous_distns import norm
 from scipy._lib._array_api import xp_capabilities
-import scipy.stats
+from ._stats_py import rankdata
 
 
 @dataclass
@@ -165,7 +165,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     The *p*-values are not adjusted for the possibility of ties. When
     ties are present, the reported  ``'exact'`` *p*-values may be somewhat
     larger (i.e. more conservative) than the true *p*-value [2]_. The
-    ``'asymptotic'``` *p*-values, however, tend to be smaller (i.e. less
+    ``'asymptotic'`` *p*-values, however, tend to be smaller (i.e. less
     conservative) than the ``'exact'`` *p*-values.
 
     References
@@ -341,7 +341,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
             raise ValueError("`data` is not properly ranked. Rank the data or "
                              "pass `ranked=False`.")
     else:
-        ranks = scipy.stats.rankdata(data, axis=-1)
+        ranks = rankdata(data, axis=-1)
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:

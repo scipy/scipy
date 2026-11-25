@@ -140,7 +140,7 @@ def shortest_path(csgraph, method='auto',
 
     See Also
     --------
-    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaninful example.
+    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaningful example.
                                   It also reconstructs the shortest path by using predecessors matrix returned
                                   by this function.
 
@@ -748,7 +748,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
         unsigned int j_current
         DTYPE_t next_val
 
-    # v is a dist_index_pair_t poped from the queue
+    # v is a dist_index_pair_t popped from the queue
     # v.first: the distance of the vertex
     # v.second: index of the vertex
     for j in range(csr_indptr[v.second], csr_indptr[v.second + 1]):
@@ -758,7 +758,7 @@ cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
             if dist_matrix[j_current] > next_val:
                 dist_matrix[j_current] = next_val
                 # The same vertex may be pushed multiple times to the queue, but
-                # anything with suboptimal distance is ignored when poped
+                # anything with suboptimal distance is ignored when popped
                 heap.push(dist_index_pair_t(-next_val, j_current))
                 if return_pred:
                     pred[j_current] = v.second
@@ -1033,7 +1033,7 @@ cdef int _bellman_ford_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, j_source, count
+        unsigned int i, j, j_source, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
@@ -1042,7 +1042,7 @@ cdef int _bellman_ford_directed(
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count in range(N - 1):
+        for _count in range(N - 1):
             for j in range(N):
                 d1 = dist_matrix[i, j]
                 for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1075,7 +1075,7 @@ cdef int _bellman_ford_undirected(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, j, j_source, ind_k, count
+        unsigned int i, j, j_source, ind_k, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
         int return_pred = (pred.size > 0)
@@ -1084,7 +1084,7 @@ cdef int _bellman_ford_undirected(
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count in range(N - 1):
+        for _count in range(N - 1):
             for j in range(N):
                 d1 = dist_matrix[i, j]
                 for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1328,12 +1328,12 @@ cdef int _johnson_directed(
     # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, count
+        unsigned int j, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count in range(N):
+    for _count in range(N):
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1362,12 +1362,12 @@ cdef int _johnson_undirected(
     # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, ind_k, count
+        unsigned int j, ind_k, _count
         ITYPE_t k
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count in range(N):
+    for _count in range(N):
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1465,7 +1465,7 @@ def yen(
     by Jin Y. Yen in 1971 and employs any shortest path algorithm to find the best path,
     then proceeds to find ``K - 1`` deviations of the best path.
 
-    The algorithm is based on Dijsktra's algorithm for finding each shortest path.
+    The algorithm is based on Dijkstra's algorithm for finding each shortest path.
     In case there are negative edges in the graph, Johnson's algorithm is applied.
 
     If multiple valid solutions are possible, output may vary with SciPy and

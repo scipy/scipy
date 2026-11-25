@@ -8,14 +8,6 @@ categories:
     `test_from_window` function).
 3. Test algorithmic properties of STFT/ISTFT. Some tests were ported from
    ``test_spectral.py``.
-
-Notes
------
-* Mypy 0.990 does interpret the line::
-
-        from scipy.stats import norm as normal_distribution
-
-  incorrectly (but the code works), hence a ``type: ignore`` was appended.
 """
 import math
 from itertools import product
@@ -24,9 +16,9 @@ from typing import cast, get_args, Literal
 
 import numpy as np
 import pytest
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy.fft import fftshift
-from scipy.stats import norm as normal_distribution  # type: ignore
+from scipy.stats import norm as normal_distribution
 from scipy.signal import check_COLA, get_window, welch, stft, istft, spectrogram
 
 from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
@@ -518,6 +510,32 @@ def test_x_slices_padding():
         xp_assert_equal(yy, xx, err_msg=f"Failed '{p_}' padding.")
 
 
+def test_padding_short_slices():
+    """Verify case of the padding being longer than the signal slice. """
+    SFT = ShortTimeFFT(np.ones(4), hop=1, fs=1, phase_shift=None)
+    x = np.arange(4)
+    Sx_full = SFT.stft(x, padding='even')
+    Sx0, Sx1 = SFT.stft(x, -1, 0, padding='even'), SFT.stft(x, 5, 6, padding='even')
+    xp_assert_equal(Sx0, Sx_full[:,  :1], err_msg="Invalid STFT slice for p0=-1, p1=0")
+    xp_assert_equal(Sx1, Sx_full[:, -1:], err_msg="Invalid STFT slice for p0=5, p1=6")
+
+
+@pytest.mark.parametrize('padding', get_args(PAD_TYPE))
+@pytest.mark.parametrize('n, m_num, hop', [(3, 4, 1), (8, 4, 2)])
+def test_stft_partial_slices(padding, n, m_num, hop):
+    """Every slice ``stft(x, p0, p1)`` must equal the matching columns of the
+    full STFT, i.e., cropping x before padding must not change the result. """
+    x = np.arange(n)
+    SFT = ShortTimeFFT(np.ones(m_num), hop=hop, fs=1, phase_shift=None)
+    Sx_full = SFT.stft(x, padding=padding)
+    p_min, p_max = SFT.p_min, SFT.p_max(n)
+    for p0 in range(SFT.p_min, p_max):
+        for p1 in range(p0 + 1, p_max + 1):
+            Sx = SFT.stft(x, p0, p1, padding=padding)
+            Sx_ref = Sx_full[:, p0 - p_min:p1 - p_min]
+            xp_assert_close(Sx, Sx_ref, err_msg=f"{p0=}, {p1=}")
+
+
 def test_invertible():
     """Verify `invertible` property. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
@@ -656,7 +674,7 @@ def test_fft_func_roundtrip(n: int):
                         f"{f_typ=}, {mfft=}, {scaling=}, {phase_shift=}")
 
     SFT = ShortTimeFFT(w, h_n, fs=1)
-    SFT._fft_mode = 'invalid_fft'  # type: ignore
+    SFT._fft_mode = 'invalid_fft'
     with pytest.raises(RuntimeError):
         SFT._fft_func(x0)
     with pytest.raises(RuntimeError):
@@ -801,8 +819,8 @@ def test_tutorial_stft_legacy_stft():
 
     xp_assert_close(Sz0, Sz1[:, 2:-1])
 
-    xp_assert_close((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
-                    (6.925060911593139e-07, 8.00271269218721e-07))
+    xp_assert_close(abs(Sz1[:, 1]).min(), 6.925060911593139e-07)
+    xp_assert_close(abs(Sz1[:, 1]).max(), 8.00271269218721e-07)
 
     t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap, input_onesided=False,
                        scaling='spectrum')

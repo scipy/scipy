@@ -69,7 +69,7 @@ RECTYPE_DICT = {0: "START_MARKER",
                 20: "DESCRIPTION"}
 
 # Define a dictionary to contain structure definitions
-STRUCT_DICT = {}
+STRUCT_DICT: dict[str, dict] = {}
 
 
 def _align_32(f):

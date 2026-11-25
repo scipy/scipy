@@ -180,8 +180,10 @@ class FortranFile:
 
         Returns
         -------
-        data : ndarray
-            A 1-D array object.
+        data : ndarray or tuple of ndrray
+            An array when one dtype is supplied, or a tuple containing one array
+            per dtype when multiple dtypes are supplied. The shape of each array
+            follows the supplied dtype.
 
         Raises
         ------

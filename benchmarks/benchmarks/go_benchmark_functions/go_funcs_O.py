@@ -21,7 +21,7 @@ class OddSquare(Benchmark):
     .. math::
 
         \begin{cases}
-        d = n \cdot \smash{\displaystyle\max_{1 \leq i \leq n}} 
+        d = n \cdot \smash{\displaystyle\max_{1 \leq i \leq n}}
             \left[ (x_i - b_i)^2 \right ] \\
         h = \sum_{i=1}^{n} (x_i - b_i)^2
         \end{cases}

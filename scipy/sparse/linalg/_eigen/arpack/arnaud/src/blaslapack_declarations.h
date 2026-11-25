@@ -3,119 +3,145 @@
 
 #include "arnaud/types.h"
 
-// BLAS
-void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);
-void scopy_(int* n, float* x, int* incx, float* y, int* incy);
-float sdot_(int* n, float* x, int* incx, float* y, int* incy);
-void sgemv_(char* trans, int* m, int* n, float* alpha, float* a, int* lda, float* x, int* incx, float* beta, float* y, int* incy);
-void sger_(int* m, int* n, float* alpha, float* x, int* incx, float* y, int* incy, float* a, int* lda);
-float snrm2_(int* n, float* x, int* incx);
-void srot_(int* n, float* sx, int* incx, float* sy, int* incy, float* c, float* s);
-void sscal_(int* n, float* alpha, float* x, int* incx);
-void sswap_(int* n, float* x, int* incx, float* y, int* incy);
-void strmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, float* alpha, float* a, int* lda, float* b, int* ldb);
+/*
+ * BLAS/LAPACK Fortran symbol mangling.
+ *
+ * When building within SciPy, `ARNAUD_HAS_BLAS_CONFIG` is defined,
+ * that sets the `ARNAUD_BLAS` macro to contain the desired symbol
+ * mangling functionality (`BLAS_FUNC()` in other submodules).
+ *
+ * For standalone builds, ARNAUD_BLAS defaults to appending an underscore
+ * (standard Fortran name mangling).
+ */
+
+#ifdef ARNAUD_HAS_BLAS_CONFIG
+#include "arnaud_blas_config.h"
+#endif
+
+#ifndef ARNAUD_BLAS
+#define ARNAUD_BLAS(name) name ## _
+#endif
 
 
-void daxpy_(int* n, double* alpha, double* x, int* incx, double* y, int* incy);
-void dcopy_(int* n, double* x, int* incx, double* y, int* incy);
-double ddot_(int* n, double* x, int* incx, double* y, int* incy);
-void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
-void dger_(int* m, int* n, double* alpha, double* x, int* incx, double* y, int* incy, double* a, int* lda);
-double dnrm2_(int* n, double* x, int* incx);
-void drot_(int* n, double* sx, int* incx, double* sy, int* incy, double* c, double* s);
-void dscal_(int* n, double* alpha, double* x, int* incx);
-void dswap_(int* n, double* x, int* incx, double* y, int* incy);
-void dtrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
+// BLAS — single real
+void ARNAUD_BLAS(saxpy)(ARNAUD_INT* n, float* alpha, float* x, ARNAUD_INT* incx, float* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(scopy)(ARNAUD_INT* n, float* x, ARNAUD_INT* incx, float* y, ARNAUD_INT* incy);
+float ARNAUD_BLAS(sdot)(ARNAUD_INT* n, float* x, ARNAUD_INT* incx, float* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(sgemv)(char* trans, ARNAUD_INT* m, ARNAUD_INT* n, float* alpha, float* a, ARNAUD_INT* lda, float* x, ARNAUD_INT* incx, float* beta, float* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(sger)(ARNAUD_INT* m, ARNAUD_INT* n, float* alpha, float* x, ARNAUD_INT* incx, float* y, ARNAUD_INT* incy, float* a, ARNAUD_INT* lda);
+float ARNAUD_BLAS(snrm2)(ARNAUD_INT* n, float* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(srot)(ARNAUD_INT* n, float* sx, ARNAUD_INT* incx, float* sy, ARNAUD_INT* incy, float* c, float* s);
+void ARNAUD_BLAS(sscal)(ARNAUD_INT* n, float* alpha, float* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(sswap)(ARNAUD_INT* n, float* x, ARNAUD_INT* incx, float* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(strmm)(char* side, char* uplo, char* transa, char* diag, ARNAUD_INT* m, ARNAUD_INT* n, float* alpha, float* a, ARNAUD_INT* lda, float* b, ARNAUD_INT* ldb);
 
 
-void caxpy_(int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, int* incx, ARNAUD_CPLXF_TYPE* y, int* incy);
-void ccopy_(int* n, ARNAUD_CPLXF_TYPE* x, int* incx, ARNAUD_CPLXF_TYPE* y, int* incy);
-void cgeru_(int* m, int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, int* incx, ARNAUD_CPLXF_TYPE* y, int* incy, ARNAUD_CPLXF_TYPE* a, int* lda);
-float scnrm2_(int* n, ARNAUD_CPLXF_TYPE* x, int* incx);
-void cscal_(int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, int* incx);
-void csscal_(int* n, float* da, ARNAUD_CPLXF_TYPE* zx, int* incx);
-void cgemv_(char* trans, int* m, int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* a, int* lda, ARNAUD_CPLXF_TYPE* x, int* incx, ARNAUD_CPLXF_TYPE* beta, ARNAUD_CPLXF_TYPE* y, int* incy);
-void crot_(int* n, ARNAUD_CPLXF_TYPE* cx, int* incx, ARNAUD_CPLXF_TYPE* cy, int* incy, float* c, ARNAUD_CPLXF_TYPE* s);
-void ctrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* a, int* lda, ARNAUD_CPLXF_TYPE* b, int* ldb);
+// BLAS — double real
+void ARNAUD_BLAS(daxpy)(ARNAUD_INT* n, double* alpha, double* x, ARNAUD_INT* incx, double* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(dcopy)(ARNAUD_INT* n, double* x, ARNAUD_INT* incx, double* y, ARNAUD_INT* incy);
+double ARNAUD_BLAS(ddot)(ARNAUD_INT* n, double* x, ARNAUD_INT* incx, double* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(dgemv)(char* trans, ARNAUD_INT* m, ARNAUD_INT* n, double* alpha, double* a, ARNAUD_INT* lda, double* x, ARNAUD_INT* incx, double* beta, double* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(dger)(ARNAUD_INT* m, ARNAUD_INT* n, double* alpha, double* x, ARNAUD_INT* incx, double* y, ARNAUD_INT* incy, double* a, ARNAUD_INT* lda);
+double ARNAUD_BLAS(dnrm2)(ARNAUD_INT* n, double* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(drot)(ARNAUD_INT* n, double* sx, ARNAUD_INT* incx, double* sy, ARNAUD_INT* incy, double* c, double* s);
+void ARNAUD_BLAS(dscal)(ARNAUD_INT* n, double* alpha, double* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(dswap)(ARNAUD_INT* n, double* x, ARNAUD_INT* incx, double* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(dtrmm)(char* side, char* uplo, char* transa, char* diag, ARNAUD_INT* m, ARNAUD_INT* n, double* alpha, double* a, ARNAUD_INT* lda, double* b, ARNAUD_INT* ldb);
 
 
-void zaxpy_(int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, int* incx, ARNAUD_CPLX_TYPE* y, int* incy);
-void zcopy_(int* n, ARNAUD_CPLX_TYPE* x, int* incx, ARNAUD_CPLX_TYPE* y, int* incy);
-void zgeru_(int* m, int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, int* incx, ARNAUD_CPLX_TYPE* y, int* incy, ARNAUD_CPLX_TYPE* a, int* lda);
-double dznrm2_(int* n, ARNAUD_CPLX_TYPE* x, int* incx);
-void zscal_(int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, int* incx);
-void zdscal_(int* n, double* da, ARNAUD_CPLX_TYPE* zx, int* incx);
-void zgemv_(char* trans, int* m, int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* a, int* lda, ARNAUD_CPLX_TYPE* x, int* incx, ARNAUD_CPLX_TYPE* beta, ARNAUD_CPLX_TYPE* y, int* incy);
-void zrot_(int* n, ARNAUD_CPLX_TYPE* cx, int* incx, ARNAUD_CPLX_TYPE* cy, int* incy, double* c, ARNAUD_CPLX_TYPE* s);
-void ztrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* a, int* lda, ARNAUD_CPLX_TYPE* b, int* ldb);
+// BLAS — single complex
+void ARNAUD_BLAS(caxpy)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(ccopy)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(cgeru)(ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* y, ARNAUD_INT* incy, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda);
+float ARNAUD_BLAS(scnrm2)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(cscal)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(csscal)(ARNAUD_INT* n, float* da, ARNAUD_CPLXF_TYPE* zx, ARNAUD_INT* incx);
+void ARNAUD_BLAS(cgemv)(char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* beta, ARNAUD_CPLXF_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(crot)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* cx, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* cy, ARNAUD_INT* incy, float* c, ARNAUD_CPLXF_TYPE* s);
+void ARNAUD_BLAS(ctrmm)(char* side, char* uplo, char* transa, char* diag, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLXF_TYPE* b, ARNAUD_INT* ldb);
+
+
+// BLAS — double complex
+void ARNAUD_BLAS(zaxpy)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(zcopy)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(zgeru)(ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* y, ARNAUD_INT* incy, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda);
+double ARNAUD_BLAS(dznrm2)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(zscal)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx);
+void ARNAUD_BLAS(zdscal)(ARNAUD_INT* n, double* da, ARNAUD_CPLX_TYPE* zx, ARNAUD_INT* incx);
+void ARNAUD_BLAS(zgemv)(char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* beta, ARNAUD_CPLX_TYPE* y, ARNAUD_INT* incy);
+void ARNAUD_BLAS(zrot)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* cx, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* cy, ARNAUD_INT* incy, double* c, ARNAUD_CPLX_TYPE* s);
+void ARNAUD_BLAS(ztrmm)(char* side, char* uplo, char* transa, char* diag, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLX_TYPE* b, ARNAUD_INT* ldb);
 
 
 
-// LAPACK
-void sgeqr2_(int* m, int* n, float* a, int* lda, float* tau, float* work, int* info);
-void slacpy_(char* uplo, int* m, int* n, float* a, int* lda, float* b, int* ldb);
-void slaev2_(float* a, float* b, float* c, float* rt1, float* rt2, float* cs1, float* sn1);
-void slahqr_(int* wantt, int* wantz, int* n, int* ilo, int* ihi, float* h, int* ldh, float* wr, float* wi, int* iloz, int* ihiz, float* z, int* ldz, int* info );
-float slanhs_(char* norm, int* n, float* a, int* lda, float* work);
-float slanst_(char* norm, int* n, float* d, float* e);
-void slarf_(char* side, int* m, int* n, float* v, int* incv, float* tau, float* c, int* ldc, float* work);
-void slarfg_(int* n, float* alpha, float* x, int* incx, float* tau);
-void slartg_(float* f, float* g, float* c, float* s, float* r);
-void slartgp_(float* f, float* g, float* c, float* s, float* r);
-void slascl_(char* mtype, int* kl, int* ku, float* cfrom, float* cto, int* m, int* n, float* a, int* lda, int* info);
-void slaset_(char* uplo, int* m, int* n, float* alpha, float* beta, float* a, int* lda);
-void slasr_(char* side, char* pivot, char* direct, int* m, int* n, float* c, float* s, float* a, int* lda);
-void sorm2r_(char* side, char* trans, int* m, int* n, int* k, float* a, int* lda, float* tau, float* c, int* ldc, float* work, int* info);
-void ssteqr_(char* compz, int* n, float* d, float* e, float* z, int* ldz, float* work, int* info);
-void strevc_(char* side, char* howmny, int* select, int* n, float* t, int* ldt, float* vl, int* ldvl, float* vr, int* ldvr, int* mm, int* m, float* work, int* info);
-void strsen_(char* job, char* compq, int* select, int* n, float* t, int* ldt, float* q, int* ldq, float* wr, float* wi, int* m, float* s, float* sep, float* work, int* lwork, int* iwork, int* liwork, int* info);
+// LAPACK — single real
+void ARNAUD_BLAS(sgeqr2)(ARNAUD_INT* m, ARNAUD_INT* n, float* a, ARNAUD_INT* lda, float* tau, float* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(slacpy)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, float* a, ARNAUD_INT* lda, float* b, ARNAUD_INT* ldb);
+void ARNAUD_BLAS(slaev2)(float* a, float* b, float* c, float* rt1, float* rt2, float* cs1, float* sn1);
+void ARNAUD_BLAS(slahqr)(ARNAUD_INT* wantt, ARNAUD_INT* wantz, ARNAUD_INT* n, ARNAUD_INT* ilo, ARNAUD_INT* ihi, float* h, ARNAUD_INT* ldh, float* wr, float* wi, ARNAUD_INT* iloz, ARNAUD_INT* ihiz, float* z, ARNAUD_INT* ldz, ARNAUD_INT* info);
+float ARNAUD_BLAS(slanhs)(char* norm, ARNAUD_INT* n, float* a, ARNAUD_INT* lda, float* work);
+float ARNAUD_BLAS(slanst)(char* norm, ARNAUD_INT* n, float* d, float* e);
+void ARNAUD_BLAS(slarf)(char* side, ARNAUD_INT* m, ARNAUD_INT* n, float* v, ARNAUD_INT* incv, float* tau, float* c, ARNAUD_INT* ldc, float* work);
+void ARNAUD_BLAS(slarfg)(ARNAUD_INT* n, float* alpha, float* x, ARNAUD_INT* incx, float* tau);
+void ARNAUD_BLAS(slartg)(float* f, float* g, float* c, float* s, float* r);
+void ARNAUD_BLAS(slartgp)(float* f, float* g, float* c, float* s, float* r);
+void ARNAUD_BLAS(slascl)(char* mtype, ARNAUD_INT* kl, ARNAUD_INT* ku, float* cfrom, float* cto, ARNAUD_INT* m, ARNAUD_INT* n, float* a, ARNAUD_INT* lda, ARNAUD_INT* info);
+void ARNAUD_BLAS(slaset)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, float* alpha, float* beta, float* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(slasr)(char* side, char* pivot, char* direct, ARNAUD_INT* m, ARNAUD_INT* n, float* c, float* s, float* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(sorm2r)(char* side, char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_INT* k, float* a, ARNAUD_INT* lda, float* tau, float* c, ARNAUD_INT* ldc, float* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(ssteqr)(char* compz, ARNAUD_INT* n, float* d, float* e, float* z, ARNAUD_INT* ldz, float* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(strevc)(char* side, char* howmny, ARNAUD_INT* select, ARNAUD_INT* n, float* t, ARNAUD_INT* ldt, float* vl, ARNAUD_INT* ldvl, float* vr, ARNAUD_INT* ldvr, ARNAUD_INT* mm, ARNAUD_INT* m, float* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(strsen)(char* job, char* compq, ARNAUD_INT* select, ARNAUD_INT* n, float* t, ARNAUD_INT* ldt, float* q, ARNAUD_INT* ldq, float* wr, float* wi, ARNAUD_INT* m, float* s, float* sep, float* work, ARNAUD_INT* lwork, ARNAUD_INT* iwork, ARNAUD_INT* liwork, ARNAUD_INT* info);
 
 
-void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
-void dlacpy_(char* uplo, int* m, int* n, double* a, int* lda, double* b, int* ldb);
-void dlaev2_(double* a, double* b, double* c, double* rt1, double* rt2, double* cs1, double* sn1);
-void dlahqr_(int* wantt, int* wantz, int* n, int* ilo, int* ihi, double* h, int* ldh, double* wr, double* wi, int* iloz, int* ihiz, double* z, int* ldz, int* info );
-double dlanhs_(char* norm, int* n, double* a, int* lda, double* work);
-double dlanst_(char* norm, int* n, double* d, double* e);
-void dlarf_(char* side, int* m, int* n, double* v, int* incv, double* tau, double* c, int* ldc, double* work);
-void dlarfg_(int* n, double* alpha, double* x, int* incx, double* tau);
-void dlartg_(double* f, double* g, double* c, double* s, double* r);
-void dlartgp_(double* f, double* g, double* c, double* s, double* r);
-void dlascl_(char* mtype, int* kl, int* ku, double* cfrom, double* cto, int* m, int* n, double* a, int* lda, int* info);
-void dlaset_(char* uplo, int* m, int* n, double* alpha, double* beta, double* a, int* lda);
-void dlasr_(char* side, char* pivot, char* direct, int* m, int* n, double* c, double* s, double* a, int* lda);
-void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
-void dsteqr_(char* compz, int* n, double* d, double* e, double* z, int* ldz, double* work, int* info);
-void dtrevc_(char* side, char* howmny, int* select, int* n, double* t, int* ldt, double* vl, int* ldvl, double* vr, int* ldvr, int* mm, int* m, double* work, int* info);
-void dtrsen_(char* job, char* compq, int* select, int* n, double* t, int* ldt, double* q, int* ldq, double* wr, double* wi, int* m, double* s, double* sep, double* work, int* lwork, int* iwork, int* liwork, int* info);
+// LAPACK — double real
+void ARNAUD_BLAS(dgeqr2)(ARNAUD_INT* m, ARNAUD_INT* n, double* a, ARNAUD_INT* lda, double* tau, double* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(dlacpy)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, double* a, ARNAUD_INT* lda, double* b, ARNAUD_INT* ldb);
+void ARNAUD_BLAS(dlaev2)(double* a, double* b, double* c, double* rt1, double* rt2, double* cs1, double* sn1);
+void ARNAUD_BLAS(dlahqr)(ARNAUD_INT* wantt, ARNAUD_INT* wantz, ARNAUD_INT* n, ARNAUD_INT* ilo, ARNAUD_INT* ihi, double* h, ARNAUD_INT* ldh, double* wr, double* wi, ARNAUD_INT* iloz, ARNAUD_INT* ihiz, double* z, ARNAUD_INT* ldz, ARNAUD_INT* info);
+double ARNAUD_BLAS(dlanhs)(char* norm, ARNAUD_INT* n, double* a, ARNAUD_INT* lda, double* work);
+double ARNAUD_BLAS(dlanst)(char* norm, ARNAUD_INT* n, double* d, double* e);
+void ARNAUD_BLAS(dlarf)(char* side, ARNAUD_INT* m, ARNAUD_INT* n, double* v, ARNAUD_INT* incv, double* tau, double* c, ARNAUD_INT* ldc, double* work);
+void ARNAUD_BLAS(dlarfg)(ARNAUD_INT* n, double* alpha, double* x, ARNAUD_INT* incx, double* tau);
+void ARNAUD_BLAS(dlartg)(double* f, double* g, double* c, double* s, double* r);
+void ARNAUD_BLAS(dlartgp)(double* f, double* g, double* c, double* s, double* r);
+void ARNAUD_BLAS(dlascl)(char* mtype, ARNAUD_INT* kl, ARNAUD_INT* ku, double* cfrom, double* cto, ARNAUD_INT* m, ARNAUD_INT* n, double* a, ARNAUD_INT* lda, ARNAUD_INT* info);
+void ARNAUD_BLAS(dlaset)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, double* alpha, double* beta, double* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(dlasr)(char* side, char* pivot, char* direct, ARNAUD_INT* m, ARNAUD_INT* n, double* c, double* s, double* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(dorm2r)(char* side, char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_INT* k, double* a, ARNAUD_INT* lda, double* tau, double* c, ARNAUD_INT* ldc, double* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(dsteqr)(char* compz, ARNAUD_INT* n, double* d, double* e, double* z, ARNAUD_INT* ldz, double* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(dtrevc)(char* side, char* howmny, ARNAUD_INT* select, ARNAUD_INT* n, double* t, ARNAUD_INT* ldt, double* vl, ARNAUD_INT* ldvl, double* vr, ARNAUD_INT* ldvr, ARNAUD_INT* mm, ARNAUD_INT* m, double* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(dtrsen)(char* job, char* compq, ARNAUD_INT* select, ARNAUD_INT* n, double* t, ARNAUD_INT* ldt, double* q, ARNAUD_INT* ldq, double* wr, double* wi, ARNAUD_INT* m, double* s, double* sep, double* work, ARNAUD_INT* lwork, ARNAUD_INT* iwork, ARNAUD_INT* liwork, ARNAUD_INT* info);
 
 
-void cgeqr2_(int* m, int* n, ARNAUD_CPLXF_TYPE* a, int* lda, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* work, int* info);
-void clacpy_(char* uplo, int* m, int* n, ARNAUD_CPLXF_TYPE* a, int* lda, ARNAUD_CPLXF_TYPE* b, int* ldb);
-void clahqr_(int* wantt, int* wantz, int* n, int* ilo, int* ihi, ARNAUD_CPLXF_TYPE* h, int* ldh, ARNAUD_CPLXF_TYPE* w, int* iloz, int* ihiz, ARNAUD_CPLXF_TYPE* z, int* ldz, int* info );
-float clanhs_(char* norm, int* n, ARNAUD_CPLXF_TYPE* a, int* lda, float* work);
-void clarf_(char* side, int* m, int* n, ARNAUD_CPLXF_TYPE* v, int* incv, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* c, int* ldc, ARNAUD_CPLXF_TYPE* work);
-void clarfg_(int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, int* incx, ARNAUD_CPLXF_TYPE* tau);
-void clartg_(ARNAUD_CPLXF_TYPE* f, ARNAUD_CPLXF_TYPE* g, float* c, ARNAUD_CPLXF_TYPE* s, ARNAUD_CPLXF_TYPE* r);
-void clascl_(char* mtype, int* kl, int* ku, float* cfrom, float* cto, int* m, int* n, ARNAUD_CPLXF_TYPE* a, int* lda, int* info);
-void claset_(char* uplo, int* m, int* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* beta, ARNAUD_CPLXF_TYPE* a, int* lda);
-void ctrevc_(char* side, char* howmny, int* select, int* n, ARNAUD_CPLXF_TYPE* t, int* ldt, ARNAUD_CPLXF_TYPE* vl, int* ldvl, ARNAUD_CPLXF_TYPE* vr, int* ldvr, int* mm, int* m, ARNAUD_CPLXF_TYPE* work, float* rwork, int* info);
-void ctrsen_(char* job, char* compq, int* select, int* n, ARNAUD_CPLXF_TYPE* t, int* ldt, ARNAUD_CPLXF_TYPE* q, int* ldq, ARNAUD_CPLXF_TYPE* w, int* m, float* s, float* sep, ARNAUD_CPLXF_TYPE* work, int* lwork, int* info);
-void cunm2r_(char* side, char* trans, int* m, int* n, int* k, ARNAUD_CPLXF_TYPE* a, int* lda, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* c, int* ldc, ARNAUD_CPLXF_TYPE* work, int* info);
+// LAPACK — single complex
+void ARNAUD_BLAS(cgeqr2)(ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(clacpy)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLXF_TYPE* b, ARNAUD_INT* ldb);
+void ARNAUD_BLAS(clahqr)(ARNAUD_INT* wantt, ARNAUD_INT* wantz, ARNAUD_INT* n, ARNAUD_INT* ilo, ARNAUD_INT* ihi, ARNAUD_CPLXF_TYPE* h, ARNAUD_INT* ldh, ARNAUD_CPLXF_TYPE* w, ARNAUD_INT* iloz, ARNAUD_INT* ihiz, ARNAUD_CPLXF_TYPE* z, ARNAUD_INT* ldz, ARNAUD_INT* info);
+float ARNAUD_BLAS(clanhs)(char* norm, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, float* work);
+void ARNAUD_BLAS(clarf)(char* side, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* v, ARNAUD_INT* incv, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* c, ARNAUD_INT* ldc, ARNAUD_CPLXF_TYPE* work);
+void ARNAUD_BLAS(clarfg)(ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLXF_TYPE* tau);
+void ARNAUD_BLAS(clartg)(ARNAUD_CPLXF_TYPE* f, ARNAUD_CPLXF_TYPE* g, float* c, ARNAUD_CPLXF_TYPE* s, ARNAUD_CPLXF_TYPE* r);
+void ARNAUD_BLAS(clascl)(char* mtype, ARNAUD_INT* kl, ARNAUD_INT* ku, float* cfrom, float* cto, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_INT* info);
+void ARNAUD_BLAS(claset)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* alpha, ARNAUD_CPLXF_TYPE* beta, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(ctrevc)(char* side, char* howmny, ARNAUD_INT* select, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* t, ARNAUD_INT* ldt, ARNAUD_CPLXF_TYPE* vl, ARNAUD_INT* ldvl, ARNAUD_CPLXF_TYPE* vr, ARNAUD_INT* ldvr, ARNAUD_INT* mm, ARNAUD_INT* m, ARNAUD_CPLXF_TYPE* work, float* rwork, ARNAUD_INT* info);
+void ARNAUD_BLAS(ctrsen)(char* job, char* compq, ARNAUD_INT* select, ARNAUD_INT* n, ARNAUD_CPLXF_TYPE* t, ARNAUD_INT* ldt, ARNAUD_CPLXF_TYPE* q, ARNAUD_INT* ldq, ARNAUD_CPLXF_TYPE* w, ARNAUD_INT* m, float* s, float* sep, ARNAUD_CPLXF_TYPE* work, ARNAUD_INT* lwork, ARNAUD_INT* info);
+void ARNAUD_BLAS(cunm2r)(char* side, char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_INT* k, ARNAUD_CPLXF_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLXF_TYPE* tau, ARNAUD_CPLXF_TYPE* c, ARNAUD_INT* ldc, ARNAUD_CPLXF_TYPE* work, ARNAUD_INT* info);
 
 
-void zgeqr2_(int* m, int* n, ARNAUD_CPLX_TYPE* a, int* lda, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* work, int* info);
-void zlacpy_(char* uplo, int* m, int* n, ARNAUD_CPLX_TYPE* a, int* lda, ARNAUD_CPLX_TYPE* b, int* ldb);
-void zlahqr_(int* wantt, int* wantz, int* n, int* ilo, int* ihi, ARNAUD_CPLX_TYPE* h, int* ldh, ARNAUD_CPLX_TYPE* w, int* iloz, int* ihiz, ARNAUD_CPLX_TYPE* z, int* ldz, int* info );
-double zlanhs_(char* norm, int* n, ARNAUD_CPLX_TYPE* a, int* lda, double* work);
-void zlarf_(char* side, int* m, int* n, ARNAUD_CPLX_TYPE* v, int* incv, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* c, int* ldc, ARNAUD_CPLX_TYPE* work);
-void zlarfg_(int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, int* incx, ARNAUD_CPLX_TYPE* tau);
-void zlartg_(ARNAUD_CPLX_TYPE* f, ARNAUD_CPLX_TYPE* g, double* c, ARNAUD_CPLX_TYPE* s, ARNAUD_CPLX_TYPE* r);
-void zlascl_(char* mtype, int* kl, int* ku, double* cfrom, double* cto, int* m, int* n, ARNAUD_CPLX_TYPE* a, int* lda, int* info);
-void zlaset_(char* uplo, int* m, int* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* beta, ARNAUD_CPLX_TYPE* a, int* lda);
-void ztrevc_(char* side, char* howmny, int* select, int* n, ARNAUD_CPLX_TYPE* t, int* ldt, ARNAUD_CPLX_TYPE* vl, int* ldvl, ARNAUD_CPLX_TYPE* vr, int* ldvr, int* mm, int* m, ARNAUD_CPLX_TYPE* work, double* rwork, int* info);
-void ztrsen_(char* job, char* compq, int* select, int* n, ARNAUD_CPLX_TYPE* t, int* ldt, ARNAUD_CPLX_TYPE* q, int* ldq, ARNAUD_CPLX_TYPE* w, int* m, double* s, double* sep, ARNAUD_CPLX_TYPE* work, int* lwork, int* info);
-void zunm2r_(char* side, char* trans, int* m, int* n, int* k, ARNAUD_CPLX_TYPE* a, int* lda, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* c, int* ldc, ARNAUD_CPLX_TYPE* work, int* info);
+// LAPACK — double complex
+void ARNAUD_BLAS(zgeqr2)(ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* work, ARNAUD_INT* info);
+void ARNAUD_BLAS(zlacpy)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLX_TYPE* b, ARNAUD_INT* ldb);
+void ARNAUD_BLAS(zlahqr)(ARNAUD_INT* wantt, ARNAUD_INT* wantz, ARNAUD_INT* n, ARNAUD_INT* ilo, ARNAUD_INT* ihi, ARNAUD_CPLX_TYPE* h, ARNAUD_INT* ldh, ARNAUD_CPLX_TYPE* w, ARNAUD_INT* iloz, ARNAUD_INT* ihiz, ARNAUD_CPLX_TYPE* z, ARNAUD_INT* ldz, ARNAUD_INT* info);
+double ARNAUD_BLAS(zlanhs)(char* norm, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, double* work);
+void ARNAUD_BLAS(zlarf)(char* side, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* v, ARNAUD_INT* incv, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* c, ARNAUD_INT* ldc, ARNAUD_CPLX_TYPE* work);
+void ARNAUD_BLAS(zlarfg)(ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* x, ARNAUD_INT* incx, ARNAUD_CPLX_TYPE* tau);
+void ARNAUD_BLAS(zlartg)(ARNAUD_CPLX_TYPE* f, ARNAUD_CPLX_TYPE* g, double* c, ARNAUD_CPLX_TYPE* s, ARNAUD_CPLX_TYPE* r);
+void ARNAUD_BLAS(zlascl)(char* mtype, ARNAUD_INT* kl, ARNAUD_INT* ku, double* cfrom, double* cto, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_INT* info);
+void ARNAUD_BLAS(zlaset)(char* uplo, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* alpha, ARNAUD_CPLX_TYPE* beta, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda);
+void ARNAUD_BLAS(ztrevc)(char* side, char* howmny, ARNAUD_INT* select, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* t, ARNAUD_INT* ldt, ARNAUD_CPLX_TYPE* vl, ARNAUD_INT* ldvl, ARNAUD_CPLX_TYPE* vr, ARNAUD_INT* ldvr, ARNAUD_INT* mm, ARNAUD_INT* m, ARNAUD_CPLX_TYPE* work, double* rwork, ARNAUD_INT* info);
+void ARNAUD_BLAS(ztrsen)(char* job, char* compq, ARNAUD_INT* select, ARNAUD_INT* n, ARNAUD_CPLX_TYPE* t, ARNAUD_INT* ldt, ARNAUD_CPLX_TYPE* q, ARNAUD_INT* ldq, ARNAUD_CPLX_TYPE* w, ARNAUD_INT* m, double* s, double* sep, ARNAUD_CPLX_TYPE* work, ARNAUD_INT* lwork, ARNAUD_INT* info);
+void ARNAUD_BLAS(zunm2r)(char* side, char* trans, ARNAUD_INT* m, ARNAUD_INT* n, ARNAUD_INT* k, ARNAUD_CPLX_TYPE* a, ARNAUD_INT* lda, ARNAUD_CPLX_TYPE* tau, ARNAUD_CPLX_TYPE* c, ARNAUD_INT* ldc, ARNAUD_CPLX_TYPE* work, ARNAUD_INT* info);
 
 
 #endif

@@ -26,7 +26,7 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
         if len(new_shape) > 2:
             raise IndexError("Indexing that leads to >2D is not supported by "
@@ -124,7 +124,7 @@ class IndexMixin:
             return res.reshape(new_shape)
         return res
 
-    def __setitem__(self, key, x):
+    def __setitem__(self, key, x, /):
         index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
 
         # 1D array
@@ -445,10 +445,6 @@ def _asindices(idx, length, format):
     if format != "coo" and ix.ndim not in (1, 2) or format == "coo" and ix.ndim == 0:
         raise IndexError(f'Index dimension must be 1 or 2. Got {ix.ndim}')
 
-    # LIL routines handle bounds-checking for us, so don't do it here.
-    if format == "lil":
-        return ix
-
     if ix.size == 0:
         return ix
 
@@ -487,5 +483,12 @@ def _compatible_boolean_index(idx, desired_ndim):
         idx = np.asanyarray(idx)
 
     if idx.dtype.kind == 'b':
+        if not hasattr(idx, 'nonzero'):
+            idx = np.asarray(idx)
+            if idx.dtype.kind != 'b':
+                raise IndexError(
+                    "bool index array-like converted to non-boolean dtype "
+                    f"{idx.dtype}"
+                )
         return idx
     return None

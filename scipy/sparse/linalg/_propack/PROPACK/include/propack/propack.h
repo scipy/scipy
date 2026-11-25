@@ -31,10 +31,10 @@
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s aprod,
-             float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
-             float tolin, float* work, int lwork, int* iwork,
-             float* doption, int* ioption, int* info, float* dparm, int* iparm,
+void slansvd(int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, CBLAS_INT kmax, PROPACK_aprod_s aprod,
+             float* U, CBLAS_INT ldu, float* sigma, float* bnd, float* V, CBLAS_INT ldv,
+             float tolin, float* work, CBLAS_INT lwork, CBLAS_INT* iwork,
+             float* doption, CBLAS_INT* ioption, CBLAS_INT* info, float* dparm, CBLAS_INT* iparm,
              uint64_t* rng_state);
 
 /**
@@ -64,10 +64,10 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d aprod,
-             double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-             double tolin, double* work, int lwork, int* iwork,
-             double* doption, int* ioption, int* info, double* dparm, int* iparm,
+void dlansvd(int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, CBLAS_INT kmax, PROPACK_aprod_d aprod,
+             double* U, CBLAS_INT ldu, double* sigma, double* bnd, double* V, CBLAS_INT ldv,
+             double tolin, double* work, CBLAS_INT lwork, CBLAS_INT* iwork,
+             double* doption, CBLAS_INT* ioption, CBLAS_INT* info, double* dparm, CBLAS_INT* iparm,
              uint64_t* rng_state);
 
 /**
@@ -99,11 +99,11 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c aprod,
-             PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd, PROPACK_CPLXF_TYPE* V, int ldv,
-             float tolin, float* work, int lwork, PROPACK_CPLXF_TYPE* cwork, int lcwork,
-             int* iwork, float* doption, int* ioption, int* info,
-             PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state);
+void clansvd(int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, CBLAS_INT kmax, PROPACK_aprod_c aprod,
+             PROPACK_CPLXF_TYPE* U, CBLAS_INT ldu, float* sigma, float* bnd, PROPACK_CPLXF_TYPE* V, CBLAS_INT ldv,
+             float tolin, float* work, CBLAS_INT lwork, PROPACK_CPLXF_TYPE* cwork, CBLAS_INT lcwork,
+             CBLAS_INT* iwork, float* doption, CBLAS_INT* ioption, CBLAS_INT* info,
+             PROPACK_CPLXF_TYPE* cparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 /**
  * @brief Compute a partial SVD (double-precision complex) using Lanczos bidiagonalization.
@@ -134,11 +134,11 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z aprod,
-             PROPACK_CPLX_TYPE* U, int ldu, double* sigma, double* bnd, PROPACK_CPLX_TYPE* V, int ldv,
-             double tolin, double* work, int lwork, PROPACK_CPLX_TYPE* zwork, int lzwork,
-             int* iwork, double* doption, int* ioption, int* info,
-             PROPACK_CPLX_TYPE* zparm, int* iparm, uint64_t* rng_state);
+void zlansvd(int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT k, CBLAS_INT kmax, PROPACK_aprod_z aprod,
+             PROPACK_CPLX_TYPE* U, CBLAS_INT ldu, double* sigma, double* bnd, PROPACK_CPLX_TYPE* V, CBLAS_INT ldv,
+             double tolin, double* work, CBLAS_INT lwork, PROPACK_CPLX_TYPE* zwork, CBLAS_INT lzwork,
+             CBLAS_INT* iwork, double* doption, CBLAS_INT* ioption, CBLAS_INT* info,
+             PROPACK_CPLX_TYPE* zparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 
 /**
@@ -171,10 +171,10 @@ void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z 
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_s aprod, float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
-                 float tolin, float* work, int lwork, int* iwork, float* doption, int* ioption,
-                 int* info, float* dparm, int* iparm, uint64_t* rng_state);
+void slansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_s aprod, float* U, CBLAS_INT ldu, float* sigma, float* bnd, float* V, CBLAS_INT ldv,
+                 float tolin, float* work, CBLAS_INT lwork, CBLAS_INT* iwork, float* doption, CBLAS_INT* ioption,
+                 CBLAS_INT* info, float* dparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 /**
  * @brief Implicitly restarted Lanczos SVD (double precision).
@@ -206,10 +206,10 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_d aprod, double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-                 double tolin, double* work, int lwork, int* iwork, double* doption, int* ioption,
-                 int* info, double* dparm, int* iparm, uint64_t* rng_state);
+void dlansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_d aprod, double* U, CBLAS_INT ldu, double* sigma, double* bnd, double* V, CBLAS_INT ldv,
+                 double tolin, double* work, CBLAS_INT lwork, CBLAS_INT* iwork, double* doption, CBLAS_INT* ioption,
+                 CBLAS_INT* info, double* dparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 /**
  * @brief Implicitly restarted Lanczos SVD (single-precision complex).
@@ -243,11 +243,11 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd,
-                 PROPACK_CPLXF_TYPE* V, int ldv, float tolin, float* work, int lwork,
-                 PROPACK_CPLXF_TYPE* cwork, int lcwork, int* iwork, float* soption,
-                 int* ioption, int* info, PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state);
+void clansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, CBLAS_INT ldu, float* sigma, float* bnd,
+                 PROPACK_CPLXF_TYPE* V, CBLAS_INT ldv, float tolin, float* work, CBLAS_INT lwork,
+                 PROPACK_CPLXF_TYPE* cwork, CBLAS_INT lcwork, CBLAS_INT* iwork, float* soption,
+                 CBLAS_INT* ioption, CBLAS_INT* info, PROPACK_CPLXF_TYPE* cparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 /**
  * @brief Implicitly restarted Lanczos SVD (double-precision complex).
@@ -281,10 +281,10 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
  * @param iparm    Integer parameter array.
  * @param rng_state Random number generator state (input/output).
  */
-void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
-                 PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu, double* sigma, double* bnd,
-                 PROPACK_CPLX_TYPE* V, int ldv, double tolin, double* work, int lwork,
-                 PROPACK_CPLX_TYPE* zwork, int lzwork, int* iwork, double* doption,
-                 int* ioption, int* info, PROPACK_CPLX_TYPE* zparm, int* iparm, uint64_t* rng_state);
+void zlansvd_irl(int which, int jobu, int jobv, CBLAS_INT m, CBLAS_INT n, CBLAS_INT dim, CBLAS_INT p, CBLAS_INT *neig, CBLAS_INT maxiter,
+                 PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, CBLAS_INT ldu, double* sigma, double* bnd,
+                 PROPACK_CPLX_TYPE* V, CBLAS_INT ldv, double tolin, double* work, CBLAS_INT lwork,
+                 PROPACK_CPLX_TYPE* zwork, CBLAS_INT lzwork, CBLAS_INT* iwork, double* doption,
+                 CBLAS_INT* ioption, CBLAS_INT* info, PROPACK_CPLX_TYPE* zparm, CBLAS_INT* iparm, uint64_t* rng_state);
 
 #endif

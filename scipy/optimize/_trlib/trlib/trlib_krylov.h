@@ -158,7 +158,7 @@
  *  in the very final iteration before convergence. If memory and not computational
  *  load is an issue, you may very well save :c:data:`iter`, :c:data:`ityp`, :c:data:`flt1`, :c:data:`flt2`
  *  :c:data:`flt2` instead of :math:`q_j` and when :math:`s \leftarrow Q s` is requested
- *  simultaniously recompute the directions :math:`q_j` and update the direction
+ *  simultaneously recompute the directions :math:`q_j` and update the direction
  *  :math:`s` once :math:`q_j` has been computed as :math:`s \leftarrow h_j q_j`
  *  with initialization :math:`s \leftarrow 0`.
  *

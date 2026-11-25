@@ -99,14 +99,18 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         Only relevant for sparse variables.
 
         .. deprecated:: 1.18.0
-            The default value for `spmatrix` is changing to False in v1.20.
+            The default value for `spmatrix` is changing to False in v2.1.
             That means the default return value will be a sparse array.
             Unless you use * instead of @, ** for matrix power, or you depend
             on 2D shapes from e.g. ``A.sum(axis=0)``, it may not matter to you.
             See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
+        .. deprecated:: 2.0.0
+            The value `True` for `spmatrix` will no longer be supported in v2.2.
+            The spmatrix classes are deprecated and will be removed then.
+
     **kwargs
-        The following aditional keyword arguments can be passed:
+        The following additional keyword arguments can be passed:
 
         byte_order : str or None, optional
             None by default, implying byte order guessed from mat
@@ -166,6 +170,13 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
     You will need an HDF5 Python library to read MATLAB 7.3 format mat
     files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
+
+    .. warning::
+        The MAT-file readers used by ``loadmat`` are not hardened against adversarial
+        input and should not be used to load files from untrusted sources. Malformed
+        files may cause excessive memory use or read errors. The reader does not execute
+        arbitrary code, but the format is complex and not all corruption modes are
+        caught explicitly.
 
     Examples
     --------
@@ -241,7 +252,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
 
-    warn_msg = """The default value for `spmatrix` is changing to `False` in v1.20.
+    warn_msg = """The default value for `spmatrix` is changing to `False` in v2.1.
         That means the default return type will be a sparse array.
         Unless you use * instead of @, ** for matrix power, or you depend
         on 2D shapes from e.g. `A.sum(axis=0)` it may not matter to you.
@@ -250,12 +261,24 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=_NoValue, **kwarg
         """
 
     from scipy.sparse import issparse, coo_matrix, csc_matrix, coo_array, csc_array
+    if any(issparse(var) for var in matfile_dict.values()):
+        if spmatrix is _NoValue:
+            prefixes = (os.path.dirname(__file__),)
+            warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
+            spmatrix = True
+        elif spmatrix is True:
+            msg = """The value `spmatrix=True` will no longer be supported in v2.2.
+                 The spmatrix classes are deprecated and will be removed then.
+                 The return value will always be a sparse array.
+                 Unless you use * instead of @, ** for matrix power, or you depend
+                 on 2D shapes from e.g. ``A.sum(axis=0)`` it may not matter to you.
+                 See :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
+                 """
+            prefixes = (os.path.dirname(__file__),)
+            warnings.warn(msg, DeprecationWarning, skip_file_prefixes=prefixes)
+
     for name, var in list(matfile_dict.items()):
         if issparse(var):
-            if spmatrix is _NoValue:
-                prefixes = (os.path.dirname(__file__),)
-                warnings.warn(warn_msg, DeprecationWarning, skip_file_prefixes=prefixes)
-                spmatrix = True
             if spmatrix:
                 fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
             else:
@@ -322,11 +345,14 @@ def savemat(file_name, mdict,
     'label': 'experiment'}
     >>> savemat("matlab_matrix.mat", mdic)
     """
+    if format not in ('4', '5'):
+        raise ValueError("Format should be '4' or '5'")
+    if format == '4' and long_field_names:
+        message = "Long field names are not available for version 4 files"
+        raise ValueError(message)
+
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':
-            if long_field_names:
-                message = "Long field names are not available for version 4 files"
-                raise ValueError(message)
             MW = MatFile4Writer(file_stream, oned_as)
         elif format == '5':
             MW = MatFile5Writer(file_stream,
@@ -334,8 +360,6 @@ def savemat(file_name, mdict,
                                 unicode_strings=True,
                                 long_field_names=long_field_names,
                                 oned_as=oned_as)
-        else:
-            raise ValueError("Format should be '4' or '5'")
         MW.put_variables(mdict)
 
 
@@ -359,6 +383,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
         Possible data classes are: int8, uint8, int16, uint16, int32, uint32,
         int64, uint64, single, double, cell, struct, object, char, sparse,
         function, opaque, logical, unknown.
+        MATLAB objects such as ``string`` or ``table`` are listed as opaque
+        with an empty shape, because their header does not store the shape.
 
     Notes
     -----

@@ -5,7 +5,8 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from scipy.optimize import _minpack, OptimizeResult
+from scipy.optimize import _minpack
+from scipy.optimize._optimize import OptimizeResult
 from scipy.optimize._differentiable_functions import VectorFunction
 from scipy.optimize._numdiff import group_columns
 from scipy.optimize._minimize import Bounds
@@ -500,7 +501,7 @@ def least_squares(
 
         The signature is ``callback(intermediate_result: OptimizeResult)``
 
-        `intermediate_result is a `scipy.optimize.OptimizeResult`
+        ``intermediate_result`` is a `scipy.optimize.OptimizeResult`
         which contains the intermediate results of the optimization at the
         current iteration.
 

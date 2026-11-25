@@ -14,6 +14,7 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import fractions
 import functools
 import itertools
 import operator
@@ -22,7 +23,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
+from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
         array_equal)
 
@@ -33,12 +34,12 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipe, ellipk, ellipkm1
-from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import softplus
-from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
-from scipy._lib._util import np_long, np_ulong
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
+from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, elliprg,
+                           elliprj, softplus, mathieu_cem, mathieu_sem,
+                           mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
+                           tandg, cotdg)
+
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, make_xp_test_case
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -186,9 +187,6 @@ class TestCephes:
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
-    def test_cosdg(self):
-        assert_equal(cephes.cosdg(0),1.0)
-
     def test_cosm1(self):
         assert_equal(cephes.cosm1(0),0.0)
 
@@ -199,35 +197,51 @@ class TestCephes:
         assert_equal(cephes.dawsn(0),0.0)
         assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
-    def test_diric(self):
+    @make_xp_test_case(special.diric)
+    def test_diric(self, xp):
         # Test behavior near multiples of 2pi.  Regression test for issue
         # described in gh-4001.
-        n_odd = [1, 5, 25]
-        x = np.array(2*np.pi + 5e-5).astype(np.float32)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-7, rtol=0)
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        x = np.array(2*np.pi + 1e-15).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        if hasattr(np, 'float128'):
-            # No float128 available in 32-bit numpy
-            x = np.array(2*np.pi + 1e-12).astype(np.float128)
-            assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-19, rtol=0)
+        n_odd = xp.asarray([1, 5, 25])
+        x = xp.asarray(2*np.pi + 5e-5, dtype=xp.float32)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-7, rtol=0)
 
-        n_even = [2, 4, 24]
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_even), -1.0, atol=1.5e-15, rtol=0)
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        x = xp.asarray(2*np.pi + 1e-15, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        if hasattr(xp, 'float128'):
+            x = xp.asarray(2*np.pi + 1e-12, dtype=xp.float128)
+            res = special.diric(x, n_odd)
+            xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                            atol=1.5e-19, rtol=0)
+
+        n_even = xp.asarray([2, 4, 24])
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_even)
+        xp_assert_close(res, xp.asarray([-1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
         # Test at some values not near a multiple of pi
-        x = np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi)
+        x = xp.asarray(np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi))
         octave_result = [0.872677996249965, 0.539344662916632,
                          0.127322003750035, -0.206011329583298]
-        assert_allclose(special.diric(x, 3), octave_result, atol=1.5e-15, rtol=0)
+        res = special.diric(x, 3)
+        xp_assert_close(res, xp.asarray(octave_result, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
-    def test_diric_broadcasting(self):
-        x = np.arange(5)
-        n = np.array([1, 3, 7])
-        assert_(special.diric(x[:, np.newaxis], n).shape == (x.size, n.size))
+    @make_xp_test_case(special.diric)
+    def test_diric_broadcasting(self, xp):
+        x = xp.arange(5)
+        n = xp.asarray([1, 3, 7])
+        assert special.diric(x[:, None], n).shape == (x.shape[0], n.shape[0])
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
@@ -576,7 +590,7 @@ class TestCephes:
         assert_allclose(y, ref, rtol=1e-15)
 
     def test_mathieu_cem(self):
-        assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
+        assert_equal(mathieu_cem(1,0,0),(1.0,0.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -596,12 +610,12 @@ class TestCephes:
                 return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_cem(m[:,None], q[None,:], 0.123)[0],
                         ce_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_sem(self):
-        assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
+        assert_equal(mathieu_sem(1,0,0),(0.0,1.0))
 
         # Test AMS 20.2.27
         @np.vectorize
@@ -618,9 +632,9 @@ class TestCephes:
                 return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
-        assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
+        assert_allclose(mathieu_sem(m[:,None], q[None,:], 0.123)[0],
                         se_smallq(m[:,None], q[None,:], 0.123),
-                        rtol=1e-14, atol=0)
+                        rtol=5e-14, atol=0)
 
     def test_mathieu_modcem1(self):
         assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
@@ -658,16 +672,298 @@ class TestCephes:
               - 2*fr*cephes.mathieu_modsem1(m, q, z)[0])
         assert_allclose(y1, y2, rtol=1e-10)
 
+    @pytest.mark.slow
     def test_mathieu_overflow(self):
-        # Check that these return NaNs instead of causing a SEGV
-        assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 0, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_cem(10000, 1.5, 1.3), (np.nan, np.nan))
-        assert_equal(cephes.mathieu_sem(10000, 1.5, 1.3), (np.nan, np.nan))
+        # This originally checked that these return NaNs instead of causing a SEGV.
+        # Fixed in https://github.com/scipy/xsf/pull/99 and now these return accurate
+        # values.
+        assert_allclose(
+            mathieu_cem(10000, 0, 1.3),
+            (0.7660444431189781, -6427.876096865392),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_sem(10000, 0, 1.3),
+            (0.6427876096865393, 7660.444431189781),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_cem(10000, 1.5, 1.3),
+            (0.7660466357615003, -6427.849986120524),
+            rtol=1e-9,
+        )
+        assert_allclose(
+            mathieu_sem(10000, 1.5, 1.3),
+            (0.6427850082438498, 7660.466242825855),
+            rtol=1e-9,
+        )
         assert_equal(cephes.mathieu_modcem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem1(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
+
+    @pytest.mark.parametrize("m", [np.inf, np.nan, 1e18, -1.0, 1.5])
+    @pytest.mark.parametrize("q", [1.0, np.inf, -np.inf, np.nan])
+    def test_mathieu_non_finite_args(self, m, q):
+        assert_equal(mathieu_cem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(mathieu_sem(m, q, 1.3), (np.nan, np.nan))
+        assert_equal(special.mathieu_a(m, q), np.nan)
+        assert_equal(special.mathieu_b(m, q), np.nan)
+
+    @pytest.mark.parametrize("m", range(6))
+    def test_mathieu_cv_nan_q(self, m):
+        assert_equal(special.mathieu_a(float(m), np.nan), np.nan)
+        assert_equal(special.mathieu_b(float(max(m, 1)), np.nan), np.nan)
+
+    @pytest.mark.parametrize("m", [0, 5, 10, 40])
+    @pytest.mark.parametrize("q", [1e3, 1e4])
+    def test_mathieu_cv_large_q(self, m, q):
+        from scipy.linalg import eigh_tridiagonal
+        n = 10*(m + 25) + int(10*np.log10(q))
+        j = np.arange(n, dtype=float)
+        if m % 2:
+            d0, e0, r = 1.0 + q, q, 2*j + 1
+        else:
+            d0, e0, r = 0.0, np.sqrt(2)*q, 2*j
+        D = np.concatenate([[d0], r[1:]**2])
+        E = np.concatenate([[e0], np.full(n - 2, q)])
+        ref = eigh_tridiagonal(
+            D, E, select='i', select_range=(m//2, m//2), eigvals_only=True
+        )[0]
+        assert_allclose(special.mathieu_a(m, q), ref, rtol=1e-11)
+
+    def test_mathieu_cem_large_q(self):
+        m = np.asarray([2, 5, 10, 15]).reshape(4, 1, 1)
+        q = np.asarray([-500, 500]).reshape(1, 2, 1)
+        x = np.asarray([30, 60, 72, 90]).reshape(1, 1, 4)
+        result, result_diff = mathieu_cem(m, q, x)
+        # Reference values computed with Mathematica
+        expected = np.asarray(
+            [
+                [
+                    [
+                        -0.10699511993127243,
+                        -4.470350409256081e-08,
+                        -1.4897308521662612e-11,
+                        -6.502073479911675e-17,
+                    ],
+                    [
+                        4.470350409256081e-08,
+                        0.10699511993127243,
+                        1.5116456169984964,
+                        -1.702701664970742,
+                    ],
+                ],
+                [
+                    [
+                        0.5923164050712968,
+                        1.3951810902306242e-06,
+                        7.528695445460748e-10,
+                        0.0,
+                    ],
+                    [
+                        6.309542394410402e-06,
+                        1.0364275909095013,
+                        0.15758260914533595,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        0.3847469556317107,
+                        -0.002775083886393818,
+                        -7.235826300032016e-06,
+                        -5.14576872387257e-10,
+                    ],
+                    [
+                        0.002775083886393818,
+                        -0.3847469556317107,
+                        1.0945475873404589,
+                        -1.144543729457431,
+                    ],
+                ],
+                [
+                    [
+                        -0.7547516232028949,
+                        -0.088358513894309,
+                        -0.0007763486933946563,
+                        -0.0,
+                    ],
+                    [0.17467642060291227, 1.129624649772552, 1.0289566436695188, 0.0],
+                ],
+            ]
+        )
+        expected_diff = np.asarray(
+            [
+                [
+                    [
+                        1.931982086575836,
+                        1.61372147071861e-06,
+                        5.964180511531926e-10,
+                        0.0,
+                    ],
+                    [1.61372147071861e-06, 1.931982086575836, 9.732119972880236, 0.0],
+                ],
+                [
+                    [
+                        -7.6924144665926955,
+                        -4.6962971693661875e-05,
+                        -2.8489400777119188e-08,
+                        -2.563549792961658e-13,
+                    ],
+                    [
+                        0.00020443011876172828,
+                        10.220217850696768,
+                        -26.75083480392739,
+                        -30.244287177990444,
+                    ],
+                ],
+                [
+                    [
+                        -26.18214629233065,
+                        0.07087904799712258,
+                        0.00022267811170875295,
+                        0.0,
+                    ],
+                    [0.07087904799712258, -26.18214629233065, -14.401774987727999, 0.0],
+                ],
+                [
+                    [
+                        23.137087137330095,
+                        1.6797768393294235,
+                        0.019790490972967006,
+                        7.527835456480875e-06,
+                    ],
+                    [
+                        2.9927304038851785,
+                        -4.109478246292849,
+                        -5.935052410546458,
+                        35.44601484471241,
+                    ],
+                ],
+            ]
+        )
+        assert_allclose(result, expected, rtol=1e-11, atol=2e-14)
+        assert_allclose(result_diff, expected_diff, rtol=1e-11, atol=2e-14)
+
+    def test_mathieu_sem_large_q(self):
+        m = np.asarray([2, 5, 10, 15]).reshape(4, 1, 1)
+        q = np.asarray([-500, 500]).reshape(1, 2, 1)
+        x = np.asarray([30, 60, 72, 90]).reshape(1, 1, 4)
+        result, result_diff = mathieu_sem(m, q, x)
+        # Reference values computed with Mathematica
+        expected = np.asarray(
+            [
+                [
+                    [
+                        0.03161150921537506,
+                        5.92374594673122e-09,
+                        1.561021626782108e-12,
+                        0.0,
+                    ],
+                    [
+                        5.92374594673122e-09,
+                        0.03161150921537506,
+                        0.8187448073004929,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        1.0364275909095013,
+                        6.309542394410402e-06,
+                        4.362637529851409e-09,
+                        5.2053728361705215e-14,
+                    ],
+                    [
+                        1.3951810902306242e-06,
+                        0.5923164050712968,
+                        1.4268370626499316,
+                        1.4607234825556257,
+                    ],
+                ],
+                [
+                    [
+                        0.7030413282968647,
+                        0.0009713037062367355,
+                        1.915600111939833e-06,
+                        0.0,
+                    ],
+                    [
+                        0.0009713037062367355,
+                        0.7030413282968647,
+                        0.9836717773409747,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        -1.129624649772552,
+                        -0.17467642060291227,
+                        -0.002148573402117724,
+                        -1.103555998546891e-06,
+                    ],
+                    [
+                        0.088358513894309,
+                        0.7547516232028949,
+                        0.513042760473874,
+                        -1.0264873434825528,
+                    ],
+                ],
+            ]
+        )
+        expected_diff = np.asarray(
+            [
+                [
+                    [
+                        -0.6393182210092784,
+                        -2.2083588129453194e-07,
+                        -6.417066856062898e-11,
+                        -2.1240632613429807e-16,
+                    ],
+                    [
+                        2.2083588129453194e-07,
+                        0.6393182210092784,
+                        8.599275201225575,
+                        -22.778441684453874,
+                    ],
+                ],
+                [
+                    [
+                        -10.220217850696768,
+                        -0.00020443011876172828,
+                        -1.60184971246549e-07,
+                        -0.0,
+                    ],
+                    [
+                        4.6962971693661875e-05,
+                        7.6924144665926955,
+                        -15.447238233765805,
+                        0.0,
+                    ],
+                ],
+                [
+                    [
+                        24.231976769290327,
+                        -0.026227516276646285,
+                        -6.132325199576008e-05,
+                        -3.256800950916581e-09,
+                    ],
+                    [
+                        0.026227516276646285,
+                        -24.231976769290327,
+                        19.15213737340289,
+                        -33.456847977156805,
+                    ],
+                ],
+                [
+                    [-4.109478246292849, 2.9927304038851785, 0.05171136755285225, 0.0],
+                    [1.6797768393294235, 23.137087137330095, 29.501241155947525, 0.0],
+                ],
+            ]
+        )
+        assert_allclose(result, expected, rtol=1e-11, atol=2e-14)
+        assert_allclose(result_diff, expected_diff, rtol=1e-11, atol=5e-14)
 
     def test_mathieu_ticket_1847(self):
         # Regression test --- this call had some out-of-bounds access
@@ -730,12 +1026,6 @@ class TestCephes:
         p = cephes.ncfdtr(dfn, 2, 0.25, 15)
         assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn, rtol=1e-5)
 
-    @pytest.mark.xfail(
-        reason=(
-            "ncfdtr uses a Boost math implementation but ncfdtrinc"
-            "inverts the less accurate cdflib implementation of ncfdtr."
-        )
-    )
     def test_ncfdtrinc(self):
         nc = [0.5, 1.5, 2.0]
         p = cephes.ncfdtr(2, 3, nc, 15)
@@ -764,10 +1054,6 @@ class TestCephes:
 
     def test_nrdtrimn(self):
         assert_allclose(cephes.nrdtrimn(0.5, 1, 1), 1.0, atol=1e-6, rtol=0)
-
-    def test_nrdtrisd(self):
-        assert_allclose(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
-                         atol=0, rtol=0)
 
     def test_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
@@ -874,9 +1160,6 @@ class TestCephes:
         s, c = cephes.sici(-np.inf)
         assert_allclose(s, -np.pi * 0.5, atol=1.5e-7, rtol=0)
         assert_(np.isnan(c), "cosine integral(-inf) is not nan")
-
-    def test_sindg(self):
-        assert_equal(cephes.sindg(90),1.0)
 
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
@@ -1114,6 +1397,13 @@ class TestAiry:
             [-2.2944396826, -4.0731550891, -5.5123957297,
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
+    def test_gh26034(self):
+        z = np.asarray(-10 - 0j)
+        res = special.airy(z)
+        ref = special.airy(z.real)
+        for r, e in zip(res, ref):
+            assert_allclose(r, e)
+
 
 class TestAssocLaguerre:
     def test_assoc_laguerre(self):
@@ -1122,6 +1412,35 @@ class TestAssocLaguerre:
         assert_allclose(a2, a1(.2), atol=1.5e-8, rtol=0)
         a2 = special.assoc_laguerre(1,11,1)
         assert_allclose(a2, a1(1), atol=1.5e-8, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # degrees = [0, 1, 2, 3]
+    # points = [0.25, 1.25, 2.5, 5.0]
+    # with mp.workdps(50):
+    #     for k in [0.0, 0.5]:
+    #         values = [
+    #             float(mp.laguerre(n, k, x))
+    #             for n, x in zip(degrees, points)
+    #         ]
+    #         print(f"            ({k!r}, {values!r}),")
+    @pytest.mark.parametrize(
+        "k, expected",
+        [
+            (0.0, [1.0, -0.25, -0.875, 2.6666666666666665]),
+            (0.5, [1.0, 0.25, -1.25, 3.2291666666666665]),
+        ],
+    )
+    @make_xp_test_case(special.assoc_laguerre)
+    def test_assoc_laguerre_alt_backends(self, xp, k, expected):
+        x = xp.asarray([0.25, 1.25, 2.5, 5.0], dtype=xp.float64)
+        n = xp.asarray([0, 1, 2, 3], dtype=xp.float64)
+
+        actual = special.assoc_laguerre(x, n, k=k)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
 
 class TestBesselpoly:
@@ -1302,17 +1621,31 @@ class TestKelvin:
                                      20.53068]),
                         atol=1.5e-4, rtol=0)
 
+def _fraction_to_float(fraction):
+    """
+    Convert a Fraction to a float, returning +/-inf on overflow.
+    """
+    try:
+        return float(fraction)
+    except OverflowError:
+        return math.inf if fraction > 0 else -math.inf
 
 class TestBernoulli:
     def test_bernoulli(self):
-        brn = special.bernoulli(5)
-        assert_allclose(brn, array([1.0000,
-                                    -0.5000,
-                                    0.1667,
-                                    0.0000,
-                                    -0.0333,
-                                    0.0000]),
-                        atol=1.5e-4, rtol=0)
+        brn = special.bernoulli(10)
+        assert_equal(brn, array([1, -1/2, 1/6, 0, -1/30, 0, 1/42, 0, -1/30, 0, 5/66]))
+
+    def test_triangle_algorithm(self):
+        N = 269
+        refb_triangle_algorithm = [fractions.Fraction(1, i+1) for i in range(N + 1)]
+        for m in reversed(range(N)):
+            for n in range(N - m):
+                refb_triangle_algorithm[n+1+m] = (m+1)*(refb_triangle_algorithm[n+m] -
+                                                        refb_triangle_algorithm[n+m+1])
+        refb_triangle_algorithm[1] *= -1  # change from B^+ to B^-
+        ref = [_fraction_to_float(b) for b in refb_triangle_algorithm]
+        res = special.bernoulli(N)
+        assert_equal(res, ref)
 
 
 class TestBeta:
@@ -1543,6 +1876,18 @@ class TestBetaInc:
         res = special.betainc(a, b, x)
         assert_allclose(res, reference, rtol=rtol)
 
+    def test_gh24566(self):
+        # test that betainc does not return NaN for these specific inputs
+        # As neither Mathematica nor mpmath are able to compute the result,
+        # we simply test that the result is not NaN
+        # Boost contains a more elaborate test that checks the monotonicity
+        # in this region, see
+        # https://github.com/boostorg/math/blob/64a8d75df2d570ab5eddde4bc383c66675d68611/test/test_ibeta.hpp#L492
+        value = 0.010000000000005001
+        a = 3.1622776601699636e16
+        b = 3.130654883566682e18
+        assert not np.isnan(special.betainc(a, b, value))
+
 
 class TestCombinatorics:
     def test_comb(self):
@@ -1637,91 +1982,65 @@ class TestTrigonometric:
         cbrl1 = 27.9**(1.0/3.0)
         assert_allclose(cb1, cbrl1, atol=1.5e-8, rtol=0)
 
-    def test_cosdg(self):
-        cdg = special.cosdg(90)
-        cdgrl = cos(pi/2.0)
-        assert_allclose(cdg, cdgrl, atol=1.5e-8, rtol=0)
+    def test_cosdg_exact(self):
+        angles = np.asarray([90, 0., -0.])
+        expected = np.asarray([0, 1, 1])
+        assert_equal(cosdg(angles), expected)
 
-    def test_cosdgmore(self):
-        cdgm = special.cosdg(30)
-        cdgmrl = cos(pi/6.0)
-        assert_allclose(cdgm, cdgmrl, atol=1.5e-8, rtol=0)
+    def test_cosdg_inexact(self):
+        angles = np.asarray([30, 45])
+        expected = np.asarray([np.sqrt(3)/2, 1/np.sqrt(2)])
+        assert_allclose(cosdg(angles), expected, atol=1.5e-8, rtol=0)
 
     def test_cosm1(self):
         cs = (special.cosm1(0),special.cosm1(.3),special.cosm1(pi/10))
         csrl = (cos(0)-1,cos(.3)-1,cos(pi/10)-1)
         assert_allclose(cs, csrl, atol=1.5e-8, rtol=0)
 
-    def test_cotdg(self):
-        ct = special.cotdg(30)
-        ctrl = tan(pi/6.0)**(-1)
-        assert_allclose(ct, ctrl, atol=1.5e-8, rtol=0)
+    def test_cotdg_exact(self):
+        angles = np.asarray([45, -45, 135, -135, 225, -225, 315, -315,
+                             0.0, 90, 180, 270, 360, -0., -90, -180, -270, -360])
+        expected = np.asarray([1, -1, -1, 1, 1, -1, -1, 1, np.inf, 0., -np.inf, 0.,
+                               np.inf, -np.inf, 0., np.inf, -0., -np.inf])
+        assert_equal(cotdg(angles), expected)
 
-    def test_cotdgmore(self):
-        ct1 = special.cotdg(45)
-        ctrl1 = tan(pi/4.0)**(-1)
-        assert_allclose(ct1, ctrl1, atol=1.5e-8, rtol=0)
+    def test_cotdg_inexact(self):
+        angles = np.asarray([30])
+        expected = np.asarray([np.sqrt(3)])
+        assert_allclose(cotdg(angles), expected, atol=1.5e-8, rtol=0)
 
     def test_specialpoints(self):
-        assert_allclose(special.cotdg(45), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-45), -1.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(90), 0.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(-90), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(135), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-135), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(225), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-225), -1.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(270), 0.0, atol=1.5e-14, rtol=0)
         assert_allclose(special.cotdg(-270), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(315), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(-315), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.cotdg(765), 1.0, atol=1.5e-14, rtol=0)
 
     def test_sinc(self):
         # the sinc implementation and more extensive sinc tests are in numpy
         assert_array_equal(special.sinc([0]), 1)
         assert_equal(special.sinc(0.0), 1.0)
 
-    def test_sindg(self):
-        sn = special.sindg(90)
-        assert_equal(sn,1.0)
+    def test_sindg_exact(self):
+        angles = np.asarray([90, 0., -0.])
+        expected = np.asarray([1, 0., -0.])
+        assert_equal(sindg(angles), expected)
 
-    def test_sindgmore(self):
-        snm = special.sindg(30)
-        snmrl = sin(pi/6.0)
-        assert_allclose(snm, snmrl, atol=1.5e-8, rtol=0)
-        snm1 = special.sindg(45)
-        snmrl1 = sin(pi/4.0)
-        assert_allclose(snm1, snmrl1, atol=1.5e-8, rtol=0)
+    def test_sindg_inexact(self):
+        angles = np.asarray([30, 45])
+        expected = np.asarray([0.5, 1/np.sqrt(2)])
+        assert_allclose(sindg(angles), expected, atol=1.5e-8, rtol=0)
 
+    def test_tandg_exact(self):
+        angles = np.asarray([0., -0., 45, -45, 135, -135, 90, 180, 270, 360,
+                             -90, -180, -270, -360])
+        expected = np.asarray([0., -0., 1, -1, -1, 1, np.inf, -0., -np.inf, 0,
+                               -np.inf, -0., np.inf, 0])
+        assert_equal(tandg(angles), expected)
 
-class TestTandg:
-
-    def test_tandg(self):
-        tn = special.tandg(30)
-        tnrl = tan(pi/6.0)
-        assert_allclose(tn, tnrl, atol=1.5e-8, rtol=0)
-
-    def test_tandgmore(self):
-        tnm = special.tandg(45)
-        tnmrl = tan(pi/4.0)
-        assert_allclose(tnm, tnmrl, atol=1.5e-8, rtol=0)
-        tnm1 = special.tandg(60)
-        tnmrl1 = tan(pi/3.0)
-        assert_allclose(tnm1, tnmrl1, atol=1.5e-8, rtol=0)
-
-    def test_specialpoints(self):
-        assert_allclose(special.tandg(0), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(45), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-45), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(135), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-135), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(180), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-180), 0.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(225), 1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-225), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(315), -1.0, atol=1.5e-14, rtol=0)
-        assert_allclose(special.tandg(-315), 1.0, atol=1.5e-14, rtol=0)
+    def test_tandg_inexact(self):
+        angle = np.asarray([30, 60])
+        expected = np.asarray([1/np.sqrt(3), np.sqrt(3)])
+        assert_allclose(tandg(angle), expected, atol=1.5e-8, rtol=0)
 
 
 class TestEllip:
@@ -1733,6 +2052,34 @@ class TestEllip:
         el = special.ellipj(0.2,0)
         rel = [sin(0.2),cos(0.2),1.0,0.20]
         assert_allclose(el, rel, atol=1.5e-13, rtol=0)
+
+    @pytest.mark.parametrize(
+        "u, m, expected",
+        [
+            (
+                20,
+                -0.0001,
+                [0.91314537820787445, 0.40763404943355497, 1.0000416908550234],
+            ),
+            (
+                20,
+                -1,
+                [-0.89393389569287096, 0.44819882879294476, 1.3413119733561736],
+            ),
+            (
+                20,
+                -251.18864315095823,
+                [0.19646166026649953, 0.98051150734977632, 3.2703477287623963],
+            ),
+        ],
+    )
+    def test_ellipj_negative_m(self, u, m, expected):
+        sn, cn, dn, ph = special.ellipj(u, m)
+
+        assert_allclose([sn, cn, dn], expected, rtol=1e-8, atol=0)
+        assert_allclose(sn**2 + cn**2, 1, rtol=1e-12, atol=0)
+        assert_allclose(dn**2 + m * sn**2, 1, rtol=1e-12, atol=0)
+        assert_allclose(special.ellipkinc(ph, m), u, rtol=1e-8, atol=0)
 
     def test_ellipk(self):
         elk = special.ellipk(.2)
@@ -2329,7 +2676,7 @@ class TestFactorialFunctions:
         "n",
         [
             np.nan, np.float64("nan"), np.nan + np.nan*1j, np.complex128("nan+nanj"),
-            np.inf, np.inf + 0j, -np.inf, -np.inf + 0j, None, np.datetime64("nat")
+            np.inf, np.inf + 0j, -np.inf, -np.inf + 0j, None, np.datetime64("nat", "s")
         ],
         ids=[
             "NaN", "np.float64('nan')", "NaN+i*NaN", "np.complex128('nan+nanj')",
@@ -2568,7 +2915,7 @@ class TestFactorialFunctions:
         _check(-1 + 0.0001j, expected=-0.57721565582674219 - 9999.9999010944009697j)
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
-                                       np.complex128, object])
+                                       np.complex128])
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
@@ -2579,8 +2926,6 @@ class TestFactorialFunctions:
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
     def test_factorial_array_corner_cases(self, content, dim, exact, extend, dtype):
-        if dtype is object and SCIPY_ARRAY_API:
-            pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype is np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
@@ -2948,7 +3293,7 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact,extend",
                              [(True, "zero"), (False, "zero"), (False, "complex")])
     # neither integer, float nor complex
-    @pytest.mark.parametrize("k", ["string", np.datetime64("nat")],
+    @pytest.mark.parametrize("k", ["string", np.datetime64("nat", "s")],
                              ids=["string", "NaT"])
     def test_factorialk_raises_k_other(self, k, exact, extend, boxed):
         n = [1] if boxed else 1
@@ -2963,7 +3308,7 @@ class TestFactorialFunctions:
         kw = {"k": k, "exact": exact, "extend": extend}
         if exact and k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
-            assert_equal(special.factorialk(n, **kw).dtype, np_long)
+            assert_equal(special.factorialk(n, **kw).dtype, np.long)
             assert_equal(special.factorialk(n + 1, **kw).dtype, np.int64)
             # assert maximality of limits for given dtype
             assert special.factorialk(n + 1, **kw) > np.iinfo(np.int32).max
@@ -3121,6 +3466,18 @@ class TestGamma:
     def test_poles(self, x, expected):
         assert_array_equal(special.gamma(x), expected)
 
+    @pytest.mark.parametrize("a, x", [
+        (1, 2), (2, 1)
+    ])
+    def test_log_gammainc_gammaincc(self, a, x):
+        # Basic consistency check with gammainc/gammaincc away from the tails.
+        # Tail accuracy is covered by Boost's tests, where log_gammainc and
+        # log_gammaincc are implemented.
+        assert_allclose(np.log(special.gammainc(a, x)), special.log_gammainc(a, x),
+                        rtol=1e-15)
+        assert_allclose(np.log(special.gammaincc(a, x)), special.log_gammaincc(a, x),
+                        rtol=1e-15)
+
 
 class TestHankel:
 
@@ -3173,10 +3530,294 @@ class TestHyper:
         h1real = (special.jvp(1,.1) + special.yvp(1,.1)*1j)
         assert_allclose(h1, h1real, atol=1.5e-8, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             print("                [")
+    #             for z in points:
+    #                 value = complex(
+    #                     mp.diff(lambda t: mp.hankel1(v, t), z, n)
+    #                 )
+    #                 print(
+    #                     f"                    {value.real!r}"
+    #                     f"{value.imag:+.17g}j,"
+    #                 )
+    #             print("                ],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [
+                    0.9384698072408129-0.4445187335067066j,
+                    0.5118276717359181+0.3824489237977589j,
+                    -0.2600519549019334+0.3768500100127904j,
+                    0.1506452572509969-0.2881946839815792j,
+                ],
+                [
+                    0.540973789934528-0.9902458802434049j,
+                    0.6498380747537472-0.04608316589309741j,
+                    0.06500818287737578+0.4560488207946332j,
+                    -0.09101540952306732-0.312761075941277j,
+                ],
+                [
+                    0.03060402345868264-5.441370837174266j,
+                    0.2320876721442147-0.9321937597629739j,
+                    0.4860912605858911-0.1604003934849237j,
+                    -0.2428732099601855+0.2298579025481131j,
+                ],
+                [
+                    0.0001607364763642876-499.2725608195123j,
+                    0.0117681324203438-7.361971836479769j,
+                    0.1320341839246122-0.9166828387251396j,
+                    0.3576415947809607+0.09839104345102723j,
+                ],
+            ]),
+            (1, [
+                [
+                    -0.2422684576748739+1.471472392670243j,
+                    -0.5579365079100996+0.4123086269739113j,
+                    -0.3390589585259365-0.3246744247918j,
+                    0.2766838581275656+0.1750103443003982j,
+                ],
+                [
+                    0.4492720903088768+1.531219670177933j,
+                    -0.170529525691485+0.6651991300514464j,
+                    -0.4668835179408625-0.01099995392172975j,
+                    0.3203456934015326-0.0649519865279609j,
+                ],
+                [
+                    0.1198523638401433+20.29401095602682j,
+                    0.24848627838448+0.8306163860433873j,
+                    0.01499811813534241+0.4316080204484158j,
+                    -0.1957261214741705-0.2516296451497693j,
+                ],
+                [
+                    0.001277838183672943+3952.120992251375j,
+                    0.02958226468688951+17.5583834982187j,
+                    0.133017143689102+0.683702168861821j,
+                    -0.1236593450331985+0.2626549170317888j,
+                ],
+            ]),
+            (2, [
+                [
+                    -0.4539328918910651-2.49842605183378j,
+                    -0.1398699997958517-0.6573213417803664j,
+                    0.3730716077439122-0.2686252017488571j,
+                    -0.1967592336055912+0.2590262932648461j,
+                ],
+                [
+                    -0.8985441806177535-3.062439340355866j,
+                    -0.4639474937645631-0.4025032725737666j,
+                    0.09242543929394993-0.439714146687539j,
+                    0.03699240916779058+0.3214144551130116j,
+                ],
+                [
+                    0.219355624199953-122.2085844696676j,
+                    0.01485511496695812-1.278783848289016j,
+                    -0.2750500730372759-0.05475801043562541j,
+                    0.2485083179880822-0.1623798614066945j,
+                ],
+                [
+                    0.007570721643604232-39358.41331613203j,
+                    0.05219485499973019-56.69541688841105j,
+                    0.05835420626721993-0.9408762641846045j,
+                    -0.1780798840394451-0.09843751031142438j,
+                ],
+            ]),
+            (3, [
+                [
+                    0.1810604107575086+9.411269281678289j,
+                    0.4032113931472898+0.209153879534738j,
+                    0.1770285383306394+0.3781412226201079j,
+                    -0.236204989800868-0.2133199947250838j,
+                ],
+                [
+                    1.430281562732902+16.21074088239708j,
+                    0.2888169221127765-0.02048140706359885j,
+                    0.3700262498904006+0.1475982162396575j,
+                    -0.3151772967569374+0.009851617337879948j,
+                ],
+                [
+                    -0.1201738367928719+978.2511106829978j,
+                    -0.2563316999980426+4.077364838276459j,
+                    -0.05900951277687981-0.1260470742067026j,
+                    0.136119189010677+0.2352311379079314j,
+                ],
+                [
+                    0.02932517706962111+471322.7086829013j,
+                    0.04755227999912179+222.7043027153678j,
+                    -0.05769889975756005+2.007799602575911j,
+                    0.04196069502876812-0.136793627596507j,
+                ],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.h1vp)
+    def test_h1vp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.h1vp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.complex128)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
     def test_h2vp(self):
         h2 = special.h2vp(1,.1)
         h2real = (special.jvp(1,.1) - special.yvp(1,.1)*1j)
         assert_allclose(h2, h2real, atol=1.5e-8, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             print("                [")
+    #             for z in points:
+    #                 value = complex(
+    #                     mp.diff(lambda t: mp.hankel2(v, t), z, n)
+    #                 )
+    #                 print(
+    #                     f"                    {value.real!r}"
+    #                     f"{value.imag:+.17g}j,"
+    #                 )
+    #             print("                ],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [
+                    0.9384698072408129+0.44451873350670656j,
+                    0.5118276717359181-0.38244892379775886j,
+                    -0.26005195490193345-0.3768500100127904j,
+                    0.15064525725099692+0.28819468398157916j,
+                ],
+                [
+                    0.540973789934528+0.9902458802434049j,
+                    0.6498380747537472+0.04608316589309741j,
+                    0.06500818287737578-0.45604882079463316j,
+                    -0.09101540952306732+0.312761075941277j,
+                ],
+                [
+                    0.03060402345868264+5.441370837174266j,
+                    0.23208767214421472+0.9321937597629739j,
+                    0.4860912605858911+0.16040039348492374j,
+                    -0.24287320996018547-0.22985790254811306j,
+                ],
+                [
+                    0.0001607364763642876+499.2725608195123j,
+                    0.011768132420343795+7.3619718364797695j,
+                    0.13203418392461222+0.9166828387251396j,
+                    0.35764159478096075-0.09839104345102723j,
+                ],
+            ]),
+            (1, [
+                [
+                    -0.2422684576748739-1.471472392670243j,
+                    -0.5579365079100996-0.4123086269739113j,
+                    -0.3390589585259365+0.3246744247918j,
+                    0.27668385812756563-0.17501034430039825j,
+                ],
+                [
+                    0.44927209030887677-1.531219670177933j,
+                    -0.17052952569148502-0.6651991300514464j,
+                    -0.46688351794086247+0.010999953921729751j,
+                    0.3203456934015326+0.0649519865279609j,
+                ],
+                [
+                    0.11985236384014332-20.29401095602682j,
+                    0.24848627838448-0.8306163860433873j,
+                    0.014998118135342407-0.4316080204484158j,
+                    -0.19572612147417046+0.25162964514976927j,
+                ],
+                [
+                    0.0012778381836729433-3952.120992251375j,
+                    0.02958226468688951-17.5583834982187j,
+                    0.13301714368910203-0.683702168861821j,
+                    -0.12365934503319854-0.26265491703178884j,
+                ],
+            ]),
+            (2, [
+                [
+                    -0.4539328918910651+2.4984260518337797j,
+                    -0.1398699997958517+0.6573213417803664j,
+                    0.37307160774391224+0.26862520174885707j,
+                    -0.1967592336055912-0.2590262932648461j,
+                ],
+                [
+                    -0.8985441806177535+3.062439340355866j,
+                    -0.4639474937645631+0.40250327257376656j,
+                    0.09242543929394993+0.439714146687539j,
+                    0.036992409167790584-0.3214144551130116j,
+                ],
+                [
+                    0.21935562419995297+122.20858446966763j,
+                    0.014855114966958117+1.2787838482890157j,
+                    -0.27505007303727586+0.054758010435625414j,
+                    0.24850831798808215+0.16237986140669453j,
+                ],
+                [
+                    0.007570721643604232+39358.41331613203j,
+                    0.052194854999730186+56.69541688841105j,
+                    0.05835420626721993+0.9408762641846045j,
+                    -0.1780798840394451+0.09843751031142438j,
+                ],
+            ]),
+            (3, [
+                [
+                    0.18106041075750862-9.411269281678289j,
+                    0.4032113931472898-0.20915387953473796j,
+                    0.17702853833063945-0.3781412226201079j,
+                    -0.23620498980086804+0.21331999472508376j,
+                ],
+                [
+                    1.430281562732902-16.210740882397083j,
+                    0.28881692211277654+0.02048140706359885j,
+                    0.37002624989040056-0.14759821623965746j,
+                    -0.3151772967569374-0.009851617337879948j,
+                ],
+                [
+                    -0.1201738367928719-978.2511106829978j,
+                    -0.25633169999804256-4.077364838276459j,
+                    -0.05900951277687981+0.12604707420670264j,
+                    0.136119189010677-0.2352311379079314j,
+                ],
+                [
+                    0.029325177069621112-471322.70868290134j,
+                    0.04755227999912179-222.70430271536776j,
+                    -0.057698899757560054-2.0077996025759113j,
+                    0.04196069502876812+0.13679362759650704j,
+                ],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.h2vp)
+    def test_h2vp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.h2vp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.complex128)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def test_hyp0f1(self):
         # scalar input
@@ -3508,6 +4149,11 @@ class TestBessel:
                 else:
                     raise AssertionError(f"Invalid t return for nt={nt}")
 
+    @pytest.mark.parametrize("nt", [569, 572])
+    def test_jnjnp_zeros_overflow(self, nt):
+        # regresion test for gh-26699
+        special.jnjnp_zeros(nt)
+
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
         assert_allclose(jnp, array([1.84118,
@@ -3547,6 +4193,80 @@ class TestBessel:
         jvprim = special.jvp(2,2)
         jv0 = (special.jv(1,2)-special.jv(3,2))/2
         assert_allclose(jvprim, jv0, atol=1.5e-10, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besselj(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [0.9384698072408129, 0.5118276717359181,
+                 -0.2600519549019335, 0.1506452572509969],
+                [0.5409737899345280, 0.6498380747537472,
+                 0.0650081828773758, -0.0910154095230673],
+                [0.0306040234586826, 0.2320876721442147,
+                 0.4860912605858911, -0.2428732099601855],
+                [0.0001607364763643, 0.0117681324203438,
+                 0.1320341839246122, 0.3576415947809608],
+            ]),
+            (1, [
+                [-0.2422684576748739, -0.5579365079100996,
+                 -0.3390589585259365, 0.2766838581275656],
+                [0.4492720903088768, -0.1705295256914850,
+                 -0.4668835179408625, 0.3203456934015326],
+                [0.1198523638401433, 0.2484862783844800,
+                 0.0149981181353424, -0.1957261214741705],
+                [0.0012778381836729, 0.0295822646868895,
+                 0.1330171436891020, -0.1236593450331985],
+            ]),
+            (2, [
+                [-0.4539328918910651, -0.1398699997958517,
+                 0.3730716077439122, -0.1967592336055912],
+                [-0.8985441806177535, -0.4639474937645631,
+                 0.0924254392939499, 0.0369924091677906],
+                [0.2193556241999530, 0.0148551149669581,
+                 -0.2750500730372759, 0.2485083179880822],
+                [0.0075707216436042, 0.0521948549997302,
+                 0.0583542062672199, -0.1780798840394451],
+            ]),
+            (3, [
+                [0.1810604107575086, 0.4032113931472898,
+                 0.1770285383306395, -0.2362049898008680],
+                [1.4302815627329020, 0.2888169221127765,
+                 0.3700262498904006, -0.3151772967569374],
+                [-0.1201738367928719, -0.2563316999980426,
+                 -0.0590095127768798, 0.1361191890106770],
+                [0.0293251770696211, 0.0475522799991218,
+                 -0.0576988997575601, 0.0419606950287681],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.jvp)
+    def test_jvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.jvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def test_k0(self):
         ozk = special.k0(.1)
@@ -3644,6 +4364,80 @@ class TestBessel:
         x = special.kvp(v, z, n=2)
         assert_allclose(xc, x, atol=1.5e-10, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besselk(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [0.9244190712276659, 0.21380556264752573,
+                 0.03473950438627925, 0.0012439943280131232],
+                [1.0750476034999203, 0.22833505222826544,
+                 0.036025985131764596, 0.0012682866523815886],
+                [7.5501835512408695, 0.5836559632566508,
+                 0.06151045847174204, 0.0016919675672582928],
+                [752.245097910404, 7.918870773154969,
+                 0.30585120998610915, 0.004163865663165997],
+            ]),
+            (1, [
+                [-1.656441120003301, -0.2773878004568438,
+                 -0.040156431128194184, -0.001343919717735509],
+                [-2.1500952069998407, -0.3044467363043539,
+                 -0.04203031598705869, -0.001373977206746721],
+                [-31.85717532496678, -1.0555957514657115,
+                 -0.08116340344268888, -0.0019079089068216066],
+                [-6080.018692813162, -22.950792430887827,
+                 -0.5299719890719958, -0.005247808538018369],
+            ]),
+            (2, [
+                [4.237301311234267, 0.39873076295208826,
+                 0.048124981429010644, 0.001467980947635708],
+                [6.450285620999521, 0.4566701044565309,
+                 0.05103681226999984, 0.0015060903997031366],
+                [192.06747102102833, 2.3249970655789487,
+                 0.11590290782896813, 0.0021979487814239263],
+                [61055.96874980258, 79.53136900284885,
+                 1.026244024096524, 0.006889107380909501],
+            ]),
+            (3, [
+                [-16.75680822248504, -0.6664917759612777,
+                 -0.06065991728544153, -0.0016259143122785578],
+                [-30.101332897997768, -0.8118579634782772,
+                 -0.06554727850362725, -0.001675635663997203],
+                [-1536.3473711457746, -6.334842933569024,
+                 -0.18311380677139194, -0.0026018865173492727],
+                [-734207.9723687767, -324.4603189449644,
+                 -2.23560185496444, -0.009490993898258774],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.kvp)
+    def test_kvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.kvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
     def test_y0(self):
         oz = special.y0(.1)
         ozr = special.yn(0,.1)
@@ -3727,6 +4521,80 @@ class TestBessel:
         yvpr = (special.yv(1,.2) - special.yv(3,.2))/2.0
         yvp1 = special.yvp(2,.2)
         assert_allclose(yvp1, yvpr, atol=1.5e-10, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.bessely(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [-0.44451873350670656, 0.38244892379775886,
+                 0.3768500100127904, -0.28819468398157916],
+                [-0.9902458802434049, -0.04608316589309741,
+                 0.45604882079463316, -0.312761075941277],
+                [-5.441370837174266, -0.9321937597629739,
+                 -0.16040039348492374, 0.22985790254811306],
+                [-499.2725608195123, -7.3619718364797695,
+                 -0.9166828387251396, 0.09839104345102723],
+            ]),
+            (1, [
+                [1.471472392670243, 0.4123086269739113,
+                 -0.3246744247918, 0.17501034430039825],
+                [1.531219670177933, 0.6651991300514464,
+                 -0.010999953921729751, -0.0649519865279609],
+                [20.29401095602682, 0.8306163860433873,
+                 0.4316080204484158, -0.25162964514976927],
+                [3952.120992251375, 17.5583834982187,
+                 0.683702168861821, 0.26265491703178884],
+            ]),
+            (2, [
+                [-2.4984260518337797, -0.6573213417803664,
+                 -0.26862520174885707, 0.2590262932648461],
+                [-3.062439340355866, -0.40250327257376656,
+                 -0.439714146687539, 0.3214144551130116],
+                [-122.20858446966763, -1.2787838482890157,
+                 -0.054758010435625414, -0.16237986140669453],
+                [-39358.41331613203, -56.69541688841105,
+                 -0.9408762641846045, -0.09843751031142438],
+            ]),
+            (3, [
+                [9.411269281678289, 0.20915387953473796,
+                 0.3781412226201079, -0.21331999472508376],
+                [16.210740882397083, -0.02048140706359885,
+                 0.14759821623965746, 0.009851617337879948],
+                [978.2511106829978, 4.077364838276459,
+                 -0.12604707420670264, 0.2352311379079314],
+                [471322.70868290134, 222.70430271536776,
+                 2.0077996025759113, -0.13679362759650704],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.yvp)
+    def test_yvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.yvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def _cephes_vs_amos_points(self):
         """Yield points at which to compare Cephes implementation to AMOS"""
@@ -3986,6 +4854,118 @@ class TestBessel:
         x = special.ivp(1,2)
         assert_allclose(x, y, atol=1.5e-10, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besseli(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [1.0634833707413236, 1.646723189772891,
+                 4.8807925858650245, 67.23440697647797],
+                [0.5879930867904163, 1.3871617204034778,
+                 4.614822903407601, 65.70503691665827],
+                [0.031906149177738256, 0.33783461833568074,
+                 2.245212440929951, 46.787094717264566],
+                [0.00016480554985482353, 0.014738166271311515,
+                 0.32570518193793546, 16.6365544178007],
+            ]),
+            (1, [
+                [0.2578943053908963, 0.9816664285779075,
+                 3.9533702174026093, 61.341936777640235],
+                [0.6843965606244331, 1.0701370892420834,
+                 3.868620607293569, 60.230424589963356],
+                [0.1302697086799433, 0.531220270797,
+                 2.456561923449309, 45.74623853855205],
+                [0.0013266675701516975, 0.04147233629259493,
+                 0.5254800535787606, 19.059504020930063],
+            ]),
+            (2, [
+                [0.5476947599595309, 0.9922789040542858,
+                 3.5630025133974876, 57.01075084687127],
+                [-0.19280694766803347, 0.8278660742869198,
+                 3.453472226071067, 56.122917796918955],
+                [0.2818651186616637, 0.584282648178891,
+                 2.4242306624157153, 44.36128770720195],
+                [0.008059025600260134, 0.09189468000557456,
+                 0.7295765986346783, 20.853994600001556],
+            ]),
+            (3, [
+                [0.1940820070354198, 0.7564433496874537,
+                 3.204966070425959, 53.544087658096146],
+                [2.140020911921, 0.9072415381255198,
+                 3.169311932886439, 52.8158441514324],
+                [0.12994009758023364, 0.5213948266161256,
+                 2.347993529469997, 42.9734794689186],
+                [0.03323179037711203, 0.15381610659382736,
+                 0.8888403322006403, 22.119484868917045],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.ivp)
+    def test_ivp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.ivp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
+    def test_gh_22706_j1_tiny_inputs(self):
+        # for tiny inputs, j1(x)=x/2 in double precision
+        # reference values can also be confirmed with mpmath (see below test)
+        x = np.array([-1e-300, 1e-200, -1e-100])
+        assert_allclose(special.j1(x), x/2, atol=1.5e-8, rtol=0)
+
+    def test_gh_22706_j1_large_inputs(self):
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 1000
+        # float(mp.besselj(1, x))
+        x = np.array([1e20, 1.438449888287654e+17])
+        reference = np.array([-7.95068198242545e-11, -1.968878305887983e-09])
+        assert_allclose(special.j1(x), reference, rtol=1e-15)
+
+
+    @pytest.mark.parametrize("x, expected",
+        [(1e15, 6.156638646885021e-09),  # 1/sqrt(eps) < x < 1/eps
+         (1e30, -5.589003016686147e-16)  # x > 1/eps
+        ])
+    def test_gh22705(self, x, expected):
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 1000
+        # float(mp.besselj(0, mp.mpf('1e15')))
+        assert_allclose(special.j0(x), expected, rtol=5e-15)
+
+
+    def test_gh25199(self):
+        # regression test that tiny inputs in j0 don't cause overflow
+        with special.errstate(overflow="raise"):
+            assert_allclose(special.j0(1e-200), 1.0, atol=0, rtol=0)
+
+    @pytest.mark.parametrize("func, expected", [(special.i0, 6.705128263670996e+307),
+                                                (special.i1, 6.700424559186402e+307)])
+    def test_gh_25823(self, func, expected):
+        assert_allclose(func(713.0), expected, rtol=5e-15, atol=0)
+
 
 class TestLaguerre:
     def test_laguerre(self):
@@ -4050,10 +5030,10 @@ def ce_fourier_coefficient_using_integral(k, n, q):
     This function is used as an alternative implementation of
     mathieu_even_coef().
     """
-    period = 180 if n % 2 == 0 else 360
+    period = np.pi if n % 2 == 0 else 2*np.pi
     # For k = 0, the factor outside the integral is (1/period).
     # For k = 1, 2, 3, ..., the factor is (2/period).
-    c = (1/period)*quad(lambda t: special.mathieu_cem(n, q, t)[0],
+    c = (1/period)*quad(lambda t: special.mathieu_ce(n, q, t)[0],
                         -period/2, period/2,
                         weight='cos', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     if k > 0:
@@ -4072,14 +5052,49 @@ def se_fourier_coefficient_using_integral(k, n, q):
     # function with k == 0, but we'll check anyway.)
     if k == 0:
         return 0.0
-    period = 180 if n % 2 == 0 else 360
-    c = (2/period)*quad(lambda t: special.mathieu_sem(n, q, t)[0],
+    period = np.pi if n % 2 == 0 else 2*np.pi
+    c = (2/period)*quad(lambda t: special.mathieu_se(n, q, t)[0],
                         -period/2, period/2,
                         weight='sin', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     return c
 
 
 class TestMathieu:
+
+    _angular = [("mathieu_cem", "mathieu_ce"), ("mathieu_sem", "mathieu_se")]
+
+    @pytest.mark.parametrize("name", ["mathieu_ce", "mathieu_se"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_angular_q0(self, name, dtype):
+        # For q = 0, the Mathieu functions reduce to
+        # ce_m(x) = cos(m*x) and se_m(x) = sin(m*x)
+        m = np.arange(5, dtype=dtype)[:, None]
+        x = np.linspace(-2*np.pi, 2*np.pi, 31, dtype=dtype)
+        y, yp = getattr(special, name)(m, dtype(0), x)
+        if name == "mathieu_ce":
+            expected = np.cos(m*x)
+            expected[0] = 1/np.sqrt(2)
+            expected_derivative = -m*np.sin(m*x)
+        else:
+            expected = np.sin(m*x)
+            expected_derivative = m*np.cos(m*x)
+        tol = 5e-6 if dtype == np.float32 else 1e-14
+        assert_allclose(y, expected, rtol=tol, atol=tol)
+        assert_allclose(yp, expected_derivative, rtol=tol, atol=tol)
+        assert y.dtype == yp.dtype == dtype
+
+    @pytest.mark.parametrize("old, new", _angular)
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_legacy_agreement(self, old, new, dtype):
+        m = np.arange(5, dtype=dtype)[:, None, None]
+        q = np.asarray([-5., 0.1, 1., 10.], dtype=dtype)[:, None]
+        x = np.linspace(-2.0 * np.pi, 2.0 * np.pi, 31, dtype=dtype)
+        legacy_x = np.rad2deg(x)
+        with pytest.warns(DeprecationWarning, match=f"{old}.*2.0.0.*2.2.0.*{new}"):
+            expected = getattr(special, old)(m, q, legacy_x)
+        actual = getattr(special, new)(m, q, x)
+        tol = 1e-5 if dtype == np.float32 else 1e-13
+        assert_allclose(actual, expected, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize('n, q', [(4, 3.5), (8, 4.25)])
     def test_mathieu_even_coef_against_integral_n_even(self, n, q):
@@ -4114,7 +5129,7 @@ class TestMathieu:
         # Compare the first 4 nonzero Fourier coefficients to the coefficients
         # computed using the integral definition.
         c = [se_fourier_coefficient_using_integral(k, n, q) for k in range(1, 5)]
-        assert_allclose(c, B[:len(c)], rtol=1e-10)
+        assert_allclose(c, B[:len(c)], rtol=5e-9)
 
     @pytest.mark.parametrize('n, q', [(3, 3.5), (7, 2)])
     def test_mathieu_odd_coef_against_integral_n_odd(self, n, q):
@@ -4278,8 +5293,10 @@ class TestRiccati:
         assert_allclose(C, special.riccati_yn(n, x), atol=1.5e-8, rtol=0)
 
 
+@make_xp_test_case(softplus)
 class TestSoftplus:
-    def test_softplus(self):
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softplus(self, dtype, xp):
         # Test cases for the softplus function. Selected based on Eq.(10) of:
         # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
         # Floating-Point Reliable. Retrieved from:
@@ -4304,11 +5321,16 @@ class TestSoftplus:
                [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
                [31.253760266045106, 27.758244090327832, 29.995959179643634],
                [73.26040086468937, 76.24944728617226, 37.83955519155184]]
+        dtype = getattr(xp, dtype)
+        ref = xp.asarray(ref, dtype=dtype)
+        a = xp.asarray(a, dtype=dtype)
 
         res = softplus(a)
-        assert_allclose(res, ref, rtol=2e-15)
+        rtol = 2e-15 if dtype == xp.float64 else 5e-6
+        xp_assert_close(res, ref, rtol=rtol, atol=1e-14)
 
     def test_softplus_with_kwargs(self):
+        # NumPy only as standard does not define any kwargs for logaddexp
         x = np.arange(5) - 2
         out = np.ones(5)
         ref = out.copy()
@@ -4830,8 +5852,8 @@ class TestStirling2:
     def test_numpy_array_unsigned_int_dtype(self, is_exact, comp, kwargs):
         # numpy unsigned integers are allowed as dtype in numpy arrays
         ans = asarray(self.table[4][1:])
-        n = asarray([4, 4, 4, 4], dtype=np_ulong)
-        k = asarray([1, 2, 3, 4], dtype=np_ulong)
+        n = asarray([4, 4, 4, 4], dtype=np.ulong)
+        k = asarray([1, 2, 3, 4], dtype=np.ulong)
         comp(stirling2(n, k, exact=False), ans, **kwargs)
 
     @pytest.mark.parametrize("is_exact, comp, kwargs", [

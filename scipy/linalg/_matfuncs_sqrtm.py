@@ -9,7 +9,7 @@ __all__ = []
 import numpy as np
 
 # Local imports
-from .lapack import ztrsyl, dtrsyl
+from .lapack import get_lapack_funcs
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
@@ -45,16 +45,20 @@ def _sqrtm_triu(T, blocksize=64):
     """
     T_diag = np.diag(T)
     keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
+    r_dtype = np.real(T).dtype
+    c_dtype = np.result_type(T, 0+0j)
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
-        T = np.asarray(T, dtype=np.complex128, order="C")
-        T_diag = np.asarray(T_diag, dtype=np.complex128)
+        T = np.asarray(T, dtype=c_dtype, order="C")
+        T_diag = np.asarray(T_diag, dtype=c_dtype)
     else:
-        T = np.asarray(T, dtype=np.float64, order="C")
-        T_diag = np.asarray(T_diag, dtype=np.float64)
+        T = np.asarray(T, dtype=r_dtype, order="C")
+        T_diag = np.asarray(T_diag, dtype=r_dtype)
 
     R = np.diag(np.sqrt(T_diag))
+
+    trsyl = get_lapack_funcs('trsyl', (R,), ilp64="preferred")
 
     # Compute the number of blocks to use; use at least one block.
     n, n = T.shape
@@ -97,10 +101,7 @@ def _sqrtm_triu(T, blocksize=64):
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
-            if keep_it_real:
-                x, scale, info = dtrsyl(Rii, Rjj, S)
-            else:
-                x, scale, info = ztrsyl(Rii, Rjj, S)
+            x, scale, info = trsyl(Rii, Rjj, S)
             R[istart:istop, jstart:jstop] = x * scale
 
     # Return the matrix square root.

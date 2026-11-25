@@ -4860,7 +4860,7 @@ def get_lebedev_recurrence_points(type_, start, a, b, v, leb):
             start = start + 8
 
         case 4:
-            # /* In this case A is inputed */
+            # /* In this case A is inputted */
             b = sqrt(1.0 - 2.0 * a * a)
             leb.x[start] = a
             leb.y[start] = a
@@ -4984,7 +4984,7 @@ def get_lebedev_recurrence_points(type_, start, a, b, v, leb):
             start = start + 24
 
         case 5:
-            # /* A is inputed in this case as well*/
+            # /* A is inputted in this case as well*/
             b = sqrt(1 - a * a)
             leb.x[start] = a
             leb.y[start] = b
@@ -5108,7 +5108,7 @@ def get_lebedev_recurrence_points(type_, start, a, b, v, leb):
             start = start + 24
 
         case 6:
-            # /* both A and B are inputed in this case */
+            # /* both A and B are input in this case */
             c = sqrt(1.0 - a * a - b * b)
             leb.x[start] = a
             leb.y[start] = b

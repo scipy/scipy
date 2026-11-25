@@ -93,7 +93,7 @@ class TestHessianUpdateStrategy(TestCase):
     # For this list of points, it is known
     # that no exception occur during the
     # Hessian update. Hence no update is
-    # skiped or damped.
+    # skipped or damped.
 
 
     def test_initialize_catch_illegal(self):

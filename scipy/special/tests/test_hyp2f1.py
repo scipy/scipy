@@ -1,6 +1,6 @@
 """Tests for hyp2f1 for complex values.
 
-Author: Albert Steppi, with credit to Adam Kullberg (FormerPhycisist) for
+Author: Albert Steppi, with credit to Adam Kullberg (FormerPhysicist) for
 the implementation of mp_hyp2f1 below, which modifies mpmath's hyp2f1 to
 return the same branch as scipy's on the standard branch cut.
 """

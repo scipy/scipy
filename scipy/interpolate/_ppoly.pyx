@@ -12,7 +12,7 @@ cimport cython
 cimport libc.stdlib
 cimport libc.math
 
-from scipy.linalg.cython_lapack cimport dgeev
+from scipy.linalg.cython_lapack cimport blas_int, dgeev
 
 include "_poly_common.pxi"
 
@@ -140,9 +140,9 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
     cdef size_t ntot
     cdef ssize_t strides[MAX_DIMS]
     cdef ssize_t kstrides[MAX_DIMS]
-    cdef double* xx[MAX_DIMS]
+    cdef const double* xx[MAX_DIMS]
     cdef size_t nxx[MAX_DIMS]
-    cdef double[::1] y
+    cdef const double[::1] y
     cdef double_or_complex[:,:,::1] c2
     cdef int ip, jp, k, ndim
     cdef int interval[MAX_DIMS]
@@ -180,7 +180,7 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
 
         # grab array pointers
         nxx[ip] = y.shape[0]
-        xx[ip] = <double*>&y[0]
+        xx[ip] = &y[0]
 
     if c.shape[1] != ntot:
         raise ValueError("xs and c have incompatible shapes")
@@ -666,7 +666,7 @@ cdef double_or_complex evaluate_poly1(double s, const double_or_complex[:,:,::1]
         Order of derivative (> 0) or antiderivative (< 0) to evaluate.
 
     """
-    cdef int kp, k
+    cdef int kp, k, _k
     cdef double_or_complex res, z
     cdef double prefactor
 
@@ -674,7 +674,7 @@ cdef double_or_complex evaluate_poly1(double s, const double_or_complex[:,:,::1]
     z = 1.0
 
     if dx < 0:
-        for k in range(-dx):
+        for _k in range(-dx):
             z *= s
 
     for kp in range(c.shape[0]):
@@ -745,8 +745,9 @@ cdef int croots_poly1(const double[:,:,::1] c, double y, int ci, int cj,
     cdef double *a
     cdef double *work
     cdef double a0, a1, a2, d, br, bi, cc
-    cdef int lwork, n, i, j, order
-    cdef int nworkspace, info
+    cdef int n, i, j
+    cdef blas_int order, lwork, info
+    cdef int nworkspace
 
     n = c.shape[0]
 

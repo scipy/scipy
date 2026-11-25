@@ -210,7 +210,7 @@ class gaussian_kde:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__: classmethod = classmethod(GenericAlias)
 
     def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(asarray(dataset))
@@ -299,7 +299,7 @@ class gaussian_kde:
 
         Parameters
         ----------
-        mean : aray_like
+        mean : array_like
             A 1-D array, specifying the mean of the Gaussian.
         cov : array_like
             A 2-D array, specifying the covariance matrix of the Gaussian.

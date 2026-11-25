@@ -1,6 +1,7 @@
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
   dependencies: [np_dep, ccallback_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -8,7 +9,7 @@ py3.extension_module('_quadpack',
 py3.extension_module('_odepack',
   ['_odepackmodule.c', 'src/lsoda.c'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
+  dependencies: [lapack_dep, np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -16,7 +17,7 @@ py3.extension_module('_odepack',
 py3.extension_module('_vode',
   ['_dzvodemodule.c', 'src/vode.c', 'src/zvode.c'],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
+  dependencies: [lapack_dep, np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -53,11 +54,6 @@ py3.install_sources([
     '_quadpack_py.py',
     '_tanhsinh.py',
     '_cubature.py',
-    'dop.py',
-    'lsoda.py',
-    'odepack.py',
-    'quadpack.py',
-    'vode.py',
     'src/LICENSE_DOP'
   ],
   subdir: 'scipy/integrate'

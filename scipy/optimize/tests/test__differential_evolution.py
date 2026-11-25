@@ -21,6 +21,8 @@ from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
 from pytest import raises as assert_raises, warns
 import pytest
 
+from scipy._lib._testutils import IS_WASM
+
 
 class TestDifferentialEvolutionSolver:
 
@@ -724,13 +726,15 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
+        workers = map if IS_WASM else 2
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as s:
+            with DifferentialEvolutionSolver(rosen, bounds, workers=workers) as s:
                 solver.solve()
         assert s._updating == 'deferred'
 
+    @pytest.mark.xfail(IS_WASM, reason="cannot create thread pool in Pyodide/WASM")
     def test_parallel_threads(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -743,6 +747,7 @@ class TestDifferentialEvolutionSolver:
             solver.solve()
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.xfail(IS_WASM, reason="cannot create process pool in Pyodide/WASM")
     def test_parallel_processes(self):
         bounds = [(0., 2.), (0., 2.)]
         with DifferentialEvolutionSolver(

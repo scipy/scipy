@@ -86,17 +86,22 @@ import warnings
 
 import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag
+from scipy._lib._array_api import xp_capabilities
+
+from scipy.linalg.blas import HAS_ILP64
 
 from . import _vode
 from . import _dop
 from ._odepack import lsoda as lsoda_step
 
+_iwork_dtype = np.int64 if HAS_ILP64 else np.int32
 
 # ------------------------------------------------------------------------------
 # User interface
 # ------------------------------------------------------------------------------
 
 
+@xp_capabilities(out_of_scope=True)
 class ode:
     """
     A generic interface class to numeric integrators.
@@ -328,7 +333,7 @@ class ode:
     """
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def __init__(self, f, jac=None):
         self.stiff = 0
@@ -413,15 +418,9 @@ class ode:
         else:
             mth = self._integrator.run
 
-        try:
-            self._y, self.t = mth(self.f, self.jac or (lambda: None),
-                                  self._y, self.t, t,
-                                  self.f_params, self.jac_params)
-        except SystemError as e:
-            # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError(
-                'Function to integrate must not return a tuple.'
-            ) from e
+        self._y, self.t = mth(self.f, self.jac or (lambda: None),
+                              self._y, self.t, t,
+                              self.f_params, self.jac_params)
 
         return self._y
 
@@ -576,6 +575,7 @@ def _transform_banded_jac(bjac):
     return newjac
 
 
+@xp_capabilities(out_of_scope=True)
 class complex_ode(ode):
     """
     A wrapper of ode for complex systems.
@@ -765,14 +765,14 @@ class IntegratorBase:
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
     istate = None  # istate > 0 means success, istate < 0 means failure
-    supports_run_relax = None
-    supports_step = None
+    supports_run_relax: int | None = None
+    supports_step: int | None = None
     supports_solout = False
-    integrator_classes = []
-    scalar = float
+    integrator_classes: list[type] = []
+    scalar: type = float
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def acquire_new_handle(self):
         # Some of the integrators have internal state (ancient
@@ -799,12 +799,12 @@ class IntegratorBase:
         raise NotImplementedError('all integrators must define '
                                   'run(f, jac, t0, t1, y0, f_params, jac_params)')
 
-    def step(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def step(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Make one integration step and return (y1,t1)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support step() method')
 
-    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
+    def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params, /):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
         raise NotImplementedError(f'{self.__class__.__name__} '
                                   'does not support run_relax() method')
@@ -955,7 +955,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1028,7 +1028,7 @@ class zvode(vode):
     supports_step = 1
     scalar = complex
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1080,7 +1080,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), np.int32)
+        iwork = zeros((liw,), _iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1119,7 +1119,7 @@ class dopri5(IntegratorBase):
                 -4: 'problem is probably stiff (interrupted)',
                 }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
@@ -1133,6 +1133,11 @@ class dopri5(IntegratorBase):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for dopri5, got {method}')
+
         self.rtol = rtol
         self.atol = atol
         self.nsteps = nsteps
@@ -1210,6 +1215,11 @@ class dop853(dopri5):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for dop853, got {method}')
+
         super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
                          ifactor, dfactor, beta, method, verbosity)
 
@@ -1247,7 +1257,7 @@ class lsoda(IntegratorBase):
         -7: "Internal workspace insufficient to finish (internal error)."
     }
 
-    __class_getitem__ = None
+    __class_getitem__ = None  # type:ignore[assignment]
 
     def __init__(self,
                  with_jacobian=False,
@@ -1263,6 +1273,10 @@ class lsoda(IntegratorBase):
                  max_order_s=5,
                  method=None
                  ):
+
+        if method is not None:
+            raise ValueError(f'Integration method must be None '
+                             f'for lsoda, got {method}')
 
         self.with_jacobian = with_jacobian
         self.rtol = rtol
@@ -1333,7 +1347,7 @@ class lsoda(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), dtype=np.int32)
+        iwork = zeros((liw,), dtype=_iwork_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:

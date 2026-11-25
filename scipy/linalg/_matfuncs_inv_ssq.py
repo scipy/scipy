@@ -418,7 +418,7 @@ def _inverse_squaring_helper(T0, theta):
     # The subtraction of the identity is redundant here,
     # because the diagonal will be replaced for improved numerical accuracy,
     # but this formulation should help clarify the meaning of R.
-    R = T - np.identity(n)
+    R = T - np.identity(n, dtype=T.dtype)
 
     # Replace the diagonal and first superdiagonal of T0^(1/(2^s)) - I
     # using formulas that have less subtractive cancellation.
@@ -502,7 +502,7 @@ def _fractional_power_pade(R, t, m):
     if len(R.shape) != 2 or R.shape[0] != R.shape[1]:
         raise ValueError('expected an upper triangular square matrix')
     n, n = R.shape
-    ident = np.identity(n)
+    ident = np.identity(n, dtype=R.dtype)
     Y = R * _fractional_power_pade_constant(2*m, t)
     for j in range(2*m - 1, 0, -1):
         rhs = R * _fractional_power_pade_constant(j, t)
@@ -655,7 +655,7 @@ def _remainder_matrix_power(A, t):
     # If the triangular matrix is real and has a negative
     # entry on the diagonal, then force the matrix to be complex.
     if np.isrealobj(T) and np.min(T_diag) < 0:
-        T = T.astype(complex)
+        T = T.astype(np.complex64 if T.dtype == np.float32 else np.complex128)
 
     # Get the fractional power of the triangular matrix,
     # and de-triangularize it if necessary.
@@ -697,7 +697,7 @@ def _fractional_matrix_power(A, p):
             a = int(np.ceil(p))
             b = p2
         try:
-            R = _remainder_matrix_power(A, b)
+            R = _remainder_matrix_power(A, b.astype(A.dtype))
             Q = np.linalg.matrix_power(A, a)
             return Q.dot(R)
         except np.linalg.LinAlgError:

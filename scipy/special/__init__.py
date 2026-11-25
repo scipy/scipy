@@ -393,8 +393,9 @@ Miscellaneous
 .. autosummary::
    :toctree: generated/
 
-   tklmbda      -- Tukey-Lambda cumulative distribution function.
-   owens_t      -- Owen's T Function.
+   tklmbda                 -- Tukey-Lambda cumulative distribution function.
+   owens_t                 -- Owen's T Function.
+   poisson_binom_cdf       -- Poisson binomial cumulative distribution function.
 
 
 Information Theory functions
@@ -424,6 +425,8 @@ Gamma and related functions
    gammaincinv  -- Inverse to `gammainc`.
    gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse to `gammaincc`.
+   log_gammainc -- Log of the regularized lower incomplete gamma function.
+   log_gammaincc -- Log of the regularized upper incomplete gamma function.
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
@@ -431,6 +434,7 @@ Gamma and related functions
    betaincinv   -- Inverse function to beta integral.
    betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
+   digammainv   -- Inverse of the digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
@@ -498,8 +502,8 @@ Ellipsoidal harmonics
 .. autosummary::
    :toctree: generated/
 
-   ellip_harm   -- Ellipsoidal harmonic functions E^p_n(l).
-   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n(l).
+   ellip_harm   -- Ellipsoidal harmonic functions E^p_n.
+   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n.
    ellip_normal -- Ellipsoidal harmonic normalization constants gamma^p_n.
 
 Orthogonal polynomials
@@ -632,19 +636,27 @@ universal functions):
    :toctree: generated/
 
    mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even Mathieu function and its derivative.
-   mathieu_sem     -- Odd Mathieu function and its derivative.
+   mathieu_ce -- Even Mathieu function and its derivative.
+   mathieu_se -- Odd Mathieu function and its derivative.
    mathieu_modcem1 -- Even modified Mathieu function of the first kind and its derivative.
    mathieu_modcem2 -- Even modified Mathieu function of the second kind and its derivative.
    mathieu_modsem1 -- Odd modified Mathieu function of the first kind and its derivative.
    mathieu_modsem2 -- Odd modified Mathieu function of the second kind and its derivative.
+
+The following functions are deprecated in favor of the functions above:
+
+.. autosummary::
+   :toctree: generated/
+
+   mathieu_cem     -- Even Mathieu function and its derivative.
+   mathieu_sem     -- Odd Mathieu function and its derivative.
 
 Spheroidal wave functions
 -------------------------
@@ -782,15 +794,16 @@ Convenience functions
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
+# Contains dynamically generated wrappers which enable alternative
+# backend support.
+from . import _support_alternative_backends
+from ._support_alternative_backends import *
+
 from . import _ufuncs
-from ._ufuncs import *
+from ._ufuncs import geterr, seterr, errstate
 
 from . import _basic
 from ._basic import *
-
-# Replace some function definitions from _ufuncs and _basic
-# to add Array API support
-from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -800,12 +813,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
-from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
@@ -813,20 +820,22 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-# Deprecated namespaces, to be removed in v2.0.0
-from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
-
-# We replace some function definitions from _ufuncs with those from
-# _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
-# so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
+__all__ = (
+    _support_alternative_backends.__all__
+    + _basic.__all__
+    + _orthogonal.__all__
+    + _multiufuncs.__all__
+)
 __all__ += [
+    'geterr',
+    'seterr',
+    'errstate',
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
     'softmax',
     'log_softmax',
-    'multigammaln',
+    'multigammaln',  # pyrefly:ignore[bad-dunder-all]
     'ellip_harm',
     'ellip_harm_2',
     'ellip_normal',
@@ -835,6 +844,12 @@ __all__ += [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'mathieu_ce',
+    'mathieu_se',
+    'mathieu_cem',
+    'mathieu_sem',
+    'poisson_binom_cdf',
+    'polygamma',
 ]
 
 from scipy._lib._testutils import PytestTester

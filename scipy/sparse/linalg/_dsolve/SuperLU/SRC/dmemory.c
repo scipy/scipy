@@ -13,9 +13,10 @@ at the top-level directory.
  * \brief Memory details
  *
  * <pre>
- * -- SuperLU routine (version 4.0) --
+ * -- SuperLU routine (version 7.0.0) --
  * Lawrence Berkeley National Laboratory.
  * June 30, 2009
+ * August 2024
  * </pre>
  */
 #include "slu_ddefs.h"
@@ -659,8 +660,8 @@ dStackCompress(GlobalLU_t *Glu)
     
     last = (char*)usub + xusub[ndim] * iword;
     fragment = (char*) (((char*)Glu->stack.array + Glu->stack.top1) - last);
-    Glu->stack.used -= (long int) fragment;
-    Glu->stack.top1 -= (long int) fragment;
+    Glu->stack.used -= (int_t)(intptr_t) fragment;
+    Glu->stack.top1 -= (int_t)(intptr_t) fragment;
 
     Glu->ucol = ucol;
     Glu->lsub = lsub;

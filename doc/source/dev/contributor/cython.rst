@@ -167,7 +167,7 @@ Exercise
     Recreating the annotated ``.html`` file shows that most of the
     Python interaction has disappeared.
 
-#. Rebuild SciPy, open an fresh IPython console, and ``%timeit``:
+#. Rebuild SciPy, open a fresh IPython console, and ``%timeit``:
 
 ::
 

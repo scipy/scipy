@@ -20,7 +20,7 @@ from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
-distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+distdiscrete = distdiscrete + [[stats.rv_discrete(values=vals), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'nhypergeom'}
@@ -38,7 +38,7 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
+@pytest.mark.parametrize('distname,arg,first_case', list(cases_test_discrete_basic()))
 def test_discrete_basic(distname, arg, first_case, num_parallel_threads):
     if (isinstance(distname, str) and distname.startswith('nchypergeom')
             and num_parallel_threads > 1):
@@ -399,7 +399,7 @@ def cases_test_discrete_integer_shapes():
 
 
 @pytest.mark.parametrize('distname, shapename, shapes',
-                         cases_test_discrete_integer_shapes())
+                         list(cases_test_discrete_integer_shapes()))
 def test_integer_shapes(distname, shapename, shapes):
     dist = getattr(stats, distname)
     shape_info = dist._shape_info()

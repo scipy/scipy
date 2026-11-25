@@ -30,9 +30,7 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.stats._finite_differences import _derivative
 
-# for scipy.stats.entropy. Attempts to import just that function or file
-# have cause import problems
-from scipy import stats
+from scipy.stats._entropy import entropy
 
 from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
@@ -507,7 +505,7 @@ def _sum_finite(x):
 class rv_frozen:
 
     # generic type compatibility with scipy-stubs
-    __class_getitem__ = classmethod(types.GenericAlias)
+    __class_getitem__: classmethod = classmethod(types.GenericAlias)
 
     def __init__(self, dist, *args, **kwds):
         self.args = args
@@ -1871,6 +1869,8 @@ class rv_continuous(rv_generic):
     ``gaussian._pdf(y) / scale``.
 
     """
+
+    _support: tuple[float | str, float | str]  # not required
 
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,
@@ -3846,7 +3846,7 @@ class rv_discrete(rv_generic):
 
     def _entropy(self, *args):
         if hasattr(self, 'pk'):
-            return stats.entropy(self.pk)
+            return entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
             return _expect(lambda x: entr(self._pmf(x, *args)),
@@ -3991,7 +3991,8 @@ for method_name in _remove_scale_methods:
     doc = FunctionDoc(method)
     doc['Parameters'] = [p for p in doc['Parameters'] if p.name != 'scale']
     doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
-    method.__doc__ = str(doc)
+    method.__doc__ = doc
+del method_name, method, doc  # pyrefly:ignore[unbound-name]
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
@@ -4188,7 +4189,7 @@ class rv_sample(rv_discrete):
         return Y
 
     def _entropy(self):
-        return stats.entropy(self.pk)
+        return entropy(self.pk)
 
     def generic_moment(self, n):
         n = asarray(n)

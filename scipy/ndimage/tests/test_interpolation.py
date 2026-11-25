@@ -34,6 +34,50 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
+    @pytest.mark.parametrize('order', [0, 3])
+    @pytest.mark.parametrize('mode, reduced', [
+        ('wrap', [0., 3.]),
+        ('grid-wrap', [0., 0.]),
+        ('mirror', [0., 0.]),
+        ('reflect', [0., -1.]),
+        ('nearest', [100., -100.]),
+        ('constant', [100., -100.]),
+        ('grid-constant', [100., -100.]),
+    ])
+    def test_large_coordinates(self, mode, reduced, order):
+        data = np.arange(1., 5.)
+        kwargs = dict(mode=mode, order=order, cval=-10.)
+        # The floating-point value 1e300 is divisible by all the periods
+        # for this input (3, 4, 6, and 8).
+        coordinates = np.array([[1e300, -1e300]])
+        expected = ndimage.map_coordinates(data, [reduced], **kwargs)
+        actual = ndimage.map_coordinates(data, coordinates, **kwargs)
+        assert_array_almost_equal(actual, expected)
+
+        # shift uses a separate C implementation. At this magnitude, adding
+        # an output index does not change the floating-point coordinate.
+        for coordinate, value in zip(coordinates[0], expected):
+            actual = ndimage.shift(data, -coordinate, **kwargs)
+            assert_array_almost_equal(actual, np.full(data.shape, value))
+
+    @pytest.mark.parametrize('coordinate', [np.nan, np.inf, -np.inf])
+    @pytest.mark.parametrize('mode', [
+        'wrap', 'grid-wrap', 'mirror', 'reflect', 'nearest',
+        'constant', 'grid-constant',
+    ])
+    def test_nonfinite_coordinates(self, coordinate, mode):
+        data = np.arange(4.)
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.map_coordinates(data, [[coordinate]], mode=mode)
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.shift(data, coordinate, mode=mode)
+
+    def test_nonfinite_mapping(self):
+        # An out-of-bounds first axis must not hide a non-finite second axis.
+        with pytest.raises(ValueError, match='coordinates must be finite'):
+            ndimage.geometric_transform(np.ones((4, 4)),
+                                        lambda _: (-1., np.nan))
+
     @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',
@@ -622,6 +666,35 @@ class TestMapCoordinates:
             )
         except MemoryError as e:
             raise pytest.skip('Not enough memory available') from e
+
+    @xfail_xp_backends("cupy", reason="CuPy map_coordinates has the same aliasing bug")
+    @pytest.mark.parametrize('n_channels', range(1, 4))
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_map_coordinates_reflect_multichannel(self, n_channels, order, xp):
+        # Regression test for gh-24550: reflect mode spline prefilter had an
+        # aliasing bug that caused accuracy loss for multi-channel images.
+        if is_jax(xp) and order > 1:
+            pytest.xfail("jax map_coordinates requires order <= 1")
+
+        rng = np.random.default_rng(4567)
+        image = xp.asarray(rng.random((8, 8)), dtype=xp.float64)
+        coords = xp.asarray(rng.random((2, 5, 5)) * 7)
+
+        single = ndimage.map_coordinates(image, coords, order=order,
+                                         mode='reflect')
+
+        color = xp.stack([image] * n_channels, axis=-1)
+        channels = np.broadcast_to(np.arange(n_channels),
+                                   (1, 5, 5, n_channels))
+        coords_color = np.broadcast_to(
+            np.asarray(coords)[..., np.newaxis], (2, 5, 5, n_channels))
+        coords_color = xp.asarray(np.concatenate(
+            (coords_color, channels), axis=0))
+
+        multi = ndimage.map_coordinates(color, coords_color, order=order,
+                                        mode='reflect')
+        expected = xp.stack([single] * n_channels, axis=-1)
+        xp_assert_close(multi, expected)
 
 
 @make_xp_test_case(ndimage.affine_transform)
@@ -1470,7 +1543,7 @@ class TestRotate:
     def test_rotate10(self, xp):
         data = xp.reshape(xp.arange(45, dtype=xp.float64), (3, 5, 3))
 
-	# The output of ndimage.rotate before refactoring
+        # The output of ndimage.rotate before refactoring
         expected = xp.asarray([[[0.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0],
                                 [6.54914793, 7.54914793, 8.54914793],

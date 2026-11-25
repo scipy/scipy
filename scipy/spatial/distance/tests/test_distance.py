@@ -1,0 +1,2825 @@
+#
+# Author: Damian Eads
+# Date: April 17, 2008
+#
+# Copyright (C) 2008 Damian Eads
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#
+# 3. The name of the author may not be used to endorse or promote
+#    products derived from this software without specific prior
+#    written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from functools import wraps, partial
+import os.path
+import sys
+import platform
+import sysconfig
+import warnings
+import weakref
+import math
+
+import numpy as np
+import pytest
+
+import scipy.spatial.distance
+
+from scipy.linalg import block_diag
+from scipy.spatial.distance import (
+    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y)
+from scipy.spatial.distance._distance import (
+    _validate_vector, _validate_weights, _METRICS_NAMES)
+
+from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
+                                    correlation, cosine, dice, euclidean,
+                                    hamming, jaccard, jensenshannon, mahalanobis,
+                                    minkowski, rogerstanimoto,
+                                    russellrao, seuclidean,
+                                    sokalsneath, sqeuclidean, yule)
+from scipy._external import array_api_extra as xpx
+from scipy._lib._util import _apply_over_batch
+from scipy._lib._array_api import (
+    make_xp_test_case,
+    is_lazy_array,
+    array_namespace,
+    make_xp_pytest_param,
+    xp_device,
+)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+
+
+@pytest.fixture(params=_METRICS_NAMES, scope="session")
+def metric(request):
+    """
+    Fixture for all metrics in scipy.spatial.distance
+    """
+    return request.param
+
+
+_filenames = [
+              "cdist-X1.txt",
+              "cdist-X2.txt",
+              "iris.txt",
+              "pdist-boolean-inp.txt",
+              "pdist-chebyshev-ml-iris.txt",
+              "pdist-chebyshev-ml.txt",
+              "pdist-cityblock-ml-iris.txt",
+              "pdist-cityblock-ml.txt",
+              "pdist-correlation-ml-iris.txt",
+              "pdist-correlation-ml.txt",
+              "pdist-cosine-ml-iris.txt",
+              "pdist-cosine-ml.txt",
+              "pdist-double-inp.txt",
+              "pdist-euclidean-ml-iris.txt",
+              "pdist-euclidean-ml.txt",
+              "pdist-hamming-ml.txt",
+              "pdist-jaccard-ml.txt",
+              "pdist-jensenshannon-ml-iris.txt",
+              "pdist-jensenshannon-ml.txt",
+              "pdist-minkowski-3.2-ml-iris.txt",
+              "pdist-minkowski-3.2-ml.txt",
+              "pdist-minkowski-5.8-ml-iris.txt",
+              "pdist-seuclidean-ml-iris.txt",
+              "pdist-seuclidean-ml.txt",
+              "pdist-spearman-ml.txt",
+              "random-bool-data.txt",
+              "random-double-data.txt",
+              "random-int-data.txt",
+              "random-uint-data.txt",
+              ]
+
+_tdist = np.array([[0, 662, 877, 255, 412, 996],
+                      [662, 0, 295, 468, 268, 400],
+                      [877, 295, 0, 754, 564, 138],
+                      [255, 468, 754, 0, 219, 869],
+                      [412, 268, 564, 219, 0, 669],
+                      [996, 400, 138, 869, 669, 0]], dtype='double')
+
+_ytdist = squareform(_tdist)
+
+# Broadcastable (u, v, w) shapes for batch tests. We test for:
+_broadcast_shapes = [
+    ((5, 2, 4), (2, 4), (3, 1, 1, 4)),  # Regular broadcasting rules
+    ((2, 4), (2, 4), (2, 1)),  # w axis -1 is 1D
+    ((2, 4), (2, 1), (1, 4)),  # v axis -1 is 1D
+    ((2, 1), (1, 4), (2, 4)),  # u axis -1 is 1D
+    ((1, 4), (3, 2, 4), (4,)),  # w.dim < u.dim < v.dim
+    ((4,), (3, 1, 4), (2, 1)),  # u.dim < w.dim < v.dim
+    ((3, 2, 1), (4,), (1,)),  # v and w have ndim == 1, w has shape[-1] == 1
+]
+
+# A hashmap of expected output arrays for the tests. These arrays
+# come from a list of text files, which are read prior to testing.
+# Each test loads inputs and outputs from this dictionary.
+eo: dict[str, np.generic] = {}
+
+
+def load_testing_files():
+    for fn in _filenames:
+        name = fn.replace(".txt", "").replace("-ml", "")
+        fqfn = os.path.join(os.path.dirname(__file__), 'data', fn)
+        fp = open(fqfn)
+        eo[name] = np.loadtxt(fp)
+        fp.close()
+    eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
+    eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
+    eo['random-float32-data'] = np.float32(eo['random-double-data'])
+    eo['random-int-data'] = np.long(eo['random-int-data'])
+    eo['random-uint-data'] = np.ulong(eo['random-uint-data'])
+
+
+load_testing_files()
+
+
+def _is_32bit():
+    return np.intp(0).itemsize < 8
+
+
+def _chk_asarrays(arrays, axis=None):
+    arrays = [np.asanyarray(a) for a in arrays]
+    if axis is None:
+        # np < 1.10 ravel removes subclass from arrays
+        arrays = [np.ravel(a) if a.ndim != 1 else a
+                  for a in arrays]
+        axis = 0
+    arrays = tuple(np.atleast_1d(a) for a in arrays)
+    if axis < 0:
+        if not all(a.ndim == arrays[0].ndim for a in arrays):
+            raise ValueError("array ndim must be the same for neg axis")
+        axis = range(arrays[0].ndim)[axis]
+    return arrays + (axis,)
+
+
+def _chk_weights(arrays, weights=None, axis=None,
+                 force_weights=False, simplify_weights=True,
+                 pos_only=False, neg_check=False,
+                 nan_screen=False, mask_screen=False,
+                 ddof=None):
+    chked = _chk_asarrays(arrays, axis=axis)
+    arrays, axis = chked[:-1], chked[-1]
+
+    simplify_weights = simplify_weights and not force_weights
+    if not force_weights and mask_screen:
+        force_weights = any(np.ma.getmask(a) is not np.ma.nomask for a in arrays)
+
+    if nan_screen:
+        has_nans = [np.isnan(np.sum(a)) for a in arrays]
+        if any(has_nans):
+            mask_screen = True
+            force_weights = True
+            arrays = tuple(np.ma.masked_invalid(a) if has_nan else a
+                           for a, has_nan in zip(arrays, has_nans))
+
+    if weights is not None:
+        weights = np.asanyarray(weights)
+    elif force_weights:
+        weights = np.ones(arrays[0].shape[axis])
+    else:
+        return arrays + (weights, axis)
+
+    if ddof:
+        weights = _freq_weights(weights)
+
+    if mask_screen:
+        weights = _weight_masked(arrays, weights, axis)
+
+    if not all(weights.shape == (a.shape[axis],) for a in arrays):
+        raise ValueError("weights shape must match arrays along axis")
+    if neg_check and (weights < 0).any():
+        raise ValueError("weights cannot be negative")
+
+    if pos_only:
+        pos_weights = np.nonzero(weights > 0)[0]
+        if pos_weights.size < weights.size:
+            arrays = tuple(np.take(a, pos_weights, axis=axis) for a in arrays)
+            weights = weights[pos_weights]
+    if simplify_weights and (weights == 1).all():
+        weights = None
+    return arrays + (weights, axis)
+
+
+def _freq_weights(weights):
+    if weights is None:
+        return weights
+    int_weights = weights.astype(int)
+    if (weights != int_weights).any():
+        raise ValueError(f"frequency (integer count-type) weights required {weights}")
+    return int_weights
+
+
+def _weight_masked(arrays, weights, axis):
+    if axis is None:
+        axis = 0
+    weights = np.asanyarray(weights)
+    for a in arrays:
+        axis_mask = np.ma.getmask(a)
+        if axis_mask is np.ma.nomask:
+            continue
+        if a.ndim > 1:
+            not_axes = tuple(i for i in range(a.ndim) if i != axis)
+            axis_mask = axis_mask.any(axis=not_axes)
+        weights *= 1 - axis_mask.astype(int)
+    return weights
+
+
+def _rand_split(arrays, weights, axis, split_per, seed=None):
+    # Coerce `arrays` to float64 if integer, to avoid nan-to-integer issues
+    arrays = [arr.astype(np.float64) if np.issubdtype(arr.dtype, np.integer)
+              else arr for arr in arrays]
+
+    # inverse operation for stats.collapse_weights
+    weights = np.array(weights, dtype=np.float64)  # modified inplace; need a copy
+    seeded_rand = np.random.RandomState(seed)
+
+    def mytake(a, ix, axis):
+        record = np.asanyarray(np.take(a, ix, axis=axis))
+        return record.reshape([a.shape[i] if i != axis else 1
+                               for i in range(a.ndim)])
+
+    n_obs = arrays[0].shape[axis]
+    assert all(a.shape[axis] == n_obs for a in arrays), \
+           "data must be aligned on sample axis"
+    for i in range(int(split_per) * n_obs):
+        split_ix = seeded_rand.randint(n_obs + i)
+        prev_w = weights[split_ix]
+        q = seeded_rand.rand()
+        weights[split_ix] = q * prev_w
+        weights = np.append(weights, (1. - q) * prev_w)
+        arrays = [np.append(a, mytake(a, split_ix, axis=axis),
+                            axis=axis) for a in arrays]
+    return arrays, weights
+
+
+assert_allclose_forgiving = partial(xp_assert_close, atol=1e-5, check_dtype=False)
+
+
+def _take(xp, a, index, axis):
+    return xp.take(a, xp.asarray(index, device=xp_device(a)), axis=axis)
+
+
+def xp_assert_ones_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
+    """Test invariance to weighting by ones."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    xp_assert_close(fn(*arrays, *rest, w=w, **kwargs), fn(*arrays, *rest, **kwargs))
+
+
+def xp_assert_scaling_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
+    """Test invariance to weight scaling."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    for scale in (101.0, 0.101):
+        xp_assert_close(fn(*arrays, *rest, w=w * scale, **kwargs), expected)
+
+
+def xp_assert_zero_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
+    """Test invariance to additional zero-weighted elements."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    expected = fn(*arrays, *rest, **kwargs)
+    rng = np.random.default_rng(seed)
+    n = w.shape[0]
+    index = rng.integers(n, size=n).tolist()
+    padded = xp.concat([w, xp.zeros_like(w)])
+    pads = [_take(xp, a, index, axis) for a in arrays]
+    for scale in (1, 101):
+        # Bool arrays support no multiplication
+        scaled = [p if p.dtype == xp.bool else p * scale for p in pads]
+        arrays_padded = [xp.concat(pair, axis=axis) for pair in zip(arrays, scaled)]
+        xp_assert_close(fn(*arrays_padded, *rest, w=padded, **kwargs), expected)
+
+
+def xp_assert_duplication_weight(fn, *arrays, rest = (), axis = 0, **kwargs):
+    """Test invariance to duplication of the input at half weight."""
+    xp = array_namespace(*arrays)
+    w = xp.ones(arrays[0].shape[axis], device=xp_device(arrays[0]))
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    doubled = [xp.concat([a, a], axis=axis) for a in arrays]
+    xp_assert_close(fn(*doubled, *rest, w=xp.concat([w, w]) / 2.0, **kwargs), expected)
+
+
+def xp_assert_split_weight(fn, *arrays, rest = (), axis = 0, seed = 0, **kwargs):
+    """Test invariance to splitting weights across repeated elements."""
+    xp = array_namespace(*arrays)
+    device = xp_device(arrays[0])
+    n = arrays[0].shape[axis]
+    w = xp.ones(n, device=device)
+    expected = fn(*arrays, *rest, w=w, **kwargs)
+    rng = np.random.default_rng(seed)
+    # Draw index from a geometric distribution to get longer tails
+    index = np.repeat(np.arange(n), rng.geometric(0.45, size=n).astype(np.intp))
+    raw = rng.exponential(1.0, index.size)
+    shares = xp.asarray(raw / np.bincount(index, weights=raw)[index],
+                        dtype=w.dtype, device=device)
+    split = [_take(xp, a, index, axis) for a in arrays]
+    weights = _take(xp, w, index, 0) * shares
+    xp_assert_close(fn(*split, *rest, w=weights, **kwargs), expected)
+
+
+def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
+                  key=lambda x: x, w=None):
+    check_a = key(a)
+    check_b = key(b)
+    try:
+        if np.array(check_a != check_b).any():  # try strict equality for string types
+            compare_assert(check_a, check_b)
+    except AttributeError:  # masked array
+        compare_assert(check_a, check_b)
+    except (TypeError, ValueError):  # nested data structure
+        for a_i, b_i in zip(check_a, check_b):
+            _rough_check(a_i, b_i, compare_assert=compare_assert)
+
+# diff from test_stats:
+#  n_args=2, weight_arg='w', default_axis=None
+#  ma_safe = False, nan_safe = False
+def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg='w',
+                    squeeze=True, silent=False,
+                    ones_test=True, const_test=True, dup_test=True,
+                    split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False,
+                    nan_safe=False, split_per=1.0, seed=0,
+                    compare_assert=assert_allclose_forgiving):
+    """runs fn on its arguments 2 or 3 ways, checks that the results are the same,
+       then returns the same thing it would have returned before"""
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        result = fn(*args, **kwargs)
+
+        arrays = args[:n_args]
+        rest = args[n_args:]
+        weights = kwargs.get(weight_arg, None)
+        axis = kwargs.get('axis', default_axis)
+
+        chked = _chk_weights(arrays, weights=weights, axis=axis,
+                             force_weights=True, mask_screen=True)
+        arrays, weights, axis = chked[:-2], chked[-2], chked[-1]
+        if squeeze:
+            arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
+
+        try:
+            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBSERVATIONS
+            args = tuple(arrays) + rest
+            if ones_test:
+                kwargs[weight_arg] = weights
+                _rough_check(result, fn(*args, **kwargs), key=key)
+            if const_test:
+                kwargs[weight_arg] = weights * 101.0
+                _rough_check(result, fn(*args, **kwargs), key=key)
+                kwargs[weight_arg] = weights * 0.101
+                try:
+                    _rough_check(result, fn(*args, **kwargs), key=key)
+                except Exception as e:
+                    raise type(e)((e, arrays, weights)) from e
+
+            # WEIGHTS CHECK 2: ADDL 0-WEIGHTED OBS
+            if dud_test:
+                # add randomly resampled rows, weighted at 0
+                dud_arrays, dud_weights = _rand_split(arrays, weights, axis,
+                                                      split_per=split_per, seed=seed)
+                dud_weights[:weights.size] = weights # not exactly 1 because of masked arrays  # noqa: E501
+                dud_weights[weights.size:] = 0
+                dud_args = tuple(dud_arrays) + rest
+                kwargs[weight_arg] = dud_weights
+                _rough_check(result, fn(*dud_args, **kwargs), key=key)
+                # increase the value of those 0-weighted rows
+                for a in dud_arrays:
+                    indexer = [slice(None)] * a.ndim
+                    indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
+                    a[indexer] = a[indexer] * 101
+                dud_args = tuple(dud_arrays) + rest
+                _rough_check(result, fn(*dud_args, **kwargs), key=key)
+                # set those 0-weighted rows to NaNs
+                for a in dud_arrays:
+                    indexer = [slice(None)] * a.ndim
+                    indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
+                    a[indexer] = a[indexer] * np.nan
+                if kwargs.get("nan_policy", None) == "omit" and nan_safe:
+                    dud_args = tuple(dud_arrays) + rest
+                    _rough_check(result, fn(*dud_args, **kwargs), key=key)
+                # mask out those nan values
+                if ma_safe:
+                    dud_arrays = [np.ma.masked_invalid(a) for a in dud_arrays]
+                    dud_args = tuple(dud_arrays) + rest
+                    _rough_check(result, fn(*dud_args, **kwargs), key=key)
+                    if ma_very_safe:
+                        kwargs[weight_arg] = None
+                        _rough_check(result, fn(*dud_args, **kwargs), key=key)
+                del dud_arrays, dud_args, dud_weights
+
+            # WEIGHTS CHECK 3: DUPLICATE DATA (DUMB SPLITTING)
+            if dup_test:
+                dup_arrays = [np.append(a, a, axis=axis) for a in arrays]
+                dup_weights = np.append(weights, weights) / 2.0
+                dup_args = tuple(dup_arrays) + rest
+                kwargs[weight_arg] = dup_weights
+                _rough_check(result, fn(*dup_args, **kwargs), key=key)
+                del dup_args, dup_arrays, dup_weights
+
+            # WEIGHT CHECK 3: RANDOM SPLITTING
+            if split_test and split_per > 0:
+                split = _rand_split(arrays, weights, axis,
+                                    split_per=split_per, seed=seed)
+                split_arrays, split_weights = split
+                split_args = tuple(split_arrays) + rest
+                kwargs[weight_arg] = split_weights
+                _rough_check(result, fn(*split_args, **kwargs), key=key)
+        except NotImplementedError as e:
+            # when some combination of arguments makes weighting impossible,
+            #  this is the desired response
+            if not silent:
+                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}",
+                              stacklevel=3)
+        return result
+    return wrapped
+
+
+wcdist = _weight_checked(cdist, default_axis=1, squeeze=False)
+wcdist_no_const = _weight_checked(cdist, default_axis=1,
+                                  squeeze=False, const_test=False)
+wpdist = _weight_checked(pdist, default_axis=1, squeeze=False, n_args=1)
+wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
+                                  const_test=False, n_args=1)
+wrogerstanimoto = _weight_checked(rogerstanimoto)
+wyule = _weight_checked(yule)
+wdice = _weight_checked(dice)
+wsokalsneath = _weight_checked(sokalsneath)
+wrussellrao = _weight_checked(russellrao)
+
+
+class TestCdist:
+
+    def setup_method(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.ulong, np.long, np.float32, np.float64],
+                              'uint': [np.long, np.float32, np.float64],
+                              'int': [np.float32, np.float64],
+                              'float32': [np.float64]}
+
+    def test_cdist_extra_args(self, metric):
+        # Tests that args and kwargs are correctly handled
+
+        X1 = [[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]]
+        X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
+        args = [3.14] * 200
+
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=eval(metric), **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric="test_" + metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=metric, *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric=eval(metric), *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, metric="test_" + metric, *args)
+
+    def test_cdist_extra_args_custom(self):
+        # Tests that args and kwargs are correctly handled
+        # also for custom metric
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]]
+        X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(3)}
+        args = [3.14] * 200
+
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, *args)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, **kwargs)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, 2.2, 3.3)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, 2.2)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1)
+        with pytest.raises(TypeError):
+            cdist(X1, X2, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
+
+        # this should work
+        xp_assert_close(
+            cdist(X1, X2, metric=_my_metric, arg=1.1, kwarg2=3.3),
+            np.full((3, 3), fill_value=5.4)
+        )
+
+    def test_cdist_euclidean_random_unicode(self):
+        eps = 1e-15
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = wcdist_no_const(X1, X2, 'euclidean')
+        Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
+        xp_assert_close(Y1, Y2, rtol=eps)
+
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 1.23,
+                                   2.0, 3.8, 4.6, np.inf])
+    def test_cdist_minkowski_random(self, p):
+        eps = 1e-13
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
+        Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
+        xp_assert_close(Y1, Y2, atol=0, rtol=eps)
+
+    def test_cdist_cosine_random(self):
+        eps = 1e-14
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = wcdist(X1, X2, 'cosine')
+
+        # Naive implementation
+        def norms(X):
+            return np.linalg.norm(X, axis=1).reshape(-1, 1)
+
+        Y2 = 1 - np.dot((X1 / norms(X1)), (X2 / norms(X2)).T)
+
+        xp_assert_close(Y1, Y2, rtol=eps)
+
+    def test_cdist_mahalanobis(self):
+        # 1-dimensional observations
+        x1 = np.array([[2], [3]])
+        x2 = np.array([[2], [5]])
+        dist = cdist(x1, x2, metric='mahalanobis')
+        xp_assert_close(dist, [[0.0, np.sqrt(4.5)], [np.sqrt(0.5), np.sqrt(2)]])
+
+        # 2-dimensional observations
+        x1 = np.array([[0, 0], [-1, 0]])
+        x2 = np.array([[0, 2], [1, 0], [0, -2]])
+        dist = cdist(x1, x2, metric='mahalanobis')
+        rt2 = np.sqrt(2)
+        xp_assert_close(dist, [[rt2, rt2, rt2], [2, 2 * rt2, 2]])
+
+        # Too few observations
+        with pytest.raises(ValueError):
+            cdist([[0, 1]], [[2, 3]], metric='mahalanobis')
+
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            cdist(x1, x2, metric='mahalanobis', VI=1.0)
+
+    def test_cdist_custom_notdouble(self):
+        class myclass:
+            pass
+
+        def _my_metric(x, y):
+            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+                raise ValueError("Type has been changed")
+            return 1.123
+        data = np.array([[myclass()]], dtype=object)
+        cdist_y = cdist(data, data, metric=_my_metric)
+        right_y = 1.123
+        xp_assert_equal(cdist_y, np.asarray([[right_y]]))
+
+    def _check_calling_conventions(self, X1, X2, metric, eps=1e-07, **kwargs):
+        # helper function for test_cdist_calling_conventions
+        try:
+            y1 = cdist(X1, X2, metric=metric, **kwargs)
+            y2 = cdist(X1, X2, metric=eval(metric), **kwargs)
+            y3 = cdist(X1, X2, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric=metric, **kwargs)
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric=eval(metric), **kwargs)
+            with pytest.raises(e_cls):
+                cdist(X1, X2, metric="test_" + metric, **kwargs)
+        else:
+            xp_assert_close(y1, y2, rtol=eps)
+            xp_assert_close(y1, y3, rtol=eps)
+
+    def test_cdist_calling_conventions(self, metric):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        for eo_name in self.rnd_eo_names:
+            # subsampling input data to speed-up tests
+            # NOTE: num samples needs to be > than dimensions for mahalanobis
+            X1 = eo[eo_name][::5, ::-2]
+            X2 = eo[eo_name][1::5, ::2]
+            if (metric in {'dice', 'yule', 'rogerstanimoto', 'russellrao',
+                           'sokalsneath'}
+                and 'bool' not in eo_name):
+                # python version permits non-bools e.g. for fuzzy logic
+                continue
+            self._check_calling_conventions(X1, X2, metric)
+
+            # Testing built-in metrics with extra args
+            if metric == "seuclidean":
+                X12 = np.vstack([X1, X2]).astype(np.float64)
+                V = np.var(X12, axis=0, ddof=1)
+                self._check_calling_conventions(X1, X2, metric, V=V)
+            elif metric == "mahalanobis":
+                X12 = np.vstack([X1, X2]).astype(np.float64)
+                V = np.atleast_2d(np.cov(X12.T))
+                VI = np.array(np.linalg.inv(V).T)
+                self._check_calling_conventions(X1, X2, metric, VI=VI)
+
+    def test_cdist_dtype_equivalence(self, metric):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
+        for test in tests:
+            X1 = test[0][::5, ::-2]
+            X2 = test[0][1::5, ::2]
+            try:
+                y1 = cdist(X1, X2, metric=metric)
+            except Exception as e:
+                e_cls = e.__class__
+                for new_type in test[1]:
+                    X1new = new_type(X1)
+                    X2new = new_type(X2)
+                    with pytest.raises(e_cls):
+                        cdist(X1new, X2new, metric=metric)
+            else:
+                for new_type in test[1]:
+                    y2 = cdist(new_type(X1), new_type(X2), metric=metric)
+                    xp_assert_close(y1, y2, rtol=eps)
+
+    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
+    def test_cdist_out(self, metric):
+        # Test that out parameter works properly
+        eps = 1e-15
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        out_r, out_c = X1.shape[0], X2.shape[0]
+
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        out1 = np.empty((out_r, out_c), dtype=np.float64)
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+
+        # test that output is numerically equivalent
+        xp_assert_close(Y1, Y2, rtol=eps)
+
+        # test that Y_test1 and out1 are the same object
+        assert Y2 is out1
+
+        # test for incorrect shape
+        out2 = np.empty((out_r-1, out_c+1), dtype=np.float64)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out2, **kwargs)
+
+        # test for C-contiguous order
+        out3 = np.empty(
+            (2 * out_r, 2 * out_c), dtype=np.float64)[::2, ::2]
+        out4 = np.empty((out_r, out_c), dtype=np.float64, order='F')
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out3, **kwargs)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out4, **kwargs)
+
+        # test for incorrect dtype
+        out5 = np.empty((out_r, out_c), dtype=np.int64)
+        with pytest.raises(ValueError):
+            cdist(X1, X2, metric, out=out5, **kwargs)
+
+    def test_striding(self, metric):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-15
+        X1 = eo['cdist-X1'][::2, ::2]
+        X2 = eo['cdist-X2'][::2, ::2]
+        X1_copy = X1.copy()
+        X2_copy = X2.copy()
+
+        # confirm equivalence
+        xp_assert_equal(X1, X1_copy)
+        xp_assert_equal(X2, X2_copy)
+        # confirm contiguity
+        assert not X1.flags.c_contiguous
+        assert not X2.flags.c_contiguous
+        assert X1_copy.flags.c_contiguous
+        assert X2_copy.flags.c_contiguous
+
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+        # test that output is numerically equivalent
+        xp_assert_close(Y1, Y2, rtol=eps)
+
+    def test_cdist_refcount(self, metric):
+        x1 = np.random.rand(10, 10)
+        x2 = np.random.rand(10, 10)
+
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+
+        out = cdist(x1, x2, metric=metric, **kwargs)
+
+        # Check reference counts aren't messed up. If we only hold weak
+        # references, the arrays should be deallocated.
+        weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
+        del x1, x2, out
+
+        assert all(weak_ref() is None for weak_ref in weak_refs)
+
+
+class TestPdist:
+
+    def setup_method(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.ulong, np.long, np.float32, np.float64],
+                              'uint': [np.long, np.float32, np.float64],
+                              'int': [np.float32, np.float64],
+                              'float32': [np.float64]}
+
+    def test_pdist_extra_args(self, metric):
+        # Tests that args and kwargs are correctly handled
+        X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
+        args = [3.14] * 200
+
+        with pytest.raises(TypeError):
+            pdist(X1, metric=metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=eval(metric), **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric="test_" + metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=metric, *args)
+        with pytest.raises(TypeError):
+            pdist(X1, metric=eval(metric), *args)
+        with pytest.raises(TypeError):
+            pdist(X1, metric="test_" + metric, *args)
+
+    def test_pdist_extra_args_custom(self):
+        # Tests that args and kwargs are correctly handled
+        # also for custom metric
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
+        kwargs = {"N0tV4l1D_p4raM": 3.14, "w": np.arange(2)}
+        args = [3.14] * 200
+
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, *args)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, **kwargs)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, kwarg=2.2, kwarg2=3.3)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1, 2, kwarg=2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, 2.2, 3.3)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, 2.2)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1)
+        with pytest.raises(TypeError):
+            pdist(X1, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
+
+        # these should work
+        xp_assert_close(
+            pdist(X1, metric=_my_metric, arg=1.1, kwarg2=3.3),
+            np.full((3,), fill_value=5.4)
+        )
+
+    def test_pdist_euclidean_random(self):
+        eps = 1e-07
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
+        Y_test1 = wpdist_no_const(X, 'euclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_euclidean_random_u(self):
+        eps = 1e-07
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
+        Y_test1 = wpdist_no_const(X, 'euclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_euclidean_random_float32(self):
+        eps = 1e-07
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-euclidean']
+        Y_test1 = wpdist_no_const(X, 'euclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_euclidean_random_nonC(self):
+        eps = 1e-07
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
+        Y_test2 = wpdist_no_const(X, 'test_euclidean')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_euclidean_iris_double(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-euclidean-iris']
+        Y_test1 = wpdist_no_const(X, 'euclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_euclidean_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-euclidean-iris']
+        Y_test1 = wpdist_no_const(X, 'euclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    @pytest.mark.slow
+    def test_pdist_euclidean_iris_nonC(self):
+        # Test pdist(X, 'test_euclidean') [the non-C implementation] on the
+        # Iris data set.
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-euclidean-iris']
+        Y_test2 = wpdist_no_const(X, 'test_euclidean')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_seuclidean_random(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-seuclidean']
+        Y_test1 = pdist(X, 'seuclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_seuclidean_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-seuclidean']
+        Y_test1 = pdist(X, 'seuclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+        # Check no error is raise when V has float32 dtype (#11171).
+        V = np.var(X, axis=0, ddof=1)
+        Y_test2 = pdist(X, 'seuclidean', V=V)
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_seuclidean_random_nonC(self):
+        # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
+        eps = 1e-07
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-seuclidean']
+        Y_test2 = pdist(X, 'test_seuclidean')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_seuclidean_iris(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-seuclidean-iris']
+        Y_test1 = pdist(X, 'seuclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_seuclidean_iris_float32(self):
+        # Tests pdist(X, 'seuclidean') on the Iris data set (float32).
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-seuclidean-iris']
+        Y_test1 = pdist(X, 'seuclidean')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    def test_pdist_seuclidean_iris_nonC(self):
+        # Test pdist(X, 'test_seuclidean') [the non-C implementation] on the
+        # Iris data set.
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-seuclidean-iris']
+        Y_test2 = pdist(X, 'test_seuclidean')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_cosine_random(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-cosine']
+        Y_test1 = wpdist(X, 'cosine')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_cosine_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-cosine']
+        Y_test1 = wpdist(X, 'cosine')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_cosine_random_nonC(self):
+        # Test pdist(X, 'test_cosine') [the non-C implementation]
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-cosine']
+        Y_test2 = wpdist(X, 'test_cosine')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_cosine_iris(self):
+        eps = 1e-05
+        X = eo['iris']
+        Y_right = eo['pdist-cosine-iris']
+        Y_test1 = wpdist(X, 'cosine')
+        xp_assert_close(Y_test1, Y_right, atol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_cosine_iris_float32(self):
+        eps = 1e-05
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-cosine-iris']
+        Y_test1 = wpdist(X, 'cosine')
+        xp_assert_close(Y_test1, Y_right, atol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_cosine_iris_nonC(self):
+        eps = 1e-05
+        X = eo['iris']
+        Y_right = eo['pdist-cosine-iris']
+        Y_test2 = wpdist(X, 'test_cosine')
+        xp_assert_close(Y_test2, Y_right, atol=eps)
+
+    def test_pdist_cosine_bounds(self):
+        # Test adapted from @joernhees's example at gh-5208: case where
+        # cosine distance used to be negative. XXX: very sensitive to the
+        # specific norm computation.
+        x = np.abs(np.random.RandomState(1337).rand(91))
+        X = np.vstack([x, x])
+        assert wpdist(X, 'cosine')[0] >= 0, 'cosine distance should be non-negative'
+
+    def test_pdist_cityblock_random(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-cityblock']
+        Y_test1 = wpdist_no_const(X, 'cityblock')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_cityblock_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-cityblock']
+        Y_test1 = wpdist_no_const(X, 'cityblock')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_cityblock_random_nonC(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-cityblock']
+        Y_test2 = wpdist_no_const(X, 'test_cityblock')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_cityblock_iris(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-cityblock-iris']
+        Y_test1 = wpdist_no_const(X, 'cityblock')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_cityblock_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-cityblock-iris']
+        Y_test1 = wpdist_no_const(X, 'cityblock')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    @pytest.mark.slow
+    def test_pdist_cityblock_iris_nonC(self):
+        # Test pdist(X, 'test_cityblock') [the non-C implementation] on the
+        # Iris data set.
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-cityblock-iris']
+        Y_test2 = wpdist_no_const(X, 'test_cityblock')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_correlation_random(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-correlation']
+        Y_test1 = wpdist(X, 'correlation')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_correlation_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-correlation']
+        Y_test1 = wpdist(X, 'correlation')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_correlation_random_nonC(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-correlation']
+        Y_test2 = wpdist(X, 'test_correlation')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_correlation_iris(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-correlation-iris']
+        Y_test1 = wpdist(X, 'correlation')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_correlation_iris_float32(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = np.float32(eo['pdist-correlation-iris'])
+        Y_test1 = wpdist(X, 'correlation')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7, check_dtype=False)
+
+    @pytest.mark.slow
+    def test_pdist_correlation_iris_nonC(self):
+        if sys.maxsize > 2**32:
+            eps = 1e-7
+        else:
+            pytest.skip("see gh-16456")
+        X = eo['iris']
+        Y_right = eo['pdist-correlation-iris']
+        Y_test2 = wpdist(X, 'test_correlation')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.parametrize("p", [0.1, 0.25, 1.0, 2.0, 3.2, np.inf])
+    def test_pdist_minkowski_random_p(self, p):
+        eps = 1e-13
+        X = eo['pdist-double-inp']
+        Y1 = wpdist_no_const(X, 'minkowski', p=p)
+        Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
+        xp_assert_close(Y1, Y2, atol=0, rtol=eps)
+
+    def test_pdist_minkowski_random(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-minkowski-3.2']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_minkowski_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-minkowski-3.2']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_minkowski_random_nonC(self):
+        eps = 1e-7
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-minkowski-3.2']
+        Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_3_2_iris(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-minkowski-3.2-iris']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_3_2_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-minkowski-3.2-iris']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_3_2_iris_nonC(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-minkowski-3.2-iris']
+        Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_5_8_iris(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-minkowski-5.8-iris']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_5_8_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-minkowski-5.8-iris']
+        Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    @pytest.mark.slow
+    def test_pdist_minkowski_5_8_iris_nonC(self):
+        eps = 1e-7
+        X = eo['iris']
+        Y_right = eo['pdist-minkowski-5.8-iris']
+        Y_test2 = wpdist_no_const(X, 'test_minkowski', p=5.8)
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_mahalanobis(self):
+        # 1-dimensional observations
+        x = np.array([2.0, 2.0, 3.0, 5.0]).reshape(-1, 1)
+        dist = pdist(x, metric='mahalanobis')
+        xp_assert_close(dist, [0.0, np.sqrt(0.5), np.sqrt(4.5),
+                               np.sqrt(0.5), np.sqrt(4.5), np.sqrt(2.0)])
+
+        # 2-dimensional observations
+        x = np.array([[0, 0], [-1, 0], [0, 2], [1, 0], [0, -2]])
+        dist = pdist(x, metric='mahalanobis')
+        rt2 = np.sqrt(2)
+        xp_assert_close(dist, [rt2, rt2, rt2, rt2, 2, 2 * rt2, 2, 2, 2 * rt2, 2])
+
+        # Too few observations
+        with pytest.raises(ValueError):
+            wpdist([[0, 1], [2, 3]], metric='mahalanobis')
+
+        # Incompatible VI shape (gh-26526)
+        msg = r"The inverse covariance matrix VI must have shape \(2, 2\)"
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=np.eye(4))
+        with pytest.raises(ValueError, match=msg):
+            pdist(x, metric='mahalanobis', VI=1.0)
+
+    def test_pdist_hamming_random(self):
+        eps = 1e-15
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-hamming']
+        Y_test1 = wpdist(X, 'hamming')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_hamming_random_float32(self):
+        eps = 1e-15
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
+        Y_test1 = wpdist(X, 'hamming')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_hamming_random_nonC(self):
+        eps = 1e-15
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-hamming']
+        Y_test2 = wpdist(X, 'test_hamming')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_dhamming_random(self):
+        eps = 1e-15
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
+        Y_test1 = wpdist(X, 'hamming')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_dhamming_random_float32(self):
+        eps = 1e-15
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
+        Y_test1 = wpdist(X, 'hamming')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_dhamming_random_nonC(self):
+        eps = 1e-15
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-hamming']
+        Y_test2 = wpdist(X, 'test_hamming')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_jensenshannon_random(self):
+        eps = 1e-11
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_test1 = pdist(X, 'jensenshannon')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jensenshannon_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-jensenshannon']
+        Y_test1 = pdist(X, 'jensenshannon')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jensenshannon_random_nonC(self):
+        eps = 1e-11
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_test2 = pdist(X, 'test_jensenshannon')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_jensenshannon_iris(self):
+        if _is_32bit():
+            # Test failing on 32-bit Linux on Azure otherwise, see gh-12810
+            eps = 2.5e-10
+        else:
+            eps = 1e-12
+
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        xp_assert_close(Y_test1, Y_right, atol=eps)
+
+    def test_pdist_jensenshannon_iris_float32(self):
+        eps = 1e-06
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        xp_assert_close(Y_test1, Y_right, atol=eps)
+
+    def test_pdist_jensenshannon_iris_nonC(self):
+        eps = 5e-5
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test2 = pdist(X, 'test_jensenshannon')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+    @pytest.mark.slow
+    def test_pdist_canberra_match(self):
+        D = eo['iris']
+        eps = 1e-15
+        y1 = wpdist_no_const(D, "canberra")
+        y2 = wpdist_no_const(D, "test_canberra")
+        xp_assert_close(y1, y2, rtol=eps)
+
+    def test_pdist_canberra_ticket_711(self):
+        # Test pdist(X, 'canberra') to see if Canberra gives the right result
+        # as reported on gh-1238.
+        eps = 1e-8
+        pdist_y = wpdist_no_const(([3.3], [3.4]), "canberra")
+        right_y = np.asarray([0.01492537])
+        xp_assert_close(pdist_y, right_y, atol=eps)
+
+    def test_pdist_custom_notdouble(self):
+        # tests that when using a custom metric the data type is not altered
+        def _my_metric(x, y):
+            if not isinstance(x[0], np.float32) or not isinstance(y[0], np.float32):
+                raise ValueError("Type has been changed")
+            return 1.123
+        data = np.zeros((2, 2), dtype=np.float32)
+        pdist_y = pdist(data, metric=_my_metric)
+        right_y = np.asarray([1.123])
+        xp_assert_equal(pdist_y, right_y)
+
+    def _check_calling_conventions(self, X, metric, eps=1e-07, **kwargs):
+        # helper function for test_pdist_calling_conventions
+        try:
+            y1 = pdist(X, metric=metric, **kwargs)
+            y2 = pdist(X, metric=eval(metric), **kwargs)
+            y3 = pdist(X, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            with pytest.raises(e_cls):
+                pdist(X, metric=metric, **kwargs)
+            with pytest.raises(e_cls):
+                pdist(X, metric=eval(metric), **kwargs)
+            with pytest.raises(e_cls):
+                pdist(X, metric="test_" + metric, **kwargs)
+        else:
+            xp_assert_close(y1, y2, rtol=eps)
+            xp_assert_close(y1, y3, rtol=eps)
+
+    def test_pdist_calling_conventions(self, metric):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        # NOTE: Extra args should be checked with a dedicated test
+        for eo_name in self.rnd_eo_names:
+            # subsampling input data to speed-up tests
+            # NOTE: num samples needs to be > than dimensions for mahalanobis
+            X = eo[eo_name][::5, ::2]
+            if metric in {'dice', 'yule', 'matching', 'rogerstanimoto', 'russellrao',
+                          'sokalsneath'} and 'bool' not in eo_name:
+                # python version permits non-bools e.g. for fuzzy logic
+                continue
+            self._check_calling_conventions(X, metric)
+
+            # Testing built-in metrics with extra args
+            if metric == "seuclidean":
+                V = np.var(X.astype(np.float64), axis=0, ddof=1)
+                self._check_calling_conventions(X, metric, V=V)
+            elif metric == "mahalanobis":
+                V = np.atleast_2d(np.cov(X.astype(np.float64).T))
+                VI = np.array(np.linalg.inv(V).T)
+                self._check_calling_conventions(X, metric, VI=VI)
+
+    def test_pdist_dtype_equivalence(self, metric):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
+        for test in tests:
+            X1 = test[0][::5, ::2]
+            try:
+                y1 = pdist(X1, metric=metric)
+            except Exception as e:
+                e_cls = e.__class__
+                for new_type in test[1]:
+                    X2 = new_type(X1)
+                    with pytest.raises(e_cls):
+                        pdist(X2, metric=metric)
+            else:
+                for new_type in test[1]:
+                    y2 = pdist(new_type(X1), metric=metric)
+                    xp_assert_close(y1, y2, rtol=eps)
+
+    def test_pdist_out(self, metric):
+        # Test that out parameter works properly
+        eps = 1e-15
+        X = eo['random-float32-data'][::5, ::2]
+        out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
+
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        out1 = np.empty(out_size, dtype=np.float64)
+        Y_right = pdist(X, metric, **kwargs)
+        Y_test1 = pdist(X, metric, out=out1, **kwargs)
+
+        # test that output is numerically equivalent
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+        # test that Y_test1 and out1 are the same object
+        assert Y_test1 is out1
+
+        # test for incorrect shape
+        out2 = np.empty(out_size + 3, dtype=np.float64)
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out2, **kwargs)
+
+        # test for (C-)contiguous output
+        out3 = np.empty(2 * out_size, dtype=np.float64)[::2]
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out3, **kwargs)
+
+        # test for incorrect dtype
+        out5 = np.empty(out_size, dtype=np.int64)
+        with pytest.raises(ValueError):
+            pdist(X, metric, out=out5, **kwargs)
+
+    def test_striding(self, metric):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-15
+        X = eo['random-float32-data'][::5, ::2]
+        X_copy = X.copy()
+
+        # confirm contiguity
+        assert not X.flags.c_contiguous
+        assert X_copy.flags.c_contiguous
+
+        kwargs = dict()
+        if metric == 'minkowski':
+            kwargs['p'] = 1.23
+        Y1 = pdist(X, metric, **kwargs)
+        Y2 = pdist(X_copy, metric, **kwargs)
+        # test that output is numerically equivalent
+        xp_assert_close(Y1, Y2, rtol=eps)
+
+
+@make_xp_test_case(minkowski)
+class TestMinkowski:
+    @pytest.mark.parametrize("p, expected", [(1, 3.0),
+                                             (1.5, (1.0 + 2.0**1.5)**(2. / 3)),
+                                             (2, 5.0 ** 0.5),
+                                             (0.25, (1.0 + 2.0 ** 0.25) ** 4)])
+    def test_minkowski(self, p, expected, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(minkowski(x, y, p), expected, atol=1.5e-7)
+
+    def test_gh_10262(self, xp):
+        # Check that casting input to minimum scalar type doesn't affect result
+        # (issue #10262). This could be extended to more test inputs with
+        # np.min_scalar_type(np.max(input_matrix)).
+        a = xp.asarray([352, 916])
+        b = xp.asarray([350, 660])
+        xp_assert_equal(minkowski(a, b),
+                        minkowski(xp.astype(a, xp.uint16), xp.astype(b, xp.uint16)))
+
+    @pytest.mark.parametrize("p", [-10.0, -0.5, 0.0])
+    def test_bad_p(self, xp, p):
+        # Raise ValueError if p <=0.
+        with pytest.raises(ValueError):
+            minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p)
+        with pytest.raises(ValueError):
+            minkowski(xp.asarray([1, 2]), xp.asarray([3, 4]), p, xp.asarray([1, 1]))
+
+
+class TestDice:
+    def test_pdist_dice_mtica1(self):
+        m = wdice(np.array([1, 0, 1, 1, 0]),
+                  np.array([1, 1, 0, 1, 1]))
+        m2 = wdice(np.array([1, 0, 1, 1, 0], dtype=bool),
+                   np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 7, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 7, rtol=0, atol=1e-10)
+
+    def test_pdist_dice_mtica2(self):
+        m = wdice(np.array([1, 0, 1]),
+                  np.array([1, 1, 0]))
+        m2 = wdice(np.array([1, 0, 1], dtype=bool),
+                   np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 0.5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 0.5, rtol=0, atol=1e-10)
+
+
+class TestRogersTanimoto:
+    def test_pdist_rogerstanimoto_mtica1(self):
+        m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
+                            np.array([1, 1, 0, 1, 1]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1, 1, 0], dtype=bool),
+                             np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10)
+
+    def test_pdist_rogerstanimoto_mtica2(self):
+        m = wrogerstanimoto(np.array([1, 0, 1]),
+                            np.array([1, 1, 0]))
+        m2 = wrogerstanimoto(np.array([1, 0, 1], dtype=bool),
+                             np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+
+
+@make_xp_test_case(euclidean)
+class TestEuclidean:
+    def test_euclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(euclidean(x, y), xp.asarray(math.sqrt(5.0)), atol=1.5e-7)
+
+    def test_euclidean_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(euclidean(x, y), np.asarray(math.sqrt(5.0)), atol=1.5e-7)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(euclidean, x, y)
+        xp_assert_zero_weight(euclidean, x, y)
+        xp_assert_duplication_weight(euclidean, x, y)
+        xp_assert_split_weight(euclidean, x, y)
+        # euclidean is not invariant to rescaling of weights
+
+
+@make_xp_test_case(sqeuclidean)
+class TestSqeuclidean:
+    def test_sqeuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(sqeuclidean(x, y), xp.asarray(5.0), atol=1.5e-7)
+
+    def test_sqeuclidean_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(sqeuclidean(x, y), np.asarray(5.0), atol=1.5e-7)
+
+    def test_euclidean_squared(self, xp):
+        rng = np.random.default_rng(42)
+        x, y = xp.asarray(rng.random(10)), xp.asarray(rng.random(10))
+        xp_assert_close(sqeuclidean(x, y), euclidean(x, y)**2)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(sqeuclidean, x, y)
+        xp_assert_zero_weight(sqeuclidean, x, y)
+        xp_assert_duplication_weight(sqeuclidean, x, y)
+        xp_assert_split_weight(sqeuclidean, x, y)
+        # sqeuclidean is linear in the weights, so not invariant to rescaling
+
+    @pytest.mark.skipif(
+        (sys.platform == 'darwin') and (platform.machine() == 'x86_64'),
+        reason="dtypes do not match, on MacOS x86-64 only"
+    )
+    def test_sqeuclidean_dtypes(self):
+        # Assert that sqeuclidean returns the right types of values.
+        # Integer types should be converted to floating for stability.
+        # Floating point types should be the same as the input.
+        x = [1, 2, 3]
+        y = [4, 5, 6]
+
+        for dtype in [np.int8, np.int16, np.int32, np.int64]:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert np.issubdtype(d.dtype, np.floating)
+
+        for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+            umax = np.iinfo(dtype).max
+            d1 = sqeuclidean([0], np.asarray([umax], dtype=dtype))
+            d2 = sqeuclidean(np.asarray([umax], dtype=dtype), [0])
+
+            xp_assert_equal(d1, d2)
+            xp_assert_equal(d1, np.float64(umax)**2)
+
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        for dtype in ['float16', 'float128']:
+            # These aren't present in older numpy versions; float128 may also not
+            # be present on all platforms.
+            if hasattr(np, dtype):
+                dtypes.append(getattr(np, dtype))
+
+        for dtype in dtypes:
+            d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+            assert d.dtype == dtype
+
+
+@make_xp_test_case(seuclidean)
+class TestSEuclidean:
+    def test_seuclidean(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        V = xp.asarray([1.0, 0.5, 2.0])
+        xp_assert_close(seuclidean(x, y, V), xp.asarray(2.0), atol=1.5e-7)
+
+    def test_seuclidean_array_like(self):
+        x, y, V = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0], [1.0, 0.5, 2.0]
+        xp_assert_close(seuclidean(x, y, V), np.asarray(2.0), atol=1.5e-7)
+
+    @pytest.mark.parametrize("u_shape, v_shape, V_shape", _broadcast_shapes)
+    def test_seuclidean_nd(self, u_shape, v_shape, V_shape):
+        # We need to test this separate from other metrics because seuclidean uses "V"
+        rng = np.random.default_rng(6738657865438)
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('V', 1))(seuclidean)
+        u, v, V = rng.random(u_shape), rng.random(v_shape), rng.random(V_shape)
+        # Broadcast arguments for the reference function
+        xp_assert_close(seuclidean(u, v, V), ref_func(*np.broadcast_arrays(u, v, V)))
+        # check error is raised for non-broadcastable inputs
+        with pytest.raises(ValueError,
+                           match="Array shapes are incompatible for broadcasting."):
+            seuclidean(u, v, rng.random(5))
+
+
+@make_xp_test_case(correlation)
+class TestCorrelation:
+    def test_correlation(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        expected = xp.asarray(1.0 - math.sqrt(3.0) / 2.0)
+        xp_assert_close(correlation(x, y), expected, atol=1.5e-7)
+
+    def test_correlation_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        expected = np.asarray(1.0 - np.sqrt(3.0) / 2.0)
+        xp_assert_close(correlation(x, y), expected, atol=1.5e-7)
+
+    def test_correlation_positive(self, xp):
+        # Regression test for gh-12320 (negative return value due to rounding
+        x = xp.asarray([0., 0., 0., 0., 0., 0., -2., 0., 0., 0., -2., -2., -2.,
+                        0., -2., 0., -2., 0., 0., -1., -2., 0., 1., 0., 0., -2.,
+                        0., 0., -2., 0., -2., -2., -2., -2., -2., -2., 0.],
+                       dtype=xp.float64)
+        y = xp.asarray([1., 1., 1., 1., 1., 1., -1., 1., 1., 1., -1., -1., -1.,
+                        1., -1., 1., -1., 1., 1., 0., -1., 1., 2., 1., 1., -1.,
+                        1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.],
+                       dtype=xp.float64)
+        dist = float(correlation(x, y))
+        assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
+    def test_complex(self, xp):
+        x, y = xp.asarray([1+0j, 2+0j]), xp.asarray([3+0j, 4+0j])
+        with pytest.raises(TypeError, match="real"):
+            correlation(x, y)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(correlation, x, y)
+        xp_assert_scaling_weight(correlation, x, y)
+        xp_assert_zero_weight(correlation, x, y)
+        xp_assert_duplication_weight(correlation, x, y)
+        xp_assert_split_weight(correlation, x, y)
+
+    def test_correlation_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(correlation([1, 1], [1, 1], centered=False), float)
+
+
+@make_xp_test_case(cosine)
+class TestCosine:
+    def test_cosine(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        expected = xp.asarray(1.0 - 18.0 / (math.sqrt(14) * math.sqrt(27)))
+        xp_assert_close(cosine(x, y), expected, atol=1.5e-7)
+
+    def test_cosine_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        expected = np.asarray(1.0 - 18.0 / (math.sqrt(14) * math.sqrt(27)))
+        xp_assert_close(cosine(x, y), expected, atol=1.5e-7)
+
+    def test_cosine_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(cosine([1, 1], [1, 1]), float)
+
+    @pytest.mark.filterwarnings('ignore:Casting complex')
+    def test_complex(self):
+        x = [1+0j, 2+0j]
+        y = [3+0j, 4+0j]
+        with pytest.raises(TypeError, match="real"):
+            cosine(x, y)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(cosine, x, y)
+        xp_assert_scaling_weight(cosine, x, y)
+        xp_assert_zero_weight(cosine, x, y)
+        xp_assert_duplication_weight(cosine, x, y)
+        xp_assert_split_weight(cosine, x, y)
+
+
+@make_xp_test_case(hamming)
+class TestHamming:
+    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_hamming(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(hamming(x, y), xp.asarray(expected))
+
+    def test_hamming_array_like(self):
+        x, y = [1, 0, 1, 1, 0], [1, 1, 0, 1, 1]
+        xp_assert_close(hamming(x, y), np.asarray(3 / 5))
+
+    def test_weight_invariance(self, xp):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.random(100) > 0.5)
+        y = xp.asarray(rng.random(100) > 0.5)
+        xp_assert_ones_weight(hamming, x, y)
+        xp_assert_scaling_weight(hamming, x, y)
+        xp_assert_zero_weight(hamming, x, y)
+        xp_assert_duplication_weight(hamming, x, y)
+        xp_assert_split_weight(hamming, x, y)
+
+    def test_hamming_unequal_length(self, xp):
+        # Regression test for gh-4290.
+        x, y = xp.asarray([0, 0, 1]), xp.asarray([1, 0, 1, 0])
+        # Used to give an AttributeError from ndarray.mean called on bool
+        with pytest.raises(ValueError):
+            hamming(x, y)
+
+    def test_hamming_unequal_length_with_w(self, xp):
+        u = xp.asarray([0, 0, 1])
+        v = xp.asarray([0, 0, 1])
+        w = xp.asarray([1, 0, 1, 0])
+        with pytest.raises(ValueError, match="Array shapes are incompatible"):
+            hamming(u, v, w)
+
+    @pytest.mark.skip_xp_backends("array_api_strict",
+                                  reason="mixed-kind promotion is undefined")
+    @pytest.mark.parametrize("u, u_dtype, v, v_dtype, expected", [
+        ([1, 2, 3], "int64", [1.0, 2.0, 3.0], "float64", 0.0),
+        ([True, False], "bool", [1, 0], "int64", 0.0),
+    ])
+    def test_hamming_mixed_kinds(self, xp, u, u_dtype, v, v_dtype, expected):
+        u = xp.asarray(u, dtype=getattr(xp, u_dtype))
+        v = xp.asarray(v, dtype=getattr(xp, v_dtype))
+        xp_assert_close(hamming(u, v), xp.asarray(expected))
+
+    def test_hamming_string_array(self):
+        # https://github.com/scikit-learn/scikit-learn/issues/4014
+        a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
+                    'spam', 'spam', 'spam', 'spam', 'eggs', 'eggs', 'spam',
+                    'eggs', 'eggs', 'eggs', 'eggs', 'eggs', 'spam'],
+                    dtype='|S4')
+        b = np.array(['eggs', 'spam', 'spam', 'eggs', 'eggs', 'spam', 'spam',
+                    'spam', 'spam', 'eggs', 'spam', 'eggs', 'spam', 'eggs',
+                    'spam', 'spam', 'eggs', 'spam', 'spam', 'eggs'],
+                    dtype='|S4')
+        desired = 0.45
+        xp_assert_close(hamming(a, b), desired, check_0d=False)
+
+    def test_hamming_string_list(self):
+        u, v = ['eggs', 'spam', 'spam'], ['eggs', 'eggs', 'spam']
+        xp_assert_close(hamming(u, v), np.asarray(1 / 3))
+        xp_assert_close(hamming(u, v, w=[1.0, 2.0, 1.0]), np.asarray(0.5))
+
+    def test_hamming_string_batched(self):
+        u = np.array([['eggs', 'spam', 'spam'], ['eggs', 'spam', 'eggs']])
+        v = np.array(['eggs', 'eggs', 'spam'])
+        xp_assert_close(hamming(u, v), np.asarray([1 / 3, 2 / 3]))
+        xp_assert_close(hamming(u, v, w=[1.0, 2.0, 1.0]), np.asarray([0.5, 0.75]))
+
+    @pytest.mark.parametrize("u, v", [
+        (['eggs', 'spam'], [b'eggs', b'spam']),
+        (np.array(['eggs', 'spam']), np.array([b'eggs', b'spam'])),
+    ])
+    def test_hamming_str_bytes(self, u, v):
+        xp_assert_close(hamming(u, v), np.asarray(1.0))  # str and bytes are not equal
+
+    @pytest.mark.skip_xp_backends("numpy", reason="NumPy arrays accept lists")
+    def test_hamming_foreign_array_with_numpy_input(self, xp):
+        with pytest.raises(TypeError):  # Other frameworks throw on string inputs
+            hamming(xp.asarray([1, 2]), ["eggs", "spam"])
+
+    def test_hamming_special_arrays(self):
+        x = np.ma.array([1, 0, 1, 1, 0], mask=[0, 0, 1, 0, 0])
+        y = np.ma.array([1, 1, 0, 1, 1], mask=[0, 0, 1, 0, 0])
+        with pytest.raises(TypeError, match="numpy.ma.MaskedArray"):
+            hamming(x, y)
+        x = scipy.sparse.csr_array([1, 0, 1, 1, 0])
+        y = scipy.sparse.csr_array([1, 1, 0, 1, 1])
+        with pytest.raises(ValueError, match="Sparse arrays"):
+            hamming(x, y)
+
+
+@make_xp_test_case(mahalanobis)
+class TestMahalanobis:
+    def test_mahalanobis(self, xp):
+        x = xp.asarray([1.0, 2.0, 3.0])
+        y = xp.asarray([1.0, 1.0, 5.0])
+        vi = xp.asarray([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
+
+    def test_mahalanobis_array_like(self):
+        x = [1.0, 2.0, 3.0]
+        y = [1.0, 1.0, 5.0]
+        vi = [[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]]
+        dist = mahalanobis(x, y, vi)
+        xp_assert_close(dist, math.sqrt(6.0), atol=1.5e-7)
+
+    def test_invariance(self, xp):
+        # We cannot test invariance with the standard helpers because VI is a matrix
+        rng = np.random.default_rng(1)
+        dtype = xpx.default_dtype(xp, "real floating")
+        n = 5
+        u, v = rng.random(n), rng.random(n)
+        A = rng.random((n, n))
+        VI = A @ A.T + np.eye(n)  # positive definite
+        expected = xp.asarray(0.8507644608189677, dtype=dtype)  # For seed 1
+        # Case 1: Zero-weighted elements (zero rows and columns in VI)
+        _u = xp.asarray(np.concatenate([u, rng.random(3)]), dtype=dtype)
+        _v = xp.asarray(np.concatenate([v, rng.random(3)]), dtype=dtype)
+        _VI = xp.asarray(block_diag(VI, np.zeros((3, 3))), dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
+        xp_assert_close(result, expected)
+        # Case 2: Duplicated elements at half weight
+        _u = xp.asarray(np.concatenate([u, u]), dtype=dtype)
+        _v = xp.asarray(np.concatenate([v, v]), dtype=dtype)
+        _VI = xp.asarray(block_diag(VI, VI) / 2, dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
+        xp_assert_close(result, expected)
+        # Case 3: Permuted elements
+        p = rng.permutation(n)
+        _u = xp.asarray(u[p], dtype=dtype)
+        _v = xp.asarray(v[p], dtype=dtype)
+        _VI = xp.asarray(VI[p][:, p], dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
+        xp_assert_close(result, expected)
+        # Case 4: Mahalanobis is invariant to M @ x + c (if M has an inverse and VI is
+        # scaled accordingly)
+        c = rng.random(n)
+        M = rng.random((n, n)) + n * np.eye(n)
+        M_inv = np.linalg.inv(M)
+        _u = xp.asarray(M @ u + c, dtype=dtype)
+        _v = xp.asarray(M @ v + c, dtype=dtype)
+        _VI = xp.asarray(M_inv.T @ VI @ M_inv, dtype=dtype)
+        result = mahalanobis(_u, _v, _VI)
+        xp_assert_close(result, expected)
+
+    @pytest.mark.parametrize("u_shape, v_shape, VI_shape", [
+        ((5, 2, 4), (2, 4), (3, 1, 1, 4, 4)),
+        ((2, 4), (1, 4), (2, 4, 4)),
+        ((1, 4), (3, 2, 4), (4, 4)),
+        ((4,), (3, 1, 4), (2, 4, 4)),
+    ])
+    def test_mahalanobis_nd(self, xp, u_shape, v_shape, VI_shape):
+        # We need to test this separate because mahalanobis uses "VI" instead of "w"
+        rng = np.random.default_rng(1)
+        dtype = xpx.default_dtype(xp, "real floating")
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('VI', 2))(mahalanobis)
+        u = xp.asarray(rng.random(u_shape), dtype=dtype)
+        v = xp.asarray(rng.random(v_shape), dtype=dtype)
+        A = rng.random(VI_shape)
+        VI = xp.asarray(A @ A.mT + np.eye(4), dtype=dtype)  # positive definite
+        xp_assert_close(mahalanobis(u, v, VI), ref_func(u, v, VI))
+
+    @pytest.mark.parametrize("u_shape, v_shape, VI_shape, match", [
+        ((5, 2, 4), (3, 4), (4, 4), "incompatible for broadcasting"),  # u and v
+        ((5, 2, 4), (2, 4), (3, 4, 4), "incompatible for broadcasting"),  # VI batch
+        ((5, 2, 4), (2, 4), (3, 3), "VI is not compatible"),  # VI and last axis
+        ((2, 1), (2, 4), (4, 4), "VI is not compatible"),  # u size 1 on last axis
+        ((2, 4), (2, 1), (4, 4), "VI is not compatible"),  # v size 1 on last axis
+        ((5, 2, 4), (2, 4), (4, 3), "VI must be a square matrix"),
+    ])
+    def test_mahalanobis_nd_invalid_shapes(self, xp, u_shape, v_shape, VI_shape,
+                                           match):
+        u, v, VI = xp.ones(u_shape), xp.ones(v_shape), xp.ones(VI_shape)
+        with pytest.raises(ValueError, match=match):
+            mahalanobis(u, v, VI)
+
+
+class TestSquareForm:
+    checked_dtypes = [np.float64, np.float32, np.int32, np.int8, bool]
+
+    def test_squareform_matrix(self):
+        for dtype in self.checked_dtypes:
+            self.check_squareform_matrix(dtype)
+
+    def test_squareform_vector(self):
+        for dtype in self.checked_dtypes:
+            self.check_squareform_vector(dtype)
+
+    def check_squareform_matrix(self, dtype):
+        A = np.zeros((0, 0), dtype=dtype)
+        rA = squareform(A)
+        assert rA.shape == (0,)
+        assert rA.dtype == dtype
+
+        A = np.zeros((1, 1), dtype=dtype)
+        rA = squareform(A)
+        assert rA.shape == (0,)
+        assert rA.dtype == dtype
+
+        A = np.array([[0, 4.2], [4.2, 0]], dtype=dtype)
+        rA = squareform(A)
+        assert rA.shape == (1,)
+        assert rA.dtype == dtype
+        xp_assert_equal(rA, np.array([4.2], dtype=dtype))
+
+    def check_squareform_vector(self, dtype):
+        v = np.zeros((0,), dtype=dtype)
+        rv = squareform(v)
+        assert rv.shape == (1, 1)
+        assert rv.dtype == dtype
+        xp_assert_equal(rv, np.asarray([[0]], dtype=dtype))
+
+        v = np.array([8.3], dtype=dtype)
+        rv = squareform(v)
+        assert rv.shape == (2, 2)
+        assert rv.dtype == dtype
+        xp_assert_equal(rv, np.array([[0, 8.3], [8.3, 0]], dtype=dtype))
+
+    @pytest.mark.parametrize('X', [
+        np.array([[0, 1.0], [1.0, 0]], dtype=object),
+        np.array([1.0], dtype=object),
+        np.zeros((2, 2), dtype=[('d', object)]),
+    ])
+    def test_squareform_object_dtype(self, X):
+        # gh-22929: copying objects as raw bytes corrupted their refcounts
+        with pytest.raises(TypeError, match="object arrays"):
+            squareform(X)
+
+    def test_squareform_multi_matrix(self):
+        for n in range(2, 5):
+            self.check_squareform_multi_matrix(n)
+
+    def check_squareform_multi_matrix(self, n):
+        X = np.random.rand(n, 4)
+        Y = wpdist_no_const(X)
+        assert len(Y.shape) == 1
+        A = squareform(Y)
+        Yr = squareform(A)
+        s = A.shape
+        k = 0
+        assert len(s) == 2
+        assert len(Yr.shape) == 1
+        assert s[0] == s[1]
+        for i in range(0, s[0]):
+            for j in range(i + 1, s[1]):
+                if i != j:
+                    assert A[i, j] == Y[k]
+                    k += 1
+                else:
+                    assert A[i, j] == 0
+
+
+@make_xp_test_case(num_obs_y)
+class TestNumObsY:
+    def test_num_obs_y_multi_matrix(self, xp):
+        for n in range(2, 10):
+            X = np.random.rand(n, 4)
+            Y = xp.asarray(pdist(X))
+            assert num_obs_y(Y) == n
+
+    def test_num_obs_y_1(self, xp):
+        rng = np.random.default_rng(905285034985039)
+        # Tests num_obs_y(y) on a condensed distance matrix over 1
+        # observations. Expecting exception.
+        with pytest.raises(ValueError):
+            num_obs_y(xp.asarray(rng.random(0)))
+
+    def test_num_obs_y(self, xp):
+        rng = np.random.default_rng(74298759834759837)
+        for i in range(2, 16):
+            n = (i * (i - 1)) // 2
+            assert num_obs_y(xp.asarray(rng.random(n))) == i
+
+    def test_num_obs_y_2_100(self, xp):
+        rng = np.random.default_rng(89759387598437)
+        # Tests num_obs_y(y) on 100 improper condensed distance matrices.
+        # Expecting exception.
+        a = {n * (n - 1) / 2 for n in range(2, 16)}
+        for i in range(5, 105):
+            if i not in a:
+                with pytest.raises(ValueError):
+                    num_obs_y(xp.asarray(rng.random(i)))
+
+
+class TestNumObsDM:
+
+    def test_num_obs_dm_multi_matrix(self):
+        for n in range(1, 10):
+            X = np.random.rand(n, 4)
+            Y = wpdist_no_const(X)
+            A = squareform(Y)
+            assert num_obs_dm(A) == n
+
+    def test_num_obs_dm_0(self):
+        # Tests num_obs_dm(D) on a 0x0 distance matrix. Expecting exception.
+        assert self.check_D(0)
+
+    def test_num_obs_dm_1(self):
+        # Tests num_obs_dm(D) on a 1x1 distance matrix.
+        assert self.check_D(1)
+
+    def test_num_obs_dm_2(self):
+        assert self.check_D(2)
+
+    def test_num_obs_dm_3(self):
+        assert self.check_D(2)
+
+    def test_num_obs_dm_4(self):
+        assert self.check_D(4)
+
+    def check_D(self, n):
+        return num_obs_dm(self.make_D(n)) == n
+
+    def make_D(self, n):
+        return np.random.rand(n, n)
+
+
+def is_valid_dm_throw(D):
+    return is_valid_dm(D, throw=True)
+
+
+class TestIsValidDM:
+
+    def test_is_valid_dm_improper_shape_1D_E(self):
+        D = np.zeros((5,), dtype=np.float64)
+        with pytest.raises(ValueError):
+            is_valid_dm_throw(D)
+
+    def test_is_valid_dm_improper_shape_1D_F(self):
+        D = np.zeros((5,), dtype=np.float64)
+        assert not is_valid_dm(D)
+
+    def test_is_valid_dm_improper_shape_3D_E(self):
+        D = np.zeros((3, 3, 3), dtype=np.float64)
+        with pytest.raises(ValueError):
+            is_valid_dm_throw(D)
+
+    def test_is_valid_dm_improper_shape_3D_F(self):
+        D = np.zeros((3, 3, 3), dtype=np.float64)
+        assert not is_valid_dm(D)
+
+    def test_is_valid_dm_nonzero_diagonal_E(self):
+        y = np.random.rand(10)
+        D = squareform(y)
+        for i in range(0, 5):
+            D[i, i] = 2.0
+        with pytest.raises(ValueError):
+            is_valid_dm_throw(D)
+
+    def test_is_valid_dm_nonzero_diagonal_F(self):
+        y = np.random.rand(10)
+        D = squareform(y)
+        for i in range(0, 5):
+            D[i, i] = 2.0
+        assert not is_valid_dm(D)
+
+    def test_is_valid_dm_asymmetric_E(self):
+        y = np.random.rand(10)
+        D = squareform(y)
+        D[1, 3] = D[3, 1] + 1
+        with pytest.raises(ValueError):
+            is_valid_dm_throw(D)
+
+    def test_is_valid_dm_asymmetric_F(self):
+        y = np.random.rand(10)
+        D = squareform(y)
+        D[1, 3] = D[3, 1] + 1
+        assert not is_valid_dm(D)
+
+    def test_is_valid_dm_correct_1_by_1(self):
+        D = np.zeros((1, 1), dtype=np.float64)
+        assert is_valid_dm(D)
+
+    def test_is_valid_dm_correct_2_by_2(self):
+        y = np.random.rand(1)
+        D = squareform(y)
+        assert is_valid_dm(D)
+
+    def test_is_valid_dm_correct_3_by_3(self):
+        y = np.random.rand(3)
+        D = squareform(y)
+        assert is_valid_dm(D)
+
+    def test_is_valid_dm_correct_4_by_4(self):
+        y = np.random.rand(6)
+        D = squareform(y)
+        assert is_valid_dm(D)
+
+    def test_is_valid_dm_correct_5_by_5(self):
+        y = np.random.rand(10)
+        D = squareform(y)
+        assert is_valid_dm(D)
+
+
+@make_xp_test_case(is_valid_y)
+class TestIsValidY:
+    # If test case name ends on "_E" then an exception is expected for the
+    # given input, if it ends in "_F" then False is expected for the is_valid_y
+    # check.  Otherwise the input is expected to be valid.
+    @pytest.mark.parametrize("shape", [(3, 3), (3, 3, 3)])
+    def test_is_valid_y_improper_shape_E(self, shape,xp):
+        y = xp.zeros(shape, dtype=xpx.default_dtype(xp))
+        with pytest.raises(ValueError):
+            is_valid_y(y, throw=True)
+
+    @pytest.mark.parametrize("shape", [(3, 3), (3, 3, 3)])
+    def test_is_valid_y_improper_shape_F(self, shape, xp):
+        y = xp.zeros(shape, dtype=xpx.default_dtype(xp))
+        assert not is_valid_y(y)
+
+    @pytest.mark.parametrize("n", list(range(2, 6)))
+    def test_is_valid_y_correct(self, n, xp):
+        rng = np.random.default_rng(98257298579)
+        y = xp.asarray(rng.random((n * (n - 1)) // 2))
+        assert is_valid_y(y)
+
+    def test_is_valid_y_2_100(self, xp):
+        rng = np.random.default_rng(82797592378598275928)
+        a = {n * (n - 1) // 2 for n in range(2, 16)}
+        for i in range(5, 105):
+            if i not in a:
+                with pytest.raises(ValueError):
+                    is_valid_y(xp.asarray(rng.random(i)), throw=True)
+
+
+class TestRussellrao:
+    def test_pdist_russellrao_mtica1(self):
+        m = wrussellrao(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = wrussellrao(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 5, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 3 / 5, rtol=0, atol=1e-10)
+
+    def test_pdist_russellrao_mtica2(self):
+        m = wrussellrao(np.array([1, 0, 1]),
+                        np.array([1, 1, 0]))
+        m2 = wrussellrao(np.array([1, 0, 1], dtype=bool),
+                         np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2 / 3, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2 / 3, rtol=0, atol=1e-10)
+
+
+class TestSokalsneath:
+    def test_sokalsneath_all_false(self):
+        # Regression test for ticket #876
+        with pytest.raises(ValueError):
+            sokalsneath([False, False, False], [False, False, False])
+
+    def test_pdist_sokalsneath_mtica1(self):
+        m = sokalsneath(np.array([1, 0, 1, 1, 0]),
+                        np.array([1, 1, 0, 1, 1]))
+        m2 = sokalsneath(np.array([1, 0, 1, 1, 0], dtype=bool),
+                         np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 3 / 4, rtol=0, atol=1e-10, check_0d=False)
+
+    def test_pdist_sokalsneath_mtica2(self):
+        m = wsokalsneath(np.array([1, 0, 1]),
+                         np.array([1, 1, 0]))
+        m2 = wsokalsneath(np.array([1, 0, 1], dtype=bool),
+                          np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
+        xp_assert_close(m2, 4 / 5, rtol=0, atol=1e-10, check_0d=False)
+
+
+@make_xp_test_case(braycurtis)
+class TestBrayCurtis:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_braycurtis(self, xp, kind):
+        # Regression test for ticket #1430.
+        dtype = xpx.default_dtype(xp, kind)
+        u = xp.asarray([1, 2, 3], dtype=dtype)
+        v = xp.asarray([2, 4, 6], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(1. / 3), atol=1e-15)
+        u = xp.asarray([1, 1, 0, 0], dtype=dtype)
+        v = xp.asarray([1, 0, 1, 0], dtype=dtype)
+        xp_assert_close(braycurtis(u, v), xp.asarray(0.5), atol=1e-15)
+
+    def test_braycurtis_array_like(self):
+        xp_assert_close(braycurtis([1, 2, 3], [2, 4, 6]), np.asarray(1. / 3))
+        xp_assert_close(braycurtis([1, 1, 0, 0], [1, 0, 1, 0]), np.asarray(0.5))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(braycurtis, x, y)
+        xp_assert_scaling_weight(braycurtis, x, y)
+        xp_assert_zero_weight(braycurtis, x, y)
+        xp_assert_duplication_weight(braycurtis, x, y)
+        xp_assert_split_weight(braycurtis, x, y)
+
+    @pytest.mark.filterwarnings("ignore:invalid value")
+    def test_braycurtis_nan(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
+        u, v = xp.asarray([0, 0]), xp.asarray([0, 0])
+        xp_assert_equal(braycurtis(u, v), xp.asarray(xp.nan))
+
+
+@make_xp_test_case(canberra)
+class TestCanberra:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    @pytest.mark.parametrize("u, v, expected", [
+        ([1, 2, 3], [2, 4, 6], 1.0),
+        ([1, 1, 0, 0], [1, 0, 1, 0], 2.0),
+    ])
+    def test_canberra(self, xp, kind, u, v, expected):
+        # Regression test for ticket #1430.
+        dtype = xpx.default_dtype(xp, kind)
+        u, v = xp.asarray(u, dtype=dtype), xp.asarray(v, dtype=dtype)
+        xp_assert_close(canberra(u, v), xp.asarray(expected))
+
+    def test_canberra_array_like(self):
+        xp_assert_close(canberra([1, 2, 3], [2, 4, 6]), np.asarray(1.0))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(canberra, x, y)
+        xp_assert_zero_weight(canberra, x, y)
+        xp_assert_duplication_weight(canberra, x, y)
+        xp_assert_split_weight(canberra, x, y)
+        # canberra is linear in the weights, so not invariant to rescaling
+
+    def test_canberra_int64_min(self, xp):
+        # Regression test for gh-26486: integer inputs at the int64 limit
+        # must not overflow to a negative, asymmetric distance in canberra.
+        dtype = xpx.default_dtype(xp, "integral")
+        u = xp.asarray([xp.iinfo(dtype).min], dtype=dtype)
+        v = xp.asarray([0], dtype=dtype)
+        xp_assert_equal(canberra(u, v), xp.asarray(1.0))
+        xp_assert_equal(canberra(v, u), xp.asarray(1.0))
+
+    def test_nan_propagates(self, xp):
+        u, v = xp.asarray([xp.nan, 2, 3]), xp.asarray([2, 4, 6])
+        xp_assert_equal(canberra(u, v), xp.asarray(xp.nan))
+
+
+def test_minkowski_w():
+    # Regression test for gh-8142.
+    arr_in = np.array([[83.33333333, 100., 83.33333333, 100., 36.,
+                        60., 90., 150., 24., 48.],
+                       [83.33333333, 100., 83.33333333, 100., 36.,
+                        60., 90., 150., 24., 48.]])
+    p0 = pdist(arr_in, metric='minkowski', p=1, w=None)
+    c0 = cdist(arr_in, arr_in, metric='minkowski', p=1, w=None)
+    p1 = pdist(arr_in, metric='minkowski', p=1)
+    c1 = cdist(arr_in, arr_in, metric='minkowski', p=1)
+
+    xp_assert_close(p0, p1, rtol=1e-15)
+    xp_assert_close(c0, c1, rtol=1e-15)
+
+
+def test_modifies_input(metric):
+    # test whether cdist or pdist modifies input arrays
+    X1 = np.asarray([[1., 2., 3.],
+                     [1.2, 2.3, 3.4],
+                     [2.2, 2.3, 4.4],
+                     [22.2, 23.3, 44.4]])
+    X1_copy = X1.copy()
+    cdist(X1, X1, metric)
+    pdist(X1, metric)
+    xp_assert_equal(X1, X1_copy)
+
+
+def test_Xdist_deprecated_args(metric):
+    # testing both cdist and pdist deprecated warnings
+    X1 = np.asarray([[1., 2., 3.],
+                     [1.2, 2.3, 3.4],
+                     [2.2, 2.3, 4.4],
+                     [22.2, 23.3, 44.4]])
+
+    with pytest.raises(TypeError):
+        cdist(X1, X1, metric, 2.)
+
+    with pytest.raises(TypeError):
+        pdist(X1, metric, 2.)
+
+    for arg in ["p", "V", "VI"]:
+        kwargs = {arg: np.asarray(1.)}
+
+        if ((arg == "V" and metric == "seuclidean")
+                or (arg == "VI" and metric == "mahalanobis")
+                or (arg == "p" and metric == "minkowski")):
+            continue
+
+        with pytest.raises(TypeError):
+            cdist(X1, X1, metric, **kwargs)
+
+        with pytest.raises(TypeError):
+            pdist(X1, metric, **kwargs)
+
+
+def test_Xdist_non_negative_weights(metric):
+    X = eo['random-float32-data'][::5, ::2]
+    w = np.ones(X.shape[1])
+    w[::5] = -w[::5]
+
+    if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
+        pytest.skip("not applicable")
+
+    for m in [metric, eval(metric), "test_" + metric]:
+        with pytest.raises(ValueError):
+            pdist(X, m, w=w)
+        with pytest.raises(ValueError):
+            cdist(X, X, m, w=w)
+
+
+@pytest.mark.uses_xp_capabilities(False)
+def test_validate_vector(xp):
+    x = [1, 2, 3]  # Check list inputs are converted to arrays
+    y = _validate_vector(x)
+    xp_assert_equal(y, np.asarray(x), xp=array_namespace(np.empty(0)))
+
+    x = xp.asarray([1, 2, 3])
+    y = _validate_vector(x)
+    xp_assert_equal(y, x)
+
+    y = _validate_vector(x, dtype=xp.float64)
+    xp_assert_equal(y, xp.asarray([1, 2, 3], dtype=xp.float64))
+    assert y.dtype == xp.float64
+
+    x = xp.asarray([1])
+    y = _validate_vector(x)
+    assert y.ndim == 1
+    xp_assert_equal(y, x)
+
+    x = 1
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
+        _validate_vector(x)
+
+    x = xp.reshape(xp.arange(5), (1, -1, 1))
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
+        _validate_vector(x)
+
+    x = [[1, 2], [3, 4]]
+    with pytest.raises(ValueError, match="Input vector should be 1-D"):
+        _validate_vector(x)
+
+@pytest.mark.uses_xp_capabilities(False)
+def test_validate_weights(xp):
+    w = xp.asarray([1.0, -1.0, 2.0])
+    if is_lazy_array(w):  # Lazy backends return NaN for a negative weight
+        assert xp.all(xp.isnan(_validate_weights(w)))
+    else:  # Eager backends raise on a negative weight
+        with pytest.raises(ValueError, match="non-negative"):
+            _validate_weights(w)
+    # valid weights pass through unchanged on every backend
+    xp_assert_close(_validate_weights(xp.asarray([1.0, 2.0, 3.0])),
+                    xp.asarray([1.0, 2.0, 3.0]))
+
+
+@make_xp_test_case(jensenshannon)
+class TestJensenShannon:
+
+    @pytest.mark.parametrize("p, q, expected", [
+        ([1.0, 0.0], [0.5, 0.5], 0.46450140402245893),
+        ([1.0, 0.0, 0.0], [1.0, 0.0, 0.0], 0.0),
+    ])
+    def test_jensenshannon(self, xp, p, q, expected):
+        p, q = xp.asarray(p), xp.asarray(q)
+        xp_assert_close(jensenshannon(p, q), xp.asarray(expected), atol=1.5e-7)
+
+    def test_jensenshannon_base(self, xp):
+        p, q = xp.asarray([1.0, 0.0, 0.0]), xp.asarray([0.0, 1.0, 0.0])
+        xp_assert_close(jensenshannon(p, q, 2.0), xp.asarray(1.0), atol=1.5e-7)
+
+    @pytest.mark.parametrize("p, q, expected0, expected1", [
+        ([[1.0, 2.0]], [[0.5, 1.5]], [0.0, 0.0], [0.0649045]),
+        (
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
+            [[13, 14, 15, 16], [17, 18, 19, 20], [21, 22, 23, 24]],
+            [0.1954288, 0.1447697, 0.1138377, 0.0927636],
+            [0.1402339, 0.0399106, 0.0201815],
+        ),
+    ])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_jensenshannon_axis(self, xp, p, q, expected0, expected1, axis):
+        p, q = xp.asarray(p), xp.asarray(q)
+        expected = xp.asarray((expected0, expected1)[axis])
+        xp_assert_close(jensenshannon(p, q, axis=axis), expected, atol=1.5e-7)
+        xp_assert_close(jensenshannon(p, q, axis=axis, keepdims=True),
+                        xp.expand_dims(expected, axis=axis), atol=1.5e-7)
+
+    def test_jensenshannon_array_like(self):
+        xp_assert_close(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                        np.asarray(0.46450140402245893), atol=1.5e-7)
+
+    def test_invariance(self, xp):
+        # We cannot test invariance with the standard helpers because jensenshannon
+        # takes no w vector. The entries of p and q act as the weights instead.
+        rng = np.random.default_rng(1)
+        n = 5
+        p, q = rng.random(n), rng.random(n)
+        expected = jensenshannon(xp.asarray(p), xp.asarray(q))
+        # Case 1: Scaled inputs (should get normalized to 1.0)
+        result = jensenshannon(xp.asarray(3 * p), xp.asarray(0.5 * q))
+        xp_assert_close(result, expected)
+        # Case 2: Zero-weighted elements (zero entries in both p and q)
+        _p, _q = np.concat([p, np.zeros(3)]), np.concat([q, np.zeros(3)])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 3: Duplicated elements
+        _p, _q = np.concat([p, p]), np.concat([q, q])
+        result = jensenshannon(xp.asarray(_p), xp.asarray(_q))
+        xp_assert_close(result, expected)
+        # Case 4: Permuted elements
+        perm = rng.permutation(n)
+        result = jensenshannon(xp.asarray(p[perm]), xp.asarray(q[perm]))
+        xp_assert_close(result, expected)
+        # Case 5: Swapped inputs
+        result = jensenshannon(xp.asarray(q), xp.asarray(p))
+        xp_assert_close(result, expected)
+
+    def test_jensenshannon_nd(self):
+        # We need to test this separate because jensenshannon takes no "w" and
+        # reduces over axis
+        rng = np.random.default_rng(1)
+        ref_func = _apply_over_batch(('p', 1), ('q', 1))(jensenshannon)
+        p = rng.random((5, 2, 4))
+        q = rng.random((2, 4))
+        xp_assert_close(jensenshannon(p, q, axis=-1), ref_func(p, q))
+
+    def test_jensenshannon_nd_invalid_shapes(self, xp):
+        p, q = xp.ones((5, 2, 4)), xp.ones((3, 4))
+        with pytest.raises(ValueError, match="incompatible for broadcasting"):
+            jensenshannon(p, q, axis=-1)
+
+    def test_default_axis_deprecation(self, xp):
+        p, q = xp.ones((2, 3)), xp.ones((2, 3))
+        with pytest.warns(DeprecationWarning, match="default value for `axis`"):
+            jensenshannon(p, q)
+
+
+class TestYule:
+    def test_pdist_yule_mtica1(self):
+        m = wyule(np.array([1, 0, 1, 1, 0]),
+                  np.array([1, 1, 0, 1, 1]))
+        m2 = wyule(np.array([1, 0, 1, 1, 0], dtype=bool),
+                   np.array([1, 1, 0, 1, 1], dtype=bool))
+        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
+
+    def test_pdist_yule_mtica2(self):
+        m = wyule(np.array([1, 0, 1]),
+                  np.array([1, 1, 0]))
+        m2 = wyule(np.array([1, 0, 1], dtype=bool),
+                   np.array([1, 1, 0], dtype=bool))
+        xp_assert_close(m, 2.0, rtol=0, atol=1e-10)
+        xp_assert_close(m2, 2.0, rtol=0, atol=1e-10)
+
+    def test_yule_all_same(self):
+        # Test yule avoids a divide by zero when exactly equal
+        x = np.ones((2, 6), dtype=bool)
+        d = wyule(x[0], x[0])
+        assert d == 0.0
+
+        d = pdist(x, 'yule')
+        xp_assert_equal(d, [0.0])
+
+        d = cdist(x[:1], x[:1], 'yule')
+        xp_assert_equal(d, [[0.0]])
+
+    def test_batch_zero_guard(self):
+        # zero-guard for one batch element must not affect the others
+        u = np.array([[1, 1, 0, 0], [1, 0, 1, 0]], dtype=bool)
+        v = np.array([[1, 1, 0, 0], [0, 1, 0, 1]], dtype=bool)
+        xp_assert_equal(yule(u, v), np.asarray([0.0, 2.0]))
+
+
+def test_gh_17703():
+    arr_1 = np.array([1, 0, 0])
+    arr_2 = np.array([2, 0, 0])
+    expected = dice(arr_1, arr_2)
+    actual = pdist([arr_1, arr_2], metric='dice')
+    xp_assert_close(actual, np.asarray([expected]))
+    actual = cdist(np.atleast_2d(arr_1),
+                   np.atleast_2d(arr_2), metric='dice')
+    xp_assert_close(actual, np.asarray([[expected]]))
+
+
+def test_immutable_input(metric):
+    if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
+        pytest.skip("not applicable")
+    x = np.arange(10, dtype=np.float64)
+    x.setflags(write=False)
+    getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+def test_gh_23109():
+    a = np.array([0, 0, 1, 1])
+    b = np.array([0, 1, 1, 0])
+    w = np.asarray([1.5, 1.2, 0.7, 1.3])
+    expected = yule(a, b, w=w)
+    xp_assert_close(expected, 1.1954022988505748)
+    actual = cdist(np.atleast_2d(a),
+                   np.atleast_2d(b),
+                   metric='yule', w=w)
+    xp_assert_close(actual, np.asarray([[expected]]))
+
+
+@make_xp_test_case(jaccard)
+class TestJaccard:
+    @pytest.mark.parametrize("dtype", ["int64", "bool"])
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_jaccard(self, xp, x, y, expected, dtype):
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        xp_assert_close(jaccard(x, y), xp.asarray(expected))
+
+    @pytest.mark.parametrize("x, y, expected", [
+        ([1, 0, 1, 1, 0], [1, 1, 0, 1, 1], 3 / 5),  # mtica example 1
+        ([1, 0, 1], [1, 1, 0], 2 / 3),  # mtica example 2
+    ])
+    def test_jaccard_array_like(self, x, y, expected):
+        xp_assert_close(jaccard(x, y), np.asarray(expected))
+
+    @pytest.mark.parametrize("dtype", ["float64", "int64", "bool"])
+    def test_weight_invariance(self, xp, dtype):
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        y = xp.asarray(rng.integers(2, size=100).astype(dtype))
+        xp_assert_ones_weight(jaccard, x, y)
+        xp_assert_scaling_weight(jaccard, x, y)
+        xp_assert_zero_weight(jaccard, x, y)
+        xp_assert_duplication_weight(jaccard, x, y)
+        xp_assert_split_weight(jaccard, x, y)
+
+    def test_jaccard_all_zero(self, xp):
+        x = xp.asarray([[0, 0, 0], [0, 0, 0]])
+        y = xp.asarray([[0, 0, 0], [1, 0, 0]])
+        xp_assert_close(jaccard(x, y), xp.asarray([0.0, 1.0]))
+        xp_assert_close(jaccard(x, y, w=xp.asarray([1.0, 2.0, 3.0])),
+                        xp.asarray([0.0, 1.0]))
+
+    @pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
+    @pytest.mark.parametrize("weights", [True, False])
+    def test_jaccard_nd(self, weights, u_shape, v_shape, w_shape):
+        # We need to test this separate from other metrics because jaccard casts its
+        # inputs to bool, which turns the random floats of test_distance_nd all True
+        rng = np.random.default_rng(6738657865438)
+        ref_func = _apply_over_batch(('u', 1), ('v', 1), ('w', 1))(jaccard)
+        u = rng.integers(2, size=u_shape)
+        v = rng.integers(2, size=v_shape)
+        w = rng.random(w_shape) if weights else None
+        # Broadcast arguments for the reference function
+        if weights:
+            _u, _v, _w = np.broadcast_arrays(u, v, w)
+        else:
+            (_u, _v), _w = np.broadcast_arrays(u, v), None
+        xp_assert_close(jaccard(u, v, w=w), ref_func(_u, _v, w=_w))
+        # check error is raised for non-broadcastable inputs
+        if weights:
+            w = rng.random((7, 7, 7))
+        else:
+            v = rng.integers(5, size=(7, 7, 7))
+        with pytest.raises(ValueError,
+                           match="Array shapes are incompatible for broadcasting."):
+            jaccard(u, v, w=w)
+
+    def test_non_01_input(self, xp):
+        eps = np.finfo(float).eps
+        x, y = xp.asarray([-10, 2.5, 0]), xp.asarray([2, -5, 2])
+        xp_assert_close(jaccard(x, y), 1/3, rtol=eps, check_0d=False)
+
+    def test_non_01_input_Xdist(self):
+        # Non-0/1 numeric input should be cast to bool before computation.
+        # See gh-21176.
+        x = np.array([-10, 2.5, 0])  # [True, True, False]
+        y = np.array([ 2,   -5, 2])  # [True, True, True]
+        xp_assert_close(cdist([x], [y], 'jaccard'), [[1/3]])
+        xp_assert_close(pdist([x, y], 'jaccard'), [1/3])
+
+    def test_pdist_jaccard_random(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'jaccard')
+        xp_assert_close(np.zeros(10), Y, rtol=eps)
+
+    def test_pdist_djaccard_random_nonC(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros_nonC(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
+        xp_assert_close(np.zeros(10), Y, rtol=eps)
+
+
+@make_xp_test_case(cityblock)
+class TestCityblock:
+    def test_cityblock(self, xp):
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([1.0, 1.0, 5.0])
+        xp_assert_close(cityblock(x, y), xp.asarray(3.0))
+
+    def test_cityblock_array_like(self):
+        x, y = [1.0, 2.0, 3.0], [1.0, 1.0, 5.0]
+        xp_assert_close(cityblock(x, y), np.asarray(3.0))
+
+    def test_cityblock_uint_wraparound(self, xp):
+        # uint8 does not wrap around and produces asymmetric results
+        u = xp.asarray([1], dtype=xp.uint8)
+        v = xp.asarray([0], dtype=xp.uint8)
+        xp_assert_equal(cityblock(u, v), xp.asarray(1.0))
+        xp_assert_equal(cityblock(v, u), xp.asarray(1.0))
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        rng = np.random.default_rng(42)
+        dtype = xpx.default_dtype(xp, kind)
+        x = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        y = xp.asarray((rng.random(100) - 0.5) * 100, dtype=dtype)
+        xp_assert_ones_weight(cityblock, x, y)
+        xp_assert_zero_weight(cityblock, x, y)
+        xp_assert_duplication_weight(cityblock, x, y)
+        xp_assert_split_weight(cityblock, x, y)
+        # cityblock is linear in the weights, so not invariant to rescaling
+
+@make_xp_test_case(chebyshev)
+class TestChebyshev:
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_chebyshev(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        x, y = xp.asarray([1, 2, 3], dtype=dtype), xp.asarray([6, 5, 4], dtype=dtype)
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    def test_weighted(self, xp):
+        # Only components with non-zero weight participate in the 'max'.
+        x, y = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0])
+        w = xp.asarray([0.0, 1.0, 5.0])
+        xp_assert_close(chebyshev(x, y, w), 3.0)
+
+    def test_array_like(self):
+        x, y = [1, 2, 3], [6, 5, 4]
+        xp_assert_close(chebyshev(x, y), 5.0)
+
+    @pytest.mark.parametrize("kind", ["real floating", "integral"])
+    def test_weight_invariance(self, xp, kind):
+        dtype = xpx.default_dtype(xp, kind)
+        rng = np.random.default_rng(42)
+        x = xp.asarray(rng.random(100), dtype=dtype)
+        y = xp.asarray(rng.random(100), dtype=dtype)
+        xp_assert_ones_weight(chebyshev, x, y)
+        xp_assert_scaling_weight(chebyshev, x, y)
+        xp_assert_zero_weight(chebyshev, x, y)
+        xp_assert_duplication_weight(chebyshev, x, y)
+        xp_assert_split_weight(chebyshev, x, y)
+
+    def test_zero_weight(self, xp):
+        # If the weight is identically zero, the distance should be zero.
+        x, y, w = xp.asarray([1.0, 2.0, 3.0]), xp.asarray([6.0, 5.0, 4.0]), xp.zeros(3)
+        xp_assert_equal(chebyshev(x, y, w), 0.0)
+        # Test zero weight on infinite values returns non-NaN distances.
+        x, y = xp.asarray([xp.inf, 2.0, 3.0]), xp.asarray([6.0, xp.inf, 4.0])
+        w = xp.asarray([0, 0, 1])
+        xp_assert_close(chebyshev(x, y, w), 1.0)
+
+    def test_weighted_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 1, 5])
+        xp_assert_close(pdist([x, y], 'chebyshev', w=w), np.asarray([3.]))
+        xp_assert_close(cdist([x], [y], 'chebyshev', w=w), np.asarray([[3.0]]))
+
+    def test_zero_weight_pdist_cdist(self):
+        x, y, w = np.asarray([1, 2, 3]), np.asarray([6, 5, 4]), np.asarray([0, 0, 0])
+        xp_assert_equal(pdist([x, y], 'chebyshev', w=w), np.asarray([0.]))
+        xp_assert_equal(cdist([x], [y], 'chebyshev', w=w), np.asarray([[0.]]))
+
+    def test_pdist_chebyshev_random(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        xp_assert_close(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        xp_assert_close(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=1e-15)
+
+    def test_pdist_chebyshev_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        xp_assert_close(Y_test1, Y_right, rtol=eps, atol=5e-7)
+
+    def test_pdist_chebyshev_iris_nonC(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        xp_assert_close(Y_test2, Y_right, rtol=eps, atol=1e-15)
+
+
+@pytest.mark.parametrize(
+    "func,p",
+    [
+        make_xp_pytest_param(minkowski, 1),
+        make_xp_pytest_param(minkowski, 2),
+        make_xp_pytest_param(minkowski, 3.5),
+        make_xp_pytest_param(minkowski, np.inf),
+        make_xp_pytest_param(euclidean, None),
+        make_xp_pytest_param(sqeuclidean, None),
+        # u or v with shape[-1] == 1 gives zero variance, so the distance is NaN
+        make_xp_pytest_param(
+            correlation, None,
+            additional_marks=pytest.mark.filterwarnings("ignore:invalid value"),
+        ),
+        make_xp_pytest_param(cosine, None),
+        make_xp_pytest_param(hamming, None),
+        make_xp_pytest_param(cityblock, None),
+        # jaccard requires bool and is tested in TestJaccard.test_jaccard_nd
+        # mahalanobis uses a VI matrix instead of a w vector. Tested in TestMahalanobis
+        make_xp_pytest_param(chebyshev, None),
+        make_xp_pytest_param(canberra, None),
+        # jensenshannon takes no w vector. Tested in TestJensenShannon
+        make_xp_pytest_param(braycurtis, None),
+        (yule, None),
+        (dice, None),
+        (rogerstanimoto, None),
+        (russellrao, None),
+        (sokalsneath, None),
+    ],
+)
+@pytest.mark.parametrize("u_shape, v_shape, w_shape", _broadcast_shapes)
+@pytest.mark.parametrize("weights", [True, False])
+def test_distance_nd(func, p, weights, u_shape, v_shape, w_shape):
+    #  check that inputs broadcast correctly against a reference implementation
+    rng = np.random.default_rng(6738657865438)
+    ref_func = _apply_over_batch(('u', 1), ('v', 1), ('p', 1), ('w', 1))(func)
+
+    u = rng.random(u_shape)
+    v = rng.random(v_shape)
+    w = rng.random(w_shape) if weights else None
+    kwargs = {'w': w} if p is None else {'p': p, 'w': w}
+
+    res = func(u, v, **kwargs)
+    # Broadcast arguments for the reference function
+    if weights:
+        u, v, kwargs['w'] = np.broadcast_arrays(u, v, w)
+    else:
+        u, v = np.broadcast_arrays(u, v)
+    ref = ref_func(u, v, **kwargs)
+
+    xp_assert_close(res, ref)
+
+    # check error is raised for non-broadcastable inputs
+    if weights:
+        w = rng.random(5)
+    else:
+        v = rng.random(5)
+
+    with pytest.raises(ValueError,
+                       match="Array shapes are incompatible for broadcasting."):
+        func(u, v, w=w)

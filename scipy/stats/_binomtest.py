@@ -1,6 +1,7 @@
 import numpy as np
 import scipy._external.array_api_extra as xpx
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_promote, is_jax
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_promote,
+                                   is_jax, xp_device, is_lazy_array)
 from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
 from scipy.special import _ufuncs as scu
@@ -28,8 +29,9 @@ class BinomTestResult:
 
     """
     def __init__(self, k, n, alternative, statistic, pvalue, xp):
-        self.k = k
-        self.n = n
+        lazy = is_lazy_array(k)
+        self.k = int(k) if not lazy and statistic.ndim == 0 and not xp.isnan(k) else k
+        self.n = int(n) if not lazy and statistic.ndim == 0 and not xp.isnan(n) else n
         self.alternative = alternative
         self.statistic = statistic
         self.pvalue = pvalue
@@ -104,7 +106,10 @@ class BinomTestResult:
                              'the interval [0, 1].')
 
         xp = self._xp
-        k, n, confidence_level = xp_promote(self.k, self.n, confidence_level, xp=xp)
+        k, n, confidence_level = xp_promote(
+            self.k, self.n, confidence_level,
+            xp=xp, force_floating=True,
+        )
         if method == 'exact':
             low, high = _binom_exact_conf_int(
                 k, n, confidence_level, self.alternative, xp=xp)
@@ -174,9 +179,11 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction, *, x
     return lo, hi
 
 
-@xp_capabilities(skip_backends=[('dask.array', "")], cpu_only=True,
-                 reason="binomial distribution ufuncs only available for NumPy",
-                 extra_note="`alternative='two-sided' is incompatible with JAX arrays.")
+@xp_capabilities(
+    skip_backends=[('dask.array', "")], cpu_only=True,
+    reason="binomial distribution ufuncs only available for NumPy",
+    extra_note="`alternative='two-sided'` is incompatible with JAX arrays.",
+)
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -286,7 +293,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         pval = B.sf(k - 1)
     else:
         if is_jax(xp):
-            message = "`alternative='two-sided' is incompatible with JAX arrays."
+            message = "`alternative='two-sided'` is incompatible with JAX arrays."
             raise ValueError(message)
 
         # alternative is 'two-sided'
@@ -320,7 +327,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
         pval = xpx.apply_where(k < p*n, (d, k, p, n), k_lt_pn,  k_gte_pn)
         # xp.minimum(1.0, pval) but for data-apis/array-api-compat#271
-        pval = xp.minimum(xp.asarray(1.0, dtype=pval.dtype), pval)
+        pval = xp.minimum(xp.asarray(1.0, dtype=pval.dtype, device=xp_device(pval)),
+                          pval)
 
     statistic = xp.where(valid, k/n, xp.nan)
     pval = xp.where(valid, pval, xp.nan)
@@ -392,13 +400,19 @@ class _SimpleBinomial:
 
     def f(self, x, fun):
         xp = self.xp
-        return xpx.lazy_apply(fun, xp.floor(x), self.n, self.p, as_numpy=True, xp=xp)
+        return xpx.lazy_apply(fun, x, self.n, self.p, as_numpy=True, xp=xp)
 
     def cdf(self, x):
-        return self.xp.where(x >= 0, self.f(x, scu._binom_cdf), 0.0)
+        return self.xp.where(x >= 0, self.f(self.xp.floor(x), scu._binom_cdf), 0.0)
 
     def sf(self, x):
-        return self.xp.where(x >= 0, self.f(x, scu._binom_sf), 1.0)
+        return self.xp.where(x >= 0, self.f(self.xp.floor(x), scu._binom_sf), 1.0)
+
+    def ppf(self, x):
+        return self.f(x, scu._binom_ppf)
+
+    def isf(self, x):
+        return self.f(x, scu._binom_isf)
 
     def pmf(self, x):
-        return self.f(x, scu._binom_pmf)
+        return self.f(self.xp.floor(x), scu._binom_pmf)

@@ -3,7 +3,7 @@
 .. currentmodule:: scipy.interpolate
 
 =====================================================================================
-Multivariate data interpolation on a regular grid  (:class:`RegularGridInterpolator`)
+Multivariate data interpolation on a regular grid (:class:`RegularGridInterpolator`)
 =====================================================================================
 
 Suppose you have N-dimensional data on a regular grid, and you
@@ -104,6 +104,43 @@ controlled by the ``fill_value`` keyword parameter:
     numerical artifacts. Consider rescaling the data before interpolating.
 
 
+.. _tutorial-interpolate_RGI_solver:
+
+Solver tolerance for spline methods
+===================================
+
+The spline methods, ``"slinear"``, ``"cubic"`` and ``"quintic"``, solve a large
+sparse linear system when the interpolator is created. By default this is done
+with the iterative solver `scipy.sparse.linalg.gcrotmk`, which stops once the
+residual is below ``max(rtol * norm(values), atol)``, with ``rtol=1e-5`` and
+``atol=1e-6`` by default. For some data this is not accurate enough, and you
+may want to pass smaller tolerances in ``solver_args``, or a different solver
+in ``solver``, such as the direct solver `scipy.sparse.linalg.spsolve`.
+
+One illustration is data with a large constant offset compared to how much they
+vary. Consider a bump of height 1 on top of a constant 1000:
+
+    >>> x = y = np.linspace(-3, 3, 8)
+    >>> X, Y = np.meshgrid(x, y, indexing="ij")
+    >>> values = 1000 + np.exp(-(X**2 + Y**2) / 2)
+    >>> rgi = RegularGridInterpolator((x, y), values, method="cubic")
+    >>> err = np.abs(rgi((X, Y)) - values).max()
+    >>> print(f"{err:.1e}")
+    1.2e-02  # may vary
+
+The interpolant misses the data points by about 1% of the height of the bump.
+A smaller tolerance fixes this:
+
+    >>> rgi_tight = RegularGridInterpolator((x, y), values, method="cubic",
+    ...                                     solver_args={"rtol": 1e-10})
+    >>> err_tight = np.abs(rgi_tight((X, Y)) - values).max()
+    >>> print(f"{err_tight:.1e}")
+    1.4e-07  # may vary
+
+For this kind of data, subtracting the mean before interpolating and adding it
+back afterwards also works, since splines reproduce constants exactly. See the
+notes on choosing a solver in `RegularGridInterpolator` for more details.
+
 
 .. _tutorial-interpolate_RGI_batching:
 
@@ -120,7 +157,7 @@ In accordance with how :ref:`1D interpolators
 interpret multidimensional arrays <tutorial-interpolate_batching>`, the interpretation is
 that the first :math:`N` dimensions of the ``values`` arrays are data dimensions
 (i.e. they correspond to the points defined by the ``grid`` argument), and the *trailing*
-dimensions are batch axes. Note that this disagrees with a usual NumPy broadcasting
+dimensions are batch axes. Note that this disagrees with the usual NumPy broadcasting
 conventions, where broadcasting proceeds along the *leading* dimensions.
 
 To illustrate:
@@ -159,7 +196,7 @@ To illustrate:
 In this example, we evaluated a batch of :math:`n=5` functions on a
 three-dimensional grid. In general, multiple batching dimensions are allowed, and the
 shape of the result follows by appending the batching shape (in this example, ``(5,)``)
-to the shape of the input ``x`` (in this example, `(1,)``).
+to the shape of the input ``x`` (in this example, ``(1,)``).
 
 
 .. _tutorial-interpolate_cartesian-grids:
@@ -173,8 +210,10 @@ using `scipy.ndimage.map_coordinates` instead.
 
 For floating-point data on grids with equal spacing, ``map_coordinates`` can
 be easily wrapped into a `RegularGridInterpolator` look-alike. The following is
-a bare-bones example originating from `the Johanness Buchner's
+a bare-bones example originating from `the Johannes Buchner's
 'regulargrid' package <https://github.com/JohannesBuchner/regulargrid/>`_::
+
+    from scipy.ndimage import map_coordinates
 
     class CartesianGridInterpolator:
         def __init__(self, points, values, method='linear'):

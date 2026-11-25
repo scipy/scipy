@@ -23,3 +23,7 @@ When submitting a pull request, we ask you to check the following:
    license is compatible and include the license information in the
    contributed files, or obtain permission from the original
    author to relicense the contributed code.
+
+3. That your submission is compatible with SciPy's **AI policy**,
+   https://scipy.github.io/devdocs/dev/conduct/ai_policy.html, and includes the
+   required AI declaration in the pull request description.

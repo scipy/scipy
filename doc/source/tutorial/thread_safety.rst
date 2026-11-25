@@ -31,16 +31,26 @@ informative error. For example, `scipy.integrate.ode` may raise an
 ``IntegratorConcurrencyError`` for integration methods that do not support
 parallel execution.
 
+The KDTree provided by `scipy.spatial` is also thread-safe, because there is no
+interface to mutate the KDTree after creating it. It is safe to query the KDTree
+simultaneously from multiple threads.
+
 SciPy offers a couple of data structures, namely sparse arrays and matrices in
-`scipy.sparse`, and k-D trees in `scipy.spatial`. These data structures are
-*currently not thread-safe*. Please avoid in particular operations that mutate
-a data structure, like using item or slice assignment on sparse arrays, while
-the data is shared across multiple threads. That may result in data corruption,
-crashes, or other unwanted behavior.
+`scipy.sparse`, that are *mutable*. These data structures are *currently not
+thread-safe*. Please avoid in particular operations that mutate a data
+structure, like using item or slice assignment on sparse arrays, while the data
+is shared across multiple threads. That may result in data corruption, crashes,
+or other unwanted behavior. If you must support shared mutation of these
+objects, take care to synchronize access or ensure there is no possibility of
+shared mutation. See the sections in the Python free-threading guide on
+`copy-on-write <https://py-free-threading.github.io/porting/#copy-on-write>`_
+and `locks <https://py-free-threading.github.io/porting/#locking>`_ for more
+guidance on ways to deal with thread-unsafe objects in Python.
 
 Note that operations that *do not* release the GIL will see no performance
 gains from use of the `threading` module, and instead might be better served
-with `multiprocessing`.
+with `multiprocessing`. However, see below for details about SciPy's support
+for the free-threaded build, which does not have this limitation.
 
 
 Free-threaded Python

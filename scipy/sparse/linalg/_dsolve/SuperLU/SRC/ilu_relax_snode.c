@@ -33,7 +33,7 @@ at the top-level directory.
 void
 ilu_relax_snode (
 	      const	int n,
-	      int	*et,	       /* column elimination tree */
+	      const int	*et,	       /* column elimination tree */
 	      const int relax_columns, /* max no of columns allowed in a
 					  relaxed snode */
 	      int	*descendants,  /* no of descendants of each node
@@ -51,8 +51,8 @@ ilu_relax_snode (
     register int j, f, parent;
     register int snode_start;	/* beginning of a snode */
 
-    ifill (relax_end, n, EMPTY);
-    ifill (relax_fsupc, n, EMPTY);
+    ifill (relax_end, n, SLU_EMPTY);
+    ifill (relax_fsupc, n, SLU_EMPTY);
     for (j = 0; j < n; j++) descendants[j] = 0;
 
     /* Compute the number of descendants of each node in the etree */
@@ -75,6 +75,7 @@ ilu_relax_snode (
 	j++;
 	relax_fsupc[f++] = snode_start;
 	/* Search for a new leaf */
-	while ( descendants[j] != 0 && j < n ) j++;
+	while (j < n && descendants[j] != 0)
+	    j++;
     }
 }

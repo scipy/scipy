@@ -10,7 +10,7 @@ at the top-level directory.
 */
 
 /*! @file ilu_zpanel_dfs.c
- * \brief Peforms a symbolic factorization on a panel of symbols and
+ * \brief Performs a symbolic factorization on a panel of symbols and
  * record the entries with maximum absolute value in each column
  *
  * <pre>
@@ -131,7 +131,7 @@ ilu_zpanel_dfs(
 	    marker[krow] = jj;
 	    kperm = perm_r[krow];
 
-	    if ( kperm == EMPTY ) {
+	    if ( kperm == SLU_EMPTY ) {
 		panel_lsub[nextl_col++] = krow; /* krow is indexed into A */
 	    }
 	    /*
@@ -146,13 +146,13 @@ ilu_zpanel_dfs(
 #ifdef CHK_DFS
 		printf("krep %d, myfnz %d, perm_r[%d] %d\n", krep, myfnz, krow, kperm);
 #endif
-		if ( myfnz != EMPTY ) { /* Representative visited before */
+		if ( myfnz != SLU_EMPTY ) { /* Representative visited before */
 		    if ( myfnz > kperm ) repfnz_col[krep] = kperm;
 		    /* continue; */
 		}
 		else {
 		    /* Otherwise, perform dfs starting at krep */
-		    oldrep = EMPTY;
+		    oldrep = SLU_EMPTY;
 		    parent[krep] = oldrep;
 		    repfnz_col[krep] = kperm;
 		    xdfs = xlsub[xsup[supno[krep]]];
@@ -178,7 +178,7 @@ ilu_zpanel_dfs(
 				chperm = perm_r[kchild];
 
 				/* Case kchild is in L: place it in L[*,j] */
-				if ( chperm == EMPTY ) {
+				if ( chperm == SLU_EMPTY ) {
 				    panel_lsub[nextl_col++] = kchild;
 				}
 				/* Case kchild is in U:
@@ -192,7 +192,7 @@ ilu_zpanel_dfs(
 #ifdef CHK_DFS
 				    printf("chrep %d,myfnz %d,perm_r[%d] %d\n",chrep,myfnz,kchild,chperm);
 #endif
-				    if ( myfnz != EMPTY ) { /* Visited before */
+				    if ( myfnz != SLU_EMPTY ) { /* Visited before */
 					if ( myfnz > chperm )
 					    repfnz_col[chrep] = chperm;
 				    }
@@ -231,7 +231,7 @@ ilu_zpanel_dfs(
 			}
 
 			kpar = parent[krep]; /* Pop stack, mimic recursion */
-			if ( kpar == EMPTY ) break; /* dfs done */
+			if ( kpar == SLU_EMPTY ) break; /* dfs done */
 			krep = kpar;
 			xdfs = xplore[krep];
 			maxdfs = xlsub[krep + 1];
@@ -241,7 +241,7 @@ ilu_zpanel_dfs(
 			for (i = xdfs; i < maxdfs; i++) printf(" %d", lsub[i]);
 			printf("\n");
 #endif
-		    } while ( kpar != EMPTY ); /* do-while - until empty stack */
+		    } while ( kpar != SLU_EMPTY ); /* do-while - until empty stack */
 
 		} /* else */
 		

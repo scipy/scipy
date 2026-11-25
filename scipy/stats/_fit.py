@@ -1002,7 +1002,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     The statistic matches exactly, but the p-value is estimated by forming
     a "Monte Carlo null distribution", that is, by explicitly drawing random
     samples from `scipy.stats.norm` with the provided parameters and
-    calculating the stastic for each. The fraction of these statistic values
+    calculating the statistic for each. The fraction of these statistic values
     at least as extreme as ``res.statistic`` approximates the exact p-value
     calculated by `scipy.stats.ks_1samp`.
 
@@ -1207,7 +1207,7 @@ def _fit_norm(data, floc=None, fscale=None):
     return loc, scale
 
 
-_fit_funs = {stats.norm: _fit_norm}  # type: ignore[attr-defined]
+_fit_funs = {stats.norm: _fit_norm}
 
 
 # Vectorized goodness of fit statistic functions. These accept a frozen
@@ -1276,7 +1276,7 @@ def _filliben(dist, data, axis):
 
     # [7] Section 8 # 4
     return _corr(X, M)
-_filliben.alternative = 'less'  # type: ignore[attr-defined]
+_filliben.alternative = 'less'  # pyrefly: ignore[missing-attribute]
 
 
 def _cramer_von_mises(dist, data, axis):

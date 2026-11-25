@@ -3,7 +3,7 @@ from warnings import warn
 from ._basic import rfft, irfft
 from ..special import loggamma, poch
 
-from scipy._lib._array_api import array_namespace, xp_capabilities
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
 
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
@@ -22,11 +22,12 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     if bias != 0:
         # a_q(r) = a(r) (r/r_c)^{-q}
         j_c = (n-1)/2
-        j = xp.arange(n, dtype=xp.float64)
+        j = xp.arange(n, dtype=xp.float64, device=xp_device(a))
         a = a * xp.exp(-bias*(j - j_c)*dln)
 
     # compute FHT coefficients
-    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias))
+    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias),
+                   device=xp_device(a))
 
     # transform
     A = _fhtq(a, u, xp=xp)
@@ -50,11 +51,12 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     if bias != 0:
         # A_q(k) = A(k) (k/k_c)^{q} (k_c r_c)^{q}
         j_c = (n-1)/2
-        j = xp.arange(n, dtype=xp.float64)
+        j = xp.arange(n, dtype=xp.float64, device=xp_device(A))
         A = A * xp.exp(bias*((j - j_c)*dln + offset))
 
     # compute FHT coefficients
-    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias, inverse=True))
+    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias, inverse=True),
+                   device=xp_device(A))
 
     # transform
     a = _fhtq(A, u, inverse=True, xp=xp)

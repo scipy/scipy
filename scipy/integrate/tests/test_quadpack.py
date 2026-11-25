@@ -10,6 +10,7 @@ from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
 from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._testutils import IS_WASM
 
 import ctypes
 import ctypes.util
@@ -63,9 +64,15 @@ class TestCtypesQuad:
         assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
         assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
+    @pytest.mark.skipif(
+        IS_WASM, reason="ctypes cannot resolve libm symbols by name in Pyodide/WASM"
+    )
     def test_ctypes_sine(self):
         quad(LowLevelCallable(sine_ctypes), 0, 1)
 
+    @pytest.mark.skipif(
+        IS_WASM, reason="ctypes cannot resolve libm symbols by name in Pyodide/WASM"
+    )
     def test_ctypes_variants(self):
         sin_0 = get_clib_test_routine('_sin_0', ctypes.c_double,
                                       ctypes.c_double, ctypes.c_void_p)
@@ -186,6 +193,27 @@ class TestQuad:
         assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
+    @pytest.mark.parametrize('bound', [-2.0, 0.0, 2.0])
+    @pytest.mark.parametrize('left_infinite', [False, True])
+    @pytest.mark.parametrize('reverse', [False, True])
+    def test_cosine_weighted_infinite_zero_frequency(
+        self, bound, left_infinite, reverse
+    ):
+        if left_infinite:
+            a, b = -np.inf, bound
+            slope = 1.0
+        else:
+            a, b = bound, np.inf
+            slope = -1.0
+
+        expected = exp(slope * bound)
+        if reverse:
+            a, b = b, a
+            expected = -expected
+
+        assert_quad(quad(lambda x: exp(slope * x), a, b, weight='cos', wvar=0),
+                    expected)
+
     def test_algebraic_log_weight(self):
         # 6) Algebraic-logarithmic weight.
         def myfunc(x, a):
@@ -197,7 +225,7 @@ class TestQuad:
                     pi/sqrt((1+2**(-a))**2 - 1))
 
     def test_cauchypv_weight(self):
-        # 7) Cauchy prinicpal value weighting w(x) = 1/(x-c)
+        # 7) Cauchy principal value weighting w(x) = 1/(x-c)
         def myfunc(x, a):
             return 2.0**(-a)/((x-1)**2+4.0**(-a))
 
