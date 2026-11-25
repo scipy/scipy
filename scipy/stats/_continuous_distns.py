@@ -3539,13 +3539,48 @@ class genextreme_gen(rv_continuous):
     def _fitstart(self, data):
         if isinstance(data, CensoredData):
             data = data._uncensor()
-        # This is better than the default shape of (1,).
+        data = np.asarray(data)
+        start = self._fitstart_pwm(data) if data.size >= 3 else None
+        if start is not None:
+            return start
+        # Fallback for tiny or constant samples. This is better than the
+        # default shape of (1,).
         g = _skew(data)
         if g < 0:
             a = 0.5
         else:
             a = -0.5
         return super()._fitstart(data, args=(a,))
+
+    def _fitstart_pwm(self, data):
+        # Probability-weighted moment (L-moment) estimates, Hosking, Wallis
+        # and Wood (1985). L-moments are linear in the order statistics, so
+        # the start follows the data's units and location (gh-26639): for
+        # `y = a + k*x` with `k > 0` it is `(c, a + k*loc, k*scale)`.
+        l1, l2, l3 = stats.lmoment(data, order=[1, 2, 3], standardize=False)
+        if not (np.isfinite(l1) and np.isfinite(l2) and np.isfinite(l3)
+                and l2 > 0):
+            return None
+        t3 = l3 / l2
+        z = 2 / (3 + t3) - np.log(2) / np.log(3)
+        # Hosking et al.'s approximation; the sign of `c` matches SciPy's.
+        c = 7.8590*z + 2.9554*z**2
+        start = self._pwm_loc_scale(c, l1, l2)
+        x = (data - start[1]) / start[2]
+        if not (np.all(np.isfinite(start)) and np.all(1 - c*x > 0)):
+            # The start would leave data outside its support (most often
+            # for c >= 0.3). The Gumbel start has unbounded support.
+            start = self._pwm_loc_scale(0.0, l1, l2)
+        return start
+
+    @staticmethod
+    def _pwm_loc_scale(c, l1, l2):
+        if c == 0:
+            scale = l2 / np.log(2)
+            return 0.0, l1 - _EULER*scale, scale
+        scale = l2 * c / (-sc.expm1(-c*np.log(2)) * sc.gamma(1 + c))
+        loc = l1 + scale * sc.expm1(sc.gammaln(1 + c)) / c
+        return c, loc, scale
 
     def _munp(self, n, c):
         k = np.arange(0, n+1)

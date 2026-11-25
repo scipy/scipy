@@ -9676,6 +9676,109 @@ def test_genextreme_sf_isf():
     assert_allclose(x2, x)
 
 
+class TestGenExtremeFit:
+    # Potomac River annual peak flows, cubic feet per second, 1895-2000
+    # (R package extRemes, dataset `Potomac`), from gh-26639.
+    potomac = np.array([
+        68500, 56000, 204000, 127000, 128000, 57700, 161000, 219000, 110000,
+        44500, 71400, 81300, 119000, 152000, 83000, 168000, 106000, 95400,
+        139000, 73900, 139000, 124000, 123000, 127000, 80500, 109000, 88800,
+        78800, 40700, 277000, 89000, 60500, 89900, 145000, 180000, 110000,
+        36800, 158000, 123000, 36700, 128000, 480000, 310000, 175000, 124000,
+        93600, 69000, 125000, 418000, 70300, 139000, 53100, 42100, 87000,
+        132000, 64700, 128000, 127000, 118000, 109000, 214000, 60800, 69200,
+        72000, 55700, 124000, 102000, 116000, 125000, 87000, 97800, 71300,
+        144000, 76800, 27800, 92100, 86400, 347000, 106000, 132000, 181000,
+        109000, 193000, 139000, 178000, 69500, 41900, 92000, 115000, 199000,
+        84700, 309000, 153000, 96100, 80900, 39800, 85000, 90000, 167000,
+        115000, 87200, 310000, 85200, 123000, 40600, 61600], dtype=float)
+
+    @pytest.mark.parametrize("c", [-0.4, 0, 0.4])
+    @pytest.mark.parametrize("a, k", [(0, 1e-6), (0, 1e6), (-1e5, 1),
+                                      (2e4, 3.7)])
+    def test_fitstart_follows_units(self, c, a, k):
+        # gh-26639: for y = a + k*x the start is (c, a + k*loc, k*scale)
+        rng = np.random.default_rng(2663901)
+        x = stats.genextreme.rvs(c, size=100, random_state=rng)
+        c0, loc0, scale0 = stats.genextreme._fitstart(x)
+        c1, loc1, scale1 = stats.genextreme._fitstart(a + k*x)
+        # the shift by a costs some digits to cancellation
+        assert_allclose(c1, c0, atol=1e-8)
+        assert_allclose((loc1 - a)/k, loc0, atol=1e-8*scale0)
+        assert_allclose(scale1/k, scale0, rtol=1e-8)
+
+    def test_fit_follows_units(self):
+        # gh-26639: the fit in cubic feet per second gave a 100-year flood
+        # of 1.9e18 cfs; in thousands of cfs it gave the MLE, about
+        # 400,548 cfs.
+        x = self.potomac
+        p_cfs = stats.genextreme.fit(x)
+        p_kcfs = stats.genextreme.fit(x / 1000)
+        q_cfs = stats.genextreme.isf(0.01, *p_cfs)
+        q_kcfs = 1000 * stats.genextreme.isf(0.01, *p_kcfs)
+        assert_allclose(q_cfs, 400548.4, rtol=1e-5)
+        assert_allclose(q_kcfs, q_cfs, rtol=1e-5)
+
+    # Samples where the PWM shape estimate puts the upper end point of the
+    # start below the largest observation. All but the first were drawn
+    # from genextreme with c = 0.3, 0.5, 0.7 and 0.9 and rounded.
+    fallback_samples = [
+        [-3.292, 1.074, -0.394, 0.638, 0.287, 0.906, 1.092, 1.132, 0.37,
+         1.288],
+        [0.414, 0.168, 0.781, -1.85, 0.212, -0.007, -0.528, 0.595, 0.179,
+         -0.191],
+        [-1.18, 0.591, 0.994, 0.156, 0.927, 1.165, 0.963, 0.423, 0.864,
+         0.828],
+        [-0.184, -0.698, 1.288, -1.691, -1.641, -1.063, 0.084, 0.345,
+         -0.181, 0.819, -0.021, -0.97, 0.156, 0.195, 0.343, -0.205, 0.116,
+         -0.056, -0.649, -0.03],
+        [0.181, 0.936, 0.57, -0.039, 0.189, -0.504, 0.67, 0.367, 0.555,
+         -2.29],
+    ]
+
+    @pytest.mark.parametrize("x", fallback_samples)
+    def test_fitstart_gumbel_fallback(self, x):
+        # The PWM start would leave the largest observation outside its
+        # support, so the start falls back to Gumbel (c = 0), whose support
+        # is unbounded.
+        x = np.asarray(x)
+        c, loc, scale = stats.genextreme._fitstart(x)
+        assert c == 0
+        assert np.all(np.isfinite(stats.genextreme.logpdf(x, c, loc, scale)))
+        # the fallback decision does not depend on the units of the data
+        a, k = 5e4, 4e4
+        c1, loc1, scale1 = stats.genextreme._fitstart(a + k*x)
+        assert c1 == 0
+        assert_allclose((loc1 - a)/k, loc, atol=1e-8*scale)
+        assert_allclose(scale1/k, scale, rtol=1e-8)
+        # and the fit improves on the start
+        p = stats.genextreme.fit(x)
+        nll_start = stats.genextreme.nnlf((c, loc, scale), x)
+        assert stats.genextreme.nnlf(p, x) <= nll_start
+
+    def test_fitstart_inside_support(self):
+        # The start never leaves an observation outside its own support,
+        # also for bounded samples (c >= 0.3), where the PWM estimate alone
+        # sometimes does.
+        rng = np.random.default_rng(12345)
+        n_fallback = 0
+        for c in [0.3, 0.5, 0.7, 0.9]:
+            for _ in range(25):
+                x = stats.genextreme.rvs(c, size=10, random_state=rng)
+                c0, loc0, scale0 = stats.genextreme._fitstart(x)
+                assert np.all(1 - c0*(x - loc0)/scale0 > 0)
+                n_fallback += c0 == 0
+        # the fallback path was taken at least once
+        assert n_fallback > 0
+
+    def test_fitstart_small_or_constant_sample(self):
+        # too few points or no spread: keep the previous moment-based start
+        assert stats.genextreme._fitstart([1.0, 2.0])[0] == -0.5
+        # (the skewness of constant data is 0/0, as before this change)
+        with np.errstate(invalid='ignore'):
+            assert stats.genextreme._fitstart(np.ones(5))[0] == -0.5
+
+
 def test_burr12_ppf_small_arg():
     prob = 1e-16
     quantile = stats.burr12.ppf(prob, 2, 3)
