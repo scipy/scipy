@@ -874,15 +874,30 @@ _linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject *
 _linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyArrayObject *ap_Am = NULL;
-    Matrix_norm_ord ord = Matrix_norm_ord::m_fro;
+    Py_ssize_t ord_index = 0;
 
-    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord)) {
+    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord_index)) {
         return NULL;
     }
 
     // Sanity check input
     if (!_check_dtype_and_flags(ap_Am, "matrix_norm", 2)) {
         return NULL;
+    }
+
+    Matrix_norm_ord ord = (Matrix_norm_ord)ord_index;
+    switch (ord) {
+        case Matrix_norm_ord::m_fro:
+        case Matrix_norm_ord::m_nuc:
+        case Matrix_norm_ord::m_one:
+        case Matrix_norm_ord::m_neg_one:
+        case Matrix_norm_ord::m_two:
+        case Matrix_norm_ord::m_neg_two:
+        case Matrix_norm_ord::m_inf:
+        case Matrix_norm_ord::m_neg_inf:
+            break;
+        default:
+            return PyErr_Format(PyExc_ValueError, "scipy.linalg.matrix_norm: unknown order index %zd.", ord_index);
     }
 
     // Allocate return object
