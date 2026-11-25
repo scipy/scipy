@@ -54,6 +54,10 @@ Both parse handlers and formatters allow breaking down the datastructure into in
 
 `thirdparty/task_thread_pool` is a simple thread pool class similar to Python's `ThreadPoolExecutor`.
 This works well and avoids a dependency on a heavy package like TBB.
+SciPy carries task-thread-pool 1.0.10, newer than the copy bundled with fast_matrix_market 1.7.x,
+because 1.0.9 fixes a data race in pool shutdown and 1.0.10 removes one in task submission (gh-22545).
+When updating fast_matrix_market, do not replace `thirdparty/task_thread_pool.hpp` with the copy it
+bundles unless that copy is 1.0.10 or newer.
 
 `field_conv.hpp` contains abstractions to read/write integer, floating point, and complex numbers. This exists primarily
 to use the best available method from:
