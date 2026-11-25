@@ -1035,6 +1035,8 @@ class _BPoly(_PPolyBase):
                 sign = -1
 
             xs, xe = self.x[0], self.x[-1]
+            if xs > xe:
+                xs, xe = xe, xs
             period = xe - xs
             interval = b - a
             n_periods, left = divmod(interval, period)
