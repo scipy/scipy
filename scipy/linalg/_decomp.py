@@ -770,6 +770,14 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         else:
             return w, v
 
+    # For a 1x1 matrix the diagonal is the only band that matters. LAPACK's
+    # N=1 shortcut in ?bevd/?bevx returns AB(1, 1) regardless of UPLO, which
+    # is the diagonal only in lower form. Keep just the diagonal row so that
+    # both forms return the diagonal entry.
+    if a1.shape[1] == 1 and a1.shape[0] > 1:
+        a1 = a1[[0]] if lower else a1[[-1]]
+        overwrite_a_band = False
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
 

@@ -734,6 +734,22 @@ class TestEigBanded:
         assert_array_almost_equal(sort(w), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize("lower", [False, True])
+    @pytest.mark.parametrize("nbands", [1, 3])
+    def test_eig_banded_1x1(self, dtype, lower, nbands):
+        """A 1x1 matrix returns its diagonal entry in either band form."""
+        # gh-26776: LAPACK's N=1 shortcut reads AB(1, 1), which is the
+        # diagonal only in lower form.
+        a_band = np.zeros((nbands, 1), dtype=dtype)
+        a_band[0 if lower else -1, 0] = 4
+        w = eigvals_banded(a_band, lower=lower)
+        assert_array_almost_equal(w, [4])
+        w, v = eig_banded(a_band, lower=lower)
+        assert_array_almost_equal(w, [4])
+        assert_array_almost_equal(abs(v), [[1]])
+
     def test_eigvals_banded(self):
         """Compare eigenvalues of eigvals_banded with those of linalg.eig."""
         w_sym = eigvals_banded(self.bandmat_sym)
