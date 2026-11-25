@@ -34,7 +34,7 @@ def _get_dtype(dtype):
     cpu_only=True, jax_jit=False,
     skip_backends=[
         ("dask.array",
-         "https://github.com/data-apis/array-api-extra/issues/488")
+         "https://github.com/scipy/scipy/issues/24205")
     ]
 )
 class NdBSpline:
