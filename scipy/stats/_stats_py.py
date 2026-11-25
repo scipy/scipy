@@ -4799,7 +4799,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # data-apis/array-api-extra#196
     mxp = array_namespace(r._meta) if is_dask(xp) else xp
     def special_case(r):
-        return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
+        # With n=2 the null distribution puts half its mass at r=1 and half at
+        # r=-1, so a one-sided p-value is 0.5 when r has the hypothesized sign.
+        p = mxp.ones_like(r)
+        if alternative == 'greater':
+            p = mxp.where(r == 1, 0.5, p)
+        elif alternative == 'less':
+            p = mxp.where(r == -1, 0.5, p)
+        return mxp.where(mxp.isnan(r), mxp.nan, p)
     r = xpx.apply_where(mask, r, mxp.round, fill_value=r)
     pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
