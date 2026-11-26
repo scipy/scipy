@@ -60,8 +60,6 @@ New features
 ``scipy.sparse`` improvements
 =============================
 
-- Dense inputs to `scipy.sparse.csgraph` no longer treat finite edge weights
-  near ``null_value`` as absent. Finite null values are now matched exactly.
 
 
 ``scipy.spatial`` improvements
