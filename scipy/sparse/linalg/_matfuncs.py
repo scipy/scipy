@@ -79,7 +79,7 @@ def inv(A):
         Ainv = scipy.sparse.csc_array(Ainv.reshape(1, 1))
         if is_pydata_spmatrix(I):
             Ainv = type(I).from_scipy_sparse(Ainv)
-        elif A.format in ("csr", "csc"):
+        elif A.format in ("csr", "csc"):  # TODO: simplify once sparse matrices are gone
             Ainv = type(A)(Ainv)
     return Ainv
 
