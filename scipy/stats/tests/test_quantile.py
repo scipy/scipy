@@ -301,6 +301,16 @@ class TestQuantile:
         ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
 
+    def test_closest_observation_weighted_ties(self, xp):
+        x = np.array([1., 2., 3.])
+        weights = np.array([2, 1, 1])
+        p = xp.asarray([0.625, 0.875, 0.75])
+        method = 'closest_observation'
+        res = stats.quantile(xp.asarray(x), p, method=method,
+                             weights=xp.asarray(weights))
+        ref = stats.quantile(xp.asarray(np.repeat(x, weights)), p, method=method)
+        xp_assert_equal(res, ref)
+
     @pytest.mark.parametrize('zero_weights', [False, True])
     def test_weights_against_numpy(self, zero_weights, xp):
         if np.__version__ < "2.1.3" and zero_weights:

@@ -451,7 +451,9 @@ def _quantile_hf(y, p, n, method, weights, xp):
     elif method == 'averaged_inverted_cdf':
         g = (1 + xp.astype((g > 0), jg.dtype)) / 2
     elif method == 'closest_observation':
-        g = (1 - xp.astype((g == 0) & (j % 2 == 1), jg.dtype))
+        # At a tie, jg is the one-based lower rank before mapping to input indices.
+        even_rank = (j % 2 == 1) if weights is None else (jg % 2 == 0)
+        g = 1 - xp.astype((g == 0) & even_rank, jg.dtype)
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'}:
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
