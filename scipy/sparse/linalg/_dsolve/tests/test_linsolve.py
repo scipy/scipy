@@ -795,6 +795,88 @@ class TestGstrsErrors:
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr,
                                 self.b.astype(np.uint8))
 
+
+class TestIndexValidation:
+    """The index arrays of a sparse array can be mutated in place after it has
+    been constructed, so ``check_format`` at construction time is not enough:
+    SuperLU indexes into ``indices``/``indptr`` without bounds checking, which
+    used to give an out-of-bounds read/write rather than an exception.
+    """
+    def setup_method(self):
+        use_solver(useUmfpack=False)
+
+    @staticmethod
+    def _matrix():
+        data = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+        indices = np.array([0, 1, 0, 1], dtype=np.intc)
+        indptr = np.array([0, 2, 4], dtype=np.intc)
+        A = csc_array((data, indices, indptr), shape=(2, 2), copy=False)
+        # skip sum_duplicates, so that the tampered arrays reach SuperLU
+        A._has_canonical_format = True
+        A._has_sorted_indices = True
+        return A
+
+    @pytest.mark.parametrize("bad", [100000, -5])
+    def test_splu_indices_out_of_bounds(self, bad):
+        A = self._matrix()
+        A.indices[1] = bad
+        with assert_raises(ValueError, match="row indices must be"):
+            splu(A, permc_spec='NATURAL')
+
+    @pytest.mark.parametrize("bad", [100000, -5])
+    def test_spsolve_indices_out_of_bounds(self, bad):
+        A = self._matrix()
+        A.indices[1] = bad
+        with assert_raises(ValueError, match="row indices must be"):
+            spsolve(A, np.ones(2))
+
+    @pytest.mark.parametrize("bad", [100000, -100])
+    def test_splu_indptr_out_of_bounds(self, bad):
+        A = self._matrix()
+        A.indptr[1] = bad
+        with assert_raises(ValueError, match="indptr must be|indptr should be"):
+            splu(A, permc_spec='NATURAL')
+
+    def test_splu_indptr_not_starting_at_zero(self):
+        A = self._matrix()
+        A.indptr[0] = 1
+        with assert_raises(ValueError, match="indptr should start with 0"):
+            splu(A, permc_spec='NATURAL')
+
+    def test_gstrf_indptr_beyond_nnz(self):
+        # `indices` are all in range, but `indptr` makes SuperLU read past
+        # `nnz` -- so the two checks are only sound together.
+        A = self._matrix()
+        with assert_raises(ValueError, match="last value of indptr"):
+            _superlu.gstrf(2, 3, A.data, A.indices, A.indptr,
+                           csc_construct_func=csc_array, ilu=False,
+                           options=dict(ColPerm="NATURAL", SymmetricMode=True))
+
+    @pytest.mark.parametrize("bad_L", [True, False])
+    def test_gstrs_indices_out_of_bounds(self, bad_L):
+        A = csc_array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+        b = np.array([[1.0], [2.0], [3.0]])
+        L = tril(A, format='csc')
+        U = triu(A, k=1, format='csc')
+        (L if bad_L else U).indices[0] = 100000
+        with assert_raises(ValueError, match="row indices must be"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                           U.shape[0], U.nnz, U.data, U.indices, U.indptr, b)
+
+    def test_unpruned_arrays_are_accepted(self):
+        # `indices`/`data` longer than nnz is legal; the scan must stop at nnz
+        # and not reject the trailing (meaningless) entries.
+        data = np.array([1.0, 2.0, 3.0, 4.0, 0.0, 0.0])
+        indices = np.array([0, 1, 0, 1, 12345, -7], dtype=np.intc)
+        indptr = np.array([0, 2, 4], dtype=np.intc)
+        lu = _superlu.gstrf(2, 4, data, indices, indptr,
+                            csc_construct_func=csc_array, ilu=False,
+                            options=dict(ColPerm="NATURAL", SymmetricMode=True))
+        assert_allclose(lu.solve(np.array([1.0, 1.0])),
+                        np.linalg.solve(np.array([[1.0, 3.0], [2.0, 4.0]]),
+                                        np.ones(2)))
+
+
 class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
