@@ -49,8 +49,7 @@ import scipy.spatial.distance
 from scipy.linalg import block_diag
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y)
-from scipy.spatial.distance._distance import (
-    _validate_vector, _validate_weights, _METRICS_NAMES)
+from scipy.spatial.distance._distance import _validate_weights, _METRICS_NAMES
 
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
@@ -2335,37 +2334,6 @@ def test_Xdist_non_negative_weights(metric):
         with pytest.raises(ValueError):
             cdist(X, X, m, w=w)
 
-
-@pytest.mark.uses_xp_capabilities(False)
-def test_validate_vector(xp):
-    x = [1, 2, 3]  # Check list inputs are converted to arrays
-    y = _validate_vector(x)
-    xp_assert_equal(y, np.asarray(x), xp=array_namespace(np.empty(0)))
-
-    x = xp.asarray([1, 2, 3])
-    y = _validate_vector(x)
-    xp_assert_equal(y, x)
-
-    y = _validate_vector(x, dtype=xp.float64)
-    xp_assert_equal(y, xp.asarray([1, 2, 3], dtype=xp.float64))
-    assert y.dtype == xp.float64
-
-    x = xp.asarray([1])
-    y = _validate_vector(x)
-    assert y.ndim == 1
-    xp_assert_equal(y, x)
-
-    x = 1
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        _validate_vector(x)
-
-    x = xp.reshape(xp.arange(5), (1, -1, 1))
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        _validate_vector(x)
-
-    x = [[1, 2], [3, 4]]
-    with pytest.raises(ValueError, match="Input vector should be 1-D"):
-        _validate_vector(x)
 
 @pytest.mark.uses_xp_capabilities(False)
 def test_validate_weights(xp):

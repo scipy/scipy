@@ -76,18 +76,6 @@ def _promote(*args, xp, order=None):
     return xp_promote(*args, force_floating=True, broadcast=True, xp=xp)
 
 
-def _validate_vector(u, dtype=None):
-    try:
-        u = _asarray(u, dtype=dtype)
-    except TypeError:
-        # String/object arrays (e.g. hamming on byte strings) have no array-API
-        # namespace. Fall back to NumPy, which handles them.
-        u = np.asarray(u, dtype=dtype)
-    if u.ndim == 1:
-        return u
-    raise ValueError("Input vector should be 1-D.")
-
-
 def _validate_weights(w, xp=None):
     """Reject negatives along the last axis.
 
