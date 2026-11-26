@@ -13,25 +13,13 @@ py3.extension_module('_sigtools',
   subdir: 'scipy/signal'
 )
 
-if use_pythran
-  py3.extension_module('_max_len_seq_inner',
-    pythran_gen.process('_max_len_seq_inner.py'),
-    cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
-else
-  py3.extension_module('_max_len_seq_inner',
-    [cython_gen.process('_max_len_seq_inner.pyx')],
-    c_args: cython_c_args,
-    dependencies: np_dep,
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
-endif
+py3.extension_module('_max_len_seq_inner',
+  ['_max_len_seq_innermodule.cc'],
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/signal'
+)
 
 pyx_files = [
   ['_peak_finding_utils', '_peak_finding_utils.pyx'],
