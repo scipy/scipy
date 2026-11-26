@@ -925,7 +925,6 @@ if HAVE_SCPDT:
         "scipy/linalg/_cython_signature_generator.py",
         "scipy/linalg/_generate_pyx.py",
         "scipy/ndimage/utils/generate_label_testvectors.py",
-        "scipy/optimize/_group_columns.py",
         "scipy/optimize/_max_len_seq_inner.py",
         "scipy/signal/_max_len_seq_inner.py",
         "scipy/sparse/_generate_sparsetools.py",
