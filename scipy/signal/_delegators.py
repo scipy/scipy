@@ -417,7 +417,8 @@ def lfiltic_signature(b, a, y, x=None):
 
 
 def lombscargle_signature(
-    x, y, freqs, *, normalize=False, weights=None, floating_mean=False
+    x, y, freqs, *, normalize=False, weights=None, floating_mean=False,
+    model="sine_cosine"
 ):
     return array_namespace(x, y, freqs, weights)
 

@@ -24,6 +24,7 @@ def lombscargle(
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
+    model: Literal["sine_cosine", "complex_exponential"] = "sine_cosine",
 ) -> npt.NDArray:
     """
     Compute the generalized Lomb-Scargle periodogram.
@@ -36,34 +37,55 @@ def lombscargle(
     each frequency independently. This algorithm was developed by Zechmeister
     and Kürster which improves the Lomb-Scargle periodogram by enabling
     the weighting of individual samples and calculating an unknown y offset
-    (also called a "floating-mean" model) [3]_. For more details, and practical
-    considerations, see the excellent reference on the Lomb-Scargle periodogram [4]_.
+    (also called a "floating-mean" model) [3]_. The alternative
+    ``model="complex_exponential"`` uses a single complex exponential
+    ``y(ω) = a*exp(1j*ω*x) + c`` at each frequency [5]_. For more details,
+    and practical considerations, see the excellent reference on the
+    Lomb-Scargle periodogram [4]_.
 
     When *normalize* is False (or "power") (default) the computed periodogram
-    is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
-    signal with amplitude A for sufficiently large N. Where N is the length of x or y.
+    is unnormalized. For real-valued data with ``model="sine_cosine"``, it takes
+    the value ``(A**2) * N/4`` for a harmonic signal with amplitude A for
+    sufficiently large N. For ``model="complex_exponential"``, a perfectly
+    fitted complex exponential of amplitude A has power ``(abs(A)**2) * N/2``.
+    Here N is the length of x or y.
 
     When *normalize* is True (or "normalize") the computed periodogram is normalized
     by the residuals of the data around a constant reference model (at zero).
 
-    When *normalize* is "amplitude" the computed periodogram is the complex
-    representation of the amplitude and phase.
+    When *normalize* is "amplitude", the periodogram returns a complex
+    representation of the fitted amplitude and phase at each frequency.
+    The interpretation depends on the selected model.
 
-    Input arrays should be 1-D of a real floating data type, which are converted into
-    float64 arrays before processing.
+    For ``model="sine_cosine"``, the fitted signal can be expressed as
+    ``A_pos*exp(1j*ω*x) + A_neg*exp(-1j*ω*x) + c``. The returned value is
+    ``2*A_neg`` at each requested frequency. For real-valued measurements,
+    this gives the conventional sinusoidal amplitude and phase. For complex
+    measurements, the two coefficients are independent, and only one is
+    returned. The other can be obtained by evaluating the opposite frequency.
+
+    For ``model="complex_exponential"``, the fitted signal is
+    ``A*exp(1j*ω*x) + c``, and the returned value is the complex coefficient
+    ``A`` directly.
+
+    Input arrays must be 1-D. Sample times, frequencies, and weights must be real;
+    measurements may be real or complex. They are converted to float64 or
+    complex128 as appropriate.
 
     Parameters
     ----------
     x : array_like
         Sample times.
     y : array_like
-        Measurement values. Values are assumed to have a baseline of ``y = 0``. If
+        Real or complex measurement values. Values are assumed to have a baseline
+        of ``y = 0``. If
         there is a possibility of a y offset, it is recommended to set `floating_mean`
         to True.
     freqs : array_like
         Angular frequencies (e.g., having unit rad/s=2π/s for `x` having unit s) for
-        output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
-        also exist at ``+freq``.
+        output periodogram. Positive and negative frequencies have equal power
+        for ``model="sine_cosine"``, but may differ for complex measurements with
+        ``model="complex_exponential"``.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -73,6 +95,11 @@ def lombscargle(
     floating_mean : bool, optional
         Determines a y offset for each frequency independently, if True.
         Else the y offset is assumed to be `0`.
+    model : {"sine_cosine", "complex_exponential"}, optional
+        Model fitted independently at each frequency. ``"sine_cosine"`` (default)
+        fits independent cosine and sine coefficients, allowing both rotating
+        components of complex measurements. ``"complex_exponential"`` fits a
+        single signed-frequency component at a time.
 
     Returns
     -------
@@ -88,7 +115,8 @@ def lombscargle(
     ValueError
         If any weight is < 0, or the sum of the weights is <= 0.
     ValueError
-        If the normalize parameter is not one of the allowed options.
+        If any of x, freqs, or weights is complex, or if normalize or model is
+        not one of the allowed options.
 
     See Also
     --------
@@ -107,6 +135,14 @@ def lombscargle(
     The legacy concept of "pre-centering" entails removing the mean from parameter `y`
     before processing, i.e., passing ``y - y.mean()`` instead of setting the parameter
     `floating_mean` to ``True``.
+
+    For complex `y`, ``model="sine_cosine"`` fits the positive- and
+    negative-frequency components jointly. With ``normalize="amplitude"``, the
+    output at each requested frequency ω is twice the fitted coefficient of
+    ``exp(-1j*ω*x)``; the other coefficient can be obtained by requesting -ω.
+    The power and normalized outputs include both fitted components.
+    With ``model="complex_exponential"``, the amplitude output is instead the
+    coefficient of ``exp(1j*ω*x)``.
 
     When the normalize parameter is "amplitude", for any frequency in freqs that is
     below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards
@@ -135,6 +171,11 @@ def lombscargle(
            The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
            May 2018
            :doi:`10.3847/1538-4365/aab766`
+
+    .. [5] G.L. Bretthorst, "Frequency Estimation and Generalized Lomb-Scargle
+           Periodograms," in Statistical Challenges in Astronomy, 2003,
+           pp. 309-329
+           :doi:`10.1007/0-387-21529-8_21`
 
 
     Examples
@@ -207,6 +248,11 @@ def lombscargle(
 
     """
 
+    # sample times, frequencies, and weights must be real-valued
+    if (np.iscomplexobj(x) or np.iscomplexobj(freqs) or
+            (weights is not None and np.iscomplexobj(weights))):
+        raise ValueError("Parameters x, freqs, and weights must be real-valued!")
+
     # if no weights are provided, assume all data points are equally important
     if weights is None:
         weights = np.ones_like(y, dtype=np.float64)
@@ -214,10 +260,10 @@ def lombscargle(
         # if provided, make sure weights is an array and cast to float64
         weights = np.asarray(weights, dtype=np.float64)
 
-    # make sure other inputs are arrays and cast to float64
+    # make sure other inputs are arrays and cast to float64 or complex128
     # done before validation, in case they were not arrays
     x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
+    y = np.asarray(y, dtype=np.complex128 if np.iscomplexobj(y) else np.float64)
     freqs = np.asarray(freqs, dtype=np.float64)
 
     # validate input shapes
@@ -243,6 +289,10 @@ def lombscargle(
             "or 'amplitude'."
         )
 
+    # validate model parameter
+    if model not in ["sine_cosine", "complex_exponential"]:
+        raise ValueError("Model must be 'sine_cosine' or 'complex_exponential'.")
+
     # weight vector must sum to 1
     weights = weights * (1.0 / weights.sum())
 
@@ -257,57 +307,78 @@ def lombscargle(
     # store frequent intermediates
     weights_y = weights * y
     freqst = freqs * x
-    coswt = np.cos(freqst)
-    sinwt = np.sin(freqst)
 
-    Y = np.dot(weights.T, y)  # Eq. 7
-    CC = np.dot(weights.T, coswt * coswt)  # Eq. 13
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq.14
-    CS = np.dot(weights.T, coswt * sinwt)  # Eq. 15
+    if model == "sine_cosine":
+        coswt = np.cos(freqst)
+        sinwt = np.sin(freqst)
 
-    if floating_mean:
-        C = np.dot(weights.T, coswt)  # Eq. 8
-        S = np.dot(weights.T, sinwt)  # Eq. 9
-        CC -= C * C  # Eq. 13
-        SS -= S * S  # Eq. 14
-        CS -= C * S  # Eq. 15
+        Y = np.dot(weights.T, y)  # Eq. 7
+        CC = np.dot(weights.T, coswt * coswt)  # Eq. 13
+        SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq.14
+        CS = np.dot(weights.T, coswt * sinwt)  # Eq. 15
 
-    # calculate tau (phase offset to eliminate CS variable)
-    tau = 0.5 * np.arctan2(2.0 * CS, CC - SS)  # Eq. 19
-    freqst_tau = freqst - tau
+        if floating_mean:
+            C = np.dot(weights.T, coswt)  # Eq. 8
+            S = np.dot(weights.T, sinwt)  # Eq. 9
+            CC -= C * C  # Eq. 13
+            SS -= S * S  # Eq. 14
+            CS -= C * S  # Eq. 15
 
-    # coswt and sinwt are now offset by tau, which eliminates CS
-    coswt_tau = np.cos(freqst_tau)
-    sinwt_tau = np.sin(freqst_tau)
+        # calculate tau (phase offset to eliminate CS variable)
+        tau = 0.5 * np.arctan2(2.0 * CS, CC - SS)  # Eq. 19
+        freqst_tau = freqst - tau
 
-    YC = np.dot(weights_y.T, coswt_tau)  # Eq. 11
-    YS = np.dot(weights_y.T, sinwt_tau)  # Eq. 12
-    CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13, CC range is [0.5, 1.0]
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2    Eq. 14, SS range is [0.0, 0.5]
+        # coswt and sinwt are now offset by tau, which eliminates CS
+        coswt_tau = np.cos(freqst_tau)
+        sinwt_tau = np.sin(freqst_tau)
 
-    if floating_mean:
-        C = np.dot(weights.T, coswt_tau)  # Eq. 8
-        S = np.dot(weights.T, sinwt_tau)  # Eq. 9
-        YC -= Y * C  # Eq. 11
-        YS -= Y * S  # Eq. 12
-        CC -= C * C  # Eq. 13, CC range is now [0.0, 1.0]
-        SS -= S * S  # Eq. 14, SS range is now [0.0, 0.5]
+        YC = np.dot(weights_y.T, coswt_tau)  # Eq. 11
+        YS = np.dot(weights_y.T, sinwt_tau)  # Eq. 12
+        CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13, CC range is [0.5, 1.0]
+        SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2    Eq. 14, SS range is [0.0, 0.5]
 
-    # to prevent division by zero errors with a and b, as well as correcting for
-    # numerical precision errors that lead to CC or SS being approximately -0.0,
-    # make sure CC and SS are both > 0
-    epsneg = np.finfo(dtype=y.dtype).epsneg  # type:ignore[union-attr]
-    CC[CC < epsneg] = epsneg
-    SS[SS < epsneg] = epsneg
+        if floating_mean:
+            C = np.dot(weights.T, coswt_tau)  # Eq. 8
+            S = np.dot(weights.T, sinwt_tau)  # Eq. 9
+            YC -= Y * C  # Eq. 11
+            YS -= Y * S  # Eq. 12
+            CC -= C * C  # Eq. 13, CC range is now [0.0, 1.0]
+            SS -= S * S  # Eq. 14, SS range is now [0.0, 0.5]
 
-    # calculate a and b
-    # where: y(w) = a*cos(w) + b*sin(w) + c
-    a = YC / CC  # Eq. A.4 and 6, eliminating CS
-    b = YS / SS  # Eq. A.4 and 6, eliminating CS
-    # c = Y - a * C - b * S
+        # to prevent division by zero errors with a and b, as well as correcting for
+        # numerical precision errors that lead to CC or SS being approximately -0.0,
+        # make sure CC and SS are both > 0
+        epsneg = np.finfo(dtype=y.dtype).epsneg  # type:ignore[union-attr]
+        CC[CC < epsneg] = epsneg
+        SS[SS < epsneg] = epsneg
 
-    # store final value as power in A^2 (i.e., (y units)^2)
-    pgram = 2.0 * (a * YC + b * YS)
+        # calculate a and b
+        # where: y(w) = a*cos(w) + b*sin(w) + c
+        a = YC / CC  # Eq. A.4 and 6, eliminating CS
+        b = YS / SS  # Eq. A.4 and 6, eliminating CS
+        # c = Y - a * C - b * S
+
+        # store final value as power in A^2 (i.e., (y units)^2)
+        pgram = 2.0 * np.real(np.conj(a) * YC + np.conj(b) * YS)
+
+    else:  # model == "complex_exponential"
+        # fit y(w) = a*exp(1j*w*x) + c, with complex a and c
+        expwt = np.exp(1j * freqst)
+        Y = np.dot(weights.T, y)
+        E = np.dot(weights.T, expwt)
+        YE = np.dot(weights_y.T, np.conj(expwt))
+        EE = np.ones_like(YE.real)  # expwt has unit magnitude
+
+        if floating_mean:
+            # eliminate the fitted offset, as in the floating-mean model
+            YE -= Y * np.conj(E)
+            EE -= np.abs(E)**2
+
+        epsneg = np.finfo(np.float64).epsneg
+        EE[EE < epsneg] = epsneg
+
+        a = YE / EE
+        pgram = 2.0 * np.real(np.conj(a) * YE)
 
     # squeeze back to a vector
     pgram = np.squeeze(pgram)
@@ -321,22 +392,25 @@ def lombscargle(
         # return the normalized power (power at current frequency wrt the entire signal)
         # range will be [0, 1]
 
-        YY = np.dot(weights_y.T, y)  # Eq. 10
+        YY = np.dot(weights_y.T, np.conj(y)).real  # Eq. 10
         if floating_mean:
-            YY -= Y * Y  # Eq. 10
+            YY -= np.abs(Y)**2  # Eq. 10
 
         pgram *= 0.5 / np.squeeze(YY)  # Eq. 20
 
     else:  # normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
 
-        # squeeze back to vectors
-        a = np.squeeze(a)
-        b = np.squeeze(b)
-        tau = np.squeeze(tau)
+        if model == "sine_cosine":
+            # squeeze back to vectors
+            a = np.squeeze(a)
+            b = np.squeeze(b)  # pyrefly: ignore[unbound-name]
+            tau = np.squeeze(tau)  # pyrefly: ignore[unbound-name]
 
-        # calculate the complex representation, and correct for tau rotation
-        pgram = (a + 1j * b) * np.exp(1j * tau)
+            # calculate the complex representation, and correct for tau rotation
+            pgram = (a + 1j * b) * np.exp(1j * tau)
+        else:  # model == "complex_exponential":
+            pgram = np.squeeze(a)
 
     return pgram
 
