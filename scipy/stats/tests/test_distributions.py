@@ -3509,6 +3509,22 @@ class TestInvgauss:
         # for the given inputs
         stats.invgauss.ppf(0.97969, 66.99652081)
 
+    @pytest.mark.parametrize("x, mu", (
+        [101, 0.6],
+        [105, 0.6],
+        [160, 0.6],
+        [490, 0.6],
+        [500, 0.8],
+        [1000, 0.9],
+        [50, 0.5]
+    ))
+    def test_gh26796(self, x, mu):
+        # gh-26796: invgauss.isf should correctly invert the survival function
+        # in the tail of the distribution
+        dist = stats.invgauss(mu)
+        q = stats.invgauss.sf(x, mu)
+        assert_allclose(dist.isf(q), x)
+
 
 class TestLandau:
     @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])
