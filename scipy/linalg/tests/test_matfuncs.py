@@ -18,9 +18,9 @@ import scipy._external.array_api_extra as xpx
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao,
-                          cosm, sinm, tanm, coshm, sinhm, tanhm)
+                          cosm, sinm, tanm, coshm, sinhm, tanhm, schur)
 
-from scipy.linalg import _matfuncs_inv_ssq
+from scipy.linalg import _batched_linalg, _matfuncs_inv_ssq
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 from scipy.linalg import LinAlgWarning
@@ -48,6 +48,85 @@ def _get_al_mohy_higham_2012_experiment_1():
         [0, 0, 3.2210e-1, 3e4],
         [0, 0, 0, 3.0744e-1]], dtype=float)
     return A
+
+
+class TestFunm:
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    @pytest.mark.parametrize('n', [1, 2, 5, 20])
+    def test_exp_matches_expm(self, dtype, n):
+        rng = np.random.default_rng(1234)
+        A = rng.standard_normal((n, n))
+        if np.issubdtype(dtype, np.complexfloating):
+            A = A + 1j*rng.standard_normal((n, n))
+        A = (A / np.sqrt(n)).astype(dtype)
+        F = funm(A, np.exp)
+        assert F.dtype == dtype
+        single = dtype in (np.float32, np.complex64)
+        expected = expm(A.astype(np.complex128 if np.iscomplexobj(A) else np.float64))
+        tol = 1e-5 if single else 1e-13
+        assert_allclose(F, expected, rtol=tol, atol=tol*np.abs(expected).max())
+
+    def test_repeated_eigenvalues(self):
+        # Equal diagonal entries of the Schur form make denominators of the
+        # recurrence zero; where the matrix does not couple them, the result is
+        # still the exact one.
+        d = np.array([2.0, 2.0, 3.0, 2.0])
+        F, _ = funm(np.diag(d), np.exp, disp=False)
+        assert_allclose(F, np.diag(np.exp(d)), rtol=1e-14)
+        F, _ = funm(np.eye(4), np.sin, disp=False)
+        assert_allclose(F, np.sin(1.0)*np.eye(4), rtol=1e-14)
+        # The same complex conjugate pair three times
+        A = np.kron(np.eye(3), np.array([[1.0, -2.0], [3.0, 1.0]]))
+        F, _ = funm(A, np.exp, disp=False)
+        assert_allclose(F, expm(A), rtol=1e-13, atol=1e-13*np.abs(expm(A)).max())
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_rsf2csf_kernel(self, dtype):
+        rng = np.random.default_rng(4321)
+        n = 30
+        A = rng.standard_normal((n, n)).astype(dtype)
+        T, Z = schur(A)
+        blocks = np.flatnonzero(np.diag(T, -1))
+        assert blocks.size > 0
+        ctype = np.result_type(dtype, np.complex64)
+        Tc, Zc = T.astype(ctype, order='F'), Z.astype(ctype, order='F')
+        assert _batched_linalg._rsf2csf(Tc, Zc) is None
+
+        tol = 1e-4 if dtype == np.float32 else 1e-12
+        assert_array_equal(np.tril(Tc, -1), 0)
+        assert_allclose(Zc.conj().T @ Zc, np.eye(n), atol=tol)
+        assert_allclose(Zc @ Tc @ Zc.conj().T, A, atol=tol*np.abs(A).max())
+        # Each 2x2 block of the real Schur form, standardized by ?gees as
+        # [[a, b], [c, a]], gives a + i*sqrt(|b c|) first, then its conjugate
+        expected = np.diag(T).astype(ctype)
+        for k in blocks:
+            w = np.sqrt(abs(T[k, k+1])) * np.sqrt(abs(T[k+1, k]))
+            expected[k] += 1j*w
+            expected[k+1] -= 1j*w
+        assert_allclose(np.diag(Tc), expected, rtol=tol, atol=tol)
+
+    def test_compiled_kernels_input_validation(self):
+        T = np.eye(3, dtype=complex, order='F')
+        with pytest.raises(ValueError, match="F-contiguous"):
+            _batched_linalg._rsf2csf(np.ascontiguousarray(T), T.copy(order='F'))
+        with pytest.raises(TypeError, match="complex64 or complex128"):
+            _batched_linalg._rsf2csf(np.eye(3, order='F'), np.eye(3, order='F'))
+        with pytest.raises(TypeError, match="complex64 or complex128"):
+            _batched_linalg._funm_parlett(T.copy(order='F'),
+                                          T.astype(np.complex64, order='F'), 1.0)
+        with pytest.raises(ValueError, match="same shape"):
+            _batched_linalg._funm_parlett(T.copy(order='F'),
+                                          np.eye(2, dtype=complex, order='F'), 1.0)
+        F = T.copy(order='F')
+        F.flags.writeable = False
+        with pytest.raises(ValueError, match="writeable"):
+            _batched_linalg._funm_parlett(F, T, 1.0)
+        Z = T.copy(order='F')
+        Z.flags.writeable = False
+        with pytest.raises(ValueError, match="writeable"):
+            _batched_linalg._rsf2csf(T.copy(order='F'), Z)
 
 
 class TestSignM:

@@ -157,7 +157,7 @@ py3.extension_module('_batched_linalg',
   [
     'src/batched_linalg/_batched_linalg_module.cpp',
   ],
-  include_directories: ['src/batched_linalg', 'src/lapack', 'src/wrapper'],
+  include_directories: ['src/batched_linalg', 'src/lapack', 'src/wrapper', 'src/blas'],
   cpp_args: simd_args,
   dependencies: [np_dep, lapack_dep],
   link_args: version_link_args,
@@ -248,23 +248,6 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   install: true,
   subdir: 'scipy/linalg'
 )
-
-if use_pythran
-  py3.extension_module('_linalg_pythran',
-    pythran_gen.process('_linalg_pythran.py'),
-    cpp_args: cpp_args_pythran,
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/linalg'
-  )
-else
-  py3.install_sources(
-    ['_linalg_pythran.py'],
-    subdir: 'scipy/linalg'
-  )
-endif
-
 
 python_sources = [
   '__init__.py',

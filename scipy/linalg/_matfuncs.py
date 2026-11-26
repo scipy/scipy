@@ -14,11 +14,11 @@ from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 from ._misc import LinAlgError, LinAlgWarning, norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
-from ._decomp_schur import schur, rsf2csf
+from ._decomp_schur import schur
 from ._expm_frechet import expm_frechet, expm_cond
 from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
 from .lapack import _ensure_aligned_and_native
-from ._linalg_pythran import _funm_loops
+from ._batched_linalg import _funm_parlett, _rsf2csf
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -754,16 +754,22 @@ def funm(A, func, disp=True):
     A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
     T, Z = schur(A)
-    T, Z = rsf2csf(T, Z)
-    n, n = T.shape
+    # The compiled kernels work in place on F-contiguous complex arrays
+    ctype = np.result_type(T.dtype, np.complex64)
+    if not np.iscomplexobj(T):
+        # Convert the real Schur form to the complex one, as `rsf2csf` does
+        T, Z = T.astype(ctype, order='F'), Z.astype(ctype, order='F')
+        _rsf2csf(T, Z)
+    else:
+        T = np.asfortranarray(T)
     F = diag(func(diag(T)))  # apply function to diagonal elements
-    F = F.astype(T.dtype.char)  # e.g., when F is real but T is complex
+    F = F.astype(ctype, order='F')  # e.g., when F is real but T is complex
 
     minden = abs(T[0, 0])
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
-    #                 "matrix Computations."
-    F, minden = _funm_loops(F, T, n, minden)
+    #                 "matrix Computations."; fills in F in place
+    minden = _funm_parlett(F, T, minden)
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
