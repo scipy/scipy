@@ -917,7 +917,6 @@ if HAVE_SCPDT:
         # equivalent to "pytest --ignore=path/to/file"
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
-        "scipy/interpolate/_rbfinterp_pythran.py",
         "scipy/_external",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",

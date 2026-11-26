@@ -164,7 +164,6 @@ scipy/fftpack/convolvemodule.c
 scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c

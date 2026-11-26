@@ -53,21 +53,13 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
-if use_pythran
-  py3.extension_module('_rbfinterp_pythran',
-    pythran_gen.process('_rbfinterp_pythran.py'),
-    cpp_args: cpp_args_pythran,
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/interpolate'
-  )
-else
-  py3.install_sources(
-    ['_rbfinterp_pythran.py'],
-    subdir: 'scipy/interpolate'
-  )
-endif
+py3.extension_module('_rbfinterp_cpp',
+  ['src/_rbfinterpmodule.cc'],
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/interpolate'
+)
 
 py3.install_sources([
     '__init__.py',

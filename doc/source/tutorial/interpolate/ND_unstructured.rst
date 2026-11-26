@@ -184,41 +184,33 @@ This example shows how to interpolate scattered 2-D data:
 Using Custom Kernels
 --------------------
 
-It  is possible to extend `RBFInterpolator` with user supplied kernels which
-are passed using function pointers and `scipy.LowLevelCallable` to wrap a
-compiled kernel with signature ``double (double)``, where the argument is the
-scalar distance *r*.  Both `epsilon` and `degree` must be supplied explicitly;
-neither has a default.
+It is possible to extend `RBFInterpolator` with user supplied kernels. A kernel
+is a compiled function with signature ``double (double)``, where the argument is
+the scaled distance *r*, wrapped in a `scipy.LowLevelCallable`. Both `epsilon`
+and `degree` must be supplied explicitly; neither has a default.
 
 .. note::
     Only NumPy arrays currently supported with a `scipy.LowLevelCallable` kernel.
 
-This can be done usig pythran to compile python to C++ or by directly writing
-and compile a C/C++ function.
+The kernel is called from compiled code without the GIL held, so any tool that
+produces a C function pointer can be used, for instance Numba, Cython, Pythran
+or a C compiler. A ``ctypes`` callback that wraps a Python function works as
+well, but it is slow, since every call has to take the GIL.
 
-**Pythran**
+**Numba**
 
-Use [pythran]_ and expose it as a capsule::
+Compile the kernel with ``numba.cfunc`` and wrap its ``ctypes`` attribute::
 
-    # custom_kernel.py
     import numpy as np
-
-    def my_kernel(r):
-        return np.exp(-r ** 2) * r
-
-    # pythran export capsule my_kernel(float64)
-
-Compile with pythran::
-
-    pythran custom_kernel.py
-
-Then in wrap the function in a ``LowLevelCallable``::
-
-    from custom_kernel import my_kernel  # capsule object
+    from numba import cfunc, types
     from scipy import LowLevelCallable
+    from scipy.interpolate import RBFInterpolator
 
-    llc = LowLevelCallable(my_kernel, signature="double (double)")
+    @cfunc(types.float64(types.float64))
+    def my_kernel(r):
+        return np.exp(-r**2) * r
 
+    llc = LowLevelCallable(my_kernel.ctypes)
     interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
 
 **C/C++**::
@@ -226,7 +218,7 @@ Then in wrap the function in a ``LowLevelCallable``::
     // custom_kernel.c
     #include <math.h>
     double my_kernel(double r) {
-        return exp(-r * r) / r;
+        return exp(-r * r) * r;
     }
 
 Compile::
@@ -245,9 +237,3 @@ Then wrap the function in a ``LowLevelCallable``::
 
     llc = LowLevelCallable(lib.my_kernel)
     interp = RBFInterpolator(y, d, kernel=llc, epsilon=1.0, degree=0)
-
-
-References
-~~~~~~~~~~
-
-.. [pythran] https://pythran.readthedocs.io/en/latest/examples/Third%20Party%20Libraries.html#With-Pythran
