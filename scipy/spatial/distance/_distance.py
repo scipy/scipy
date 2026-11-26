@@ -41,7 +41,8 @@ import numpy as np
 
 from scipy._lib._array_api import (_asarray, array_namespace, is_array_api_obj,
                                    is_lazy_array, is_numpy, is_numpy_array, np_compat,
-                                   xp_promote, xp_capabilities, xp_device)
+                                   xp_promote, xp_capabilities, xp_device,
+                                   xp_result_type)
 from scipy._lib._array_api_override import _validate_array_cls
 from scipy._lib._util import _asarray_validated, _transition_to_rng, broadcastable
 from scipy._lib.deprecation import _NoValue
@@ -73,18 +74,6 @@ def _promote(*args, xp, order=None):
             return res[0]
         return res
     return xp_promote(*args, force_floating=True, broadcast=True, xp=xp)
-
-
-def _validate_vector(u, dtype=None):
-    try:
-        u = _asarray(u, dtype=dtype)
-    except TypeError:
-        # String/object arrays (e.g. hamming on byte strings) have no array-API
-        # namespace. Fall back to NumPy, which handles them.
-        u = np.asarray(u, dtype=dtype)
-    if u.ndim == 1:
-        return u
-    raise ValueError("Input vector should be 1-D.")
 
 
 def _validate_weights(w, xp=None):
@@ -854,19 +843,18 @@ def jaccard(u, v, w=None):
 
     """
     xp = array_namespace(u, v, w)
-    u = xp.asarray(u, dtype=xp.bool)
-    v = xp.asarray(v, dtype=xp.bool)
+    u, v = xp.asarray(u), xp.asarray(v)
+    dtype = xp_result_type(u, v, w, force_floating=True, xp=xp)
+    u_b, v_b = xp.asarray(u, dtype=xp.bool), xp.asarray(v, dtype=xp.bool)
     if not broadcastable(u.shape, v.shape):
         raise ValueError("Array shapes are incompatible for broadcasting.")
-    dtype = xpx.default_dtype(xp, "real floating")
     zero = xp.zeros((), dtype=xp.bool, device=xp_device(u))
-    unequal = xp.astype(xp.bitwise_xor(u != zero, v != zero), dtype)
-    nonzero = xp.astype(xp.bitwise_or(u != zero, v != zero), dtype)
+    unequal = xp.astype(xp.bitwise_xor(u_b != zero, v_b != zero), dtype)
+    nonzero = xp.astype(xp.bitwise_or(u_b != zero, v_b != zero), dtype)
     if w is not None:
-        w = xp_promote(w, force_floating=True, xp=xp)
+        w = xp.asarray(_validate_weights(w, xp=xp), dtype=dtype)
         if not broadcastable(w.shape, unequal.shape):
             raise ValueError("Array shapes are incompatible for broadcasting.")
-        w = _validate_weights(w)
         unequal = w * unequal
         nonzero = w * nonzero
     a = xp.sum(unequal, axis=-1)
@@ -874,7 +862,11 @@ def jaccard(u, v, w=None):
     # We must avoid division by zero where b is 0. To make this work with arrays, we
     # add 1 to b where b is 0. Because b must be larger than a, and a is non-negative,
     # this does not change the result, because 0 / (0 + 1) = 0, which is the fallback
-    return a / (b + xp.astype(b == 0, b.dtype))
+    res = a / (b + xp.astype(b == 0, b.dtype))
+    u_nan = False if u.dtype == xp.bool else xp.any(xp.isnan(u), axis=-1)
+    v_nan = False if v.dtype == xp.bool else xp.any(xp.isnan(v), axis=-1)
+    res = xp.where(xp.asarray(u_nan | v_nan, device=xp_device(res)), xp.nan, res)
+    return res if res.ndim > 0 else res[()]
 
 
 @xp_capabilities()
@@ -969,9 +961,10 @@ def cityblock(u, v, w=None):
     return xp.sum(l1_diff, axis=-1)
 
 
+@xp_capabilities()
 def mahalanobis(u, v, VI):
     """
-    Compute the Mahalanobis distance between two 1-D arrays.
+    Compute the Mahalanobis distance between two arrays.
 
     The Mahalanobis distance between 1-D arrays `u` and `v`, is defined as
 
@@ -984,16 +977,16 @@ def mahalanobis(u, v, VI):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (..., N) array_like
         Input array.
-    v : (N,) array_like
+    v : (..., N) array_like
         Input array.
-    VI : array_like
+    VI : (..., N, N) array_like
         The inverse of the covariance matrix.
 
     Returns
     -------
-    mahalanobis : double
+    mahalanobis : float or array
         The Mahalanobis distance between vectors `u` and `v`.
 
     Examples
@@ -1008,12 +1001,17 @@ def mahalanobis(u, v, VI):
     1.7320508075688772
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    VI = np.atleast_2d(VI)
+    xp = array_namespace(u, v, VI)
+    u, v, VI = xp_promote(u, v, VI, force_floating=True, xp=xp)
+    VI = xpx.atleast_nd(VI, ndim=2, xp=xp)
+    if not VI.shape[-1] == VI.shape[-2]:
+        raise ValueError("VI must be a square matrix.")
+    if not VI.shape[-1] == u.shape[-1] == v.shape[-1]:
+        raise ValueError("VI is not compatible with the dimensions of u and v.")
+    if not broadcastable(u.shape[:-1], v.shape[:-1], VI.shape[:-2]):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
     delta = u - v
-    m = np.dot(np.dot(delta, VI), delta)
-    return np.sqrt(m)
+    return xp.sqrt(xp.vecdot(delta, (VI @ delta[..., None])[..., 0]))
 
 
 @xp_capabilities()
@@ -1443,9 +1441,10 @@ def rogerstanimoto(u, v, w=None):
     return (2.0 * (ntf + nft))/(ntt + nff + (2.0 * (ntf + nft)))
 
 
+@xp_capabilities()
 def russellrao(u, v, w=None):
     """
-    Compute the Russell-Rao dissimilarity between two boolean 1-D arrays.
+    Compute the Russell-Rao dissimilarity between two boolean arrays.
 
     The Russell-Rao dissimilarity between two boolean 1-D arrays, `u` and
     `v`, is defined as
@@ -1471,7 +1470,7 @@ def russellrao(u, v, w=None):
 
     Returns
     -------
-    russellrao : double
+    russellrao : float or array
         The Russell-Rao dissimilarity between vectors `u` and `v`.
 
     Examples
@@ -1482,21 +1481,30 @@ def russellrao(u, v, w=None):
     >>> distance.russellrao([1, 0, 0], [1, 1, 0])
     0.6666666666666666
     >>> distance.russellrao([1, 0, 0], [2, 0, 0])
-    0.3333333333333333
+    0.6666666666666666
 
     """
-    u, v, w = xp_promote(u, v, w, broadcast=True, xp=np)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum(axis=-1)
-        n = u.shape[-1]
-    elif w is None:
-        ntt = (u * v).sum(axis=-1)
-        n = u.shape[-1]
+    xp = array_namespace(u, v, w)
+    u, v = xp.asarray(u), xp.asarray(v)
+    dtype = xp_result_type(u, v, w, force_floating=True, xp=xp)
+    u_b, v_b = xp.asarray(u, dtype=xp.bool), xp.asarray(v, dtype=xp.bool)
+    if not broadcastable(u.shape, v.shape):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+    tt = u_b & v_b
+    if w is None:
+        ntt = xp.astype(xp.count_nonzero(tt, axis=-1), dtype)
+        n = tt.shape[-1]
     else:
-        w = _validate_weights(w)
-        ntt = (u * v * w).sum(axis=-1)
-        n = w.sum(axis=-1)
-    return (n - ntt) / n
+        w = xp.asarray(_validate_weights(w, xp=xp), dtype=dtype)
+        if not broadcastable(w.shape, tt.shape):
+            raise ValueError("Weight shape is incompatible for broadcasting.")
+        ntt = xp.sum(xp.astype(tt, dtype) * w, axis=-1)
+        n = xp.sum(xp.broadcast_arrays(w, tt)[0], axis=-1)
+    res = (n - ntt) / n
+    u_nan = False if u.dtype == xp.bool else xp.any(xp.isnan(u), axis=-1)
+    v_nan = False if v.dtype == xp.bool else xp.any(xp.isnan(v), axis=-1)
+    res = xp.where(xp.asarray(u_nan | v_nan, device=xp_device(res)), xp.nan, res)
+    return res if res.ndim > 0 else res[()]
 
 
 def sokalsneath(u, v, w=None):

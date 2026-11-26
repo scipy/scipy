@@ -1035,6 +1035,8 @@ class _BPoly(_PPolyBase):
                 sign = -1
 
             xs, xe = self.x[0], self.x[-1]
+            if xs > xe:
+                xs, xe = xe, xs
             period = xe - xs
             interval = b - a
             n_periods, left = divmod(interval, period)
@@ -2342,68 +2344,9 @@ class BPoly:
         return xp.asarray(
             xp_cls._raise_degree(xp_internal.asarray(c), d), device=device)
 
-class NdPPoly:
-    """
-    Piecewise tensor product polynomial.
 
-    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
-    computing the interval indices `i` such that::
-
-        x[0][i[0]] <= x' < x[0][i[0]+1]
-        x[1][i[1]] <= y' < x[1][i[1]+1]
-        ...
-
-    and then computing::
-
-        S = sum(c[k0-m0-1,...,kn-mn-1,i[0],...,i[n]]
-                * (xp[0] - x[0][i[0]])**m0
-                * ...
-                * (xp[n] - x[n][i[n]])**mn
-                for m0 in range(k[0]+1)
-                ...
-                for mn in range(k[n]+1))
-
-    where ``k[j]`` is the degree of the polynomial in dimension j. This
-    representation is the piecewise multivariate power basis.
-
-    Parameters
-    ----------
-    c : ndarray, shape (k0, ..., kn, m0, ..., mn, ...)
-        Polynomial coefficients, with polynomial order `kj` and
-        `mj+1` intervals for each dimension `j`.
-    x : ndim-tuple of ndarrays, shapes (mj+1,)
-        Polynomial breakpoints for each dimension. These must be
-        sorted in increasing order.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
-
-    Attributes
-    ----------
-    x : tuple of ndarrays
-        Breakpoints.
-    c : ndarray
-        Coefficients of the polynomials.
-
-    Methods
-    -------
-    __call__
-    derivative
-    antiderivative
-    integrate
-    integrate_1d
-    construct_fast
-
-    See Also
-    --------
-    PPoly : piecewise polynomials in 1D
-
-    Notes
-    -----
-    High-order polynomials in the power basis can be numerically
-    unstable.
-
-    """
+class _NdPPoly:
+    """NumPy backend for NdPPoly."""
 
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
@@ -2432,15 +2375,6 @@ class NdPPoly:
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None):
-        """
-        Construct the piecewise polynomial without making checks.
-
-        Takes the same parameters as the constructor. Input arguments
-        ``c`` and ``x`` must be arrays of the correct shape and type.  The
-        ``c`` array can only be of dtypes float and complex, and ``x``
-        array must have dtype float.
-
-        """
         self = object.__new__(cls)
         self.c = c
         self.x = x
@@ -2463,34 +2397,6 @@ class NdPPoly:
             self.x = tuple(self.x)
 
     def __call__(self, x, nu=None, extrapolate=None):
-        """
-        Evaluate the piecewise polynomial or its derivative
-
-        Parameters
-        ----------
-        x : array-like
-            Points to evaluate the interpolant at.
-        nu : tuple, optional
-            Orders of derivatives to evaluate. Each must be non-negative.
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-
-        Returns
-        -------
-        y : array-like
-            Interpolated values. Shape is determined by replacing
-            the interpolation axis in the original array with the shape of x.
-
-        Notes
-        -----
-        Derivatives are evaluated piecewise for each polynomial
-        segment, even if the polynomial is not differentiable at the
-        breakpoints. The polynomial intervals are considered half-open,
-        ``[a, b)``, except for the last interval which is closed
-        ``[a, b]``.
-
-        """
         if extrapolate is None:
             extrapolate = self.extrapolate
         else:
@@ -2602,6 +2508,332 @@ class NdPPoly:
         self.c = c2
 
     def derivative(self, nu):
+        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
+
+        for axis, n in enumerate(nu):
+            p._derivative_inplace(n, axis)
+
+        p._ensure_c_contiguous()
+        return p
+
+    def antiderivative(self, nu):
+        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
+
+        for axis, n in enumerate(nu):
+            p._antiderivative_inplace(n, axis)
+
+        p._ensure_c_contiguous()
+        return p
+
+    def integrate_1d(self, a, b, axis, extrapolate=None):
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+        else:
+            extrapolate = bool(extrapolate)
+
+        ndim = len(self.x)
+        axis = int(axis) % ndim
+
+        # reuse 1-D integration routines
+        c = self.c
+        swap = list(range(c.ndim))
+        swap.insert(0, swap[axis])
+        del swap[axis + 1]
+        swap.insert(1, swap[ndim + axis])
+        del swap[ndim + axis + 1]
+
+        c = c.transpose(swap)
+        p = _PPoly.construct_fast(c.reshape(c.shape[0], c.shape[1], -1),
+                                  self.x[axis],
+                                  extrapolate=extrapolate)
+        out = p.integrate(a, b, extrapolate=extrapolate)
+
+        # Construct result
+        if ndim == 1:
+            return out.reshape(c.shape[2:])
+        else:
+            c = out.reshape(c.shape[2:])
+            x = self.x[:axis] + self.x[axis+1:]
+            return self.construct_fast(c, x, extrapolate=extrapolate)
+
+    def integrate(self, ranges, extrapolate=None):
+        ndim = len(self.x)
+
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+        else:
+            extrapolate = bool(extrapolate)
+
+        if not hasattr(ranges, '__len__') or len(ranges) != ndim:
+            raise ValueError("Range not a sequence of correct length")
+
+        self._ensure_c_contiguous()
+
+        # Reuse 1D integration routine
+        c = self.c
+        for n, (a, b) in enumerate(ranges):
+            swap = list(range(c.ndim))
+            swap.insert(1, swap[ndim - n])
+            del swap[ndim - n + 1]
+
+            c = c.transpose(swap)
+
+            p = _PPoly.construct_fast(c, self.x[n], extrapolate=extrapolate)
+            out = p.integrate(a, b, extrapolate=extrapolate)
+            c = out.reshape(c.shape[2:])
+
+        return c
+
+
+@functools.lru_cache(16)
+def _get_xp_ndppoly_cls(xp):
+    """Returns ndppoly class to delegate to for xp along with internal namespace.
+
+    Parameters
+    ----------
+    xp : module
+
+    Returns
+    -------
+    cls : type
+        The ndppoly class to delegate to for namespace `xp`.
+    namespace : module
+        The internal namespace that calculations are performed with
+        (may differ from `xp`, e.g. numpy delegation for torch on CPU).
+    """
+    if is_numpy(xp):
+        return _NdPPoly, xp
+    spx = scipy_namespace_for(xp)
+    cls = getattr(getattr(spx, "interpolate", None), "NdPPoly", None)
+    if cls is not None:
+        return cls, xp
+    return _NdPPoly, np
+
+
+_ndppoly_extra_note = (
+    """If an ndppoly object is called on input arrays ``x`` with namespace
+    different from the namespace ``xp`` of the breakpoints and coefficients
+    with which the ndppoly object was instantiated, an attempt will be made to
+    coerce ``x`` to the ``xp`` namespace. If the conversion succeeds, the
+    output will be an array from the ``xp`` namespace. Mixing namespaces in
+    this way is not recommended.
+
+    """
+)
+
+
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    exceptions=["cupy"],
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/scipy/scipy/issues/24205")
+    ],
+    extra_note=_ndppoly_extra_note,
+)
+class NdPPoly:
+    """
+    Piecewise tensor product polynomial.
+
+    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
+    computing the interval indices `i` such that::
+
+        x[0][i[0]] <= x' < x[0][i[0]+1]
+        x[1][i[1]] <= y' < x[1][i[1]+1]
+        ...
+
+    and then computing::
+
+        S = sum(c[k0-m0-1,...,kn-mn-1,i[0],...,i[n]]
+                * (xp[0] - x[0][i[0]])**m0
+                * ...
+                * (xp[n] - x[n][i[n]])**mn
+                for m0 in range(k[0]+1)
+                ...
+                for mn in range(k[n]+1))
+
+    where ``k[j]`` is the degree of the polynomial in dimension j. This
+    representation is the piecewise multivariate power basis.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k0, ..., kn, m0, ..., mn, ...)
+        Polynomial coefficients, with polynomial order `kj` and
+        `mj+1` intervals for each dimension `j`.
+    x : ndim-tuple of ndarrays, shapes (mj+1,)
+        Polynomial breakpoints for each dimension. These must be
+        sorted in increasing order.
+    extrapolate : bool, optional
+        Whether to extrapolate to out-of-bounds points based on first
+        and last intervals, or to return NaNs. Default: True.
+
+    Attributes
+    ----------
+    x : tuple of ndarrays
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    integrate_1d
+    construct_fast
+
+    See Also
+    --------
+    PPoly : piecewise polynomials in 1D
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable.
+
+    """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__: classmethod = classmethod(GenericAlias)
+
+    def __init__(self, c, x, extrapolate=None):
+        x = tuple(x)
+        xp = array_namespace(c, *x)
+        xp_ndppoly_cls, xp_internal = _get_xp_ndppoly_cls(xp)
+        # a NumPy round-trip in the delegate must return results on the
+        # device of the inputs, not on the backend's default device
+        device = xp_result_device(c, *x)
+        if not is_numpy(xp):
+            c = xp_internal.asarray(c)
+            x = tuple(xp_internal.asarray(v) for v in x)
+        self._delegate_to = xp_ndppoly_cls(c, x, extrapolate=extrapolate)
+        self._xp = xp
+        self._xp_internal = xp_internal
+        self._device = device
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state["_xp"] = state["_xp"].empty(0)
+        state.pop("_xp_internal")
+        return state
+
+    def __setstate__(self, state):
+        self._xp = array_namespace(state.pop("_xp"))
+        _, xp_internal = _get_xp_ndppoly_cls(self._xp)
+        self._xp_internal = xp_internal
+        self.__dict__.update(state)
+
+    @classmethod
+    def _construct_from_xp(cls, xp_ndppoly, *, xp_external, device=None):
+        self = object.__new__(cls)
+        self._delegate_to = xp_ndppoly
+        self._xp = xp_external
+        self._xp_internal = array_namespace(xp_ndppoly.c)
+        self._device = device
+        return self
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
+        array must have dtype float.
+
+        """
+        x = tuple(x)
+        xp = array_namespace(c, *x)
+        xp_ndppoly_cls, xp_internal = _get_xp_ndppoly_cls(xp)
+        device = xp_result_device(c, *x)
+        c = xp_internal.asarray(c)
+        x = tuple(xp_internal.asarray(v) for v in x)
+        return cls._construct_from_xp(
+            xp_ndppoly_cls.construct_fast(c, x, extrapolate=extrapolate),
+            xp_external=xp,
+            device=device,
+        )
+
+    @property
+    def c(self):
+        return self._xp.asarray(self._delegate_to.c, device=self._device)
+
+    @c.setter
+    def c(self, c):
+        self._delegate_to.c = (
+            self._xp_internal.asarray(c) if is_numpy(self._xp_internal) else c
+        )
+
+    @property
+    def x(self):
+        return tuple(
+            self._xp.asarray(v, device=self._device) for v in self._delegate_to.x
+        )
+
+    @x.setter
+    def x(self, x):
+        self._delegate_to.x = (
+            tuple(self._xp_internal.asarray(v) for v in x)
+            if is_numpy(self._xp_internal) else x
+        )
+
+    @property
+    def extrapolate(self):
+        return self._delegate_to.extrapolate
+
+    @extrapolate.setter
+    def extrapolate(self, extrapolate):
+        self._delegate_to.extrapolate = extrapolate
+
+    def __call__(self, x, nu=None, extrapolate=None):
+        """
+        Evaluate the piecewise polynomial or its derivative
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at.
+        nu : tuple, optional
+            Orders of derivatives to evaluate. Each must be non-negative.
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        y : array-like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+
+        """
+        # NB: `_ndim_coords_from_arrays` special-cases tuples: a tuple holds
+        # one coordinate array per dimension, while an array holds points.
+        # So convert each item of a tuple, and keep it a tuple.
+        if isinstance(x, tuple):
+            device = xp_result_device(*x)
+            x = tuple(self._xp_internal.asarray(v) for v in x)
+        else:
+            device = xp_result_device(x)
+            x = self._xp_internal.asarray(x)
+
+        if device is None:
+            device = self._device
+        return self._xp.asarray(
+            self._delegate_to(x, nu=nu, extrapolate=extrapolate),
+            device=device,
+        )
+
+    def derivative(self, nu):
         """
         Construct a new piecewise polynomial representing the derivative.
 
@@ -2626,13 +2858,11 @@ class NdPPoly:
         which is closed ``[a, b]``.
 
         """
-        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
-
-        for axis, n in enumerate(nu):
-            p._derivative_inplace(n, axis)
-
-        p._ensure_c_contiguous()
-        return p
+        return self._construct_from_xp(
+            self._delegate_to.derivative(nu),
+            xp_external=self._xp,
+            device=self._device,
+        )
 
     def antiderivative(self, nu):
         """
@@ -2660,13 +2890,11 @@ class NdPPoly:
         rounding error.
 
         """
-        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
-
-        for axis, n in enumerate(nu):
-            p._antiderivative_inplace(n, axis)
-
-        p._ensure_c_contiguous()
-        return p
+        return self._construct_from_xp(
+            self._delegate_to.antiderivative(nu),
+            xp_external=self._xp,
+            device=self._device,
+        )
 
     def integrate_1d(self, a, b, axis, extrapolate=None):
         r"""
@@ -2699,35 +2927,12 @@ class NdPPoly:
             otherwise, an NdPPoly object.
 
         """
-        if extrapolate is None:
-            extrapolate = self.extrapolate
-        else:
-            extrapolate = bool(extrapolate)
-
-        ndim = len(self.x)
-        axis = int(axis) % ndim
-
-        # reuse 1-D integration routines
-        c = self.c
-        swap = list(range(c.ndim))
-        swap.insert(0, swap[axis])
-        del swap[axis + 1]
-        swap.insert(1, swap[ndim + axis])
-        del swap[ndim + axis + 1]
-
-        c = c.transpose(swap)
-        p = PPoly.construct_fast(c.reshape(c.shape[0], c.shape[1], -1),
-                                 self.x[axis],
-                                 extrapolate=extrapolate)
-        out = p.integrate(a, b, extrapolate=extrapolate)
-
-        # Construct result
-        if ndim == 1:
-            return out.reshape(c.shape[2:])
-        else:
-            c = out.reshape(c.shape[2:])
-            x = self.x[:axis] + self.x[axis+1:]
-            return self.construct_fast(c, x, extrapolate=extrapolate)
+        out = self._delegate_to.integrate_1d(a, b, axis, extrapolate=extrapolate)
+        if len(self._delegate_to.x) == 1:
+            return self._xp.asarray(out, device=self._device)
+        return self._construct_from_xp(
+            out, xp_external=self._xp, device=self._device
+        )
 
     def integrate(self, ranges, extrapolate=None):
         """
@@ -2749,30 +2954,7 @@ class NdPPoly:
             [a[0], b[0]] x ... x [a[ndim-1], b[ndim-1]]
 
         """
-
-        ndim = len(self.x)
-
-        if extrapolate is None:
-            extrapolate = self.extrapolate
-        else:
-            extrapolate = bool(extrapolate)
-
-        if not hasattr(ranges, '__len__') or len(ranges) != ndim:
-            raise ValueError("Range not a sequence of correct length")
-
-        self._ensure_c_contiguous()
-
-        # Reuse 1D integration routine
-        c = self.c
-        for n, (a, b) in enumerate(ranges):
-            swap = list(range(c.ndim))
-            swap.insert(1, swap[ndim - n])
-            del swap[ndim - n + 1]
-
-            c = c.transpose(swap)
-
-            p = PPoly.construct_fast(c, self.x[n], extrapolate=extrapolate)
-            out = p.integrate(a, b, extrapolate=extrapolate)
-            c = out.reshape(c.shape[2:])
-
-        return c
+        return self._xp.asarray(
+            self._delegate_to.integrate(ranges, extrapolate=extrapolate),
+            device=self._device,
+        )

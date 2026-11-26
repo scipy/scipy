@@ -5,6 +5,16 @@
 
 namespace sp_linalg {
 
+// QR mode tags; python side maps mode strings to these values
+enum QR_mode : Py_ssize_t
+{
+    FULL = 1,
+    R = 11,
+    RAW_MODE = 21,
+    ECONOMIC = 31
+};
+
+
 template<typename T>
 BatchStatus
 _qr(PyArrayObject *ap_Am, PyArrayObject *ap_Q, PyArrayObject *ap_R, PyArrayObject *ap_tau, PyArrayObject *ap_jpvt, const bool overwrite_a, const QR_mode mode, const bool pivoting, SliceStatusVec &vec_status)

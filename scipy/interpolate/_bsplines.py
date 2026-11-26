@@ -3202,7 +3202,14 @@ def _make_smoothing_spline_user_knots_gcv(xtwx_banded, X, y, w, xtwy, omega):
             check_conditioning=False,
         )
         rss = np.sum(w[:, None] * np.square(y - X @ c)) / n
-        return rss / (1 - tr / n) ** 2
+        denom = (1 - tr / n)**2
+        # With more coefficients than data (m > n, e.g. knots at the data
+        # sites) the fit approaches interpolation as lam -> 0, so tr -> n and
+        # denom -> 0. The correct GCV value there is +inf, since a lam that
+        # overfits should never be selected.
+        if denom == 0:
+            return np.inf
+        return rss / denom
 
     def _gcv_log(s):
         return _gcv(r * 10 ** s)

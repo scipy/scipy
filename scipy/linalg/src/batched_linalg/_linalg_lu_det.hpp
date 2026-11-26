@@ -138,9 +138,9 @@ det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, const CBLAS_INT n, CBLAS_IN
  * @brief Batched LU decomposition, `linalg.lu`.
  *
  * @param[in]  ap_a         Input array of shape (..., m, n), any strides.
- * @param[out] l_out        C-contiguous (..., m, min(m, n)) buffer for L, zero on entry.
- * @param[out] u_out        C-contiguous (..., min(m, n), n) buffer for U, zero on entry.
- * @param[out] perm         C-contiguous (..., m) buffer for the row permutations.
+ * @param[out] ap_l         C-contiguous (..., m, min(m, n)) array for L, zero on entry.
+ * @param[out] ap_u         C-contiguous (..., min(m, n), n) array for U, zero on entry.
+ * @param[out] ap_perm      C-contiguous (..., m) CBLAS_INT array for the row permutations.
  * @param[in]  permute_l    If true, L receives P @ L; the permutation is still written.
  * @param[in]  overwrite_a  If true, @p ap_a is 2-D, F-contiguous and writeable, and is factored
  *                          in place instead of being copied to a workspace.
@@ -150,13 +150,17 @@ det_type_t<T> det_from_lu(T *f_buf, CBLAS_INT *ipiv, const CBLAS_INT n, CBLAS_IN
  */
 template<typename T>
 BatchStatus
-_lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute_l, const bool overwrite_a)
+_lu(PyArrayObject *ap_a, PyArrayObject *ap_l, PyArrayObject *ap_u, PyArrayObject *ap_perm, const bool permute_l, const bool overwrite_a)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *strides = PyArray_STRIDES(ap_a);
     npy_intp s0 = strides[ndim - 2], s1 = strides[ndim - 1];
+
+    T *l_out = static_cast<T *>(PyArray_DATA(ap_l));
+    T *u_out = static_cast<T *>(PyArray_DATA(ap_u));
+    CBLAS_INT *perm = static_cast<CBLAS_INT *>(PyArray_DATA(ap_perm));
 
     npy_intp outer_size = 1;
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }
@@ -192,7 +196,7 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
  * @brief Batched determinant, `linalg.det`.
  *
  * @param[in]  ap_a         Input array of shape (..., n, n), any strides.
- * @param[out] det_out      C-contiguous (...) buffer, one determinant per slice, in det_type_t<T>.
+ * @param[out] ap_det       C-contiguous (...) array, one determinant per slice, in det_type_t<T>.
  * @param[in]  overwrite_a  If true, @p ap_a is 2-D, contiguous in either order and writeable,
  *                          and is factored in place; det(A^T) = det(A).
  * @return ok; too_large if n does not fit CBLAS_INT; lapack_error if ?getrf rejects an
@@ -201,13 +205,15 @@ _lu(PyArrayObject *ap_a, T *l_out, T *u_out, CBLAS_INT *perm, const bool permute
  */
 template<typename T>
 BatchStatus
-_det(PyArrayObject *ap_a, det_type_t<T> *det_out, const bool overwrite_a)
+_det(PyArrayObject *ap_a, PyArrayObject *ap_det, const bool overwrite_a)
 {
     char *a_data = PyArray_BYTES(ap_a);
     npy_intp ndim = PyArray_NDIM(ap_a);
     npy_intp *shape = PyArray_SHAPE(ap_a);
     npy_intp *strides = PyArray_STRIDES(ap_a);
     npy_intp s0 = strides[ndim - 2], s1 = strides[ndim - 1];
+
+    det_type_t<T> *det_out = static_cast<det_type_t<T> *>(PyArray_DATA(ap_det));
 
     npy_intp outer_size = 1;
     for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i]; }

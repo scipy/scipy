@@ -7510,6 +7510,27 @@ class TestRice:
                    130.00384613488120, 140.00357141338748]
         assert_allclose(ppf, ppf_exp)
 
+    def test_sf_isf_right_tail(self):
+        # gh-26797: sf was computed as 1 - cdf, which underflowed to 0 in the
+        # right tail. Reference values were computed with mpmath:
+        # from mpmath import mp, mpf, quad, exp, besseli, inf, log, findroot
+        # mp.dps = 50
+        # def sf(x, b):
+        #     x, b = mpf(x), mpf(b)
+        #     f = lambda t: t*exp(-(t*t + b*b)/2)*besseli(0, b*t)
+        #     return quad(f, [x, x + 5, x + 20, inf])
+        # isf(q, b) = findroot(lambda x: log(sf(x, b)) - log(q), x0)
+        b = 1.5
+        x = [8.0, 10.0, 14.38449888287663]
+        sf_ref = [9.4597754804605183e-11, 2.4826430762144744e-17,
+                  8.5941331417799894e-38]
+        assert_allclose(stats.rice.sf(x, b), sf_ref, rtol=1e-13)
+        assert_allclose(stats.rice.logsf(x, b), np.log(sf_ref), rtol=1e-13)
+
+        q = [1e-20, 1e-37]
+        isf_ref = [10.868790855980559, 14.372773738008033]
+        assert_allclose(stats.rice.isf(q, b), isf_ref, rtol=1e-13)
+
 
 class TestErlang:
     def setup_method(self):

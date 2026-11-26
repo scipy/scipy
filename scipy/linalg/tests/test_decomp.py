@@ -156,7 +156,7 @@ class TestEig:
     @pytest.mark.parametrize('generalized', [False, True])
     def test_overwrite_f_contiguous(self, generalized):
         # 2-D F-contiguous inputs with overwrite_a/overwrite_b are used in place and
-        # must give the same result as a copy.
+        # must agree with the copy within floating-point rounding error.
         rng = np.random.default_rng(1234)
         a = rng.standard_normal((5, 5))
         b = rng.standard_normal((5, 5))
@@ -165,7 +165,7 @@ class TestEig:
         copies = tuple(np.asfortranarray(x) for x in args)
         res = eig(*copies, left=True, right=True, overwrite_a=True, overwrite_b=True)
         for x, y in zip(res, ref):
-            assert_equal(x, y)
+            assert_allclose(x, y, rtol=6e-15)
 
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])

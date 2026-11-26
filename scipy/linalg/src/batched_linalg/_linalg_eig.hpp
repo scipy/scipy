@@ -5,6 +5,19 @@
 
 namespace sp_linalg {
 
+// Eigh driver tags; python side maps driver strings to these values
+enum Eigh_driver : Py_ssize_t
+{
+    EV = 1,
+    EVD = 2,
+    EVR = 3,
+    EVX = 4,
+    GV = 10,
+    GVD = 11,
+    GVX = 12
+};
+
+
 /**
  * @brief Expand the eigenvectors of a real ?geev/?ggev call into complex ones.
  *

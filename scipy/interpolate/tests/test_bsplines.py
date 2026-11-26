@@ -3117,6 +3117,17 @@ class TestSmoothingSpline:
         x_dense = np.linspace(x[0], x[-1], 2000)
         assert np.max(np.abs(f(x_dense))) < 2.0
 
+    def test_gcv_more_coeffs_than_data(self):
+        # m > n: GCV used to divide by zero near the interpolation limit
+        rng = np.random.default_rng(11)
+        x = np.sort(rng.uniform(0, 1, 15))
+        y = np.sin(5 * x) + 0.3 * rng.standard_normal(15)
+        t = np.r_[[0.] * 4, np.linspace(0, 1, 25)[1:-1], [1.] * 4]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=sl.LinAlgWarning)
+            f = make_smoothing_spline(x, y, lam=None, t=t)
+        assert np.isfinite(f.c).all()
+
     def test_compute_b_inv_all_four_bands(self):
         """All four bands of the inverse are computed, none is zeroed out."""
         rng = np.random.default_rng(3)
