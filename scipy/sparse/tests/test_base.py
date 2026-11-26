@@ -4484,6 +4484,54 @@ class _CompressedMixin:
         with pytest.raises(ValueError, match=r'must have the same dtype'):
             A.check_format()
 
+    def test_has_canonical_format_after_sort_indices(self):
+        # gh-19106: a has_canonical_format value cached before sorting
+        # must not survive sort_indices. After sorting, an array/matrix
+        # with no duplicate entries is in canonical format.
+        data = np.array(list(range(5)))
+        indices = np.array([3, 1, 2, 0, 1])
+        indptr = np.array([0, 3, 5])
+        M = self.spcreator((data, indices, indptr))
+        assert_equal(False, M.has_sorted_indices)
+        assert_equal(False, M.has_canonical_format)  # caches False
+        M.sort_indices()
+        assert_equal(True, M.has_sorted_indices)
+        assert_equal(True, M.has_canonical_format)
+
+        # with duplicate entries, sorting alone is not enough, so
+        # the recomputed value must remain False
+        data = np.array([1, 1, 1])
+        indices = np.array([1, 0, 0])
+        indptr = np.array([0, 3])
+        M = self.spcreator((data, indices, indptr))
+        assert_equal(False, M.has_canonical_format)  # caches False
+        M.sort_indices()
+        assert_equal(True, M.has_sorted_indices)
+        assert_equal(False, M.has_canonical_format)
+
+    def test_has_canonical_format_after_eliminate_zeros(self):
+        # Removing an explicit zero can make an array canonical when
+        # the zero entry was a duplicate or out of order, so a cached
+        # False must not survive eliminate_zeros.
+        data = np.array([0, 2, 3])
+        indices = np.array([0, 0, 1])
+        indptr = np.array([0, 3])
+        M = self.spcreator((data, indices, indptr))
+        assert_equal(True, M.has_sorted_indices)
+        assert_equal(False, M.has_canonical_format)  # caches False
+        M.eliminate_zeros()
+        assert_equal(True, M.has_canonical_format)
+
+        data = np.array([5, 0])
+        indices = np.array([1, 0])
+        indptr = np.array([0, 2])
+        M = self.spcreator((data, indices, indptr))
+        assert_equal(False, M.has_sorted_indices)
+        assert_equal(False, M.has_canonical_format)  # caches False
+        M.eliminate_zeros()
+        assert_equal(True, M.has_sorted_indices)
+        assert_equal(True, M.has_canonical_format)
+
 
 class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
@@ -4745,32 +4793,6 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
         assert_equal(2, len(M.indices))  # dups but has_canonical_format is True
         M.sum_duplicates()
         assert_equal(2, len(M.indices))  # still has duplicates!!!!
-
-    def test_has_canonical_format_after_sort_indices(self):
-        # gh-19106: a has_canonical_format value cached before sorting
-        # must not survive sort_indices. After sorting, an array/matrix
-        # with no duplicate entries is in canonical format.
-        for container in (self.csr_container, self.csc_container):
-            data = np.array(list(range(5)))
-            indices = np.array([3, 1, 2, 0, 1])
-            indptr = np.array([0, 3, 5])
-            M = container((data, indices, indptr))
-            assert_equal(False, M.has_sorted_indices)
-            assert_equal(False, M.has_canonical_format)  # caches False
-            M.sort_indices()
-            assert_equal(True, M.has_sorted_indices)
-            assert_equal(True, M.has_canonical_format)
-
-            # with duplicate entries, sorting alone is not enough, so
-            # the recomputed value must remain False
-            data = np.array([1, 1, 1])
-            indices = np.array([1, 0, 0])
-            indptr = np.array([0, 3])
-            M = container((data, indices, indptr))
-            assert_equal(False, M.has_canonical_format)  # caches False
-            M.sort_indices()
-            assert_equal(True, M.has_sorted_indices)
-            assert_equal(False, M.has_canonical_format)
 
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
@@ -6107,6 +6129,14 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
     def _insert_explicit_zero(self, M, i, j):
         M[i,j] = 0
         return M
+
+    @pytest.mark.skip(reason='requires exact control of indices/duplicates')
+    def test_has_canonical_format_after_sort_indices(self):
+        pass
+
+    @pytest.mark.skip(reason='requires exact control of indices/duplicates')
+    def test_has_canonical_format_after_eliminate_zeros(self):
+        pass
 
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
