@@ -47,10 +47,6 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     have an edge connecting them.  If either is nonzero, then the two are
     connected by the minimum nonzero value of the two.
 
-    This routine loses precision when users input a dense matrix.
-    Small elements < 1E-8 of the dense matrix are rounded to zero.
-    All users should input sparse matrices if possible to avoid it.
-
     If the graph is not connected, this routine returns the minimum spanning
     forest, i.e. the union of the minimum spanning trees on each connected
     component.
