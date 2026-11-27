@@ -60,9 +60,6 @@ New features
 ``scipy.sparse`` improvements
 =============================
 
-- Dividing an integer or Boolean LIL or DOK sparse array or matrix by an
-  integer scalar now returns floating-point values, preserving fractional
-  results.
 
 
 ``scipy.spatial`` improvements
