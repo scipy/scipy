@@ -31,6 +31,12 @@ PROJECT_MODULE = "scipy"
             "If not, you need to do a clean build (delete "
             "build and build-install directories)."))
 @click.option(
+    '--tsan', default=False, is_flag=True,
+    help=("Build with ThreadSanitizer support. The Python interpreter "
+            "and NumPy must themselves be built with TSan (see the "
+            "`tsan` Pixi environment). As with `--asan`, a clean "
+            "build is needed."))
+@click.option(
     '--debug', '-d', default=False, is_flag=True, help="Debug build")
 @click.option(
     '--release', '-r', default=False, is_flag=True, help="Release build")
@@ -61,8 +67,8 @@ PROJECT_MODULE = "scipy"
     show_default=True, help="Install tags to be used by meson."
 )
 @spin.util.extend_command(spin.cmds.meson.build, doc="")
-def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
-          release, setup_args, show_build_log,
+def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, tsan,
+          debug, release, setup_args, show_build_log,
           with_scipy_openblas, with_accelerate, use_system_libraries,
           tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
@@ -122,6 +128,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         f"because CFLAGS contains `{flag}`."
                                         "Please also check CXXFLAGS and FFLAGS.")
 
+    if asan and tsan:
+        raise click.UsageError("--asan and --tsan cannot be combined")
+
     if asan:
         root = Path(__file__).parent.parent
         asan_ignore_file = root.absolute() / 'tools' / 'asan-ignore.txt'
@@ -136,6 +145,14 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         )
         meson_args += (f'-Dc_args={compiler_args}',)
         meson_args += (f'-Dcpp_args={compiler_args}',)
+
+    if tsan:
+        meson_args += ('-Db_sanitize=thread',)
+        # the TSAN runtime is provided by the interpreter that loads the
+        # extensions, so extension modules must be allowed undefined symbols
+        meson_args += ('-Db_lundef=false',)
+        meson_args += ('-Dc_args=-fno-omit-frame-pointer',)
+        meson_args += ('-Dcpp_args=-fno-omit-frame-pointer',)
 
     if setup_args:
         meson_args = meson_args + tuple([str(arg) for arg in setup_args])
@@ -196,9 +213,13 @@ build_cmd = build
         "'jax.numpy', 'dask.array')."
     )
 )
+@click.option(
+    '--tsan', default=False, is_flag=True,
+    help=("Run tests under ThreadSanitizer: adds `tools/tsan-suppressions.txt` "
+          "to `TSAN_OPTIONS`. Requires a `spin build --tsan` build."))
 @spin.util.extend_command(spin.cmds.meson.test, doc="")
 def test(*, parent_callback, pytest_args, tests, coverage,
-         durations, submodule, mode, array_api_backend, **kwargs):
+         durations, submodule, mode, array_api_backend, tsan, **kwargs):
     """🔧 Run tests
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -283,6 +304,14 @@ def test(*, parent_callback, pytest_args, tests, coverage,
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
+
+    if tsan:
+        root = Path(__file__).parent.parent
+        suppressions = root.absolute() / 'tools' / 'tsan-suppressions.txt'
+        tsan_options = [f'suppressions={suppressions}']
+        if os.environ.get('TSAN_OPTIONS'):
+            tsan_options.append(os.environ['TSAN_OPTIONS'])
+        os.environ['TSAN_OPTIONS'] = ':'.join(tsan_options)
 
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
                     "coverage": coverage, **kwargs})
