@@ -509,10 +509,19 @@ def companion(a):
                          "of `a[..., 0]`) must not be zero.")
 
     first_row = -a[..., 1:] / a0
+    m = n - 1
+    batch_shape = a.shape[:-1]
+    shape = batch_shape + (m, m)
     device = xp_device(a)
-    is_first_row = xp.arange(n - 1, device=device)[:, xp.newaxis] == 0
-    subdiagonal = xp.eye(n - 1, k=-1, dtype=a.dtype, device=device)
-    return xp.where(is_first_row, first_row[..., xp.newaxis, :], subdiagonal)
+
+    if 0 in batch_shape:
+        # Avoid setting items of size-0 arrays (dask/dask#11800).
+        return xp.empty(shape, dtype=first_row.dtype, device=device)
+
+    c = xp.zeros(batch_shape + (m * m,), dtype=first_row.dtype, device=device)
+    c = xpx.at(c)[..., m::m + 1].set(1)
+    c = xp.reshape(c, shape)
+    return xpx.at(c)[..., 0, :].set(first_row)
 
 
 def helmert(n, full=False):
