@@ -4,51 +4,42 @@
  * Python module wrapping the sparsetools C++ routines.
  *
  * Each C++ routine is templated vs. an integer (I) and a data (T) parameter.
- * The `generate_sparsetools.py` script generates `*_impl.h` headers
- * that contain thunk functions with a datatype-based switch statement calling
- * each templated instantiation.
+ * Each compilation unit (`bsr.cxx`, `csr.cxx`, `csc.cxx`, `other.cxx`) builds
+ * a `constexpr` table of `SparsetoolsRoutine` descriptors whose argument specs
+ * and per-(I, T) kernel function pointers are deduced at compile time from
+ * C++ function signatures (see `sparsetools.h`).
  *
- * `generate_sparsetools.py` also generates a PyMethodDef list of Python
- * routines and the corresponding functions call the thunk functions via
- * `call_thunk`.
- *
- * The `call_thunk` function below determines the templated I and T data types
- * based on the Python arguments. It then allocates arrays with pointers to
- * the raw data, with appropriate types, and calls the thunk function after
- * that.
- *
- * The types of arguments are specified by a "spec". This is given in a format
- * where one character represents one argument. The one-character values are
- * listed below in the call_spec function.
+ * `call_routine` below determines the templated I and T data types based on
+ * the Python arguments, prepares contiguous NumPy array buffers and scalars,
+ * and dispatches to the matching compiled kernel.
  */
 
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_sparsetools_ARRAY_API
 
-#include <Python.h>
+#include <pybind11/pybind11.h>
 
-#include <string>
+#include <cstring>
+#include <initializer_list>
 #include <stdexcept>
 #include <vector>
-#include <cstdlib>
 
 #include "numpy/ndarrayobject.h"
 
 #include "sparsetools.h"
 #include "util.h"
 
+namespace py = pybind11;
+
 #define MAX_ARGS 16
 
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
-static const int supported_T_typenums[] = {NPY_BOOL,
-                                           NPY_BYTE, NPY_UBYTE,
-                                           NPY_SHORT, NPY_USHORT,
-                                           NPY_INT, NPY_UINT,
-                                           NPY_LONG, NPY_ULONG,
-                                           NPY_LONGLONG, NPY_ULONGLONG,
-                                           NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
-                                           NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE};
+static const int supported_T_typenums[] = {
+#define PROCESS(ntype, ctype) ntype,
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
+#undef PROCESS
+};
 static const int n_supported_T_typenums = sizeof(supported_T_typenums) / sizeof(int);
 
 static PyObject *array_from_std_vector_and_free(int typenum, void *p);
@@ -56,45 +47,48 @@ static void *allocate_std_vector_typenum(int typenum);
 static void free_std_vector_typenum(int typenum, void *p);
 static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
 
+static inline int get_I_index(int I_typenum) {
+    if (PyArray_EquivTypenums(I_typenum, NPY_INT32)) {
+        return sparsetools_detail::kIndexTypeIndex<npy_int32>;
+    }
+    if (PyArray_EquivTypenums(I_typenum, NPY_INT64)) {
+        return sparsetools_detail::kIndexTypeIndex<npy_int64>;
+    }
+    return -1;
+}
+
+static inline int get_T_index(int T_typenum) {
+    switch (T_typenum) {
+#define PROCESS(ntype, ctype) \
+    case ntype: return sparsetools_detail::kDataTypeIndex<ctype>;
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
+#undef PROCESS
+    default:
+        return -1;
+    }
+}
 
 /*
- * Call a thunk function, dealing with input and output arrays.
+ * Call a SparsetoolsRoutine, dealing with input and output arrays.
  *
  * Resolves the templated <integer> and <data> dtypes from the `args` argument
- * list.
- *
- * Parameters
- * ----------
- * ret_spec : {'i', 'v'}
- *     Return value spec. 'i' for integer, 'v' for void.
- * spec
- *     String whose each character specifies a types of an
- *     argument:
- *
+ * list via the routine's arg spec:
  *     'i': <integer> scalar
+ *     'l': 64-bit integer scalar
  *     'I': <integer> array
  *     'T': <data> array
  *     'V': std::vector<integer>
  *     'W': std::vector<data>
  *     'B': npy_bool array
  *     '*': indicates that the next argument is an output argument
- * thunk : PY_LONG_LONG thunk(int I_typenum, int T_typenum, void **)
- *     Thunk function to call. It is passed a void** array of pointers to
- *     arguments, constructed according to `spec`. The types of data pointed
- *     to by each element agree with I_typenum and T_typenum, or are bools.
- * args
- *     Python tuple containing unprocessed arguments.
- *
- * Returns
- * -------
- * return_value
- *     The Python return value
- *
  */
-PyObject *
-call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
+static PyObject *
+call_routine(const SparsetoolsRoutine& routine, PyObject *args)
 {
+    const char *spec = routine.arg_spec;
+    const char ret_spec = routine.ret_spec;
     void *arg_list[MAX_ARGS];
+    npy_int64 scalar_vals[MAX_ARGS];
     PyObject *arg_arrays[MAX_ARGS];
     int is_output[MAX_ARGS];
     PyObject *return_value = NULL;
@@ -109,6 +103,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     PY_LONG_LONG ret;
     Py_ssize_t max_array_size = 0;
     bool should_release_gil = false;
+    SparsetoolsKernelFn kernel = NULL;
     NPY_BEGIN_THREADS_DEF;
 
     if (!PyTuple_Check(args)) {
@@ -118,6 +113,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
     for (j = 0; j < MAX_ARGS; ++j) {
         arg_list[j] = NULL;
+        scalar_vals[j] = 0;
         arg_arrays[j] = NULL;
         is_output[j] = 0;
     }
@@ -261,30 +257,20 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
         else if (*p == 'i' || *p == 'l') {
             /* Integer scalars */
-            PY_LONG_LONG value;
-
-            value = PyLong_AsLongLong(arg_arrays[j]);
+            PY_LONG_LONG value = PyLong_AsLongLong(arg_arrays[j]);
             if (PyErr_Occurred()) {
                 goto fail;
             }
 
             if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
-                arg_list[j] = PyMem_RawMalloc(sizeof(npy_int64));
-                if (arg_list[j] == NULL) {
-                    PyErr_NoMemory();
-                    goto fail;
-                }
-                *(npy_int64*)arg_list[j] = (npy_int64)value;
+                scalar_vals[j] = (npy_int64)value;
+                arg_list[j] = &scalar_vals[j];
             }
             else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
                      && value == (npy_int32)value) {
-                arg_list[j] = PyMem_RawMalloc(sizeof(npy_int32));
-                if (arg_list[j] == NULL) {
-                    PyErr_NoMemory();
-                    goto fail;
-                }
-                *(npy_int32*)arg_list[j] = (npy_int32)value;
+                scalar_vals[j] = (npy_int64)value;
+                arg_list[j] = &scalar_vals[j];
             }
             else {
                 PyErr_SetString(PyExc_ValueError,
@@ -345,7 +331,39 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
 
     /*
-     * Call thunk
+     * Select the kernel to invoke
+     */
+    switch (routine.dispatch_kind) {
+    case SparsetoolsDispatchKind::kNone:
+        kernel = routine.kernels[0];
+        break;
+    case SparsetoolsDispatchKind::kIndex: {
+        int i_idx = get_I_index(I_typenum);
+        if (i_idx >= 0) {
+            kernel = routine.kernels[i_idx];
+        }
+        break;
+    }
+    case SparsetoolsDispatchKind::kIndexData: {
+        int i_idx = get_I_index(I_typenum);
+        int t_idx = get_T_index(T_typenum);
+        if (i_idx >= 0 && t_idx >= 0) {
+            kernel = routine.kernels[
+                static_cast<std::size_t>(i_idx) *
+                    sparsetools_detail::kNumDataTypes +
+                static_cast<std::size_t>(t_idx)];
+        }
+        break;
+    }
+    }
+    if (kernel == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error: invalid argument typenums");
+        goto fail;
+    }
+
+    /*
+     * Invoke the kenel
      */
     should_release_gil = max_array_size > 100;
     if (should_release_gil) {
@@ -353,7 +371,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         NPY_BEGIN_THREADS;
     }
     try {
-        ret = thunk(I_typenum, T_typenum, arg_list);
+        ret = kernel(arg_list);
         if (should_release_gil) NPY_END_THREADS;
     } catch (const std::bad_alloc &e) {
         if (should_release_gil) NPY_END_THREADS;
@@ -449,10 +467,7 @@ fail:
             PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
         }
         Py_XDECREF(arg_arrays[j]);
-        if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
-            PyMem_RawFree(arg_list[j]);
-        }
-        else if (*p == 'V' && arg_list[j] != NULL) {
+        if (*p == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);
         }
         else if (*p == 'W' && arg_list[j] != NULL) {
@@ -469,18 +484,18 @@ fail:
 
 static void *allocate_std_vector_typenum(int typenum)
 {
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        return (void*)(new std::vector<ctype>());               \
-    }
-
     try {
+        switch (typenum) {
+#define PROCESS(ntype, ctype)                 \
+        case ntype:                           \
+            return static_cast<void *>(new std::vector<ctype>());
         SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
-    } catch (std::exception &e) {
+#undef PROCESS
+        default: break;
+        }
+    } catch (const std::exception &) {
         /* failed */
     }
-
-#undef PROCESS
 
     PyErr_SetString(PyExc_RuntimeError,
                     "failed to allocate std::vector");
@@ -489,36 +504,37 @@ static void *allocate_std_vector_typenum(int typenum)
 
 static void free_std_vector_typenum(int typenum, void *p)
 {
-#define PROCESS(ntype, ctype)                                   \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                \
-        delete ((std::vector<ctype>*)p);                        \
-        return;                                                 \
-    }
-
+    switch (typenum) {
+#define PROCESS(ntype, ctype)                       \
+    case ntype:                                     \
+        delete static_cast<std::vector<ctype> *>(p); \
+        return;
     SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
-
 #undef PROCESS
+    default: return;
+    }
 }
 
 static PyObject *array_from_std_vector_and_free(int typenum, void *p)
 {
-#define PROCESS(ntype, ctype)                                      \
-    if (PyArray_EquivTypenums(typenum, ntype)) {                   \
-        std::vector<ctype> *v = (std::vector<ctype>*)p;            \
-        npy_intp length = v->size();                               \
-        PyObject *obj = PyArray_SimpleNew(1, &length, typenum);    \
-        if (obj == NULL) return NULL;                              \
-        if (length > 0) {                                          \
-            memcpy(PyArray_DATA((PyArrayObject *)obj), &((*v)[0]), \
-                   sizeof(ctype)*length);                          \
-        }                                                          \
-        delete v;                                                  \
-        return obj;                                                \
-    }
-
+    switch (typenum) {
+#define PROCESS(ntype, ctype)                                                 \
+    case ntype: {                                                             \
+        auto *v = static_cast<std::vector<ctype> *>(p);                       \
+        npy_intp length = static_cast<npy_intp>(v->size());                   \
+        PyObject *obj = PyArray_SimpleNew(1, &length, typenum);               \
+        if (obj == NULL) return NULL;                                         \
+        if (length > 0) {                                                     \
+            std::memcpy(PyArray_DATA((PyArrayObject *)obj), v->data(),        \
+                        sizeof(ctype) * static_cast<std::size_t>(length));    \
+        }                                                                     \
+        delete v;                                                             \
+        return obj;                                                           \
+     }
     SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
-
 #undef PROCESS
+    default: break;
+    }
 
     PyErr_SetString(PyExc_RuntimeError,
                     "failed to convert std::vector output array");
@@ -550,49 +566,33 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 /*
  * Python module initialization
  */
-
-/* Prevent the name mangling */
-extern "C" {
-#include "sparsetools_impl.h"
-}
-
-
-static int
-_sparsetools_module_exec(PyObject *module)
-{
-    (void)module;  /* unused */
-
-    if (_import_array() < 0) { return -1; }
-
-    return 0;
-}
-
-
-static PyModuleDef_Slot _sparsetools_slots[] = {
-    {Py_mod_exec, (void *)_sparsetools_module_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-#if PY_VERSION_HEX >= 0x030d00f0  /* Python 3.13+ */
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#if PYBIND11_VERSION_MAJOR >= 3
+PYBIND11_MODULE(_sparsetools, m,
+                py::mod_gil_not_used(),
+                py::multiple_interpreters::per_interpreter_gil())
+#else
+PYBIND11_MODULE(_sparsetools, m, py::mod_gil_not_used())
 #endif
-    {0, NULL},
-};
-
-
-static struct PyModuleDef moduledef = {
-    /* m_base     */ PyModuleDef_HEAD_INIT,
-    /* m_name     */ "_sparsetools",
-    /* m_doc      */ NULL,
-    /* m_size     */ 0,
-    /* m_methods  */ sparsetools_methods,
-    /* m_slots    */ _sparsetools_slots,
-    /* m_traverse */ NULL,
-    /* m_clear    */ NULL,
-    /* m_free     */ NULL
-};
-
-
-PyMODINIT_FUNC
-PyInit__sparsetools(void)
 {
-    return PyModuleDef_Init(&moduledef);
+    if (_import_array() != 0) {
+      throw py::error_already_set();
+    }
+    for (const SparsetoolsRoutineSpan unit : {
+             get_bsr_routines(),
+             get_csr_routines(),
+             get_csc_routines(),
+             get_other_routines(),
+         }) {
+        for (std::size_t i = 0; i < unit.size; ++i) {
+            const SparsetoolsRoutine &r = unit.data[i];
+            m.def(r.name, [&r](py::args args) {
+                PyObject *result = call_routine(r, args.ptr());
+                if (!result) {
+                    throw py::error_already_set();
+                }
+                return py::reinterpret_steal<py::object>(result);
+            });
+        }
+    }
 }
+

@@ -926,48 +926,48 @@ void csr_binop_csr(const I n_row,
 }
 
 /* element-wise binary operations*/
-template <class I, class T, class T2>
+template <class I, class T>
 void csr_ne_csr(const I n_row, const I n_col,
                 const I Ap[], const I Aj[], const T Ax[],
                 const I Bp[], const I Bj[], const T Bx[],
-                      I Cp[],       I Cj[],      T2 Cx[])
+                      I Cp[],       I Cj[], npy_bool_wrapper Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class T>
 void csr_lt_csr(const I n_row, const I n_col,
                 const I Ap[], const I Aj[], const T Ax[],
                 const I Bp[], const I Bj[], const T Bx[],
-                      I Cp[],       I Cj[],      T2 Cx[])
+                      I Cp[],       I Cj[], npy_bool_wrapper Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class T>
 void csr_gt_csr(const I n_row, const I n_col,
                 const I Ap[], const I Aj[], const T Ax[],
                 const I Bp[], const I Bj[], const T Bx[],
-                      I Cp[],       I Cj[],      T2 Cx[])
+                      I Cp[],       I Cj[], npy_bool_wrapper Cx[])
 {
     // Alias: B < A
     csr_lt_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
 }
 
-template <class I, class T, class T2>
+template <class I, class T>
 void csr_le_csr(const I n_row, const I n_col,
                 const I Ap[], const I Aj[], const T Ax[],
                 const I Bp[], const I Bj[], const T Bx[],
-                      I Cp[],       I Cj[],      T2 Cx[])
+                      I Cp[],       I Cj[], npy_bool_wrapper Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class T>
 void csr_ge_csr(const I n_row, const I n_col,
                 const I Ap[], const I Aj[], const T Ax[],
                 const I Bp[], const I Bj[], const T Bx[],
-                      I Cp[],       I Cj[],      T2 Cx[])
+                      I Cp[],       I Cj[], npy_bool_wrapper Cx[])
 {
     // Alias: B <= A
     csr_le_csr(n_row,n_col,Bp,Bj,Bx,Ap,Aj,Ax,Cp,Cj,Cx);
