@@ -40,7 +40,7 @@ else:
             cython = None
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL',
+__all__ = ['PytestTester', 'check_free_memory', '_TestArrayArguments', 'IS_MUSL',
            'IS_WASM']
 
 
@@ -148,9 +148,10 @@ class PytestTester:
         return (code == 0)
 
 
-class _TestPythranFunc:
+class _TestArrayArguments:
     '''
-    These are situations that can be tested in our pythran tests:
+    Test a function with all supported dtypes, views and strided arrays of its
+    array arguments. These are the situations covered:
     - A function with multiple array arguments and then
       other positional and keyword arguments.
     - A function with array-like keywords (e.g. `def somefunc(x0, x1=None)`.
@@ -204,20 +205,20 @@ class _TestPythranFunc:
                 new_dtype = self.get_dtype(self.arguments[arg_idx][1],
                                            type_idx)
                 args_array.append(self.arguments[arg_idx][0].astype(new_dtype))
-            self.pythranfunc(*args_array)
+            self.check(*args_array)
 
     def test_views(self):
         args_array = []
         for arg_idx in self.arguments:
             args_array.append(self.arguments[arg_idx][0][::-1][::-1])
-        self.pythranfunc(*args_array)
+        self.check(*args_array)
 
     def test_strided(self):
         args_array = []
         for arg_idx in self.arguments:
             args_array.append(np.repeat(self.arguments[arg_idx][0],
                                         2, axis=0)[::2])
-        self.pythranfunc(*args_array)
+        self.check(*args_array)
 
 
 def _pytest_has_xdist():

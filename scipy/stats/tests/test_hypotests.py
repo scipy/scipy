@@ -8,12 +8,13 @@ from pytest import raises as assert_raises
 
 from scipy import stats, special
 from scipy.stats import distributions
-from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
+from scipy.stats._hypotests import (_concordance_sums, epps_singleton_2samp,
+                                    cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
-from scipy._lib._testutils import _TestPythranFunc
+from scipy._lib._testutils import _TestArrayArguments
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, is_numpy,
                                    eager_warns, xp_ravel, is_jax)
@@ -885,7 +886,7 @@ class TestMannWhitneyU:
         xp_assert_close(res.pvalue, xp.asarray(5.642865531266e-5))
 
 
-class TestSomersD(_TestPythranFunc):
+class TestSomersD(_TestArrayArguments):
     def setup_method(self):
         self.dtypes = self.ALL_INTEGER + self.ALL_FLOAT
         self.arguments = {0: (np.arange(10),
@@ -901,12 +902,24 @@ class TestSomersD(_TestPythranFunc):
                                              alternative='two-sided')
         self.expected = self.partialfunc(*input_array)
 
-    def pythranfunc(self, *args):
+    def check(self, *args):
         res = self.partialfunc(*args)
         assert_allclose(res.statistic, self.expected.statistic, atol=1e-15)
         assert_allclose(res.pvalue, self.expected.pvalue, atol=1e-15)
 
-    def test_pythranfunc_keywords(self):
+    def test_concordance_sums(self):
+        # The cumulative sums against the definitions of A_ij and D_ij
+        rng = np.random.default_rng(5)
+        for m, n in [(1, 4), (2, 2), (3, 7), (8, 5)]:
+            A = rng.integers(0, 5, size=(m, n)).astype(float)
+            Aij = np.array([[A[:i, :j].sum() + A[i+1:, j+1:].sum()
+                             for j in range(n)] for i in range(m)])
+            Dij = np.array([[A[i+1:, :j].sum() + A[:i, j+1:].sum()
+                             for j in range(n)] for i in range(m)])
+            expected = ((A*Aij).sum(), (A*Dij).sum(), (A*(Aij - Dij)**2).sum())
+            assert_equal(_concordance_sums(A), expected)
+
+    def test_keywords(self):
         # Not specifying the optional keyword args
         table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
         res1 = stats.somersd(table)

@@ -926,7 +926,6 @@ if HAVE_SCPDT:
         "scipy/ndimage/utils/generate_label_testvectors.py",
         "scipy/sparse/_generate_sparsetools.py",
         "scipy/special/_generate_pyx.py",
-        "scipy/stats/_stats_pythran.py",
     ]
 
     dt_config.pytest_extra_xfail = {
