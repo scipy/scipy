@@ -556,16 +556,14 @@ class TestNoncentralF:
         # the inverse with respect to dfd is ambiguous
         assert_allclose(sp.ncfdtridfd(dfn, expected_cdf, nc, f), dfd, rtol=5e-12)
 
-    @pytest.mark.parametrize(
-        "dfn, nc, f, expected_cdf",
-        [[100.0, 0.1, 100.0, 0.29787396410092676],
-         [1.0, 0.01, 0.01, 0.00021944525290299],
-        ]
-    )
-    def test_ncfdtridfd_returns_nan_for_ambiguous_input(
-            self, dfn, nc, f, expected_cdf):
-        # Ambiguous inputs for ncfdtridfd should return NaN
-        assert np.isnan(sp.ncfdtridfd(dfn, expected_cdf, nc, f))
+    @pytest.mark.parametrize("dfd", [1, 10, 50, 150])
+    def test_ncfdtridfd_returns_nan_for_ambiguous_input(self, dfd):
+        # For large dfn and small f the cdf tends to 0 both as dfd -> 0 and as
+        # dfd -> inf, so every p has two solutions for dfd and NaN is expected.
+        # Taken from Boost.Math tests (boostorg/math#1495).
+        dfn, nc, f = 10000, 1, 0.1
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        assert np.isnan(sp.ncfdtridfd(dfn, p, nc, f))
 
     def test_gh7695(self):
         dfn = 5
