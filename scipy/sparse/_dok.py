@@ -506,7 +506,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def __truediv__(self, other):
         if isscalarlike(other):
-            res_dtype = upcast_scalar(self.dtype, other)
+            res_dtype = np.true_divide(np.empty(0, dtype=self.dtype), other).dtype
             new = self._dok_container(self.shape, dtype=res_dtype)
             new._dict.update(((k, v / other) for k, v in self.items()))
             return new

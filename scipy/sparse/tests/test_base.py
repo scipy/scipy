@@ -4966,6 +4966,24 @@ with warnings.catch_warnings():
     TestCSCMatrix.init_class()
 
 
+@pytest.mark.filterwarnings("ignore:.*_matrix is being repl:DeprecationWarning")
+@pytest.mark.parametrize("container", [dok_array, dok_matrix, lil_array, lil_matrix])
+@pytest.mark.parametrize(
+    "dtype, divisor",
+    [(np.bool_, 2), (np.int64, 2), (np.uint8, np.array(2, dtype=np.uint8)),
+     (np.int8, 256), (np.float32, 2), (np.complex64, 2j)],
+)
+def test_scalar_true_division_dtype(container, dtype, divisor):
+    dense = np.array([[0, 3], [1, 0]], dtype=dtype)
+    expected = dense / divisor
+
+    result = container(dense) / divisor
+
+    assert isinstance(result, container)
+    assert_array_equal(result.toarray(), expected)
+    assert result.dtype == expected.dtype
+
+
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator: Callable[..., Any] = dok_array
     math_dtypes = [np.int_, np.float64, np.complex128]
