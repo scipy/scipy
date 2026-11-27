@@ -16,7 +16,7 @@ from numpy.linalg import cond
 from scipy._external import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
                                    make_xp_pytest_param,
-                                   xp_assert_close)
+                                   xp_assert_close, is_lazy_array)
 
 
 class TestToeplitz:
@@ -117,35 +117,62 @@ class TestLeslie:
         xp_assert_equal(a, expected)
 
 
+@make_xp_test_case(companion)
 class TestCompanion:
 
-    def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [0, 4, 5])
-        assert_raises(ValueError, companion, [1])
-        assert_raises(ValueError, companion, [])
+    def test_bad_shapes(self, xp):
+        for a in [xp.asarray(1.), xp.asarray([1.]), xp.asarray([])]:
+            with pytest.raises(ValueError, match="at least 2"):
+                companion(a)
 
-    def test_basic(self):
-        c = companion([1, 2, 3])
-        expected = array([
-            [-2.0, -3.0],
-            [1.0, 0.0]])
-        assert_array_equal(c, expected)
+    def test_zero_leading_coefficient(self, xp):
+        a = xp.asarray([[1., 2., 3.], [0., 4., 5.]])
+        if is_lazy_array(a):
+            c = companion(a)
+            assert not xp.any(xp.isnan(c[0, ...]))
+            assert xp.all(xp.isnan(c[1, 0, :]))
+        else:
+            with pytest.raises(ValueError, match="must not be zero"):
+                companion(a)
 
-        c = companion([2.0, 5.0, -10.0])
-        expected = array([
+    @pytest.mark.parametrize('dtype', ["float32", "float64"])
+    def test_basic(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        c = companion(xp.asarray([2.0, 5.0, -10.0], dtype=dtype))
+        expected = xp.asarray([
             [-2.5, 5.0],
-            [1.0, 0.0]])
-        assert_array_equal(c, expected)
+            [1.0, 0.0]], dtype=dtype)
+        xp_assert_equal(c, expected)
 
-        c = companion([(1.0, 2.0, 3.0),
-                       (4.0, 5.0, 6.0)])
-        expected = array([
+        c = companion(xp.asarray([(1.0, 2.0, 3.0),
+                                  (4.0, 5.0, 6.0)], dtype=dtype))
+        expected = xp.asarray([
             ([-2.00, -3.00],
              [+1.00, +0.00]),
             ([-1.25, -1.50],
              [+1.00, +0.00])
-        ])
-        assert_array_equal(c, expected)
+        ], dtype=dtype)
+        xp_assert_equal(c, expected)
+
+        c = companion(xp.asarray([2.0, 4.0], dtype=dtype))
+        xp_assert_equal(c, xp.asarray([[-2.0]], dtype=dtype))
+
+    @pytest.mark.parametrize('dtype', ["complex64", "complex128"])
+    def test_complex(self, xp, dtype):
+        dtype = getattr(xp, dtype)
+        c = companion(xp.asarray([1j, 2, 3j], dtype=dtype))
+        expected = xp.asarray([[2j, -3], [1, 0]], dtype=dtype)
+        xp_assert_equal(c, expected)
+
+    def test_integer(self, xp):
+        # Integer input is promoted to the default floating-point type before
+        # negation; negating first would wrap around for unsigned input.
+        c = companion(xp.asarray([2, 3, 4], dtype=xp.uint8))
+        xp_assert_equal(c, xp.asarray([[-1.5, -2.0], [1.0, 0.0]]))
+
+    def test_list(self):
+        c = companion([1, 2, 3])
+        assert_array_equal(c, array([[-2.0, -3.0], [1.0, 0.0]]))
 
 
 @make_xp_test_case(block_diag)

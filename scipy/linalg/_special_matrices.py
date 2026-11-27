@@ -4,7 +4,7 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch, _validate_int
 from scipy._lib._array_api import (
-    array_namespace, xp_capabilities, xp_promote, xp_device
+    array_namespace, is_lazy_array, xp_capabilities, xp_promote, xp_device
 )
 import scipy._external.array_api_extra as xpx
 
@@ -437,7 +437,8 @@ def block_diag(*arrs):
     return out
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(extra_note="With JAX and Dask, a zero leading coefficient "
+                            "gives NaN in the first row instead of raising.")
 def companion(a):
     """
     Create a companion matrix.
@@ -490,21 +491,37 @@ def companion(a):
            [  0.,   1.,   0.]])
 
     """
-    a = np.atleast_1d(a)
+    xp = array_namespace(a)
+    a = xp_promote(a, force_floating=True, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[-1]
 
     if n < 2:
         raise ValueError("The length of `a` along the last axis must be at least 2.")
 
-    if np.any(a[..., 0] == 0):
+    a0 = a[..., :1]
+    invalid = a0 == 0
+    if is_lazy_array(invalid):
+        # Lazy backends can't raise based on values; return NaN instead.
+        a0 = xp.where(invalid, xp.nan, a0)
+    elif xp.any(invalid):
         raise ValueError("The first coefficient(s) of `a` (i.e. elements "
                          "of `a[..., 0]`) must not be zero.")
 
-    first_row = -a[..., 1:] / (1.0 * a[..., 0:1])
-    c = np.zeros(a.shape[:-1] + (n - 1, n - 1), dtype=first_row.dtype)
-    c[..., 0, :] = first_row
-    c[..., np.arange(1, n - 1), np.arange(0, n - 2)] = 1
-    return c
+    first_row = -a[..., 1:] / a0
+    m = n - 1
+    batch_shape = a.shape[:-1]
+    shape = batch_shape + (m, m)
+    device = xp_device(a)
+
+    if 0 in batch_shape:
+        # Avoid setting items of size-0 arrays (dask/dask#11800).
+        return xp.empty(shape, dtype=first_row.dtype, device=device)
+
+    c = xp.zeros(batch_shape + (m * m,), dtype=first_row.dtype, device=device)
+    c = xpx.at(c)[..., m::m + 1].set(1)
+    c = xp.reshape(c, shape)
+    return xpx.at(c)[..., 0, :].set(first_row)
 
 
 def helmert(n, full=False):
