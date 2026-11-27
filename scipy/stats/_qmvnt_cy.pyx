@@ -12,7 +12,6 @@ from scipy.special.cython_special cimport ndtri as phinv
 from scipy.special.cython_special cimport ndtr as phi
 
 
-#pythran export _qmvn_inner(float[:], float[:, :], int64, int64, float[:, :], float[:], float[:])  # noqa: E501
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def _qmvn_inner(double[::1] q,
@@ -90,7 +89,6 @@ def _qmvn_inner(double[::1] q,
     return prob, est_error, n_samples
 
 
-#pythran export _qmvt_inner(float[], float[:, :], int, int, float[:, :], float[], float[], float)  # noqa: E501
 def _qmvt_inner(double[::1] q,
                 double[:, ::1] rndm,
                 int n_qmc_samples,

@@ -5088,6 +5088,35 @@ class TestKSTwoSamples:
             assert_raises(FloatingPointError, _count_paths_outside_method,
                           2000, 1000, 1, 1)
 
+    @skip_xp_backends(np_only=True)
+    def test_outer_prob_inside_method(self):
+        # The compiled recursion against exact counts of the lattice paths that
+        # stay strictly inside |x/m - y/n| < h / lcm(m, n)
+        from fractions import Fraction
+        from scipy.stats._stats_py import _compute_outer_prob_inside_method
+
+        def outer_prob(m, n, h):
+            g = math.gcd(m, n)
+            paths = [[0] * (n + 1) for _ in range(m + 1)]
+            for x in range(m + 1):
+                for y in range(n + 1):
+                    if abs(x*n - y*m) >= h*g:
+                        continue
+                    paths[x][y] = 1 if x == y == 0 else (
+                        (paths[x-1][y] if x else 0) + (paths[x][y-1] if y else 0))
+            return float(1 - Fraction(paths[m][n], math.comb(m + n, n)))
+
+        for m, n in [(3, 2), (2, 3), (7, 4), (12, 9), (15, 10)]:
+            g = math.gcd(m, n)
+            lcm = m * n // g
+            for h in range(1, lcm + 1, max(1, lcm // 12)):
+                assert_allclose(_compute_outer_prob_inside_method(m, n, g, h),
+                                outer_prob(m, n, h), rtol=1e-13, atol=1e-15)
+
+        for args in [(0, 2, 1, 1), (3, 2, 0, 1), (3, 2, 2, 1), (3, 2, 1, -1)]:
+            with pytest.raises(ValueError, match="Expected m > 0"):
+                _compute_outer_prob_inside_method(*args)
+
     @pytest.mark.parametrize('case', (([], [1.]), ([1.], []), ([], [])))
     def test_argument_checking(self, case, xp):
         # Check that an empty array warns

@@ -9,13 +9,14 @@ from pytest import raises as assert_raises
 from scipy._lib._testutils import IS_WASM
 
 from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
-from scipy.sparse import csr_array, csc_array, lil_array
+from scipy.sparse import csr_array, csc_array, lil_array, random_array
 from scipy._lib._array_api import xp_result_type
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
     group_columns, _eps_for_method, _compute_absolute_step)
 from scipy.optimize import rosen
+from scipy.optimize._group_columns import group_sparse
 
 
 def test_group_columns():
@@ -44,6 +45,44 @@ def test_group_columns():
     groups_1 = group_columns(A)
     groups_2 = group_columns(A)
     assert_equal(groups_1, groups_2)
+
+
+def test_group_columns_index_dtypes():
+    structure = np.array([[1, 1, 0], [0, 1, 1], [0, 0, 1]])
+    A = csc_array(structure)
+    expected = group_columns(structure, np.arange(3))
+    assert expected.dtype == np.intp
+    for dtype in (np.int32, np.int64):
+        B = csc_array((A.data, A.indices.astype(dtype), A.indptr.astype(dtype)),
+                      shape=A.shape)
+        groups = group_columns(B, np.arange(3))
+        assert groups.dtype == np.intp
+        assert_equal(groups, expected)
+
+
+def test_group_columns_random_structure():
+    # Columns in a group must not share a row, and the dense and the sparse
+    # code paths must agree.
+    rng = np.random.default_rng(20261126)
+    S = random_array((60, 50), density=0.05, rng=rng, format='csc')
+    D = S.toarray() != 0
+    for order in (0, 1, np.arange(50)):
+        groups = group_columns(S, order)
+        assert_equal(group_columns(D, order), groups)
+        for g in np.unique(groups):
+            assert (D[:, groups == g].sum(axis=1) <= 1).all()
+
+
+def test_group_sparse_invalid_structure():
+    indptr = np.array([0, 1, 2, 2])
+    with pytest.raises(ValueError, match="Invalid CSC structure"):
+        group_sparse(3, 3, np.array([0, 3]), indptr)
+    with pytest.raises(ValueError, match="Invalid CSC structure"):
+        group_sparse(3, 3, np.array([0, 1]), np.array([0, 2, 1, 2]))
+    with pytest.raises(ValueError, match="Invalid CSC structure"):
+        group_sparse(3, 3, np.array([0]), indptr)
+    with pytest.raises(ValueError, match="n \\+ 1 entries"):
+        group_sparse(3, 2, np.array([0, 1]), indptr)
 
 
 def test_correct_fp_eps():

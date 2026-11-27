@@ -414,8 +414,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _coo_to_compressed(self, swap, copy=False):
         """convert (shape, coords, data) to (indptr, indices, data, shape)"""
         M, N = swap(self._shape_as_2d)
-        # convert idx_dtype intc to int32 for pythran.
-        # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
 
         if self.ndim == 1:

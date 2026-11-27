@@ -5,20 +5,14 @@ from scipy._lib._ccallback_c import get_capsule_signature
 from scipy.linalg.lapack import get_lapack_funcs
 from ._rbfinterp_common import _monomial_powers_impl
 
-from . import _rbfinterp_pythran as _pythran_mod
-from ._rbfinterp_pythran import (
-    _build_system_with_kernel as _pythran_build_system_with_kernel,
-    _build_evaluation_coefficients_with_kernel as
-        _pythran_build_evaluation_coefficients_with_kernel,
-    _polynomial_matrix as _pythran_polynomial_matrix
-)
+from . import _rbfinterp_cpp
 
 
 dsysv = get_lapack_funcs('sysv', dtype=np.float64, ilp64="preferred")
 
 
-def _get_kernel_capsule(kernel):
-    """Return a float64(float64) capsule for given name.
+def _get_kernel(kernel):
+    """Return `kernel` in the form that the compiled routines take.
 
     Parameters
     ----------
@@ -28,50 +22,35 @@ def _get_kernel_capsule(kernel):
 
     Returns
     -------
-    capsule : PyCapsule
-        Opaque capsule suitable for passing to
-        ``_build_system_with_kernel`` /
-        ``_build_evaluation_coefficients_with_kernel``.
-
-    Notes
-    -----
-    For the ``str`` path, the compiled capsule is retrieved as a module
-    attribute of ``_bfinterp_pythran``
-
-    For the ``LowLevelCallable`` path, element 0 of the LLC tuple is the
-    normalised PyCapsule.  Pythran ignores the capsule name and trusts the
-    ``float64(float64)`` annotation in the export line, so no ``signature=`` coercion
-    is needed on the LLC side.
+    str or PyCapsule
+        The name of a built-in RBF, unchanged, or the capsule of the
+        ``LowLevelCallable``.
     """
     if isinstance(kernel, str):
-        # Built in kernel
-        return getattr(_pythran_mod, kernel)
-    else:
-        # LowLevelCallable is a tuple subclass; element 0 is the capsule
-        capsule =  tuple.__getitem__(kernel, 0)
-        sig = get_capsule_signature(capsule)
-        if sig != "double (double)":
-            raise ValueError(
-                f"LowLevelCallable kernel must have signature \"double (double)\", got"
-                f" \"{sig}\"."
-                f"Construct with: "
-                f"LowLevelCallable(fn, signature=\"double (double)\")"
-            )
-        return capsule
+        return kernel
+    # LowLevelCallable is a tuple subclass; element 0 is the capsule
+    capsule = tuple.__getitem__(kernel, 0)
+    sig = get_capsule_signature(capsule)
+    if sig != "double (double)":
+        raise ValueError(
+            f"LowLevelCallable kernel must have signature \"double (double)\", got "
+            f"\"{sig}\". Construct with: "
+            f"LowLevelCallable(fn, signature=\"double (double)\")"
+        )
+    return capsule
 
 
-# trampolines for pythran-compiled functions to drop the `xp` argument
+# trampolines for the compiled functions, to drop the `xp` argument
 def _build_evaluation_coefficients(
     x, y, kernel, epsilon, powers, shift, scale, xp
 ):
-    capsule = _get_kernel_capsule(kernel)
-    return _pythran_build_evaluation_coefficients_with_kernel(
-        x, y, capsule, epsilon, powers, shift, scale
+    return _rbfinterp_cpp._build_evaluation_coefficients(
+        x, y, _get_kernel(kernel), epsilon, powers, shift, scale
     )
 
 
 def polynomial_matrix(x, powers, xp):
-    return _pythran_polynomial_matrix(x, powers)
+    return _rbfinterp_cpp._polynomial_matrix(x, powers)
 
 
 def _monomial_powers(ndim, degree, xp, device=None):
@@ -83,9 +62,8 @@ def _monomial_powers(ndim, degree, xp, device=None):
 
 
 def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
-    capsule = _get_kernel_capsule(kernel)
-    return _pythran_build_system_with_kernel(
-        y, d, smoothing, capsule, epsilon, powers
+    return _rbfinterp_cpp._build_system(
+        y, d, smoothing, _get_kernel(kernel), epsilon, powers
     )
 
 
@@ -100,8 +78,8 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
         Data values at `y`.
     smoothing : (P,) float ndarray
         Smoothing parameter for each data point.
-    kernel : str
-        Name of the RBF.
+    kernel : str or LowLevelCallable
+        Name of the RBF, or a compiled ``double (double)`` kernel.
     epsilon : float
         Shape parameter.
     powers : (R, N) int ndarray

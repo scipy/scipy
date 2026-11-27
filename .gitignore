@@ -164,7 +164,6 @@ scipy/fftpack/convolvemodule.c
 scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c
@@ -220,8 +219,6 @@ scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
 scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
-scipy/signal/_max_len_seq_inner.c
-scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/_correlate_nd.c
@@ -276,12 +273,9 @@ scipy/stats/_biasedurn.cxx
 scipy/stats/biasedurn.cxx
 scipy/stats/_sobol.c
 scipy/stats/_qmc_cy.cxx
-scipy/stats/_hypotests_pythran.cpp
 scipy/stats/_unuran/unuran_wrapper.c
 scipy/stats/_rcont/rcont.c
-scipy/stats/_stats_pythran.cpp
 scipy/version.py
 scipy/special/_exprel.c
-scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx

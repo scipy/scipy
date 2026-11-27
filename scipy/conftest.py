@@ -917,22 +917,15 @@ if HAVE_SCPDT:
         # equivalent to "pytest --ignore=path/to/file"
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
-        "scipy/interpolate/_rbfinterp_pythran.py",
         "scipy/_external",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
         "scipy/_lib/_uarray",
         "scipy/linalg/_cython_signature_generator.py",
         "scipy/linalg/_generate_pyx.py",
-        "scipy/linalg/_linalg_pythran.py",
-        "scipy/linalg/_matfuncs_sqrtm_triu.py",
         "scipy/ndimage/utils/generate_label_testvectors.py",
-        "scipy/optimize/_group_columns.py",
-        "scipy/optimize/_max_len_seq_inner.py",
-        "scipy/signal/_max_len_seq_inner.py",
         "scipy/sparse/_generate_sparsetools.py",
         "scipy/special/_generate_pyx.py",
-        "scipy/stats/_stats_pythran.py",
     ]
 
     dt_config.pytest_extra_xfail = {

@@ -707,6 +707,9 @@ namespace lapack {
         void BLAS_FUNC(clartg)(c64 *, c64 *, f32 *, c64 *, c64 *);
         void BLAS_FUNC(zlartg)(c128 *, c128 *, f64 *, c128 *, c128 *);
 
+        void BLAS_FUNC(slanv2)(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *, f32 *, f32 *, f32 *, f32 *);
+        void BLAS_FUNC(dlanv2)(f64 *, f64 *, f64 *, f64 *, f64 *, f64 *, f64 *, f64 *, f64 *, f64 *);
+
         void BLAS_FUNC(crot)(CBLAS_INT *, c64 *, CBLAS_INT *, c64 *, CBLAS_INT *, f32 *, c64 *);
         void BLAS_FUNC(zrot)(CBLAS_INT *, c128 *, CBLAS_INT *, c128 *, CBLAS_INT *, f64 *, c128 *);
 
@@ -1892,6 +1895,12 @@ namespace lapack {
     inline void lartg(f64 f, f64 g, f64 *cs, f64 *sn, f64 *r)      { BLAS_FUNC(dlartg)(&f, &g, cs, sn, r); }
     inline void lartg(c64 f, c64 g, f32 *cs, c64 *sn, c64 *r)      { BLAS_FUNC(clartg)(&f, &g, cs, sn, r); }
     inline void lartg(c128 f, c128 g, f64 *cs, c128 *sn, c128 *r)  { BLAS_FUNC(zlartg)(&f, &g, cs, sn, r); }
+
+    /* `lanv2` standardizes a real 2x2 block in place and returns its eigenvalues; real flavors only. */
+    inline void lanv2(f32 *a, f32 *b, f32 *c, f32 *d, f32 *rt1r, f32 *rt1i, f32 *rt2r, f32 *rt2i, f32 *cs, f32 *sn)
+        { BLAS_FUNC(slanv2)(a, b, c, d, rt1r, rt1i, rt2r, rt2i, cs, sn); }
+    inline void lanv2(f64 *a, f64 *b, f64 *c, f64 *d, f64 *rt1r, f64 *rt1i, f64 *rt2r, f64 *rt2i, f64 *cs, f64 *sn)
+        { BLAS_FUNC(dlanv2)(a, b, c, d, rt1r, rt1i, rt2r, rt2i, cs, sn); }
 
     /* `rot` exists only for the complex flavors: the real one is BLAS `srot`/`drot`. */
     inline void rot(CBLAS_INT n, c64 *x, CBLAS_INT incx, c64 *y, CBLAS_INT incy, f32 c, c64 s)

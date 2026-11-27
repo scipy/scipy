@@ -20,10 +20,8 @@ option('use-g77-abi', type: 'boolean', value: false,
         description: 'If set to true, forces using g77 compatibility wrappers ' +
                      'for LAPACK functions. The default is to use gfortran ' +
                      'ABI for all LAPACK libraries except MKL.')
-option('use-pythran', type: 'boolean', value: true,
-        description: 'If set to false, disables using Pythran (it falls back ' +
-                     'to either pure Python code or Cython code, depending on ' +
-                     'the implementation).')
+option('use-pythran', type: 'boolean', value: true, deprecated: true,
+        description: 'Deprecated, has no effect: SciPy no longer uses Pythran.')
 option('use-simd', type: 'boolean', value: true,
        description: 'If set to false, disables the hand-written SIMD kernels ' +
                     '(which are otherwise built with supported compilers and ' +

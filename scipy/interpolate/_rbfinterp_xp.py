@@ -5,15 +5,16 @@ The general logic is this: `_rbfinterp.py` implements the user API and calls
 into either `_rbfinterp_np` (the "numpy backend"), or `_rbfinterp_xp` (the
 "generic backend".
 
-The numpy backend offloads performance-critical computations to the
-pythran-compiled `_rbfinterp_pythran` extension. This way, the call chain is
+The numpy backend offloads performance-critical computations to the compiled
+`_rbfinterp_cpp` extension (``src/_rbfinterpmodule.cc``). This way, the call
+chain is
 
-    _rbfinterp.py <-- _rbfinterp_np.py <-- _rbfinterp_pythran.py
+    _rbfinterp.py <-- _rbfinterp_np.py <-- _rbfinterp_cpp
 
 The "generic" backend here is a drop-in replacement of the API of
 `_rbfinterp_np.py` for use in `_rbfinterp.py` with non-numpy arrays.
 
-The implementation closely follows `_rbfinterp_np + _rbfinterp_pythran`, with
+The implementation closely follows `_rbfinterp_np + _rbfinterp_cpp`, with
 the following differences:
 
   -  We used vectorized code not explicit loops in `_build_system` and
@@ -21,9 +22,7 @@ the following differences:
   - RBF kernels are also "vectorized" and not scalar: they receive an
     array of norms not a single norm;
   - RBF kernels accept an extra xp= argument;
-
-In general, we would prefer less code duplication. The main blocker ATM is
-that pythran cannot compile functions with an xp= argument where xp is numpy.
+  - user-supplied LowLevelCallable kernels are not supported.
 """
 from math import sqrt
 
@@ -100,7 +99,7 @@ def linear(r, xp):
 
 
 def thin_plate_spline(r, xp):
-    # NB: changed w.r.t. pythran, vectorized
+    # NB: changed w.r.t. the compiled kernel, vectorized
     return xp.where(r == 0, 0, xp.square(r) * xp.log(r))
 
 
@@ -267,7 +266,7 @@ def _build_evaluation_coefficients(
     xeps = x*epsilon
     xhat = (x - shift)/scale
 
-    # NB: changed w.r.t. pythran
+    # NB: changed w.r.t. the compiled loops: vectorized
     vec = xp.concat(
         [
             kernel_func(

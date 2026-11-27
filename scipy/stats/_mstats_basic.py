@@ -46,7 +46,6 @@ from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
 import scipy.stats._stats_py as _stats_py
-from scipy.stats._stats_pythran import siegelslopes as siegelslopes_pythran
 from ._stats_mstats_common import _find_repeats, TheilslopesResult, SiegelslopesResult
 
 
@@ -1411,6 +1410,25 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     return _theilslopes(y, x, alpha=alpha, method=method)
 
 
+def _masked_row_medians(a, mask):
+    """Medians of the rows of `a` over the entries where `mask` is True.
+
+    As `np.median` gives them: NaN for a row without such entries or with a
+    NaN among them. Overwrites `a`.
+    """
+    count = mask.sum(axis=1)
+    has_nan = (np.isnan(a) & mask).any(axis=1)
+    a[~mask] = np.inf  # the other entries sort last
+    # The middle positions of each row; one partition puts all of them in place
+    lo_pos, hi_pos = np.maximum(count - 1, 0) // 2, count // 2
+    a.partition(np.unique(np.concatenate((lo_pos, hi_pos))), axis=1)
+    rows = np.arange(a.shape[0])
+    lo, hi = a[rows, lo_pos], a[rows, hi_pos]
+    med = np.where(count % 2 == 1, lo, (lo + hi) / 2)
+    med[(count == 0) | has_nan] = np.nan
+    return med
+
+
 def _siegelslopes(y, x=None, method="hierarchical"):
     if method not in ['hierarchical', 'separate']:
         raise ValueError("method can only be 'hierarchical' or 'separate'")
@@ -1426,8 +1444,20 @@ def _siegelslopes(y, x=None, method="hierarchical"):
 
     dtype = np.result_type(x, y, np.float32)  # use at least float32
     y, x = y.astype(dtype), x.astype(dtype)
-    medslope, medinter = siegelslopes_pythran(y, x, method)
-    medslope, medinter = np.asarray(medslope)[()], np.asarray(medinter)[()]
+
+    # The repeated median: for each point j, the median of the slopes to the points
+    # k with x[k] != x[j], then the median of those medians.
+    deltax = x[:, np.newaxis] - x
+    nonzero = deltax != 0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        slopes = (y[:, np.newaxis] - y) / deltax
+        medslope = np.median(_masked_row_medians(slopes, nonzero))
+        if method == 'separate':
+            # The intercepts of the lines through the same pairs of points
+            intercepts = (y * x[:, np.newaxis] - y[:, np.newaxis] * x) / deltax
+            medinter = np.median(_masked_row_medians(intercepts, nonzero))
+        else:
+            medinter = np.median(y - medslope * x)
     return SiegelslopesResult(slope=medslope, intercept=medinter)
 
 

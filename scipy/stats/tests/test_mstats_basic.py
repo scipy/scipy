@@ -1109,6 +1109,36 @@ def test_siegelslopes():
     assert_allclose(intercept, intercept_ols, rtol=0.1)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("method", ["hierarchical", "separate"])
+def test_siegelslopes_matches_stats(dtype, method):
+    # Same repeated medians as `stats.siegelslopes`, with ties in `x`, which
+    # leave some slopes out, and both odd and even counts of the others.
+    rng = np.random.default_rng(1729)
+    for n in (2, 3, 8, 51):
+        x = rng.standard_normal(n).astype(dtype)
+        y = (2*x + rng.standard_normal(n)).astype(dtype)
+        x[:n // 3] = x[0]
+        res = mstats.siegelslopes(y, x, method=method)
+        ref = stats.siegelslopes(y, x, method=method)
+        # `mstats.siegelslopes` converts `x` to float64
+        assert res.slope.dtype == res.intercept.dtype == np.float64
+        rtol = 1e-5 if dtype == np.float32 else 1e-13
+        assert_allclose(res.slope, ref.slope, rtol=rtol)
+        assert_allclose(res.intercept, ref.intercept, rtol=rtol)
+
+
+@pytest.mark.parametrize("method", ["hierarchical", "separate"])
+def test_siegelslopes_nan_and_equal_x(method):
+    # A NaN propagates, as through `np.median`, and so does a set of points
+    # without any two different x.
+    y = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
+    res = mstats.siegelslopes(y, np.arange(5.0), method=method)
+    assert np.isnan(res.slope) and np.isnan(res.intercept)
+    res = mstats.siegelslopes([1.0, 2.0, 3.0], [1.0, 1.0, 1.0], method=method)
+    assert np.isnan(res.slope) and np.isnan(res.intercept)
+
+
 def test_siegelslopes_namedtuple_consistency():
     """
     Simple test to ensure tuple backwards-compatibility of the returned

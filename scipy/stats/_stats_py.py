@@ -54,7 +54,7 @@ from . import _mstats_basic as mstats_basic
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
-from ._stats_pythran import _compute_outer_prob_inside_method
+from ._ks_2samp_exact import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
@@ -8132,9 +8132,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
 
 @np.vectorize(excluded={3, 4, 5}, otypes=[np.float64])
 def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
-    # math.gcd used to return an `int`, but now that these return arrays, NumPy can
-    # return an int32. Unless we want the pythranized functions to be compiled for
-    # int32, this needs to produce an int64.
+    # int64, since the sample sizes can be int32 and their products below, such as
+    # lcm(n1, n2), would overflow.
     g = np.gcd(n1, n2).astype(np.int64)
     n1g = n1 // g
     n2g = n2 // g

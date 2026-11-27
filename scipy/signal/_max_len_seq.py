@@ -114,7 +114,6 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
         if np.any(taps < 0) or np.any(taps > nbits) or taps.size < 1:
             raise ValueError('taps must be non-empty with values between '
                              'zero and nbits (inclusive)')
-        taps = np.array(taps)  # needed for Cython and Pythran
     n_max = (2**nbits) - 1
     if length is None:
         length = n_max
@@ -122,8 +121,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
         length = int(length)
         if length < 0:
             raise ValueError('length must be greater than or equal to 0')
-    # We use int8 instead of bool here because NumPy arrays of bools
-    # don't seem to work nicely with Cython
+    # The sequence and the state are int8 arrays of 0's and 1's
     if state is None:
         state = np.ones(nbits, dtype=np.int8, order='c')
     else:

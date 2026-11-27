@@ -301,7 +301,6 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     >>> idx_dtype
     <class 'numpy.int32'>
     """
-    # not using intc directly due to misinteractions with pythran
     if np.intc().itemsize != 4:
         return np.int64
 

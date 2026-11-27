@@ -33,8 +33,6 @@ PYTHON_INCLUDING_HEADERS = [
     "boost/python/ssize_t.hpp",
     "boost/python/object.hpp",
     "boost/mpi/python.hpp",
-    # Pythran
-    "pythonic/core.hpp",
     # Python-including headers the sort doesn't pick up
     "ni_support.h",
     # xsf::numpy

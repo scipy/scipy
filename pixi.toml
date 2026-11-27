@@ -47,7 +47,6 @@ ninja = "*"
 meson = "!=1.12.0"  # scipy/scipy#25904
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
 numpy = "*"
 # currently, we use openblas uniformly, matching our wheels,
@@ -265,7 +264,7 @@ features = ["build-deps", "build-clang-23"]
 
 [environments.build-intel]
 # tasks: build-intel
-features = ["build-deps", "pythran-pypi", "intel", "build-intel", "py312"]
+features = ["build-deps", "intel", "build-intel", "py312"]
 
 [environments.test-intel]
 # tasks: test-intel
@@ -313,7 +312,6 @@ blas-devel = "*"
 # which we sometimes want to avoid,
 # e.g. when using Intel oneAPI
 [feature.build-deps-compilers]
-dependencies.pythran = "*"  # https://github.com/conda-forge/pythran-feedstock/issues/77
 # minimally-activated gxx and clangxx on linux and osx respectively
 target.unix.dependencies.cxx-compiler = "2.*"
 target.linux.activation.env = {
@@ -934,10 +932,6 @@ description = "Test with mparray"
 
 ### Optional dependencies ###
 
-[feature.pythran-pypi.pypi-dependencies]
-pythran = "*"
-
-
 [feature.scikit-sparse.dependencies]
 scikit-sparse = "*"
 
@@ -1016,7 +1010,6 @@ ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-pythran = "*"
 pybind11 = "*"
 # needed at build-time as well as run-time
 numpy = "*"
@@ -1024,8 +1017,7 @@ blas-devel = { version = "*", build = "*openblas" }
 
 
 [feature.asan.tasks.build-asan]
-# `use-pythran=false` needed with py316dev due to https://github.com/serge-sans-paille/gast/issues/110
-cmd = "spin build --asan --build-dir=build-asan --setup-args=-Duse-pythran=false --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = {
   ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0",
   LDFLAGS = "-shared-libsan $LDFLAGS",
@@ -1092,7 +1084,17 @@ description = "Test SciPy (with pytest-run-parallel and freethreaded Python)"
 [feature.build-clang-23.dependencies]
 python-build = "*"
 clang-23 = "*"
-pythran = "*"
+
+# The toolchains that conda-forge's `pythran` package used to pull in: the gcc
+# sysroot, libstdc++ headers and binutils on Linux, the clang toolchain elsewhere.
+[feature.build-clang-23.target.linux.dependencies]
+gxx = "*"
+
+[feature.build-clang-23.target.osx.dependencies]
+clangxx = "*"
+
+[feature.build-clang-23.target.win.dependencies]
+clangxx = "*"
 
 [feature.build-clang-23.tasks.build-clang-23]
 cmd = "python -m build -wnx -Csetup-args=--werror"

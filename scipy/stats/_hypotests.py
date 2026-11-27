@@ -14,10 +14,6 @@ from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
 import scipy._external.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
-from ._stats_pythran import _a_ij_Aij_Dij2
-from ._stats_pythran import (
-    _concordant_pairs as _P, _discordant_pairs as _Q
-)
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy.stats import _stats_py
 
@@ -742,6 +738,33 @@ def _get_wilcoxon_distr2(n):
     return res
 
 
+def _concordance_sums(A):
+    """Sums over the contingency table `A` that `somersd` needs.
+
+    With A_ij the sum of the upper-left and lower-right blocks of `A` around
+    entry (i, j), and D_ij that of the lower-left and upper-right blocks
+    (`somersd` References [2] bottom of page 309), return
+
+    - P = sum(A * A_ij), twice the number of concordant pairs, excluding ties,
+    - Q = sum(A * D_ij), twice the number of discordant pairs, excluding ties,
+    - sum(A * (A_ij - D_ij)**2), a term in the ASE of Kendall's tau and
+      Somers' D (References [2] section 4).
+
+    All the block sums come from one table of cumulative sums.
+    """
+    m, n = A.shape
+    # C[i, j] = A[:i, :j].sum()
+    C = np.zeros((m + 1, n + 1))
+    C[1:, 1:] = A.cumsum(axis=0).cumsum(axis=1)
+    upper_left = C[:-1, :-1]
+    upper_right = C[:-1, -1:] - C[:-1, 1:]
+    lower_left = C[-1:, :-1] - C[1:, :-1]
+    lower_right = C[-1, -1] - C[1:, -1:] - C[-1:, 1:] + C[1:, 1:]
+    Aij = upper_left + lower_right
+    Dij = lower_left + upper_right
+    return (A * Aij).sum(), (A * Dij).sum(), (A * (Aij - Dij)**2).sum()
+
+
 def _somers_d(A, alternative='two-sided'):
     """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
@@ -752,13 +775,12 @@ def _somers_d(A, alternative='two-sided'):
 
     NA = A.sum()
     NA2 = NA**2
-    PA = _P(A)
-    QA = _Q(A)
+    PA, QA, AD2 = _concordance_sums(A)
     Sri2 = (A.sum(axis=1)**2).sum()
 
     d = (PA - QA)/(NA2 - Sri2)
 
-    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
+    S = AD2 - (PA-QA)**2/NA
 
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5

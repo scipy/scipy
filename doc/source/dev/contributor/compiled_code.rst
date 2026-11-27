@@ -10,14 +10,14 @@ than Python that we have extra documentation for is :ref:`Cython<adding-cython>`
 
 *Can I use a programming language other than Python to speed up my code?*
 
-Yes. The languages used in SciPy are Python, Cython, Pythran, C, and C++.
+Yes. The languages used in SciPy are Python, Cython, C, and C++.
 All of these have their pros and cons. If Python really doesn't offer
 enough performance, one of those languages can be used. Important concerns when
 using compiled languages are maintainability and portability. For
-maintainability, Pythran and Cython are preferred over C/C++.
+maintainability, Cython is preferred over C/C++.
 
-Our basic advice is: use Pythran or Cython for accelerating smaller pieces of
-code. In cases where Pythran or Cython are no longer enough, prefer C or C++.
+Our basic advice is: use Cython for accelerating smaller pieces of code. In
+cases where Cython is no longer enough, prefer C or C++.
 SciPy no longer contains any Fortran code (the last of it was removed in SciPy
 2.0.0), and new Fortran code is not expected (see :ref:`toolchain-roadmap`).
 

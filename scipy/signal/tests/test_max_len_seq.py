@@ -5,6 +5,7 @@ from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from numpy.fft import fft, ifft
 
 from scipy.signal import max_len_seq
+from scipy.signal._max_len_seq_inner import _max_len_seq_inner
 
 
 class TestMLS:
@@ -25,6 +26,41 @@ class TestMLS:
         assert_raises(ValueError, max_len_seq, 64)
         # bad taps
         assert_raises(ValueError, max_len_seq, 10, taps=[-1, 1])
+
+    def test_inner_input_validation(self):
+        # The compiled loop indexes `state` with the taps and writes into
+        # `state` and `seq`, so it checks them itself.
+        state = np.ones(4, dtype=np.int8)
+        seq = np.empty(5, dtype=np.int8)
+        taps = np.array([3])
+        for bad_taps in ([-1], [5]):
+            assert_raises(ValueError, _max_len_seq_inner, np.array(bad_taps), state,
+                          4, 5, seq)
+        assert_raises(ValueError, _max_len_seq_inner, taps, state, 5, 5, seq)
+        assert_raises(ValueError, _max_len_seq_inner, taps, state, 4, 6, seq)
+        assert_raises(ValueError, _max_len_seq_inner, taps, state.astype(bool), 4, 5,
+                      seq)
+        assert_raises(ValueError, _max_len_seq_inner, taps, np.ones(8, np.int8)[::2],
+                      4, 5, seq)
+        readonly = np.ones(4, dtype=np.int8)
+        readonly.flags.writeable = False
+        assert_raises(ValueError, _max_len_seq_inner, taps, readonly, 4, 5, seq)
+
+    def test_taps_at_the_ends(self):
+        # Taps of 0 and nbits both tap the bit being replaced, so they cancel;
+        # compare against the definition of the shift register.
+        nbits, taps, length = 6, [6, 5, 0], 200
+        state = np.array([1, 0, 1, 1, 0, 1], dtype=np.int8)
+        seq, _ = max_len_seq(nbits, state=state, taps=taps, length=length)
+        ring = state.copy()
+        expected = np.empty(length, dtype=np.int8)
+        for i in range(length):
+            idx = i % nbits
+            expected[i] = feedback = ring[idx]
+            for t in sorted(set(taps), reverse=True):
+                feedback ^= ring[(t + idx) % nbits]
+            ring[idx] = feedback
+        xp_assert_equal(seq, expected)
 
     def test_mls_output(self):
         # define some alternate working taps

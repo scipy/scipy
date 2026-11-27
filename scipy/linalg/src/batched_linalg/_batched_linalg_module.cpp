@@ -17,6 +17,7 @@
 
 #include "scipy_blas_defines.h"
 #include "lapack_calls.hpp"
+#include "blas_calls.hpp"
 #include "wrapper_types.hpp"
 #include "_linalg_bandwidth.h"
 #include "_common_array_utils.hpp"
@@ -29,6 +30,7 @@
 #include "_linalg_qr.hpp"
 #include "_linalg_solve.hpp"
 #include "_linalg_svd.hpp"
+#include "_linalg_funm.hpp"
 
 
 using namespace sp_linalg;
@@ -1072,6 +1074,106 @@ _linalg_bandwidth(PyObject* Py_UNUSED(dummy), PyObject* args) {
 }
 
 
+/*
+ * Checks shared by _rsf2csf and _funm_parlett: two square arrays of the same shape, of type
+ * complex64 or complex128, aligned, in native byte order and F-contiguous; writeable where the
+ * kernel works in place. The Python layer prepares them so, but memory safety depends on it.
+ */
+static int
+_check_funm_pair(PyArrayObject *ap_a, PyArrayObject *ap_b, const bool b_writeable) {
+    const int typenum = PyArray_TYPE(ap_a);
+    if ((typenum != NPY_COMPLEX64 && typenum != NPY_COMPLEX128) || PyArray_TYPE(ap_b) != typenum) {
+        PyErr_SetString(PyExc_TypeError, "scipy.linalg.funm: Expected two arrays of type complex64 "
+                        "or complex128.");
+        return 0;
+    }
+    if (PyArray_NDIM(ap_a) != 2 || PyArray_NDIM(ap_b) != 2
+            || PyArray_DIM(ap_a, 0) != PyArray_DIM(ap_a, 1)
+            || PyArray_DIM(ap_b, 0) != PyArray_DIM(ap_a, 0)
+            || PyArray_DIM(ap_b, 1) != PyArray_DIM(ap_a, 1)) {
+        PyErr_SetString(PyExc_ValueError, "scipy.linalg.funm: Expected two square 2D arrays of the "
+                        "same shape.");
+        return 0;
+    }
+    if (!PyArray_ISBEHAVED_RO(ap_a) || !PyArray_ISBEHAVED_RO(ap_b) || !usable_in_place(ap_a)
+            || !PyArray_IS_F_CONTIGUOUS(ap_b) || (b_writeable && !PyArray_ISWRITEABLE(ap_b))) {
+        PyErr_SetString(PyExc_ValueError, "scipy.linalg.funm: Expected aligned, F-contiguous arrays "
+                        "in native byte order, writeable where they are modified.");
+        return 0;
+    }
+    return 1;
+}
+
+
+static PyObject*
+_linalg_rsf2csf(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_T = NULL, *ap_Z = NULL;
+    if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, (PyObject **)&ap_T,
+                          &PyArray_Type, (PyObject **)&ap_Z)) {
+        return NULL;
+    }
+    if (!_check_funm_pair(ap_T, ap_Z, true)) { return NULL; }
+    const int typenum = PyArray_TYPE(ap_T);
+    const npy_intp n = PyArray_DIM(ap_T, 0);
+
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) -> BatchStatus {
+        using C = decltype(tag);
+        if constexpr (!is_complex_v<C>) {
+            return {BatchCode::bad_dtype};
+        } else {
+            CBLAS_INT intn;
+            if (!checked_narrow(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
+            rsf2csf_inplace(static_cast<C *>(PyArray_DATA(ap_T)), static_cast<C *>(PyArray_DATA(ap_Z)),
+                            intn);
+            return {};
+        }
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "funm", typenum); }
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+_linalg_funm_parlett(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_F = NULL, *ap_T = NULL;
+    double minden = 0.0;
+    if (!PyArg_ParseTuple(args, "O!O!d", &PyArray_Type, (PyObject **)&ap_F,
+                          &PyArray_Type, (PyObject **)&ap_T, &minden)) {
+        return NULL;
+    }
+    if (!_check_funm_pair(ap_F, ap_T, false)) { return NULL; }
+    const int typenum = PyArray_TYPE(ap_F);
+    const npy_intp n = PyArray_DIM(ap_F, 0);
+
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) -> BatchStatus {
+        using C = decltype(tag);
+        if constexpr (!is_complex_v<C>) {
+            return {BatchCode::bad_dtype};
+        } else {
+            using R = real_of_t<C>;
+            CBLAS_INT intn;
+            if (!checked_narrow(n, &intn)) { return {BatchCode::too_large, nullptr, n}; }
+            Workspace<C> work = alloc_workspace<C>(2 * static_cast<std::uint64_t>(n));
+            // T is only read; the BLAS prototypes take it as a non-const pointer.
+            minden = static_cast<double>(funm_parlett(
+                static_cast<C *>(PyArray_DATA(ap_F)), static_cast<C *>(PyArray_DATA(ap_T)), intn,
+                static_cast<R>(minden), work.get()));
+            return {};
+        }
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "funm", typenum); }
+
+    return PyFloat_FromDouble(minden);
+}
+
+
 static char doc_det[] = (
     "_linalg_det(a, overwrite_a, /)\n"
     "\n"
@@ -1150,6 +1252,48 @@ static char doc_eigh[] = ("eigenvalue solver for symmetric/hermitian matrices.")
 static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
 
+static char doc_rsf2csf[] = (
+    "_rsf2csf(T, Z, /)\n"
+    "\n"
+    "Convert a real Schur form to the complex Schur form, in place.\n"
+    "\n"
+    "The algorithm of `rsf2csf`, for the output of ?gees cast to complex: a 2x2\n"
+    "block on the diagonal of T is marked by a nonzero subdiagonal entry. The\n"
+    "rotations come from ?lartg, with a real cosine, so T and Z can differ from\n"
+    "those of `rsf2csf` by a diagonal unitary similarity.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "T : (N, N) ndarray\n"
+    "    Quasi upper triangular real Schur form, F-contiguous and writeable, of\n"
+    "    type complex64 or complex128. Upper triangular on exit.\n"
+    "Z : (N, N) ndarray\n"
+    "    Orthogonal Schur vectors, likewise. Unitary on exit.\n"
+);
+
+static char doc_funm_parlett[] = (
+    "_funm_parlett(F, T, minden, /)\n"
+    "\n"
+    "Compute F = f(T) for an upper triangular T with the Parlett recurrence.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "F : (N, N) ndarray\n"
+    "    F-contiguous and writeable, of type complex64 or complex128. On entry its\n"
+    "    diagonal holds f of the diagonal of T, on exit its strict upper triangle\n"
+    "    that of f(T).\n"
+    "T : (N, N) ndarray\n"
+    "    Upper triangular and F-contiguous, of the same type; the lower triangle is\n"
+    "    not read.\n"
+    "minden : float\n"
+    "    Starting value of the minimum below.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "minden : float\n"
+    "    The minimum of `minden` and of |T[j, j] - T[i, i]| over all i < j.\n"
+);
+
 static struct PyMethodDef module_methods[] = {
   {"_bandwidth", _linalg_bandwidth, METH_VARARGS, doc_bandwidth},
   {"_det", _linalg_det, METH_VARARGS, doc_det},
@@ -1162,6 +1306,8 @@ static struct PyMethodDef module_methods[] = {
   {"_eigh", _linalg_eigh, METH_VARARGS, doc_eigh},
   {"_cholesky", _linalg_cholesky, METH_VARARGS, doc_cholesky},
   {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
+  {"_rsf2csf", _linalg_rsf2csf, METH_VARARGS, doc_rsf2csf},
+  {"_funm_parlett", _linalg_funm_parlett, METH_VARARGS, doc_funm_parlett},
   {NULL, NULL, 0, NULL}
 };
 
