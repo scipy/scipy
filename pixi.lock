@@ -2,7 +2,7 @@ version: 7
 platforms:
 - name: linux-64
   virtual-packages:
-  - __unix=0=0
+  - __unix=0
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=x86_64
@@ -10,7 +10,7 @@ platforms:
   subdir: linux-64
   virtual-packages:
   - __cuda=12.9
-  - __unix=0=0
+  - __unix=0
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=x86_64
@@ -18,19 +18,19 @@ platforms:
   subdir: linux-64
   virtual-packages:
   - __cuda=13.0
-  - __unix=0=0
+  - __unix=0
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=x86_64
 - name: linux-aarch64
   virtual-packages:
-  - __unix=0=0
+  - __unix=0
   - __linux=4.18
   - __glibc=2.28
   - __archspec=0=aarch64
 - name: osx-arm64
   virtual-packages:
-  - __unix=0=0
+  - __unix=0
   - __osx=13.0
   - __archspec=0=m1
 - name: win-64
@@ -1663,7 +1663,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/urllib3-2.8.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/zipp-4.1.2-pyh5ded981_0.conda
-      - conda_source: gmpy2[dc1a0117] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+      - conda_source: gmpy2[c7516ced] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
       - conda_source: numpy[00fdbaab] @ git+https://github.com/lucascolley/numpy?subdirectory=pixi-packages%2Fasan&rev=553a4620011c9301d6d66185766fbf76921c564b#553a4620011c9301d6d66185766fbf76921c564b
       - conda_source: python[831f9981] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
       - conda_source: python_abi[2184d6b7] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
@@ -1786,7 +1786,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/urllib3-2.8.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/zipp-4.1.2-pyh5ded981_0.conda
-      - conda_source: gmpy2[58327e8b] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+      - conda_source: gmpy2[880c97f3] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
       - conda_source: numpy[53fa41c2] @ git+https://github.com/lucascolley/numpy?subdirectory=pixi-packages%2Fasan&rev=553a4620011c9301d6d66185766fbf76921c564b#553a4620011c9301d6d66185766fbf76921c564b
       - conda_source: python[1614bfe5] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
       - conda_source: python_abi[237ad1b3] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
@@ -1904,7 +1904,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/tapi-1600.0.11.8-hb561403_4.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/xxhash-0.8.3-h579eaed_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-      - conda_source: gmpy2[9c075789] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+      - conda_source: gmpy2[f9bf06d0] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
       - conda_source: numpy[d01bb1f6] @ git+https://github.com/lucascolley/numpy?subdirectory=pixi-packages%2Fasan&rev=553a4620011c9301d6d66185766fbf76921c564b#553a4620011c9301d6d66185766fbf76921c564b
       - conda_source: python[4426c33c] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
       - conda_source: python_abi[2d37723d] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
@@ -54379,7 +54379,7 @@ packages:
     - zstd >=1.5.7,<1.6.0a0
   size: 387535
   timestamp: 1786599623274
-- conda_source: gmpy2[58327e8b] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+- conda_source: gmpy2[880c97f3] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
   version: 2.3.1
   build: h88a2446_0
   subdir: linux-aarch64
@@ -54465,92 +54465,7 @@ packages:
   - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
   - conda: https://prefix.dev/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
   - conda_source: python[1614bfe5] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
-- conda_source: gmpy2[9c075789] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
-  version: 2.3.1
-  build: h183b68d_0
-  subdir: osx-arm64
-  variants:
-    c_compiler: clang
-    c_compiler_version: '22'
-    c_stdlib: macosx_deployment_target
-    c_stdlib_version: '13.0'
-    target_platform: osx-arm64
-  depends:
-  - __osx >=13.0
-  - gmp >=6.3.0,<7.0a0
-  - mpc >=1.4.0,<2.0a0
-  - mpfr >=4.2.2,<5.0a0
-  - python >=3.9
-  - python_abi 3.15.* *_asan_cp315
-  license: LGPL-3.0-or-later
-  source_depends:
-    python:
-      git: https://github.com/lucascolley/cpython
-      rev: aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
-      subdirectory: Tools/pixi-packages
-    python_abi:
-      git: https://github.com/lucascolley/cpython
-      rev: aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
-      subdirectory: Tools/pixi-packages
-  build_packages:
-  - conda: https://prefix.dev/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/compiler-rt22_osx-arm64-22.1.8-hb8825d9_2.conda
-  - conda: https://prefix.dev/conda-forge/noarch/compiler-rt_osx-arm64-22.1.8-hce30654_2.conda
-  - conda: https://prefix.dev/conda-forge/noarch/macosx_deployment_target_osx-arm64-13.0-h95484f9_7.conda
-  - conda: https://prefix.dev/conda-forge/noarch/sdkroot_env_osx-arm64-26.0-ha3f98da_7.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/cctools_impl_osx-arm64-1030.6.3-llvm22_1_he9db816_6.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/cctools_osx-arm64-1030.6.3-llvm22_1_hbe26303_6.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/clang-22-22.1.8-default_hd876229_11.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/clang_impl_osx-arm64-22.1.8-default_h79071a4_11.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/clang_osx-arm64-22.1.8-hc95f77d_34.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/compiler-rt-22.1.8-hce30654_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/compiler-rt22-22.1.8-hdb3d66b_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/ld64_osx-arm64-956.6-llvm22_1_hf30805f_6.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libclang-cpp22.1-22.1.8-default_h79071a4_11.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libcompiler-rt-22.1.8-hdb3d66b_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libcxx-23.1.4-h55c6f16_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libiconv-1.18-he4c29f2_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libllvm22-22.1.8-h759d1ac_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/liblzma-5.8.3-h8088a28_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libsigtool-0.1.3-h98dc951_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libxml2-16-2.15.4-heb56d2d_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libxml2-2.15.4-h550178d_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libzlib-1.3.2-h8088a28_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/llvm-tools-22-22.1.8-h79441dc_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/llvm-tools-22.1.8-hdb3d66b_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/ncurses-6.6-he64c551_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/openssl-3.6.5-h55eecbc_0.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/sigtool-codesign-0.1.3-h98dc951_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/tapi-1600.0.11.8-hb561403_4.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-  host_packages:
-  - conda: https://prefix.dev/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/setuptools-79.0.1-pyhff2d567_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/setuptools-scm-10.3.4-pyh5ded981_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/tomli-2.5.0-pyh5ded981_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
-  - conda: https://prefix.dev/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/bzip2-1.0.8-h4e30115_10.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/gmp-6.3.0-hf5e55b1_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libcompiler-rt-22.1.8-hdb3d66b_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libcxx-23.1.4-h55c6f16_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libexpat-2.8.5-h6111c0a_0.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libffi-3.7.0-h47dc5ef_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/liblzma-5.8.3-h8088a28_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libmpdec-4.0.0-h84a0fba_2.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libsqlite-3.54.1-h34a968b_100.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/libzlib-1.3.2-h8088a28_3.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/mpc-1.4.0-h071a35a_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/mpfr-4.2.2-h72846b0_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/ncurses-6.6-he64c551_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/openssl-3.6.5-h55eecbc_0.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/readline-8.3-h8b90a29_1.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/uv-0.13.5-hbb8eed7_0.conda
-  - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-  - conda_source: python[4426c33c] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
-- conda_source: gmpy2[dc1a0117] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+- conda_source: gmpy2[c7516ced] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
   version: 2.3.1
   build: h0761cbe_0
   subdir: linux-64
@@ -54637,6 +54552,91 @@ packages:
   - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
   - conda: https://prefix.dev/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
   - conda_source: python[831f9981] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
+- conda_source: gmpy2[f9bf06d0] @ git+https://github.com/gmpy2/gmpy2?rev=49b9de3b07421d621cd04e1a4c1acb1382940d77#49b9de3b07421d621cd04e1a4c1acb1382940d77
+  version: 2.3.1
+  build: h183b68d_0
+  subdir: osx-arm64
+  variants:
+    c_compiler: clang
+    c_compiler_version: '22'
+    c_stdlib: macosx_deployment_target
+    c_stdlib_version: '13.0'
+    target_platform: osx-arm64
+  depends:
+  - __osx >=13.0
+  - gmp >=6.3.0,<7.0a0
+  - mpc >=1.4.0,<2.0a0
+  - mpfr >=4.2.2,<5.0a0
+  - python >=3.9
+  - python_abi 3.15.* *_asan_cp315
+  license: LGPL-3.0-or-later
+  source_depends:
+    python:
+      git: https://github.com/lucascolley/cpython
+      rev: aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
+      subdirectory: Tools/pixi-packages
+    python_abi:
+      git: https://github.com/lucascolley/cpython
+      rev: aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
+      subdirectory: Tools/pixi-packages
+  build_packages:
+  - conda: https://prefix.dev/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/compiler-rt22_osx-arm64-22.1.8-hb8825d9_2.conda
+  - conda: https://prefix.dev/conda-forge/noarch/compiler-rt_osx-arm64-22.1.8-hce30654_2.conda
+  - conda: https://prefix.dev/conda-forge/noarch/macosx_deployment_target_osx-arm64-13.0-h95484f9_7.conda
+  - conda: https://prefix.dev/conda-forge/noarch/sdkroot_env_osx-arm64-26.0-ha3f98da_7.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/cctools_impl_osx-arm64-1030.6.3-llvm22_1_he9db816_6.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/cctools_osx-arm64-1030.6.3-llvm22_1_hbe26303_6.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/clang-22-22.1.8-default_hd876229_11.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/clang_impl_osx-arm64-22.1.8-default_h79071a4_11.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/clang_osx-arm64-22.1.8-hc95f77d_34.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/compiler-rt-22.1.8-hce30654_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/compiler-rt22-22.1.8-hdb3d66b_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/ld64_osx-arm64-956.6-llvm22_1_hf30805f_6.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libclang-cpp22.1-22.1.8-default_h79071a4_11.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libcompiler-rt-22.1.8-hdb3d66b_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libcxx-23.1.4-h55c6f16_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libiconv-1.18-he4c29f2_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libllvm22-22.1.8-h759d1ac_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/liblzma-5.8.3-h8088a28_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libsigtool-0.1.3-h98dc951_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libxml2-16-2.15.4-heb56d2d_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libxml2-2.15.4-h550178d_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libzlib-1.3.2-h8088a28_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/llvm-tools-22-22.1.8-h79441dc_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/llvm-tools-22.1.8-hdb3d66b_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/ncurses-6.6-he64c551_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/openssl-3.6.5-h55eecbc_0.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/sigtool-codesign-0.1.3-h98dc951_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/tapi-1600.0.11.8-hb561403_4.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
+  host_packages:
+  - conda: https://prefix.dev/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/packaging-26.3-pyhc364b38_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/setuptools-79.0.1-pyhff2d567_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/setuptools-scm-10.3.4-pyh5ded981_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/tomli-2.5.0-pyh5ded981_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
+  - conda: https://prefix.dev/conda-forge/noarch/vcs_versioning-2.6.0-pyh5ded981_0.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/bzip2-1.0.8-h4e30115_10.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/gmp-6.3.0-hf5e55b1_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libcompiler-rt-22.1.8-hdb3d66b_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libcxx-23.1.4-h55c6f16_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libexpat-2.8.5-h6111c0a_0.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libffi-3.7.0-h47dc5ef_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/liblzma-5.8.3-h8088a28_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libmpdec-4.0.0-h84a0fba_2.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libsqlite-3.54.1-h34a968b_100.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/libzlib-1.3.2-h8088a28_3.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/mpc-1.4.0-h071a35a_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/mpfr-4.2.2-h72846b0_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/ncurses-6.6-he64c551_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/openssl-3.6.5-h55eecbc_0.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/readline-8.3-h8b90a29_1.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/uv-0.13.5-hbb8eed7_0.conda
+  - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
+  - conda_source: python[4426c33c] @ git+https://github.com/lucascolley/cpython?subdirectory=Tools%2Fpixi-packages&rev=aa372d05e1e6ab3f1b16f4e13841b347f5b37e89#aa372d05e1e6ab3f1b16f4e13841b347f5b37e89
 - conda_source: numpy[00fdbaab] @ git+https://github.com/lucascolley/numpy?subdirectory=pixi-packages%2Fasan&rev=553a4620011c9301d6d66185766fbf76921c564b#553a4620011c9301d6d66185766fbf76921c564b
   version: 2.6.0.dev0
   build: hb72ac8c_0

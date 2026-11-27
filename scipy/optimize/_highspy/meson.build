@@ -1,10 +1,3 @@
-fs = import('fs')
-if not fs.exists('../../../subprojects/highs/README.md')
-    error(
-        'Missing the `highs` submodule! Run `git submodule update --init` to fix this.',
-    )
-endif
-
 highs_opts = {
     'default_library': 'static',
     'with_pybind11': false,  # We don't want to build and install highspy
