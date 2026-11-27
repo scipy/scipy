@@ -45,10 +45,14 @@ _IS_32BIT = (sys.maxsize < 2**32)
 # Entries sorted by speed (very slow to slow).
 # xslow took > 1s; slow took > 0.5s
 
-xslow_test_cont_basic = {'studentized_range', 'kstwo', 'ksone', 'vonmises', 'kappa4',
-                         'recipinvgauss', 'vonmises_line', 'gausshyper',
-                         'rel_breitwigner', 'norminvgauss'}
-slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
+# test_cont_basic: the cheap checks (method consistency, support, dtypes, ...)
+xslow_test_cont_basic = {'studentized_range'}
+slow_test_cont_basic = {'norminvgauss'}
+# test_cont_basic_expensive: sampling, stats, entropy and named arguments
+# (which call `moment`).
+xslow_test_cont_basic_expensive = {'studentized_range', 'kstwo', 'ksone',
+                                   'recipinvgauss', 'kappa4'}
+slow_test_cont_basic_expensive = {'gausshyper'}
 
 # test_moments is already marked slow
 xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
@@ -113,35 +117,48 @@ for (a, bins), density in itertools.product([case1, case2], [True, False]):
     histogram_test_instances.append((_rv_hist, tuple()))
 
 
-def cases_test_cont_basic():
+def cases_test_cont_basic(slow, xslow):
     for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':  # fails; tested separately
             continue
-        if distname in slow_test_cont_basic:
+        if distname in slow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
-        elif distname in xslow_test_cont_basic:
+        elif distname in xslow:
             yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
 
-@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic()))
-@pytest.mark.parametrize('sn', [500])
-def test_cont_basic(distname, arg, sn, num_parallel_threads):
+def _cont_basic_dist(distname):
+    # cases_test_cont_basic yields rv_histogram instances in place of names
     try:
-        distfn = getattr(stats, distname)
+        return getattr(stats, distname), distname
     except TypeError:
-        distfn = distname
-        distname = 'rv_histogram_instance'
+        return distname, 'rv_histogram_instance'
 
-    rng = np.random.default_rng(7654565)
-    rvs = distfn.rvs(size=sn, *arg, random_state=rng)
-    m, v = distfn.stats(*arg)
 
-    if distname not in {'laplace_asymmetric'}:
-        # TODO: multiple checks in this function are not robust, tweaking the
-        # seed above will make different distributions fail.
-        check_sample_meanvar_(m, v, rvs, rng)
+def _cont_basic_args(distname, arg):
+    # shape arguments used by the checks after the method consistency checks
+    if distname == 'invweibull':
+        return (1,)
+    elif distname == 'ksone':
+        return (3,)
+    return arg
+
+
+def _cont_basic_meths(distfn):
+    return [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+            distfn.logsf]
+
+
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(
+    slow_test_cont_basic, xslow_test_cont_basic)))
+def test_cont_basic(distname, arg, num_parallel_threads):
+    # The checks that are generally cheap for distributions. The ones that are
+    # expensive for some (sampling, stats, entropy, named arguments) are in
+    # test_cont_basic_expensive, so that they can be marked slow separately.
+    distfn, distname = _cont_basic_dist(distname)
+
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_cdf_sf(distfn, arg, distname)
@@ -153,28 +170,7 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
 
-    alpha = 0.01
-    if distname == 'rv_histogram_instance':
-        check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-    elif distname != 'geninvgauss':
-        # skip kstest for geninvgauss since cdf is too slow; see test for
-        # rv generation in TestGenInvGauss in test_distributions.py
-        check_distribution_rvs(distname, arg, alpha, rvs)
-
-    locscale_defaults = (0, 1)
-    meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-             distfn.logsf]
-    # make sure arguments are within support
-    spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
-              'rv_histogram_instance': 5.0}
-    x = spec_x.get(distname, 0.5)
-    if distname == 'invweibull':
-        arg = (1,)
-    elif distname == 'ksone':
-        arg = (3,)
-
-    check_named_args(distfn, x, arg, locscale_defaults, meths)
+    arg = _cont_basic_args(distname, arg)
     if num_parallel_threads == 1:
         check_random_state_property(distfn, arg)
 
@@ -184,6 +180,58 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
         else:
             check_pickling(distfn, arg)
     check_freezing(distfn, arg)
+
+    check_retrieving_support(distfn, arg)
+    check_edge_support(distfn, arg)
+
+    meths = _cont_basic_meths(distfn)
+    check_meth_dtype(distfn, arg, meths)
+    check_ppf_dtype(distfn, arg)
+
+    # complex special functions known to fail on sparc64 (gh-22577)
+    if distname not in fails_cmplx and platform.machine() != 'sparc64':
+        check_cmplx_deriv(distfn, arg)
+
+    if distname != 'truncnorm':
+        check_ppf_private(distfn, arg, distname)
+
+
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(
+    slow_test_cont_basic_expensive, xslow_test_cont_basic_expensive)))
+@pytest.mark.parametrize('sn', [500])
+def test_cont_basic_expensive(distname, arg, sn):
+    # The checks of test_cont_basic that are expensive for some distributions:
+    # sampling (sample moments, KS test), stats, entropy (numerical
+    # integration) and named arguments (`check_named_args` calls `moment`,
+    # which integrates numerically if there is no closed form).
+    distfn, distname = _cont_basic_dist(distname)
+
+    rng = np.random.default_rng(7654565)
+    rvs = distfn.rvs(size=sn, *arg, random_state=rng)
+    m, v = distfn.stats(*arg)
+
+    if distname not in {'laplace_asymmetric'}:
+        # TODO: multiple checks in this function are not robust, tweaking the
+        # seed above will make different distributions fail.
+        check_sample_meanvar_(m, v, rvs, rng)
+
+    alpha = 0.01
+    if distname == 'rv_histogram_instance':
+        check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+    elif distname != 'geninvgauss':
+        # skip kstest for geninvgauss since cdf is too slow; see test for
+        # rv generation in TestGenInvGauss in test_distributions.py
+        check_distribution_rvs(distname, arg, alpha, rvs)
+
+    locscale_defaults = (0, 1)
+    # make sure arguments are within support
+    spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
+              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
+              'rv_histogram_instance': 5.0}
+    x = spec_x.get(distname, 0.5)
+    arg = _cont_basic_args(distname, arg)
+    check_named_args(distfn, x, arg, locscale_defaults,
+                     _cont_basic_meths(distfn))
 
     # Entropy
     if distname not in ['kstwobign', 'kstwo', 'ncf']:
@@ -202,19 +250,6 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
         warnings.filterwarnings("ignore", "Extremely bad integrand", IntegrationWarning)
         warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
         check_entropy_vect_scale(distfn, arg)
-
-    check_retrieving_support(distfn, arg)
-    check_edge_support(distfn, arg)
-
-    check_meth_dtype(distfn, arg, meths)
-    check_ppf_dtype(distfn, arg)
-
-    # complex special functions known to fail on sparc64 (gh-22577)
-    if distname not in fails_cmplx and platform.machine() != 'sparc64':
-        check_cmplx_deriv(distfn, arg)
-
-    if distname != 'truncnorm':
-        check_ppf_private(distfn, arg, distname)
 
 
 def cases_test_cont_basic_fit():
@@ -278,8 +313,10 @@ def test_cont_basic_fit(distname, arg, n_fit_samples, method, fix_args):
     else:
         check_fit_args(distfn, arg, rvs, method)
 
-@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic()))
+@pytest.mark.parametrize('distname,arg', list(cases_test_cont_basic(set(), set())))
 def test_rvs_scalar(distname, arg):
+    # A single variate per call, so this is fast for every distribution
+    # (< 0.2s for studentized_range, the slowest) and none are marked slow.
     # rvs should return a scalar when given scalar arguments (gh-12428)
     try:
         distfn = getattr(stats, distname)

@@ -823,6 +823,7 @@ class MyValue:
         raise RuntimeError("No array representation")
 
 
+@make_xp_test_case(interpn)
 class TestInterpN:
     def _sample_2d_data(self):
         x = np.array([.5, 2., 3., 4., 5.5, 6.])
@@ -863,6 +864,17 @@ class TestInterpN:
             (x.tolist(), y.tolist()), z.tolist(), xi.tolist(), method=method
         )
         xp_assert_close(v1, v2, err_msg=method)
+
+    def test_matches_rgi(self, xp):
+        x, y, z = self._sample_2d_data()
+        points = (xp.asarray(x), xp.asarray(y))
+        values = xp.asarray(z)
+        xi = xp.asarray([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                         [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        v = interpn(points, values, xi, method="linear", bounds_error=False)
+        rgi = RegularGridInterpolator(points, values, method="linear",
+                                      bounds_error=False)
+        xp_assert_close(v, rgi(xi))
 
     def test_spline_2d_outofbounds(self):
         x = np.array([.5, 2., 3., 4., 5.5])

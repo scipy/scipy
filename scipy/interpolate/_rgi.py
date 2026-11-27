@@ -655,6 +655,15 @@ class RegularGridInterpolator:
         return out_of_bounds
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/scipy/scipy/issues/24205")
+    ],
+    extra_note='``method="splinef2d"`` uses FITPACK and supports '
+               'NumPy arrays only.',
+)
 def interpn(points, values, xi, method="linear", bounds_error=True,
             fill_value=np.nan):
     """
