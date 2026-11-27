@@ -4,9 +4,9 @@ from copy import deepcopy
 import numpy as np
 import pytest
 from numpy.linalg import norm
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less)
-from scipy.optimize import (BFGS, SR1)
+from numpy.testing import (TestCase, assert_array_equal, assert_array_less,
+                           assert_allclose)
+from scipy.optimize import (BFGS, SR1, LBFGS, minimize)
 
 
 class Rosenbrock:
@@ -17,7 +17,7 @@ class Rosenbrock:
     """
 
     def __init__(self, n=2, random_state=0):
-        rng = np.random.RandomState(random_state)
+        rng = np.random.default_rng(random_state)
         self.x0 = rng.uniform(-1, 1, n)
         self.x_opt = np.ones(n)
 
@@ -199,7 +199,7 @@ class TestHessianUpdateStrategy(TestCase):
                 raise ArithmeticError()
         # Define QuasiNewton update
         for quasi_newton in (BFGS(init_scale=1, min_curvature=1e-4),
-                             SR1(init_scale=1)):
+                             SR1(init_scale=1), LBFGS(memory=40, init_scale=1)):
             hess = deepcopy(quasi_newton)
             inv_hess = deepcopy(quasi_newton)
             hess.initialize(len(x_list[0]), 'hess')
@@ -210,7 +210,7 @@ class TestHessianUpdateStrategy(TestCase):
                 inv_hess.update(s, y)
                 B = hess.get_matrix()
                 H = inv_hess.get_matrix()
-                assert_array_almost_equal(np.linalg.inv(B), H, decimal=10)
+                assert_allclose(np.linalg.inv(B), H, rtol=1e-9, atol=1e-10)
             B_true = prob.hess(x_list[len(delta_x)])
             assert_array_less(norm(B - B_true)/norm(B_true), 0.1)
 
@@ -291,10 +291,382 @@ class TestHessianUpdateStrategy(TestCase):
         assert_array_equal(B, B_updated)
 
 
-@pytest.mark.parametrize('strategy', [BFGS, SR1])
+@pytest.mark.parametrize('strategy', [BFGS, SR1, LBFGS])
 @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
 def test_matmul_equals_dot(strategy, approx_type):
     H = strategy(init_scale=1)
     H.initialize(2, approx_type)
     v = np.array([1, 2])
     assert_array_equal(H @ v, H.dot(v))
+
+
+class TestLBFGS:
+    """Tests for the limited-memory BFGS Hessian update strategy."""
+
+    @pytest.mark.parametrize('memory', [1, 3, 10])
+    @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+    @pytest.mark.parametrize('init_scale', [2.0, 'auto'])
+    def test_dense_chronological_replay(self, memory, approx_type, init_scale):
+        rng = np.random.default_rng(42)
+        n = 5
+        a = self._spd(n, 23)
+        qn = LBFGS(memory=memory, init_scale=init_scale)
+        qn.initialize(n, approx_type)
+        pairs = []
+        auto_scale = None
+        for _ in range(memory + 5):
+            s = rng.normal(size=n)
+            y = a @ s
+            qn.update(s, y)
+            pairs.append((s, y))
+            pairs = pairs[-memory:]
+            if init_scale == 'auto':
+                if auto_scale is None:
+                    auto_scale = (y @ y) / (s @ y)
+                scale = auto_scale
+                if approx_type == 'inv_hess':
+                    scale = 1 / scale
+            else:
+                scale = init_scale
+            expected = scale * np.eye(n)
+            for step, grad in pairs:
+                curvature = step @ grad
+                if approx_type == 'hess':
+                    bs = expected @ step
+                    expected += (np.outer(grad, grad) / curvature
+                                 - np.outer(bs, bs) / (step @ bs))
+                else:
+                    v = np.eye(n) - np.outer(step, grad) / curvature
+                    expected = (v @ expected @ v.T
+                                + np.outer(step, step) / curvature)
+            actual = qn.get_matrix()
+            assert_allclose(actual, expected, rtol=2e-11, atol=2e-11)
+            assert_allclose(actual, actual.T, rtol=1e-12, atol=1e-12)
+            assert np.linalg.eigvalsh(actual).min() > 0
+            argument, target = (s, y) if approx_type == 'hess' else (y, s)
+            assert_allclose(qn.dot(argument), target, rtol=2e-11, atol=2e-11)
+            v = rng.normal(size=n)
+            assert_allclose(qn.dot(v), expected @ v, rtol=2e-11, atol=2e-11)
+
+    @pytest.mark.parametrize('memory', [1, 3, 10])
+    def test_inverse_consistency_after_eviction(self, memory):
+        hess, inv = LBFGS(memory=memory), LBFGS(memory=memory)
+        hess.initialize(5, 'hess')
+        inv.initialize(5, 'inv_hess')
+        rng = np.random.default_rng(16)
+        a = self._spd(5, 21)
+        for _ in range(memory + 5):
+            s = rng.normal(size=5)
+            for qn in (hess, inv):
+                qn.update(s, a @ s)
+            assert_allclose(hess.get_matrix() @ inv.get_matrix(), np.eye(5),
+                            rtol=2e-10, atol=2e-10)
+
+    @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+    def test_copy_reinitialize_and_skipped_pairs(self, approx_type):
+        qn = LBFGS(memory=3, init_scale=2)
+        control = LBFGS(memory=3, init_scale=2)
+        for obj in (qn, control):
+            obj.initialize(5, approx_type)
+        rng = np.random.default_rng(20)
+        a = self._spd(5, 12)
+        for _ in range(4):
+            s = rng.normal(size=5)
+            y = a @ s
+            control.update(s.copy(), y.copy())
+            qn.update(s, y)
+            s[:] = 999
+            y[:] = -999
+        before = qn.get_matrix().copy()
+        assert_allclose(before, control.get_matrix(), rtol=1e-12, atol=1e-12)
+        s = rng.normal(size=5)
+        qn.update(s, -s)
+        qn.update(np.zeros(5), s)
+        with pytest.warns(UserWarning, match='delta_grad == 0.0'):
+            qn.update(s, np.zeros(5))
+        assert_array_equal(qn.get_matrix(), before)
+        # A subsequent accepted pair detects eviction by a skipped pair.
+        for obj in (qn, control):
+            obj.update(s, a @ s)
+        assert_allclose(qn.get_matrix(), control.get_matrix(),
+                        rtol=1e-12, atol=1e-12)
+        qn.initialize(3, approx_type)
+        fresh = LBFGS(memory=3, init_scale=2)
+        fresh.initialize(3, approx_type)
+        assert_array_equal(qn.get_matrix(), fresh.get_matrix())
+        for obj in (qn, fresh):
+            obj.update(np.ones(3), np.arange(1., 4.))
+        assert_allclose(qn.get_matrix(), fresh.get_matrix(),
+                        rtol=1e-12, atol=1e-12)
+
+    def test_inverse_does_not_compute_w(self, monkeypatch):
+        qn = LBFGS(memory=3)
+        qn.initialize(5, 'inv_hess')
+
+        def forbidden(*args, **kwargs):
+            raise AssertionError('inverse mode computed Hessian products')
+
+        monkeypatch.setattr(qn, '_apply', forbidden)
+        rng = np.random.default_rng(3)
+        for _ in range(8):
+            s = rng.normal(size=5)
+            qn.update(s, 2 * s)
+            assert np.isfinite(qn.dot(s)).all()
+        assert len(qn._w) == 0
+
+    @pytest.mark.parametrize('failure', ['new_factor', 'rebuild'])
+    def test_recovery_keeps_current_pair(self, monkeypatch, failure):
+        qn = LBFGS(memory=2, init_scale=2)
+        qn.initialize(3, 'hess')
+        qn.update(np.array([1., 0., 0.]), np.array([3., 1., 0.]))
+        if failure == 'rebuild':
+            qn.update(np.array([0., 1., 0.]), np.array([1., 4., 0.]))
+            monkeypatch.setattr(qn, '_rebuild', lambda: False)
+        else:
+            apply = qn._apply
+
+            def failed_factor(s, y, w, vector):
+                if s:
+                    return -vector
+                return apply(s, y, w, vector)
+
+            monkeypatch.setattr(qn, '_apply', failed_factor)
+        s = np.array([1., 1., 1.])
+        y = np.array([3., 4., 5.])
+        qn.update(s, y)
+        fresh = LBFGS(init_scale=2)
+        fresh.initialize(3, 'hess')
+        fresh.update(s, y)
+        # Compare public results after removing the injected failure.
+        monkeypatch.undo()
+        assert_allclose(qn.get_matrix(), fresh.get_matrix(),
+                        rtol=1e-12, atol=1e-12)
+
+    @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+    def test_auto_scale_is_not_refreshed(self, approx_type):
+        qn = LBFGS(memory=1)
+        qn.initialize(2, approx_type)
+        qn.update(np.array([1., 0.]), np.array([2., 0.]))
+        qn.update(np.array([0., 1.]), np.array([0., 100.]))
+        expected = 2. if approx_type == 'hess' else 0.5
+        assert_allclose(qn.dot(np.array([1., 0.])), [expected, 0.])
+
+    def test_severe_cancellation_keeps_curvature(self):
+        # With base I, the pairs below have exact result diag(2, 1).  A
+        # dense stored matrix loses the second diagonal entry to
+        # cancellation; the factored evaluation over retained pairs must
+        # preserve it.
+        qn = LBFGS(init_scale=1)
+        qn.initialize(2, 'hess')
+        qn.update(np.array([1., 0.]), np.array([1., 1e8]))
+        qn.update(np.array([1., 0.]), np.array([2., 0.]))
+        assert_allclose(qn.get_matrix(), np.diag([2., 1.]),
+                        rtol=1e-12, atol=1e-12)
+        # A subsequent pair in the weakened direction is accepted and
+        # satisfies its secant equation.
+        s = np.array([0., 1.])
+        y = np.array([0., 3.])
+        qn.update(s, y)
+        assert_allclose(qn.dot(s), y, rtol=1e-12, atol=1e-12)
+        assert np.linalg.eigvalsh(qn.get_matrix()).min() > 0
+
+    @pytest.mark.parametrize('memory', [0, -1, 1.5, True, '3', np.nan, np.inf])
+    def test_invalid_memory(self, memory):
+        with pytest.raises((TypeError, ValueError)):
+            LBFGS(memory=memory)
+
+    @pytest.mark.parametrize('scale', [0, -1, np.nan, np.inf, -np.inf,
+                                       1j, 'invalid', np.eye(2)])
+    def test_invalid_scale(self, scale):
+        with pytest.raises((TypeError, ValueError)):
+            qn = LBFGS(init_scale=scale)
+            qn.initialize(5, 'hess')
+            qn.update(np.ones(5), np.ones(5))
+
+    @pytest.mark.parametrize('n', [0, -1, 1.5, True, '5'])
+    def test_invalid_dimension(self, n):
+        with pytest.raises((TypeError, ValueError)):
+            LBFGS().initialize(n, 'hess')
+
+    def test_invalid_approximation(self):
+        with pytest.raises(ValueError):
+            LBFGS().initialize(5, 'invalid')
+
+    @pytest.mark.parametrize('bad', [np.ones(4), np.ones((5, 1)), 1.,
+                                     np.full(5, np.nan), np.full(5, np.inf),
+                                     np.ones(5, dtype=complex) * (1 + 1j)])
+    @pytest.mark.parametrize('operation', ['step', 'gradient', 'dot'])
+    @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+    def test_invalid_vectors(self, bad, operation, approx_type):
+        qn = LBFGS()
+        qn.initialize(5, approx_type)
+        if operation == 'dot' and np.shape(bad) == (5, 1):
+            # SciPy's trust-region solvers also pass column vectors.
+            assert qn.dot(bad).shape == (5, 1)
+            return
+        with pytest.raises((TypeError, ValueError)):
+            if operation == 'dot':
+                qn.dot(bad)
+            elif operation == 'step':
+                qn.update(bad, np.ones(5))
+            else:
+                qn.update(np.ones(5), bad)
+
+    def _spd(self, n, seed):
+        rng = np.random.default_rng(seed)
+        a = rng.standard_normal((n, n))
+        return a @ a.T + n * np.eye(n)
+
+    def test_secant_condition(self):
+        # The approximation has to satisfy B s = y for the pair it was
+        # updated with.
+        n = 12
+        hessian = self._spd(n, 3)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.default_rng(7)
+        for _ in range(8):
+            s = rng.standard_normal(n)
+            y = hessian @ s
+            hess.update(s, y)
+            assert_allclose(hess.dot(s), y, rtol=1e-11, atol=1e-11)
+
+    def test_symmetric_and_positive_definite(self):
+        n = 10
+        hessian = self._spd(n, 5)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.default_rng(11)
+        for _ in range(6):
+            s = rng.standard_normal(n)
+            hess.update(s, hessian @ s)
+        a = rng.standard_normal(n)
+        b = rng.standard_normal(n)
+        assert_allclose(hess.dot(a) @ b, hess.dot(b) @ a,
+                        rtol=1e-11, atol=1e-11)
+        assert hess.dot(a) @ a > 0
+
+    def test_inverse_hessian(self):
+        # The 'inv_hess' product is the inverse of the 'hess' product.
+        n = 12
+        hessian = self._spd(n, 3)
+        rng = np.random.default_rng(7)
+        pairs = []
+        for _ in range(10):
+            s = rng.standard_normal(n)
+            pairs.append((s, hessian @ s))
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        inv = LBFGS()
+        inv.initialize(n, 'inv_hess')
+        for s, y in pairs:
+            hess.update(s, y)
+            inv.update(s, y)
+        v = np.random.default_rng(1).standard_normal(n)
+        assert_allclose(inv.dot(v), np.linalg.solve(hess.get_matrix(), v),
+                        rtol=1e-10, atol=1e-11)
+
+    def test_skip_update(self):
+        # A pair without positive curvature, and a zero step, must not
+        # change the approximation.
+        n = 5
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.default_rng(9)
+        s = rng.standard_normal(n)
+        hess.update(s, 2 * s)
+        B = hess.get_matrix()
+        hess.update(s, -s)
+        hess.update(np.zeros(n), s)
+        assert_array_equal(hess.get_matrix(), B)
+
+    def test_scaled_to_the_problem(self):
+        # The initial approximation is scaled to the problem, so that a
+        # caller does not have to rescale it by hand.
+        n = 6
+        scale = 1e4
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.default_rng(21)
+        s = rng.standard_normal(n)
+        hess.update(s, scale * s)
+        p = rng.standard_normal(n)
+        p = p - s * (p @ s) / (s @ s)
+        ratio = (hess.dot(p) @ p) / (p @ p)
+        assert 0.1 * scale <= ratio <= 10 * scale
+
+    @pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+    def test_bounded_stored_arrays(self, approx_type):
+        # Inspect owned state, not process-global allocation tracking.
+        n = 50_000
+        memory = 3
+        hess = LBFGS(memory=memory)
+        rng = np.random.default_rng(0)
+        hess.initialize(n, approx_type)
+
+        def arrays(value):
+            if isinstance(value, np.ndarray):
+                yield value
+            elif isinstance(value, dict):
+                for item in value.values():
+                    yield from arrays(item)
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    yield from arrays(item)
+
+        for _ in range(2 * memory + 2):
+            s = rng.standard_normal(n)
+            hess.update(s, s + 0.01 * rng.standard_normal(n))
+            assert np.isfinite(hess.dot(s)).all()
+            stored = list(arrays(vars(hess)))
+            assert all(a.size <= memory * n for a in stored)
+            assert sum(a.size for a in stored) <= (4 * memory + 4) * n
+
+    def test_get_matrix(self):
+        # The dense matrix must be the operator that dot() applies.
+        n = 8
+        hessian = self._spd(n, 17)
+        hess = LBFGS()
+        hess.initialize(n, 'hess')
+        rng = np.random.default_rng(19)
+        for _ in range(5):
+            s = rng.standard_normal(n)
+            hess.update(s, hessian @ s)
+
+        M = hess.get_matrix()
+        assert_allclose(M, hess.get_matrix(), rtol=1e-12, atol=1e-12)
+        assert M.shape == (n, n)
+
+        v = rng.standard_normal(n)
+        assert_allclose(M @ v, hess.dot(v), rtol=1e-11, atol=1e-11)
+
+        inv = LBFGS()
+        inv.initialize(n, 'inv_hess')
+        for _ in range(5):
+            s = rng.standard_normal(n)
+            inv.update(s, hessian @ s)
+
+        H = inv.get_matrix()
+        assert H.shape == (n, n)
+        assert_allclose(H @ v, inv.dot(v), rtol=1e-11, atol=1e-11)
+
+    def test_minimize(self):
+        # The strategy can be used as the 'hess' argument of minimize.
+        n = 20
+        hessian = self._spd(n, 13)
+        linear = np.random.default_rng(6).standard_normal(n)
+        x0 = np.random.default_rng(8).standard_normal(n)
+
+        def fun(x):
+            return 0.5 * x @ hessian @ x + linear @ x
+
+        def jac(x):
+            return hessian @ x + linear
+
+        result = minimize(fun, x0, jac=jac, hess=LBFGS(),
+                          method='trust-constr',
+                          options={'maxiter': 300, 'gtol': 1e-8})
+        optimum = np.linalg.solve(hessian, -linear)
+        expected = 0.5 * optimum @ hessian @ optimum + linear @ optimum
+        assert result.success
+        assert abs(result.fun - expected) <= 1e-6 * max(1.0, abs(expected))
