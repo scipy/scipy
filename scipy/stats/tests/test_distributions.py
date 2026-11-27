@@ -3523,7 +3523,7 @@ class TestInvgauss:
         # in the tail of the distribution
         dist = stats.invgauss(mu)
         q = stats.invgauss.sf(x, mu)
-        assert_allclose(dist.isf(q), x)
+        assert_allclose(dist.isf(q), x, rtol=1e-12)
 
 
 class TestLandau:
