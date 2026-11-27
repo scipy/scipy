@@ -1,0 +1,38 @@
+{
+    <PyInit>
+    Memcheck:Leak
+    match-leak-kinds: possible,reachable
+    ...
+    fun:PyInit_*
+    fun:_PyImport_LoadDynamicModuleWithSpec
+    fun:_imp_create_dynamic_impl
+    fun:_imp_create_dynamic
+    fun:PyCFunction_Call
+    fun:ext_do_call
+    ...
+}
+{
+    <PyInit>
+    Memcheck:Leak
+    match-leak-kinds: possible,reachable
+    ...
+    fun:PyInit__*
+    ...
+}
+{
+   <Py_Initialize>
+   Memcheck:Leak
+   match-leak-kinds: possible,reachable
+   ...
+   fun:Py_Initialize
+   fun:Py_Main
+   ...
+}
+{
+   <GC>
+   Memcheck:Leak
+   match-leak-kinds: possible,reachable
+   ...
+   fun:_PyObject_GC_*
+   ...
+}
