@@ -4217,6 +4217,75 @@ class TestMakeLSQNdBSplineFromGrid:
 
         xp_assert_close(spl.c, ref.c, atol=1e-12)
 
+    @staticmethod
+    def _dense_solver(a, b):
+        coef, *_ = np.linalg.lstsq(a.toarray(), b, rcond=None)
+        return coef, 1
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_separable_matches_full_problem(self, dtype):
+        # Without weights and solver, the coefficients are fitted one axis at
+        # a time. Compare with solving the full least-squares problem.
+        rng = np.random.default_rng(1234)
+        points = (
+            np.sort(rng.uniform(0.0, 1.0, 9)),
+            np.linspace(-1.0, 1.0, 7),
+            np.sort(rng.uniform(0.0, 2.0, 11)),
+        )
+        k = (3, 2, 1)
+        t = tuple(
+            np.r_[[x[0]] * (kd + 1),
+                  x[0] + (x[-1] - x[0]) * np.r_[0.3, 0.6],
+                  [x[-1]] * (kd + 1)]
+            for x, kd in zip(points, k)
+        )
+        values = rng.standard_normal((9, 7, 11, 2)).astype(dtype)
+        if dtype == np.complex128:
+            values += 1j * rng.standard_normal(values.shape)
+
+        spl = make_lsq_ndbspline(points, values, t, k=k, grid=True)
+        ref = make_lsq_ndbspline(
+            points, values, t, k=k, grid=True, solver=self._dense_solver
+        )
+
+        assert spl.k == k
+        xp_assert_close(spl.c, ref.c, rtol=1e-12, atol=1e-12)
+
+    def test_separable_unsorted_axes(self):
+        rng = np.random.default_rng(1234)
+        points = (np.linspace(0.0, 1.0, 8), np.linspace(-1.0, 1.0, 9))
+        values = rng.standard_normal((8, 9))
+        t = (
+            np.r_[[0.0] * 3, 0.5, [1.0] * 3],
+            np.r_[[-1.0] * 4, 0.0, [1.0] * 4],
+        )
+        ref = _make_lsq_ndbspl_from_grid(points, values, t, k=(2, 3))
+
+        perm = rng.permutation(8)
+        spl = _make_lsq_ndbspl_from_grid(
+            (points[0][perm], points[1][::-1]),
+            values[perm, ::-1],
+            t,
+            k=(2, 3),
+        )
+
+        xp_assert_close(spl.c, ref.c, rtol=1e-13)
+
+    def test_separable_validation(self):
+        values = np.linspace(0.0, 1.0, 5)
+        t = (np.r_[0.0, 0.0, 0.5, 1.0, 1.0],)
+
+        with assert_raises(ValueError, match="Out of bounds"):
+            _make_lsq_ndbspl_from_grid(
+                (np.linspace(0.0, 1.5, 5),), values, t, k=1
+            )
+
+        # no data point in the support of the last basis function
+        with assert_raises(ValueError, match="Schoenberg-Whitney"):
+            _make_lsq_ndbspl_from_grid(
+                (np.linspace(0.0, 0.4, 5),), values, t, k=1
+            )
+
     def test_validation(self):
         points = (np.linspace(0.0, 1.0, 5),)
         values = np.linspace(0.0, 1.0, 5)

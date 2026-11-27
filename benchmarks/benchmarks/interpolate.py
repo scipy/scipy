@@ -12,6 +12,9 @@ with safe_import():
     from scipy.sparse import csr_array
 
 with safe_import():
+    import scipy.sparse.linalg as ssl
+
+with safe_import():
     from scipy.interpolate._regrid import _regrid
 
 
@@ -315,6 +318,38 @@ class RectBivariateSplineVsRegridPython(Benchmark):
     def time_regrid(self, size, s):
         _regrid(
             self.x, self.y, self.z, kx=self.kx, ky=self.ky, s=self.s
+        )
+
+
+class MakeLSQNdBSplineGrid(Benchmark):
+    """
+    Benchmark least-squares fits of tensor-product splines to gridded data.
+
+    "default" fits one axis at a time, "lsqr" solves the full sparse problem.
+    """
+    param_names = ['shape', 'solver']
+    params = [
+        [(200, 200), (30, 30, 30)],
+        ['default', 'lsqr'],
+    ]
+
+    def setup(self, shape, solver):
+        rng = np.random.default_rng(314159)
+
+        self.points = tuple(np.linspace(0, 1, n) for n in shape)
+        self.values = rng.random(size=shape)
+        self.t = tuple(np.r_[[0.0] * 4, np.linspace(0, 1, 10)[1:-1], [1.0] * 4]
+                       for _ in shape)
+        self.solver = None if solver == 'default' else ssl.lsqr
+
+    def time_make_lsq_ndbspline(self, shape, solver):
+        interpolate.make_lsq_ndbspline(
+            self.points, self.values, self.t, grid=True, solver=self.solver
+        )
+
+    def peakmem_make_lsq_ndbspline(self, shape, solver):
+        interpolate.make_lsq_ndbspline(
+            self.points, self.values, self.t, grid=True, solver=self.solver
         )
 
 

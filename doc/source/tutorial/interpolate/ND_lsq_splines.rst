@@ -141,3 +141,8 @@ In ``N`` dimensions, ``points`` contains ``N`` one-dimensional arrays and
 input accept trailing dimensions in the data values, allowing several outputs
 to be fitted with the same coordinates and basis. For example, values with
 shape ``(m1, ..., mN, 2)`` fit two outputs on the same grid.
+
+Without weights and a custom solver, the fit on a grid is computed with one
+one-dimensional least-squares fit per axis, which is exact and much faster than
+solving the least-squares problem for all coefficients at once. See the notes
+of `make_lsq_ndbspline` for details.
