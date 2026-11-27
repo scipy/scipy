@@ -107,6 +107,9 @@ Backwards incompatible changes
 Other changes
 *************
 
+- `scipy.interpolate.make_smoothing_spline` now uses a single code path for
+  default and user-provided knots. Results may differ from previous versions
+  within numerical noise (PR #26739).
 
 
 *******
