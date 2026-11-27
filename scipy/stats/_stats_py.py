@@ -9218,7 +9218,7 @@ class QuantileTestResult:
             high = xp.where(valid_index, x_high, xp.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
-            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
+            low_index = _quantile_test_low_index(bd, p, xp)
             valid_index = low_index >= 0
             low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
@@ -9226,7 +9226,7 @@ class QuantileTestResult:
             high = xp.full(shape, xp.inf, device=xp_device(x))
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index = xp.astype(bd.ppf(p), xp.int64) - 1
+            low_index = _quantile_test_low_index(bd, p, xp)
             valid_index = low_index >= 0
             low_index = xpx.at(low_index)[~valid_index].set(0)
             x_low = xp.take_along_axis(x, low_index, axis=-1)
@@ -9311,6 +9311,16 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
         p = xpx.at(p, nan_out).set(0.5, copy=True)
 
     return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out, dtype, xp
+
+
+def _quantile_test_low_index(bd, p, xp):
+    # 0-based index of the order statistic that is the lower confidence bound:
+    # the largest `m` with `bd.cdf(m) <= p`. `bd.ppf(p)` is the smallest `k`
+    # with `bd.cdf(k) >= p`, so `k - 1` is the answer unless `bd.cdf(k) == p`,
+    # in which case `k` itself still achieves the required coverage.
+    k = bd.ppf(p)
+    exact = xp.astype(bd.cdf(k) <= p, xp.int64)
+    return xp.astype(k, xp.int64) - 1 + exact
 
 
 def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out, xp):
