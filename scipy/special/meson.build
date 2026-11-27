@@ -1,6 +1,5 @@
 _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
@@ -19,12 +18,6 @@ ufuncs_sources = [
 ufuncs_cxx_sources = [
   'sf_error.cc',
 ]
-
-cdflib_lib = static_library('cdflib',
-  'cdflib.c',
-  include_directories: ['../_lib', '../_build_utils/src'],
-  gnu_symbol_visibility: 'hidden',
-)
 
 ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
 
@@ -101,7 +94,6 @@ py3.extension_module('_ufuncs',
     lapack_dep
   ],
   link_args: version_link_args,
-  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
 )
@@ -147,7 +139,6 @@ py3.extension_module('cython_special',
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
   dependencies: [boost_math_dep, xsf_dep, np_dep, lapack_dep],
-  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
 )

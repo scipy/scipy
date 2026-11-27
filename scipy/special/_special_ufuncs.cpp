@@ -222,6 +222,7 @@ extern const char *exprel_doc;
 extern const char *fdtr_doc;
 extern const char *fdtrc_doc;
 extern const char *fdtri_doc;
+extern const char *fdtridfd_doc;
 extern const char *fresnel_doc;
 extern const char *gamma_doc;
 extern const char *gammainc_doc;
@@ -304,6 +305,8 @@ extern const char *nbdtrin_doc;
 extern const char *ncfdtr_doc;
 extern const char *ncfdtri_doc;
 extern const char *ncfdtrinc_doc;
+extern const char *ncfdtridfd_doc;
+extern const char *ncfdtridfn_doc;
 extern const char *nctdtr_doc;
 extern const char *nctdtridf_doc;
 extern const char *nctdtrinc_doc;
@@ -1321,6 +1324,12 @@ _special_ufuncs_module_exec(PyObject *module)
                           "fdtri", fdtri_doc);
     PyModule_AddObjectRef(module, "fdtri", fdtri);
 
+    PyObject *fdtridfd =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(f_find_dfd_float),
+                           static_cast<xsf::numpy::ddd_d>(f_find_dfd_double)},
+                          "fdtridfd", fdtridfd_doc);
+    PyModule_AddObjectRef(module, "fdtridfd", fdtridfd);
+
     PyObject *expm1 =
         xsf::numpy::ufunc({static_cast<xsf::numpy::f_f>(xsf::expm1), static_cast<xsf::numpy::d_d>(xsf::expm1),
                            static_cast<xsf::numpy::F_F>(xsf::expm1), static_cast<xsf::numpy::D_D>(xsf::expm1)},
@@ -1402,6 +1411,18 @@ _special_ufuncs_module_exec(PyObject *module)
                            static_cast<xsf::numpy::dddd_d>(ncf_find_non_centrality_double)},
                           "ncfdtrinc", ncfdtrinc_doc);
     PyModule_AddObjectRef(module, "ncfdtrinc", ncfdtrinc);
+
+    PyObject *ncfdtridfd =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_find_dfd_float),
+                           static_cast<xsf::numpy::dddd_d>(ncf_find_dfd_double)},
+                          "ncfdtridfd", ncfdtridfd_doc);
+    PyModule_AddObjectRef(module, "ncfdtridfd", ncfdtridfd);
+
+    PyObject *ncfdtridfn =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_f>(ncf_find_dfn_float),
+                           static_cast<xsf::numpy::dddd_d>(ncf_find_dfn_double)},
+                          "ncfdtridfn", ncfdtridfn_doc);
+    PyModule_AddObjectRef(module, "ncfdtridfn", ncfdtridfn);
 
     PyObject *nctdtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::fff_f>(nct_cdf_float),

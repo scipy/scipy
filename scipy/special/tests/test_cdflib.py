@@ -1,11 +1,6 @@
 """
 Test cdflib functions versus mpmath, if available.
 
-The following functions still need tests:
-
-- ncfdtridfn
-- ncfdtridfd
-
 """
 import itertools
 
@@ -152,15 +147,6 @@ def _binomial_cdf(k, n, p):
     return mpmath.betainc(n - k, k + 1, x2=onemp, regularized=True)
 
 
-def _f_cdf(dfn, dfd, x):
-    if x < 0:
-        return mpmath.mpf(0)
-    dfn, dfd, x = mpmath.mpf(dfn), mpmath.mpf(dfd), mpmath.mpf(x)
-    ub = dfn*x/(dfn*x + dfd)
-    res = mpmath.betainc(dfn/2, dfd/2, x2=ub, regularized=True)
-    return res
-
-
 def _student_t_cdf(df, t, dps=None):
     if dps is None:
         dps = mpmath.mp.dps
@@ -224,15 +210,6 @@ class TestCDFlib:
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-7,
             endpt_atol=[None, 1e-18, 1e-15])
-
-    @pytest.mark.xfail(run=False)
-    def test_fdtridfd(self):
-        _assert_inverts(
-            sp.fdtridfd,
-            _f_cdf,
-            1,
-            [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
-            rtol=1e-7)
 
     def test_gdtria(self):
         _assert_inverts(
@@ -476,7 +453,7 @@ class TestNoncentralF:
         [1e-100, 3, 1.5, 1e100, 0.611815287345399]
         ]
     )
-    def test_all(self, dfn, dfd, nc, f, expected_cdf):
+    def test_ncfdtr_ncfdtri_ncfdtrinc(self, dfn, dfd, nc, f, expected_cdf):
         # Reference values computed with mpmath with the following script
         #
         # import numpy as np
@@ -524,7 +501,7 @@ class TestNoncentralF:
         # of a CDF as they are not bijective in these regions
         if 0 < expected_cdf < 1:
             assert_allclose(sp.ncfdtri(dfn, dfd, nc, expected_cdf), f, rtol=5e-11)
-            assert_allclose(sp.ncfdtrinc(dfn, dfd, expected_cdf, f), nc, rtol=1e-10)
+            assert_allclose(sp.ncfdtrinc(dfn, dfd, expected_cdf, f), nc, rtol=5e-11)
 
     @pytest.mark.parametrize(
         "args",
@@ -546,6 +523,60 @@ class TestNoncentralF:
         # ncfdtrinc should return 0.
         p = sp.fdtr(dfn, dfd, f)
         assert_allclose(sp.ncfdtrinc(dfn, dfd, p, f), 0.0, atol=1e-10, rtol=0)
+
+    @pytest.mark.parametrize(
+        "dfn,dfd,nc,f,expected_cdf",
+        [[100.0, 0.1, 0.1, 100.0, 0.29787396410092676],
+        [100.0, 100.0, 0.01, 0.1, 4.4344737598690424e-26],
+        [100.0, 0.01, 0.1, 0.01, 0.002848616633080384],
+        [10.0, 0.01, 1.0, 0.1, 0.012339557729057956],
+        [100.0, 100.0, 0.01, 0.01, 1.8926477420964936e-72],
+        [1.0, 100.0, 100.0, 0.1, 1.7925940526821304e-22],
+        [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
+        ]
+    )
+    def test_ncfdtridfn_accuracy(self, dfn, dfd, nc, f, expected_cdf):
+        # test cases are taken from test_all, except the ones where
+        # the inverse with respect to dfn is ambiguous
+        assert_allclose(sp.ncfdtridfn(expected_cdf, dfd, nc, f), dfn, rtol=5e-12)
+
+    def test_ncfdtridfn_returns_nan_for_ambiguous_input(self):
+        # Ambiguous inputs for ncfdtridfn should return NaN
+        # example taken from Boost.Math tests for ambiguous input
+        assert np.isnan(sp.ncfdtridfn(.498458420116863580, 2, 1, 1.5))
+
+    @pytest.mark.parametrize(
+        "dfn,dfd,nc,f,expected_cdf",
+        [[10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
+        [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+        ]
+    )
+    def test_ncfdtridfd_accuracy(self, dfn, dfd, nc, f, expected_cdf):
+        # test cases are taken from test_all, except the ones where
+        # the inverse with respect to dfd is ambiguous
+        assert_allclose(sp.ncfdtridfd(dfn, expected_cdf, nc, f), dfd, rtol=5e-12)
+
+    @pytest.mark.parametrize("dfd", [1, 10, 50, 150])
+    def test_ncfdtridfd_returns_nan_for_ambiguous_input(self, dfd):
+        # For large dfn and small f the cdf tends to 0 both as dfd -> 0 and as
+        # dfd -> inf, so every p has two solutions for dfd and NaN is expected.
+        # Taken from Boost.Math tests (boostorg/math#1495).
+        dfn, nc, f = 10000, 1, 0.1
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        assert np.isnan(sp.ncfdtridfd(dfn, p, nc, f))
+
+    def test_gh7695(self):
+        dfn = 5
+        dfd = 3
+        nc = 1.5
+        f = 1.25
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        # two possible solutions for dfn exist, so we return NaN
+        assert np.isnan(sp.ncfdtridfn(p, dfd, nc, f))
+        dfn = 2
+        dfd = 2
+        p = sp.ncfdtr(dfn, dfd, nc, f)
+        assert_allclose(sp.ncfdtridfd(dfn, p, nc, f), dfd, rtol=5e-12)
 
 
 class TestNoncentralTFunctions:
@@ -727,6 +758,16 @@ class TestNoncentralTFunctions:
             sp.nctdtrinc(df, sp.stdtr(df, x), x), 0,
             atol=1e-11, rtol=0
         )
+
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (36927.726327192555, 22.657510627430774, -1.9600282275330887,
+         4.1656076955530763e-134),
+        (24661.95794984711, 19.630953694774004, -1.9600601807012346,
+         1.1113682575781306e-103),
+        (1000, 23, -1, 1.6147146123955216e-127)
+    ])
+    def test_gh25470(self, df, nc, x, expected_cdf):
+        assert_allclose(sp.nctdtr(df, nc, x), expected_cdf, rtol=1e-13)
 
 
 class TestNegativeBinomialFunctions:
@@ -940,6 +981,36 @@ class TestPdtrik:
         # mp.gammainc(k+1, a=m, regularized=True)
         assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
 
+
+class TestStudentT:
+    # all cdf reference values were computed with mpmath using
+    # the function above with 1000 dps
+    @pytest.mark.parametrize("df, t, cdf_ref", [
+    (10, 10, 0.9999992052234122),
+    (10, -10, 7.9477658779820598e-7),
+    (1, -2000, 0.0001591549298289854),
+    (1000, -2, 0.02288517324662582),
+    (1000, 5, 0.99999966163718177),
+    (1000, -30, 7.6873437220217411e-142)
+    ])
+    def test_students_t_functions_spot_checks(self, df, t, cdf_ref):
+        assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-13)
+        assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
+        assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)
+
+    @pytest.mark.parametrize("df, t, cdf_ref", [
+        (3, -2.311368906937497e82, 8.9296194283025105e-248),
+        (10, -8.109742389861548e29, 1.0000000001178707e-295)
+    ])
+    def test_gh25968(self, df, t, cdf_ref):
+        # gh25968 reported wrong quantiles in the extreme left tail
+        assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-6)
+
+    def test_gh25667(self):
+        # gh25667 reported incorrect cdf values for very small t with df=1
+        assert_allclose(sp.stdtr(1, 1e-10), 0.50000000003183099, rtol=1e-14)
+
+
 @pytest.mark.parametrize("a, b, p, ref", [
     (0, 0, 0, np.nan),
     (0, 0, 1, np.nan),
@@ -1003,15 +1074,20 @@ def test_nrdtrimn_edge_cases(p, std, x, ref):
 def test_nrdtrisd_edge_cases(mn, p, x, ref):
     assert_equal(sp.nrdtrisd(mn, p, x), ref)
 
-@pytest.mark.parametrize("df, t, cdf_ref", [
-    (10, 10, 0.9999992052234122),
-    (10, -10, 7.947765877982061e-07),
-    (1, -2000, 0.0001591549298289854),
-    (1000, -2, 0.022885173246625867),
-    (1000, 5, 0.9999996616371818),
-    (1000, -30, 7.687343722021527e-142)
+@pytest.mark.parametrize("dfn, dfd, x", [
+    (10, 5, 2),
+    (100, 50, 3),
+    (10, 5, 5)
 ])
-def test_students_t_functions_spot_checks(df, t, cdf_ref):
-    assert_allclose(sp.stdtr(df, t), cdf_ref, rtol=1e-12)
-    assert_allclose(sp.stdtrit(df, cdf_ref), t, rtol=1e-11)
-    assert_allclose(sp.stdtridf(cdf_ref, t), df, rtol=1e-9)
+def test_fdtr_fdtridfd_roundtrip(dfn, dfd, x):
+    cdf_value = sp.fdtr(dfn, dfd, x)
+    assert_allclose(sp.fdtridfd(dfn, cdf_value, x), dfd, rtol=1e-11)
+
+
+def test_fdtridfd_returns_nan_in_ambiguous_case():
+    # two possible dfd values for the given cdf_value and x, should return NaN
+    dfn = 6
+    dfd = 4
+    x = 0.5
+    cdf_value = sp.fdtr(dfn, dfd, x)
+    assert np.isnan(sp.fdtridfd(dfn, cdf_value, x))

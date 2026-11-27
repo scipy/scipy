@@ -1230,6 +1230,98 @@ ncf_find_non_centrality_double(double dfn, double dfd, double p, double f)
     return ncf_find_non_centrality_wrap(dfn, dfd, p, f);
 }
 
+// p, dfd, nc, f
+
+template<typename Real>
+Real
+ncf_find_dfd_wrap(const Real dfn, const Real p, const Real nc, const Real f)
+{
+    if (std::isnan(p) || std::isnan(dfn) || std::isnan(nc) || std::isnan(f)) {
+        return NAN;
+    }
+    if (p < 0 || p > 1 || dfn <= 0 || f < 0) {
+        sf_error("ncfdtridfd", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_f_distribution<Real, SpecialPolicy>::find_v2(f, dfn, nc, p);
+    } catch (const std::domain_error& e) {
+        sf_error("ncfdtridfd", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("ncfdtridfd", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (const std::overflow_error& e) {
+        sf_error("ncfdtridfd", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (...) {
+        sf_error("ncfdtridfd", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("ncfdtridfd", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+double ncf_find_dfd_double(double p, double dfn, double nc, double f)
+{
+    return ncf_find_dfd_wrap(p, dfn, nc, f);
+}
+
+float ncf_find_dfd_float(float p, float dfn, float nc, float f)
+{
+    return ncf_find_dfd_wrap(p, dfn, nc, f);
+}
+
+// SciPy argument order: p, dfd, nc, f
+
+template<typename Real>
+Real
+ncf_find_dfn_wrap(const Real p, const Real dfd, const Real nc, const Real f)
+{
+    if (std::isnan(p) || std::isnan(dfd) || std::isnan(nc) || std::isnan(f)) {
+        return NAN;
+    }
+    if (p < 0 || p > 1 || dfd <= 0 || f < 0) {
+        sf_error("ncfdtridfn", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_f_distribution<Real, SpecialPolicy>::find_v1(f, dfd, nc, p);
+    } catch (const std::domain_error& e) {
+        sf_error("ncfdtridfn", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("ncfdtridfn", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (const std::overflow_error& e) {
+        sf_error("ncfdtridfn", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (...) {
+        sf_error("ncfdtridfn", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("ncfdtridfn", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+double ncf_find_dfn_double(double p, double dfd, double nc, double f)
+{
+    return ncf_find_dfn_wrap(p, dfd, nc, f);
+}
+
+float ncf_find_dfn_float(float p, float dfd, float nc, float f)
+{
+    return ncf_find_dfn_wrap(p, dfd, nc, f);
+}
+
 #define RETURN_NAN(v, c) if( v <= c ) { \
         return NAN; \
     } \
@@ -2503,6 +2595,53 @@ double
 f_ppf_double(double dfn, double dfd, double x)
 {
     return f_ppf_wrap(dfn, dfd, x);
+}
+
+// SciPy argument order: dfn, p, f
+template<typename Real>
+Real
+f_find_dfd_wrap(const Real dfn, const Real p, const Real f)
+{
+    if (std::isnan(dfn) || std::isnan(p) || std::isnan(f)) {
+        return NAN;
+    }
+    if (dfn <= 0 || p < 0 || p > 1 || f < 0) {
+        sf_error("fdtridfd", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::fisher_f_distribution<Real, SpecialPolicy>::find_v2(f, dfn, p);
+    } catch (const std::domain_error& e) {
+        sf_error("fdtridfd", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::underflow_error& e) {
+        sf_error("fdtridfd", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (const std::overflow_error& e) {
+        sf_error("fdtridfd", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (...) {
+        sf_error("fdtridfd", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("fdtridfd", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+f_find_dfd_float(float dfn, float p, float f)
+{
+    return f_find_dfd_wrap(dfn, p, f);
+}
+
+double
+f_find_dfd_double(double dfn, double p, double f)
+{
+    return f_find_dfd_wrap(dfn, p, f);
 }
 
 template<typename Real>
