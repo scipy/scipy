@@ -305,9 +305,10 @@ def dunnett(
 
     >>> import numpy as np
     >>> from scipy.stats import dunnett
+    >>> rng = np.random.default_rng()
     >>> samples = [[3.8, 2.7, 4.0, 2.4], [2.8, 3.4, 3.7, 2.2, 2.0]]
     >>> control = [2.9, 3.0, 2.5, 2.6, 3.2]
-    >>> res = dunnett(*samples, control=control)
+    >>> res = dunnett(*samples, control=control, rng=rng)
     >>> res.statistic
     array([ 0.90874545, -0.05007117])
     >>> res.pvalue
@@ -316,7 +317,7 @@ def dunnett(
     Now, we test that the means of the distributions underlying the samples are
     greater than the mean of the distribution underlying the control.
 
-    >>> res = dunnett(*samples, control=control, alternative='greater')
+    >>> res = dunnett(*samples, control=control, alternative='greater', rng=rng)
     >>> res.statistic
     array([ 0.90874545, -0.05007117])
     >>> res.pvalue

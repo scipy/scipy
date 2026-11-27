@@ -1,5 +1,6 @@
 import warnings
 import numpy as np
+from numpy import _NoValue  # scipy._lib.deprecation._NoValue doesn't work w/ JAX?!
 from itertools import combinations, permutations, product, accumulate
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -1995,7 +1996,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import permutation_test
     >>> # because our statistic is vectorized, we pass `vectorized=True`
     >>> # `n_resamples=np.inf` indicates that an exact test is to be performed
-    >>> res = permutation_test((x, y), statistic, vectorized=True,
+    >>> res = permutation_test((x, y), statistic, vectorized=True, rng=rng,
     ...                        n_resamples=np.inf, alternative='less')
     >>> print(res.statistic)
     -3.5411688580987266
@@ -2055,7 +2056,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     ...     return pearsonr(x, y, axis=axis).statistic
     >>> res = permutation_test((x, y), statistic, vectorized=True,
     ...                        permutation_type='pairings',
-    ...                        alternative='greater')
+    ...                        alternative='greater', rng=rng)
     >>> r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
 
     In this case, some elements of the null distribution differ from the
@@ -2234,9 +2235,9 @@ class MonteCarloMethod(ResamplingMethod):
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
-                   "`rng`. Support for `random_state` will be removed in SciPy 2.0.0. "
+                   "`rng`. Support for `random_state` will be removed in SciPy 2.4.0. "
                    "To silence this warning and ensure consistent behavior in SciPy "
-                   "2.0.0, control the RNG using attribute `rng`. Values set using "
+                   "2.4.0, control the RNG using attribute `rng`. Values set using "
                    "attribute `rng` will be validated by `np.random.default_rng`, so "
                    "the behavior corresponding with a given value may change compared "
                    "to use of `random_state`. For example, 1) `None` will result in "
@@ -2300,24 +2301,28 @@ class PermutationMethod(ResamplingMethod):
 
     @property
     def random_state(self):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        return self._random_state
+        warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        return self._random_state if self._random_state is not _NoValue else None
 
     @random_state.setter
     def random_state(self, val):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
     @property
     def rng(self):
         return self._rng
 
-    def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
-        #               DeprecationWarning, stacklevel=2)
+    def __init__(self, n_resamples=9999, batch=None, random_state=_NoValue,
+                 *, rng=_NoValue):
+        if random_state is not _NoValue:
+            if rng is not _NoValue:
+                message =  ("`PermutationMethod` got multiple values for argument now "
+                            "known as `rng`. Specify one of `random_state` or `rng`.")
+                raise TypeError(message)
+            warnings.warn(_rs_deprecation.replace('attribute', 'keyword argument'),
+                          DeprecationWarning, stacklevel=2)
+
         self._rng = rng
         self._random_state = random_state
         super().__init__(n_resamples=n_resamples, batch=batch)
@@ -2325,10 +2330,10 @@ class PermutationMethod(ResamplingMethod):
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         d = dict(n_resamples=self.n_resamples, batch=self.batch)
-        if self.rng is not None:
+        if self.rng is not _NoValue:
             d['rng'] = self.rng
-        if self.random_state is not None:
-            d['random_state'] = self.random_state
+        if self._random_state is not _NoValue:
+            d['random_state'] = self._random_state
         return d
 
 
@@ -2391,25 +2396,28 @@ class BootstrapMethod(ResamplingMethod):
 
     @property
     def random_state(self):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        return self._random_state
+        warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        return self._random_state if self._random_state is not _NoValue else None
 
     @random_state.setter
     def random_state(self, val):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._random_state = val
 
     @property
     def rng(self):
         return self._rng
 
-    def __init__(self, n_resamples=9999, batch=None, random_state=None,
-                 method='BCa', *, rng=None):
-        # Uncomment in SciPy 1.17.0
-        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
-        #               DeprecationWarning, stacklevel=2)
+    def __init__(self, n_resamples=9999, batch=None, random_state=_NoValue,
+                 method='BCa', *, rng=_NoValue):
+        if random_state is not _NoValue:
+            if rng is not _NoValue:
+                message =  ("`BootstrapMethod` got multiple values for argument now "
+                            "known as `rng`. Specify one of `random_state` or `rng`.")
+                raise TypeError(message)
+            warnings.warn(_rs_deprecation.replace('attribute', 'keyword argument'),
+                          DeprecationWarning, stacklevel=2)
+
         self._rng = rng  # don't validate with `default_rng`
         self._random_state = random_state
         self.method = method
@@ -2419,8 +2427,8 @@ class BootstrapMethod(ResamplingMethod):
         # `dataclasses.asdict` deepcopies; we don't want that.
         d = dict(n_resamples=self.n_resamples, batch=self.batch,
                  method=self.method)
-        if self.rng is not None:
+        if self.rng is not _NoValue:
             d['rng'] = self.rng
-        if self.random_state is not None:
-            d['random_state'] = self.random_state
+        if self._random_state is not _NoValue:
+            d['random_state'] = self._random_state
         return d

@@ -2,6 +2,7 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
+import warnings
 
 import numpy as np
 
@@ -78,7 +79,11 @@ def sample_A_B(
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     d = len(dists)
-    A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n).T
+    with warnings.catch_warnings():
+        message = "Use of keyword argument `seed` is deprecated"
+        warnings.filterwarnings("ignore", message=message,
+                                category=DeprecationWarning)
+        A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n).T
     A_B = A_B.reshape(2, d, -1)
     try:
         for d_, dist in enumerate(dists):
@@ -177,7 +182,9 @@ class SobolResult:
     def bootstrap(
         self,
         confidence_level: "DecimalNumber" = 0.95,
-        n_resamples: "IntNumber" = 999
+        n_resamples: "IntNumber" = 999,
+        *,
+        rng: np.random.Generator | None = None
     ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
@@ -188,6 +195,11 @@ class SobolResult:
         n_resamples : int, default: ``999``
             The number of resamples performed to form the bootstrap
             distribution of the indices.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         Returns
         -------
@@ -216,7 +228,8 @@ class SobolResult:
             [np.arange(n)], statistic=statistic, method="BCa",
             n_resamples=n_resamples,
             confidence_level=confidence_level,
-            bootstrap_result=self._bootstrap_result
+            bootstrap_result=self._bootstrap_result,
+            rng=np.random.default_rng(rng)
         )
         self._bootstrap_result = res
 
@@ -478,7 +491,7 @@ def sobol_indices(
 
     Confidence interval can be obtained using bootstrapping.
 
-    >>> boot = indices.bootstrap()
+    >>> boot = indices.bootstrap(rng=rng)
 
     Then, this information can be easily visualized.
 
@@ -527,7 +540,7 @@ def sobol_indices(
     >>> from scipy.stats import qmc
     >>> n_dim = 3
     >>> p_labels = ['$x_1$', '$x_2$', '$x_3$']
-    >>> sample = qmc.Sobol(d=n_dim, seed=rng).random(1024)
+    >>> sample = qmc.Sobol(d=n_dim, rng=rng).random(1024)
     >>> sample = qmc.scale(
     ...     sample=sample,
     ...     l_bounds=[-np.pi, -np.pi, -np.pi],
@@ -701,7 +714,7 @@ def sobol_indices(
         _indices_method=indices_method,
         _f_A=f_A,
         _f_B=f_B,
-        _f_AB=f_AB
+        _f_AB=f_AB,
     )
 
     if callable(func):
