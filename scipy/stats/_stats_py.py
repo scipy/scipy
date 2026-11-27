@@ -4527,6 +4527,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     assuming x1 != x2 and y1 != y2, the only possible values for r are 1
     and -1.  Because abs(r') for any sample x' and y' with length 2 will
     be 1, the two-sided p-value for a sample of length 2 is always 1.
+    For one-sided tests, the p-value is 0.5 when the observed correlation
+    is in the direction of the alternative hypothesis (r = 1 for
+    alternative='greater' or r = -1 for alternative='less') and 1.0 otherwise.
 
     For backwards compatibility, the object that is returned also behaves
     like a tuple of length two that holds the statistic and the p-value.
@@ -4799,7 +4802,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # data-apis/array-api-extra#196
     mxp = array_namespace(r._meta) if is_dask(xp) else xp
     def special_case(r):
-        return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
+        if alternative == 'greater':
+            p = mxp.where(r > 0, mxp.full_like(r, 0.5), mxp.ones_like(r))
+        elif alternative == 'less':
+            p = mxp.where(r < 0, mxp.full_like(r, 0.5), mxp.ones_like(r))
+        else:
+            p = mxp.ones_like(r)
+        return mxp.where(mxp.isnan(r), mxp.nan, p)
     r = xpx.apply_where(mask, r, mxp.round, fill_value=r)
     pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
