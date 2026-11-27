@@ -8964,6 +8964,39 @@ class TestQuantileTest:
             res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
             assert res.pvalue < 1 - alpha
 
+    def test_ci_lower_bound_exact_coverage(self, xp):
+        # gh-26840: when the binomial CDF equals `1 - confidence_level` exactly,
+        # the lower bound was one order statistic too low. With n=7, p=0.5,
+        # P(Y <= 1) = 8/128 = 1/16, so [x_(2), inf) has coverage exactly 15/16.
+        x = xp.arange(1., 8.)
+        res = stats.quantile_test(x, p=0.5, alternative='greater')
+        ci = res.confidence_interval(15/16)
+        xp_assert_equal(ci.low, xp.asarray(2.))
+        # The lower bound must mirror the upper bound of the reflected sample.
+        res = stats.quantile_test(-x, p=0.5, alternative='less')
+        xp_assert_equal(res.confidence_interval(15/16).high, xp.asarray(-2.))
+
+    @pytest.mark.parametrize('n', [5, 7, 8, 12])
+    @pytest.mark.parametrize('p', [0.25, 0.5, 0.75])
+    @pytest.mark.parametrize('alternative', ['greater', 'two-sided'])
+    def test_ci_lower_bound_brute_force(self, n, p, alternative, xp):
+        # The lower bound is x_(m+1), with m the largest integer such that
+        # P(Y <= m) <= alpha for Y ~ Binomial(n, p). Check against levels that
+        # hit the binomial CDF exactly, and some that don't.
+        x = xp.arange(1., n + 1.)
+        res = stats.quantile_test(x, p=p, alternative=alternative)
+        cdf = stats.binom.cdf(np.arange(n + 1), n, p)
+        alphas = np.concatenate([cdf[:-1], [0.01, 0.05, 0.1]])
+        for alpha in alphas:
+            if not 0 < alpha < 0.5:
+                continue
+            level = 1 - alpha if alternative == 'greater' else 1 - 2 * alpha
+            ci = res.confidence_interval(level)
+            alpha = (1 - level) if alternative == 'greater' else (1 - level) / 2
+            m = np.nonzero(cdf <= alpha)[0]
+            ref = np.nan if m.size == 0 else float(m[-1] + 1)
+            xp_assert_equal(ci.low, xp.asarray(ref))
+
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_match_conover_examples(self, dtype, xp):
         # Test against the examples in [1] (Conover Practical Nonparametric
