@@ -313,7 +313,7 @@ def validate_rst_syntax(text, name, dots=True):
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv',
-        'versionremoved', 'math:numref', 'dropdown'
+        'versionremoved', 'math:numref', 'dropdown', 'plot'
     ])
 
     # Run through docutils
