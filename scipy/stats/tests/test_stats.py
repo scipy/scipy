@@ -750,6 +750,21 @@ class TestPearsonr:
         xp_assert_close(ci.low, -ones)
         xp_assert_close(ci.high, ones)
 
+        # gh-26803: one-sided p-values for n == 2
+        res_greater = stats.pearsonr(x, y, alternative='greater', axis=-1)
+        xp_assert_close(res_greater.pvalue, xp.asarray([0.5, 1.0, 1.0, 0.5]))
+
+        res_less = stats.pearsonr(x, y, alternative='less', axis=-1)
+        xp_assert_close(res_less.pvalue, xp.asarray([1.0, 0.5, 0.5, 1.0]))
+
+        # Scalar length 2
+        assert stats.pearsonr([1, 2], [1, 2], alternative='greater').pvalue == 0.5
+        assert stats.pearsonr([1, 2], [1, 2], alternative='less').pvalue == 1.0
+        assert stats.pearsonr([1, 2], [2, 1], alternative='greater').pvalue == 1.0
+        assert stats.pearsonr([1, 2], [2, 1], alternative='less').pvalue == 0.5
+        assert stats.pearsonr([1, 2], [1, 2], alternative='two-sided').pvalue == 1.0
+        assert stats.pearsonr([1, 2], [2, 1], alternative='two-sided').pvalue == 1.0
+
     def test_different_dimensionality(self, xp):
         # For better or for worse, there is one difference between the broadcasting
         # behavior of most stats functions and NumPy gufuncs / NEP 5: gufuncs `axis`
