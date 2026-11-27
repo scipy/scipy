@@ -439,6 +439,8 @@ class _Parameter(ABC):
     typical : 2-tuple of floats or strings (consider making a _Domain)
         Defines the endpoints of a typical range of values of the parameter.
         Used for sampling.
+    docstring: str
+        A string that describes the parameter.
 
     Methods
     -------
@@ -459,13 +461,14 @@ class _Parameter(ABC):
     # generic type compatibility with scipy-stubs
     __class_getitem__: classmethod = classmethod(GenericAlias)
 
-    def __init__(self, name, *, domain, symbol=None, typical=None):
+    def __init__(self, name, *, domain, symbol=None, typical=None, docstring=None):
         self.name = name
         self.symbol = symbol or name
         self.domain = domain
         if typical is not None and not isinstance(typical, _Domain):
             typical = domain.__class__(typical)
         self.typical = typical or domain
+        self.__doc__ = self.docstring = docstring
 
     def __str__(self):
         r""" String representation of the parameter for use in documentation."""
@@ -662,6 +665,9 @@ class _Parameterization:
 
     def copy(self):
         return _Parameterization(*self.parameters.values())
+
+    def get_param_doc(self, param):
+        return self.parameters[param].__doc__ if param in self.parameters else None
 
     def matches(self, parameters):
         r""" Checks whether the keyword arguments match the parameterization.
