@@ -1,6 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-# NB: do not import from ._matfuncs_sqrtm at module level; that module imports
-# `within_block_loop` from this one, which would be a circular import.
 
 from numpy cimport float32_t, float64_t, complex64_t, complex128_t, intp_t
 

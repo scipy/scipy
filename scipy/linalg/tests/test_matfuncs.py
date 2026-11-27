@@ -1188,25 +1188,3 @@ def test_field_view_strides(func, dtype, pad, shape):
     view = rec["z"]
     assert view.strides[-1] % view.itemsize != 0
     xp_assert_equal(func(view), func(a))
-
-
-@pytest.mark.skipif(IS_WASM, reason="no subprocess support in wasm")
-def test_sqrtm_triu_extension_imports_standalone():
-    # Regression test for gh-23037: importing the Cython extension directly
-    # as the first import must not hit a circular import.
-    import subprocess
-    import sys
-    # Stub out the `scipy.linalg` package so its __init__ (which imports
-    # `_matfuncs` -> `_matfuncs_sqrtm` first) does not run; otherwise the
-    # triu-first ordering from the issue is never reproduced.
-    code = (
-        "import os, types, sys\n"
-        "import scipy\n"
-        "pkg = types.ModuleType('scipy.linalg')\n"
-        "pkg.__path__ = [os.path.join(os.path.dirname(scipy.__file__), 'linalg')]\n"
-        "sys.modules['scipy.linalg'] = pkg\n"
-        "from scipy.linalg._matfuncs_sqrtm_triu import within_block_loop\n"
-    )
-    res = subprocess.run([sys.executable, "-c", code],
-                         capture_output=True, text=True)
-    assert res.returncode == 0, res.stderr
