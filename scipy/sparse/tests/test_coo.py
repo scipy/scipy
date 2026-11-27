@@ -124,6 +124,7 @@ def test_1d_tuple_constructor_with_shape():
     assert res.shape == (4,)
     assert_equal(res.toarray(), np.array([0, 9, 8, 0]))
 
+
 def test_reshape_overflow():
     # see gh-22353 : new idx_dtype can need to be int64 instead of int32
     M, N = (1045507, 523266)
@@ -139,6 +140,7 @@ def test_reshape_overflow():
     C = A.reshape(N, M)
     assert C.coords[0].dtype == np.dtype('int32')
     assert C.coords[0][0] == N - 1
+
 
 def test_reshape():
     arr1d = coo_array([1, 0, 3])
