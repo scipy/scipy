@@ -3,7 +3,7 @@ from warnings import warn, catch_warnings, simplefilter
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
-                          csr_array, csc_array, eye_array, diags_array)
+                          csr_array, csc_array, eye_array)
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
                                    get_index_dtype, safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
@@ -254,12 +254,25 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack.u
 
+    if b_is_vector and b_is_sparse:
+        b = b.toarray()
+        b_is_sparse = False
+
+    if not b_is_sparse and A.nnz >= 1500 and N < 2**31:
+        lower, upper = is_sptriangular(A)
+        if lower or upper:
+            try:
+                x = spsolve_triangular(A, b, lower=lower)
+            except LinAlgError:
+                warn("Matrix is exactly singular", MatrixRankWarning,
+                     stacklevel=2)
+                x = np.full(b.shape, np.nan, dtype=result_dtype)
+            if b_is_vector:
+                x = x.ravel()
+            return x
+
     if b_is_vector and use_umfpack:
-        if b_is_sparse:
-            b_vec = b.toarray()
-        else:
-            b_vec = b
-        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
+        b_vec = asarray(b, dtype=A.dtype).ravel()
 
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
@@ -273,10 +286,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
     else:
-        if b_is_vector and b_is_sparse:
-            b = b.toarray()
-            b_is_sparse = False
-
         if not b_is_sparse:
             if A.format == "csc":
                 flag = 1  # CSC format
@@ -731,24 +740,6 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         raise ValueError(
             f'A must be a square matrix but its shape is {A.shape}.')
 
-    if unit_diagonal:
-        with catch_warnings():
-            simplefilter('ignore', SparseEfficiencyWarning)
-            A.setdiag(1)
-    else:
-        diag = A.diagonal()
-        if np.any(diag == 0):
-            raise LinAlgError(
-                'A is singular: zero entry on diagonal.')
-        invdiag = 1/diag
-        if trans == "N":
-            A = A @ diags_array(invdiag)
-        else:
-            A = (A.T @ diags_array(invdiag)).T
-
-    # sum duplicates for non-canonical format
-    A.sum_duplicates()
-
     b = np.asanyarray(b)
 
     if b.ndim not in [1, 2]:
@@ -768,6 +759,24 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         b = b.astype(result_dtype)
     elif not overwrite_b:
         b = b.copy()
+
+    # sum duplicates for non-canonical format
+    A.sum_duplicates()
+
+    if unit_diagonal:
+        with catch_warnings():
+            simplefilter('ignore', SparseEfficiencyWarning)
+            A.setdiag(1)
+    else:
+        diag = A.diagonal()
+        if np.any(diag == 0):
+            raise LinAlgError(
+                'A is singular: zero entry on diagonal.')
+        invdiag = 1/diag
+        if trans == "N":
+            A.data = A.data * np.repeat(invdiag, np.diff(A.indptr))
+        else:
+            A.data = A.data * invdiag[A.indices]
 
     if lower:
         L = A
@@ -856,10 +865,12 @@ def is_sptriangular(A):
     # format in ("csc", "csr")
     indptr, indices = A.indptr, A.indices
     N = len(indptr) - 1
+    if N == 0:
+        return True, True
 
     lower, upper = True, True
     # check middle, 1st, last col (treat as CSC and switch at end if CSR)
-    for col in [N // 2, 0, -1]:
+    for col in (N // 2, 0, N - 1):
         rows = indices[indptr[col]:indptr[col + 1]]
         upper = upper and (col >= rows).all()
         lower = lower and (col <= rows).all()

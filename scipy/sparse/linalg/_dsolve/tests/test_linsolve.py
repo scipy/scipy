@@ -442,6 +442,110 @@ class TestLinsolve:
         x = spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
+    @pytest.mark.parametrize("fmt", ["csc", "csr"])
+    @pytest.mark.parametrize("kind", ["lower", "upper", "diag"])
+    @pytest.mark.parametrize("b_kind", ["1d", "col", "2d", "sparse_col"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+    def test_triangular_dispatch_correctness(self, fmt, kind, b_kind, dtype):
+        rng = np.random.default_rng(12345)
+        if kind == "diag":
+            N = 1600
+            A = scipy.sparse.diags_array(
+                rng.uniform(1.0, 2.0, size=N), format=fmt
+            ).astype(dtype)
+        else:
+            N = 80
+            M = random_array((N, N), density=0.6, format="csr", rng=rng)
+            M = tril(M) if kind == "lower" else triu(M)
+            M = M + 5.0 * eye_array(N, format="csr")
+            A = M.asformat(fmt).astype(dtype)
+        assert A.nnz >= 1500
+
+        if b_kind == "1d":
+            b = rng.standard_normal(N).astype(dtype)
+        elif b_kind == "col":
+            b = rng.standard_normal((N, 1)).astype(dtype)
+        elif b_kind == "2d":
+            b = rng.standard_normal((N, 3)).astype(dtype)
+        else:
+            b = csc_array(rng.standard_normal((N, 1)).astype(dtype))
+
+        A_before = A.copy()
+        x = spsolve(A, b)
+        # Ensure input A was not modified
+        assert_equal(A.toarray(), A_before.toarray())
+
+        expected_shape = (N,) if b_kind in ("1d", "col", "sparse_col") else (N, 3)
+        assert x.shape == expected_shape
+        assert x.dtype == np.dtype(dtype)
+        b_dense = b.toarray().ravel() if b_kind == "sparse_col" else (
+            b.ravel() if b_kind == "col" else b
+        )
+        tol = 1e-4 if dtype == np.float32 else 1e-10
+        assert_allclose(A @ x, b_dense, rtol=tol, atol=tol)
+
+    def test_triangular_dispatch_spy(self, monkeypatch):
+        from scipy.sparse.linalg._dsolve import linsolve as linsolve_mod
+
+        calls = []
+        orig = linsolve_mod.spsolve_triangular
+
+        def spy(*args, **kwargs):
+            calls.append(kwargs.get("lower"))
+            return orig(*args, **kwargs)
+
+        monkeypatch.setattr(linsolve_mod, "spsolve_triangular", spy)
+
+        N = 80
+        rng = np.random.default_rng(7)
+        dense_tri = tril(random_array((N, N), density=0.6, format="csc", rng=rng))
+        dense_tri = (dense_tri + 5.0 * eye_array(N, format="csc")).tocsc()
+        assert dense_tri.nnz >= 1500
+        b = np.ones(N)
+
+        # Large triangular -> dispatches to spsolve_triangular
+        x_lower = spsolve(dense_tri, b)
+        assert calls == [True]
+        assert_allclose(dense_tri @ x_lower, b, rtol=1e-10)
+
+        x_upper = spsolve(dense_tri.T.tocsr(), b)
+        assert calls == [True, False]
+        assert_allclose(dense_tri.T @ x_upper, b, rtol=1e-10)
+
+        # Large non-triangular -> does not dispatch
+        non_tri = dense_tri + dense_tri.T
+        x_gen = spsolve(non_tri, b)
+        assert calls == [True, False]
+        assert_allclose(non_tri @ x_gen, b, rtol=1e-10)
+
+        # Small triangular (nnz < 1500) -> skips overhead
+        small_tri = tril(random_array((10, 10), density=0.5, format="csc", rng=rng))
+        small_tri = (small_tri + 5.0 * eye_array(10, format="csc")).tocsc()
+        assert small_tri.nnz < 1500
+        x_small = spsolve(small_tri, np.ones(10))
+        assert calls == [True, False]
+        assert_allclose(small_tri @ x_small, np.ones(10), rtol=1e-10)
+
+    @pytest.mark.parametrize("fmt", ["csc", "csr"])
+    def test_triangular_dispatch_singular(self, fmt):
+        N = 1600
+        A = eye_array(N, format=fmt)
+        A = A.tolil()
+        A[-1, -1] = 0.0
+        A = A.asformat(fmt)
+        # Ensure nnz >= 1500 (including stored structural entries)
+        assert A.nnz >= 1500
+        b = np.ones(N)
+        with pytest.warns(MatrixRankWarning, match="Matrix is exactly singular"):
+            x = spsolve(A, b)
+        assert x.shape == (N,)
+        assert np.isnan(x).all()
+
+    def test_is_sptriangular_empty(self):
+        for fmt in ("csc", "csr", "coo", "dok", "lil"):
+            A = csc_array((0, 0)).asformat(fmt)
+            assert is_sptriangular(A) == (True, True)
+
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
