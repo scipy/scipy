@@ -179,9 +179,8 @@ The `root_scalar` function supports the following methods:
 
 
 
-The table below lists situations and appropriate methods, along with
-*asymptotic* convergence rates per iteration (and per function evaluation)
-for successful convergence to a simple root(*).
+The table below compares scalar root-finding methods by their input
+requirements and convergence behavior.
 Bisection is the slowest of them all, adding one bit of accuracy for each
 function evaluation, but is guaranteed to converge.
 The other bracketing methods all (eventually) increase the number of accurate
@@ -190,23 +189,34 @@ The derivative-based methods, all built on `newton`, can converge quite quickly
 if the initial value is close to the root.  They can also be applied to
 functions defined on (a subset of) the complex plane.
 
-+-------------+----------+----------+-----------+-------------+-------------+----------------+
-| Domain of f | Bracket? |    Derivatives?      | Solvers     |        Convergence           |
-+             +          +----------+-----------+             +-------------+----------------+
-|             |          | `fprime` | `fprime2` |             | Guaranteed? |  Rate(s)(*)    |
-+=============+==========+==========+===========+=============+=============+================+
-| `R`         | Yes      | N/A      | N/A       | - bisection | - Yes       | - 1 "Linear"   |
-|             |          |          |           | - brentq    | - Yes       | - >=1, <= 1.62 |
-|             |          |          |           | - brenth    | - Yes       | - >=1, <= 1.62 |
-|             |          |          |           | - ridder    | - Yes       | - 2.0 (1.41)   |
-|             |          |          |           | - toms748   | - Yes       | - 2.7 (1.65)   |
-+-------------+----------+----------+-----------+-------------+-------------+----------------+
-| `R` or `C`  | No       | No       | No        | secant      | No          | 1.62 (1.62)    |
-+-------------+----------+----------+-----------+-------------+-------------+----------------+
-| `R` or `C`  | No       | Yes      | No        | newton      | No          | 2.00 (1.41)    |
-+-------------+----------+----------+-----------+-------------+-------------+----------------+
-| `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 3.00 (1.44)    |
-+-------------+----------+----------+-----------+-------------+-------------+----------------+
++-------------+----------+----------+-----------+-------------+-------------+------------------------+
+| Domain of f | Bracket? |    Derivatives?      | Solvers     |        Convergence                   |
++             +          +----------+-----------+             +-------------+------------------------+
+|             |          | `fprime` | `fprime2` |             | Guaranteed? | Efficiency index [#]_  |
++=============+==========+==========+===========+=============+=============+========================+
+| `R`         | Yes      | N/A      | N/A       | - bisection | - Yes       | - 1 (linear)           |
+|             |          |          |           | - brentq    | - Yes       | - >=1, <= 1.62         |
+|             |          |          |           | - brenth    | - Yes       | - >=1, <= 1.62         |
+|             |          |          |           | - ridder    | - Yes       | - 1.41                 |
+|             |          |          |           | - toms748   | - Yes       | - 1.65                 |
++-------------+----------+----------+-----------+-------------+-------------+------------------------+
+| `R` or `C`  | No       | No       | No        | secant      | No          | 1.62                   |
++-------------+----------+----------+-----------+-------------+-------------+------------------------+
+| `R` or `C`  | No       | Yes      | No        | newton      | No          | 1.41                   |
++-------------+----------+----------+-----------+-------------+-------------+------------------------+
+| `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 1.44                   |
++-------------+----------+----------+-----------+-------------+-------------+------------------------+
+
+.. [#] The efficiency index measures asymptotic convergence to a simple
+   root per function or derivative evaluation. For iteration order *p*,
+   the next error is approximately proportional to the current error
+   raised to the power *p*. With *k* evaluations per iteration, the index
+   is the *k*-th root of *p*. For example, Newton's method has index
+   approximately 1.41 when each iteration evaluates the function and its
+   first derivative separately. Bisection, Brent's method (brentq), and
+   Brent's method with hyperbolic extrapolation (brenth) each evaluate the
+   function once per iteration after the initial endpoint evaluations,
+   so their efficiency indices equal their iteration orders.
 
 .. seealso::
 
