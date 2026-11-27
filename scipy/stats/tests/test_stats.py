@@ -8987,7 +8987,7 @@ class TestQuantileTest:
         res = stats.quantile_test(x, p=p, alternative=alternative)
         cdf = stats.binom.cdf(np.arange(n + 1), n, p)
         alphas = np.concatenate([cdf[:-1], [0.01, 0.05, 0.1]])
-        for alpha in alphas:
+        for alpha in alphas.tolist():
             if not 0 < alpha < 0.5:
                 continue
             level = 1 - alpha if alternative == 'greater' else 1 - 2 * alpha
