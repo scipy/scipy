@@ -6,7 +6,7 @@ set -o nounset
 set -o errexit
 
 REPO_URL="https://github.com/ERGO-Code/HiGHS"
-COMMIT_HASH="f3f113d230429a8c0014b12ab0dd1a3847e58c55"
+COMMIT_HASH="b2caabac6f3e0df181950bcbe3173fa839e47ee7"
 
 # XXX: run this from the repo top level like `./tools/vendoring/vendor_highs.sh`
 ROOT_DIR="subprojects/highs"
