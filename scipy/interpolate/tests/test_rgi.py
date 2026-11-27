@@ -19,6 +19,7 @@ from scipy.interpolate._regrid import (_regrid,
                                               _ndbspline_call_like_bivariate)
 
 from scipy._lib._testutils import _run_concurrent_barrier, IS_WASM
+from scipy.sparse.linalg import gcrotmk, spsolve
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
@@ -781,6 +782,92 @@ class TestRegularGridInterpolator:
             RegularGridInterpolator(
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_at_nodes(self, method):
+        # Regression test for gh-23356: data with a large constant offset.
+        # The spline must reproduce the data at the grid points up to rounding.
+        # Before SciPy 2.0.0 the default solver was gcrotmk, which stops at a
+        # residual relative to norm(values): here, errors were ~5e-2 for cubic
+        # and quintic.
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        values = 1000 + rng.uniform(size=(8, 9, 7))
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        xi = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+        xp_assert_close(interp(xi), values, atol=1e-10, rtol=0)
+        xp_assert_close(interpn(points, values, xi, method=method), values,
+                        atol=1e-10, rtol=0)
+
+        # descending grids are flipped
+        flipped = RegularGridInterpolator((points[0][::-1], points[1], points[2]),
+                                          values[::-1], method=method)
+        xp_assert_close(flipped(xi), values, atol=1e-10, rtol=0)
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_explicit_solver(self, method):
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9))
+        values = rng.uniform(size=(8, 9))
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        default = RegularGridInterpolator(points, values, method=method)
+        direct = RegularGridInterpolator(points, values, method=method,
+                                         solver=spsolve)
+        xp_assert_close(default(xi), direct(xi), atol=1e-11)
+
+        iterative = RegularGridInterpolator(
+            points, values, method=method, solver=gcrotmk,
+            solver_args={"rtol": 1e-12, "atol": 1e-14, "maxiter": 10000}
+        )
+        xp_assert_close(default(xi), iterative(xi), atol=1e-8)
+
+        with assert_raises(TypeError, match="rtol"):
+            RegularGridInterpolator(points, values, method=method,
+                                    solver_args={"rtol": 1e-12})
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_override(self, method):
+        # a spline for a different method is built at the call
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9))
+        values = rng.uniform(size=(8, 9))
+        xi = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+
+        interp = RegularGridInterpolator(points, values)
+        xp_assert_close(interp(xi, method=method), values, atol=1e-11)
+
+    @pytest.mark.parametrize("method", ["slinear", "cubic", "quintic"])
+    def test_spline_methods_match_legacy(self, method):
+        # the recursive `_legacy` evaluation solves along one axis at a time
+        # for each point, the default does it once for the coefficients:
+        # the interpolant is the same (gh-7903, gh-26427)
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        values = rng.uniform(size=(8, 9, 7))
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        legacy = RegularGridInterpolator(points, values, method=method + "_legacy")
+        xp_assert_close(interp(xi), legacy(xi), atol=1e-9)
+
+    @pytest.mark.parametrize("method", ["cubic", "quintic"])
+    def test_spline_methods_derivatives_of_quadratic(self, method):
+        # a not-a-knot spline of degree >= 2 reproduces a quadratic, so the
+        # values and the first derivatives are exact up to rounding
+        rng = np.random.default_rng(1234)
+        points = tuple(np.cumsum(rng.uniform(0.2, 1, size=n)) for n in (8, 9, 7))
+        x0 = np.asarray([1.3, 2.9, 0.7])
+        grid = np.stack(np.meshgrid(*points, indexing='ij'), axis=-1)
+        values = ((grid - x0)**2).sum(axis=-1)
+        xi = np.stack([rng.uniform(x[0], x[-1], size=20) for x in points], axis=-1)
+
+        interp = RegularGridInterpolator(points, values, method=method)
+        xp_assert_close(interp(xi), ((xi - x0)**2).sum(axis=-1), atol=1e-10)
+        for d in range(3):
+            nu = tuple(int(i == d) for i in range(3))
+            xp_assert_close(interp(xi, nu=nu), 2 * (xi[:, d] - x0[d]), atol=1e-9)
 
     @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
     def test_concurrency(self):

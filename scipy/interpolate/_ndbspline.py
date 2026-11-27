@@ -14,7 +14,7 @@ from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_result_device
 )
 
-from ._bsplines import _not_a_knot, BSpline
+from ._bsplines import _not_a_knot, make_interp_spline, BSpline
 
 __all__ = [
     "NdBSpline",
@@ -776,8 +776,8 @@ def make_lsq_ndbspline(
     )
 
 
-def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
-    """Construct an interpolating NdBspline.
+def make_ndbspl(points, values, k=3, *, solver=None, **solver_args):
+    r"""Construct an interpolating NdBspline.
 
     Parameters
     ----------
@@ -788,16 +788,17 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
     k : int, optional
-        The spline degree. Must be odd. Default is cubic, k=3
+        The spline degree. Must be positive. Default is cubic, k=3
     solver : a `scipy.sparse.linalg` solver (iterative or direct), optional.
-        An iterative solver from `scipy.sparse.linalg` or a direct one,
-        `sparse.sparse.linalg.spsolve`.
-        Used to solve the sparse linear system
-        ``design_matrix @ coefficients = rhs`` for the coefficients.
-        Default is `scipy.sparse.linalg.gcrotmk`
+        By default, the coefficients are computed with a separable solver,
+        see Notes. If given, the full sparse linear system
+        ``design_matrix @ coefficients = rhs`` is assembled and solved with
+        `solver`, either an iterative solver from `scipy.sparse.linalg` or the
+        direct solver `scipy.sparse.linalg.spsolve`.
     solver_args : dict, optional
         Additional arguments for the solver. The call signature is
-        ``solver(csr_array, rhs_vector, **solver_args)``
+        ``solver(csr_array, rhs_vector, **solver_args)``.
+        Only allowed if `solver` is given.
 
     Returns
     -------
@@ -806,6 +807,22 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     Notes
     -----
     Boundary conditions are not-a-knot in all dimensions.
+
+    By default, the interpolation conditions are solved separably, with one
+    banded solve per dimension [1]_. The derivation is in the tutorial, see
+    :ref:`tutorial-interpolate_RGI_solver`.
+
+    .. versionchanged:: 2.0.0
+        The separable solver is the default. Previously, the default was
+        `scipy.sparse.linalg.gcrotmk`, which only solves the system up to its
+        tolerance, and `solver_args` given without `solver` were passed to
+        it. Now passing `solver_args` without `solver` raises a `TypeError`.
+
+    References
+    ----------
+    .. [1] C. de Boor, "Efficient Computer Manipulation of Tensor Products",
+           ACM Trans. Math. Softw., 5(2), pp. 173-182, 1979.
+           :doi:`10.1145/355826.355831`
     """
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
@@ -825,6 +842,33 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
 
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))
+
+    if solver is None:
+        if solver_args:
+            raise TypeError(
+                f"Got solver arguments {sorted(solver_args)} without a "
+                "`solver`. Pass a `scipy.sparse.linalg` solver as well."
+            )
+
+        # With the 1D collocation matrices A_d[r, i] = B(x_d[r]; i, t_d), the
+        # interpolation conditions on the grid are
+        #
+        #   values[r1, ..., rN] = sum_{i1, ..., iN}
+        #       A_1[r1, i1] * ... * A_N[rN, iN] * c[i1, ..., iN]
+        #
+        # which is (A_1 kron ... kron A_N) @ c.ravel() = values.ravel(). The
+        # inverse of a Kronecker product is the Kronecker product of the
+        # inverses, so `c` follows from applying inv(A_d) along each axis d, in
+        # any order. That is one banded solve per axis, with
+        # values.size / len(x_d) right-hand sides.
+        # See de Boor, Efficient Computer Manipulation of Tensor Products,
+        # ACM TOMS 5(2), 1979, https://doi.org/10.1145/355826.355831
+        c = np.asarray(values)
+        for d in range(ndim):
+            c = make_interp_spline(points[d], c, k=k[d], t=t[d], axis=d).c
+            c = np.moveaxis(c, 0, d)
+        return NdBSpline(t, c, k)
+
     xvals = np.asarray([xv for xv in itertools.product(*points)], dtype=float)
 
     # construct the colocation matrix

@@ -6,7 +6,6 @@ from types import GenericAlias
 
 import numpy as np
 
-import scipy.sparse.linalg as ssl
 from scipy._lib._array_api import (
     array_namespace, xp_capabilities, xp_result_device
 )
@@ -105,12 +104,18 @@ class RegularGridInterpolator:
     solver : callable, optional
         Only used for methods "slinear", "cubic" and "quintic".
         Sparse linear algebra solver for construction of the NdBSpline instance.
-        Default is the iterative solver `scipy.sparse.linalg.gcrotmk`.
+        By default, a separable solver is used and no sparse system is
+        assembled, see Notes.
 
         .. versionadded:: 1.13
 
+        .. versionchanged:: 2.0.0
+            The default changed from `scipy.sparse.linalg.gcrotmk` to the
+            separable solver.
+
     solver_args : dict, optional
-        Additional arguments to pass to `solver`, if any.
+        Additional arguments to pass to `solver`. Only allowed if `solver` is
+        given.
 
         .. versionadded:: 1.13
 
@@ -156,17 +161,32 @@ class RegularGridInterpolator:
 
     **Choosing a solver for spline methods**
 
-    Spline methods, "slinear", "cubic" and "quintic" involve solving a
-    large sparse linear system at instantiation time. Depending on data,
-    the default solver may or may not be adequate. When it is not, you may
-    need to experiment with an optional `solver` argument, where you may
-    choose between the direct solver (`scipy.sparse.linalg.spsolve`) or
-    iterative solvers from `scipy.sparse.linalg`. You may need to supply
+    Spline methods, "slinear", "cubic" and "quintic" involve solving a linear
+    system at instantiation time. On a rectilinear grid its matrix is a Kronecker
+    product of one-dimensional banded matrices, so by default the system is solved
+    separably, with one banded solve per dimension [4]_: all grid lines along
+    an axis are interpolated with one-dimensional splines, as in
+    `make_interp_spline`, and the resulting coefficients are passed on to the
+    next axis. The result is exact up to rounding. See
+    :ref:`tutorial-interpolate_RGI_solver` for the details.
+
+    .. versionchanged:: 2.0.0
+        The default used to be the iterative solver `scipy.sparse.linalg.gcrotmk`,
+        which stops at a tolerance relative to the norm of `values`. Spline
+        interpolants are therefore more accurate than in older SciPy versions,
+        and their values may differ slightly from the old ones, more so for
+        data with a large constant offset (see below). To get the old results,
+        pass ``solver=scipy.sparse.linalg.gcrotmk``.
+
+    You may instead assemble the system as a large sparse matrix and solve it
+    with an optional `solver` argument, where you may choose between the direct
+    solver (`scipy.sparse.linalg.spsolve`) or iterative solvers from
+    `scipy.sparse.linalg`. You may need to supply
     additional parameters via the optional `solver_args` parameter (for instance,
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
 
-    In particular, the default solver stops once the residual is below
+    In particular, `scipy.sparse.linalg.gcrotmk` stops once the residual is below
     ``rtol=1e-5`` relative to the norm of `values`. If `values` have a large
     constant offset compared to how much they vary (say, values near 1000
     that vary by 1), the interpolant may then miss the data points by much
@@ -280,6 +300,9 @@ class RegularGridInterpolator:
            COMPUT. 50.181 (1988): 189-196.
            https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
            :doi:`10.1090/S0025-5718-1988-0917826-0`
+    .. [4] C. de Boor, "Efficient Computer Manipulation of Tensor Products",
+           ACM Trans. Math. Softw., 5(2), pp. 173-182, 1979.
+           :doi:`10.1145/355826.355831`
 
     """
     # this class is based on code originally programmed by Johannes Buchner,
@@ -347,8 +370,6 @@ class RegularGridInterpolator:
                 )
 
     def _construct_spline(self, method, solver=None, **solver_args):
-        if solver is None:
-            solver = ssl.gcrotmk
         spl = make_ndbspl(
                 self._grid, self._values, self._SPLINE_DEGREE_MAP[method],
                 solver=solver, **solver_args
