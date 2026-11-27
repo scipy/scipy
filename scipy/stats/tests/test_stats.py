@@ -8982,9 +8982,11 @@ class TestQuantileTest:
     def test_ci_lower_bound_brute_force(self, n, p, alternative, xp):
         # The lower bound is x_(m+1), with m the largest integer such that
         # P(Y <= m) <= alpha for Y ~ Binomial(n, p). Check against levels that
-        # hit the binomial CDF exactly, and some that don't.
-        x = xp.arange(1., n + 1.)
-        res = stats.quantile_test(x, p=p, alternative=alternative)
+        # hit the binomial CDF exactly, and some that don't. Use float64 so that
+        # the CDF matches the reference exactly.
+        x = xp.arange(1., n + 1., dtype=xp.float64)
+        res = stats.quantile_test(x, p=xp.asarray(p, dtype=xp.float64),
+                                  alternative=alternative)
         cdf = stats.binom.cdf(np.arange(n + 1), n, p)
         alphas = np.concatenate([cdf[:-1], [0.01, 0.05, 0.1]])
         for alpha in alphas.tolist():
@@ -8995,7 +8997,7 @@ class TestQuantileTest:
             alpha = (1 - level) if alternative == 'greater' else (1 - level) / 2
             m = np.nonzero(cdf <= alpha)[0]
             ref = np.nan if m.size == 0 else float(m[-1] + 1)
-            xp_assert_equal(ci.low, xp.asarray(ref))
+            xp_assert_equal(ci.low, xp.asarray(ref, dtype=xp.float64))
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_match_conover_examples(self, dtype, xp):
