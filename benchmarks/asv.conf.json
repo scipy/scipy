@@ -43,7 +43,6 @@
         "numpy": [],
         "Cython": [],
         "pytest": [],
-        "pythran": [],
         "pybind11": [],
         "meson-python": [],
     },

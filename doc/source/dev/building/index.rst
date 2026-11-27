@@ -67,7 +67,7 @@ Building SciPy itself
       conda env create -f environment.yml
 
       # Or, install only the required build dependencies (accurate at the time of writing):
-      conda install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
+      conda install python numpy cython pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy

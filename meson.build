@@ -153,11 +153,6 @@ endif
 
 tempita = find_program('tools/building/tempita.py')
 
-use_pythran = get_option('use-pythran')
-if use_pythran
-  pythran = find_program('pythran', native: true, version: '>=0.18.1')
-endif
-
 # Subprojects
 if not fs.exists('subprojects/array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')

@@ -70,13 +70,6 @@ Cython to places where it's the best choice. Note that most ``scipy.special``
 kernels have moved to C++ in XSF (see the ``special`` section below).
 
 
-Use of Pythran
-``````````````
-Pythran is still an optional build dependency, and can be disabled with
-``-Duse-pythran=false``. The aim is to make it a hard dependency - for that to
-happen it must be clear that the maintenance burden is low enough.
-
-
 Continuous integration
 ``````````````````````
 Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,

@@ -42,43 +42,6 @@ pybind11_dep = declare_dependency(
   compile_args: cpp.get_supported_arguments('-Wno-unused-template'),
 )
 
-# Pythran include directory and build flags
-if use_pythran
-  # This external-property may not be needed if we can use the native include
-  # dir, see https://github.com/serge-sans-paille/pythran/issues/1394
-  incdir_pythran = meson.get_external_property('pythran-include-dir', 'not-given')
-  if incdir_pythran == 'not-given'
-    incdir_pythran = run_command(py3,
-      [
-        '-c',
-      '''import os
-os.chdir(os.path.join("..", "tools"))
-import pythran
-try:
-  incdir = os.path.relpath(pythran.get_include())
-except Exception:
-  incdir = pythran.get_include()
-print(incdir)
-'''
-      ],
-      check: true
-    ).stdout().strip()
-  endif
-  incdir_pythran = incdir_pythran.replace('\\', '/')
-  pythran_dep = declare_dependency(
-    include_directories: incdir_pythran,
-  )
-else
-  pythran_dep = []
-endif
-
-# Note: warning flags are added to this further down
-cpp_args_pythran = [
-  '-DENABLE_PYTHON_MODULE',
-  '-D__PYTHRAN__=3',
-  '-DPYTHRAN_BLAS_NONE'
-]
-
 cdata = configuration_data()
 
 # Test variable attribute to use for thread-local storage;
@@ -426,13 +389,6 @@ cython_gen_cpp = generator(cython,
   depends : [_cython_tree, cython_shared_module]
 )
 
-if use_pythran
-  pythran_gen = generator(pythran,
-    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
-    output : '@BASENAME@.cpp',
-  )
-endif
-
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
 # because we want to be able to build with `-Werror` in CI; that ensures that
@@ -456,28 +412,11 @@ Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 
 # C++ warning flags
-_cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
-_cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 _cpp_Wno_terminate = cpp.get_supported_arguments('-Wno-terminate')
 _cpp_Wno_uninitialized = cpp.get_supported_arguments('-Wno-uninitialized')
-_cpp_Wno_unused_but_set_variable = cpp.get_supported_arguments('-Wno-unused-but-set-variable')
 _cpp_Wno_unused_function = cpp.get_supported_arguments('-Wno-unused-function')
-_cpp_Wno_unused_local_typedefs = cpp.get_supported_arguments('-Wno-unused-local-typedefs')
-_cpp_Wno_unused_variable = cpp.get_supported_arguments('-Wno-unused-variable')
 _cpp_Wno_unused_template = cpp.get_supported_arguments('-Wno-unused-template')
-_cpp_Wno_int_in_bool_context = cpp.get_supported_arguments('-Wno-int-in-bool-context')
 _cpp_Wno_unneeded_internal_declaration = cpp.get_supported_arguments('-Wno-unneeded-internal-declaration')
-
-cpp_args_pythran += [
-  _cpp_Wno_cpp,
-  _cpp_Wno_deprecated_declarations,
-  _cpp_Wno_unused_but_set_variable,
-  _cpp_Wno_unused_function,
-  _cpp_Wno_unused_variable,
-  _cpp_Wno_unused_template, # https://github.com/serge-sans-paille/pythran/issues/2477
-  _cpp_Wno_int_in_bool_context,
-]
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
@@ -575,11 +514,6 @@ foreach name, compiler : compilers
     )
   endif
 endforeach
-# Add `pythran` information if present
-if use_pythran
-  conf_data.set('PYTHRAN_VERSION', pythran.version())
-  conf_data.set('PYTHRAN_INCDIR', portable_config_output ? 'unknown' : incdir_pythran)
-endif
 
 # Machines CPU and system information
 foreach name, machine : machines

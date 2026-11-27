@@ -26,7 +26,7 @@ section for an example.)
 
 - First and foremost, SciPy is a Python project, hence it requires a Python environment.
 - BLAS and LAPACK numerical libraries need to be installed.
-- Compilers for C and C++ code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
+- Compilers for C and C++ code are needed, as well as for Cython.
 - The Python environment needs the ``numpy`` package to be installed.
 - Testing requires the ``pytest`` and ``hypothesis`` Python packages.
 - Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
@@ -116,8 +116,7 @@ Compilers
 ^^^^^^^^^
 
 Building SciPy requires compilers for C and C++, as well as the
-python transpilers Cython and Pythran (the latter is an opt-out dependency
-starting from version 1.7.0). A Fortran compiler is no longer needed: in SciPy
+Python transpiler Cython. A Fortran compiler is no longer needed: in SciPy
 2.0.0, the last Fortran code was removed. Note that BLAS and LAPACK are still
 Fortran libraries, so their Fortran ABI (see :ref:`building-blas-and-lapack`)
 and runtime library still matter.
@@ -389,19 +388,16 @@ Compiler support for C++23 and C++26 is still under heavy development [CPP]_.
 .. _while yet: https://discourse.llvm.org/t/rfc-clang-17-0-6-would-be-minimum-version-to-build-llvm-in-c-20/75345/8
 
 
-Cython & Pythran
-~~~~~~~~~~~~~~~~
+Cython
+~~~~~~
 
-SciPy always requires a recent Cython compiler. Since 1.7, Pythran
-is a build dependency (currently with the possibility to opt out).
+SciPy always requires a recent Cython compiler.
 
 
 OpenMP support
 ^^^^^^^^^^^^^^
 
 For `various reasons`_, SciPy cannot be distributed with built-in OpenMP support.
-When using the optional Pythran support, OpenMP-enabled parallel code can be
-generated when building from source.
 
 .. _various reasons: https://github.com/scipy/scipy/issues/10239
 

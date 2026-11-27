@@ -49,10 +49,6 @@ CONFIG = _cleanup(
                 "args": r"@CPP_COMP_ARGS@",
                 "linker args": r"@CPP_COMP_LINK_ARGS@",
             },
-            "pythran": {
-                "version": r"@PYTHRAN_VERSION@",
-                "include directory": r"@PYTHRAN_INCDIR@"
-            },
         },
         "Machine Information": {
             "host": {

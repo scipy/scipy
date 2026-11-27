@@ -485,7 +485,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), kwargs=None, xatol=None
         # Standard logic for updating a three-point bracket based on a new
         # point. In QBASIC code, see "IF SGN(X-X2) = SGN(X3-X2) THEN...".
         # There is an awful lot of data copying going on here; this would
-        # probably benefit from code optimization or implementation in Pythran.
+        # probably benefit from code optimization or a compiled implementation.
         i = xp.sign(x - work.x2) == xp.sign(work.x3 - work.x2)
         xi, x1i, x2i, x3i = x[i], work.x1[i], work.x2[i], work.x3[i],
         fi, f1i, f2i, f3i = f[i], work.f1[i], work.f2[i], work.f3[i]

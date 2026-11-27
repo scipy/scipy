@@ -98,7 +98,7 @@ jobs:
 
   #############################################################################
   fast_spin_arm64:
-    name: fast, py3.12/npAny, spin (Win-ARM64), no pythran
+    name: fast, py3.12/npAny, spin (Win-ARM64)
     runs-on: windows-11-arm
     needs: get_commit_message
     if: >
@@ -127,7 +127,7 @@ jobs:
           $env:Path = "C:\Program Files\LLVM\bin;" + $env:Path
           $env:cc = "clang-cl"
           $env:cxx = "clang-cl"
-          spin build --with-scipy-openblas=32 --setup-args="-Duse-pythran=false"
+          spin build --with-scipy-openblas=32
 
       - name: Test
         run: |
