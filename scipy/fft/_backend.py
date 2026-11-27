@@ -1,8 +1,17 @@
+import warnings
+import os
+
 import scipy._lib.uarray as ua
 from scipy._lib._array_api import xp_capabilities
 from . import _basic_backend
 from . import _realtransforms_backend
 from . import _fftlog_backend
+
+
+_DEP_MESSAGE = ("The use of uarray to control the FFT backend is deprecated as of "
+                "SciPy 2.0 and will be removed in SciPy 2.2. For support for "
+                "alternative array types, see the documentation "
+                "on support for the Python array API standard.")
 
 
 class _ScipyBackend:
@@ -53,6 +62,11 @@ def _backend_from_arg(backend):
 def set_global_backend(backend, coerce=False, only=False, try_last=False):
     """Sets the global fft backend.
 
+    .. deprecated:: 2.0
+        The use of uarray to control the FFT backend is deprecated as of SciPy 2.0
+        and will be removed in SciPy 2.2. See :ref:`array-api-coverage` for details
+        on using alternative array types through the Python array API standard.
+
     This utility method replaces the default backend for permanent use. It
     will be tried in the list of backends automatically, unless the
     ``only`` flag is set on a backend. This will be the first tried
@@ -90,6 +104,12 @@ def set_global_backend(backend, coerce=False, only=False, try_last=False):
     >>> fft([1])  # Calls the global backend
     array([1.+0.j])
     """
+    warnings.warn(_DEP_MESSAGE, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
+    _set_global_backend(backend, coerce=coerce, only=only, try_last=try_last)
+
+
+def _set_global_backend(backend, coerce=False, only=False, try_last=False):
     backend = _backend_from_arg(backend)
     ua.set_global_backend(backend, coerce=coerce, only=only, try_last=try_last)
 
@@ -101,6 +121,11 @@ def register_backend(backend):
 
     Registered backends have the lowest priority and will be tried after the
     global backend.
+
+    .. deprecated:: 2.0
+        The use of uarray to control the FFT backend is deprecated as of SciPy 2.0
+        and will be removed in SciPy 2.2. See :ref:`array-api-coverage` for details
+        on using alternative array types through the Python array API standard.
 
     Parameters
     ----------
@@ -131,6 +156,8 @@ def register_backend(backend):
     >>> set_global_backend("scipy")  # Restore global backend to default
 
     """
+    warnings.warn(_DEP_MESSAGE, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     backend = _backend_from_arg(backend)
     ua.register_backend(backend)
 
@@ -142,6 +169,11 @@ def set_backend(backend, coerce=False, only=False):
     Upon entering the ``with`` statement, the given backend will be added to
     the list of available backends with the highest priority. Upon exit, the
     backend is reset to the state before entering the scope.
+
+    .. deprecated:: 2.0
+        The use of uarray to control the FFT backend is deprecated as of SciPy 2.0
+        and will be removed in SciPy 2.2. See :ref:`array-api-coverage` for details
+        on using alternative array types through the Python array API standard.
 
     Parameters
     ----------
@@ -169,6 +201,8 @@ def set_backend(backend, coerce=False, only=False):
     ...     fft.fft([1])  # Always calls the scipy implementation
     array([1.+0.j])
     """
+    warnings.warn(_DEP_MESSAGE, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     backend = _backend_from_arg(backend)
     return ua.set_backend(backend, coerce=coerce, only=only)
 
@@ -180,6 +214,11 @@ def skip_backend(backend):
     Within the context of a ``with`` statement, the given backend will not be
     called. This covers backends registered both locally and globally. Upon
     exit, the backend will again be considered.
+
+    .. deprecated:: 2.0
+        The use of uarray to control the FFT backend is deprecated as of SciPy 2.0
+        and will be removed in SciPy 2.2. See :ref:`array-api-coverage` for details
+        on using alternative array types through the Python array API standard.
 
     Parameters
     ----------
@@ -204,8 +243,10 @@ def skip_backend(backend):
         ...
     BackendNotImplementedError: No selected backends had an implementation ...
     """
+    warnings.warn(_DEP_MESSAGE, DeprecationWarning,
+                  skip_file_prefixes=(os.path.dirname(__file__),))
     backend = _backend_from_arg(backend)
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy', try_last=True)
+_set_global_backend('scipy', try_last=True)

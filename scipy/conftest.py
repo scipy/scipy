@@ -905,6 +905,10 @@ if HAVE_SCPDT:
         'scipy.special.mathieu_cem',
         'scipy.special.mathieu_sem',
         'scipy.stats.tiecorrect',
+        'scipy.fft.set_backend',
+        'scipy.fft.skip_backend',
+        'scipy.fft.set_global_backend',
+        'scipy.fft.register_backend',
     ])
 
     # help pytest collection a bit: these names are either private
