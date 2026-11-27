@@ -2,7 +2,6 @@
 #ifndef CUPDLP_H
 #define CUPDLP_H
 
-#include "pdlp/cupdlp/cupdlp_cs.h"
 #include "pdlp/cupdlp/cupdlp_defs.h"
 #include "pdlp/cupdlp/cupdlp_linalg.h"
 #include "pdlp/cupdlp/cupdlp_proj.h"

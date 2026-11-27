@@ -25,6 +25,7 @@
 #include "parallel/HighsParallel.h"
 #include "simplex/HEkk.h"
 #include "simplex/HSimplex.h"
+#include "util/HighsUndoStack.h"
 
 // Single method to solve an LP with the simplex method. Solves the
 // scaled LP then analyses the unscaled solution. If it doesn't satisfy
@@ -392,11 +393,10 @@ inline HighsStatus solveLpSimplex(HighsLpSolverObject& solver_object) {
     }
     if (solve_unscaled_lp) {
       // Save options/strategies that may be changed
-      HighsInt simplex_strategy = options.simplex_strategy;
-      double dual_simplex_cost_perturbation_multiplier =
-          options.dual_simplex_cost_perturbation_multiplier;
-      HighsInt simplex_dual_edge_weight_strategy =
-          ekk_info.dual_edge_weight_strategy;
+      HighsUndoStack undo;
+      undo.save(options.simplex_strategy);
+      undo.save(options.dual_simplex_cost_perturbation_multiplier);
+      undo.save(ekk_info.dual_edge_weight_strategy);
       // #1865 exposed that this should not be
       // HighsModelStatus::kObjectiveBound, but
       // HighsModelStatus::kObjectiveTarget, since if the latter is
@@ -477,10 +477,7 @@ inline HighsStatus solveLpSimplex(HighsLpSolverObject& solver_object) {
         }
       }
       // Restore the options/strategies that may have been changed
-      options.simplex_strategy = simplex_strategy;
-      options.dual_simplex_cost_perturbation_multiplier =
-          dual_simplex_cost_perturbation_multiplier;
-      ekk_info.dual_edge_weight_strategy = simplex_dual_edge_weight_strategy;
+      undo.reset();
     }
   }
   if (solved_unscaled_lp) {

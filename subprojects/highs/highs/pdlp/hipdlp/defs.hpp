@@ -62,7 +62,9 @@ struct AdaptiveLinesearchParams {
 struct PrimalDualParams {
   double eta;
   double omega;
-  double tolerance;
+  double primal_feasibility_tolerance;
+  double dual_feasibility_tolerance;
+  double optimality_tolerance;
   HighsInt max_iterations;
   Device device_type;
   double time_limit = 3600.0;

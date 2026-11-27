@@ -153,6 +153,8 @@ class HighsTaskExecutor {
     return threadLocalWorkerDeque();
   }
 
+  static bool isRunning() { return threadLocalExecutorHandle().ptr != nullptr; }
+
   static int getNumWorkerThreads() {
     return threadLocalWorkerDeque()->getNumWorkers();
   }
@@ -172,8 +174,11 @@ class HighsTaskExecutor {
     auto& executorHandle = threadLocalExecutorHandle();
 
     if (executorHandle.ptr != nullptr) {
+      const bool isMain = executorHandle.isMain;
       executorHandle.ptr->stopWorkerThreads(blocking);
       executorHandle.dispose();
+      // Avoid leaving a dangling deque pointer on the main thread
+      if (isMain) threadLocalWorkerDeque() = nullptr;
     }
   }
 

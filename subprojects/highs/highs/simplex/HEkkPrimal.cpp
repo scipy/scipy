@@ -375,12 +375,13 @@ void HEkkPrimal::initialiseInstance() {
 }
 
 void HEkkPrimal::initialiseSolve() {
-  // Copy values of simplex solver options to dual simplex options
+  // Copy values of simplex solver options to primal simplex options
   primal_feasibility_tolerance =
       ekk_instance_.options_->primal_feasibility_tolerance;
   dual_feasibility_tolerance =
       ekk_instance_.options_->dual_feasibility_tolerance;
-  objective_target = ekk_instance_.options_->objective_target;
+  objective_target_ = static_cast<HighsInt>(ekk_instance_.lp_.sense_) *
+                      ekk_instance_.options_->objective_target;
 
   ekk_instance_.status_.has_primal_objective_value = false;
   ekk_instance_.status_.has_dual_objective_value = false;

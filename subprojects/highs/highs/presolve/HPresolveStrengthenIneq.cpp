@@ -127,7 +127,7 @@ HPresolve::Result HPresolve::strengthenInequalities(
 
     // Check for timeout according to frequency, unless a particularly
     // dense row has just been analysed
-    if ((row & check_time_frequency) == 0 || 10 * rowsize[row] > rowsize_limit)
+    if (row % check_time_frequency == 0 || 10 * rowsize[row] > rowsize_limit)
       HPRESOLVE_CHECKED_CALL(checkTimeLimit());
 
     if (skiprow) {

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <random>
 #include <stack>
 
@@ -81,33 +82,34 @@ void Analyse::permute(const std::vector<Int>& iperm) {
 }
 
 void Analyse::eTree() {
-  // Find elimination tree.
+  // Find elimination tree, following the algorithms in J. Liu, "A compact row
+  // storage scheme for Cholesky factors using elimination trees", ACM TOMS,
+  // 1986, and T. Davis, "Direct Methods for Sparse Linear Systems", SIAM, 2006.
   // It works only for upper triangular matrices.
   // The tree is stored in the vector parent:
   //  parent[i] = j
   // means that j is the parent of i in the tree.
   // For the root(s) of the tree, parent[root] = -1.
+  // Processed nodes are kept in disjoint sets, one per subtree of the current
+  // forest; set_top is the root of each subtree. An entry (i,j), i < j, makes
+  // j the parent of the root of the subtree containing i.
 
-  parent_.resize(n_);
-  std::vector<Int> ancestor(n_);
-  Int next{};
+  parent_.assign(n_, -1);
+  HighsDisjointSets<> subtrees(n_);
+  std::vector<Int> set_top(n_);
+  std::iota(set_top.begin(), set_top.end(), 0);
 
   for (Int j = 0; j < n_; ++j) {
-    // initialise parent and ancestor, which are still unknown
-    parent_[j] = -1;
-    ancestor[j] = -1;
-
     for (Int el = ptr_upper_[j]; el < ptr_upper_[j + 1]; ++el) {
-      for (Int i = rows_upper_[el]; i != -1 && i < j; i = next) {
-        // next is used to move up the tree
-        next = ancestor[i];
+      const Int i = rows_upper_[el];
+      if (i >= j) continue;
 
-        // ancestor keeps track of the known part of the tree, to avoid
-        // repeating (aka path compression): from j there is a known path to i
-        ancestor[i] = j;
+      const Int root = set_top[subtrees.getSet(i)];
+      if (root == j) continue;
 
-        if (next == -1) parent_[i] = j;
-      }
+      parent_[root] = j;
+      subtrees.merge(root, j);
+      set_top[subtrees.getSet(j)] = j;
     }
   }
 }
@@ -155,45 +157,60 @@ void Analyse::postorder() {
 }
 
 void Analyse::colCount() {
-  // Columns count using skeleton matrix.
-  // Taken from Tim Davis "Direct Methods for Sparse Linear Systems".
+  // Column counts of L via row subtrees, following the algorithms in Gilbert,
+  // Ng, Peyton, "An efficient algorithm to compute row and column counts for
+  // sparse Cholesky factorization", SIAM J. Matrix Anal. Appl., 1994, and
+  // T. Davis, "Direct Methods for Sparse Linear Systems", SIAM, 2006. Requires
+  // a postordered etree. Each row subtree contributes +1 at its leaves, -1 at
+  // the lca of consecutive leaves and -1 at the parent of its root; summing
+  // these over etree subtrees gives the number of row subtrees containing each
+  // node.
 
-  std::vector<Int> first(n_, -1);
-  std::vector<Int> ancestor(n_, -1);
-  std::vector<Int> max_first(n_, -1);
-  std::vector<Int> prev_leaf(n_, -1);
+  std::vector<Int> first_desc;
+  firstDescendant(parent_, first_desc);
 
-  col_count_.resize(n_);
+  col_count_.assign(n_, 0);
+  for (Int node = 0; node < n_; ++node) {
+    // row subtree of an etree leaf consists only of the leaf itself
+    if (first_desc[node] == node) ++col_count_[node];
+    // row subtree of node ends at node
+    if (parent_[node] != -1) --col_count_[parent_[node]];
+  }
 
-  // find first descendant
-  for (Int k = 0; k < n_; ++k) {
-    Int j = k;
-    col_count_[j] = (first[j] == -1) ? 1 : 0;
-    while (j != -1 && first[j] == -1) {
-      first[j] = k;
-      j = parent_[j];
+  // last column with a nonzero in each row, and last leaf of each row subtree
+  std::vector<Int> last_nz_col(n_, -1);
+  std::vector<Int> last_leaf_col(n_, -1);
+
+  // sets of processed nodes; set_top gives the highest etree node of each set
+  HighsDisjointSets<> processed(n_);
+  std::vector<Int> set_top(n_);
+  std::iota(set_top.begin(), set_top.end(), 0);
+
+  for (Int col = 0; col < n_; ++col) {
+    for (Int el = ptr_lower_[col]; el < ptr_lower_[col + 1]; ++el) {
+      const Int row = rows_lower_[el];
+      if (row <= col) continue;
+
+      // col is a new leaf unless the previous nonzero of row is below col
+      const bool new_leaf = last_nz_col[row] < first_desc[col];
+      last_nz_col[row] = col;
+      if (!new_leaf) continue;
+
+      ++col_count_[col];
+      const Int prev = last_leaf_col[row];
+      if (prev != -1) --col_count_[set_top[processed.getSet(prev)]];
+      last_leaf_col[row] = col;
+    }
+
+    // attach col to its parent
+    const Int up = parent_[col];
+    if (up != -1) {
+      processed.merge(col, up);
+      set_top[processed.getSet(up)] = up;
     }
   }
 
-  // each node belongs to a separate set
-  for (Int j = 0; j < n_; j++) ancestor[j] = j;
-
-  for (Int k = 0; k < n_; ++k) {
-    const Int j = k;
-
-    // if not a root, decrement
-    if (parent_[j] != -1) col_count_[parent_[j]]--;
-
-    // process edges of matrix
-    for (Int el = ptr_lower_[j]; el < ptr_lower_[j + 1]; ++el) {
-      processEdge(j, rows_lower_[el], first, max_first, col_count_, prev_leaf,
-                  ancestor);
-    }
-
-    if (parent_[j] != -1) ancestor[j] = parent_[j];
-  }
-
-  // sum contributions from each child
+  // accumulate contributions up the etree
   for (Int j = 0; j < n_; ++j) {
     if (parent_[j] != -1) {
       col_count_[parent_[j]] += col_count_[j];
@@ -217,9 +234,9 @@ void Analyse::fundamentalSupernodes() {
 
   std::vector<Int> prev_nonz(n_, -1);
 
-  // compute sizes of subtrees
-  std::vector<Int> subtree_sizes(n_);
-  subtreeSize(parent_, subtree_sizes);
+  // tree is postordered, so the subtree of j is [first_desc[j], j]
+  std::vector<Int> first_desc;
+  firstDescendant(parent_, first_desc);
 
   for (Int j = 0; j < n_; ++j) {
     for (Int el = ptr_lower_[j]; el < ptr_lower_[j + 1]; ++el) {
@@ -227,14 +244,15 @@ void Analyse::fundamentalSupernodes() {
       const Int k = prev_nonz[i];
 
       // mark as fundamental sn, nodes which are leaf of subtrees
-      if (k < j - subtree_sizes[j] + 1) {
+      if (k < first_desc[j]) {
         is_sn[j] = true;
       }
 
-      // mark as fundamental sn, nodes which have more than one child
-      if (parent_[i] != -1 &&
-          subtree_sizes[i] + 1 != subtree_sizes[parent_[i]]) {
-        is_sn[parent_[i]] = true;
+      // mark as fundamental sn, nodes which have more than one child, i.e.
+      // whose subtree is not the subtree of i plus the node itself
+      const Int p = parent_[i];
+      if (p != -1 && (i != p - 1 || first_desc[i] != first_desc[p])) {
+        is_sn[p] = true;
       }
 
       prev_nonz[i] = j;

@@ -47,6 +47,11 @@ class HPresolveCliqueTable {
 
   void rebuild(HighsCliqueTable& table);
 
+  // the clique table has to be kept up to date as soon as it contains
+  // cliques, e.g. in a sub-MIP that starts with the clique table of its parent
+  // before its cliques are extracted (see issue #3707)
+  bool isActive() const { return table != nullptr && table->numCliques() != 0; }
+
   bool fixCol(HighsInt col, bool val,
               std::vector<HighsCliqueTable::CliqueVar>& impliedFixings);
 
@@ -54,6 +59,13 @@ class HPresolveCliqueTable {
 
   bool substituteCol(HighsInt substCol, HighsCliqueTable::CliqueVar replacement,
                      std::vector<HighsCliqueTable::CliqueVar>& impliedFixings);
+
+  // whether the column is in a clique that is still in use, i.e. it has
+  // neither been fixed, eliminated nor substituted in the clique table
+  bool isColInClique(HighsInt col) const {
+    return !table->colDeleted[col] && (table->numCliques(col, false) != 0 ||
+                                       table->numCliques(col, true) != 0);
+  }
 };
 
 #endif

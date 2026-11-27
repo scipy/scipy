@@ -145,7 +145,7 @@ void Iterate::indicators() {
 
 void Iterate::primalObj() {
   pobj = model.offset() + dotProd(x, model.c());
-  if (model.qp()) pobj += model.sense() * model.Q().objectiveValue(x);
+  if (model.qp()) pobj += model.Q().objectiveValue(x);
 }
 void Iterate::dualObj() {
   dobj = model.offset() + dotProd(y, model.b());
@@ -153,7 +153,7 @@ void Iterate::dualObj() {
     if (model.hasLb(i)) dobj += model.lb(i) * zl[i];
     if (model.hasUb(i)) dobj -= model.ub(i) * zu[i];
   }
-  if (model.qp()) dobj -= model.sense() * model.Q().objectiveValue(x);
+  if (model.qp()) dobj -= model.Q().objectiveValue(x);
 }
 void Iterate::pdGap() {
   // relative primal-dual gap
@@ -238,7 +238,7 @@ void Iterate::residual1234() {
     if (model.hasLb(i)) res.r4[i] -= zl[i];
     if (model.hasUb(i)) res.r4[i] += zu[i];
   }
-  if (model.qp()) model.Q().alphaProductPlusY(model.sense(), x, res.r4);
+  if (model.qp()) model.Q().alphaProductPlusY(1.0, x, res.r4);
 
   info.times[kResidualsTime] += clock.stop();
 }
@@ -278,7 +278,7 @@ std::vector<double> Iterate::residual8(const Residuals& r,
   // temp = (Theta^-1+Rp+Q)^-1 * res7
   for (Int i = 0; i < model.n(); ++i) {
     double denom = scaling[i] + regul.primal;
-    if (model.qp()) denom += model.sense() * model.Q().diag(i);
+    if (model.qp()) denom += model.Q().diag(i);
     temp[i] /= denom;
   }
 
@@ -565,7 +565,7 @@ void Iterate::residuals6x6(const NewtonDir& d) {
     double reg_p = Rp ? Rp[i] : regul.primal;
     ires.r4[i] += reg_p * dx[i];
   }
-  if (model.qp()) model.Q().alphaProductPlusY(model.sense(), dx, ires.r4);
+  if (model.qp()) model.Q().alphaProductPlusY(1.0, dx, ires.r4);
 
   // ires5 = res5 - zl * dxl - xl * dzl
   for (Int i = 0; i < n; ++i) {

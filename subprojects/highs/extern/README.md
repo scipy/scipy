@@ -31,6 +31,7 @@ Wrapper-backed features exposed through `HighsExtrasApi` and `HighsExternalDeps`
 | blas | `HIPO` | `HIGHS_BLAS_VENDOR` | `HIGHS_BLAS_VERSION` | `HIGHS_BLAS_LICENSE` | The configured BLAS provider |
 | metis | `HIPO` | METIS-GKlib | 5.2.1+highs | Apache-2.0 | Graph partitioning and fill-reducing matrix ordering (adapted for HiGHS) |
 | rcm | `HIPO` | SPARSEPAK | unversioned+highs | MIT | Reverse Cuthill McKee (RCM) ordering (adapted for HiGHS) |
+| qdldl | `HIPO` | QDLDL | unversioned+highs | Apache-2.0 | Elimination tree and up-looking LDL^T row factorisation (adapted for HiGHS) |
 
 <br>
 

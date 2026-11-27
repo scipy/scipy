@@ -117,7 +117,6 @@ _incdirs += include_directories('.')
 # --------------------- Libraries
 
 _cupdlp_srcs = [
-    'pdlp/cupdlp/cupdlp_cs.c',
     'pdlp/cupdlp/cupdlp_linalg.c',
     'pdlp/cupdlp/cupdlp_proj.c',
     'pdlp/cupdlp/cupdlp_restart.c',
@@ -356,11 +355,13 @@ _srcs = [
     'util/HFactorUtils.cpp',
     'util/HSet.cpp',
     'util/HVectorBase.cpp',
+    'util/HighsAvailableMemory.cpp',
     'util/HighsDynamicLibrary.cpp',
     'util/HighsHash.cpp',
     'util/HighsLinearSumBounds.cpp',
     'util/HighsMatrixPic.cpp',
     'util/HighsMatrixUtils.cpp',
+    'util/HighsSolverSelect.cpp',
     'util/HighsSort.cpp',
     'util/HighsSparseMatrix.cpp',
     'util/HighsUtils.cpp',

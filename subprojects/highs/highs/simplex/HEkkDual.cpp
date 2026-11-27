@@ -539,16 +539,33 @@ void HEkkDual::initSlice(const HighsInt initial_num_slice) {
 
 void HEkkDual::initialiseSolve() {
   // Copy values of simplex solver options to dual simplex options
-  primal_feasibility_tolerance =
-      ekk_instance_.options_->primal_feasibility_tolerance;
-  dual_feasibility_tolerance =
-      ekk_instance_.options_->dual_feasibility_tolerance;
-  objective_bound = ekk_instance_.options_->objective_bound;
+  //  primal_feasibility_tolerance =
+  //  ekk_instance_.options_->primal_feasibility_tolerance;
+  //  dual_feasibility_tolerance =
+  //  ekk_instance_.options_->dual_feasibility_tolerance;
 
+  // The objective bound used in the simplex solver has to correspond
+  // to the minimization that it's doing, regardless of the sense of
+  // the original problem
+  //
+  // The default value of HighsOptions::objective_bound is thus kHighsInf
+  //
+  // If the value of HighsOptions::objective_bound has been changed
+  // for a maximization, then it's assumed to correspond to the
+  // model's objective function, so the value of objective_bound_ must
+  // be the negation of HighsOptions::objective_bound
+  const double objective_bound = ekk_instance_.options_->objective_bound;
+  objective_bound_ =
+      objective_bound < kHighsInf
+          ? static_cast<HighsInt>(ekk_instance_.lp_.sense_) * objective_bound
+          : kHighsInf;
   // Copy tolerances
   // ToDo: Eliminate these horribly-named unnecessary copies!
-  Tp = primal_feasibility_tolerance;
-  Td = dual_feasibility_tolerance;
+  Tp = ekk_instance_.options_->primal_feasibility_tolerance;
+  Td = ekk_instance_.options_->dual_feasibility_tolerance;
+
+  // Initialise the number of calls to reachedExactObjectiveBound
+  num_exact_objective_bound_call_ = 0;
 
   initial_basis_is_logical_ = true;
   for (HighsInt iRow = 0; iRow < solver_num_row; iRow++) {
@@ -2771,84 +2788,87 @@ bool HEkkDual::bailoutOnDualObjective() {
     assert(ekk_instance_.model_status_ == HighsModelStatus::kTimeLimit ||
            ekk_instance_.model_status_ == HighsModelStatus::kIterationLimit ||
            ekk_instance_.model_status_ == HighsModelStatus::kObjectiveBound);
-  } else if (ekk_instance_.lp_.sense_ == ObjSense::kMinimize &&
-             solve_phase == kSolvePhase2) {
-    if (ekk_instance_.info_.updated_dual_objective_value >
-        ekk_instance_.options_->objective_bound)
+  } else if (solve_phase == kSolvePhase2) {
+    if (ekk_instance_.info_.updated_dual_objective_value > objective_bound_)
       ekk_instance_.solve_bailout_ = reachedExactObjectiveBound();
   }
   return ekk_instance_.solve_bailout_;
 }
 
 bool HEkkDual::reachedExactObjectiveBound() {
-  // Solving a minimization in dual simplex phase 2, and dual
-  // objective exceeds the prescribed upper bound. However, costs
-  // will be perturbed, so need to check whether exact dual
-  // objective value exceeds the prescribed upper bound. This can be
-  // a relatively expensive calculation, so determine whether to do
-  // it according to the sparsity of the pivotal row
-  bool reached_exact_objective_bound = false;
+  // In dual simplex phase 2, and dual objective exceeds the
+  // prescribed upper bound. However, costs will be perturbed, so need
+  // to check whether exact dual objective value exceeds the
+  // prescribed upper bound. This can be a relatively expensive
+  // calculation, so determine whether to do it according to the
+  // sparsity of the pivotal row
   double use_row_ap_density =
       std::min(std::max(ekk_instance_.info_.row_ap_density, 0.01), 1.0);
   HighsInt check_frequency = 1.0 / use_row_ap_density;
   assert(check_frequency > 0);
 
-  bool check_exact_dual_objective_value =
-      ekk_instance_.info_.update_count % check_frequency == 0;
+  const bool check_exact_dual_objective_value =
+      num_exact_objective_bound_call_ % check_frequency == 0;
+  // Update this now, so that check_exact_dual_objective_value is true
+  // when num_exact_objective_bound_call_ = 0
+  num_exact_objective_bound_call_++;
 
-  if (check_exact_dual_objective_value) {
-    const double objective_bound = ekk_instance_.options_->objective_bound;
-    const double perturbed_dual_objective_value =
-        ekk_instance_.info_.updated_dual_objective_value;
-    const double perturbed_value_residual =
-        perturbed_dual_objective_value - objective_bound;
-    HVector dual_col;
-    HVector dual_row;
-    const double exact_dual_objective_value =
-        computeExactDualObjectiveValue(dual_col, dual_row);
-    const double exact_value_residual =
-        exact_dual_objective_value - objective_bound;
-    std::string action;
-    if (exact_dual_objective_value > objective_bound) {
-      highsLogDev(
-          ekk_instance_.options_->log_options, HighsLogType::kDetailed,
-          "HEkkDual::solvePhase2: %12g = Objective > ObjectiveUB = %12g\n",
-          ekk_instance_.info_.updated_dual_objective_value, objective_bound);
-      action = "Have DualUB bailout";
-      if (ekk_instance_.info_.costs_perturbed ||
-          ekk_instance_.info_.costs_shifted) {
-        // Remove cost perturbation/shifting
-        ekk_instance_.initialiseCost(SimplexAlgorithm::kDual, kSolvePhase2);
-      }
+  if (!check_exact_dual_objective_value) return false;
 
-      // Set the duals as computed in the computeExactDualObjective call
-      for (HighsInt i = 0; i < solver_num_col; i++)
-        ekk_instance_.info_.workDual_[i] =
-            ekk_instance_.info_.workCost_[i] - dual_row.array[i];
-      for (HighsInt i = solver_num_col; i < solver_num_tot; i++)
-        ekk_instance_.info_.workDual_[i] = -dual_col.array[i - solver_num_col];
-
-      // Since the computeExactDualObjectiveValue() call succeeded, if there are
-      // any dual infeasibilities they can be removed by a bound flip
-      force_phase2 = false;
-      correctDualInfeasibilities(dualInfeasCount);
-
-      // no shifts should have occurred
-      assert(!ekk_instance_.info_.costs_shifted);
-      reached_exact_objective_bound = true;
-      ekk_instance_.model_status_ = HighsModelStatus::kObjectiveBound;
-    } else {
-      action = "No   DualUB bailout";
+  bool reached_exact_objective_bound = false;
+  const double perturbed_dual_objective_value =
+      ekk_instance_.info_.updated_dual_objective_value;
+  const double perturbed_value_residual =
+      perturbed_dual_objective_value - objective_bound_;
+  HVector dual_col;
+  HVector dual_row;
+  // Compute the exact dual objective, using dual values corresponding
+  // to negated costs if maximizing, so it's consistent with the
+  // objective bound, which has been negated if maximizing
+  const double exact_dual_objective_value =
+      computeExactDualObjectiveValue(dual_col, dual_row);
+  const double exact_value_residual =
+      exact_dual_objective_value - objective_bound_;
+  std::string action;
+  if (exact_dual_objective_value > objective_bound_) {
+    highsLogDev(
+        ekk_instance_.options_->log_options, HighsLogType::kDetailed,
+        "HEkkDual::solvePhase2: %12g = Objective > ObjectiveUB = %12g\n",
+        ekk_instance_.info_.updated_dual_objective_value, objective_bound_);
+    action = "Have DualUB bailout";
+    if (ekk_instance_.info_.costs_perturbed ||
+        ekk_instance_.info_.costs_shifted) {
+      // Remove cost perturbation/shifting
+      ekk_instance_.initialiseCost(SimplexAlgorithm::kDual, kSolvePhase2);
     }
-    highsLogDev(ekk_instance_.options_->log_options, HighsLogType::kInfo,
-                "%s on iteration %" HIGHSINT_FORMAT
-                ": Density %11.4g; Frequency %" HIGHSINT_FORMAT
-                ": "
-                "Residual(Perturbed = %g; Exact = %g)\n",
-                action.c_str(), ekk_instance_.iteration_count_,
-                use_row_ap_density, check_frequency, perturbed_value_residual,
-                exact_value_residual);
+
+    // Set the duals as computed in the computeExactDualObjective call
+    for (HighsInt i = 0; i < solver_num_col; i++)
+      ekk_instance_.info_.workDual_[i] =
+          ekk_instance_.info_.workCost_[i] - dual_row.array[i];
+    for (HighsInt i = solver_num_col; i < solver_num_tot; i++)
+      ekk_instance_.info_.workDual_[i] = -dual_col.array[i - solver_num_col];
+
+    // Since the computeExactDualObjectiveValue() call succeeded, if there are
+    // any dual infeasibilities they can be removed by a bound flip
+    force_phase2 = false;
+    correctDualInfeasibilities(dualInfeasCount);
+
+    // no shifts should have occurred
+    assert(!ekk_instance_.info_.costs_shifted);
+    reached_exact_objective_bound = true;
+    ekk_instance_.model_status_ = HighsModelStatus::kObjectiveBound;
+  } else {
+    action = "No   DualUB bailout";
   }
+  highsLogDev(ekk_instance_.options_->log_options, HighsLogType::kInfo,
+              "%s on iteration %" HIGHSINT_FORMAT
+              ": Density %11.4g; Frequency %" HIGHSINT_FORMAT
+              ": "
+              "Residual(Perturbed = %g; Exact = %g)\n",
+              action.c_str(), ekk_instance_.iteration_count_,
+              use_row_ap_density, check_frequency, perturbed_value_residual,
+              exact_value_residual);
   return reached_exact_objective_bound;
 }
 
@@ -2857,13 +2877,18 @@ double HEkkDual::computeExactDualObjectiveValue(HVector& dual_col,
   const HighsLp& lp = ekk_instance_.lp_;
   const SimplexBasis& basis = ekk_instance_.basis_;
   const HighsSimplexInfo& info = ekk_instance_.info_;
+  // Compute the exact dual objective as if the primal objective had
+  // been negated for a maximization (as done by the simplex solver so
+  // it's minimizing), ensuring that the active bound is identified
+  // from the dual for minimization
+  const HighsInt sense = lp.sense_ == ObjSense::kMinimize ? 1 : -1;
   // Create a local buffer for the pi vector
   dual_col.setup(lp.num_row_);
   dual_col.clear();
   for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
     HighsInt iVar = basis.basicIndex_[iRow];
     if (iVar < lp.num_col_) {
-      const double value = lp.col_cost_[iVar];
+      const double value = sense * lp.col_cost_[iVar];
       if (value) {
         dual_col.array[iRow] = value;
         dual_col.index[dual_col.count++] = iRow;
@@ -2889,12 +2914,12 @@ double HEkkDual::computeExactDualObjectiveValue(HVector& dual_col,
                 "infeasibilities = %d / %g / %g\n",
                 (int)info.num_dual_infeasibilities, info.max_dual_infeasibility,
                 info.sum_dual_infeasibilities);
-  HighsCDouble dual_objective = lp.offset_;
+  HighsCDouble dual_objective = sense * lp.offset_;
   double norm_dual = 0;
   double norm_delta_dual = 0;
   for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
     if (!basis.nonbasicFlag_[iCol]) continue;
-    double exact_dual = lp.col_cost_[iCol] - dual_row.array[iCol];
+    double exact_dual = sense * lp.col_cost_[iCol] - dual_row.array[iCol];
     // The active value must be decided based on the exact dual. For a nonbasic
     // column the bound that must be used may flip due to cost perturbation
     // flipping the sign of its dual and for a basic variable we may need to add

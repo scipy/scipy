@@ -161,10 +161,6 @@ void dense2csr(CUPDLPcsr *csr, CUPDLPdense *dense);
 
 void dense2csc(CUPDLPcsc *csc, CUPDLPdense *dense);
 
-void csr2csc(CUPDLPcsc *csc, CUPDLPcsr *csr);
-
-cupdlp_int csc2csr(CUPDLPcsr *csr, CUPDLPcsc *csc);
-
 void csr2dense(CUPDLPdense *dense, CUPDLPcsr *csr);
 
 void csc2dense(CUPDLPdense *dense, CUPDLPcsc *csc);
@@ -179,7 +175,7 @@ void dense_clear(CUPDLPdense *dense);
 
 void dense_copy(CUPDLPdense *dst, CUPDLPdense *src);
 
-void csr_copy(CUPDLPcsr *dst, CUPDLPcsr *src);
+cupdlp_int csr_copy(CUPDLPcsr *dst, CUPDLPcsr *src);
 
 cupdlp_int csc_copy(CUPDLPcsc *dst, CUPDLPcsc *src);
 

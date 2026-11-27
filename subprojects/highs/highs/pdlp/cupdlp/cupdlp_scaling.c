@@ -326,8 +326,6 @@ cupdlp_retcode PDHG_Scale_Data(cupdlp_int log_level, CUPDLPcsc *csc,
     if (log_level) cupdlp_printf("--------------------------------------------------\n");
   }
 
-  /* make sure the csr matrix is also scaled*/
-  // csc2csr(data->csr_matrix, csc);
 #if CUPDLP_DEBUG
   //------------------- for debug ------------------
   dMinElem = OUR_DBL_MAX;

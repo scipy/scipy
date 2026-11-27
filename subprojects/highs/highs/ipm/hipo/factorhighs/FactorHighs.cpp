@@ -87,6 +87,11 @@ void FHsolver::setLogger(const Logger* logger, bool use_printf) {
 #endif
 }
 
+void FHsolver::setStopCallback(StopCallback should_stop, void* data) {
+  options_.should_stop = should_stop;
+  options_.stop_data = data;
+}
+
 void FHsolver::inertia(Int& pos, Int& neg, Int& zero, double tol) const {
   N_.inertia(pos, neg, zero, tol);
 }
@@ -146,8 +151,9 @@ Int FHsolver::reorderMetis(Int n, Int nz, const Int* rows, const Int* ptr,
 
   std::vector<Int> iperm(n);
 
-  Int status = HighsExtras::metis::nodeND(&n, full_ptr, full_rows, nullptr,
-                                          options, perm, iperm.data());
+  Int status =
+      HighsExtras::metis::nodeND(&n, full_ptr, full_rows, nullptr, options,
+                                 perm, iperm.data(), options_.should_stop, options_.stop_data);
 
   if (options_.one_indexing)
     for (Int i = 0; i < n; ++i) perm[i]++;
@@ -173,7 +179,8 @@ Int FHsolver::reorderAmd(Int n, Int nz, const Int* rows, const Int* ptr,
   double info[AMD_INFO];
 
   Int status =
-      HighsExtras::amd::order(n, full_ptr, full_rows, perm, control, info);
+      HighsExtras::amd::order(n, full_ptr, full_rows, perm, control, info,
+                              options_.should_stop, options_.stop_data);
 
   if (options_.one_indexing)
     for (Int i = 0; i < n; ++i) perm[i]++;

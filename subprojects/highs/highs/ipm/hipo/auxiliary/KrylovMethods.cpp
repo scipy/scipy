@@ -47,8 +47,8 @@ Int Gmres(const AbstractMatrix* M, const AbstractMatrix* P,
   // Attempt to solve M * x = b using GMRES, with the preconditioner P.
   // Return the number of iterations taken.
   //
-  // Based on Netlib implementation and Kelley "Iterative Methods for Linear and
-  // Nonlinear Equations":
+  // Following the algorithms in Kelley "Iterative Methods for Linear and
+  // Nonlinear Equations" and the Netlib implementation:
   // https://www.netlib.org/templates/cpp/gmres.h
   // https://www.netlib.org/templates/templates.pdf
   // https://en.wikipedia.org/wiki/Generalized_minimal_residual_method#Example_code

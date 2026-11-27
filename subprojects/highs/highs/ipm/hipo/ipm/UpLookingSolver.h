@@ -1,14 +1,18 @@
 #ifndef HIPO_UP_LOOKING_SOLVER_H
 #define HIPO_UP_LOOKING_SOLVER_H
 
+#include "Control.h"
 #include "Info.h"
 #include "IpmData.h"
 #include "KktMatrix.h"
 #include "LinearSolver.h"
 #include "Model.h"
 
-// Up-looking factorisation
-// Based on Tim Davis "Direct Methods for Sparse Linear Systems", cholmod, qdldl
+// Up-looking factorisation. The elimination tree and the row factorisation
+// kernels are adapted from QDLDL and live in the extras library
+// (extern/qdldl, Apache 2.0 license, see THIRD_PARTY_NOTICES.md). The
+// algorithms are described in T. Davis, "Direct Methods for Sparse Linear
+// Systems", SIAM, 2006.
 
 namespace hipo {
 
@@ -41,16 +45,18 @@ class UpLookingSolver : public LinearSolver {
   IpmData& data_;
   const Regularisation& regul_;
   const Model& model_;
+  const Control& control_;
 
   void etreeAndCounts(const std::vector<Int>& ptr, const std::vector<Int>& rows,
                       std::vector<Int64>& colcount);
-  void factor(const std::vector<Int>& ptr, const std::vector<Int>& rows,
-              const std::vector<double>& val);
+  Int factor(const std::vector<Int>& ptr, const std::vector<Int>& rows,
+             const std::vector<double>& val);
   void solve(std::vector<double>& x);
 
  public:
   UpLookingSolver(KktMatrix& kkt, Info& info, IpmData& data,
-                  const Regularisation& regul, const Model& model);
+                  const Regularisation& regul, const Model& model,
+                  const Control& control);
 
   Int factorAS(const std::vector<double>& scaling) override;
   Int factorNE(const std::vector<double>& scaling) override;

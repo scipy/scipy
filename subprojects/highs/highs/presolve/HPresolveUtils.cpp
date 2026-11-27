@@ -22,8 +22,8 @@ PresolveProbingScope::~PresolveProbingScope() {
 
 SingletonRowResult computeSingletonRowBounds(
     double val, double rowLower, double rowUpper, double colLower,
-    double colUpper, double primalFeastol, double maxAbsColVal, bool isIntegral,
-    double& lb, double& ub, bool& lowerTightened, bool& upperTightened) {
+    double colUpper, double primalFeastol, bool isIntegral, double& lb,
+    double& ub, bool& lowerTightened, bool& upperTightened) {
   if (val > 0) {
     if (colUpper * val <= rowUpper + primalFeastol &&
         colLower * val >= rowLower - primalFeastol)
@@ -69,15 +69,26 @@ SingletonRowResult computeSingletonRowBounds(
     // bounds could be infeasible or equal in tolerances, first check infeasible
     if (ub < lb - primalFeastol) return SingletonRowResult::kPrimalInfeasible;
 
-    // bounds are equal in tolerances, if they have a slight infeasibility below
-    // those tolerances or they have a slight numerical distance which changes
-    // the largest contribution below feasibility tolerance then we can safely
-    // set the bound to one of the values. To heuristically get rid of numerical
-    // errors we choose the bound that was not tightened, or the midpoint if
+    // Bounds are equal. To get rid of numerical errors heuristically,
+    // we choose the bound that was not tightened, or the midpoint if
     // both where tightened.
-    if (ub < lb ||
-        (ub > lb &&
-         (ub - lb) * std::max(std::abs(val), maxAbsColVal) <= primalFeastol)) {
+    //
+    // With reference to #3768, fixing variables by rounding like this
+    //
+    //    if (ub < lb) ||
+    //      (ub > lb &&
+    //       (ub - lb) * std::max(std::abs(val), maxAbsColVal) <= primalFeastol)
+    // can lead to a feasible MIP being declared infeasible as a
+    // near-fixed column removed at a bound moves its rows, and such
+    // moves add up
+    //
+    // Requiring the bound difference to be non-positive cannot be
+    // incorrect. It just fixes fewer variables
+    //
+    // Bounds that are apart stay apart: a column snapped to one bound
+    // moves its other rows, and such moves add up
+    //
+    if (ub < lb) {
       if (lowerTightened && upperTightened) {
         ub = 0.5 * (ub + lb);
         lb = ub;

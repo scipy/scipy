@@ -4,6 +4,7 @@
 #include "HConfig.h"
 
 #ifdef HIGHSINT64
+#include <cstdint>
 typedef int64_t HighsInt;
 typedef uint64_t HighsUInt;
 #define HIGHSINT_FORMAT PRId64

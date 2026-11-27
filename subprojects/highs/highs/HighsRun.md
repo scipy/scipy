@@ -72,9 +72,21 @@ The `HighsLp` class contains data values and structures that cannot be handled e
     upper bound is set to `kMaxSemiVariableUpper` (it is said to be "tightened". 
     Otherwise, it is deemed to be illegal
 
-These modifications are currently performed in `Highs::run()`, with
-very careful code to ensure that they are removed before returning
-from `Highs::run()`.
+- If the relaxation is being solved, the lower bound of any
+  semi-variable is set to zero in `relaxSemiVariables` (in
+  `HighsLpUtils.cpp`)
+
+All these modifications are applied in
+`Highs::optimizeModelApplyMods()`, and recorded in `HighsLp::mods_`.
+They are undone by `Highs::optimizeModelUndoMods()`, which is called
+from `Highs::returnFromOptimizeModel()` or, when returning before
+then (including after an exception), directly. The mods are applied
+for each call to `Highs::optimizeModel()`, rather than once in
+`Highs::optimizeHighs()`, since handling infinite costs depends on the
+objective, which changes between the optimizations when there are
+multiple objectives. A nested call to `Highs::optimizeModel()` from
+`Highs::completeSolutionFromDiscreteAssignment()` sees the model with
+mods applied, so doesn't apply or undo them.
 
 With the plan to allow indicator constraints and SOS as generalised
 disjunctive forms that will be reformulated, the handling of "mods"
@@ -102,13 +114,14 @@ previously in `app/RunHighs.cpp`, and user scaling
 
 ### `Highs::optimizeHighs()`
 
-The next layer applies any "mods" to the `HighsModel` class, and calls
-`Highs::optimizeModel()` or `Highs::multiobjectiveSolve()` if there
-are multiple objectives.
+The next layer calls `Highs::optimizeModel()` or
+`Highs::multiobjectiveSolve()` if there are multiple objectives.
 
 ### `Highs::optimizeModel()`
 
-The next layer should just optimize what's in the `HighsModel` (without semi-variables)
+The next layer applies any "mods" to the `HighsModel` class (see
+above) in `Highs::optimizeModelApplyMods()`, before optimizing it, and
+undoes them before returning
 
 ## Observations
 
@@ -126,7 +139,9 @@ The next layer should just optimize what's in the `HighsModel` (without semi-var
 
 - Move the code to write out the presolved model from `app/RunHighs.cpp` to `Highs::run()`
 
-- Move the "mods" to `Highs::optimizeHighs()`
+- Make the bound changes in
+  `Highs::processedBoundsFindsInfeasibility()` a "mod" that is undone,
+  rather than a permanent change to the incumbent model
 
 - For problems with multiple objectives
 

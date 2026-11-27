@@ -1831,6 +1831,8 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used()) {
              HighsCallbackType::kCallbackQpFirstFeasiblePoint)
       .value("kHighsCallbackQpInterrupt",
              HighsCallbackType::kCallbackQpInterrupt)
+      .value("kCallbackPdlpInterrupt",
+             HighsCallbackType::kCallbackPdlpInterrupt)
       .value("kCallbackMax", HighsCallbackType::kCallbackMax)
       .value("kNumCallbackType", HighsCallbackType::kNumCallbackType)
       .export_values();

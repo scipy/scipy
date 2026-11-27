@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "lp_data/HConst.h"
+#include "pdqsort/pdqsort.h"
 #include "util/HighsHash.h"
 #include "util/HighsHashTree.h"
 #include "util/HighsRandom.h"
@@ -96,6 +97,43 @@ class HighsCliqueTable {
   std::vector<HighsInt> deletedrows;
   std::vector<std::pair<HighsInt, CliqueVar>> cliqueextensions;
   std::vector<HighsBool> iscandidate;
+  // position of each clique variable (by index()) in the vector that is being
+  // partitioned into cliques, -1 for variables that are not being
+  // partitioned; scratch storage of the partition functions, not thread-safe
+  std::vector<HighsInt> clqVarPos;
+  // view of the clique variables that are being partitioned, together with
+  // their positions (pos[entries[i].index()] == i); sets the positions on
+  // construction and resets them on destruction
+  struct IndexedCliqueVars {
+    std::vector<CliqueVar>& entries;
+    std::vector<HighsInt>& pos;
+
+    IndexedCliqueVars(std::vector<CliqueVar>& entries,
+                      std::vector<HighsInt>& pos)
+        : entries(entries), pos(pos) {
+      setPositions(0, static_cast<HighsInt>(entries.size()));
+    }
+    ~IndexedCliqueVars() {
+      for (CliqueVar v : entries) pos[v.index()] = -1;
+    }
+    // sort a range of entries and update their positions
+    template <typename Comparator>
+    void sort(HighsInt start, HighsInt end, const Comparator& order) {
+      pdqsort_branchless(entries.begin() + start, entries.begin() + end, order);
+      setPositions(start, end);
+    }
+    // swap two entries and update their positions
+    void swap(HighsInt i, HighsInt j) {
+      std::swap(entries[i], entries[j]);
+      pos[entries[i].index()] = i;
+      pos[entries[j].index()] = j;
+    }
+
+   private:
+    void setPositions(HighsInt start, HighsInt end) {
+      for (HighsInt i = start; i < end; ++i) pos[entries[i].index()] = i;
+    }
+  };
   std::vector<HighsBool> colDeleted;
   std::vector<uint32_t> cliquehits;
   std::vector<HighsInt> cliquehitinds;
@@ -179,18 +217,28 @@ class HighsCliqueTable {
                           int64_t& numNeighbourhoodqueries, CliqueVar v,
                           CliqueVar* q, HighsInt N) const;
 
+  bool findNeighbourhoodByCliques(std::vector<HighsInt>& neighbourhoodInds,
+                                  int64_t& numNeighbourhoodqueries, CliqueVar v,
+                                  const IndexedCliqueVars& vars, HighsInt start,
+                                  HighsInt end) const;
+
+  HighsInt partitionNeighbourhood(std::vector<HighsInt>& neighbourhoodInds,
+                                  int64_t& numNeighbourhoodqueries, CliqueVar v,
+                                  IndexedCliqueVars& vars, HighsInt start,
+                                  HighsInt end) const;
+
   void recordSubstitution(Substitution substitution);
 
   void replaceLiteral(CliqueVar substitutedVar, CliqueVar replacementVar);
 
   template <bool Sort = true, typename Comparator>
   HighsInt extendClique(std::vector<HighsInt>& neighbourhoodInds,
-                        std::vector<CliqueVar>& clqVars, HighsInt seedPos,
+                        IndexedCliqueVars& vars, HighsInt seedPos,
                         HighsInt extensionEnd,
                         const Comparator& candidateOrder);
 
   HighsInt extendClique(std::vector<HighsInt>& neighbourhoodInds,
-                        std::vector<CliqueVar>& clqVars, HighsInt seedPos,
+                        IndexedCliqueVars& vars, HighsInt seedPos,
                         HighsInt extensionEnd);
 
  public:
@@ -211,6 +259,7 @@ class HighsCliqueTable {
     invertedHashList.resize(2 * ncols);
     invertedHashListSizeTwo.resize(2 * ncols);
     numcliquesvar.resize(2 * ncols, 0);
+    clqVarPos.resize(2 * ncols, -1);
     colsubstituted.resize(ncols);
     colDeleted.resize(ncols, false);
   }
@@ -257,10 +306,16 @@ class HighsCliqueTable {
 
   const std::vector<HighsInt>& getDeletedRows() const { return deletedrows; }
 
-  std::vector<Substitution>& getSubstitutions() { return substitutions; }
-
   const std::vector<Substitution>& getSubstitutions() const {
     return substitutions;
+  }
+
+  // remove the substitutions (e.g. after they have been applied to the model)
+  // together with the columns' references to them
+  void clearSubstitutions() {
+    for (const Substitution& subst : substitutions)
+      colsubstituted[subst.substcol] = 0;
+    substitutions.clear();
   }
 
   const Substitution* getSubstitution(HighsInt col) const {

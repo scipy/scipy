@@ -9,15 +9,6 @@
 
 #include "ipm/basiclu/lu_internal.h"
 
-static lu_int dfs_end(
-    lu_int i, const lu_int *begin, const lu_int *end, const lu_int *index,
-    lu_int top, lu_int *xi, lu_int *pstack, lu_int *marked, const lu_int M);
-
-static lu_int dfs(
-    lu_int i, const lu_int *begin, const lu_int *index,
-    lu_int top, lu_int *xi, lu_int *pstack, lu_int *marked, const lu_int M);
-
-
 /*
  * lu_dfs() - compute reach(i) in a graph by depth first search
  *
@@ -37,105 +28,74 @@ static lu_int dfs(
  *
  * If node i is marked on entry, the function does nothing.
  *
+ * Method: iterative depth first search [1,2]. A node is appended to the
+ * output when the search from it has finished. Writing the output from
+ * xi[top-1] downwards then gives a topological order of the reached nodes [2].
+ *
+ * The simulated recursion uses two stacks indexed by depth d:
+ *   pstack[d]  node being expanded at depth d,
+ *   xi[d]      position in index[] of the next neighbour of pstack[d].
+ * The second stack occupies xi[0..depth] while the output grows downward
+ * from xi[top-1]. Every node on either stack is newly reached, and the
+ * caller guarantees room for all newly reached nodes below top, so the two
+ * never overlap.
+ *
+ * [1] R. Tarjan, "Depth-first search and linear graph algorithms",
+ *     SIAM J. Comput. 1 (1972), pp. 146-160.
+ * [2] J. Gilbert and T. Peierls, "Sparse partial pivoting in time
+ *     proportional to arithmetic operations", SIAM J. Sci. Stat. Comput. 9
+ *     (1988), pp. 862-874.
  */
-
 lu_int lu_dfs(
     lu_int i, const lu_int *begin, const lu_int *end, const lu_int *index,
     lu_int top, lu_int *xi, lu_int *pstack, lu_int *marked, const lu_int M)
 {
+    lu_int depth, node, pos, child;
+
     if (marked[i] == M)
         return top;
 
-    return end ?
-        dfs_end(i, begin, end, index, top, xi, pstack, marked, M) :
-        dfs(i, begin, index, top, xi, pstack, marked, M);
-}
+    depth = 0;
+    marked[i] = M;
+    pstack[0] = i;
+    xi[0] = begin[i];
 
-
-/* ==========================================================================
- * dfs_end
- *
- * adapted from T. Davis, CSPARSE
- * ========================================================================== */
-
-static lu_int dfs_end(
-    lu_int i, const lu_int *begin, const lu_int *end, const lu_int *index,
-    lu_int top, lu_int *xi, lu_int *pstack, lu_int *marked, const lu_int M)
-{
-    lu_int inext, done, p, head = 0;
-    assert(marked[i] != M);
-
-    xi[0] = i;
-    while (head >= 0)
+    while (depth >= 0)
     {
-        i = xi[head];
-        if (marked[i] != M)     /* node i has not been visited */
+        node = pstack[depth];
+        pos = xi[depth];
+
+        /* Skip neighbours that have been reached already. The neighbour list
+         * ends at end[node], or at a negative entry when end is NULL. */
+        if (end)
         {
-            marked[i] = M;
-            pstack[head] = begin[i];
+            while (pos < end[node] && marked[index[pos]] == M)
+                pos++;
+            child = pos < end[node] ? index[pos] : -1;
         }
-        done = 1;
-        /* continue dfs at node i */
-        for (p = pstack[head]; p < end[i]; p++)
+        else
         {
-            inext = index[p];
-            if (marked[inext] == M)
-                continue;       /* skip visited node */
-            pstack[head] = p+1;
-            xi[++head] = inext; /* start dfs at node inext */
-            done = 0;
-            break;
+            while (index[pos] >= 0 && marked[index[pos]] == M)
+                pos++;
+            child = index[pos];
         }
-        if (done)               /* node i has no unvisited neighbours */
+
+        if (child >= 0)
         {
-            head--;
-            xi[--top] = i;
+            /* Descend into child; resume node after it later. */
+            xi[depth] = pos + 1;
+            depth++;
+            assert(depth < top);
+            marked[child] = M;
+            pstack[depth] = child;
+            xi[depth] = begin[child];
+        }
+        else
+        {
+            /* All neighbours of node done. */
+            depth--;
+            xi[--top] = node;
         }
     }
-
-    return top;
-}
-
-
-/* ==========================================================================
- * dfs
- *
- * adapted from T. Davis, CSPARSE
- * ========================================================================== */
-
-static lu_int dfs(
-    lu_int i, const lu_int *begin, const lu_int *index,
-    lu_int top, lu_int *xi, lu_int *pstack, lu_int *marked, const lu_int M)
-{
-    lu_int inext, done, p, head = 0;
-    assert(marked[i] != M);
-
-    xi[0] = i;
-    while (head >= 0)
-    {
-        i = xi[head];
-        if (marked[i] != M)     /* node i has not been visited */
-        {
-            marked[i] = M;
-            pstack[head] = begin[i];
-        }
-        done = 1;
-        /* continue dfs at node i */
-        for (p = pstack[head]; (inext = index[p]) >= 0; p++)
-        {
-            if (marked[inext] == M)
-                continue;       /* skip visited node */
-            pstack[head] = p+1;
-            xi[++head] = inext; /* start dfs at node inext */
-            done = 0;
-            break;
-        }
-        if (done)               /* node i has no unvisited neighbours */
-        {
-            head--;
-            xi[--top] = i;
-        }
-    }
-
     return top;
 }

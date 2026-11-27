@@ -100,7 +100,7 @@ FilereaderRetcode readMps(
     } else if (sense.compare("MIN") == 0) {
       objSense = ObjSense::kMinimize;
     } else {
-      return FilereaderRetcode::kParserError;
+      return failureInSection(log_options, "OBJSENSE");
     }
     highsLogDev(log_options, HighsLogType::kInfo,
                 "readMPS: Read OBJSENSE OK\n");
@@ -126,7 +126,7 @@ FilereaderRetcode readMps(
       }
     } else {
       if (mxNumRow > 0 && numRow >= mxNumRow)
-        return FilereaderRetcode::kParserError;
+        return failureInSection(log_options, "ROWS");
       rowType.push_back(flag[0]);
       // rowIndex is used to get the row index from a row name in the
       // COLUMNS, RHS and RANGES section. However, if this contains a
@@ -142,7 +142,8 @@ FilereaderRetcode readMps(
     }
   }
   highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read ROWS    OK\n");
-
+  if (objName == 0)
+    highsLogUser(log_options, HighsLogType::kInfo, "No objective row found\n");
   // Load COLUMNS
   map<double, int> colIndex;
   double lastName = 0;
@@ -157,7 +158,7 @@ FilereaderRetcode readMps(
     if (iRow >= 0) name = row_names[iRow];
     if (lastName != data[1]) {  // New column
       if (mxNumCol > 0 && numCol >= mxNumCol)
-        return FilereaderRetcode::kParserError;
+        return failureInSection(log_options, "COLUMNS");
       lastName = data[1];
       // colIndex is used to get the column index from a column name
       // in the BOUNDS section. However, if this contains a reference
@@ -203,6 +204,10 @@ FilereaderRetcode readMps(
             "%s\n",
             name.c_str(), line);
       }
+    } else {
+      highsLogUser(log_options, HighsLogType::kError,
+                   "COLUMNS section line contains no row name\n");
+      return failureInSection(log_options, "COLUMNS");
     }
     save_flag1 = flag[1];
   }
@@ -218,12 +223,18 @@ FilereaderRetcode readMps(
   }
   highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read COLUMNS OK\n");
 
+  // Keep track of the last section read so that it can be quoted if
+  // ENDATA is not read
+  std::string last_section_read = "COLUMNS";
+
   // Load RHS
   num_alien_entries = 0;
   vector<double> RHS(numRow, 0);
   save_flag1 = 0;
+  HighsInt num_rhs_read = 0;
   while (load_mpsLine(file, integerCol, lmax, line.data(), flag.data(),
                       data.data())) {
+    num_rhs_read++;
     if (data[2] != objName) {
       HighsInt iRow = rowIndex[data[2]] - 1;
       if (iRow >= 0) {
@@ -267,16 +278,45 @@ FilereaderRetcode readMps(
                  "  section: ignored\n",
                  num_alien_entries);
   }
-  highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read RHS     OK\n");
+  if (num_rhs_read) {
+    highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read RHS     OK\n");
+    last_section_read = "RHS";
+  }
 
-  // Load RANGES
-  num_alien_entries = 0;
+  // Setup default bounds for rows
   rowLower.resize(numRow);
   rowUpper.resize(numRow);
+  for (HighsInt iRow = 0; iRow < numRow; iRow++) {
+    switch (rowType[iRow]) {
+      case 'L':
+        rowLower[iRow] = -kHighsInf;
+        rowUpper[iRow] = RHS[iRow];
+        break;
+      case 'G':
+        rowLower[iRow] = RHS[iRow];
+        rowUpper[iRow] = +kHighsInf;
+        break;
+      case 'E':
+        rowLower[iRow] = RHS[iRow];
+        rowUpper[iRow] = RHS[iRow];
+        break;
+      case 'N':
+        rowLower[iRow] = -kHighsInf;
+        rowUpper[iRow] = +kHighsInf;
+        break;
+      case 'X':
+        break;
+    }
+  }
+
   if (flag[0] == 'R') {
+    // Load RANGES
+    num_alien_entries = 0;
     save_flag1 = 0;
+    HighsInt num_ranges_read = 0;
     while (load_mpsLine(file, integerCol, lmax, line.data(), flag.data(),
                         data.data())) {
+      num_ranges_read++;
       HighsInt iRow = rowIndex[data[2]] - 1;
       if (iRow >= 0) {
         if (rowType[iRow] == 'L' || (rowType[iRow] == 'E' && data[0] < 0)) {
@@ -308,48 +348,32 @@ FilereaderRetcode readMps(
       }
       save_flag1 = flag[1];
     }
-  }
-
-  // Setup bounds for row without 'RANGE'
-  for (HighsInt iRow = 0; iRow < numRow; iRow++) {
-    switch (rowType[iRow]) {
-      case 'L':
-        rowLower[iRow] = -kHighsInf;
-        rowUpper[iRow] = RHS[iRow];
-        break;
-      case 'G':
-        rowLower[iRow] = RHS[iRow];
-        rowUpper[iRow] = +kHighsInf;
-        break;
-      case 'E':
-        rowLower[iRow] = RHS[iRow];
-        rowUpper[iRow] = RHS[iRow];
-        break;
-      case 'N':
-        rowLower[iRow] = -kHighsInf;
-        rowUpper[iRow] = +kHighsInf;
-        break;
-      case 'X':
-        break;
+    if (num_alien_entries) {
+      warning_issued = true;
+      highsLogUser(log_options, HighsLogType::kWarning,
+                   "RANGES  section entries contain %8" HIGHSINT_FORMAT
+                   " with row not in ROWS  "
+                   "  section: ignored\n",
+                   num_alien_entries);
+    }
+    if (num_ranges_read) {
+      highsLogDev(log_options, HighsLogType::kInfo,
+                  "readMPS: Read RANGES  OK\n");
+      last_section_read = "RANGES";
     }
   }
-  if (num_alien_entries) {
-    warning_issued = true;
-    highsLogUser(log_options, HighsLogType::kWarning,
-                 "RANGES  section entries contain %8" HIGHSINT_FORMAT
-                 " with row not in ROWS  "
-                 "  section: ignored\n",
-                 num_alien_entries);
-  }
-  highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read RANGES  OK\n");
 
-  // Load BOUNDS
-  num_alien_entries = 0;
+  // Set up default bounds for columns
   colLower.assign(numCol, 0);
   colUpper.assign(numCol, kHighsInf);
   if (flag[0] == 'B') {
+    // Load BOUNDS
+    last_section_read = "BOUNDS";
+    HighsInt num_bounds_read = 0;
+    num_alien_entries = 0;
     while (load_mpsLine(file, integerCol, lmax, line.data(), flag.data(),
                         data.data())) {
+      num_bounds_read++;
       // Find the column index associated with the name "data[2]". If
       // the name is in colIndex then the value stored is the true
       // column index plus one. Otherwise 0 will be returned.
@@ -389,9 +413,21 @@ FilereaderRetcode readMps(
             name.c_str(), line);
       }
     }
+    if (num_alien_entries) {
+      warning_issued = true;
+      highsLogUser(log_options, HighsLogType::kWarning,
+                   "BOUNDS  section entries contain %8" HIGHSINT_FORMAT
+                   " with col not in "
+                   "COLUMNS section: ignored\n",
+                   num_alien_entries);
+    }
+    if (num_bounds_read)
+      highsLogDev(log_options, HighsLogType::kInfo,
+                  "readMPS: Read BOUNDS  OK\n");
   }
   // Load Hessian
   if (flag[0] == 'Q') {
+    last_section_read = "QUADOBJ/QSECTION";
     warning_issued = true;
     highsLogUser(log_options, HighsLogType::kWarning,
                  "Quadratic section: under development. Assumes "
@@ -413,11 +449,11 @@ FilereaderRetcode readMps(
       if (iCol0 != previous_col) {
         // Can't handle columns out of order
         if (iCol0 < previous_col) {
-          return FilereaderRetcode::kParserError;
+          return failureInSection(log_options, last_section_read);
         } else if (iCol0 > previous_col) {
           // A previous column has entries, but not on the diagonal
           if (previous_col >= 0 && !has_diagonal)
-            return FilereaderRetcode::kParserError;
+            return failureInSection(log_options, last_section_read);
           // New column, so set up starts of any intermediate (empty) columns
           for (HighsInt iCol = previous_col + 1; iCol < iCol0; iCol++)
             Qstart.push_back(hessian_nz);
@@ -427,7 +463,8 @@ FilereaderRetcode readMps(
         }
       }
       // Assumes QUADOBJ, so iCol1 cannot be less than iCol0
-      if (iCol1 < iCol0) return FilereaderRetcode::kParserError;
+      if (iCol1 < iCol0)
+        return failureInSection(log_options, last_section_read);
       if (iCol1 == iCol0) has_diagonal = true;
       if (value) {
         Qindex.push_back(iCol1);
@@ -453,25 +490,22 @@ FilereaderRetcode readMps(
       if (colUpper[iCol] >= kHighsInf) colUpper[iCol] = 1;
     }
   }
-  if (num_alien_entries) {
-    warning_issued = true;
-    highsLogUser(log_options, HighsLogType::kWarning,
-                 "BOUNDS  section entries contain %8" HIGHSINT_FORMAT
-                 " with col not in "
-                 "COLUMNS section: ignored\n",
-                 num_alien_entries);
-  }
-  highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read BOUNDS  OK\n");
-  highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read ENDATA  OK\n");
-  highsLogDev(log_options, HighsLogType::kInfo,
-              "readMPS: Model has %" HIGHSINT_FORMAT
-              " rows and %" HIGHSINT_FORMAT " columns with %" HIGHSINT_FORMAT
-              " integer\n",
-              numRow, numCol, num_int);
-  // Load ENDATA and close file
+  const bool read_endata = flag[0] == 'E';
+  // Close file
   file.close();
   // If there are no integer variables then clear the integrality vector
   if (!num_int) integerColumn.clear();
+
+  if (read_endata) {
+    highsLogDev(log_options, HighsLogType::kInfo, "readMPS: Read ENDATA  OK\n");
+    highsLogDev(log_options, HighsLogType::kInfo,
+                "readMPS: Model has %" HIGHSINT_FORMAT
+                " rows and %" HIGHSINT_FORMAT " columns with %" HIGHSINT_FORMAT
+                " integer\n",
+                numRow, numCol, num_int);
+  } else {
+    return failureInSection(log_options, last_section_read);
+  }
   return FilereaderRetcode::kOk;
 }
 
@@ -487,21 +521,38 @@ bool load_mpsLine(std::istream& file, HighsVarType& integerVar, HighsInt lmax,
     return true;
   }
 
+  char return_character[1];
   // try to read some to the line
   for (;;) {
     // Line input
     *line = '\0';
     file.get(line, lmax);
-    if (*line == '\0' && file.eof())  // nothing read and EOF
-      return false;
-
+    // A null character ('\0') is automatically appended to the
+    // written sequence, even if an empty string is extracted, so the
+    // following tests for nothing being read
+    if (*line == '\0') {
+      if (file.eof()) return false;
+      // The failbit is set, so subsequent reads (including getline)
+      // immediately fail unless you call clear()
+      file.clear();
+    }
     // Line trim   -- to delete tailing white spaces
     HighsInt lcnt = strlen(line) - 1;
     // if file.get() did not stop because it reached the lmax-1 limit,
-    // then because it reached a newline char (or eof); lets consume this
-    // newline (or do nothing if eof)
-    if (lcnt + 1 < lmax - 1) file.get();
-    while (isspace(line[lcnt]) && lcnt >= 0) lcnt--;
+    // then because it reached a newline char; lets consume this
+    // newline
+    //
+    //    if (lcnt + 1 < lmax - 1) file.get();
+    //
+    // Cannot use get() since the delimiting character is not
+    // extracted from the input sequence if found, and remains there
+    // as the next character to be extracted from the stream, leading
+    // to an infinite loop if there is a blank line in the MPS file
+    //
+    // Have to use getline(), since that extracts the delimiting
+    // character from the input sequence and then discards it
+    if (lcnt + 1 < lmax - 1) file.getline(return_character, 1);
+    while (lcnt >= 0 && isspace(line[lcnt])) lcnt--;
     if (lcnt <= 0 || line[0] == '*') continue;
 
     // Line expand -- to get data easier
@@ -546,6 +597,15 @@ bool load_mpsLine(std::istream& file, HighsVarType& integerVar, HighsInt lmax,
   }
 
   return true;
+}
+
+FilereaderRetcode failureInSection(const HighsLogOptions& log_options,
+                                   const std::string& section) {
+  highsLogUser(
+      log_options, HighsLogType::kError,
+      "Anomalous exit when parsing %s section of fixed format MPS file\n",
+      section.c_str());
+  return FilereaderRetcode::kParserError;
 }
 
 HighsStatus writeModelAsMps(const HighsOptions& options,

@@ -615,7 +615,7 @@ void HybridSolveHandler::inertia(Int& pos, Int& neg, Int& zero,
             if (trace > 0)
               pos += 2;
             else
-              neg -= 2;
+              neg += 2;
           } else {
             // indefinite 2x2 pivot
             ++pos;

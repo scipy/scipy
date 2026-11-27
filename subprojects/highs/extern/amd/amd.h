@@ -53,15 +53,24 @@ typedef unsigned int amd_uint;
 extern "C" {
 #endif
 
+/* Callback used to stop the ordering early (e.g. for a time limit). It is
+ * called with the user data pointer passed to Highs_amd_order and should
+ * return nonzero to request termination. It must not throw or longjmp. */
+typedef int (*Highs_amd_ShouldStop) (void *data) ;
+
 int Highs_amd_order  /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
-                                    * AMD_INVALID, or AMD_OUT_OF_MEMORY */
+                                    * AMD_INVALID, AMD_OUT_OF_MEMORY, or
+                                    * AMD_INTERRUPTED */
 (
     amd_int n,                         /* A is n-by-n.  n must be >= 0. */
     const amd_int Ap [ ],              /* column pointers for A, of size n+1 */
     const amd_int Ai [ ],              /* row indices of A, of size nz = Ap [n] */
     amd_int P [ ],                     /* output permutation, of size n */
     double Control [ ],     /* input Control settings, of size AMD_CONTROL */
-    double Info [ ]         /* output Info statistics, of size AMD_INFO */
+    double Info [ ],        /* output Info statistics, of size AMD_INFO */
+    Highs_amd_ShouldStop should_stop, /* checked during the ordering; may be
+                                       * NULL */
+    void *stop_data         /* passed to should_stop */
 ) ;
 
 /* Input arguments (not modified):
@@ -232,7 +241,7 @@ int Highs_amd_order  /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
  * of the matrix for AMD to destroy).  Refer to AMD/Source/amd_2.c for a
  * description of each parameter. */
 
-void Highs_amd_2
+int Highs_amd_2     /* returns AMD_OK or AMD_INTERRUPTED */
 (
     amd_int n,
     amd_int Pe [ ],
@@ -248,7 +257,9 @@ void Highs_amd_2
     amd_int Degree [ ],
     amd_int W [ ],
     double Control [ ],
-    double Info [ ]
+    double Info [ ],
+    Highs_amd_ShouldStop should_stop,
+    void *stop_data
 ) ;
 
 /* ------------------------------------------------------------------------- */
@@ -322,6 +333,7 @@ void Highs_amd_info       (double Info [ ]) ;
 #define AMD_OK 0           /* success */
 #define AMD_OUT_OF_MEMORY -1        /* malloc failed, or problem too large */
 #define AMD_INVALID -2              /* input arguments are not valid */
+#define AMD_INTERRUPTED -3          /* stopped by the should_stop callback */
 #define AMD_OK_BUT_JUMBLED 1        /* input matrix is OK for amd_order, but
     * columns were not sorted, and/or duplicate entries were present.  AMD had
     * to do extra work before ordering the matrix.  This is a warning, not an

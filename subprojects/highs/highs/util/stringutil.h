@@ -17,8 +17,8 @@
 #include <vector>
 
 static const std::string kDefaultNonChars = "\t\n\v\f\r ";
-static const char* kLegalIntegerCharacters = "+-0123456789eE";
-static const char* kLegalDoubleCharacters = ".+-0123456789eE";
+static const char* const kLegalIntegerCharacters = "+-0123456789eE";
+static const char* const kLegalDoubleCharacters = ".+-0123456789eE";
 
 /*
 void strRemoveWhitespace(char* str);

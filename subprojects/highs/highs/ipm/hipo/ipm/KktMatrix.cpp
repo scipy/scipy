@@ -82,7 +82,7 @@ Int KktMatrix::buildASvalues(const std::vector<double>& scaling) {
 
   for (Int i = 0; i < n; ++i) {
     valAS[ptrAS[i]] = scaling.empty() ? -1.0 : -scaling[i];
-    if (model.qp()) valAS[ptrAS[i]] -= model.sense() * model.Q().diag(i);
+    if (model.qp()) valAS[ptrAS[i]] -= model.Q().diag(i);
   }
 
   info.times[kMatrixValuesTime] += clock.stop();
@@ -261,7 +261,7 @@ Int KktMatrix::buildNEvalues(const std::vector<double>& scaling) {
 
       double denom = scaling.empty() ? 1.0 : scaling[col];
       denom += regul.primal;
-      if (model.qp()) denom += model.sense() * Q.diag(col);
+      if (model.qp()) denom += Q.diag(col);
 
       const double mult = 1.0 / denom;
       const double row_value = mult * A.value_[corr];

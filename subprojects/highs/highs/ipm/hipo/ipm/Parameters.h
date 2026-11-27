@@ -45,8 +45,21 @@ const double kUplookNzPerColUpper = 25;
 const double kUplookSpopsRatioLower = 20;
 const double kUplookSpopsRatioUpper = 100;
 
+// parameters for uplooking factorisation
+const Int64 kUplookTimeCheckWork = 10000000;
+
 // parameters for skipping AS or NE
 const double kSkipSystemNzBoundsRatio = 50.0;
+
+// margins over the serial storage of the factorisation when checking memory.
+// Measured peaks were up to 1.15 times the storage in serial, and 2.3 times
+// with a parallel tree. These are conservative guesses, to be refined
+const double kMemoryMarginSerial = 1.2;
+const double kMemoryMarginParallelTree = 2.5;
+
+// Below this many bytes required, memory is not checked, since reading the
+// available memory costs about 30us of file reads on Linux
+const double kMemoryCheckMinBytes = 256.0 * 1024 * 1024;
 
 // parameters for iterative refinement
 const Int kRefineMaxIter = 3;

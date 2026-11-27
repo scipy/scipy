@@ -14,8 +14,11 @@ Int Model::init(const HighsLp& lp, const HighsHessian& Q) {
   rhs_orig_ = b_;
   constraints_orig_ = constraints_;
   Q_ = Q;
-  if (qp()) completeHessian(n_, Q_);
-  sense_ = lp.sense_;
+  if (qp()) {
+    completeHessian(n_, Q_);
+    if (lp.sense_ == ObjSense::kMaximize)
+      for (double& val : Q_.value_) val = -val;
+  }
 
   if (checkData()) return kErrorModel;
 

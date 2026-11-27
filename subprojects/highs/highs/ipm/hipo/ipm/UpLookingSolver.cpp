@@ -1,12 +1,13 @@
 #include "UpLookingSolver.h"
 
+#include "HighsExternalApi.h"
 #include "ipm/hipo/auxiliary/Auxiliary.h"
 
 namespace hipo {
 
 UpLookingSolver::UpLookingSolver(KktMatrix& kkt, Info& info, IpmData& data,
                                  const Regularisation& regul,
-                                 const Model& model)
+                                 const Model& model, const Control& control)
     : kkt_{kkt},
       ptr_{kkt_.isNE() ? kkt_.ptrNE : kkt_.ptrAS},
       rows_{kkt_.isNE() ? kkt_.rowsNE : kkt_.rowsAS},
@@ -15,28 +16,18 @@ UpLookingSolver::UpLookingSolver(KktMatrix& kkt, Info& info, IpmData& data,
       info_{info},
       data_{data},
       regul_{regul},
-      model_{model} {}
+      model_{model},
+      control_{control} {}
 
 void UpLookingSolver::etreeAndCounts(const std::vector<Int>& ptr,
                                      const std::vector<Int>& rows,
                                      std::vector<Int64>& colcount) {
   // compute elimination tree and column counts
-  parent_.assign(n_, -1);
-  colcount.assign(n_, 1);
-  std::vector<Int> ancestor(n_, 0);
-
-  for (Int col = 0; col < n_; ++col) {
-    ancestor[col] = col;
-    for (Int el = ptr[col]; el < ptr[col + 1]; ++el) {
-      Int row = rows[el];
-      while (ancestor[row] != col) {
-        if (parent_[row] < 0) parent_[row] = col;
-        ++colcount[row];
-        ancestor[row] = col;
-        row = parent_[row];
-      }
-    }
-  }
+  parent_.resize(n_);
+  colcount.resize(n_);
+  std::vector<Int> work(n_);
+  HighsExtras::qdldl::etree(n_, ptr.data(), rows.data(), parent_.data(),
+                            colcount.data(), work.data());
 }
 
 Int UpLookingSolver::setup() {
@@ -73,9 +64,9 @@ Int UpLookingSolver::setup() {
   return kOk;
 }
 
-void UpLookingSolver::factor(const std::vector<Int>& ptr,
-                             const std::vector<Int>& rows,
-                             const std::vector<double>& val) {
+Int UpLookingSolver::factor(const std::vector<Int>& ptr,
+                            const std::vector<Int>& rows,
+                            const std::vector<double>& val) {
   // Up-looking factorisation.
   // It computes L one row at a time.
   // If the first k rows have been computed, then we already have a
@@ -91,70 +82,28 @@ void UpLookingSolver::factor(const std::vector<Int>& ptr,
   //
   // A must be upper triangular.
   // L is computed as lower triangular. The diagonal of L is used to store D^-1.
+  //
+  // Returns kErrorFactorise if the time limit is reached; L is then invalid.
 
   std::vector<HighsBool> mark(n_, false);
   std::vector<Int> stack(n_);
-  Int top = 0;
   std::vector<Int> revpattern(n_);
   std::vector<double> x(n_, 0.0);
   std::vector<Int64> next = ptrL_;
 
+  // number of entries of L scanned since the last check of the time limit
+  Int64 work = 0;
+
   for (Int row = 0; row < n_; ++row) {
-    // ===================================================================
-    //  Sparsity pattern of row of L
-    // ===================================================================
-    // Compute the sparsity pattern of current row of L by traversing the row
-    // subtree (see ereach in Davis' book)
-
-    Int rowcount = 0;
-
-    for (Int el = ptr[row]; el < ptr[row + 1]; ++el) {
-      Int i = rows[el];
-      top = 0;
-
-      assert(i <= row);
-
-      while (i >= 0 && i < row && !mark[i]) {
-        mark[i] = true;
-        stack[top++] = i;
-        i = parent_[i];
-      }
-
-      while (top > 0) {
-        --top;
-        revpattern[rowcount] = stack[top];
-        ++rowcount;
-      }
+    if (work >= kUplookTimeCheckWork) {
+      work = 0;
+      if (control_.timeLimitReached()) return kErrorFactorise;
     }
 
-    // ===================================================================
-    //  Values of row of L
-    // ===================================================================
-    // Compute l, by computing L^-1 * b in x, and then multiplying by Dinv
-
-    x[row] = 0.0;
-    for (Int el = ptr[row]; el < ptr[row + 1]; ++el) x[rows[el]] = val[el];
-    double d = x[row];
-    x[row] = 0.0;
-
-    for (Int i = 0; i < rowcount; ++i) {
-      const Int col = revpattern[rowcount - 1 - i];
-
-      double value = x[col];
-      x[col] = 0.0;
-      assert(rowsL_[ptrL_[col]] == col);
-      for (Int el = ptrL_[col] + 1; el < next[col]; ++el)
-        x[rowsL_[el]] -= valL_[el] * value;
-
-      const double Dinv = valL_[ptrL_[col]];
-      rowsL_[next[col]] = row;
-      valL_[next[col]] = value * Dinv;
-
-      d -= value * valL_[next[col]];
-      next[col]++;
-
-      mark[col] = false;
-    }
+    double d = HighsExtras::qdldl::factorRow(
+        row, ptr.data(), rows.data(), val.data(), parent_.data(),
+        ptrL_.data(), rowsL_.data(), valL_.data(), next.data(), mark.data(),
+        stack.data(), revpattern.data(), x.data(), &work);
 
     // diagonal entry
     double old_pivot = d;
@@ -173,6 +122,8 @@ void UpLookingSolver::factor(const std::vector<Int>& ptr,
     rowsL_[next[row]] = row;
     next[row]++;
   }
+
+  return kOk;
 }
 
 void UpLookingSolver::solve(std::vector<double>& x) {
@@ -211,7 +162,7 @@ Int UpLookingSolver::factorAS(const std::vector<double>& scaling) {
   permuteSym(kkt_.iperm(), ptrT, rowsT, valT, false);
 
   clock.start();
-  factor(ptrT, rowsT, valT);
+  if (Int status = factor(ptrT, rowsT, valT)) return status;
   info_.times[kFactoriseTime] += clock.stop();
   info_.factor_number++;
 
@@ -233,7 +184,7 @@ Int UpLookingSolver::factorNE(const std::vector<double>& scaling) {
   permuteSym(kkt_.iperm(), ptrT, rowsT, valT, false);
 
   clock.start();
-  factor(ptrT, rowsT, valT);
+  if (Int status = factor(ptrT, rowsT, valT)) return status;
   info_.times[kFactoriseTime] += clock.stop();
   info_.factor_number++;
 

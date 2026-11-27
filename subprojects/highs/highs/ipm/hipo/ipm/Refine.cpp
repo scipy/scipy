@@ -64,8 +64,9 @@ static void updateOmega(double tau, double& omega1, double& omega2, double num,
 }
 
 double Solver::computeOmega(const NewtonDir& delta) const {
-  // Evaluate iterative refinement progress. Based on "Solving sparse linear
-  // systems with sparse backward error", Arioli, Demmel, Duff.
+  // Evaluate iterative refinement progress, following the algorithms in
+  // "Solving sparse linear systems with sparse backward error", Arioli, Demmel,
+  // Duff.
 
   // Compute |A| * |dx| and |A^T| * |dy|
   std::vector<double> abs_prod_A(m_);

@@ -66,6 +66,10 @@ HPresolve::Result HPresolve::singletonColStuffing(
 
   // lambda for fixing a variable
   auto fixCol = [&](HighsInt col, HighsInt direction) {
+    // remove the column from the clique table first, so that fixing it does
+    // not fix other columns via the clique table, which would invalidate the
+    // activity bounds and candidates computed for the row (see issue #3628)
+    presolveCliqueTable.eliminateCol(col);
     if (direction < 0)
       HPRESOLVE_CHECKED_CALL(fixColToLower(postsolve_stack, col));
     else

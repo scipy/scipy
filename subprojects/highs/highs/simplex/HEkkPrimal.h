@@ -125,7 +125,7 @@ class HEkkPrimal {
   EdgeWeightMode edge_weight_mode;
   double primal_feasibility_tolerance;
   double dual_feasibility_tolerance;
-  double objective_target;
+  double objective_target_;
   HighsInt rebuild_reason;
   // Pivot related
   HighsInt variable_in;

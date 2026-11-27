@@ -490,8 +490,8 @@ void getKktFailures(const HighsOptions& options, const bool is_qp,
   if (have_dual_solution) {
     // Determine the primal-dual objective error
     //
-    // IPX computes objective_gap = (pobjective-dobjective) / (1.0 +
-    // 0.5*std::fabs(pobjective+dobjective));
+    // IPX computes pdgap = (pobj-dobj) / (1.0 +
+    // 0.5*std::fabs(pobj+dobj-2*offset));
     //
     // PDLP computes dRelObjGap = fabs(dPrimalObj - dDualObj) / (1.0 +
     // fabs(dPrimalObj) + fabs(dDualObj));
@@ -503,16 +503,20 @@ void getKktFailures(const HighsOptions& options, const bool is_qp,
     // -(1/2)(g-c)^Tx = (1/2)(c-g)^Tx, so pass a pointer to the
     // gradient data if this is necessary
     const double* gradient_p = is_qp ? gradient.data() : nullptr;
+    const double primal_objective_value = highs_info.objective_function_value;
     double dual_objective_value;
     bool dual_objective_status = computeDualObjectiveValue(
         gradient_p, lp, solution, dual_objective_value);
     assert(dual_objective_status);
     const double abs_objective_difference =
-        std::fabs(highs_info.objective_function_value - dual_objective_value);
+        std::fabs(primal_objective_value - dual_objective_value);
     primal_dual_objective_error = abs_objective_difference;
-    const double denominator = 1.0 +
-                               std::fabs(highs_info.objective_function_value) +
-                               std::fabs(dual_objective_value);
+    const double primal_objective_value_less_offset =
+        primal_objective_value - lp.offset_;
+    const double dual_objective_value_less_offset =
+        dual_objective_value - lp.offset_;
+    double denominator = 1.0 + std::fabs(primal_objective_value_less_offset) +
+                         std::fabs(dual_objective_value_less_offset);
     primal_dual_objective_error = primal_dual_objective_error / denominator;
   }
 

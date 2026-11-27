@@ -105,7 +105,13 @@ class HighsCDouble {
     return *this;
   }
 
+  // the division is accurate for normalized operands only. if the parts hi and
+  // lo are much larger than their sum, the rounding errors are relative to the
+  // parts, and the correction step widens the gap between hi and lo, so that
+  // repeated divisions can lose all precision (see issue #3604). renormalizing
+  // does not change the value.
   HighsCDouble& operator/=(double v) {
+    renormalize();
     HighsCDouble d(hi / v, lo / v);
     HighsCDouble c = d * v - (*this);
     c.hi /= v;
@@ -115,11 +121,14 @@ class HighsCDouble {
   }
 
   HighsCDouble& operator/=(const HighsCDouble& v) {
-    double vdbl = v.hi + v.lo;
-    HighsCDouble d(hi / vdbl, lo / vdbl);
-    HighsCDouble c = d * v - (*this);
-    c.hi /= vdbl;
-    c.lo /= vdbl;
+    // renormalize a copy of the divisor (v may refer to *this)
+    HighsCDouble vn = v;
+    vn.renormalize();
+    renormalize();
+    HighsCDouble d(hi / vn.hi, lo / vn.hi);
+    HighsCDouble c = d * vn - (*this);
+    c.hi /= vn.hi;
+    c.lo /= vn.hi;
     *this = d - c;
     return *this;
   }

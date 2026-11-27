@@ -527,6 +527,7 @@ unsigned int rngSeed();
 
 #include <cstdint>
 #include <iosfwd>
+#include <new>
 #include <string>
 
 // We need a dummy global operator<< so we can bring it into Catch namespace

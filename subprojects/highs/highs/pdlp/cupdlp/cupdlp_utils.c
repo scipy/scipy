@@ -9,7 +9,6 @@
 
 #include <time.h>
 
-#include "pdlp/cupdlp/cupdlp_cs.h"
 #include "pdlp/cupdlp/cupdlp_linalg.h"
 #include "pdlp/cupdlp/glbopts.h"
 
@@ -1165,15 +1164,24 @@ void dense_copy(CUPDLPdense *dst, CUPDLPdense *src) {
   return;
 }
 
-void csr_copy(CUPDLPcsr *dst, CUPDLPcsr *src) {
+cupdlp_int csr_copy(CUPDLPcsr *dst, CUPDLPcsr *src) {
   dst->nRows = src->nRows;
   dst->nCols = src->nCols;
   dst->nMatElem = src->nMatElem;
-  cupdlp_copy(dst->rowMatBeg, src->rowMatBeg, cupdlp_int, src->nRows + 1);
-  cupdlp_copy(dst->rowMatIdx, src->rowMatIdx, cupdlp_int, src->nMatElem);
-  cupdlp_copy(dst->rowMatElem, src->rowMatElem, cupdlp_float, src->nMatElem);
+  CUPDLP_COPY_VEC(dst->rowMatBeg, src->rowMatBeg, cupdlp_int, src->nRows + 1);
+  CUPDLP_COPY_VEC(dst->rowMatIdx, src->rowMatIdx, cupdlp_int, src->nMatElem);
+  CUPDLP_COPY_VEC(dst->rowMatElem, src->rowMatElem, cupdlp_float,
+                  src->nMatElem);
 
-  return;
+#ifndef CUPDLP_CPU
+  // Pointer to GPU csr matrix
+  CHECK_CUSPARSE(cusparseCreateCsr(
+      &dst->cuda_csr, src->nRows, src->nCols, src->nMatElem, dst->rowMatBeg,
+      dst->rowMatIdx, dst->rowMatElem, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+      CUSPARSE_INDEX_BASE_ZERO, CudaComputeType));
+#endif
+
+  return 0;
 }
 
 cupdlp_int csc_copy(CUPDLPcsc *dst, CUPDLPcsc *src) {
@@ -1190,63 +1198,6 @@ cupdlp_int csc_copy(CUPDLPcsc *dst, CUPDLPcsc *src) {
   CHECK_CUSPARSE(cusparseCreateCsc(
       &dst->cuda_csc, src->nRows, src->nCols, src->nMatElem, dst->colMatBeg,
       dst->colMatIdx, dst->colMatElem, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-      CUSPARSE_INDEX_BASE_ZERO, CudaComputeType));
-#endif
-
-  return 0;
-}
-
-void csr2csc(CUPDLPcsc *csc, CUPDLPcsr *csr) {
-  cupdlp_dcs *cs_csr =
-      cupdlp_dcs_spalloc(csr->nCols, csc->nRows, csc->nMatElem, 1, 0);
-  cupdlp_copy(cs_csr->p, csr->rowMatBeg, cupdlp_int, csr->nRows + 1);
-  cupdlp_copy(cs_csr->i, csr->rowMatIdx, cupdlp_int, csr->nMatElem);
-  cupdlp_copy(cs_csr->x, csr->rowMatElem, cupdlp_float, csr->nMatElem);
-
-  cupdlp_dcs *cs_csc = cupdlp_dcs_transpose(cs_csr, 1);
-  csc->nCols = cs_csc->m;
-  csc->nRows = cs_csc->n;
-  csc->nMatElem = cs_csc->nzmax;
-  cupdlp_copy(csc->colMatBeg, cs_csc->p, cupdlp_int, cs_csc->n + 1);
-  cupdlp_copy(csc->colMatIdx, cs_csc->i, cupdlp_int, cs_csc->nzmax);
-  cupdlp_copy(csc->colMatElem, cs_csc->x, cupdlp_float, cs_csc->nzmax);
-
-  // cupdlp_dcs_free(cs_csc);
-  // cupdlp_dcs_free(cs_csr);
-  cupdlp_dcs_spfree(cs_csc);
-  cupdlp_dcs_spfree(cs_csr);
-
-  return;
-}
-
-cupdlp_int csc2csr(CUPDLPcsr *csr, CUPDLPcsc *csc) {
-  // The transpose may need to be done on the GPU
-  // Currently, it is done on the CPU
-
-  cupdlp_dcs *cs_csc =
-      cupdlp_dcs_spalloc(csc->nRows, csc->nCols, csc->nMatElem, 1, 0);
-  cupdlp_copy(cs_csc->p, csc->colMatBeg, cupdlp_int, csc->nCols + 1);
-  cupdlp_copy(cs_csc->i, csc->colMatIdx, cupdlp_int, csc->nMatElem);
-  cupdlp_copy(cs_csc->x, csc->colMatElem, cupdlp_float, csc->nMatElem);
-
-  cupdlp_dcs *cs_csr = cupdlp_dcs_transpose(cs_csc, 1);
-  csr->nCols = cs_csr->m;
-  csr->nRows = cs_csr->n;
-  csr->nMatElem = cs_csr->nzmax;
-  CUPDLP_COPY_VEC(csr->rowMatBeg, cs_csr->p, cupdlp_int, cs_csr->n + 1);
-  CUPDLP_COPY_VEC(csr->rowMatIdx, cs_csr->i, cupdlp_int, cs_csr->nzmax);
-  CUPDLP_COPY_VEC(csr->rowMatElem, cs_csr->x, cupdlp_float, cs_csr->nzmax);
-
-  // cupdlp_dcs_free(cs_csc);
-  // cupdlp_dcs_free(cs_csr);
-  cupdlp_dcs_spfree(cs_csc);
-  cupdlp_dcs_spfree(cs_csr);
-
-#ifndef CUPDLP_CPU
-  // Pointer to GPU csc matrix
-  CHECK_CUSPARSE(cusparseCreateCsr(
-      &csr->cuda_csr, csr->nRows, csr->nCols, csr->nMatElem, csr->rowMatBeg,
-      csr->rowMatIdx, csr->rowMatElem, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
       CUSPARSE_INDEX_BASE_ZERO, CudaComputeType));
 #endif
 
@@ -1418,9 +1369,6 @@ cupdlp_retcode csr_alloc_matrix(CUPDLPcsr *csr, cupdlp_int nRows,
     case CSR:
       csr_copy(csr, (CUPDLPcsr *)src);
       break;
-    case CSC:
-      csc2csr(csr, (CUPDLPcsc *)src);
-      break;
     default:
       break;
   }
@@ -1454,9 +1402,6 @@ cupdlp_retcode csc_alloc_matrix(CUPDLPcsc *csc, cupdlp_int nRows,
   switch (src_matrix_format) {
     case DENSE:
       dense2csc(csc, (CUPDLPdense *)src);
-      break;
-    case CSR:
-      csr2csc(csc, (CUPDLPcsr *)src);
       break;
     case CSC:
       csc_copy(csc, (CUPDLPcsc *)src);

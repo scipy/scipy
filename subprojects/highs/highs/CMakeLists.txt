@@ -244,7 +244,6 @@ else()
           pdlp/cupdlp/cuda/cupdlp_cuda_kernels.cuh
           pdlp/cupdlp/cuda/cupdlp_cudalinalg.cuh
           pdlp/cupdlp/cuda/cupdlp_cudalinalg.cu
-          pdlp/cupdlp/cupdlp_cs.c
           pdlp/hipdlp/pdhg.cu)
 
         set_target_properties(highs PROPERTIES
@@ -405,6 +404,8 @@ else()
 
       if(DOTNET_TARGET_ARCH MATCHES "^(aarch64|arm64)")
         set(DOTNET_PLATFORM arm64)
+      elseif(DOTNET_TARGET_ARCH MATCHES "^arm")
+        set(DOTNET_PLATFORM arm)
       elseif(WIN32 AND (CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_SIZEOF_VOID_P EQUAL 4))
         set(DOTNET_PLATFORM x86)
       else()

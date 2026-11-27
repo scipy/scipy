@@ -1,6 +1,9 @@
 #ifndef FACTOR_HIGHS_H
 #define FACTOR_HIGHS_H
 
+#include <functional>
+#include <utility>
+
 #include "CliqueStack.h"
 #include "DataCollector.h"
 #include "FactorHighsOptions.h"
@@ -80,12 +83,16 @@ via the Symbolic object, S.iperm().
 namespace hipo {
 
 class FHsolver {
-  const Logger* logger_;
+  const Logger* logger_ = nullptr;
   DataCollector data_;
   Numeric N_;
   CliqueStack serial_stack_;
   bool local_logger_ = false;
 
+ public:
+  using StopCallback = FHoptions::StopCallback;
+
+ private:
   FHoptions options_{};
 
   // Columns of factorisation, stored by supernode.
@@ -146,6 +153,12 @@ class FHsolver {
   // By default, logging is off.
   void setLogger(const Logger* logger = nullptr, bool use_printf = false);
   const Logger* getLogger() const { return logger_; }
+
+  // Pass a callback that is checked periodically during reorderMetis,
+  // reorderAmd and the factorisation; if it returns nonzero, the computation
+  // stops and returns an error. data is passed to the callback. Pass nullptr
+  // to remove the callback.
+  void setStopCallback(StopCallback should_stop, void* data = nullptr);
 
   // Compute number of positive, negative and zero pivots, using tol as
   // tolerance for zero.

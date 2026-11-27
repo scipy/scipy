@@ -595,6 +595,19 @@ void PDLPSolver::solve(std::vector<double>& x, std::vector<double>& y) {
       break;
     }
 
+    // check for user interrupt
+    if (highs_callback_p_ && highs_callback_p_->user_callback &&
+        highs_callback_p_->active[kCallbackPdlpInterrupt]) {
+      highs_callback_p_->clearHighsCallbackOutput();
+      highs_callback_p_->data_out.pdlp_iteration_count = final_iter_count_;
+      if (highs_callback_p_->callbackAction(kCallbackPdlpInterrupt,
+                                            "PDLP interrupt")) {
+        logger_.info("User interrupt.");
+        termination_status = TerminationStatus::INTERRUPT;
+        break;
+      }
+    }
+
     // -- Step 1 (Major, isolated for restart-FPE check) --
 #if defined(CUPDLP_GPU) || defined(HIPDLP_GPU)
     GpuStepParams h_step_params{stepsize_.primal_step, stepsize_.dual_step,
@@ -712,6 +725,11 @@ void PDLPSolver::solve(std::vector<double>& x, std::vector<double>& y) {
     termination_status = TerminationStatus::MAXITER;
   }
 
+  // The output vectors are only set on convergence, so if the solver
+  // stopped for any other reason (iteration limit, time limit, user
+  // interrupt), return the latest iterate rather than the initial point
+  if (termination_status != TerminationStatus::OPTIMAL) getLastIterate(x, y);
+
   solveReturn(termination_status);
 }
 
@@ -811,18 +829,16 @@ bool PDLPSolver::runConvergenceCheck(size_t iter, std::vector<double>& output_x,
   if (params_.use_halpern_restart && d_pdhg_primal_ != nullptr && iter > 0) {
     linalgGpuAx(d_pdhg_primal_, d_ax_next_);
     linalgGpuATy(d_pdhg_dual_, d_aty_next_);
-    current_converged =
-        checkConvergenceGpu(iter, d_pdhg_primal_, d_pdhg_dual_, d_ax_next_,
-                            d_aty_next_, params_.tolerance, current_results,
-                            "[L-GPU]", d_dSlackPos_, d_dSlackNeg_, true);
+    current_converged = checkConvergenceGpu(
+        iter, d_pdhg_primal_, d_pdhg_dual_, d_ax_next_, d_aty_next_,
+        current_results, "[L-GPU]", d_dSlackPos_, d_dSlackNeg_, true);
   } else {
-    current_converged =
-        checkConvergenceGpu(iter, d_x_current_, d_y_current_, d_ax_current_,
-                            d_aty_current_, params_.tolerance, current_results,
-                            "[L-GPU]", d_dSlackPos_, d_dSlackNeg_, false);
+    current_converged = checkConvergenceGpu(
+        iter, d_x_current_, d_y_current_, d_ax_current_, d_aty_current_,
+        current_results, "[L-GPU]", d_dSlackPos_, d_dSlackNeg_, false);
     average_converged = checkConvergenceGpu(
-        iter, d_x_avg_, d_y_avg_, d_ax_avg_, d_aty_avg_, params_.tolerance,
-        average_results, "[A-GPU]", d_dSlackPosAvg_, d_dSlackNegAvg_, false);
+        iter, d_x_avg_, d_y_avg_, d_ax_avg_, d_aty_avg_, average_results,
+        "[A-GPU]", d_dSlackPosAvg_, d_dSlackNegAvg_, false);
   }
 
 #else
@@ -831,18 +847,18 @@ bool PDLPSolver::runConvergenceCheck(size_t iter, std::vector<double>& output_x,
     std::vector<double> ATy_pdhg(lp_.num_col_);
     linalg::ax(lp_, x_next_, Ax_pdhg);
     linalg::aTy(lp_, y_next_, ATy_pdhg);
-    current_converged = checkConvergence(
-        iter, x_next_, y_next_, Ax_pdhg, ATy_pdhg, params_.tolerance,
-        current_results, "[L]", dSlackPos_, dSlackNeg_);
+    current_converged =
+        checkConvergence(iter, x_next_, y_next_, Ax_pdhg, ATy_pdhg,
+                         current_results, "[L]", dSlackPos_, dSlackNeg_);
   } else {
-    current_converged = checkConvergence(
-        iter, x_current_, y_current_, Ax_cache_, ATy_cache_, params_.tolerance,
-        current_results, "[L]", dSlackPos_, dSlackNeg_);
+    current_converged =
+        checkConvergence(iter, x_current_, y_current_, Ax_cache_, ATy_cache_,
+                         current_results, "[L]", dSlackPos_, dSlackNeg_);
   }
   if (!params_.use_halpern_restart) {
-    average_converged = checkConvergence(
-        iter, x_avg_, y_avg_, Ax_avg_, ATy_avg_, params_.tolerance,
-        average_results, "[A]", dSlackPosAvg_, dSlackNegAvg_);
+    average_converged =
+        checkConvergence(iter, x_avg_, y_avg_, Ax_avg_, ATy_avg_,
+                         average_results, "[A]", dSlackPosAvg_, dSlackNegAvg_);
   }
 #endif
 
@@ -1122,6 +1138,37 @@ void PDLPSolver::performHalpernPdhgStepGpu(bool is_major, int k_offset) {
                                    rho, a_num_rows_, gpu_stream_);
 }
 #endif
+
+void PDLPSolver::getLastIterate(std::vector<double>& output_x,
+                                std::vector<double>& output_y) {
+  // The latest iterate is the one tested by the last call to
+  // runConvergenceCheck, which also computed its dual slacks. When
+  // using Halpern restart, and after the first iteration, that is the
+  // PDHG iterate; otherwise it is the current iterate
+  const bool use_pdhg_iterate =
+      params_.use_halpern_restart && final_iter_count_ > 0;
+#if defined(CUPDLP_GPU) || defined(HIPDLP_GPU)
+  const double* src_x = use_pdhg_iterate ? d_pdhg_primal_ : d_x_current_;
+  const double* src_y = use_pdhg_iterate ? d_pdhg_dual_ : d_y_current_;
+  output_x.resize(lp_.num_col_);
+  output_y.resize(lp_.num_row_);
+  GPU_CHECK(gpuMemcpy(output_x.data(), src_x, lp_.num_col_ * sizeof(double),
+                      gpuMemcpyDeviceToHost));
+  GPU_CHECK(gpuMemcpy(output_y.data(), src_y, lp_.num_row_ * sizeof(double),
+                      gpuMemcpyDeviceToHost));
+  dSlackPos_.resize(lp_.num_col_);
+  dSlackNeg_.resize(lp_.num_col_);
+  GPU_CHECK(gpuMemcpy(dSlackPos_.data(), d_dSlackPos_,
+                      lp_.num_col_ * sizeof(double), gpuMemcpyDeviceToHost));
+  GPU_CHECK(gpuMemcpy(dSlackNeg_.data(), d_dSlackNeg_,
+                      lp_.num_col_ * sizeof(double), gpuMemcpyDeviceToHost));
+#else
+  // On the CPU, dSlackPos_ and dSlackNeg_ already hold the slacks of
+  // the latest iterate
+  output_x = use_pdhg_iterate ? x_next_ : x_current_;
+  output_y = use_pdhg_iterate ? y_next_ : y_current_;
+#endif
+}
 
 void PDLPSolver::solveReturn(const TerminationStatus term_code) {
 #if defined(CUPDLP_GPU) || defined(HIPDLP_GPU)
@@ -1469,13 +1516,15 @@ double PDLPSolver::computeDualObjective(const std::vector<double>& y,
   return dual_obj;
 }
 
-bool PDLPSolver::checkConvergence(
-    const HighsInt iter, const std::vector<double>& x,
-    const std::vector<double>& y, const std::vector<double>& ax_vector,
-    const std::vector<double>& aty_vector, double epsilon,
-    SolverResults& results, const char* type,
-    // Add slack vectors as non-const references
-    std::vector<double>& dSlackPos, std::vector<double>& dSlackNeg) {
+bool PDLPSolver::checkConvergence(const HighsInt iter,
+                                  const std::vector<double>& x,
+                                  const std::vector<double>& y,
+                                  const std::vector<double>& ax_vector,
+                                  const std::vector<double>& aty_vector,
+                                  SolverResults& results, const char* type,
+                                  // Add slack vectors as non-const references
+                                  std::vector<double>& dSlackPos,
+                                  std::vector<double>& dSlackNeg) {
   // computeDualSlacks is now called inside computeDualFeasibility
 
   // Compute primal feasibility
@@ -1517,9 +1566,11 @@ bool PDLPSolver::checkConvergence(
 
   // check convergence criteria (matching cuPDLP)
   bool primal_feasible =
-      primal_feasibility < epsilon * (1.0 + unscaled_rhs_norm_);
-  bool dual_feasible = dual_feasibility < epsilon * (1.0 + unscaled_c_norm_);
-  bool gap_small = relative_obj_gap < epsilon;
+      primal_feasibility <
+      params_.primal_feasibility_tolerance * (1.0 + unscaled_rhs_norm_);
+  bool dual_feasible = dual_feasibility < params_.dual_feasibility_tolerance *
+                                              (1.0 + unscaled_c_norm_);
+  bool gap_small = relative_obj_gap < params_.optimality_tolerance;
 
   return primal_feasible && dual_feasible && gap_small;
 }
@@ -1774,10 +1825,12 @@ double PDLPSolver::powerMethodGpu() {
 }
 #endif
 
-HighsStatus PDLPSolver::setup(const HighsOptions& options, HighsTimer& timer) {
+HighsStatus PDLPSolver::setup(const HighsOptions& options, HighsTimer& timer,
+                              HighsCallback& callback) {
   logger_.initialise(options.log_dev_level, options.log_options, &timer);
   logger_.printHeader();
   highs_timer_p_ = &timer;
+  highs_callback_p_ = &callback;
   highsLogUser(options.log_options, HighsLogType::kInfo,
                "Using HiPDLP first order PDLP solver on a %s\n",
 #if defined(CUPDLP_GPU) || defined(HIPDLP_GPU)
@@ -1832,9 +1885,15 @@ HighsStatus PDLPSolver::setup(const HighsOptions& options, HighsTimer& timer) {
   params_.initialise();
   //  params.eta = 0; Not set in parse_options_file
   //  params.omega = 0; Not set in parse_options_file
-  params_.tolerance = options.pdlp_optimality_tolerance;
-  if (options.kkt_tolerance != kDefaultKktTolerance)
-    params_.tolerance = options.kkt_tolerance;
+  params_.primal_feasibility_tolerance = options.primal_feasibility_tolerance;
+  params_.dual_feasibility_tolerance = options.dual_feasibility_tolerance;
+  params_.optimality_tolerance = options.pdlp_optimality_tolerance;
+  // Possibly over-write with uniform KKT tolerance
+  if (options.kkt_tolerance != kDefaultKktTolerance) {
+    params_.primal_feasibility_tolerance = options.kkt_tolerance;
+    params_.dual_feasibility_tolerance = options.kkt_tolerance;
+    params_.optimality_tolerance = options.kkt_tolerance;
+  }
   params_.max_iterations = options.pdlp_iteration_limit;
   params_.device_type = Device::CPU;
   params_.time_limit = options.time_limit;
@@ -1915,7 +1974,9 @@ void PDLPSolver::logSummary() {
 void PrimalDualParams::initialise() {
   this->eta = 0;
   this->omega = 0;
-  this->tolerance = 0;
+  this->primal_feasibility_tolerance = 0;
+  this->dual_feasibility_tolerance = 0;
+  this->optimality_tolerance = 0;
   this->max_iterations = 0;
   this->device_type = Device::CPU;
   this->time_limit = kHighsInf;
@@ -2725,7 +2786,7 @@ void PDLPSolver::launchKernelScaleVector(double* d_out, const double* d_in,
 
 bool PDLPSolver::checkConvergenceGpu(const HighsInt iter, const double* d_x,
                                      const double* d_y, const double* d_ax,
-                                     const double* d_aty, double epsilon,
+                                     const double* d_aty,
                                      SolverResults& results, const char* type,
                                      double* d_slackPos_out,
                                      double* d_slackNeg_out,
@@ -2766,10 +2827,12 @@ bool PDLPSolver::checkConvergenceGpu(const HighsInt iter, const double* d_x,
 #endif
 
   bool primal_feasible =
-      results.primal_feasibility < epsilon * (1.0 + unscaled_rhs_norm_);
+      results.primal_feasibility <
+      params_.primal_feasibility_tolerance * (1.0 + unscaled_rhs_norm_);
   bool dual_feasible =
-      results.dual_feasibility < epsilon * (1.0 + unscaled_c_norm_);
-  bool gap_small = results.relative_obj_gap < epsilon;
+      results.dual_feasibility <
+      params_.dual_feasibility_tolerance * (1.0 + unscaled_c_norm_);
+  bool gap_small = results.relative_obj_gap < params_.optimality_tolerance;
 
   return primal_feasible && dual_feasible && gap_small;
 }

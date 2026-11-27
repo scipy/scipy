@@ -1451,8 +1451,9 @@ HighsBasis HEkk::getHighsBasis(HighsLp& use_lp) const {
   highs_basis.alien = false;
   highs_basis.useful = true;
   highs_basis.was_alien = false;
-  highs_basis.debug_id =
-      (HighsInt)(build_synthetic_tick_ + total_synthetic_tick_);
+  // The tick count can exceed the range of HighsInt
+  highs_basis.debug_id = (HighsInt)std::min(
+      build_synthetic_tick_ + total_synthetic_tick_, (double)kHighsIInf);
   highs_basis.debug_update_count = info_.update_count;
   highs_basis.debug_origin_name = basis_.debug_origin_name;
   return highs_basis;

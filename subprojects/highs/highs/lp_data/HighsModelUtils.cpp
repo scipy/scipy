@@ -158,15 +158,15 @@ void writeModelBoundSolution(
     ss.str(std::string());
     std::string var_status_string =
         have_basis ? statusToString(status[ix], lower[ix], upper[ix]) : "";
-    ss << highsFormatToString("%9" HIGHSINT_FORMAT "   %4s %12g %12g", ix,
+    ss << highsFormatToString("%9" HIGHSINT_FORMAT "   %4s %12.6g %12.6g", ix,
                               var_status_string.c_str(), lower[ix], upper[ix]);
     if (have_primal) {
-      ss << highsFormatToString(" %12g", primal[ix]);
+      ss << highsFormatToString(" %12.6g", primal[ix]);
     } else {
       ss << "             ";
     }
     if (have_dual) {
-      ss << highsFormatToString(" %12g", dual[ix]);
+      ss << highsFormatToString(" %12.6g", dual[ix]);
     } else {
       ss << "             ";
     }
@@ -302,8 +302,7 @@ void writeModelSolution(FILE* file, const HighsLogOptions& log_options,
       highsFprintfString(file, log_options, "Infeasible\n");
     }
     writeModelObjective(file, log_options, model, solution.col_value);
-    if (model.isMip() && model_status == HighsModelStatus::kOptimal &&
-        info.mip_gap < kHighsInf)
+    if (model.isMip() && have_primal && info.mip_gap < kHighsInf)
       writeMipBoundGap(file, log_options, info.mip_dual_bound, info.mip_gap);
     writePrimalSolution(file, log_options, model.lp_, solution.col_value,
                         sparse, partial);
@@ -564,8 +563,7 @@ void writeSolutionFile(FILE* file, const HighsOptions& options,
                                           kHighsSolutionValueToStringTolerance);
     ss << highsFormatToString("Objective value: %s\n", obj_string.data());
     highsFprintfString(file, log_options, ss.str());
-    if (model.isMip() && model_status == HighsModelStatus::kOptimal &&
-        info.mip_gap < kHighsInf) {
+    if (model.isMip() && have_primal && info.mip_gap < kHighsInf) {
       // Possibly log the MIP bounds and gap
       auto mip_dual_bound_string = highsDoubleToString(
           info.mip_dual_bound, kHighsSolutionValueToStringTolerance);

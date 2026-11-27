@@ -23,6 +23,7 @@ struct Options {
   double optimality_tol = kIpmTolDefault;
   double crossover_tol = kIpmTolDefault;
   bool refine_with_ipx = true;
+  bool stop_if_no_memory = false;
   double time_limit = -1.0;
   Int block_size = 0;
   Int random_seed = 0;

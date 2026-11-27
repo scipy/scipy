@@ -26,7 +26,7 @@
 
 #include "amd_internal.h"
 
-void Highs_amd_1
+int Highs_amd_1
 (
     amd_int n,		/* n > 0 */
     const amd_int Ap [ ],	/* input of size n+1, not modified */
@@ -38,7 +38,9 @@ void Highs_amd_1
 			 * ideally slen = 1.2 * sum (Len) + 8n */
     amd_int S [ ],		/* size slen workspace */
     double Control [ ],	/* input array of size AMD_CONTROL */
-    double Info [ ]	/* output array of size AMD_INFO */
+    double Info [ ],	/* output array of size AMD_INFO */
+    Highs_amd_ShouldStop should_stop,	/* may be NULL */
+    void *stop_data	/* passed to should_stop */
 )
 {
     amd_int i, j, k, p, pfree, iwlen, pj, p1, p2, pj2, *Iw, *Pe, *Nv, *Head,
@@ -167,6 +169,7 @@ void Highs_amd_1
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    Highs_amd_2 (n, Pe, Iw, Len, iwlen, pfree,
-	Nv, Pinv, P, Head, Elen, Degree, W, Control, Info) ;
+    return Highs_amd_2 (n, Pe, Iw, Len, iwlen, pfree,
+	Nv, Pinv, P, Head, Elen, Degree, W, Control, Info,
+	should_stop, stop_data) ;
 }

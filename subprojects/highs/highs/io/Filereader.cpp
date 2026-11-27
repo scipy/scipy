@@ -78,10 +78,16 @@ std::string extractModelName(const std::string& filename) {
   std::size_t found = name.find_last_of("/\\");
   if (found < name.size()) name = name.substr(found + 1);
   found = name.find_last_of('.');
+  // If no extension to remove, return the name
+  if (found == std::string::npos) return name;
   if (name.substr(found + 1) == "gz") {
+    // Strip off any gz extension
     name.erase(found, name.size() - found);
     found = name.find_last_of('.');
+    // If no remaining extension to remove, return the name
+    if (found == std::string::npos) return name;
   }
+  // Strip off any remaining extension
   if (found < name.size()) name.erase(found, name.size() - found);
   return name;
 }

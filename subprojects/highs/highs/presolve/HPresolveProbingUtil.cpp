@@ -180,14 +180,18 @@ HPresolve::Result HPresolve::prepareProbing(
   HighsDomain& domain = mipsolver->mipdata_->getDomain();
   HighsCliqueTable& cliquetable = mipsolver->mipdata_->cliquetable;
 
-  shrinkProblem(postsolve_stack);
-
   // first call?
   firstCall = !mipsolver->mipdata_->cliquesExtracted;
 
   // todo: rows that become setppc after domain propagation (below) are
   // not normalised and thus cannot be deleted by clique merging
   if (firstCall) HPRESOLVE_CHECKED_CALL(normaliseCliqueRows(postsolve_stack));
+
+  // shrink the problem after the normalisation, so that the columns it deletes
+  // are neither in the domain nor in the clique table that probing and
+  // enumeration use (e.g. a clique table inherited by a sub-MIP, see issue
+  // #3707)
+  shrinkProblem(postsolve_stack);
 
   toCSC(model->a_matrix_.value_, model->a_matrix_.index_,
         model->a_matrix_.start_);
@@ -368,7 +372,7 @@ HPresolve::Result HPresolve::applyConflictGraphSubstitutions(
     HPRESOLVE_CHECKED_CALL(checkLimits(postsolve_stack));
   }
 
-  cliquetable.getSubstitutions().clear();
+  cliquetable.clearSubstitutions();
 
   return Result::kOk;
 }

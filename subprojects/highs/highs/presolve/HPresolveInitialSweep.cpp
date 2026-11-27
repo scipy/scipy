@@ -34,19 +34,24 @@ HPresolveInitialSweep::HPresolveInitialSweep(
 HPresolveInitialSweep::Result HPresolveInitialSweep::checkColBounds(
     HighsInt col, bool& isFixed) {
   double boundDiff = lp_.col_upper_[col] - lp_.col_lower_[col];
-  double max_abs_col_value = 0;
-  for (HighsInt iEl = lp_.a_matrix_.start_[col];
-       iEl < lp_.a_matrix_.start_[col + 1]; iEl++)
-    max_abs_col_value =
-        std::max(std::abs(lp_.a_matrix_.value_[iEl]), max_abs_col_value);
   isFixed = false;
   // Check for simple infeasibility in the original LP should
   // already have been carried out in
   // HPresolve::checkOriginalLpBounds()
   assert(boundDiff >= 0);
-  if (boundDiff <= primal_feastol_ &&
-      (boundDiff <= options_.small_matrix_value ||
-       max_abs_col_value * boundDiff <= primal_feastol_)) {
+  // With reference to #3768, fixing variables by rounding like this
+  //
+  // if (boundDiff <= primal_feastol &&
+  //    (boundDiff <= options->small_matrix_value ||
+  //     getMaxAbsColVal(col) * boundDiff <= primal_feastol)) {
+  //
+  // can lead to a feasible MIP being declared infeasible as a
+  // near-fixed column removed at a bound moves its rows, and such
+  // moves add up
+  //
+  // Requiring the bound difference to be non-positive cannot be
+  // incorrect. It just fixes fewer variables
+  if (boundDiff <= 0) {
     // check for unboundedness
     if (std::abs(lp_.col_lower_[col]) == kHighsInf)
       return Result::kDualInfeasible;
@@ -135,7 +140,7 @@ HPresolveInitialSweep::Result HPresolveInitialSweep::singletonRow(
   bool lowerTightened, upperTightened;
   SingletonRowResult sr = computeSingletonRowBounds(
       val, lp_.row_lower_[row], lp_.row_upper_[row], lp_.col_lower_[col],
-      lp_.col_upper_[col], primal_feastol_, getMaxAbsColVal(col),
+      lp_.col_upper_[col], primal_feastol_,
       lp_.integrality_[col] != HighsVarType::kContinuous, lb, ub,
       lowerTightened, upperTightened);
   if (sr == SingletonRowResult::kRedundant) {

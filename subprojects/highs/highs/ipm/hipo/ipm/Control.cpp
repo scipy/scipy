@@ -15,13 +15,15 @@ HighsCallback* Control::callback() const { return callback_; }
 
 double Control::elapsed() const { return timer_ ? timer_->read() : -1.0; }
 
+bool Control::timeLimitReached() const {
+  return options_ && options_->time_limit >= 0 &&
+         elapsed() > options_->time_limit;
+}
+
 Int Control::interruptCheck(const Int ipm_iteration_count) const {
   HighsTaskExecutor::getThisWorkerDeque()->checkInterrupt();
 
-  if (options_ && options_->time_limit >= 0 &&
-      elapsed() > options_->time_limit) {
-    return kStatusTimeLimit;
-  }
+  if (timeLimitReached()) return kStatusTimeLimit;
 
   if (callback_) {
     if (callback_->user_callback && callback_->active[kCallbackIpmInterrupt]) {

@@ -1642,10 +1642,7 @@ HighsInt Highs_repairCallbackSolution(HighsCallbackDataIn* data_in) {
 // * Deprecated methods*
 // *********************
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 const char* Highs_compilationDate(void) { return "Deprecated"; }
-#pragma GCC diagnostic pop
 
 HighsInt Highs_call(const HighsInt num_col, const HighsInt num_row,
                     const HighsInt num_nz, const double* col_cost,

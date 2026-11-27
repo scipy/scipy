@@ -11,7 +11,8 @@ Control::Control() {
 }
 
 Int Control::InterruptCheck(const Int ipm_iteration_count) const {
-    HighsTaskExecutor::getThisWorkerDeque()->checkInterrupt();
+    if (HighsTaskExecutor::isRunning())
+        HighsTaskExecutor::getThisWorkerDeque()->checkInterrupt();
     if (parameters_.time_limit >= 0.0 &&
         parameters_.time_limit < this->Elapsed())
         return IPX_ERROR_time_interrupt;

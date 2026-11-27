@@ -20,6 +20,7 @@
 #include "simplex/HSimplex.h"
 #include "util/HighsMatrixUtils.h"
 #include "util/HighsSort.h"
+#include "util/HighsUndoStack.h"
 
 void Highs::reportModelStats() const {
   const HighsLp& lp = this->model_.lp_;
@@ -402,13 +403,8 @@ HighsStatus Highs::addColsInterface(
   if (ext_num_new_nz < 0) return HighsStatus::kError;
   if (ext_num_new_col == 0) return HighsStatus::kOk;
   if (ext_num_new_col > 0)
-    if (isColDataNull(options.log_options, ext_col_cost, ext_col_lower,
-                      ext_col_upper))
-      return HighsStatus::kError;
-  if (ext_num_new_nz > 0)
-    if (isMatrixDataNull(options.log_options, ext_a_start, ext_a_index,
-                         ext_a_value))
-      return HighsStatus::kError;
+    assert(ext_col_cost && ext_col_lower && ext_col_upper);
+  if (ext_num_new_nz > 0) assert(ext_a_start && ext_a_index && ext_a_value);
 
   HighsLp& lp = model_.lp_;
   HighsBasis& basis = basis_;
@@ -545,13 +541,8 @@ HighsStatus Highs::addRowsInterface(HighsInt ext_num_new_row,
   if (ext_num_new_row < 0) return HighsStatus::kError;
   if (ext_num_new_nz < 0) return HighsStatus::kError;
   if (ext_num_new_row == 0) return HighsStatus::kOk;
-  if (ext_num_new_row > 0)
-    if (isRowDataNull(options.log_options, ext_row_lower, ext_row_upper))
-      return HighsStatus::kError;
-  if (ext_num_new_nz > 0)
-    if (isMatrixDataNull(options.log_options, ext_ar_start, ext_ar_index,
-                         ext_ar_value))
-      return HighsStatus::kError;
+  if (ext_num_new_row > 0) assert(ext_row_lower && ext_row_upper);
+  if (ext_num_new_nz > 0) assert(ext_ar_start && ext_ar_index && ext_ar_value);
 
   HighsLp& lp = model_.lp_;
   HighsBasis& basis = basis_;
@@ -980,8 +971,8 @@ HighsStatus Highs::changeColBoundsInterface(
   // set and data are in ascending order
   if (index_collection.is_set_)
     sortSetData(index_collection.set_num_entries_, index_collection.set_,
-                col_lower, col_upper, NULL, local_colLower.data(),
-                local_colUpper.data(), NULL);
+                col_lower, col_upper, nullptr, local_colLower.data(),
+                local_colUpper.data(), nullptr);
   HighsStatus return_status = HighsStatus::kOk;
   return_status = interpretCallStatus(
       options_.log_options,
@@ -1031,8 +1022,8 @@ HighsStatus Highs::changeRowBoundsInterface(
   // set and data are in ascending order
   if (index_collection.is_set_)
     sortSetData(index_collection.set_num_entries_, index_collection.set_, lower,
-                upper, NULL, local_rowLower.data(), local_rowUpper.data(),
-                NULL);
+                upper, nullptr, local_rowLower.data(), local_rowUpper.data(),
+                nullptr);
   HighsStatus return_status = HighsStatus::kOk;
   return_status = interpretCallStatus(
       options_.log_options,
@@ -1528,7 +1519,7 @@ HighsStatus Highs::basisSolveInterface(const vector<double>& rhs,
     ekk_instance_.ftran(solve_vector, expected_density);
   }
   // Extract the solution
-  if (solution_indices == NULL) {
+  if (solution_indices == nullptr) {
     // Nonzeros in the solution not required
     if (solve_vector.count > num_row) {
       // Solution nonzeros not known
@@ -1593,14 +1584,10 @@ HighsStatus Highs::getDualRayInterface(bool& has_dual_ray,
   // should be recovered
   std::vector<double> col_cost;
   HighsHessian hessian;
-  bool solve_relaxation;
-  std::string presolve;
-  std::string solver;
-  bool allow_unbounded_or_infeasible;
   bool solve_feasibility_problem = false;
   const bool is_qp = model_.isQp();
 
-  if (dual_ray_value != NULL) {
+  if (dual_ray_value != nullptr) {
     // User wants a dual ray whatever
     if (!has_dual_ray || !has_invert) {
       // No dual ray is known, or no INVERT to compute it
@@ -1619,11 +1606,6 @@ HighsStatus Highs::getDualRayInterface(bool& has_dual_ray,
       // solved to yield a basic solution
       col_cost = lp.col_cost_;
       if (is_qp) hessian = model_.hessian_;
-      solve_relaxation = this->options_.solve_relaxation;
-      presolve = this->options_.presolve;
-      solver = this->options_.solver;
-      allow_unbounded_or_infeasible =
-          this->options_.allow_unbounded_or_infeasible;
       solve_feasibility_problem = true;
       // Zero the costs and Hessian
       std::vector<double> zero_costs;
@@ -1642,18 +1624,15 @@ HighsStatus Highs::getDualRayInterface(bool& has_dual_ray,
         this->passHessian(zero_hessian);
       }
       //
-      this->options_.solve_relaxation = true;
-      this->options_.presolve = kHighsOffString;
-      this->options_.solver = kSimplexString;
-      this->options_.allow_unbounded_or_infeasible = false;
+      HighsUndoStack options_undo;
+      options_undo.set(this->options_.solve_relaxation, true);
+      options_undo.set(this->options_.presolve, kHighsOffString);
+      options_undo.set(this->options_.solver, kSimplexString);
+      options_undo.set(this->options_.allow_unbounded_or_infeasible, false);
       HighsStatus call_status = this->run();
       // Restore the column costs, any Hessian, the relaxation,
       // presolve and solver settings
-      this->options_.solve_relaxation = solve_relaxation;
-      this->options_.presolve = presolve;
-      this->options_.solver = solver;
-      this->options_.allow_unbounded_or_infeasible =
-          allow_unbounded_or_infeasible;
+      options_undo.reset();
 
       lp.col_cost_ = col_cost;
       if (is_qp) model_.hessian_ = hessian;
@@ -1678,7 +1657,8 @@ HighsStatus Highs::getDualRayInterface(bool& has_dual_ray,
         rhs.assign(num_row, 0);
         rhs[iRow] = ekk_instance_.dual_ray_record_.sign;
         HighsInt* dual_ray_num_nz = 0;
-        basisSolveInterface(rhs, dual_ray_value, dual_ray_num_nz, NULL, true);
+        basisSolveInterface(rhs, dual_ray_value, dual_ray_num_nz, nullptr,
+                            true);
         // Now save the dual ray itself
         ekk_instance_.dual_ray_record_.value.resize(num_row);
         for (HighsInt iRow = 0; iRow < num_row; iRow++)
@@ -1742,13 +1722,9 @@ HighsStatus Highs::getPrimalRayInterface(bool& has_primal_ray,
   assert(!lp.is_moved_);
   has_primal_ray = ekk_instance_.primal_ray_record_.index != kNoRayIndex;
 
-  bool solve_relaxation;
-  std::string presolve;
-  std::string solver;
-  bool allow_unbounded_or_infeasible;
   bool solve_unboundedness_problem = false;
 
-  if (primal_ray_value != NULL) {
+  if (primal_ray_value != nullptr) {
     // User wants a primal ray whatever
     if (!has_primal_ray || !has_invert) {
       // No primal ray is known, or no INVERT to compute it
@@ -1763,24 +1739,15 @@ HighsStatus Highs::getPrimalRayInterface(bool& has_primal_ray,
       }
       highsLogUser(options_.log_options, HighsLogType::kInfo,
                    "Solving LP to try to compute primal ray\n");
-      // Save the relaxation, presolve and solver settings
-      solve_relaxation = this->options_.solve_relaxation;
-      presolve = this->options_.presolve;
-      solver = this->options_.solver;
-      allow_unbounded_or_infeasible =
-          this->options_.allow_unbounded_or_infeasible;
       solve_unboundedness_problem = true;
-      this->options_.solve_relaxation = true;
-      this->options_.presolve = kHighsOffString;
-      this->options_.solver = kSimplexString;
-      this->options_.allow_unbounded_or_infeasible = false;
+      HighsUndoStack options_undo;
+      options_undo.set(this->options_.solve_relaxation, true);
+      options_undo.set(this->options_.presolve, kHighsOffString);
+      options_undo.set(this->options_.solver, kSimplexString);
+      options_undo.set(this->options_.allow_unbounded_or_infeasible, false);
       HighsStatus call_status = this->run();
       // Restore the relaxation, presolve and solver settings
-      this->options_.solve_relaxation = solve_relaxation;
-      this->options_.presolve = presolve;
-      this->options_.solver = solver;
-      this->options_.allow_unbounded_or_infeasible =
-          allow_unbounded_or_infeasible;
+      options_undo.reset();
       if (call_status != HighsStatus::kOk) return_status = call_status;
       has_primal_ray = ekk_instance_.primal_ray_record_.index != kNoRayIndex;
       has_invert = ekk_instance_.status_.has_invert;
@@ -1816,7 +1783,7 @@ HighsStatus Highs::getPrimalRayInterface(bool& has_primal_ray,
           rhs[col - num_col] = primal_ray_sign;
         }
         HighsInt* column_num_nz = 0;
-        basisSolveInterface(rhs, column.data(), column_num_nz, NULL, false);
+        basisSolveInterface(rhs, column.data(), column_num_nz, nullptr, false);
         // Now zero primal_ray_value and scatter the column according to
         // the basic variables.
         for (HighsInt iCol = 0; iCol < num_col; iCol++)
@@ -2079,13 +2046,13 @@ HighsStatus Highs::getIisInterface() {
     // Model is known to be infeasible, and a dual ray option is
     // chosen, but it has no INVERT, presumably because infeasibility
     // detected in presolve, so solve without presolve
-    std::string presolve = options_.presolve;
-    options_.presolve = kHighsOffString;
+    HighsUndoStack options_undo;
+    options_undo.set(options_.presolve, kHighsOffString);
 
     double simplex_time = -this->getRunTime();
     HighsInt simplex_iterations = -info_.simplex_iteration_count;
     HighsStatus run_status = this->optimizeModel();
-    options_.presolve = presolve;
+    options_undo.reset();
     simplex_time += this->getRunTime();
     simplex_iterations += info_.simplex_iteration_count;
     this->iis_.info_.update(simplex_time, simplex_iterations);
@@ -2124,7 +2091,7 @@ HighsStatus Highs::getIisInterface() {
     rhs[iRow] = 1;
     std::vector<double> dual_ray_value(num_row);
     HighsInt* dual_ray_num_nz = 0;
-    basisSolveInterface(rhs, dual_ray_value.data(), dual_ray_num_nz, NULL,
+    basisSolveInterface(rhs, dual_ray_value.data(), dual_ray_num_nz, nullptr,
                         true);
     for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++)
       if (dual_ray_value[iRow]) this->iis_.row_index_.push_back(iRow);
@@ -2579,15 +2546,15 @@ HighsStatus Highs::elasticityFilter(const double global_lower_penalty,
   this->iis_.clear();
   // Lambda for gathering data when solving an LP
   auto solveLp = [&]() -> HighsStatus {
-    bool output_flag = options_.output_flag;
-    options_.output_flag = false;
+    HighsUndoStack options_undo;
+    options_undo.set(options_.output_flag, false);
     double simplex_time = -this->getRunTime();
     HighsInt simplex_iterations = -info_.simplex_iteration_count;
     run_status = this->optimizeModel();
     simplex_time += this->getRunTime();
     simplex_iterations += info_.simplex_iteration_count;
     iis.info_.update(simplex_time, simplex_iterations);
-    options_.output_flag = output_flag;
+    options_undo.reset();
     return run_status;
   };
 
@@ -3192,16 +3159,15 @@ HighsStatus Highs::userScaleSolution(HighsUserScaleData& data,
   if (has_integrality)
     info_.mip_dual_bound *= (bound_scale_value * objective_scale_value);
 
-  const double primal_feasibility_tolerance =
-      options_.primal_feasibility_tolerance;
+  HighsUndoStack options_undo;
   // Remember to check primal feasibility using the tolerance used
   // when the model was solved
   if (model_.isMip() && !options_.solve_relaxation)
-    options_.primal_feasibility_tolerance =
-        options_.getMipPrimalFeasibilityTolerance();
+    options_undo.set(options_.primal_feasibility_tolerance,
+                     options_.getMipPrimalFeasibilityTolerance());
   getKktFailures(options_, model_, solution_, basis_, info_);
   // Restore the primal feasibility tolerance
-  options_.primal_feasibility_tolerance = primal_feasibility_tolerance;
+  options_undo.reset();
   return reportKktFailures(model_.lp_, options_, info_,
                            "After removing user scaling")
              ? HighsStatus::kWarning
@@ -3945,6 +3911,7 @@ HighsStatus Highs::returnFromLexicographicOptimization(
     info_.invalidateDualKkt();
     this->solution_.value_valid = true;
     this->model_.lp_.col_cost_.assign(this->model_.lp_.num_col_, 0);
+    this->model_.lp_.has_infinite_cost_ = false;
   }
   return return_status;
 }
@@ -4019,6 +3986,8 @@ HighsStatus Highs::multiobjectiveSolve() {
                               multi_linear_objective.coefficients[iCol];
     }
     lp.sense_ = ObjSense::kMinimize;
+    // The costs have changed, so determine whether any are infinite
+    lp.has_infinite_cost_ = lp.hasInfiniteCost(options_.infinite_cost);
 
     multi_objective_log =
         std::unique_ptr<std::stringstream>(new std::stringstream());
@@ -4064,6 +4033,7 @@ HighsStatus Highs::multiobjectiveSolve() {
   // Clear LP objective
   lp.offset_ = 0;
   lp.col_cost_.assign(lp.num_col_, 0);
+  lp.has_infinite_cost_ = false;
   const HighsInt original_lp_num_row = lp.num_row_;
   std::vector<HighsInt> index(lp.num_col_);
   std::vector<double> value(lp.num_col_);
@@ -4078,6 +4048,8 @@ HighsStatus Highs::multiobjectiveSolve() {
         this->multi_linear_objective_[iObj];
     lp.offset_ = linear_objective.offset;
     lp.col_cost_ = linear_objective.coefficients;
+    // The costs have changed, so determine whether any are infinite
+    lp.has_infinite_cost_ = lp.hasInfiniteCost(options_.infinite_cost);
     lp.sense_ =
         linear_objective.weight > 0 ? ObjSense::kMinimize : ObjSense::kMaximize;
     if (lp.isMip() && solution.value_valid) {
@@ -4220,8 +4192,9 @@ HighsStatus Highs::multiobjectiveSolve() {
                                              original_lp_num_row);
 }
 
-bool Highs::tryPdlpCleanup(HighsInt& pdlp_cleanup_iteration_limit,
-                           const HighsInfo& presolved_lp_info) const {
+bool Highs::tryPdlpCleanup(
+    HighsInt& pdlp_cleanup_iteration_limit,
+    const HighsInt presolved_lp_pdlp_iteration_count) const {
   // Primal/dual infeasibilities/residuals can be magnified in
   // postsolve after PDLP, and IPX without crossover can fail,
   // both leading to model_status_ == HighsModelStatus::kUnknown.
@@ -4274,10 +4247,10 @@ bool Highs::tryPdlpCleanup(HighsInt& pdlp_cleanup_iteration_limit,
   }
   //
   // Force PDLP to be used with an iteration limit
-  if (presolved_lp_info.pdlp_iteration_count > 0) {
+  if (presolved_lp_pdlp_iteration_count > 0) {
     // PDLP was used, so allow 10% of the iterations to clean up
     HighsInt ten_percent_pdlp_iteration_count =
-        presolved_lp_info.pdlp_iteration_count / 10;
+        presolved_lp_pdlp_iteration_count / 10;
     pdlp_cleanup_iteration_limit =
         std::max(HighsInt(10000), ten_percent_pdlp_iteration_count);
   } else {

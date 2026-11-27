@@ -26,12 +26,11 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
   // if free format parser
   // Parse file and return status.
   if (options.mps_parser_type_free) {
-    HMpsFF parser{};
+    HMpsFF parser(options.log_options);
     if (options.time_limit < kHighsInf && options.time_limit > 0)
       parser.time_limit_ = options.time_limit;
 
-    FreeFormatParserReturnCode result =
-        parser.loadProblem(options.log_options, filename, model);
+    FreeFormatParserReturnCode result = parser.loadProblem(filename, model);
     switch (result) {
       case FreeFormatParserReturnCode::kSuccess:
         lp.ensureColwise();
@@ -44,8 +43,8 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
         return FilereaderRetcode::kFileNotFound;
       case FreeFormatParserReturnCode::kFixedFormat:
         highsLogUser(options.log_options, HighsLogType::kWarning,
-                     "Free format reader has detected row/col names with "
-                     "spaces: switching to fixed format parser\n");
+                     "Free format reader has detected row name with spaces:"
+                     " switching to fixed format parser\n");
         break;
       case FreeFormatParserReturnCode::kTimeout:
         highsLogUser(options.log_options, HighsLogType::kWarning,
@@ -59,7 +58,7 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
   //
   // If the fixed format parser has had to be used, then a warning was
   // issued, otherwise no warning has yet been issued
-  bool warning_issued = options.mps_parser_type_free;
+  bool warning_issued = false;
   FilereaderRetcode return_code =
       readMps(options.log_options, filename, -1, -1, lp.num_row_, lp.num_col_,
               lp.sense_, lp.offset_, lp.a_matrix_.start_, lp.a_matrix_.index_,
@@ -71,7 +70,7 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
   if (return_code == FilereaderRetcode::kOk) lp.ensureColwise();
   // Comment on existence of names with spaces
   hasNamesWithSpaces(options.log_options, lp);
-  assert(model.lp_.objective_name_ != "");
+  warning_issued = options.mps_parser_type_free || warning_issued;
   if (return_code == FilereaderRetcode::kOk && warning_issued)
     return_code = FilereaderRetcode::kWarning;
   return return_code;

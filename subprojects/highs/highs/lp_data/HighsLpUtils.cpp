@@ -3132,51 +3132,6 @@ HighsStatus calculateRowValuesQuad(const HighsLp& lp, HighsSolution& solution,
                                 report_row);
 }
 
-bool isColDataNull(const HighsLogOptions& log_options,
-                   const double* usr_col_cost, const double* usr_col_lower,
-                   const double* usr_col_upper) {
-  bool null_data = false;
-  null_data =
-      doubleUserDataNotNull(log_options, usr_col_cost, "column costs") ||
-      null_data;
-  null_data = doubleUserDataNotNull(log_options, usr_col_lower,
-                                    "column lower bounds") ||
-              null_data;
-  null_data = doubleUserDataNotNull(log_options, usr_col_upper,
-                                    "column upper bounds") ||
-              null_data;
-  return null_data;
-}
-
-bool isRowDataNull(const HighsLogOptions& log_options,
-                   const double* usr_row_lower, const double* usr_row_upper) {
-  bool null_data = false;
-  null_data =
-      doubleUserDataNotNull(log_options, usr_row_lower, "row lower bounds") ||
-      null_data;
-  null_data =
-      doubleUserDataNotNull(log_options, usr_row_upper, "row upper bounds") ||
-      null_data;
-  return null_data;
-}
-
-bool isMatrixDataNull(const HighsLogOptions& log_options,
-                      const HighsInt* usr_matrix_start,
-                      const HighsInt* usr_matrix_index,
-                      const double* usr_matrix_value) {
-  bool null_data = false;
-  null_data =
-      intUserDataNotNull(log_options, usr_matrix_start, "matrix starts") ||
-      null_data;
-  null_data =
-      intUserDataNotNull(log_options, usr_matrix_index, "matrix indices") ||
-      null_data;
-  null_data =
-      doubleUserDataNotNull(log_options, usr_matrix_value, "matrix values") ||
-      null_data;
-  return null_data;
-}
-
 void reportPresolveReductions(const HighsLogOptions& log_options,
                               HighsPresolveStatus presolve_status,
                               const HighsLp& lp, const HighsLp& presolved_lp) {

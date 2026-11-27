@@ -17,6 +17,13 @@
 
 #include "lp_data/HighsOptions.h"
 
+enum DoubleStatus {
+  kDoubleStatusFinite = 0,
+  kDoubleStatusInfinite,
+  kDoubleStatusNan,
+  kDoubleStatusIllegal
+};
+
 const HighsInt kIndexCollectionCreateOk = 0;
 const HighsInt kIndexCollectionCreateIllegalInterval = 1;
 const HighsInt kIndexCollectionCreateIllegalSetSize = 1;
@@ -278,4 +285,41 @@ inline std::pair<double, double> infeasibility(const double lower,
 bool handleExceptionIsOom(const HighsLogOptions& log_options,
                           const std::string& source,
                           const std::exception& exception);
+
+inline HighsInt wordIsFiniteDouble(const std::string& word, double& value) {
+  // Lambda to trim white space
+  const std::string whitespace = " \t";
+  const std::string emptyString = "";
+
+  auto trimWhitespace = [&](const std::string str) {
+    const auto strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos) return emptyString;  // no content
+    const auto strEnd = str.find_last_not_of(whitespace);
+    const auto strRange = strEnd - strBegin + 1;
+    return str.substr(strBegin, strRange);
+  };
+
+  // Lambda to replace any d or D by E
+  auto dD2e = [&](std::string& word) {
+    size_t ix = word.find('D');
+    if (ix != std::string::npos) {
+      word.replace(ix, 1, "E");
+    } else {
+      ix = word.find('d');
+      if (ix != std::string::npos) word.replace(ix, 1, "E");
+    }
+  };
+
+  std::string local_word = trimWhitespace(word);
+  dD2e(local_word);
+  char* endptr;
+  value = strtod(local_word.c_str(), &endptr);
+
+  if ((endptr != nullptr) && (endptr[0] == '\0')) {
+    if (std::isfinite(value)) return kDoubleStatusFinite;
+    if (std::isnan(value)) return kDoubleStatusNan;
+    return kDoubleStatusInfinite;
+  }
+  return kDoubleStatusIllegal;
+}
 #endif  // UTIL_HIGHSUTILS_H_

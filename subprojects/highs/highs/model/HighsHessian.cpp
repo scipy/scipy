@@ -810,11 +810,11 @@ void HessianOracle::product(const HighsInt x_num_entries,
     assert(x_num_entries > 0);
     this->call_(kHessianOracleCallTypeProduct, &x_num_entries, x_index, x_value,
                 nullptr, nullptr, hessian_x_value, this->data_);
+    this->scaleAndShift(&x_num_entries, x_index, x_value, hessian_x_value);
   } else {
     // Passed x_index as null pointer, so assume full x
     this->product(x_value, hessian_x_value);
   }
-  this->scaleAndShift(&x_num_entries, x_index, x_value, hessian_x_value);
 }
 
 void HessianOracle::scaleAndShift(const HighsInt* x_num_entries,

@@ -27,7 +27,8 @@ const HighsExtrasFeatureInfo extras_feature_info[] = {
     {"SuiteSparse AMD", "7.12.1+", "BSD-3-Clause", __hipo_enabled},
     {HIGHS_BLAS_VENDOR, HIGHS_BLAS_VERSION, HIGHS_BLAS_LICENSE, __hipo_enabled},
     {"METIS-GKlib", "5.2.1+", "Apache-2.0", __hipo_enabled},
-    {"SPARSEPAK", "unversioned+", "MIT", __hipo_enabled}};
+    {"SPARSEPAK", "unversioned+", "MIT", __hipo_enabled},
+    {"QDLDL", "unversioned+", "Apache-2.0", __hipo_enabled}};
 
 const HighsExtrasFeatureInfo* extras_family::getInfo() {
   return extras_feature_info;

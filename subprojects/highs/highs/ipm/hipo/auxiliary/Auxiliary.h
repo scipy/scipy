@@ -13,7 +13,7 @@
 namespace hipo {
 
 void inversePerm(const std::vector<Int>& perm, std::vector<Int>& iperm);
-void subtreeSize(const std::vector<Int>& parent, std::vector<Int>& sizes);
+void firstDescendant(const std::vector<Int>& parent, std::vector<Int>& first);
 void transpose(Int n, Int nz, const Int* ptr, const Int* rows, Int* ptrT,
                Int* rowsT);
 void transpose(const std::vector<Int>& ptr, const std::vector<Int>& rows,
@@ -30,9 +30,6 @@ void childrenLinkedList(const std::vector<Int>& parent, std::vector<Int>& head,
 void reverseLinkedList(std::vector<Int>& head, std::vector<Int>& next);
 void dfsPostorder(Int node, Int& start, std::vector<Int>& head,
                   const std::vector<Int>& next, std::vector<Int>& order);
-void processEdge(Int j, Int i, const std::vector<Int>& first,
-                 std::vector<Int>& maxfirst, std::vector<Int>& delta,
-                 std::vector<Int>& prevleaf, std::vector<Int>& ancestor);
 Int64 getDiagStart(Int n, Int k, Int nb, Int n_blocks,
                    std::vector<Int64>& start, bool triang = false);
 Int maxDepthTree(const std::vector<Int>& parent);

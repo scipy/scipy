@@ -1,5 +1,7 @@
 #include "Auxiliary.h"
 
+#include <algorithm>
+#include <numeric>
 #include <stack>
 
 namespace hipo {
@@ -14,15 +16,17 @@ void inversePerm(const std::vector<Int>& perm, std::vector<Int>& iperm) {
   }
 }
 
-void subtreeSize(const std::vector<Int>& parent, std::vector<Int>& sizes) {
-  // Compute sizes of subtrees of the tree given by parent
+void firstDescendant(const std::vector<Int>& parent, std::vector<Int>& first) {
+  // Lowest node in the subtree of each node of the tree given by parent.
+  // If the tree is postordered, the subtree of i is [first[i], i].
 
   Int n = parent.size();
-  sizes.assign(n, 1);
+  first.resize(n);
+  std::iota(first.begin(), first.end(), 0);
 
   for (Int i = 0; i < n; ++i) {
     Int k = parent[i];
-    if (k != -1) sizes[k] += sizes[i];
+    if (k != -1) first[k] = std::min(first[k], first[i]);
   }
 }
 
@@ -228,48 +232,6 @@ void dfsPostorder(Int node, Int& start, std::vector<Int>& head,
       head[current] = next[child];
     }
   }
-}
-
-void processEdge(Int j, Int i, const std::vector<Int>& first,
-                 std::vector<Int>& maxfirst, std::vector<Int>& delta,
-                 std::vector<Int>& prevleaf, std::vector<Int>& ancestor) {
-  // Process edge of skeleton matrix.
-  // Taken from Tim Davis "Direct Methods for Sparse Linear Systems".
-
-  // j not a leaf of ith row subtree
-  if (i <= j || first[j] <= maxfirst[i]) {
-    return;
-  }
-
-  // max first[j] so far
-  maxfirst[i] = first[j];
-
-  // previous leaf of ith row subtree
-  Int jprev = prevleaf[i];
-
-  // A(i,j) is in the skeleton matrix
-  delta[j]++;
-
-  if (jprev != -1) {
-    // find least common ancestor of jprev and j
-    Int q = jprev;
-    while (q != ancestor[q]) {
-      q = ancestor[q];
-    }
-
-    // path compression
-    Int sparent;
-    for (Int s = jprev; s != q; s = sparent) {
-      sparent = ancestor[s];
-      ancestor[s] = q;
-    }
-
-    // consider overlap
-    delta[q]--;
-  }
-
-  // previous leaf of ith subtree set to j
-  prevleaf[i] = j;
 }
 
 Int64 getDiagStart(Int n, Int k, Int nb, Int n_blocks,

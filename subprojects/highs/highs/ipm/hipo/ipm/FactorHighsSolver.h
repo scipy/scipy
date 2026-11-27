@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <atomic>
 
+#include "Control.h"
 #include "Info.h"
 #include "IpmData.h"
 #include "KktMatrix.h"
@@ -23,6 +24,7 @@ class FactorHighsSolver : public LinearSolver {
   const Logger& logger_;
   const Model& model_;
   Options& options_;
+  const Control& control_;
 
   std::vector<double> as_buffer_;
 
@@ -39,11 +41,13 @@ class FactorHighsSolver : public LinearSolver {
                      std::string& ordering, const std::string& nla);
   Int analyseAS(Symbolic& S);
   Int analyseNE(Symbolic& S);
+  // An analyse stopped by the time limit is a warning, otherwise an error
+  void printAnalyseFailure(const char* message) const;
 
  public:
   FactorHighsSolver(KktMatrix& kkt, Options& options, const Model& model,
                     const Regularisation& regul, Info& info, IpmData& record,
-                    const Logger& logger);
+                    const Logger& logger, const Control& control);
 
   Int factorAS(const std::vector<double>& scaling) override;
   Int factorNE(const std::vector<double>& scaling) override;
@@ -53,6 +57,7 @@ class FactorHighsSolver : public LinearSolver {
               const std::vector<double>& rhs_y, std::vector<double>& lhs_x,
               std::vector<double>& lhs_y) override;
   Int setup() override;
+  void checkMemory() const override;
   void clear() override;
   double flops() const override;
   double spops() const override;

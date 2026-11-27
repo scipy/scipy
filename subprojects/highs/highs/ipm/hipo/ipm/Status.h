@@ -20,6 +20,7 @@ enum Error {
   kErrorNegativeComponent,
   kErrorInvalidPointer,
   kErrorFailedAllocation,
+  kErrorScheduler,
 };
 
 enum Status {
@@ -72,6 +73,7 @@ inline std::string errorString(Error error) {
       {kErrorNegativeComponent, "Negative component detected"},
       {kErrorInvalidPointer, "Invalid pointer"},
       {kErrorFailedAllocation, "Failed allocation"},
+      {kErrorScheduler, "Task scheduler not initialised"},
   };
 
   auto found = status_map.find(error);

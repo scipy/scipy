@@ -19,6 +19,11 @@
 #include "mip/MipTimer.h"
 #include "util/HighsCDouble.h"
 #include "util/HighsHash.h"
+#include "util/HighsSolverSelect.h"
+
+// Cap on IPM iterations in MIP LP solves. Of 1309 IPM solves on the benchmark
+// sets, 3 needed more than this
+const HighsInt kMipIpmIterationLimit = 200;
 
 void HighsLpRelaxation::setProfiling(HighsProfiling* profiling) {
   assert(profiling);
@@ -1143,13 +1148,18 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
                  "MIP-Timing: %11.2g - start first LP solve (with%s basis)\n",
                  mipsolver.timer_.read(), valid_basis ? "" : "out");
   }
-  // Determine the solver
-  //
-  // Currently use simplex by default, unless IPM is requested
-  // explicitly and there is no basis. Later pass mip_lp_solver and
-  // take action on failure in SolveLp
+  // Determine the solver: simplex if there is a basis, otherwise
+  // mip_lp_solver, or solver selection if that is "choose"
   std::string solver;
   lpsolver.getOptionValue("solver", solver);
+  // Options that selection changes, which other solves of lpsolver, such as
+  // after removing cuts, must see unchanged
+  const HighsInt ipm_iteration_limit =
+      lpsolver.getOptions().ipm_iteration_limit;
+  const HighsInt solver_select_strategy =
+      lpsolver.getOptions().solver_select_strategy;
+  const bool solver_select_require_basis =
+      lpsolver.getOptions().solver_select_require_basis;
   std::string use_solver;
   if (valid_basis) {
     use_solver = kSimplexString;
@@ -1157,9 +1167,27 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
     const std::string mip_lp_solver = mipsolver.options_mip_->mip_lp_solver;
     if (useIpm(mip_lp_solver)) {
       bool use_hipo = mip_lp_solver == kHipoString;
-      // Later still, pass mip_lp_solver and take action on failure in
-      // solveLp
       use_solver = use_hipo ? kHipoString : kIpxString;
+    } else if (mip_lp_solver == kHighsChooseString && !retrying_after_error &&
+               useSolverSelection(
+                   mipsolver.options_mip_->solver_select_strategy) &&
+               lpsolver.getOptions().simplex_strategy !=
+                   kSimplexStrategyPrimal) {
+      // Defer the choice of simplex, IPX or HiPO to solveLp, so that it
+      // is made using the LP after any presolve by lpsolver. The MIP
+      // solver requires a basis. Primal simplex is only set when the
+      // MIP solver must have it
+      use_solver = kHighsChooseString;
+      lpsolver.setOptionValue("solver_select_strategy",
+                              mipsolver.options_mip_->solver_select_strategy);
+      lpsolver.setOptionValue("solver_select_require_basis", true);
+      // LPs with a simplex iteration limit, such as those in heuristics,
+      // have a budget that selected IPM must also respect
+      lpsolver.setOptionValue(
+          "ipm_iteration_limit",
+          lpsolver.getOptions().simplex_iteration_limit < kHighsIInf
+              ? kMipIpmIterationLimit
+              : kHighsIInf);
     } else {
       use_solver = kSimplexString;
     }
@@ -1167,6 +1195,8 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
   HighsStatus callstatus;
   // Now allowing the use of IPM at the root node
   lpsolver.setOptionValue("solver", use_solver);
+  const bool use_choose = use_solver == kHighsChooseString;
+  // Selection falls back to simplex itself if IPM fails, in solveLp
   bool use_ipm = useIpm(use_solver);
   bool use_simplex = !use_ipm;
   if (use_ipm) {
@@ -1200,7 +1230,9 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
     if (callstatus == HighsStatus::kError) {
       highsLogDev(
           mipsolver.options_mip_->log_options, HighsLogType::kInfo,
-          "HighsLpRelaxation::run HiPO has failed : status = %s Try IPX\n",
+          "HighsLpRelaxation::run Solver \"%s\" has failed: status = %s, so "
+          "use simplex\n",
+          use_solver.c_str(),
           lpsolver.modelStatusToString(lpsolver.getModelStatus()).c_str());
       lpsolver.setOptionValue("solver", kSimplexString);
       use_simplex = true;
@@ -1219,8 +1251,20 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
     mipsolver.profiling_->solveCall("LP2", mipsolver.submip);
     callstatus = lpsolver.optimizeLp();
   }
+  if (use_choose)
+    highsLogDev(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
+                "HighsLpRelaxation::run Solver selection: %d IPM and %d "
+                "simplex iterations\n",
+                int(info.ipm_iteration_count),
+                int(info.simplex_iteration_count));
   // Revert the value of lpsolver.options_.solver
   lpsolver.setOptionValue("solver", solver);
+  if (use_choose) {
+    lpsolver.setOptionValue("solver_select_strategy", solver_select_strategy);
+    lpsolver.setOptionValue("solver_select_require_basis",
+                            solver_select_require_basis);
+    lpsolver.setOptionValue("ipm_iteration_limit", ipm_iteration_limit);
+  }
   if (mipsolver.profiling_->mip_ && !mipsolver.submip &&
       !this->solved_first_lp) {
     highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
@@ -1231,6 +1275,11 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
   HighsInt itercount = -1;
   if (use_simplex) {
     itercount = std::max(HighsInt{0}, info.simplex_iteration_count);
+    // Iteration limits are multiples of the root LP's count, so must not
+    // be left at zero if selection chose IPM
+    if (use_choose)
+      itercount += std::max(HighsInt{0}, info.ipm_iteration_count) +
+                   std::max(HighsInt{0}, info.crossover_iteration_count);
     numlpiters += itercount;
   }
 
@@ -1252,7 +1301,9 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
       // still an error: now try to solve with presolve from scratch
       lpsolver.setOptionValue("simplex_strategy", kSimplexStrategyDual);
       lpsolver.setOptionValue("presolve", kHighsOnString);
+      retrying_after_error = true;
       auto retval = run(false);
+      retrying_after_error = false;
       lpsolver.setOptionValue("presolve", kHighsOffString);
 
       return retval;
@@ -1390,7 +1441,7 @@ HighsLpRelaxation::Status HighsLpRelaxation::run(bool resolve_on_error) {
         // solveLp
         const std::string ipm_solver = use_hipo ? kHipoString : kIpxString;
         ipm.setOptionValue("solver", ipm_solver);
-        ipm.setOptionValue("ipm_iteration_limit", 200);
+        ipm.setOptionValue("ipm_iteration_limit", kMipIpmIterationLimit);
         ipm.passModel(lpsolver.getLp());
         // todo @ Julian : If you remove this you can see the looping on
         // istanbul-no-cutoff

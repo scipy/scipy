@@ -555,6 +555,48 @@ void HighsCliqueTable::queryNeighbourhood(
   }
 }
 
+bool HighsCliqueTable::findNeighbourhoodByCliques(
+    std::vector<HighsInt>& neighbourhoodInds, int64_t& numQueries, CliqueVar v,
+    const IndexedCliqueVars& vars, HighsInt start, HighsInt end) const {
+  // count the entries of the cliques of v; enumerating them is only cheaper
+  // than querying all candidates if there are at most as many as candidates
+  const HighsInt numCandidates = end - start;
+  HighsInt numCliqueEntries = 0;
+  if (invertedHashList[v.index()].for_each([&](HighsInt cliqueid) {
+        numCliqueEntries += cliques[cliqueid].end - cliques[cliqueid].start;
+        return numCliqueEntries > numCandidates;
+      }))
+    return false;
+  if (invertedHashListSizeTwo[v.index()].for_each([&](HighsInt) {
+        numCliqueEntries += 2;
+        return numCliqueEntries > numCandidates;
+      }))
+    return false;
+  numQueries += numCliqueEntries;
+
+  // collect the candidates among the members of the cliques of v
+  neighbourhoodInds.clear();
+  auto addNeighbours = [&](HighsInt cliqueid) {
+    for (HighsInt i = cliques[cliqueid].start; i != cliques[cliqueid].end;
+         ++i) {
+      CliqueVar u = cliqueentries[i];
+      if (u.col == v.col) continue;
+      HighsInt pos = vars.pos[u.index()];
+      if (pos >= start && pos < end) neighbourhoodInds.push_back(pos - start);
+    }
+  };
+  invertedHashList[v.index()].for_each(addNeighbours);
+  invertedHashListSizeTwo[v.index()].for_each(addNeighbours);
+
+  // same order as queryNeighbourhood, without duplicates (a candidate may
+  // share several cliques with v)
+  pdqsort(neighbourhoodInds.begin(), neighbourhoodInds.end());
+  neighbourhoodInds.erase(
+      std::unique(neighbourhoodInds.begin(), neighbourhoodInds.end()),
+      neighbourhoodInds.end());
+  return true;
+}
+
 HighsInt HighsCliqueTable::partitionNeighbourhood(
     std::vector<HighsInt>& neighbourhoodInds, int64_t& numQueries, CliqueVar v,
     CliqueVar* q, HighsInt N) const {
@@ -562,6 +604,25 @@ HighsInt HighsCliqueTable::partitionNeighbourhood(
 
   for (size_t i = 0; i < neighbourhoodInds.size(); ++i)
     std::swap(q[i], q[neighbourhoodInds[i]]);
+
+  return static_cast<HighsInt>(neighbourhoodInds.size());
+}
+
+HighsInt HighsCliqueTable::partitionNeighbourhood(
+    std::vector<HighsInt>& neighbourhoodInds, int64_t& numQueries, CliqueVar v,
+    IndexedCliqueVars& vars, HighsInt start, HighsInt end) const {
+  // the positions of the candidates are known, so the neighbourhood may be
+  // found by enumerating the cliques of v instead of querying all candidates
+  if (!findNeighbourhoodByCliques(neighbourhoodInds, numQueries, v, vars, start,
+                                  end))
+    queryNeighbourhood(neighbourhoodInds, numQueries, v,
+                       vars.entries.data() + start, end - start);
+
+  // move the neighbours to the front of the candidates (keeping their order),
+  // so that the remaining candidates are [start, start + number of
+  // neighbours); swapping also updates the positions
+  for (size_t i = 0; i < neighbourhoodInds.size(); ++i)
+    vars.swap(start + static_cast<HighsInt>(i), start + neighbourhoodInds[i]);
 
   return static_cast<HighsInt>(neighbourhoodInds.size());
 }
@@ -1031,28 +1092,25 @@ void HighsCliqueTable::extractCliques(
 
 template <bool Sort, typename Comparator>
 HighsInt HighsCliqueTable::extendClique(
-    std::vector<HighsInt>& neighbourhoodInds, std::vector<CliqueVar>& clqVars,
+    std::vector<HighsInt>& neighbourhoodInds, IndexedCliqueVars& vars,
     HighsInt seedPos, HighsInt extensionEnd, const Comparator& candidateOrder) {
   for (HighsInt i = seedPos; i < extensionEnd; ++i) {
-    if (Sort)
-      pdqsort_branchless(clqVars.begin() + i, clqVars.begin() + extensionEnd,
-                         candidateOrder);
-    CliqueVar v = clqVars[i];
+    if (Sort) vars.sort(i, extensionEnd, candidateOrder);
+    CliqueVar v = vars.entries[i];
     HighsInt extensionStart = i + 1;
     extensionEnd =
         partitionNeighbourhood(neighbourhoodInds, numNeighbourhoodQueries, v,
-                               clqVars.data() + extensionStart,
-                               extensionEnd - extensionStart) +
+                               vars, extensionStart, extensionEnd) +
         extensionStart;
   }
   return extensionEnd;
 }
 
 HighsInt HighsCliqueTable::extendClique(
-    std::vector<HighsInt>& neighbourhoodInds, std::vector<CliqueVar>& clqVars,
+    std::vector<HighsInt>& neighbourhoodInds, IndexedCliqueVars& vars,
     HighsInt seedPos, HighsInt extensionEnd) {
   auto noop = [](const CliqueVar&, const CliqueVar&) { return false; };
-  return extendClique<false>(neighbourhoodInds, clqVars, seedPos, extensionEnd,
+  return extendClique<false>(neighbourhoodInds, vars, seedPos, extensionEnd,
                              noop);
 }
 
@@ -1067,10 +1125,11 @@ void HighsCliqueTable::cliquePartition(std::vector<CliqueVar>& clqVars,
   partitionStart.clear();
   partitionStart.reserve(clqVars.size());
 
+  IndexedCliqueVars vars(clqVars, clqVarPos);
   HighsInt pos = 0;
   while (pos < numClqVars) {
     partitionStart.push_back(pos);
-    pos = extendClique(neighbourhoodInds, clqVars, pos, numClqVars);
+    pos = extendClique(neighbourhoodInds, vars, pos, numClqVars);
   }
   partitionStart.push_back(numClqVars);
 }
@@ -1080,11 +1139,11 @@ void HighsCliqueTable::cliquePartition(const std::vector<double>& objective,
                                        std::vector<HighsInt>& partitionStart) {
   randgen.shuffle(clqVars.data(), clqVars.size());
 
-  pdqsort_branchless(clqVars.begin(), clqVars.end(),
-                     [&](CliqueVar v1, CliqueVar v2) {
-                       return (2 * v1.val - 1) * objective[v1.col] >
-                              (2 * v2.val - 1) * objective[v2.col];
-                     });
+  auto objectiveOrder = [&](CliqueVar v1, CliqueVar v2) {
+    return (2 * v1.val - 1) * objective[v1.col] >
+           (2 * v2.val - 1) * objective[v2.col];
+  };
+  pdqsort_branchless(clqVars.begin(), clqVars.end(), objectiveOrder);
 
   std::vector<HighsInt> neighbourhoodInds;
   neighbourhoodInds.reserve(clqVars.size());
@@ -1095,25 +1154,20 @@ void HighsCliqueTable::cliquePartition(const std::vector<double>& objective,
   HighsInt extensionEnd = numClqVars;
   partitionStart.push_back(0);
   HighsInt lastSwappedIndex = 0;
+  IndexedCliqueVars vars(clqVars, clqVarPos);
   for (HighsInt i = 0; i < numClqVars; ++i) {
     if (i == extensionEnd) {
       partitionStart.push_back(i);
       extensionEnd = numClqVars;
       if (lastSwappedIndex >= i)
-        pdqsort_branchless(clqVars.begin() + i,
-                           clqVars.begin() + lastSwappedIndex + 1,
-                           [&](CliqueVar v1, CliqueVar v2) {
-                             return (2 * v1.val - 1) * objective[v1.col] >
-                                    (2 * v2.val - 1) * objective[v2.col];
-                           });
+        vars.sort(i, lastSwappedIndex + 1, objectiveOrder);
       lastSwappedIndex = 0;
     }
     CliqueVar v = clqVars[i];
     HighsInt extensionStart = i + 1;
     extensionEnd =
         partitionNeighbourhood(neighbourhoodInds, numNeighbourhoodQueries, v,
-                               clqVars.data() + extensionStart,
-                               extensionEnd - extensionStart) +
+                               vars, extensionStart, extensionEnd) +
         extensionStart;
     if (!neighbourhoodInds.empty())
       lastSwappedIndex =
@@ -1138,9 +1192,10 @@ void HighsCliqueTable::cliqueCover(std::vector<CliqueVar>& clqVars,
   HighsInt numClqVars = clqVars.size();
   HighsInt pos = 0;
 
+  IndexedCliqueVars vars(clqVars, clqVarPos);
   while (pos < numClqVars) {
-    HighsInt cliqueEnd = extendClique(neighbourhoodInds, clqVars, pos,
-                                      numClqVars, candidateOrder);
+    HighsInt cliqueEnd =
+        extendClique(neighbourhoodInds, vars, pos, numClqVars, candidateOrder);
 
     std::vector<CliqueVar> clique(clqVars.begin() + pos,
                                   clqVars.begin() + cliqueEnd);

@@ -17,6 +17,7 @@
 #include <sstream>
 #include <vector>
 
+#include "util/HighsAvailableMemory.h"
 #include "util/HighsSort.h"
 
 HighsInt create(HighsIndexCollection& index_collection, const HighsInt from_col,
@@ -1273,7 +1274,10 @@ bool highsPause(const bool pause_condition, const std::string& message) {
 bool handleExceptionIsOom(const HighsLogOptions& log_options,
                           const std::string& source,
                           const std::exception& exception) {
-  highsLogUser(log_options, HighsLogType::kError, "Exception %s in %s\n",
-               exception.what(), source.c_str());
+  const bool planned =
+      dynamic_cast<const HighsPredictedOutOfMemory*>(&exception);
+  highsLogUser(log_options,
+               planned ? HighsLogType::kWarning : HighsLogType::kError,
+               "Exception %s in %s\n", exception.what(), source.c_str());
   return dynamic_cast<const std::bad_alloc*>(&exception);
 }

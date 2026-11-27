@@ -62,9 +62,10 @@ struct lu
     double time_factorize_total;
     double time_solve_total;
     double time_update_total;
-    lu_int Lflops;
-    lu_int Uflops;
-    lu_int Rflops;
+    /* cumulative counts, which can exceed the range of lu_int */
+    double Lflops;
+    double Uflops;
+    double Rflops;
     double condestL;
     double condestU;
     double normL;

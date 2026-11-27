@@ -39,7 +39,11 @@ static amd_int Highs_amd_clear_flag (amd_int wflg, amd_int wbig, amd_int W [ ], 
 /* === AMD_2 =============================================================== */
 /* ========================================================================= */
 
-void Highs_amd_2
+/* Work, measured as the sum of 1 + |Lme| over the pivots, between two calls
+ * of should_stop. */
+#define AMD_STOP_CHECK_WORK 100000
+
+int Highs_amd_2
 (
     amd_int n,		/* A is n-by-n, where n > 0 */
     amd_int Pe [ ],		/* Pe [0..n-1]: index in Iw of row i on input */
@@ -60,7 +64,11 @@ void Highs_amd_2
 
     /* control parameters and output statistics */
     double Control [ ],	/* array of size AMD_CONTROL */
-    double Info [ ]	/* array of size AMD_INFO */
+    double Info [ ],	/* array of size AMD_INFO */
+
+    /* early termination */
+    Highs_amd_ShouldStop should_stop,	/* may be NULL */
+    void *stop_data	/* passed to should_stop */
 )
 {
 
@@ -460,7 +468,7 @@ void Highs_amd_2
     amd_int deg, degme, dext, lemax, e, elenme, eln, i, ilast, inext, j,
 	jlast, jnext, k, knt1, knt2, knt3, lenj, ln, me, mindeg, nel, nleft,
 	nvi, nvj, nvpiv, slenme, wbig, we, wflg, wnvi, ok, ndense, ncmpa,
-	dense, aggressive ;
+	dense, aggressive, work ;
 
     amd_uint hash ;	    /* unsigned, so that hash % n is well defined.*/
 
@@ -580,6 +588,7 @@ void Highs_amd_2
     ncmpa = 0 ;
     nel = 0 ;
     lemax = 0 ;
+    work = 0 ;
 
     /* get control parameters */
     if (Control != (double *) NULL)
@@ -692,6 +701,17 @@ void Highs_amd_2
 
     while (nel < n)
     {
+
+	/* ----------------------------------------------------------------- */
+	/* check if the ordering should stop; all the memory is owned by */
+	/* the caller, so it is enough to return */
+	/* ----------------------------------------------------------------- */
+
+	if (should_stop && work >= AMD_STOP_CHECK_WORK)
+	{
+	    work = 0 ;
+	    if (should_stop (stop_data)) return (AMD_INTERRUPTED) ;
+	}
 
 
 /* ========================================================================= */
@@ -976,6 +996,7 @@ void Highs_amd_2
 
 	/* degme holds the external degree of new element */
 	Degree [me] = degme ;
+	work += 1 + degme ;
 	Pe [me] = pme1 ;
 	Len [me] = pme2 - pme1 + 1 ;
 	
@@ -1758,4 +1779,6 @@ void Highs_amd_2
 	Last [k] = i ;
 	
     }
+
+    return (AMD_OK) ;
 }

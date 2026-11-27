@@ -7,6 +7,12 @@
 namespace hipo {
 
 struct FHoptions {
+  // C-style callback that returns nonzero to stop a long computation early.
+  // It must not throw and may be called concurrently.
+  using StopCallback = int (*)(void* data);
+  StopCallback should_stop = nullptr;
+  void* stop_data = nullptr;
+  bool stopRequested() const { return should_stop && should_stop(stop_data); }
   double reg_p = 0.0;
   double reg_d = 0.0;
   Int nb = kBlockSize;

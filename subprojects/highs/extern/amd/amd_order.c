@@ -25,7 +25,9 @@ int Highs_amd_order
     const amd_int Ai [ ],
     amd_int P [ ],
     double Control [ ],
-    double Info [ ]
+    double Info [ ],
+    Highs_amd_ShouldStop should_stop,
+    void *stop_data
 )
 {
     amd_int *Len, *S, nz, i, *Pinv, info, status, *Rp, *Ri, *Cp, *Ci, ok ;
@@ -179,7 +181,12 @@ int Highs_amd_order
     /* order the matrix */
     /* --------------------------------------------------------------------- */
 
-    Highs_amd_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info) ;
+    if (Highs_amd_1 (n, Cp, Ci, P, Pinv, Len, slen, S, Control, Info,
+	should_stop, stop_data) == AMD_INTERRUPTED)
+    {
+	/* stopped by should_stop: P is undefined */
+	status = AMD_INTERRUPTED ;
+    }
 
     /* --------------------------------------------------------------------- */
     /* free the workspace */

@@ -267,6 +267,7 @@ The nuget package contains runtime libraries for
 * `win-x86`
 * `linux-x64`
 * `linux-arm64`
+* `linux-arm`
 * `macos-x64`
 * `macos-arm64`
 

@@ -412,15 +412,16 @@ class HEkkDual {
   bool allow_dual_steepest_edge_to_devex_switch;
 
   double Tp;  // Tolerance for primal
-  double primal_feasibility_tolerance;
+  //  double primal_feasibility_tolerance; //ToDo Use this to replace Tp
 
   double Td;  // Tolerance for dual
-  double dual_feasibility_tolerance;
-  double objective_bound;
+  //  double dual_feasibility_tolerance; //ToDo Use this to replace Td
+  double objective_bound_;
 
   bool force_phase2;
   HighsInt solve_phase;
   HighsInt rebuild_reason;
+  HighsInt num_exact_objective_bound_call_;
 
   HVector row_ep;
   HVector row_ap;

@@ -25,6 +25,7 @@
 
 #include "linalg.hpp"
 #include "logger.hpp"
+#include "lp_data/HighsCallback.h"
 #if PDLP_PROFILE
 #include "pdlp/HiPdlpTimer.h"
 #endif
@@ -44,7 +45,8 @@ struct StepSizeConfig;
 class PDLPSolver {
  public:
   // --- setup & Main Interface ---
-  HighsStatus setup(const HighsOptions& options, HighsTimer& timer);
+  HighsStatus setup(const HighsOptions& options, HighsTimer& timer,
+                    HighsCallback& callback);
   void passLp(const HighsLp* lp) { original_lp_ = lp; }
   void preprocessLp();
   void scaleProblem();
@@ -81,6 +83,10 @@ class PDLPSolver {
   bool runConvergenceCheck(size_t iter, std::vector<double>& output_x,
                            std::vector<double>& output_y,
                            TerminationStatus& status);
+  // Copies the latest iterate (and its dual slacks) to the output
+  // vectors when the solver stops without having converged
+  void getLastIterate(std::vector<double>& output_x,
+                      std::vector<double>& output_y);
   bool checkRestartCriteria(double current_fpe, double initial_fpe,
                             double last_trial_fpe, int halpern_iteration,
                             int final_iter_count);
@@ -100,7 +106,7 @@ class PDLPSolver {
   bool checkConvergence(const HighsInt iter, const std::vector<double>& x,
                         const std::vector<double>& y,
                         const std::vector<double>& ax_vector,
-                        const std::vector<double>& aty_vector, double epsilon,
+                        const std::vector<double>& aty_vector,
                         SolverResults& results, const char* type,
                         std::vector<double>& dSlackPos,
                         std::vector<double>& dSlackNeg);
@@ -220,6 +226,7 @@ class PDLPSolver {
       std::numeric_limits<double>::infinity();
 
   HighsTimer* highs_timer_p_;
+  HighsCallback* highs_callback_p_ = nullptr;
 
 #if PDLP_PROFILE
   HipdlpTimer hipdlp_timer_;
@@ -308,10 +315,9 @@ class PDLPSolver {
   void linalgGpuATy(const double* d_y_in, double* d_aty_out);
   bool checkConvergenceGpu(const HighsInt iter, const double* d_x,
                            const double* d_y, const double* d_ax,
-                           const double* d_aty, double epsilon,
-                           SolverResults& results, const char* type,
-                           double* d_slackPos_out, double* d_slackNeg_out,
-                           bool use_halpern_slack);
+                           const double* d_aty, SolverResults& results,
+                           const char* type, double* d_slackPos_out,
+                           double* d_slackNeg_out, bool use_halpern_slack);
   void computeStepSizeRatioGpu(PrimalDualParams& working_params);
   void updateAverageIteratesGpu(HighsInt inner_iter);
   void computeAverageIterateGpu();

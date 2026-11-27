@@ -834,99 +834,212 @@ void HighsMipSolverData::runMipPresolve(
                              *mipsolver.model_);
 }
 
-void HighsMipSolverData::checkAddSolution() {
-  // Run when (re-)starting the MIP solver
-  if (mipsolver.solution_objective_ != kHighsInf) {
-    // Assigning new incumbent
-    incumbent = postSolveStack.getReducedPrimalSolution(mipsolver.solution_);
-    // return the objective value in the transformed space
-    double solobj =
-        mipsolver.solution_objective_ * (int)mipsolver.orig_model_->sense_ -
-        mipsolver.model_->offset_;
-    const bool feasible =
-        mipsolver.bound_violation_ <=
-            mipsolver.options_mip_->mip_feasibility_tolerance &&
-        mipsolver.integrality_violation_ <=
-            mipsolver.options_mip_->mip_feasibility_tolerance &&
-        mipsolver.row_violation_ <=
-            mipsolver.options_mip_->mip_feasibility_tolerance;
-    if (numRestarts == 0) {
-      // Perform logging and checking of the MIP start solution
-      if (feasible) {
+void HighsMipSolverData::checkAddSolution(const bool from_cleanup_solve) {
+  // Run when (re-)starting the MIP solver, or in cleanupSolve
+  //
+  // The call in cleanupSolve is for cases such as #3118(a) when the
+  // MIP is found infeasible in presolve, but a start solution is
+  // feasible within the tolerances. Hence the solution in the reduced
+  // space cannot be expected to be feasible. Indeed, in #3118 the MIP
+  // after presolve is trivially infeasible.
+  if (mipsolver.solution_objective_ == kHighsInf) return;
+  // Assigning new incumbent
+  incumbent = postSolveStack.getReducedPrimalSolution(mipsolver.solution_);
+  const bool reduced = postSolveStack.numReductions() > 0;
+  // Determine the corresponding objective used by the MIP solver in
+  // the reduced space - being the objective for the reduced problem
+  // scaled by the sense (since the MIP solver only minimizes) less
+  // the offset for the reduced problem - which can be deduced from
+  // the objective for the problem in the original space
+  double solobj =
+      mipsolver.solution_objective_ * (int)mipsolver.orig_model_->sense_ -
+      mipsolver.model_->offset_;
+  const bool saved_solution_feasible =
+      mipsolver.bound_violation_ <=
+          mipsolver.options_mip_->mip_feasibility_tolerance &&
+      mipsolver.integrality_violation_ <=
+          mipsolver.options_mip_->mip_feasibility_tolerance &&
+      mipsolver.row_violation_ <=
+          mipsolver.options_mip_->mip_feasibility_tolerance;
+  if (numRestarts == 0 && !from_cleanup_solve) {
+    auto compareSolutionAndObjective = [&](const std::vector<double>& s0,
+                                           const double& v0,
+                                           const std::vector<double>& s1,
+                                           const double& v1) {
+      HighsInt num_col = s0.size();
+      HighsInt num_col1 = s1.size();
+      if (num_col1 != num_col) {
+        printf(
+            "\nERROR: compareSolutionAndObjective: s0 and s1 have sizes %d and "
+            "%d\n",
+            int(num_col), int(num_col1));
+        assert(num_col1 == num_col);
+      }
+      HighsInt num_differences = 0;
+      double max_difference = 0;
+      double sum_differences = 0;
+      const HighsInt max_logged_differences = 3;
+      bool logged_header = false;
+
+      auto logHeader = [&]() {
         highsLogUser(
             mipsolver.options_mip_->log_options, HighsLogType::kInfo,
-            "\nMIP start solution is feasible: objective value is %.12g\n",
-            mipsolver.solution_objective_);
-      } else {
-        // The initial solution shouldn't be infeasible in the
-        // original space, since it's tested externally
-        highsLogUser(
-            mipsolver.options_mip_->log_options, HighsLogType::kWarning,
-            "\nMIP start solution is infeasible: objective value is "
-            "%.12g with violations:"
-            " variable bound = %.4g; constraint bound = %.4g; "
-            "integrality = %.4g\n",
-            mipsolver.solution_objective_, mipsolver.bound_violation_,
-            mipsolver.row_violation_, mipsolver.integrality_violation_);
-      }
-      // Since the supplied solution (mipsolver.solution_) may not
-      // correspond to postsolve applied to incumbent (#3510), compute
-      // the objective locally using incumbent, saving the value of
-      // mipsolver.solution_objective_ to identify changes
-      const double previous_mipsolver_solution_objective =
-          mipsolver.solution_objective_;
-      double mipsolver_solution_objective =
-          double(mipsolver.model_->objectiveCDoubleValue(incumbent));
-      mipsolver.solution_objective_ =
-          int(mipsolver.orig_model_->sense_) * mipsolver_solution_objective;
-      const bool has_start_solution_objective_difference =
-          std::fabs(mipsolver.solution_objective_ -
-                    previous_mipsolver_solution_objective) /
-              (1 + std::fabs(previous_mipsolver_solution_objective)) >
-          mipsolver.options_mip_->mip_feasibility_tolerance;
-      // This affects solobj - which is use used to determine bounds
-      // etc (without the objective offset)
-      solobj = mipsolver_solution_objective - mipsolver.model_->offset_;
-      if (has_start_solution_objective_difference) {
-        const bool reduced = postSolveStack.numReductions() > 0;
+            "MIP start solution and its postsolved reduced space image differ\n"
+            "   Col   start solution   postsolved image       |diff|\n");
+        logged_header = true;
+      };
+
+      double abs_difference = std::fabs(v0 - v1);
+      double rel_difference =
+          abs_difference / (1 + 0.5 * (std::fabs(v0) + fabs(v1)));
+      if (rel_difference > 1e-6) {
+        logHeader();
         highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
-                     "MIP start solution is %s%s: objective value is %.12g\n",
-                     feasible ? "feasible" : "infeasible",
-                     reduced ? " in the reduced space" : "",
-                     mipsolver.solution_objective_);
+                     "   Obj     %12.6g       %12.6g     %8.2g\n", v0, v1,
+                     abs_difference);
+      }
+      for (HighsInt iCol = 0; iCol < num_col; iCol++) {
+        double abs_difference = std::fabs(s0[iCol] - s1[iCol]);
+        double rel_difference =
+            abs_difference /
+            (1 + 0.5 * (std::fabs(s0[iCol]) + std::fabs(s1[iCol])));
+        if (rel_difference > 1e-6) {
+          num_differences++;
+          max_difference = std::max(abs_difference, max_difference);
+          sum_differences += abs_difference;
+          if (!logged_header) logHeader();
+          if (num_differences <= max_logged_differences)
+            highsLogUser(mipsolver.options_mip_->log_options,
+                         HighsLogType::kInfo,
+                         "   %3d     %12.6g       %12.6g     %8.2g\n",
+                         int(iCol), s0[iCol], s1[iCol], abs_difference);
+        }
+      }
+      HighsInt num_unlogged_differences =
+          num_differences - max_logged_differences;
+      if (num_unlogged_differences > 0)
+        highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
+                     "   Further %d unlogged difference%s\n",
+                     int(num_unlogged_differences),
+                     highsIntToPlural(num_unlogged_differences).c_str());
+      highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
+                   "   Num / max / sum differences of %d / %.4g / %.4g\n",
+                   int(num_differences), max_difference, sum_differences);
+    };
+
+    if (!saved_solution_feasible) {
+      // The current MIP solution should be feasible in the original
+      // space, since it's already been tested
+      highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kError,
+                   "MIP start solution is not feasible: objective value is "
+                   "%.6g with violations:"
+                   " variable bound = %.4g; constraint bound = %.4g; "
+                   "integrality = %.4g\n",
+                   mipsolver.solution_objective_, mipsolver.bound_violation_,
+                   mipsolver.row_violation_, mipsolver.integrality_violation_);
+      // Reset the solution objecive and clear the saved solution
+      mipsolver.solution_objective_ = kHighsInf;
+      mipsolver.solution_.clear();
+      mipsolver.bound_violation_ = 0;
+      mipsolver.integrality_violation_ = 0;
+      mipsolver.row_violation_ = 0;
+      // The following values should not yet have been changed from
+      // their values corresponding to no start solution
+      assert(lower_bound == -kHighsInf);
+      assert(upper_bound == kHighsInf);
+      assert(upper_limit == kHighsInf);
+      assert(optimality_limit == kHighsInf);
+      return;
+    }
+    assert(saved_solution_feasible);
+    const bool reduced_solution_feasible = checkSolution(incumbent);
+    if (reduced_solution_feasible) {
+      // Since the supplied solution (mipsolver.solution_) may not
+      // correspond to postsolve applied to incumbent (#3510),
+      // determine the solution in the original space that is
+      // postsolve applied to incumbent - checking its feasibility
+      // (and possibly solving a "repair LP" to try to achieve
+      // feasibility, as in transformNewIntegerFeasibleSolution)
+      double mipsolver_reduced_objective_value;
+      double original_space_objective_value;
+      HighsSolution original_space_solution;
+      MipViolation original_space_violation;
+      if (feasibleInOriginalSpace(incumbent, mipsolver_reduced_objective_value,
+                                  original_space_solution,
+                                  original_space_objective_value,
+                                  original_space_violation)) {
+        // The solution in the original space is feasible so, if it's
+        // an improvement on the start solution (as it may well be
+        // since some column values in the start solution that
+        // contradict presolve fixings will have been ``corrected'')
+        // it and its objective value replace the solution objecive
+        // and saved solution, as required to fix #3634
+        //
+        // Record the previous saved objective to check for changes
+        const double previous_mipsolver_solution_objective =
+            mipsolver.solution_objective_;
+        const bool new_solution_better =
+            mipsolver.model_->sense_ == ObjSense::kMinimize
+                ? (original_space_objective_value <
+                   mipsolver.solution_objective_)
+                : (original_space_objective_value >
+                   mipsolver.solution_objective_);
+        if (new_solution_better) {
+          // This should only happen if the problem is reduced by presolve
+          assert(reduced);
+          // Update the saved objective and solution
+          compareSolutionAndObjective(mipsolver.solution_,
+                                      mipsolver.solution_objective_,
+                                      original_space_solution.col_value,
+                                      original_space_objective_value);
+          mipsolver.solution_objective_ = original_space_objective_value;
+          mipsolver.solution_ = original_space_solution.col_value;
+          original_space_violation.copy(mipsolver.bound_violation_,
+                                        mipsolver.row_violation_,
+                                        mipsolver.integrality_violation_);
+          // The objective used by the MIP solver in the reduced space may
+          // have changed
+          solobj = mipsolver_reduced_objective_value;
+          highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
+                       "MIP start solution is has objective value %.6g in the "
+                       "original space, but %.6g in the reduced space\n",
+                       previous_mipsolver_solution_objective,
+                       mipsolver.solution_objective_);
+        }
       }
     }
-    if (feasible && solobj < upper_bound) {
-      double prev_upper_bound = upper_bound;
+  }
+  if (!saved_solution_feasible) return;
+  if (solobj < upper_bound) {
+    double prev_upper_bound = upper_bound;
 
-      upper_bound = solobj;
+    upper_bound = solobj;
 
-      bool bound_change = upper_bound != prev_upper_bound;
-      if (!mipsolver.submip && bound_change)
-        updatePrimalDualIntegral(lower_bound, lower_bound, prev_upper_bound,
-                                 upper_bound);
+    bool bound_change = upper_bound != prev_upper_bound;
+    if (!mipsolver.submip && bound_change)
+      updatePrimalDualIntegral(lower_bound, lower_bound, prev_upper_bound,
+                               upper_bound);
 
-      double new_upper_limit = computeNewUpperLimit(solobj, 0.0, 0.0);
+    double new_upper_limit = computeNewUpperLimit(solobj, 0.0, 0.0);
 
-      saveReportMipSolution(new_upper_limit);
-      if (new_upper_limit < upper_limit) {
-        upper_limit = new_upper_limit;
-        optimality_limit =
-            computeNewUpperLimit(solobj, mipsolver.options_mip_->mip_abs_gap,
-                                 mipsolver.options_mip_->mip_rel_gap);
-        nodequeue.setOptimalityLimit(optimality_limit);
-      }
+    saveReportMipSolution(new_upper_limit);
+    if (new_upper_limit < upper_limit) {
+      upper_limit = new_upper_limit;
+      optimality_limit =
+          computeNewUpperLimit(solobj, mipsolver.options_mip_->mip_abs_gap,
+                               mipsolver.options_mip_->mip_rel_gap);
+      nodequeue.setOptimalityLimit(optimality_limit);
     }
-    if (!mipsolver.submip && feasible && mipsolver.callback_->user_callback &&
-        mipsolver.callback_->active[kCallbackMipSolution]) {
-      assert(!mipsolver.submip);
-      mipsolver.callback_->clearHighsCallbackOutput();
-      mipsolver.callback_->data_out.mip_solution = mipsolver.solution_;
-      const bool interrupt = interruptFromCallbackWithData(
-          kCallbackMipSolution, mipsolver.solution_objective_,
-          "Feasible solution");
-      assert(!interrupt);
-    }
+  }
+  if (!mipsolver.submip && mipsolver.callback_->user_callback &&
+      mipsolver.callback_->active[kCallbackMipSolution]) {
+    assert(!mipsolver.submip);
+    mipsolver.callback_->clearHighsCallbackOutput();
+    mipsolver.callback_->data_out.mip_solution = mipsolver.solution_;
+    const bool interrupt = interruptFromCallbackWithData(
+        kCallbackMipSolution, mipsolver.solution_objective_,
+        "Feasible solution");
+    assert(!interrupt);
   }
 }
 
@@ -950,6 +1063,16 @@ void HighsMipSolverData::runSetup() {
   lower_bound -= mipsolver.model_->offset_;
   upper_bound -= mipsolver.model_->offset_;
 
+  // If there is a start solution, checkAddSolution() determines
+  // whether it yields an incumbent, requiring a check that it
+  // corresponds to a feasible solution in the reduced space. This
+  // requires a call to checkSolution, which generally uses the
+  // row-wise copy of the matrix (why?) so set it up here, rather than
+  // before (re-)initializing number of uplocks and downlocks
+  highsSparseTranspose(model.num_row_, model.num_col_, model.a_matrix_.start_,
+                       model.a_matrix_.index_, model.a_matrix_.value_, ARstart_,
+                       ARindex_, ARvalue_);
+  rowMatrixSet = true;
   checkAddSolution();
 
   if (mipsolver.numCol() == 0)
@@ -965,33 +1088,25 @@ void HighsMipSolverData::runSetup() {
   implint_cols.clear();
   integral_cols.clear();
 
-  rowMatrixSet = false;
-  if (!rowMatrixSet) {
-    rowMatrixSet = true;
-    highsSparseTranspose(model.num_row_, model.num_col_, model.a_matrix_.start_,
-                         model.a_matrix_.index_, model.a_matrix_.value_,
-                         ARstart_, ARindex_, ARvalue_);
-    // (re-)initialize number of uplocks and downlocks
-    uplocks.assign(model.num_col_, 0);
-    downlocks.assign(model.num_col_, 0);
-    for (HighsInt i = 0; i != model.num_col_; ++i) {
-      HighsInt start = model.a_matrix_.start_[i];
-      HighsInt end = model.a_matrix_.start_[i + 1];
-      for (HighsInt j = start; j != end; ++j) {
-        HighsInt row = model.a_matrix_.index_[j];
-
-        if (model.row_lower_[row] != -kHighsInf) {
-          if (model.a_matrix_.value_[j] < 0)
-            ++uplocks[i];
-          else
-            ++downlocks[i];
-        }
-        if (model.row_upper_[row] != kHighsInf) {
-          if (model.a_matrix_.value_[j] < 0)
-            ++downlocks[i];
-          else
-            ++uplocks[i];
-        }
+  // (re-)initialize number of uplocks and downlocks
+  uplocks.assign(model.num_col_, 0);
+  downlocks.assign(model.num_col_, 0);
+  for (HighsInt i = 0; i != model.num_col_; ++i) {
+    HighsInt start = model.a_matrix_.start_[i];
+    HighsInt end = model.a_matrix_.start_[i + 1];
+    for (HighsInt j = start; j != end; ++j) {
+      HighsInt row = model.a_matrix_.index_[j];
+      if (model.row_lower_[row] != -kHighsInf) {
+        if (model.a_matrix_.value_[j] < 0)
+          ++uplocks[i];
+        else
+          ++downlocks[i];
+      }
+      if (model.row_upper_[row] != kHighsInf) {
+        if (model.a_matrix_.value_[j] < 0)
+          ++downlocks[i];
+        else
+          ++uplocks[i];
       }
     }
   }
@@ -1150,6 +1265,11 @@ void HighsMipSolverData::runSetup() {
                         num_implied_integer + num_domain_fixed);
   if (numRestarts == 0) {
     numCliqueEntriesAfterFirstPresolve = cliquetable.getNumEntries();
+    // available_core_count() is slow: skip it when nothing is logged
+    const HighsInt available_cores =
+        mipsolver.options_mip_->output_flag
+            ? static_cast<HighsInt>(highs::parallel::available_core_count())
+            : 0;
     highsLogUser(
         mipsolver.options_mip_->log_options, HighsLogType::kInfo,
         // clang-format off
@@ -1172,7 +1292,7 @@ void HighsMipSolverData::runSetup() {
         num_col == 1 ? "" : "s", num_binary, num_general_integer,
         num_implied_integer, num_continuous, num_domain_fixed,
         mipsolver.numNonzero(), mipsolver.numNonzero() == 1 ? "" : "s",
-        HighsInt{static_cast<int>(highs::parallel::available_core_count())},
+        available_cores,
         HighsInt{static_cast<int>(std::thread::hardware_concurrency())},
         mipsolver.getMaxNumWorkers(), HighsInt{highs::parallel::num_threads()});
   } else {
@@ -1208,35 +1328,39 @@ void HighsMipSolverData::runSetup() {
                  "\n");
 }
 
-double HighsMipSolverData::transformNewIntegerFeasibleSolution(
-    const std::vector<double>& sol,
-    const bool possibly_store_as_new_incumbent) {
-  HighsSolution solution;
-  solution.col_value = sol;
-  solution.value_valid = true;
+bool HighsMipSolverData::feasibleInOriginalSpace(
+    const std::vector<double>& reduced_col_value,
+    double& mipsolver_reduced_objective_value,
+    HighsSolution& original_space_solution,
+    double& original_space_objective_value,
+    MipViolation& original_space_violation) {
+  original_space_solution.col_value = reduced_col_value;
+  original_space_solution.value_valid = true;
   // Perform primal postsolve to get the original column values
   const HighsInt report_col = -kHighsIInf;
-  this->reportOriginalPresolvedCol(report_col, sol);
-  postSolveStack.undoPrimal(*mipsolver.options_mip_, solution, report_col);
+  this->reportOriginalPresolvedCol(report_col, reduced_col_value);
+  postSolveStack.undoPrimal(*mipsolver.options_mip_, original_space_solution,
+                            report_col);
   // Determine the row values, as they aren't computed in primal
   // postsolve
   HighsStatus return_status =
-      calculateRowValuesQuad(*mipsolver.orig_model_, solution);
+      calculateRowValuesQuad(*mipsolver.orig_model_, original_space_solution);
   if (kAllowDeveloperAssert) assert(return_status == HighsStatus::kOk);
   bool allow_try_again = true;
 try_again:
 
   // compute the objective value in the original space
-  MipViolation violation;
-  HighsCDouble mipsolver_quad_objective_value = 0;
+  HighsCDouble original_space_quad_objective_value = 0;
   bool feasible = mipsolver.solutionFeasible(
-      mipsolver.orig_model_, solution.col_value, &solution.row_value, violation,
-      mipsolver_quad_objective_value);
+      mipsolver.orig_model_, original_space_solution.col_value,
+      &original_space_solution.row_value, original_space_violation,
+      original_space_quad_objective_value);
   double bound_violation_ = 0;
   double row_violation_ = 0;
   double integrality_violation_ = 0;
-  violation.copy(bound_violation_, row_violation_, integrality_violation_);
-  double mipsolver_objective_value = double(mipsolver_quad_objective_value);
+  original_space_violation.copy(bound_violation_, row_violation_,
+                                integrality_violation_);
+  original_space_objective_value = double(original_space_quad_objective_value);
   if (!feasible && allow_try_again) {
     // printf(
     //     "trying to repair sol that is violated by %.12g bounds, %.12g rows,
@@ -1246,7 +1370,7 @@ try_again:
     fixedModel.integrality_.clear();
     for (HighsInt i = 0; i != mipsolver.orig_model_->num_col_; ++i) {
       if (mipsolver.orig_model_->integrality_[i] == HighsVarType::kInteger) {
-        double solval = std::round(solution.col_value[i]);
+        double solval = std::round(original_space_solution.col_value[i]);
         fixedModel.col_lower_[i] = std::max(fixedModel.col_lower_[i], solval);
         fixedModel.col_upper_[i] = std::min(fixedModel.col_upper_[i], solval);
       }
@@ -1294,18 +1418,41 @@ try_again:
         tmpSolver.getInfo().simplex_iteration_count;
     if (tmpSolver.getInfo().primal_solution_status == kSolutionStatusFeasible) {
       this->total_repair_lp_feasible++;
-      solution = tmpSolver.getSolution();
-      calculateRowValuesQuad(*mipsolver.orig_model_, solution.col_value,
-                             solution.row_value);
+      original_space_solution = tmpSolver.getSolution();
+      calculateRowValuesQuad(*mipsolver.orig_model_,
+                             original_space_solution.col_value,
+                             original_space_solution.row_value);
       allow_try_again = false;
       goto try_again;
     }
   }
-
-  const double transformed_solobj =
+  // Determine the objective used by the MIP solver in the reduced
+  // space - being the objective for the reduced problem scaled by the
+  // sense (since the MIP solver only minimizes) less the offset for
+  // the reduced problem
+  mipsolver_reduced_objective_value =
       static_cast<double>(static_cast<HighsInt>(mipsolver.orig_model_->sense_) *
-                              mipsolver_quad_objective_value -
+                              original_space_quad_objective_value -
                           mipsolver.model_->offset_);
+
+  return feasible;
+}
+
+double HighsMipSolverData::transformNewIntegerFeasibleSolution(
+    const std::vector<double>& sol,
+    const bool possibly_store_as_new_incumbent) {
+  double original_space_objective_value;
+  MipViolation original_space_violation;
+  HighsSolution solution;
+  double mipsolver_reduced_objective_value;
+  bool feasible = feasibleInOriginalSpace(
+      sol, mipsolver_reduced_objective_value, solution,
+      original_space_objective_value, original_space_violation);
+  double bound_violation_ = 0;
+  double row_violation_ = 0;
+  double integrality_violation_ = 0;
+  original_space_violation.copy(bound_violation_, row_violation_,
+                                integrality_violation_);
 
   // Possible MIP solution callback
   if (!mipsolver.submip && feasible && mipsolver.callback_->user_callback &&
@@ -1313,14 +1460,16 @@ try_again:
     mipsolver.callback_->clearHighsCallbackOutput();
     mipsolver.callback_->data_out.mip_solution = solution.col_value;
     const bool interrupt = interruptFromCallbackWithData(
-        kCallbackMipSolution, mipsolver_objective_value, "Feasible solution");
+        kCallbackMipSolution, original_space_objective_value,
+        "Feasible solution");
     assert(!interrupt);
   }
 
-  // Catch the case where the repaired solution now has worse objective
-  // than the current stored solution
-  if (transformed_solobj >= upper_bound && !sol.empty()) {
-    return transformed_solobj;
+  // Catch the case where the repaired solution now has worse
+  // objective (as used by the MIP solver in the reduced space) than
+  // the current stored solution
+  if (mipsolver_reduced_objective_value >= upper_bound && !sol.empty()) {
+    return mipsolver_reduced_objective_value;
   }
 
   if (possibly_store_as_new_incumbent) {
@@ -1329,13 +1478,13 @@ try_again:
     if (feasible) {
       // if (!allow_try_again)
       //   printf("repaired solution with value %g\n",
-      //   mipsolver_objective_value);
+      //   original_space_objective_value);
       // store
       mipsolver.row_violation_ = row_violation_;
       mipsolver.bound_violation_ = bound_violation_;
       mipsolver.integrality_violation_ = integrality_violation_;
       mipsolver.solution_ = std::move(solution.col_value);
-      mipsolver.solution_objective_ = mipsolver_objective_value;
+      mipsolver.solution_objective_ = original_space_objective_value;
     } else {
       bool currentFeasible =
           mipsolver.solution_objective_ != kHighsInf &&
@@ -1345,8 +1494,8 @@ try_again:
               mipsolver.options_mip_->mip_feasibility_tolerance &&
           mipsolver.row_violation_ <=
               mipsolver.options_mip_->mip_feasibility_tolerance;
-      violation.log(mipsolver.options_mip_->log_options,
-                    mipsolver_objective_value, "Solution");
+      original_space_violation.log(mipsolver.options_mip_->log_options,
+                                   original_space_objective_value, "Solution");
       if (!currentFeasible) {
         // if the current incumbent is non existent or also not feasible we
         // still store the new one
@@ -1354,7 +1503,7 @@ try_again:
         mipsolver.bound_violation_ = bound_violation_;
         mipsolver.integrality_violation_ = integrality_violation_;
         mipsolver.solution_ = std::move(solution.col_value);
-        mipsolver.solution_objective_ = mipsolver_objective_value;
+        mipsolver.solution_objective_ = original_space_objective_value;
       }
 
       // return infinity so that it is not used for bounding
@@ -1362,8 +1511,11 @@ try_again:
     }
   }
 
-  // return the objective value in the transformed space
-  return transformed_solobj;
+  // Return the objective used by the MIP solver in the reduced space
+  // - being the objective for the reduced problem scaled by the sense
+  // (since the MIP solver only minimizes) less the offset for the
+  // reduced problem
+  return mipsolver_reduced_objective_value;
 }
 
 double HighsMipSolverData::percentageInactiveIntegers() const {
@@ -1574,8 +1726,9 @@ bool HighsMipSolverData::addIncumbent(const std::vector<double>& sol,
   const bool possibly_store_as_new_incumbent = solobj < upper_bound;
   const bool get_transformed_solution =
       possibly_store_as_new_incumbent || execute_mip_solution_callback;
-  // Get the transformed objective and solution if required
-  const double transformed_solobj =
+  // Get the objective used by the MIP solver in the reduced space and
+  // solution if required
+  const double mipsolver_reduced_objective_value =
       get_transformed_solution ? transformNewIntegerFeasibleSolution(
                                      sol, possibly_store_as_new_incumbent)
                                : 0;
@@ -1593,14 +1746,15 @@ bool HighsMipSolverData::addIncumbent(const std::vector<double>& sol,
     if (possibly_store_as_new_incumbent)
       ss << highsFormatToString(
           "; TransObj = %15.8g; TransObj-UB = %11.4g; TransSolobj < UB %s",
-          transformed_solobj, transformed_solobj - upper_bound,
-          transformed_solobj < upper_bound ? "T" : "F");
+          mipsolver_reduced_objective_value,
+          mipsolver_reduced_objective_value - upper_bound,
+          mipsolver_reduced_objective_value < upper_bound ? "T" : "F");
     highsLogUser(mipsolver.options_mip_->log_options, HighsLogType::kInfo,
                  "%s\n", ss.str().c_str());
     fflush(stdout);
   }
   if (possibly_store_as_new_incumbent) {
-    solobj = transformed_solobj;
+    solobj = mipsolver_reduced_objective_value;
     if (solobj >= upper_bound) return false;
 
     double prev_upper_bound = upper_bound;
@@ -2780,19 +2934,19 @@ void HighsMipSolverData::updateLowerBound(double new_lower_bound,
                              upper_bound, check_bound_change, check_prev_data);
 }
 
-// Interface to callbackAction, with mipsolver_objective_value since
+// Interface to callbackAction, with original_space_objective_value since
 // incumbent value (mipsolver.solution_objective_) is not right for
 // callback_type = kCallbackMipSolution
 
 void HighsMipSolverData::setCallbackDataOut(
-    const double mipsolver_objective_value) const {
+    const double original_space_objective_value) const {
   double dual_bound;
   double primal_bound;
   double mip_rel_gap;
   limitsToBounds(dual_bound, primal_bound, mip_rel_gap);
   mipsolver.callback_->data_out.running_time = mipsolver.timer_.read();
   mipsolver.callback_->data_out.objective_function_value =
-      mipsolver_objective_value;
+      original_space_objective_value;
   mipsolver.callback_->data_out.mip_node_count = mipsolver.mipdata_->num_nodes;
   mipsolver.callback_->data_out.mip_total_lp_iterations =
       mipsolver.mipdata_->total_lp_iterations;
@@ -2802,23 +2956,23 @@ void HighsMipSolverData::setCallbackDataOut(
 }
 
 bool HighsMipSolverData::interruptFromCallbackWithData(
-    const int callback_type, const double mipsolver_objective_value,
+    const int callback_type, const double original_space_objective_value,
     const std::string& message) const {
   if (!mipsolver.callback_->callbackActive(callback_type)) return false;
   assert(!mipsolver.submip);
-  setCallbackDataOut(mipsolver_objective_value);
+  setCallbackDataOut(original_space_objective_value);
   return mipsolver.callback_->callbackAction(callback_type, message);
 }
 
 void HighsMipSolverData::queryExternalSolution(
-    const double mipsolver_objective_value,
+    const double original_space_objective_value,
     const ExternalMipSolutionQueryOrigin external_solution_query_origin) {
   assert(!mipsolver.submip);
   HighsCallback* callback = mipsolver.callback_;
   const bool use_callback =
       callback->user_callback && callback->active[kCallbackMipUserSolution];
   if (use_callback) {
-    setCallbackDataOut(mipsolver_objective_value);
+    setCallbackDataOut(original_space_objective_value);
     callback->data_out.external_solution_query_origin =
         external_solution_query_origin;
     callback->clearHighsCallbackInput();
@@ -2845,19 +2999,20 @@ void HighsMipSolverData::queryExternalSolution(
       // (reduced_c)^T(reduced_x) = original_sense*[original_offset +
       // (original_c)^T(original_x) - reduced_offset]
       const auto& user_solution = callback->data_in.user_solution;
-      MipViolation violation;
+      MipViolation original_space_violation;
       HighsCDouble user_solution_quad_objective_value = 0;
       const bool feasible = mipsolver.solutionFeasible(
-          mipsolver.orig_model_, user_solution, nullptr, violation,
-          user_solution_quad_objective_value);
+          mipsolver.orig_model_, user_solution, nullptr,
+          original_space_violation, user_solution_quad_objective_value);
       double bound_violation_ = 0;
       double row_violation_ = 0;
       double integrality_violation_ = 0;
-      violation.copy(bound_violation_, row_violation_, integrality_violation_);
+      original_space_violation.copy(bound_violation_, row_violation_,
+                                    integrality_violation_);
       if (!feasible) {
-        violation.log(mipsolver.options_mip_->log_options,
-                      double(user_solution_quad_objective_value),
-                      "User-supplied solution");
+        original_space_violation.log(mipsolver.options_mip_->log_options,
+                                     double(user_solution_quad_objective_value),
+                                     "User-supplied solution");
         return;
       }
       std::vector<double> reduced_user_solution;

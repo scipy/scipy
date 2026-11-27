@@ -15,6 +15,7 @@
 
 #include "HighsExtrasApiBinding.h"
 #include "HighsMetis.h"
+#include "HighsQdldl.h"
 #include "amd/amd.h"
 #include "blas/mycblas.h"
 #include "rcm/rcm.h"
@@ -51,7 +52,7 @@ struct wrapper_storage<extras_family> {
 template <int Index>
 struct extras_feature : feature_base<extras_family, Index> {
   static const char* name() {
-    return std::get<Index>(std::make_tuple("amd", "blas", "metis", "rcm"));
+    return std::get<Index>(std::make_tuple("amd", "blas", "metis", "rcm", "qdldl"));
   }
 };
 
@@ -74,6 +75,9 @@ using metis_methods = std::tuple<decltype(&Highs_METIS_SetDefaultOptions),
 
 using rcm_methods = std::tuple<decltype(&Highs_genrcm)>;
 
+using qdldl_methods = std::tuple<decltype(&Highs_qdldl_etree),
+                                 decltype(&Highs_qdldl_factor_row)>;
+
 //
 // 2. API import/export structure
 //
@@ -82,7 +86,8 @@ using rcm_methods = std::tuple<decltype(&Highs_genrcm)>;
 struct HighsExtrasApi : feature_api<amd_methods>,
                         feature_api<metis_methods>,
                         feature_api<blas_methods>,
-                        feature_api<rcm_methods> {
+                        feature_api<rcm_methods>,
+                        feature_api<qdldl_methods> {
   template <class Methods>
   feature_api<Methods>& as() {
     return static_cast<feature_api<Methods>&>(*this);
@@ -105,8 +110,10 @@ struct amd : extras_feature<0> {
   }
 
   static int order(amd_int n, const amd_int Ap[], const amd_int Ai[],
-                   amd_int P[], double Control[], double Info[]) {
-    return impl::template fn<1>()(n, Ap, Ai, P, Control, Info);
+                   amd_int P[], double Control[], double Info[],
+                   Highs_amd_ShouldStop should_stop, void* stop_data) {
+    return impl::template fn<1>()(n, Ap, Ai, P, Control, Info, should_stop,
+                                  stop_data);
   }
 };
 
@@ -197,9 +204,10 @@ struct metis : extras_feature<2> {
   }
 
   static int nodeND(idx_t* nvtxs, const idx_t* xadj, const idx_t* adjncy,
-                    idx_t* vwgt, idx_t* options, idx_t* perm, idx_t* iperm) {
+                    idx_t* vwgt, idx_t* options, idx_t* perm, idx_t* iperm,
+                    Highs_METIS_ShouldStop should_stop, void* stop_data) {
     return impl::template fn<1>()(nvtxs, xadj, adjncy, vwgt, options, perm,
-                                  iperm);
+                                  iperm, should_stop, stop_data);
   }
 };
 
@@ -213,11 +221,31 @@ struct rcm : extras_feature<3> {
   }
 };
 
+struct qdldl : extras_feature<4> {
+  using impl = feature_wrapper<extras_family, qdldl_methods>;
+
+  static void etree(HighsInt n, const HighsInt* ptr, const HighsInt* rows,
+                    HighsInt* parent, int64_t* colcount, HighsInt* work) {
+    impl::template fn<0>()(n, ptr, rows, parent, colcount, work);
+  }
+
+  static double factorRow(HighsInt row, const HighsInt* ptr,
+                          const HighsInt* rows, const double* val,
+                          const HighsInt* parent, const int64_t* ptrL,
+                          HighsInt* rowsL, double* valL, int64_t* next,
+                          uint8_t* mark, HighsInt* stack, HighsInt* revpattern,
+                          double* x, int64_t* work) {
+    return impl::template fn<1>()(row, ptr, rows, val, parent, ptrL, rowsL,
+                                  valL, next, mark, stack, revpattern, x,
+                                  work);
+  }
+};
+
 //
 // define feature set
 //
 
-using hipo = require<amd, blas, metis, rcm>;
+using hipo = require<amd, blas, metis, rcm, qdldl>;
 using extrasAll = require<hipo>;
 
 }  // namespace HighsExtras

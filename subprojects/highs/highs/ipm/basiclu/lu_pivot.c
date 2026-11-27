@@ -464,7 +464,7 @@ static lu_int lu_pivot_small(struct lu *this)
     double *Wvalue          = this->Wvalue;
     lu_int *marked          = this->iwork0;
     double *work            = this->work0;
-    int64_t *cancelled      = (void *) this->row_pivot;
+    uint64_t *cancelled     = (void *) this->row_pivot;
     
     lu_int cbeg = Wbegin[pivot_col]; /* changed by file compression */
     lu_int cend = Wend[pivot_col];
@@ -476,7 +476,7 @@ static lu_int lu_pivot_small(struct lu *this)
     lu_int i, j, pos, pos1, rpos, put, Uput, where, nz, *wi;
     lu_int grow, room, found, position, col_number;
     double pivot, a, x, cmx, xrj, *wx;
-    int64_t mask;
+    uint64_t mask;
 
     assert(cnz1 <= MAXROW_SMALL);
 
@@ -619,7 +619,7 @@ static lu_int lu_pivot_small(struct lu *this)
             else
             {
                 /* cancellation in row wi[pos] */
-                mask |= (int64_t) 1 << (pos-1);
+                mask |= (uint64_t) 1 << (pos-1);
             }
             work[pos] = 0.0;
         }

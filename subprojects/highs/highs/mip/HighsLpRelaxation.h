@@ -87,6 +87,9 @@ class HighsLpRelaxation {
   Status status;
   bool adjustSymBranchingCol;
   bool solved_first_lp;
+  // Whether run() is retrying after an error, when selection mustn't
+  // choose IPM again
+  bool retrying_after_error = false;
   HighsMipWorker* worker_;
 
   void storeDualInfProof();

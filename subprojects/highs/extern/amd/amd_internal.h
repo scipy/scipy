@@ -89,7 +89,7 @@ size_t Highs_amd_aat
     double Info [ ]
 ) ;
 
-void Highs_amd_1
+int Highs_amd_1     /* returns AMD_OK or AMD_INTERRUPTED */
 (
     amd_int n,
     const amd_int Ap [ ],
@@ -100,7 +100,9 @@ void Highs_amd_1
     amd_int slen,
     amd_int S [ ],
     double Control [ ],
-    double Info [ ]
+    double Info [ ],
+    Highs_amd_ShouldStop should_stop,
+    void *stop_data
 ) ;
 
 void Highs_amd_postorder

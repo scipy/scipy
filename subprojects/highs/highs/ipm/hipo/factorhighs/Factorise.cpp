@@ -112,6 +112,11 @@ void Factorise::processSupernode(Int sn) {
   const bool serial = !parallel;
 
   if (flag_stop_.load(std::memory_order_relaxed)) return;
+  // Called from parallel tasks, so the stop callback must be thread safe
+  if (FH_opt_.stopRequested()) {
+    flag_stop_.store(true, std::memory_order_relaxed);
+    return;
+  }
 
   if (parallel) {
     // spawn children of this supernode in forward order

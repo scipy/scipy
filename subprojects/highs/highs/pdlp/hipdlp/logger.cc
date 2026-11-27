@@ -80,7 +80,14 @@ void Logger::printParams(const PrimalDualParams& params) const {
   ss << "  - Max Iterations: " << params.max_iterations;
   detailed(ss.str());
   ss.str("");
-  ss << "  - Tolerance: " << params.tolerance;
+  ss << "  - Primal feasibility tolerance: "
+     << params.primal_feasibility_tolerance;
+  detailed(ss.str());
+  ss.str("");
+  ss << "  - Dual feasibility tolerance: " << params.dual_feasibility_tolerance;
+  detailed(ss.str());
+  ss.str("");
+  ss << "  - Optimality tolerance: " << params.optimality_tolerance;
   detailed(ss.str());
   ss.str("");
   ss << "  - Restart Strategy: "

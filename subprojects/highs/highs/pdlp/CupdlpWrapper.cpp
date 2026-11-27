@@ -464,10 +464,39 @@ cupdlp_retcode problem_create(CUPDLPproblem** prob) {
 //   return retcode;
 // }
 
+// CSC-to-CSR transpose via HighsSparseMatrix (replaces cuPDLP-C's own, #3712)
+static void csr_alloc_from_csc(CUPDLPcsr** csr, cupdlp_int nRows,
+                               cupdlp_int nCols, const CUPDLPcsc* csc) {
+  HighsSparseMatrix a_matrix;
+  a_matrix.num_col_ = csc->nCols;
+  a_matrix.num_row_ = csc->nRows;
+  a_matrix.start_.assign(csc->colMatBeg, csc->colMatBeg + csc->nCols + 1);
+  a_matrix.index_.assign(csc->colMatIdx, csc->colMatIdx + csc->nMatElem);
+  a_matrix.value_.assign(csc->colMatElem, csc->colMatElem + csc->nMatElem);
+  a_matrix.ensureRowwise();
+  // HighsInt may be 64-bit, cuPDLP-C indices are int
+  std::vector<cupdlp_int> row_start(a_matrix.start_.begin(),
+                                    a_matrix.start_.end());
+  std::vector<cupdlp_int> row_index(a_matrix.index_.begin(),
+                                    a_matrix.index_.end());
+  CUPDLPcsr row_wise{};
+  row_wise.nRows = csc->nRows;
+  row_wise.nCols = csc->nCols;
+  row_wise.nMatElem = csc->nMatElem;
+  row_wise.rowMatBeg = row_start.data();
+  row_wise.rowMatIdx = row_index.data();
+  row_wise.rowMatElem = a_matrix.value_.data();
+  csr_create(csr);
+  csr_alloc_matrix(*csr, nRows, nCols, &row_wise, CSR);
+}
+
 cupdlp_retcode data_alloc(CUPDLPdata* data, cupdlp_int nRows, cupdlp_int nCols,
                           void* matrix, CUPDLP_MATRIX_FORMAT src_matrix_format,
                           CUPDLP_MATRIX_FORMAT dst_matrix_format) {
   cupdlp_retcode retcode = RETCODE_OK;
+  // csr_alloc_from_csc reads the matrix as CSC
+  if (src_matrix_format != CSC) return RETCODE_FAILED;
+  const CUPDLPcsc* csc = (const CUPDLPcsc*)matrix;
 
   data->nRows = nRows;
   data->nCols = nCols;
@@ -489,9 +518,7 @@ cupdlp_retcode data_alloc(CUPDLPdata* data, cupdlp_int nRows, cupdlp_int nCols,
                          src_matrix_format);
       break;
     case CSR:
-      csr_create(&data->csr_matrix);
-      csr_alloc_matrix(data->csr_matrix, nRows, nCols, matrix,
-                       src_matrix_format);
+      csr_alloc_from_csc(&data->csr_matrix, nRows, nCols, csc);
       break;
     case CSC:
       csc_create(&data->csc_matrix);
@@ -502,15 +529,11 @@ cupdlp_retcode data_alloc(CUPDLPdata* data, cupdlp_int nRows, cupdlp_int nCols,
       csc_create(&data->csc_matrix);
       csc_alloc_matrix(data->csc_matrix, nRows, nCols, matrix,
                        src_matrix_format);
-      csr_create(&data->csr_matrix);
-      csr_alloc_matrix(data->csr_matrix, nRows, nCols, matrix,
-                       src_matrix_format);
+      csr_alloc_from_csc(&data->csr_matrix, nRows, nCols, csc);
       break;
     default:
       break;
   }
-  // currently, only supprot that input matrix is CSC, and store both CSC and
-  // CSR data->csc_matrix = matrix;
 
   return retcode;
 }

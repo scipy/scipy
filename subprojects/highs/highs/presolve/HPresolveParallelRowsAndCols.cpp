@@ -409,9 +409,7 @@ HPresolve::Result HPresolve::detectParallelRowsAndCols(
                          colScale * model->col_lower_[duplicateCol];
           }
 
-          if (mipsolver != nullptr && mipsolver->mipdata_->cliquesExtracted) {
-            presolveCliqueTable.eliminateCol(col);
-          }
+          presolveCliqueTable.eliminateCol(col);
 
           // change bounds
           HPRESOLVE_CHECKED_CALL(changeColBounds(col, mergeLower, mergeUpper));

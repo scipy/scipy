@@ -6,3 +6,5 @@ Changes:
 - The name of the custom types and of some #define has been changed, to avoid conflicts.
 - Any function that is not needed to use amd_order has been removed.
 - The code is compiled using a single integer type, controlled by HIGHSINT64.
+- A callback to check whether to stop (e.g. for time limit) has been added.
+  A new status AMD_INTERRUPTED has been added for this purpose.

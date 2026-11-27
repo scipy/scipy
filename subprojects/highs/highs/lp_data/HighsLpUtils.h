@@ -272,16 +272,6 @@ HighsStatus calculateRowValuesQuad(const HighsLp& lp, HighsSolution& solution,
 
 HighsStatus calculateColDualsQuad(const HighsLp& lp, HighsSolution& solution);
 
-bool isColDataNull(const HighsLogOptions& log_options,
-                   const double* usr_col_cost, const double* usr_col_lower,
-                   const double* usr_col_upper);
-bool isRowDataNull(const HighsLogOptions& log_options,
-                   const double* usr_row_lower, const double* usr_row_upper);
-bool isMatrixDataNull(const HighsLogOptions& log_options,
-                      const HighsInt* usr_matrix_start,
-                      const HighsInt* usr_matrix_index,
-                      const double* usr_matrix_value);
-
 void reportPresolveReductions(const HighsLogOptions& log_options,
                               HighsPresolveStatus presolve_status,
                               const HighsLp& lp, const HighsLp& presolved_lp);

@@ -18,10 +18,10 @@ namespace ipx {
 // @marked, @marker Node i is "marked" iff @marked[i] == @marker.
 // @work workspace of size # rows of A.
 //
-// The code has been copied and adapted from cs_dfs.c, included in the CSPARSE
-// package [1].
-//
-// [1] T. Davis, "Direct methods for sparse linear systems" (2006)
+// Nodes are written to @istack in the order in which their search finishes
+// (postorder), from position @top-1 downwards. Hence @istack[newtop..@top-1]
+// is a topological order of the reached nodes. @istack[0..@top-1] is used as
+// scratch space during the search.
 //
 Int DepthFirstSearch(Int istart, const Int* Ap, const Int* Ai,
                      const Int* colmap, Int top, Int* istack, Int* marked,
@@ -45,10 +45,12 @@ Int DepthFirstSearch(Int istart, const Int* Ap, const Int* Ai,
 //
 // Returns true if the matching was extended.
 //
-// The code has been copied and adapted from cs_augment.c, included in the
-// CSPARSE package [1].
+// The search is a depth-first search for an alternating path from @jstart to
+// a free row, with a "cheap assignment" check for a directly adjacent free
+// row whenever a column is first visited, as in [1].
 //
-// [1] T. Davis, "Direct methods for sparse linear systems" (2006)
+// [1] I. S. Duff, "On algorithms for obtaining a maximum transversal",
+//     ACM Trans. Math. Software 7 (1981), pp. 315-330.
 //
 bool AugmentingPath(Int jstart, const Int* Ap, const Int* Ai, Int* jmatch,
                     Int* cheap, Int* marked, Int* work, Int* work2, Int* work3);

@@ -40,9 +40,15 @@ typedef int32_t idx_t;
 extern "C" {
 #endif
 
+/* Callback used to stop the ordering early (e.g. for a time limit). It is
+   called with the user data pointer passed to Highs_METIS_NodeND and should
+   return nonzero to request termination. It must not throw or longjmp. */
+typedef int (*Highs_METIS_ShouldStop)(void *data);
+
 METIS_API(int)
 Highs_METIS_NodeND(idx_t *nvtxs, const idx_t *xadj, const idx_t *adjncy,
-                   idx_t *vwgt, idx_t *options, idx_t *perm, idx_t *iperm);
+                   idx_t *vwgt, idx_t *options, idx_t *perm, idx_t *iperm,
+                   Highs_METIS_ShouldStop should_stop, void *stop_data);
 
 METIS_API(int) Highs_METIS_SetDefaultOptions(idx_t *options);
 
@@ -55,7 +61,8 @@ typedef enum {
   METIS_OK = 1,           /*!< Returned normally */
   METIS_ERROR_INPUT = -2, /*!< Returned due to erroneous inputs and/or options */
   METIS_ERROR_MEMORY = -3, /*!< Returned due to insufficient memory */
-  METIS_ERROR = -4         /*!< Some other errors */
+  METIS_ERROR = -4,        /*!< Some other errors */
+  METIS_ERROR_INTERRUPTED = -5 /*!< Stopped by the should_stop callback */
 } rstatus_et;
 
 /*! Options codes (i.e., options[]) */

@@ -372,6 +372,9 @@ struct HighsOptionsStruct {
   HighsInt user_bound_scale;
   HighsInt highs_debug_level;
   HighsInt highs_analysis_level;
+
+  HighsInt solver_select_strategy;
+  bool solver_select_require_basis;
   HighsInt simplex_strategy;
   HighsInt simplex_scale_strategy;
   HighsInt simplex_crash_strategy;
@@ -409,6 +412,7 @@ struct HighsOptionsStruct {
   HighsInt hipo_parallel_force;
   HighsInt hipo_parallel_forbid;
   bool hipo_serial_blas;
+  bool hipo_stop_if_no_memory;
 
   // Options for PDLP solver
   HighsInt pdlp_features_off;
@@ -566,6 +570,8 @@ struct HighsOptionsStruct {
         user_bound_scale(0),
         highs_debug_level(0),
         highs_analysis_level(0),
+        solver_select_strategy(0),
+        solver_select_require_basis(false),
         simplex_strategy(0),
         simplex_scale_strategy(0),
         simplex_crash_strategy(0),
@@ -596,6 +602,7 @@ struct HighsOptionsStruct {
         hipo_parallel_force(0),
         hipo_parallel_forbid(0),
         hipo_serial_blas(true),
+        hipo_stop_if_no_memory(false),
         pdlp_features_off(0),
         pdlp_iteration_limit(0),
         pdlp_scaling_mode(0),
@@ -908,6 +915,27 @@ class HighsOptions : public HighsOptionsStruct {
         kHighsAnalysisLevelMin,  // kHighsAnalysisLevelMipTime,  //
         kHighsAnalysisLevelMax);
     records.push_back(record_int);
+
+    // Strategies 3 to 8 are for development, so aren't in the description.
+    // They can still be set, as can advanced options. See
+    // util/HighsSolverSelect.h
+    record_int = new OptionRecordInt(
+        "solver_select_strategy",
+        "Strategy for automatic LP solver selection when solver is "
+        "\"choose\" and, for LPs without a basis in the MIP solver, when "
+        "mip_lp_solver is \"choose\": 0 => Simplex only; 1 => "
+        "Fitted model on columns, rows and nonzeros; 2 => Fitted model on "
+        "ranked features",
+        advanced, &solver_select_strategy, 0, 0, 8);
+    records.push_back(record_int);
+
+    record_bool =
+        new OptionRecordBool("solver_select_require_basis",
+                             "Require a basis from automatic solver selection: "
+                             "simplex is used if the selected IPM solver "
+                             "doesn't yield one or reaches its iteration limit",
+                             now_advanced, &solver_select_require_basis, false);
+    records.push_back(record_bool);
 
     record_int = new OptionRecordInt(
         "simplex_strategy",
@@ -1306,7 +1334,9 @@ class HighsOptions : public HighsOptionsStruct {
     record_string =
         new OptionRecordString(kMipLpSolverString,
                                "MIP LP solver: \"choose\", \"simplex\", "
-                               "\"ipm\", \"ipx\" or \"hipo\"",
+                               "\"ipm\", \"ipx\" or \"hipo\". Only "
+                               "\"choose\" allows solver_select_strategy to "
+                               "act",
                                advanced, &mip_lp_solver, kHighsChooseString);
     records.push_back(record_string);
 
@@ -1374,6 +1404,12 @@ class HighsOptions : public HighsOptionsStruct {
         "hipo_block_size", "Block size for dense linear algebra within HiPO",
         advanced, &hipo_block_size, 0, 128, kHighsIInf);
     records.push_back(record_int);
+
+    record_bool = new OptionRecordBool(
+        "hipo_stop_if_no_memory",
+        "Stop HiPO if its predicted memory use exceeds what is available",
+        now_advanced, &hipo_stop_if_no_memory, false);
+    records.push_back(record_bool);
 
     record_bool = new OptionRecordBool(
         "hipo_serial_blas",

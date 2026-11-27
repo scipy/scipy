@@ -83,6 +83,9 @@ HIGHS_EXTRAS_API bool HighsExtras_getApi(HighsExtrasApi* api) {
 
   bind_api<rcm_methods>(api, std::make_tuple(&Highs_genrcm));
 
+  bind_api<qdldl_methods>(
+      api, std::make_tuple(&Highs_qdldl_etree, &Highs_qdldl_factor_row));
+
 #endif
 
   return true;

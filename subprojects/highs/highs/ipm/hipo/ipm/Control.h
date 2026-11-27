@@ -33,6 +33,7 @@ class Control {
   HighsCallback* callback() const;
 
   double elapsed() const;
+  bool timeLimitReached() const;
   Int interruptCheck(const Int ipm_iteration_count = -1) const;
 };
 

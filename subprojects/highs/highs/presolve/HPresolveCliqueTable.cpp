@@ -44,6 +44,7 @@ void HPresolveCliqueTable::checkCompactClique(const HighsInt cliqueId,
 
 bool HPresolveCliqueTable::fixCol(HighsInt col, bool val,
                                   std::vector<CliqueVar>& impliedFixings) {
+  if (!isActive()) return true;
   const ColState state = colStates[col];
   if (!state.isActive()) {
     if (state.isEliminated()) return true;
@@ -94,7 +95,7 @@ bool HPresolveCliqueTable::fixCol(HighsInt col, bool val,
         const ColState otherState = colStates[v2.col];
         if (otherState.isFixedTo(v2.val)) return false;
         if (otherState.isActive()) {
-          fixingQueue.emplace_back(static_cast<HighsUInt>(v2.col), 1 - v2.val);
+          fixingQueue.emplace_back(static_cast<HighsInt>(v2.col), 1 - v2.val);
         }
       }
       table->removeClique(cliqueId);
@@ -135,6 +136,7 @@ bool HPresolveCliqueTable::fixCol(HighsInt col, bool val,
 }
 
 void HPresolveCliqueTable::eliminateCol(const HighsInt col) {
+  if (!isActive()) return;
   if (colStates[col].isEliminated()) return;
   colStates[col] = ColState(ColState::kEliminated);
   if (table->colDeleted[col]) return;
@@ -180,6 +182,7 @@ void HPresolveCliqueTable::eliminateCol(const HighsInt col) {
 bool HPresolveCliqueTable::substituteCol(
     const HighsInt substCol, const CliqueVar replacement,
     std::vector<CliqueVar>& impliedFixings) {
+  if (!isActive()) return true;
   if (substCol == static_cast<HighsInt>(replacement.col)) {
     // Substituting itself is either redundant or infeasible
     return replacement.val == 1;

@@ -77,7 +77,8 @@ void FactorHighs_inertia(void* FH, HighsInt* pos, HighsInt* neg, HighsInt* zero,
 }
 
 void FactorHighs_symbolic_print(void* FH, void* S, HighsInt verbose) {
-  ((hipo::Symbolic*)S)->print(*(((hipo::FHsolver*)FH)->getLogger()), verbose);
+  const hipo::Logger* logger = ((hipo::FHsolver*)FH)->getLogger();
+  if (logger) ((hipo::Symbolic*)S)->print(*logger, verbose);
 }
 
 void FactorHighs_iperm(void* FH, void* S, HighsInt* ip) {

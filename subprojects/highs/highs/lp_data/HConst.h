@@ -259,7 +259,8 @@ enum HighsCallbackType : int {
   kCallbackMipUserSolution,           // 9
   kCallbackQpFirstFeasiblePoint,      // 10
   kCallbackQpInterrupt,               // 11
-  kCallbackMax = kCallbackQpInterrupt,
+  kCallbackPdlpInterrupt,             // 12
+  kCallbackMax = kCallbackPdlpInterrupt,
   kNumCallbackType
 };
 

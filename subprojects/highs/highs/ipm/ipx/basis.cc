@@ -360,11 +360,14 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
 	  info->errflag = IPX_ERROR_time_interrupt;
 	  return;
 	}
-        double sigma = MinSingularValue();
-        control_.Debug()
-            << Textline("Minimum singular value of crash basis:") << sci2(sigma)
-            << '\n';
+        // MinSingularValue is expensive and has no time check
+        if (control_.Debug())
+            control_.Debug()
+                << Textline("Minimum singular value of crash basis:")
+                << sci2(MinSingularValue()) << '\n';
         Repair(info, interrupt);
+        if (info->errflag)
+            return;
 	if (interrupt) {
 	  info->errflag = IPX_ERROR_time_interrupt;
 	  return;
@@ -373,11 +376,10 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
 	  control_.hLog(" discarding crash basis\n");
 	     SetToSlackBasis();
         }
-        else if (info->basis_repairs > 0) {
-            sigma = MinSingularValue();
+        else if (info->basis_repairs > 0 && control_.Debug()) {
             control_.Debug()
                 << Textline("Minimum singular value of repaired crash basis:")
-                << sci2(sigma) << '\n';
+                << sci2(MinSingularValue()) << '\n';
         }
     } else {
         SetToSlackBasis();
@@ -585,6 +587,8 @@ void Basis::Repair(Info* info, bool& interrupt) {
     info->basis_repairs = 0;
 
     while (true) {
+        if ((info->errflag = control_.InterruptCheck()) != 0)
+            return;
         std::tuple<Int,Int,double> entry = InverseSearch(*this, work);
         Int pmax = std::get<0>(entry);
         Int imax = std::get<1>(entry);

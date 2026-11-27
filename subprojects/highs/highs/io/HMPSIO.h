@@ -71,6 +71,9 @@ HighsStatus writeMps(
 bool load_mpsLine(std::istream& file, HighsVarType& integerVar, HighsInt lmax,
                   char* line, char* flag, double* data);
 
+FilereaderRetcode failureInSection(const HighsLogOptions& log_options,
+                                   const std::string& section);
+
 HighsStatus writeModelAsMps(const HighsOptions& options,
                             const std::string& filename,
                             const HighsModel& model, const bool free = true);
