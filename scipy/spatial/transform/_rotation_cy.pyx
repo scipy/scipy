@@ -7,24 +7,31 @@ from scipy._lib._util import check_random_state, _transition_to_rng
 
 cimport numpy as np
 cimport cython
+from cython cimport floating
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, isnan, NAN, pi
+from libc.math cimport sqrt, sin, cos, atan2, pi
 
 np.import_array()
+ctypedef unsigned char uchar
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
     if n == 0:
         return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
+
+
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
     if n1 == 0:
         return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
+
+
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
     if n1 == 0:
         return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
+
 
 # flat implementations of numpy functions
 @cython.boundscheck(False)
@@ -36,30 +43,32 @@ cdef inline double[:] _cross3(const double[:] a, const double[:] b) noexcept:
     result[2] = a[0]*b[1] - a[1]*b[0]
     return result
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double _dot3(const double[:] a, const double[:] b) noexcept nogil:
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double _norm3(const double[:] elems) noexcept nogil:
     return sqrt(_dot3(elems, elems))
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef inline double _normalize4(double[:] elems) noexcept nogil:
-    cdef double norm = sqrt(_dot3(elems, elems) + elems[3]*elems[3])
 
-    if norm == 0:
-        return NAN
-
-    elems[0] /= norm
-    elems[1] /= norm
-    elems[2] /= norm
-    elems[3] /= norm
-
+@cython.cdivision(True)
+cdef inline floating _normalize4(floating* q) noexcept nogil:
+    """Normalize the four contiguous elements at `q` in place and return their norm."""
+    cdef floating norm = sqrt(q[0]**2 + q[1]**2 + q[2]**2 + q[3]**2)
+    # We explicitly use multiplication by inverse here, because the compiler otherwise vectorizes
+    # the division before -freciprocal-math discovers that this can be turned into a multiply.
+    cdef floating inv_norm = 1 / norm
+    q[0] *= inv_norm
+    q[1] *= inv_norm
+    q[2] *= inv_norm
+    q[3] *= inv_norm
     return norm
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -74,7 +83,6 @@ cdef inline int _argmax4(const double[:] a) noexcept nogil:
 
     return imax
 
-ctypedef unsigned char uchar
 
 cdef double[3] _ex = [1, 0, 0]
 cdef double[3] _ey = [0, 1, 0]
@@ -87,12 +95,14 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis) noexcept:
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline int _elementary_basis_index(uchar axis) noexcept:
     if axis == b'x': return 0
     elif axis == b'y': return 1
     elif axis == b'z': return 2
+
 
 # Reduce the quaternion double coverage of the rotation group to a unique
 # canonical "positive" single cover
@@ -108,12 +118,14 @@ cdef inline void _quat_canonical_single(double[:] q) noexcept nogil:
         q[2] *= -1.0
         q[3] *= -1.0
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void _quat_canonical(double[:, :] q) noexcept:
     cdef Py_ssize_t n = q.shape[0]
     for ind in range(n):
         _quat_canonical_single(q[ind])
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -242,6 +254,7 @@ cdef double[:, :] _compute_euler_from_quat(
                       "all angles.", stacklevel=2)
 
     return angles
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -404,30 +417,48 @@ cdef double[:, :] _elementary_quat_compose(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_quat(const double[:, :] quat, bint normalize=True, bint copy=True, bint scalar_first=False):
-    if quat.ndim != 2 or quat.shape[1] != 4:
-        raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
+cdef void _from_quat(
+    np.ndarray[floating, ndim=2] quat,
+    np.ndarray[floating, ndim=2, mode="c"] out,
+    bint normalize,
+    bint scalar_first,
+):
+    cdef int x = 1 if scalar_first else 0
+    cdef int w = 0 if scalar_first else 3
+    # Normalizing a local quat is faster because the four values stay in the registers without being
+    # read back a second time for the normalization
+    cdef floating[4] q
+    for ind in range(quat.shape[0]):
+        q[0] = quat[ind, x]
+        q[1] = quat[ind, x + 1]
+        q[2] = quat[ind, x + 2]
+        q[3] = quat[ind, w]
+        if normalize and _normalize4(q) == 0:
+            raise ValueError("Found zero norm quaternions in `quat`.")
+        out[ind, 0] = q[0]
+        out[ind, 1] = q[1]
+        out[ind, 2] = q[2]
+        out[ind, 3] = q[3]
 
-    cdef double[:, :] quat_mut  # Non-const to enable in-place normalization
-    cdef Py_ssize_t num_rotations = quat.shape[0]
 
-    if num_rotations > 0:  # Avoid 0-sized axis errors
-        if scalar_first:
-            quat_mut = np.roll(quat, -1, axis=1)
-        elif normalize or copy:
-            quat_mut = quat.copy()
-        else:  
-            # quat is not altered, so we return directly using quat instead of quat_mut
-            return np.asarray(quat, dtype=float)
-
-        if normalize:
-            for ind in range(num_rotations):
-                if isnan(_normalize4(quat_mut[ind, :])):
-                    raise ValueError("Found zero norm quaternions in `quat`.")
-
-        return np.asarray(quat_mut, dtype=float)
-
-    return np.asarray(quat, dtype=float)
+def from_quat(np.ndarray quat, bint normalize=True, bint copy=True, bint scalar_first=False):
+    if quat.ndim == 0 or quat.shape[quat.ndim - 1] != 4:
+        raise ValueError(f"Expected `quat` to have shape (..., 4), got {np.shape(quat)}.")
+    # Cast and align quat with the numpy C API to avoid Python overhead
+    cdef int dtype = np.NPY_FLOAT32 if np.PyArray_TYPE(quat) == np.NPY_FLOAT32 else np.NPY_FLOAT64
+    quat = np.PyArray_FROM_OTF(quat, dtype, np.NPY_ARRAY_ALIGNED)
+    if not (normalize or copy or scalar_first):
+        return quat
+    # Create an output array using the numpy C API, write the (possibly normalized) values into a 2D
+    # view of out using the 2D _from_quat loop, and return it in the original shape
+    out = np.PyArray_EMPTY(quat.ndim, quat.shape, dtype, 0)
+    rows = np.PyArray_Reshape(quat, (-1, 4))  # Copies only if needed
+    out_rows = np.PyArray_Reshape(out, (-1, 4))  # Guaranteed to be a view since out is C-contiguous
+    if dtype == np.NPY_FLOAT32:
+        _from_quat[float](rows, out_rows, normalize, scalar_first)
+    else:
+        _from_quat[double](rows, out_rows, normalize, scalar_first)
+    return out
 
 
 @cython.boundscheck(False)
@@ -540,6 +571,7 @@ def _from_matrix_orthogonal(matrix):
     cdef Py_ssize_t i, j, k
     cdef double[:] decision = _empty1(4)
     cdef int choice
+    cdef double[4] q
     cdef int ind
 
     cdef double[:, :] quat = _empty2(num_rotations, 4)
@@ -557,18 +589,22 @@ def _from_matrix_orthogonal(matrix):
             j = (i + 1) % 3
             k = (j + 1) % 3
 
-            quat[ind, i] = 1 - decision[3] + 2 * cmatrix[ind, i, i]
-            quat[ind, j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
-            quat[ind, k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
-            quat[ind, 3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
+            q[i] = 1 - decision[3] + 2 * cmatrix[ind, i, i]
+            q[j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
+            q[k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
+            q[3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
         else:
-            quat[ind, 0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
-            quat[ind, 1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
-            quat[ind, 2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
-            quat[ind, 3] = 1 + decision[3]
+            q[0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
+            q[1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
+            q[2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
+            q[3] = 1 + decision[3]
 
         # normalize
-        _normalize4(quat[ind])
+        _normalize4(q)
+        quat[ind, 0] = q[0]
+        quat[ind, 1] = q[1]
+        quat[ind, 2] = q[2]
+        quat[ind, 3] = q[3]
 
     if is_single:
         return np.asarray(quat, dtype=float)[0]
