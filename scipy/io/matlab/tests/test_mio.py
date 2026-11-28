@@ -746,8 +746,8 @@ def test_to_writeable():
     res = to_writeable(())
     assert_equal(res.shape, (0,))
     assert_equal(res.dtype.type, np.float64)
-    # None -> None
-    assert_(to_writeable(None) is None)
+    # None -> 0x0 double
+    assert_array_equal(to_writeable(None), np.empty((0, 0)), strict=True)
     # String to strings
     assert_equal(to_writeable('a string').dtype.type, np.str_)
     # Scalars to numpy to NumPy scalars
@@ -886,6 +886,17 @@ def test_empty_string():
     d = rdr.get_variables()
     assert_array_equal(d['a'], np.array([], dtype='U1'))
     stream.close()
+
+
+def test_save_none():
+    # None is written as [], a 0x0 double
+    stream = BytesIO()
+    savemat(stream, {'x': None, 's': {'a': None}, 'c': [1, None]})
+    vars = loadmat(stream)
+    empty = np.empty((0, 0))
+    assert_array_equal(vars['x'], empty, strict=True)
+    assert_array_equal(vars['s']['a'][0, 0], empty, strict=True)
+    assert_array_equal(vars['c'][0, 1], empty, strict=True)
 
 
 @pytest.mark.parametrize('fmt', ['4', '5'])
