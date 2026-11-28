@@ -38,9 +38,11 @@ Contents
    construct_dist_matrix
    csgraph_from_dense
    csgraph_from_masked
+   csgraph_from_adjacency_list
    csgraph_masked_from_dense
    csgraph_to_dense
    csgraph_to_masked
+   csgraph_to_adjacency_list
    reconstruct_path
 
 Graph Representations
@@ -180,8 +182,10 @@ __all__ = ['connected_components',
            'csgraph_masked_from_dense',
            'csgraph_from_dense',
            'csgraph_from_masked',
+           'csgraph_from_adjacency_list',
            'csgraph_to_dense',
            'csgraph_to_masked',
+           'csgraph_to_adjacency_list',
            'NegativeCycleError']
 
 from ._laplacian import laplacian
@@ -202,7 +206,7 @@ from ._reordering import reverse_cuthill_mckee, structural_rank
 from ._tools import (
     construct_dist_matrix, reconstruct_path, csgraph_from_dense,
     csgraph_to_dense, csgraph_masked_from_dense, csgraph_from_masked,
-    csgraph_to_masked
+    csgraph_to_masked, csgraph_from_adjacency_list, csgraph_to_adjacency_list
 )
 
 from scipy._lib._testutils import PytestTester
