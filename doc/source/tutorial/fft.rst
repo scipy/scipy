@@ -418,8 +418,7 @@ determining adequate input lengths for fast execution.
 
 Furthermore, the :mod:`~scipy.fft` module provides also the context manager
 :func:`~scipy.fft.set_workers` to set the maximum number of allowed threads when
-calculating the FFT. Note that some third-party FFT libraries provide SciPy backends,
-which can be activated by utilizing :func:`~scipy.fft.set_backend`.
+calculating the FFT.
 
 
 2- and N-D discrete Fourier transforms

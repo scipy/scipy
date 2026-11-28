@@ -17,29 +17,6 @@ if exc.error:
     has_scipy_fft = False
 
 
-with safe_import() as exc:
-    import pyfftw.interfaces.numpy_fft as pyfftw_fft
-    import pyfftw
-    pyfftw.interfaces.cache.enable()
-    has_pyfftw = True
-if exc.error:
-    pyfftw_fft = {}
-    has_pyfftw = False
-
-
-class PyfftwBackend:
-    """Backend for pyfftw"""
-    __ua_domain__ = 'numpy.scipy.fft'
-
-    @staticmethod
-    def __ua_function__(method, args, kwargs):
-        kwargs.pop('overwrite_x', None)
-
-        fn = getattr(pyfftw_fft, method.__name__, None)
-        return (NotImplemented if fn is None
-                else fn(*args, **kwargs))
-
-
 def random(size):
     return rand(*size)
 
@@ -232,86 +209,6 @@ class RealTransformsND(Benchmark):
     def time_dstn(self, size, type, module):
         x = self.x if self.type != 1 else self.x_dst
         self.dstn(x, self.type)
-
-
-class FftBackends(Benchmark):
-    params = [
-        [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],
-        ['real', 'cmplx'],
-        ['duccfft', 'pyfftw', 'numpy', 'direct']
-    ]
-    param_names = ['size', 'type', 'backend']
-
-    def setup(self, size, cmplx, backend):
-        import scipy.fft
-        if cmplx == 'cmplx':
-            self.x = random([size]).astype(cdouble)+random([size]).astype(cdouble)*1j
-        else:
-            self.x = random([size]).astype(double)
-
-        self.fft = scipy.fft.fft
-        self.ifft = scipy.fft.ifft
-
-        if backend == 'duccfft':
-            scipy.fft.set_global_backend('scipy')
-        elif backend == 'pyfftw':
-            if not has_pyfftw:
-                raise NotImplementedError
-            scipy.fft.set_global_backend(PyfftwBackend)
-        elif backend == 'numpy':
-            from scipy.fft._debug_backends import NumPyBackend
-            scipy.fft.set_global_backend(NumPyBackend)
-        elif backend == 'direct':
-            import scipy.fft._duccfft
-            self.fft = scipy.fft._duccfft.fft
-            self.ifft = scipy.fft._duccfft.ifft
-
-    def time_fft(self, size, cmplx, module):
-        self.fft(self.x)
-
-    def time_ifft(self, size, cmplx, module):
-        self.ifft(self.x)
-
-
-class FftnBackends(Benchmark):
-    params = [
-        ["100x100", "313x100", "1000x100", "256x256", "512x512"],
-        ['real', 'cmplx'],
-        ['duccfft', 'pyfftw', 'numpy', 'direct']
-    ]
-    param_names = ['size', 'type', 'backend']
-
-    def setup(self, size, cmplx, backend):
-        import scipy.fft
-        size = list(map(int, size.split("x")))
-
-        if cmplx == 'cmplx':
-            self.x = random(size).astype(double)+random(size).astype(double)*1j
-        else:
-            self.x = random(size).astype(double)
-
-        self.fftn = scipy.fft.fftn
-        self.ifftn = scipy.fft.ifftn
-
-        if backend == 'duccfft':
-            scipy.fft.set_global_backend('scipy')
-        elif backend == 'pyfftw':
-            if not has_pyfftw:
-                raise NotImplementedError
-            scipy.fft.set_global_backend(PyfftwBackend)
-        elif backend == 'numpy':
-            from scipy.fft._debug_backends import NumPyBackend
-            scipy.fft.set_global_backend(NumPyBackend)
-        elif backend == 'direct':
-            import scipy.fft._duccfft
-            self.fftn = scipy.fft._duccfft.fftn
-            self.ifftn = scipy.fft._duccfft.ifftn
-
-    def time_fft(self, size, cmplx, module):
-        self.fftn(self.x)
-
-    def time_ifft(self, size, cmplx, module):
-        self.ifftn(self.x)
 
 
 class FftThreading(Benchmark):
