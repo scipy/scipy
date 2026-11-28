@@ -338,11 +338,17 @@ def laplacian(
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 
-    if normed and (
-        np.issubdtype(csgraph.dtype, np.signedinteger)
-        or np.issubdtype(csgraph.dtype, np.uint)
-    ):
+    if normed and np.issubdtype(csgraph.dtype, np.integer):
         csgraph = csgraph.astype(np.float64)
+
+    # Only promote when the requested dtype can represent every input value.
+    # np.promote_types(uint64, int64) selects float64, which may silently
+    # round large integer edge weights.
+    if dtype is not None:
+        requested_dtype = np.dtype(dtype)
+        if np.can_cast(csgraph.dtype, requested_dtype, casting="safe"):
+            if requested_dtype != csgraph.dtype:
+                csgraph = csgraph.astype(requested_dtype)
 
     if form == "array":
         create_lap = (
