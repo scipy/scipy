@@ -204,6 +204,32 @@ def test_isf_with_loc(dist, args):
         npt.assert_array_equal(expected, res)
 
 
+@pytest.mark.parametrize('method', ['cdf', 'logcdf', 'sf', 'logsf'])
+@pytest.mark.parametrize('loc', [0, -3, 2.5])
+@pytest.mark.parametrize('dist, args', distdiscrete)
+def test_cdf_sf_noninteger_x(dist, args, loc, method, request):
+    # The cdf and sf of a discrete distribution are step functions, so for
+    # x between two support points they must equal the value at the lower
+    # one: P(X <= x) == P(X <= floor(x)). The values of loc and the offsets
+    # are exact in binary, so x - loc is computed without rounding error.
+    if (dist in {'yulesimon', 'hypergeom'}
+            or (dist == 'logser' and method in {'sf', 'logsf'})):
+        fix = 'gh-26782' if dist == 'hypergeom' else 'gh-26726'
+        request.applymarker(pytest.mark.xfail(reason=f'fixed in {fix}'))
+    try:
+        distfn = getattr(stats, dist)
+    except TypeError:
+        distfn = dist
+    k = np.unique(distfn.ppf([0.01, 0.25, 0.5, 0.75, 0.99], *args))
+    k = k[np.isfinite(k)]
+    offsets = np.array([0.25, 0.5, 0.75])
+    x = (k[:, np.newaxis] + offsets).ravel()
+    k = np.repeat(k, len(offsets))
+    method = getattr(distfn, method)
+    assert_allclose(method(x + loc, *args, loc=loc),
+                    method(k + loc, *args, loc=loc), rtol=1e-12)
+
+
 def check_cdf_ppf(distfn, arg, supp, msg):
     # supp is assumed to be an array of integers in the support of distfn
     # (but not necessarily all the integers in the support).
