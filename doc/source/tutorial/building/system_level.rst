@@ -5,12 +5,14 @@ SciPy uses compiled code for speed, which means you need compilers and some
 other system-level (i.e, non-Python / non-PyPI) dependencies to build it on
 your system.
 
-.. note::
+Conda
+-----
 
-    If you are using conda, you can skip the steps in this section - with the
-    exception of installing compilers for Windows or the Apple Developer Tools
-    for macOS. All other dependencies will be installed automatically by the
-    ``conda env create -f environment.yml`` command.
+If you are using a conda package manager like ``conda`` or ``mamba``, follow
+`conda-forge's system setup guide <https://conda-forge.org/docs/user/system_setup_compilers/>`__.
+
+System package managers
+-----------------------
 
 .. tab-set::
 

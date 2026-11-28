@@ -11,13 +11,7 @@ Building from source
 .. note::
 
     If you are building SciPy in order to contribute to SciPy,
-    please see instead `the contributor building guide <contributor.html>`__.
-
-.. toctree::
-    :hidden:
-    :maxdepth: 1
-
-    contributor
+    please see instead :ref:`building-contributor`.
 
 Building SciPy from source requires setting up system-level dependencies
 (compilers, BLAS/LAPACK libraries, etc.) first, and then invoking a build. The
