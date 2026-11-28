@@ -9,6 +9,7 @@ py3.install_sources([
     'test_czt.py',
     'test_dltisys.py',
     'test_filter_design.py',
+    'test_fftconv_smoke.py',
     'test_fir_filter_design.py',
     'test_ltisys.py',
     'test_max_len_seq.py',
