@@ -2217,6 +2217,14 @@ class TestHypergeom:
         expected2 = [1, 0.1237904, 6.511452e-34, 3.277667e-69]
         assert_allclose(res2, expected2, atol=0, rtol=5e-7)
 
+    @pytest.mark.parametrize("method", ["cdf", "sf", "logcdf", "logsf"])
+    def test_fractional_threshold(self, method):
+        # gh-26740: X is integer-valued, so X <= x iff X <= floor(x).
+        dist = stats.hypergeom(30, 12, 6)
+        probability = getattr(dist, method)
+        x = np.array([1, 1.5, 2, 2.5, 3.75])
+        assert_allclose(probability(x), probability(np.floor(x)), rtol=1e-13)
+
     def test_entropy(self):
         # Simple tests of entropy.
         hg = stats.hypergeom(4, 1, 1)
