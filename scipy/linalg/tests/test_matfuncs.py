@@ -599,6 +599,46 @@ class TestSqrtM:
     def test_1d_single_element_input(self):
         assert_allclose(sqrtm([4]), [[2.0]])
 
+    @pytest.mark.parametrize('dt', [np.float32, np.float64])
+    def test_real_schur_input(self, dt):
+        # Input already in real Schur form skips ?gees; with a 2x2 block and a
+        # negative eigenvalue, the block rotations were never undone.
+        T = np.array([[2., 3, 1, 0], [-3, 2, 0, 1], [0, 0, -4, 1], [0, 0, 0, 5]],
+                     dtype=dt)
+        R = sqrtm(T)
+        assert_allclose(R @ R, T, atol=100*np.finfo(dt).eps*np.abs(T).max())
+
+    def test_real_schur_of_random(self):
+        # a complex pair (a 2x2 block) and a negative real eigenvalue
+        rng = np.random.default_rng(5)
+        while True:
+            A = rng.standard_normal((6, 6))
+            ev = np.linalg.eigvals(A)
+            real_ev = ev[np.abs(ev.imag) < 1e-12].real
+            if np.any(np.abs(ev.imag) > 1e-8) and np.any(real_ev < 0):
+                break
+        T = scipy.linalg.schur(A)[0]
+        R = sqrtm(T)
+        assert_allclose(R @ R, T, atol=1e-12)
+
+    @pytest.mark.parametrize('dt, t, c', [(np.float64, 1e-200, 1e200),
+                                          (np.complex128, 1e-200, 1e200),
+                                          (np.float32, 1e-12, 1e25),
+                                          (np.complex64, 1e-12, 1e25)])
+    def test_sylvester_scale(self, dt, t, c):
+        # ?trsyl returns X with A X + X B = scale*C; X was multiplied by scale
+        # instead of divided.
+        T = np.diag(np.full(4, t)).astype(dt)
+        T[0, 2] = c
+        R = sqrtm(T)
+        assert_allclose(R[0, 2], c / (2*np.sqrt(t)), rtol=1e-4)
+
+    @pytest.mark.parametrize('a', [np.array(1.0), np.ones(33)])
+    def test_compiled_entry_ndim(self, a):
+        from scipy.linalg import _internal_matfuncs
+        with pytest.raises(_internal_matfuncs.error, match="2D-array"):
+            _internal_matfuncs.recursive_schur_sqrtm(a)
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
@@ -893,6 +933,46 @@ class TestExpM:
         one_at_a_time = np.stack([expm(x) for x in A])
         assert_allclose(expm(A), one_at_a_time,
                         rtol=10*np.finfo(dt).eps, atol=0)
+
+    def test_real_pade13_accuracy(self):
+        # The real flavors added the old A**6 into U for the order-13 Pade
+        # approximant, a 2.5e-11 relative error here against 1.2e-13 for the
+        # complex path.
+        S = np.random.default_rng(0).standard_normal((4, 4))
+        A = (S - S.T) * 1e3     # expm(A) is orthogonal
+        E = expm(A)
+        Ec = expm(A.astype(np.complex128)).real
+        assert np.linalg.norm(E - Ec) / np.linalg.norm(Ec) < 1e-12
+        assert np.abs(E.T @ E - np.eye(4)).max() < 1e-12
+
+    @pytest.mark.parametrize('dt', [np.float32, np.complex64])
+    @pytest.mark.parametrize('A', [[[0, 1e5], [-1e5, 0]],
+                                   [[-1e5, 1e4], [-1e4, -1e5]]])
+    def test_overflowing_powers(self, dt, A):
+        # A**8 overflows in single precision; the scaling exponent was cast
+        # from inf and the result was all NaN.
+        A = np.array(A, dtype=dt)
+        E = expm(A)
+        assert np.isfinite(E).all()
+        assert_allclose(E, expm(A.astype(np.promote_types(dt, np.float64))), atol=1e-2)
+
+    @pytest.mark.parametrize('dt', [np.float32, np.float64,
+                                    np.complex64, np.complex128])
+    def test_triangular_close_diagonal(self, dt):
+        # The triangular squaring recomputed the off-diagonal entry as
+        # (exp(b) - exp(a)) / (b - a), which cancels for close a and b.
+        cplx = np.issubdtype(dt, np.complexfloating)
+        single = np.finfo(dt).bits == 32
+        a0 = 20.0 + 1.0j if cplx else 20.0
+        rtol = 1e-6 if single else 1e-13
+        directions = (1.0, -1.0, 0.6 + 0.8j, -0.6 + 0.8j) if cplx else (1.0, -1.0)
+        for direction in directions:
+            for delta in ((1e-4, 1e-5) if single else (1e-10, 1e-13, 1e-15)):
+                A = np.array([[a0, 1e3], [0.0, a0 + 20*delta*direction]], dtype=dt)
+                a, b = A.diagonal().astype(np.promote_types(dt, np.float64))
+                expected = 1e3 * np.exp(a) * np.expm1(b - a) / (b - a)
+                assert_allclose(expm(A)[0, 1], expected, rtol=rtol)
+                assert_allclose(expm(A.T)[1, 0], expected, rtol=rtol)
 
 
 class TestExpmFrechet:

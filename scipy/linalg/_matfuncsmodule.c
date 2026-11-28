@@ -41,8 +41,8 @@ capsule_destructor(PyObject *capsule) {
  *
  * This function tests for the dtypes to be LAPACK compatible and for squareness.
  *
- * IMPORTANT: This function does not test for 0-dimensional, or nD arrays where
- * some dimensions are 0. It is expected to have this case caught by the caller.
+ * IMPORTANT: This function does not test for nD arrays where some dimensions
+ * are 0. It is expected to have this case caught by the caller.
 */
 static PyObject*
 recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
@@ -71,6 +71,10 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
     if (!PyArray_ISBEHAVED_RO(ap_Am))
     {
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be aligned and in native byte order.");
+    }
+    if (PyArray_NDIM(ap_Am) < 2)
+    {
+        PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Input must be at least a 2D-array.");
     }
 
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
@@ -177,8 +181,8 @@ recursive_schur_sqrtm(PyObject* Py_UNUSED(dummy), PyObject *args) {
     }
     // For ref counting of the memory
     if (PyArray_SetBaseObject(ap_ret, capsule) == -1) {
+        // PyArray_SetBaseObject released the capsule, which freed mem_ret
         Py_DECREF(ap_ret);
-        Py_DECREF(capsule);
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:sqrtm: Failed to set array's base.");
     }
 
@@ -284,8 +288,8 @@ matrix_exponential(PyObject* Py_UNUSED(dummy), PyObject *args) {
     }
     // For ref counting of the memory
     if (PyArray_SetBaseObject(ap_ret, capsule) == -1) {
+        // PyArray_SetBaseObject released the capsule, which freed mem_ret
         Py_DECREF(ap_ret);
-        Py_DECREF(capsule);
         PYERR(matfuncs_error, "scipy.linalg._matfuncs:expm: Failed to set array's base.");
     }
 

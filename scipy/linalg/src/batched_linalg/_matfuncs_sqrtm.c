@@ -163,8 +163,14 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
             // [real, real, real, ...] --> [real, 0, real, 0, ...]
             // We start from the end of the 2n*n array and insert zeros.
             zebra_pattern_s(buffer, n*n);
-            // If needed, do the same for the Schur vectors
-            if (!isSchur) { zebra_pattern_s(vs, n*n); }
+            // Schur-form input skipped ?gees: vs starts as the identity, because the block
+            // rotations below are accumulated in it and undone after the square root
+            if (isSchur)
+            {
+                for (npy_intp i = 0; i < n*n; i++) { vs[i] = 0.0f; }
+                for (npy_intp i = 0; i < n; i++) { vs[i*n + i] = 1.0f; }
+            }
+            zebra_pattern_s(vs, n*n);
 
             // Convert real schur form to complex schur form in float arithmetic
             for (Py_ssize_t col = 0; col < (n - 1); col++)
@@ -222,17 +228,14 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
                     data[2*n*col + 2*col + 2] = 0.0f;
                     data[2*n*col + 2*col + 3] = 0.0f;
 
-                    if (!isSchur)
+                    for (Py_ssize_t i = 0; i < n; i++)
                     {
-                        for (Py_ssize_t i = 0; i < n; i++)
-                        {
-                            float temp1 = vs[2*n*col       + 2*i];
-                            float temp2 = vs[2*n*(col + 1) + 2*i];
-                            vs[2*n*col       + 2*i    ] =  u1re*temp1 + u2*temp2;
-                            vs[2*n*col       + 2*i + 1] =  u1im*temp1;
-                            vs[2*n*(col + 1) + 2*i    ] = -u2*temp1   + u1re*temp2;
-                            vs[2*n*(col + 1) + 2*i + 1] = -u1im*temp2;
-                        }
+                        float temp1 = vs[2*n*col       + 2*i];
+                        float temp2 = vs[2*n*(col + 1) + 2*i];
+                        vs[2*n*col       + 2*i    ] =  u1re*temp1 + u2*temp2;
+                        vs[2*n*col       + 2*i + 1] =  u1im*temp1;
+                        vs[2*n*(col + 1) + 2*i    ] = -u2*temp1   + u1re*temp2;
+                        vs[2*n*(col + 1) + 2*i + 1] = -u1im*temp2;
                     }
                     // Skip next column
                     col++;
@@ -243,15 +246,12 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
             info = sqrtm_recursion_c(complex_data, n, n);
             // Unapply the Schur decomposition, use the return array current
             // slice as scratch space for the matrix multiplications
-            if (!isSchur)
-            {
-                // ret_data = vs * data
-                // data = ret_data * vs^H
-                scipy_c64 c_one = CMPLXF(1.0f, 0.0f);
-                scipy_c64 c_zero = CMPLXF(0.0f, 0.0f);
-                BLAS_FUNC(cgemm)("N", "N", &intn, &intn, &intn, &c_one, complex_vs, &intn, complex_data, &intn, &c_zero, &((scipy_c64*)ret_data)[idx*n*n], &intn);
-                BLAS_FUNC(cgemm)("N", "C", &intn, &intn, &intn, &c_one, &((scipy_c64*)ret_data)[idx*n*n], &intn, complex_vs, &intn, &c_zero, complex_data, &intn);
-            }
+            // ret_data = vs * data
+            // data = ret_data * vs^H
+            scipy_c64 c_one = CMPLXF(1.0f, 0.0f);
+            scipy_c64 c_zero = CMPLXF(0.0f, 0.0f);
+            BLAS_FUNC(cgemm)("N", "N", &intn, &intn, &intn, &c_one, complex_vs, &intn, complex_data, &intn, &c_zero, &((scipy_c64*)ret_data)[idx*n*n], &intn);
+            BLAS_FUNC(cgemm)("N", "C", &intn, &intn, &intn, &c_one, &((scipy_c64*)ret_data)[idx*n*n], &intn, complex_vs, &intn, &c_zero, complex_data, &intn);
 
         } else {
             // Compute the square root
@@ -411,7 +411,14 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
         if (isComplex)
         {
             zebra_pattern_d(buffer, n*n);
-            if (!isSchur) { zebra_pattern_d(vs, n*n); }
+            // Schur-form input skipped ?gees: vs starts as the identity, because the block
+            // rotations below are accumulated in it and undone after the square root
+            if (isSchur)
+            {
+                for (npy_intp i = 0; i < n*n; i++) { vs[i] = 0.0; }
+                for (npy_intp i = 0; i < n; i++) { vs[i*n + i] = 1.0; }
+            }
+            zebra_pattern_d(vs, n*n);
 
             for (Py_ssize_t col = 0; col < (n - 1); col++)
             {
@@ -451,30 +458,24 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
                     data[2*n*col + 2*col + 2] = 0.0;
                     data[2*n*col + 2*col + 3] = 0.0;
 
-                    if (!isSchur)
+                    for (Py_ssize_t i = 0; i < n; i++)
                     {
-                        for (Py_ssize_t i = 0; i < n; i++)
-                        {
-                            double temp1 = vs[2*n*col       + 2*i];
-                            double temp2 = vs[2*n*(col + 1) + 2*i];
-                            vs[2*n*col       + 2*i    ] =  u1re*temp1 + u2*temp2;
-                            vs[2*n*col       + 2*i + 1] =  u1im*temp1;
-                            vs[2*n*(col + 1) + 2*i    ] = -u2*temp1   + u1re*temp2;
-                            vs[2*n*(col + 1) + 2*i + 1] = -u1im*temp2;
-                        }
+                        double temp1 = vs[2*n*col       + 2*i];
+                        double temp2 = vs[2*n*(col + 1) + 2*i];
+                        vs[2*n*col       + 2*i    ] =  u1re*temp1 + u2*temp2;
+                        vs[2*n*col       + 2*i + 1] =  u1im*temp1;
+                        vs[2*n*(col + 1) + 2*i    ] = -u2*temp1   + u1re*temp2;
+                        vs[2*n*(col + 1) + 2*i + 1] = -u1im*temp2;
                     }
                     col++;
                 }
             }
             info = sqrtm_recursion_z(complex_data, n, n);
 
-            if (!isSchur)
-            {
-                scipy_c128 c_one = CMPLX(1.0, 0.0);
-                scipy_c128 c_zero = CMPLX(0.0, 0.0);
-                BLAS_FUNC(zgemm)("N", "N", &intn, &intn, &intn, &c_one, complex_vs, &intn, complex_data, &intn, &c_zero, &((scipy_c128*)ret_data)[idx*n*n], &intn);
-                BLAS_FUNC(zgemm)("N", "C", &intn, &intn, &intn, &c_one, &((scipy_c128*)ret_data)[idx*n*n], &intn, complex_vs, &intn, &c_zero, complex_data, &intn);
-            }
+            scipy_c128 c_one = CMPLX(1.0, 0.0);
+            scipy_c128 c_zero = CMPLX(0.0, 0.0);
+            BLAS_FUNC(zgemm)("N", "N", &intn, &intn, &intn, &c_one, complex_vs, &intn, complex_data, &intn, &c_zero, &((scipy_c128*)ret_data)[idx*n*n], &intn);
+            BLAS_FUNC(zgemm)("N", "C", &intn, &intn, &intn, &c_one, &((scipy_c128*)ret_data)[idx*n*n], &intn, complex_vs, &intn, &c_zero, complex_data, &intn);
         } else {
             info = sqrtm_recursion_d(data, n, n);
             if (!isSchur)
@@ -800,14 +801,15 @@ sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n)
             T[2*intbign + 1] = INFINITY;
             info = 1;
         } else {
-            BLAS_FUNC(strsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            // ?trsyl solves T11 X + X T22 = scale*T12 with scale <= 1, so X is the result / scale
+            BLAS_FUNC(strsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(bign + 1)], &intbign, &T[halfn*bign], &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
                 {
                     for (j = 0; j < halfn; j++)
                     {
-                        T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] /= scale;
                     }
                 }
             }
@@ -891,14 +893,15 @@ sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n)
             T[2*intbign + 1] = INFINITY;
             info = 1;
         } else {
-            BLAS_FUNC(dtrsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
+            // ?trsyl solves T11 X + X T22 = scale*T12 with scale <= 1, so X is the result / scale
+            BLAS_FUNC(dtrsyl)("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(bign + 1)], &intbign, &T[halfn*bign], &intbign, &scale, &info);
             if (scale != 1.0)
             {
                 for (i = 0; i < otherhalfn; i++)
                 {
                     for (j = 0; j < halfn; j++)
                     {
-                        T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] /= scale;
                     }
                 }
             }
@@ -961,6 +964,7 @@ sqrtm_recursion_c(scipy_c64* T, npy_intp bign, npy_intp n)
             T12[intbign] = cinf;
             info = 1;
         } else {
+            // ?trsyl solves T11 X + X T22 = scale*T12 with scale <= 1, so X is the result / scale
             BLAS_FUNC(ctrsyl)("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
             if (scale != 1.0)
             {
@@ -969,9 +973,9 @@ sqrtm_recursion_c(scipy_c64* T, npy_intp bign, npy_intp n)
                     for (j = 0; j < halfn; j++)
                     {
 #if defined(_MSC_VER)
-                        T[(halfn + i)*bign + j] = _FCmulcr(T[(halfn + i)*bign + j], scale);
+                        T[(halfn + i)*bign + j] = CMPLXF(crealf(T[(halfn + i)*bign + j]) / scale, cimagf(T[(halfn + i)*bign + j]) / scale);
 #else
-                        T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] /= scale;
 #endif
                     }
                 }
@@ -1035,6 +1039,7 @@ sqrtm_recursion_z(scipy_c128* T, npy_intp bign, npy_intp n)
             T12[intbign] = zinf;
             info = 1;
         } else {
+            // ?trsyl solves T11 X + X T22 = scale*T12 with scale <= 1, so X is the result / scale
             BLAS_FUNC(ztrsyl)("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
             if (scale != 1.0)
             {
@@ -1043,9 +1048,9 @@ sqrtm_recursion_z(scipy_c128* T, npy_intp bign, npy_intp n)
                     for (j = 0; j < halfn; j++)
                     {
 #if defined(_MSC_VER)
-                        T[(halfn + i)*bign + j] = _Cmulcr(T[(halfn + i)*bign + j], scale);
+                        T[(halfn + i)*bign + j] = CMPLX(creal(T[(halfn + i)*bign + j]) / scale, cimag(T[(halfn + i)*bign + j]) / scale);
 #else
-                        T[(halfn + i)*bign + j] *= scale;
+                        T[(halfn + i)*bign + j] /= scale;
 #endif
                     }
                 }

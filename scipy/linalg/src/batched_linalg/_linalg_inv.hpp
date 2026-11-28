@@ -15,24 +15,24 @@ void invert_slice_general(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_(data, (npy_intp)N);
 
     lapack::getrf(N, N, data, N, ipiv, &info);
 
     status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
-        // getrf success, check the condition number
+        // getrf success, check the condition number. For an infinite or NaN anorm, gecon
+        // returns info = -5 with rcond = 0 or NaN, which flags the slice; the inversion still runs.
         lapack::gecon(norm, N, data, N, anorm, &rcond, work, irwork, &info);
 
         status.rcond = (double)rcond;
-        if (info >= 0) {
-            status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
+        status.is_ill_conditioned = (rcond != rcond) || (rcond < std::numeric_limits<real_type>::epsilon());
 
-            // finally, invert
-            lapack::getri(N, data, N, ipiv, work, lwork, &info);
-            status.is_singular = (info > 0);
-        }
+        // finally, invert
+        lapack::getri(N, data, N, ipiv, work, lwork, &info);
+        status.is_singular = (info > 0);
+        if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
     }
     else if (info > 0) {
         // trf detected singularity
@@ -54,7 +54,7 @@ void invert_slice_cholesky(
     CBLAS_INT info = 0;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
-    real_type rcond;
+    real_type rcond = 0;
 
     lapack::potrf(uplo, N, data, N, &info);
 
@@ -70,6 +70,7 @@ void invert_slice_cholesky(
             // finally, invert
             lapack::potri(uplo, N, data, N, &info);
             status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -88,7 +89,7 @@ void invert_slice_sym_herm(
     using real_type = real_of_t<T>;
 
     CBLAS_INT info = 0;
-    real_type rcond;
+    real_type rcond = 0;
     real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
 
     if constexpr (!is_complex_v<T>) {
@@ -130,6 +131,7 @@ void invert_slice_sym_herm(
             }
 
             status.is_singular = (info > 0);
+            if (info < 0) { status.lapack_info = (Py_ssize_t)info; }
         }
     }
     else if (info > 0) {
@@ -149,7 +151,7 @@ void invert_slice_triangular(
 
     CBLAS_INT info = 0;
     char norm = '1';
-    real_type rcond;
+    real_type rcond = 0;
 
     lapack::trtri(uplo, diag, N, data, N, &info);
     status.is_singular  = (info > 0);
@@ -406,7 +408,12 @@ _inverse(PyArrayObject* ap_Am, PyArrayObject *ap_Ainv, const St structure, const
             {
                 invert_slice_cholesky(uplo, intn, data, work, irwork.get(), slice_status);
 
-                if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
+                if (slice_status.lapack_info < 0) {
+                    // an argument error, which no fallback can fix
+                    vec_status.push_back(slice_status);
+                    return {};
+                }
+                if (!slice_status.is_singular) {
                     // success (maybe ill-conditioned)
                     if(slice_status.is_ill_conditioned) {
                         vec_status.push_back(slice_status);

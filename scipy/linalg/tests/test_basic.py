@@ -565,6 +565,53 @@ class TestSolveHBanded:
 
 
 class TestSolve:
+    def test_overflowing_norm(self):
+        # gecon rejects an infinite 1-norm with info = -5; the solve was then
+        # skipped and b returned as the solution, with no warning.
+        A = np.array([[1e308, 1.0, 0, 0],
+                      [1e308, 1e308, 2.0, 0],
+                      [0, 3.0, 1.0, 0],
+                      [0, 0, 5.0, 1.0]])
+        b = np.array([1.0, 2.0, 3.0, 4.0])
+        with pytest.warns(LinAlgWarning):
+            x = solve(A, b, assume_a='general')
+        assert_allclose(A @ x, b, rtol=1e-12)
+
+    @pytest.mark.parametrize('assume_a', ['pos', 'sym'])
+    def test_lower_conditioning(self, assume_a):
+        # The 1-norm for lower=True left out column 0's off-diagonal entries.
+        n = 101
+        a = (1 - 1e-6) / np.sqrt(n - 1)
+        A = np.eye(n)
+        A[0, 1:] = a
+        A[1:, 0] = a
+        A = A.astype(np.float32)    # rcond 1.7e-8 < eps
+        b = np.ones(n, dtype=np.float32)
+        for lower in (False, True):
+            with pytest.warns(LinAlgWarning):
+                solve(A, b, assume_a=assume_a, lower=lower)
+
+    @pytest.mark.parametrize('assume_a', [None, 'tridiagonal'])
+    def test_tridiagonal_conditioning(self, assume_a):
+        # The tridiagonal 1-norm left out the last superdiagonal entry.
+        A = np.array([[1, 1, 0, 0],
+                      [1, 3, 1, 0],
+                      [0, 1, 3, 1e17],
+                      [0, 0, 1, 1.]])
+        with pytest.warns(LinAlgWarning):
+            solve(A, np.ones(4), assume_a=assume_a)
+
+    @pytest.mark.parametrize('structure', [-1, 101, 211])
+    def test_compiled_transposed_hermitian(self, structure):
+        # The Cholesky and Hermitian paths solved A x = b for transposed=True;
+        # for complex Hermitian A, A^T = conj(A).
+        rng = np.random.default_rng(0)
+        M = rng.standard_normal((4, 4)) + 1j*rng.standard_normal((4, 4))
+        A = M @ M.conj().T + 4*np.eye(4)
+        b = rng.standard_normal((4, 1)) + 0j
+        x, _ = _batched_linalg._solve(A, b.copy(), structure, False, True)
+        assert_allclose(A.T @ x, b, atol=1e-12)
+
     def test_20Feb04_bug(self):
         a = [[1, 1], [1.0, 0]]  # ok
         x0 = solve(a, [1, 0j])
@@ -1400,6 +1447,26 @@ class TestSolveTriangular:
 
 
 class TestInv:
+    def test_overflowing_norm(self):
+        # see TestSolve.test_overflowing_norm; inv returned the LU factors
+        A = np.array([[1e308, 1.0, 0, 0],
+                      [1e308, 1e308, 2.0, 0],
+                      [0, 3.0, 1.0, 0],
+                      [0, 0, 5.0, 1.0]])
+        with pytest.warns(LinAlgWarning):
+            Ainv = inv(A)
+        assert_allclose(Ainv @ A, np.eye(4), atol=1e-12)
+
+    def test_lower_conditioning(self):
+        n = 101
+        a = (1 - 1e-6) / np.sqrt(n - 1)
+        A = np.eye(n)
+        A[0, 1:] = a
+        A[1:, 0] = a
+        A = A.astype(np.float32)
+        with pytest.warns(LinAlgWarning):
+            inv(A, assume_a='pos', lower=True)
+
     def test_simple(self):
         a = [[1, 2], [3, 4]]
         a_inv = inv(a)
@@ -2005,6 +2072,23 @@ def direct_lstsq(a, b, cmplx=0):
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLstsq:
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
+
+    def test_svd_not_converged(self, monkeypatch):
+        # gelsd/gelss info > 0 stops the batch and leaves the remaining slices
+        # uninitialised; it raised nothing.
+        import scipy.linalg._basic as basic
+        compiled = basic._batched_linalg._lstsq
+
+        def not_converged(*args):
+            x, rank, S, _ = compiled(*args)
+            return x, rank, S, [{"num": 1, "structure": 0, "is_singular": 0,
+                                 "is_ill_conditioned": 0, "rcond": 0.0,
+                                 "lapack_info": 3}]
+
+        monkeypatch.setattr(basic._batched_linalg, "_lstsq", not_converged)
+        A = np.ones((3, 6, 4)) + np.eye(6, 4)
+        with pytest.raises(LinAlgError, match="did not converge.*slice 1"):
+            lstsq(A, np.ones((3, 6, 2)))
 
     @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
     @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
