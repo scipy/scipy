@@ -2601,6 +2601,16 @@ class Voronoi(_QhullUser):
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+        For nearest-site, non-incremental Voronoi diagrams computed with "Qc",
+        finite-precision effects can cause distinct, near-coincident input
+        points to be treated as coplanar. SciPy assigns such a point the region
+        of the nearest vertex considered for the associated Qhull facet, so
+        multiple input points can have the same region index even when their
+        coordinates are not exactly equal.
+        Furthest-site diagrams can instead have empty regions for interior
+        input points, and a point not inserted during incremental addition can
+        retain the value -1. See :ref:`qhulltutorial` for more about Qhull
+        precision issues.
         If qhull option "Qz" was specified, there will be one less
         element than the number of regions because an extra point
         at infinity is added internally to facilitate computation.
