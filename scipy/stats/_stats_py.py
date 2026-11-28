@@ -468,7 +468,18 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         return _linearized_pmean(a, p, axis=axis, weights=weights, xp=xp)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
+        if p > 0:
+            c = xp.max(a, axis=axis)
+            c_keepdims = xp.max(a, axis=axis, keepdims=True)
+        else:
+            c = xp.min(a, axis=axis)
+            c_keepdims = xp.min(a, axis=axis, keepdims=True)
+
+        finite_nonzero = xp.isfinite(c_keepdims) & (c_keepdims != 0)
+        scale = xp.where(finite_nonzero, c_keepdims, xp.ones_like(c_keepdims))
+
+        scaled_a = a / scale
+        return c * (_xp_mean(scaled_a**float(p), axis=axis, weights=weights)**(1/p))
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
