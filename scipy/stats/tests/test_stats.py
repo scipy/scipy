@@ -517,6 +517,21 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.parametrize('x, y, p_greater, p_less',
+                             [([1., 2.], [3., 5.], 0.5, 1.),
+                              ([2., 1.], [3., 5.], 1., 0.5)])
+    def test_length_two_one_sided_pvalue_gh26803(self, x, y, p_greater, p_less, xp):
+        # With n=2, r is +1 or -1 with equal probability under the null, so a
+        # one-sided p-value is 0.5 when r has the hypothesized sign and 1 otherwise.
+        # See https://github.com/scipy/scipy/issues/26803
+        x, y = xp.asarray(x), xp.asarray(y)
+        result = stats.pearsonr(x, y, alternative='greater')
+        xp_assert_equal(result.pvalue, xp.asarray(p_greater))
+        result = stats.pearsonr(x, y, alternative='less')
+        xp_assert_equal(result.pvalue, xp.asarray(p_less))
+
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_length_two_constant_input(self, xp):
         # Zero variance input
