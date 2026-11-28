@@ -835,8 +835,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.indptr, self.indices, self.data, _ = arrays
             # Sort the indices (like in _insert_many)
             if do_sort:
-                self.has_sorted_indices = False  # force a sort
-                self.sort_indices()
+                n_major = len(self.indptr) - 1
+                csr_sort_indices(n_major, self.indptr, self.indices, self.data)
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self._shape_as_2d)
@@ -987,8 +987,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if do_sort:
             # TODO: only sort where necessary
-            self.has_sorted_indices = False
-            self.sort_indices()
+            M = len(self.indptr) - 1
+            csr_sort_indices(M, self.indptr, self.indices, self.data)
 
         self.check_format(full_check=False)
 
@@ -1041,7 +1041,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         This is an *in place* operation.
         """
         M, N = self._swap(self._shape_as_2d)
+        nnz = self.indptr[-1]
         csr_eliminate_zeros(M, N, self.indptr, self.indices, self.data)
+        if self.indptr[-1] != nnz:
+            # Removing an explicit zero may have removed the entry that
+            # made this array non-canonical (an unsorted or duplicate
+            # entry), so a cached False status may now be stale. Cached
+            # True statuses need no invalidation: removing entries can
+            # neither unsort the indices nor create duplicates.
+            if getattr(self, '_has_canonical_format', None) is False:
+                self.__dict__.pop('_has_canonical_format', None)
+            if getattr(self, '_has_sorted_indices', None) is False:
+                self.__dict__.pop('_has_sorted_indices', None)
         self.prune()  # nnz may have changed
 
     @property
@@ -1062,16 +1073,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
             M = len(self.indptr) - 1
-            self.has_canonical_format = bool(
+            self._has_canonical_format = bool(
                 csr_has_canonical_format(M, self.indptr, self.indices)
             )
+            if self._has_canonical_format:
+                # canonical format implies sorted indices
+                self._has_sorted_indices = True
         return self._has_canonical_format
 
     @has_canonical_format.setter
     def has_canonical_format(self, val: bool):
-        self._has_canonical_format = bool(val)
         if val:
+            # Set the sorted flag first: changing it invalidates the
+            # cached canonical value (see the `has_sorted_indices`
+            # setter), so the canonical value must be stored afterwards
+            # to survive.
             self.has_sorted_indices = True
+        else:
+            # A False value says nothing about whether the indices are
+            # sorted (the array may be sorted but have duplicates), so
+            # drop any cached sorted flag and let it be recomputed on
+            # next access.
+            self.__dict__.pop('_has_sorted_indices', None)
+        self._has_canonical_format = bool(val)
 
     def sum_duplicates(self):
         """Eliminate duplicate entries by adding them together.
@@ -1106,7 +1130,20 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     @has_sorted_indices.setter
     def has_sorted_indices(self, val: bool):
-        self._has_sorted_indices = bool(val)
+        val = bool(val)
+        if getattr(self, '_has_sorted_indices', None) != val:
+            if val:
+                # The indices have become sorted, so a cached
+                # `has_canonical_format` value may now be stale (e.g.
+                # a False cached before `sort_indices` sorted the
+                # indices). Drop it so it is recomputed on next access.
+                # gh-19106
+                self.__dict__.pop('_has_canonical_format', None)
+            else:
+                # Unsorted indices cannot be in canonical format, so
+                # the value is known without recomputing it.
+                self._has_canonical_format = False
+        self._has_sorted_indices = val
 
 
     def sorted_indices(self):
