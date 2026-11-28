@@ -7343,6 +7343,24 @@ class TestGSTD:
             res = stats.gstd(x)
         xp_assert_equal(res, xp.asarray(np.nan))
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.parametrize('bad_value', (0, -1))
+    @pytest.mark.parametrize('nan_policy', ('omit', 'raise'))
+    def test_returns_nan_invalid_value_nan_policy(self, bad_value, nan_policy, xp):
+        # A non-positive value is not a NaN in the input, so `nan_policy` must
+        # neither omit it nor raise about it; the result is NaN as by default.
+        x = xp.asarray(self.array_1d + [bad_value])
+        if is_lazy_array(x) and nan_policy == 'raise':
+            pytest.skip("nan_policy='raise' is not supported for lazy arrays")
+        if not is_lazy_array(x):
+            message = "The geometric standard deviation is only defined..."
+            with pytest.warns(RuntimeWarning, match=message):
+                res = stats.gstd(x, nan_policy=nan_policy)
+        else:
+            res = stats.gstd(x, nan_policy=nan_policy)
+        xp_assert_equal(res, xp.asarray(np.nan))
+
     def test_propagates_nan_values(self, xp):
         a = xp.asarray([[1, 1, 1, 16], [xp.nan, 1, 2, 3]])
         gstd_actual = stats.gstd(a, axis=1)

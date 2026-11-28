@@ -3039,7 +3039,15 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
     kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = xp.exp(_xp_var(xp.log(a), **kwargs)**0.5)
+        # A non-positive value has no real logarithm. Keep it out of the logs passed
+        # to `_xp_var`, so that `nan_policy` acts only on NaNs in the input, and make
+        # the result NaN for any slice that contains one.
+        invalid = a <= 0
+        log_a = xp.where(invalid, xp.asarray(0., dtype=a.dtype), xp.log(a))
+        res = xp.exp(_xp_var(log_a, **kwargs)**0.5)
+    invalid = xp.any(invalid, axis=axis, keepdims=keepdims)
+    res = xp.where(invalid, xp.asarray(xp.nan, dtype=res.dtype), res)
+    res = res[()] if res.ndim == 0 else res
 
     if not is_lazy_array(a) and xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
