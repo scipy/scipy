@@ -1,3 +1,4 @@
+#include "legacy.h"
 #include "mathieu.h"
 
 #include <cmath>
@@ -812,6 +813,8 @@ double xsf_pdtrc(double k, double m) { return xsf::pdtrc(k, m); }
 
 double xsf_pdtri(int k, double y) { return xsf::pdtri(k, y); }
 
+double special_pdtri_unsafe(double k, double y) { return special::pdtri_unsafe(k, y); }
+
 double xsf_smirnov(int n, double x) { return xsf::cpu::smirnov(n, x); }
 
 double xsf_smirnovc(int n, double x) { return xsf::cpu::smirnovc(n, x); }
@@ -845,8 +848,6 @@ double cephes_nbdtri_wrap(Py_ssize_t k, Py_ssize_t n, double p) {
 double cephes_ndtr_wrap(double x) { return xsf::cephes::ndtr(x); }
 
 double cephes_ndtri_wrap(double x) { return xsf::cephes::ndtri(x); }
-
-double cephes_pdtri_wrap(Py_ssize_t k, double y) { return xsf::cephes::pdtri(static_cast<int>(k), y); }
 
 double cephes_smirnov_wrap(Py_ssize_t n, double x) { return xsf::cephes::smirnov(static_cast<int>(n), x); }
 

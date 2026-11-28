@@ -84,14 +84,6 @@
         "_cdflib_wrappers.pxd": {
             "ncfdtridfn": "dddd->d"        }
     },
-    "pdtri": {
-        "_legacy.pxd": {
-            "pdtri_unsafe": "dd->d"
-        },
-        "cython_special_wrappers.h": {
-            "cephes_pdtri_wrap": "pd->d"
-        }
-    },
     "smirnov": {
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
