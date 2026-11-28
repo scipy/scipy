@@ -9,8 +9,6 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
-from scipy.sparse._sputils import matrix
-from scipy.conftest import skip_xp_invalid_arg
 from scipy.linalg.lapack import _ensure_dtype_cdsz
 
 
@@ -87,12 +85,6 @@ class TestSolveLyapunov:
                     0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j,
                     0.000+0.j]]),
          np.eye(11)),
-        # https://github.com/scipy/scipy/issues/4176
-        (matrix([[0, 1], [-1/2, -1]]),
-         (matrix([0, 3]).T @ matrix([0, 3]).T.T)),
-        # https://github.com/scipy/scipy/issues/4176
-        (matrix([[0, 1], [-1/2, -1]]),
-         (np.array(matrix([0, 3]).T @ matrix([0, 3]).T.T))),
         ]
 
     def test_continuous_squareness_and_shape(self):
@@ -149,7 +141,6 @@ class TestSolveLyapunov:
         assert_allclose(a @ x  + x @ a.conj().T, q, atol=atol)
         assert x.dtype == dtype
 
-    @skip_xp_invalid_arg
     def test_cases(self):
         for case in self.cases:
             self.check_continuous_case(case[0], case[1])
@@ -172,6 +163,15 @@ class TestSolveLyapunov:
 
         assert res.shape == (0, 0)
         assert res.dtype == ref.dtype
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    def test_continuous_trsyl_scale(self, dtype):
+        """Test a right-hand side large enough that TRSYL rescales."""
+        a = np.array([[-0.5, 0.1], [0.0, -0.3]], dtype=dtype)
+        q = -1e295 * np.eye(2, dtype=dtype)
+        x = solve_continuous_lyapunov(a, q)
+        assert_allclose((a @ x + x @ a.conj().T) / 1e295, -np.eye(2),
+                        rtol=1e-12, atol=1e-12)
 
 
 class TestSolveContinuousAre:
@@ -631,6 +631,20 @@ class TestSolveCommonAre:
         ref = solver(A, B, Q, R, E, S)
         np.testing.assert_allclose(res, ref)
 
+    @pytest.mark.parametrize("solver", [solve_continuous_are, solve_discrete_are])
+    def test_balanced_with_nondiagonal_e_gh26555(self, solver):
+        # gh-26555 reported that balancing with an e that does not commute
+        # with the balancing scaling returned a wrong solution
+        A = np.array([[3.0, -3.0], [-1.0, -1.0]])
+        B = np.array([[3.0], [-2.0]])
+        Q = np.eye(2)
+        R = np.eye(1)
+        E = np.array([[1.0, -2.0], [0.0, 100.0]])
+
+        res = solver(A, B, Q, R, e=E)
+        ref = solver(A, B, Q, R, e=E, balanced=False)
+        assert_allclose(res, ref, rtol=1e-12)
+
 
 def test_solve_generalized_continuous_are():
     cases = [
@@ -872,6 +886,15 @@ class TestSolveSylvester:
         c = np.array([2.0, 2.0]).reshape(-1, 1)
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
+
+    def test_trsyl_scale(self):
+        """Test a right-hand side large enough that TRSYL rescales."""
+        a = np.array([[-0.5, 0.1], [0.0, -0.3]])
+        b = np.array([[-0.7, 0.2], [0.0, -0.4]])
+        c = 1e295 * np.eye(2)
+        x = solve_sylvester(a, b, c)
+        assert_allclose((a @ x + x @ b) / 1e295, np.eye(2),
+                        rtol=1e-12, atol=1e-12)
 
     # Feel free to adjust this to test fewer dtypes or random selections rather than
     # the Cartesian product. It doesn't take very long to test all combinations,

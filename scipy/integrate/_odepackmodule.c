@@ -972,8 +972,11 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    // Get y0 array
-    ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
+    // Get y0 array. LSODA writes the solution into it and it is returned, so
+    // always copy: `ode.integrate` passes the array returned by the previous
+    // call as y0, and that array must not change (gh-26794).
+    ap_y = (PyArrayObject *) PyArray_FROMANY(y0, NPY_DOUBLE, 0, 0,
+                                             NPY_ARRAY_ENSURECOPY | NPY_ARRAY_CARRAY);
     if (ap_y == NULL) {
         goto fail;
     }
@@ -1097,6 +1100,8 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
     Py_DECREF(jac_extra_args);
     Py_DECREF(ap_rtol);
     Py_DECREF(ap_atol);
+    Py_DECREF(ap_rwork);
+    Py_DECREF(ap_iwork);
     Py_XDECREF(ap_state_doubles);
     Py_XDECREF(ap_state_ints);
 

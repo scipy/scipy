@@ -39,8 +39,7 @@ from scipy.special import (ellipe, ellipk, ellipkm1 ,elliprc, elliprd, elliprf, 
                            mathieu_odd_coef, mathieu_even_coef, stirling2, cosdg, sindg,
                            tandg, cotdg)
 
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API,
-                                   make_xp_test_case)
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, make_xp_test_case
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -198,35 +197,51 @@ class TestCephes:
         assert_equal(cephes.dawsn(0),0.0)
         assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
-    def test_diric(self):
+    @make_xp_test_case(special.diric)
+    def test_diric(self, xp):
         # Test behavior near multiples of 2pi.  Regression test for issue
         # described in gh-4001.
-        n_odd = [1, 5, 25]
-        x = np.array(2*np.pi + 5e-5).astype(np.float32)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-7, rtol=0)
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        x = np.array(2*np.pi + 1e-15).astype(np.float64)
-        assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-15, rtol=0)
-        if hasattr(np, 'float128'):
-            # No float128 available in 32-bit numpy
-            x = np.array(2*np.pi + 1e-12).astype(np.float128)
-            assert_allclose(special.diric(x, n_odd), 1.0, atol=1.5e-19, rtol=0)
+        n_odd = xp.asarray([1, 5, 25])
+        x = xp.asarray(2*np.pi + 5e-5, dtype=xp.float32)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-7, rtol=0)
 
-        n_even = [2, 4, 24]
-        x = np.array(2*np.pi + 1e-9).astype(np.float64)
-        assert_allclose(special.diric(x, n_even), -1.0, atol=1.5e-15, rtol=0)
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        x = xp.asarray(2*np.pi + 1e-15, dtype=xp.float64)
+        res = special.diric(x, n_odd)
+        xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
+
+        if hasattr(xp, 'float128'):
+            x = xp.asarray(2*np.pi + 1e-12, dtype=xp.float128)
+            res = special.diric(x, n_odd)
+            xp_assert_close(res, xp.asarray([1.0]*3, dtype=res.dtype),
+                            atol=1.5e-19, rtol=0)
+
+        n_even = xp.asarray([2, 4, 24])
+        x = xp.asarray(2*np.pi + 1e-9, dtype=xp.float64)
+        res = special.diric(x, n_even)
+        xp_assert_close(res, xp.asarray([-1.0]*3, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
         # Test at some values not near a multiple of pi
-        x = np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi)
+        x = xp.asarray(np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi))
         octave_result = [0.872677996249965, 0.539344662916632,
                          0.127322003750035, -0.206011329583298]
-        assert_allclose(special.diric(x, 3), octave_result, atol=1.5e-15, rtol=0)
+        res = special.diric(x, 3)
+        xp_assert_close(res, xp.asarray(octave_result, dtype=res.dtype),
+                        atol=1.5e-15, rtol=0)
 
-    def test_diric_broadcasting(self):
-        x = np.arange(5)
-        n = np.array([1, 3, 7])
-        assert_(special.diric(x[:, np.newaxis], n).shape == (x.size, n.size))
+    @make_xp_test_case(special.diric)
+    def test_diric_broadcasting(self, xp):
+        x = xp.arange(5)
+        n = xp.asarray([1, 3, 7])
+        assert special.diric(x[:, None], n).shape == (x.shape[0], n.shape[0])
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
@@ -1397,6 +1412,35 @@ class TestAssocLaguerre:
         assert_allclose(a2, a1(.2), atol=1.5e-8, rtol=0)
         a2 = special.assoc_laguerre(1,11,1)
         assert_allclose(a2, a1(1), atol=1.5e-8, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # degrees = [0, 1, 2, 3]
+    # points = [0.25, 1.25, 2.5, 5.0]
+    # with mp.workdps(50):
+    #     for k in [0.0, 0.5]:
+    #         values = [
+    #             float(mp.laguerre(n, k, x))
+    #             for n, x in zip(degrees, points)
+    #         ]
+    #         print(f"            ({k!r}, {values!r}),")
+    @pytest.mark.parametrize(
+        "k, expected",
+        [
+            (0.0, [1.0, -0.25, -0.875, 2.6666666666666665]),
+            (0.5, [1.0, 0.25, -1.25, 3.2291666666666665]),
+        ],
+    )
+    @make_xp_test_case(special.assoc_laguerre)
+    def test_assoc_laguerre_alt_backends(self, xp, k, expected):
+        x = xp.asarray([0.25, 1.25, 2.5, 5.0], dtype=xp.float64)
+        n = xp.asarray([0, 1, 2, 3], dtype=xp.float64)
+
+        actual = special.assoc_laguerre(x, n, k=k)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
 
 class TestBesselpoly:
@@ -2871,7 +2915,7 @@ class TestFactorialFunctions:
         _check(-1 + 0.0001j, expected=-0.57721565582674219 - 9999.9999010944009697j)
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
-                                       np.complex128, object])
+                                       np.complex128])
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
@@ -2882,8 +2926,6 @@ class TestFactorialFunctions:
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
     def test_factorial_array_corner_cases(self, content, dim, exact, extend, dtype):
-        if dtype is object and SCIPY_ARRAY_API:
-            pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype is np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
@@ -3488,10 +3530,294 @@ class TestHyper:
         h1real = (special.jvp(1,.1) + special.yvp(1,.1)*1j)
         assert_allclose(h1, h1real, atol=1.5e-8, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             print("                [")
+    #             for z in points:
+    #                 value = complex(
+    #                     mp.diff(lambda t: mp.hankel1(v, t), z, n)
+    #                 )
+    #                 print(
+    #                     f"                    {value.real!r}"
+    #                     f"{value.imag:+.17g}j,"
+    #                 )
+    #             print("                ],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [
+                    0.9384698072408129-0.4445187335067066j,
+                    0.5118276717359181+0.3824489237977589j,
+                    -0.2600519549019334+0.3768500100127904j,
+                    0.1506452572509969-0.2881946839815792j,
+                ],
+                [
+                    0.540973789934528-0.9902458802434049j,
+                    0.6498380747537472-0.04608316589309741j,
+                    0.06500818287737578+0.4560488207946332j,
+                    -0.09101540952306732-0.312761075941277j,
+                ],
+                [
+                    0.03060402345868264-5.441370837174266j,
+                    0.2320876721442147-0.9321937597629739j,
+                    0.4860912605858911-0.1604003934849237j,
+                    -0.2428732099601855+0.2298579025481131j,
+                ],
+                [
+                    0.0001607364763642876-499.2725608195123j,
+                    0.0117681324203438-7.361971836479769j,
+                    0.1320341839246122-0.9166828387251396j,
+                    0.3576415947809607+0.09839104345102723j,
+                ],
+            ]),
+            (1, [
+                [
+                    -0.2422684576748739+1.471472392670243j,
+                    -0.5579365079100996+0.4123086269739113j,
+                    -0.3390589585259365-0.3246744247918j,
+                    0.2766838581275656+0.1750103443003982j,
+                ],
+                [
+                    0.4492720903088768+1.531219670177933j,
+                    -0.170529525691485+0.6651991300514464j,
+                    -0.4668835179408625-0.01099995392172975j,
+                    0.3203456934015326-0.0649519865279609j,
+                ],
+                [
+                    0.1198523638401433+20.29401095602682j,
+                    0.24848627838448+0.8306163860433873j,
+                    0.01499811813534241+0.4316080204484158j,
+                    -0.1957261214741705-0.2516296451497693j,
+                ],
+                [
+                    0.001277838183672943+3952.120992251375j,
+                    0.02958226468688951+17.5583834982187j,
+                    0.133017143689102+0.683702168861821j,
+                    -0.1236593450331985+0.2626549170317888j,
+                ],
+            ]),
+            (2, [
+                [
+                    -0.4539328918910651-2.49842605183378j,
+                    -0.1398699997958517-0.6573213417803664j,
+                    0.3730716077439122-0.2686252017488571j,
+                    -0.1967592336055912+0.2590262932648461j,
+                ],
+                [
+                    -0.8985441806177535-3.062439340355866j,
+                    -0.4639474937645631-0.4025032725737666j,
+                    0.09242543929394993-0.439714146687539j,
+                    0.03699240916779058+0.3214144551130116j,
+                ],
+                [
+                    0.219355624199953-122.2085844696676j,
+                    0.01485511496695812-1.278783848289016j,
+                    -0.2750500730372759-0.05475801043562541j,
+                    0.2485083179880822-0.1623798614066945j,
+                ],
+                [
+                    0.007570721643604232-39358.41331613203j,
+                    0.05219485499973019-56.69541688841105j,
+                    0.05835420626721993-0.9408762641846045j,
+                    -0.1780798840394451-0.09843751031142438j,
+                ],
+            ]),
+            (3, [
+                [
+                    0.1810604107575086+9.411269281678289j,
+                    0.4032113931472898+0.209153879534738j,
+                    0.1770285383306394+0.3781412226201079j,
+                    -0.236204989800868-0.2133199947250838j,
+                ],
+                [
+                    1.430281562732902+16.21074088239708j,
+                    0.2888169221127765-0.02048140706359885j,
+                    0.3700262498904006+0.1475982162396575j,
+                    -0.3151772967569374+0.009851617337879948j,
+                ],
+                [
+                    -0.1201738367928719+978.2511106829978j,
+                    -0.2563316999980426+4.077364838276459j,
+                    -0.05900951277687981-0.1260470742067026j,
+                    0.136119189010677+0.2352311379079314j,
+                ],
+                [
+                    0.02932517706962111+471322.7086829013j,
+                    0.04755227999912179+222.7043027153678j,
+                    -0.05769889975756005+2.007799602575911j,
+                    0.04196069502876812-0.136793627596507j,
+                ],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.h1vp)
+    def test_h1vp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.h1vp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.complex128)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
     def test_h2vp(self):
         h2 = special.h2vp(1,.1)
         h2real = (special.jvp(1,.1) - special.yvp(1,.1)*1j)
         assert_allclose(h2, h2real, atol=1.5e-8, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             print("                [")
+    #             for z in points:
+    #                 value = complex(
+    #                     mp.diff(lambda t: mp.hankel2(v, t), z, n)
+    #                 )
+    #                 print(
+    #                     f"                    {value.real!r}"
+    #                     f"{value.imag:+.17g}j,"
+    #                 )
+    #             print("                ],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [
+                    0.9384698072408129+0.44451873350670656j,
+                    0.5118276717359181-0.38244892379775886j,
+                    -0.26005195490193345-0.3768500100127904j,
+                    0.15064525725099692+0.28819468398157916j,
+                ],
+                [
+                    0.540973789934528+0.9902458802434049j,
+                    0.6498380747537472+0.04608316589309741j,
+                    0.06500818287737578-0.45604882079463316j,
+                    -0.09101540952306732+0.312761075941277j,
+                ],
+                [
+                    0.03060402345868264+5.441370837174266j,
+                    0.23208767214421472+0.9321937597629739j,
+                    0.4860912605858911+0.16040039348492374j,
+                    -0.24287320996018547-0.22985790254811306j,
+                ],
+                [
+                    0.0001607364763642876+499.2725608195123j,
+                    0.011768132420343795+7.3619718364797695j,
+                    0.13203418392461222+0.9166828387251396j,
+                    0.35764159478096075-0.09839104345102723j,
+                ],
+            ]),
+            (1, [
+                [
+                    -0.2422684576748739-1.471472392670243j,
+                    -0.5579365079100996-0.4123086269739113j,
+                    -0.3390589585259365+0.3246744247918j,
+                    0.27668385812756563-0.17501034430039825j,
+                ],
+                [
+                    0.44927209030887677-1.531219670177933j,
+                    -0.17052952569148502-0.6651991300514464j,
+                    -0.46688351794086247+0.010999953921729751j,
+                    0.3203456934015326+0.0649519865279609j,
+                ],
+                [
+                    0.11985236384014332-20.29401095602682j,
+                    0.24848627838448-0.8306163860433873j,
+                    0.014998118135342407-0.4316080204484158j,
+                    -0.19572612147417046+0.25162964514976927j,
+                ],
+                [
+                    0.0012778381836729433-3952.120992251375j,
+                    0.02958226468688951-17.5583834982187j,
+                    0.13301714368910203-0.683702168861821j,
+                    -0.12365934503319854-0.26265491703178884j,
+                ],
+            ]),
+            (2, [
+                [
+                    -0.4539328918910651+2.4984260518337797j,
+                    -0.1398699997958517+0.6573213417803664j,
+                    0.37307160774391224+0.26862520174885707j,
+                    -0.1967592336055912-0.2590262932648461j,
+                ],
+                [
+                    -0.8985441806177535+3.062439340355866j,
+                    -0.4639474937645631+0.40250327257376656j,
+                    0.09242543929394993+0.439714146687539j,
+                    0.036992409167790584-0.3214144551130116j,
+                ],
+                [
+                    0.21935562419995297+122.20858446966763j,
+                    0.014855114966958117+1.2787838482890157j,
+                    -0.27505007303727586+0.054758010435625414j,
+                    0.24850831798808215+0.16237986140669453j,
+                ],
+                [
+                    0.007570721643604232+39358.41331613203j,
+                    0.052194854999730186+56.69541688841105j,
+                    0.05835420626721993+0.9408762641846045j,
+                    -0.1780798840394451+0.09843751031142438j,
+                ],
+            ]),
+            (3, [
+                [
+                    0.18106041075750862-9.411269281678289j,
+                    0.4032113931472898-0.20915387953473796j,
+                    0.17702853833063945-0.3781412226201079j,
+                    -0.23620498980086804+0.21331999472508376j,
+                ],
+                [
+                    1.430281562732902-16.210740882397083j,
+                    0.28881692211277654+0.02048140706359885j,
+                    0.37002624989040056-0.14759821623965746j,
+                    -0.3151772967569374-0.009851617337879948j,
+                ],
+                [
+                    -0.1201738367928719-978.2511106829978j,
+                    -0.25633169999804256-4.077364838276459j,
+                    -0.05900951277687981+0.12604707420670264j,
+                    0.136119189010677-0.2352311379079314j,
+                ],
+                [
+                    0.029325177069621112-471322.70868290134j,
+                    0.04755227999912179-222.70430271536776j,
+                    -0.057698899757560054-2.0077996025759113j,
+                    0.04196069502876812+0.13679362759650704j,
+                ],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.h2vp)
+    def test_h2vp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.h2vp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.complex128)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def test_hyp0f1(self):
         # scalar input
@@ -3823,6 +4149,11 @@ class TestBessel:
                 else:
                     raise AssertionError(f"Invalid t return for nt={nt}")
 
+    @pytest.mark.parametrize("nt", [569, 572])
+    def test_jnjnp_zeros_overflow(self, nt):
+        # regresion test for gh-26699
+        special.jnjnp_zeros(nt)
+
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
         assert_allclose(jnp, array([1.84118,
@@ -3862,6 +4193,80 @@ class TestBessel:
         jvprim = special.jvp(2,2)
         jv0 = (special.jv(1,2)-special.jv(3,2))/2
         assert_allclose(jvprim, jv0, atol=1.5e-10, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besselj(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [0.9384698072408129, 0.5118276717359181,
+                 -0.2600519549019335, 0.1506452572509969],
+                [0.5409737899345280, 0.6498380747537472,
+                 0.0650081828773758, -0.0910154095230673],
+                [0.0306040234586826, 0.2320876721442147,
+                 0.4860912605858911, -0.2428732099601855],
+                [0.0001607364763643, 0.0117681324203438,
+                 0.1320341839246122, 0.3576415947809608],
+            ]),
+            (1, [
+                [-0.2422684576748739, -0.5579365079100996,
+                 -0.3390589585259365, 0.2766838581275656],
+                [0.4492720903088768, -0.1705295256914850,
+                 -0.4668835179408625, 0.3203456934015326],
+                [0.1198523638401433, 0.2484862783844800,
+                 0.0149981181353424, -0.1957261214741705],
+                [0.0012778381836729, 0.0295822646868895,
+                 0.1330171436891020, -0.1236593450331985],
+            ]),
+            (2, [
+                [-0.4539328918910651, -0.1398699997958517,
+                 0.3730716077439122, -0.1967592336055912],
+                [-0.8985441806177535, -0.4639474937645631,
+                 0.0924254392939499, 0.0369924091677906],
+                [0.2193556241999530, 0.0148551149669581,
+                 -0.2750500730372759, 0.2485083179880822],
+                [0.0075707216436042, 0.0521948549997302,
+                 0.0583542062672199, -0.1780798840394451],
+            ]),
+            (3, [
+                [0.1810604107575086, 0.4032113931472898,
+                 0.1770285383306395, -0.2362049898008680],
+                [1.4302815627329020, 0.2888169221127765,
+                 0.3700262498904006, -0.3151772967569374],
+                [-0.1201738367928719, -0.2563316999980426,
+                 -0.0590095127768798, 0.1361191890106770],
+                [0.0293251770696211, 0.0475522799991218,
+                 -0.0576988997575601, 0.0419606950287681],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.jvp)
+    def test_jvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.jvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def test_k0(self):
         ozk = special.k0(.1)
@@ -3959,6 +4364,80 @@ class TestBessel:
         x = special.kvp(v, z, n=2)
         assert_allclose(xc, x, atol=1.5e-10, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besselk(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [0.9244190712276659, 0.21380556264752573,
+                 0.03473950438627925, 0.0012439943280131232],
+                [1.0750476034999203, 0.22833505222826544,
+                 0.036025985131764596, 0.0012682866523815886],
+                [7.5501835512408695, 0.5836559632566508,
+                 0.06151045847174204, 0.0016919675672582928],
+                [752.245097910404, 7.918870773154969,
+                 0.30585120998610915, 0.004163865663165997],
+            ]),
+            (1, [
+                [-1.656441120003301, -0.2773878004568438,
+                 -0.040156431128194184, -0.001343919717735509],
+                [-2.1500952069998407, -0.3044467363043539,
+                 -0.04203031598705869, -0.001373977206746721],
+                [-31.85717532496678, -1.0555957514657115,
+                 -0.08116340344268888, -0.0019079089068216066],
+                [-6080.018692813162, -22.950792430887827,
+                 -0.5299719890719958, -0.005247808538018369],
+            ]),
+            (2, [
+                [4.237301311234267, 0.39873076295208826,
+                 0.048124981429010644, 0.001467980947635708],
+                [6.450285620999521, 0.4566701044565309,
+                 0.05103681226999984, 0.0015060903997031366],
+                [192.06747102102833, 2.3249970655789487,
+                 0.11590290782896813, 0.0021979487814239263],
+                [61055.96874980258, 79.53136900284885,
+                 1.026244024096524, 0.006889107380909501],
+            ]),
+            (3, [
+                [-16.75680822248504, -0.6664917759612777,
+                 -0.06065991728544153, -0.0016259143122785578],
+                [-30.101332897997768, -0.8118579634782772,
+                 -0.06554727850362725, -0.001675635663997203],
+                [-1536.3473711457746, -6.334842933569024,
+                 -0.18311380677139194, -0.0026018865173492727],
+                [-734207.9723687767, -324.4603189449644,
+                 -2.23560185496444, -0.009490993898258774],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.kvp)
+    def test_kvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.kvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
     def test_y0(self):
         oz = special.y0(.1)
         ozr = special.yn(0,.1)
@@ -4042,6 +4521,80 @@ class TestBessel:
         yvpr = (special.yv(1,.2) - special.yv(3,.2))/2.0
         yvp1 = special.yvp(2,.2)
         assert_allclose(yvp1, yvpr, atol=1.5e-10, rtol=0)
+
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.bessely(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [-0.44451873350670656, 0.38244892379775886,
+                 0.3768500100127904, -0.28819468398157916],
+                [-0.9902458802434049, -0.04608316589309741,
+                 0.45604882079463316, -0.312761075941277],
+                [-5.441370837174266, -0.9321937597629739,
+                 -0.16040039348492374, 0.22985790254811306],
+                [-499.2725608195123, -7.3619718364797695,
+                 -0.9166828387251396, 0.09839104345102723],
+            ]),
+            (1, [
+                [1.471472392670243, 0.4123086269739113,
+                 -0.3246744247918, 0.17501034430039825],
+                [1.531219670177933, 0.6651991300514464,
+                 -0.010999953921729751, -0.0649519865279609],
+                [20.29401095602682, 0.8306163860433873,
+                 0.4316080204484158, -0.25162964514976927],
+                [3952.120992251375, 17.5583834982187,
+                 0.683702168861821, 0.26265491703178884],
+            ]),
+            (2, [
+                [-2.4984260518337797, -0.6573213417803664,
+                 -0.26862520174885707, 0.2590262932648461],
+                [-3.062439340355866, -0.40250327257376656,
+                 -0.439714146687539, 0.3214144551130116],
+                [-122.20858446966763, -1.2787838482890157,
+                 -0.054758010435625414, -0.16237986140669453],
+                [-39358.41331613203, -56.69541688841105,
+                 -0.9408762641846045, -0.09843751031142438],
+            ]),
+            (3, [
+                [9.411269281678289, 0.20915387953473796,
+                 0.3781412226201079, -0.21331999472508376],
+                [16.210740882397083, -0.02048140706359885,
+                 0.14759821623965746, 0.009851617337879948],
+                [978.2511106829978, 4.077364838276459,
+                 -0.12604707420670264, 0.2352311379079314],
+                [471322.70868290134, 222.70430271536776,
+                 2.0077996025759113, -0.13679362759650704],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.yvp)
+    def test_yvp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.yvp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
 
     def _cephes_vs_amos_points(self):
         """Yield points at which to compare Cephes implementation to AMOS"""
@@ -4301,6 +4854,80 @@ class TestBessel:
         x = special.ivp(1,2)
         assert_allclose(x, y, atol=1.5e-10, rtol=0)
 
+    # Reference values generated with:
+    #
+    # import mpmath as mp
+    # orders = [0.0, 0.5, 2.0, 4.0]
+    # points = [0.5, 1.5, 3.0, 6.0]
+    # with mp.workdps(50):
+    #     for n in range(4):
+    #         print(f"            ({n}, [")
+    #         for v in orders:
+    #             values = [
+    #                 float(mp.diff(lambda t: mp.besseli(v, t), z, n))
+    #                 for z in points
+    #             ]
+    #             print(f"                [{values[0]!r}, {values[1]!r},")
+    #             print(f"                 {values[2]!r}, {values[3]!r}],")
+    #         print("            ]),")
+    @pytest.mark.parametrize(
+        "n, expected",
+        [
+            (0, [
+                [1.0634833707413236, 1.646723189772891,
+                 4.8807925858650245, 67.23440697647797],
+                [0.5879930867904163, 1.3871617204034778,
+                 4.614822903407601, 65.70503691665827],
+                [0.031906149177738256, 0.33783461833568074,
+                 2.245212440929951, 46.787094717264566],
+                [0.00016480554985482353, 0.014738166271311515,
+                 0.32570518193793546, 16.6365544178007],
+            ]),
+            (1, [
+                [0.2578943053908963, 0.9816664285779075,
+                 3.9533702174026093, 61.341936777640235],
+                [0.6843965606244331, 1.0701370892420834,
+                 3.868620607293569, 60.230424589963356],
+                [0.1302697086799433, 0.531220270797,
+                 2.456561923449309, 45.74623853855205],
+                [0.0013266675701516975, 0.04147233629259493,
+                 0.5254800535787606, 19.059504020930063],
+            ]),
+            (2, [
+                [0.5476947599595309, 0.9922789040542858,
+                 3.5630025133974876, 57.01075084687127],
+                [-0.19280694766803347, 0.8278660742869198,
+                 3.453472226071067, 56.122917796918955],
+                [0.2818651186616637, 0.584282648178891,
+                 2.4242306624157153, 44.36128770720195],
+                [0.008059025600260134, 0.09189468000557456,
+                 0.7295765986346783, 20.853994600001556],
+            ]),
+            (3, [
+                [0.1940820070354198, 0.7564433496874537,
+                 3.204966070425959, 53.544087658096146],
+                [2.140020911921, 0.9072415381255198,
+                 3.169311932886439, 52.8158441514324],
+                [0.12994009758023364, 0.5213948266161256,
+                 2.347993529469997, 42.9734794689186],
+                [0.03323179037711203, 0.15381610659382736,
+                 0.8888403322006403, 22.119484868917045],
+            ]),
+        ],
+    )
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="fails to find correct output shape"
+    )
+    @make_xp_test_case(special.ivp)
+    def test_ivp_alt_backends(self, xp, n, expected):
+        v = xp.asarray([[0.0], [0.5], [2.0], [4.0]], dtype=xp.float64)
+        z = xp.asarray([0.5, 1.5, 3.0, 6.0], dtype=xp.float64)
+
+        actual = special.ivp(v, z, n=n)
+        expected = xp.asarray(expected, dtype=xp.float64)
+
+        xp_assert_close(actual, expected, rtol=1e-12, atol=1e-13)
+
     def test_gh_22706_j1_tiny_inputs(self):
         # for tiny inputs, j1(x)=x/2 in double precision
         # reference values can also be confirmed with mpmath (see below test)
@@ -4403,10 +5030,10 @@ def ce_fourier_coefficient_using_integral(k, n, q):
     This function is used as an alternative implementation of
     mathieu_even_coef().
     """
-    period = 180 if n % 2 == 0 else 360
+    period = np.pi if n % 2 == 0 else 2*np.pi
     # For k = 0, the factor outside the integral is (1/period).
     # For k = 1, 2, 3, ..., the factor is (2/period).
-    c = (1/period)*quad(lambda t: special.mathieu_cem(n, q, t)[0],
+    c = (1/period)*quad(lambda t: special.mathieu_ce(n, q, t)[0],
                         -period/2, period/2,
                         weight='cos', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     if k > 0:
@@ -4425,14 +5052,49 @@ def se_fourier_coefficient_using_integral(k, n, q):
     # function with k == 0, but we'll check anyway.)
     if k == 0:
         return 0.0
-    period = 180 if n % 2 == 0 else 360
-    c = (2/period)*quad(lambda t: special.mathieu_sem(n, q, t)[0],
+    period = np.pi if n % 2 == 0 else 2*np.pi
+    c = (2/period)*quad(lambda t: special.mathieu_se(n, q, t)[0],
                         -period/2, period/2,
                         weight='sin', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
     return c
 
 
 class TestMathieu:
+
+    _angular = [("mathieu_cem", "mathieu_ce"), ("mathieu_sem", "mathieu_se")]
+
+    @pytest.mark.parametrize("name", ["mathieu_ce", "mathieu_se"])
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_angular_q0(self, name, dtype):
+        # For q = 0, the Mathieu functions reduce to
+        # ce_m(x) = cos(m*x) and se_m(x) = sin(m*x)
+        m = np.arange(5, dtype=dtype)[:, None]
+        x = np.linspace(-2*np.pi, 2*np.pi, 31, dtype=dtype)
+        y, yp = getattr(special, name)(m, dtype(0), x)
+        if name == "mathieu_ce":
+            expected = np.cos(m*x)
+            expected[0] = 1/np.sqrt(2)
+            expected_derivative = -m*np.sin(m*x)
+        else:
+            expected = np.sin(m*x)
+            expected_derivative = m*np.cos(m*x)
+        tol = 5e-6 if dtype == np.float32 else 1e-14
+        assert_allclose(y, expected, rtol=tol, atol=tol)
+        assert_allclose(yp, expected_derivative, rtol=tol, atol=tol)
+        assert y.dtype == yp.dtype == dtype
+
+    @pytest.mark.parametrize("old, new", _angular)
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_legacy_agreement(self, old, new, dtype):
+        m = np.arange(5, dtype=dtype)[:, None, None]
+        q = np.asarray([-5., 0.1, 1., 10.], dtype=dtype)[:, None]
+        x = np.linspace(-2.0 * np.pi, 2.0 * np.pi, 31, dtype=dtype)
+        legacy_x = np.rad2deg(x)
+        with pytest.warns(DeprecationWarning, match=f"{old}.*2.0.0.*2.2.0.*{new}"):
+            expected = getattr(special, old)(m, q, legacy_x)
+        actual = getattr(special, new)(m, q, x)
+        tol = 1e-5 if dtype == np.float32 else 1e-13
+        assert_allclose(actual, expected, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize('n, q', [(4, 3.5), (8, 4.25)])
     def test_mathieu_even_coef_against_integral_n_even(self, n, q):

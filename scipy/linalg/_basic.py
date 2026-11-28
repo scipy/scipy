@@ -6,10 +6,10 @@
 
 import warnings
 import numpy as np
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 from .lapack import (
     get_lapack_funcs, _normalize_lapack_dtype, _normalize_lapack_dtype1,
-    _ensure_aligned_and_native, _ensure_dtype_cdsz,
+    _ensure_aligned_and_native, _ensure_dtype_cdsz, _broadcast_batch
 )
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -230,9 +230,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         raise ValueError(f"incompatible shapes: {a1.shape=} and {b1.shape=}")
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
 
     # catch empty inputs
     if a1.size == 0 or b1.size == 0:
@@ -490,6 +488,9 @@ def _solve_banded_signature(nlower, nupper, ab, b, overwrite_ab,
 def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
+    overwrite_ab = overwrite_ab or _datacopied(a1, ab)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
 
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
@@ -506,7 +507,6 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
         dt = solve(np.eye(1, dtype=a1.dtype), np.ones(1, dtype=b1.dtype)).dtype
         return np.empty_like(b1, dtype=dt)
 
-    overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
         # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
@@ -771,12 +771,8 @@ def _solve_toeplitz_signature(c, r, b, check_finite):
 @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'),
                    signature=_solve_toeplitz_signature)
 def _solve_toeplitz(c, r, b, check_finite):
-    r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
+    r, c, b, _, _ = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
-
-    # accommodate empty arrays
-    if b.size == 0:
-        return np.empty_like(b)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
@@ -789,7 +785,7 @@ def _solve_toeplitz(c, r, b, check_finite):
     else:
         x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
                              for i in range(b.shape[1])])
-        x = x.reshape(*b_shape)
+        x = x.reshape(*b.shape)
 
     return x
 
@@ -1126,7 +1122,8 @@ def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     # XXX can relax a1.ndim == 2?
     overwrite_a = overwrite_a and (a1.ndim == 2) and (a1.flags["F_CONTIGUOUS"])
 
-    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
+    # keep the numbers in sync with C at
+    # `linalg/src/batched_linalg/_common_array_utils.hpp`
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
@@ -1228,6 +1225,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype1(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
@@ -1247,19 +1245,11 @@ def det(a, overwrite_a=False, check_finite=True):
             return a1
         return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
-    det = _linalg_det(a1, overwrite_a)
-
-    # Promote single precision to double to prevent overflows
-    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
-    if det.dtype.char == 'f':
-        det = det.astype(np.float64)
-    elif det.dtype.char == 'F':
-        det = det.astype(np.complex128)
-
-    # Return scalar for 2D input
-    if det.ndim == 0:
-        return det[()]
-    return det
+    # Single precision input gives a double precision determinant, computed in double
+    # precision so that e.g. np.diag([1e+38, 1e+38]).astype(np.float32) does not
+    # overflow.
+    # A scalar for 2D input, else an array of the batch shape.
+    return _linalg_det(a1, overwrite_a)
 
 
 # Linear Least Squares
@@ -1446,9 +1436,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                          f' of rows ({m} != {b1.shape[-2]}).')
 
     # 2. broadcast the batch dimensions of b1 and a1
-    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
-    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
-    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+    a1, b1 = _broadcast_batch(a1, b1)
+    batch_shape = a1.shape[:-2]
 
     overwrite_a = overwrite_a and (a1.ndim == 2) and a1.flags["F_CONTIGUOUS"]
     overwrite_b = (
@@ -1721,11 +1710,10 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
 
 def _matrix_balance_signature(*args, **kwargs):
-    return ("(i,i)->(i,i),(2,i)" if kwargs.get('separate')
+    return ("(i,i)->(i,i),(i),int(i)" if kwargs.get('separate')
             else "(i,i)->(i,i),(i,i)")
 
 
-@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
@@ -1738,6 +1726,11 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     Moreover, if enabled, the matrix is first permuted to isolate the upper
     triangular parts of the matrix and, again if scaling is also enabled,
     only the remaining subblocks are subjected to scaling.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1822,8 +1815,18 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
            [  0. ,   0. ,  1. ]])
 
     """
+    res = _matrix_balance(A, permute=permute, scale=scale, separate=separate,
+                          overwrite_a=overwrite_a)
+    if not separate:
+        return res
+    else:
+        return res[0], (res[1], res[2])
 
+
+@_apply_over_batch(('A', 2), signature=_matrix_balance_signature)
+def _matrix_balance(A, permute, scale, separate, overwrite_a):
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
+    dtype_int = np.int64 if HAS_ILP64 else np.int32
 
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
@@ -1834,7 +1837,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         B = np.empty_like(A, dtype=b_n.dtype)
         if separate:
             scaling = np.ones_like(A, shape=len(A))
-            perm = np.arange(len(A))
+            perm = np.arange(len(A), dtype=dtype_int)
             return B, (scaling, perm)
         return B, np.empty_like(A, dtype=t_n.dtype)
 
@@ -1848,13 +1851,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
                          'LAPACK documentation for the xGEBAL error codes.')
 
     # Separate the permutations from the scalings and then convert to int
-    scaling = np.ones_like(ps, dtype=float)
+    scaling = np.ones_like(ps, dtype=B.dtype)
     scaling[lo:hi+1] = ps[lo:hi+1]
 
     # gebal uses 1-indexing
-    ps = ps.astype(int, copy=False) - 1
+    ps = ps.astype(dtype_int, copy=False) - 1
     n = A.shape[0]
-    perm = np.arange(n)
+    perm = np.arange(n, dtype=dtype_int)
 
     # LAPACK permutes with the ordering n --> hi, then 0--> lo
     if hi < n:
@@ -1870,7 +1873,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
             perm[[x, ind]] = perm[[ind, x]]
 
     if separate:
-        return B, (scaling, perm)
+        return B, scaling, perm
 
     # get the inverse permutation
     iperm = np.empty_like(perm)
@@ -1940,16 +1943,14 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
         raise ValueError('Incompatible dimensions.')
 
-    is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.float64
-    r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
+    c, r, b = _ensure_dtype_cdsz(c, r, b)
 
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
         b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
-    return r, c, b, dtype, b_shape
+    return r, c, b, b.dtype, b_shape
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):

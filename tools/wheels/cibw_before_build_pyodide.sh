@@ -20,9 +20,6 @@ set -xeo pipefail
 PROJECT_DIR="${1:-$PWD}"
 PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
 
-# cibuildwheel doesn't have a default wheel repair command for Pyodide
-python -m pip install "auditwheel-emscripten==0.2.5"
-
 # for semicolon-lapack to build
 python -m pip install "meson>=1.5.0" "ninja>=1.8.2"
 

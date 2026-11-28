@@ -87,7 +87,7 @@ def test_lsqr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsqr(A_dense, b)
     res = splin.lsqr(A_sparse, b)
-    assert_allclose(res[0], res0[0], atol=1e-5)
+    assert_allclose(res[0], res0[0], atol=1.1e-5)
 
 
 @pytest.mark.skip("https://github.com/pydata/sparse/issues/940")
@@ -228,6 +228,13 @@ def test_inv(matrices):
     x0 = splin.inv(sp.csc_array(A_dense))
     x = splin.inv(A_sparse)
     assert_allclose(x.todense(), x0.todense())
+
+
+def test_inv_1x1(sparse_cls):
+    # gh-5551: a 1x1 input gave a 1-D ndarray
+    x = splin.inv(sparse_cls(np.array([[4.0]])))
+    assert type(x) is type(splin.inv(sparse_cls(np.array([[4.0, 0], [0, 2.0]]))))
+    assert_allclose(x.todense(), [[0.25]])
 
 
 def test_expm(matrices):

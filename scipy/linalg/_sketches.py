@@ -11,7 +11,7 @@ from scipy._lib._util import (check_random_state, rng_integers,
 __all__ = ['clarkson_woodruff_transform']
 
 
-def cwt_matrix(n_rows, n_columns, rng=None):
+def _cwt_matrix(n_rows, n_columns, dtype, rng=None):
     r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
@@ -26,6 +26,8 @@ def cwt_matrix(n_rows, n_columns, rng=None):
         Number of rows of S
     n_columns : int
         Number of columns of S
+    dtype : dtype
+        The dtype of the array.
     rng : `numpy.random.Generator`, optional
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the
@@ -48,7 +50,7 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
-    signs = rng.choice([1, -1], n_columns)
+    signs = rng.choice([1, -1], n_columns).astype(dtype)
     S = csc_array((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
@@ -185,7 +187,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
         message = "Batch support for sparse arrays is not available."
         raise NotImplementedError(message)
 
-    S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    S = _cwt_matrix(
+        sketch_size, input_matrix.shape[-2], input_matrix.dtype, rng=rng
+    )
     if input_matrix.ndim <= 2:
         # transposes are cheap and ensure output class matches input_matrix
         return (input_matrix.T @ S.T).T

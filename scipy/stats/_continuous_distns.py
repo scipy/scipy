@@ -307,7 +307,7 @@ class kstwobign_gen(rv_continuous):
 
     Notes
     -----
-    :math:`\sqrt{n} D_n` is given by
+    :math:`D_n` is given by
 
     .. math::
 
@@ -2930,11 +2930,11 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+        f(x, c, a, b) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`a < x <= b`, :math:`0 \le a < b` and :math:`c > 0`.
+    for :math:`a < x \leq b`, :math:`0 \leq a < b` and :math:`c > 0`.
 
-    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    `truncweibull_min` takes :math:`c`, :math:`a`, and :math:`b` as shape
     parameters.
 
     Notice that the truncation values, :math:`a` and :math:`b`, are defined in
@@ -2942,13 +2942,14 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        a = (u_l - loc)/scale
-        b = (u_r - loc)/scale
+        a &= (u_l - \mathrm{loc})/\mathrm{scale} \\
+        b &= (u_r - \mathrm{loc})/\mathrm{scale}
 
     where :math:`u_l` and :math:`u_r` are the specific left and right
     truncation values, respectively. In other words, the support of the
-    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
-    :math:`loc` and/or :math:`scale` are provided.
+    distribution becomes
+    :math:`a\,\mathrm{scale} + \mathrm{loc} < x \leq b\,\mathrm{scale} + \mathrm{loc}`
+    when ``loc`` and/or ``scale`` are provided.
 
     %(after_notes)s
 
@@ -5558,7 +5559,7 @@ class norminvgauss_gen(rv_continuous):
 
     where :math:`x` is a real number, the parameter :math:`a` is the tail
     heaviness and :math:`b` is the asymmetry parameter satisfying
-    :math:`a > 0` and :math:`|b| <= a`.
+    :math:`a > 0` and :math:`|b| < a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 
@@ -7722,6 +7723,9 @@ class moyal_gen(rv_continuous):
     def _ppf(self, x):
         return -np.log(2 * sc.erfcinv(x)**2)
 
+    def _isf(self, q):
+        return -2*np.log(sc.erfinv(q)) - np.log(2)
+
     def _stats(self):
         mu = np.log(2) + np.euler_gamma
         mu2 = np.pi**2 / 2
@@ -8664,8 +8668,15 @@ class pearson3_gen(rv_continuous):
             self._preprocess(q, skew))
         ans[mask] = _norm_ppf(q[mask])
         q = q[invmask]
-        q[beta < 0] = 1 - q[beta < 0]  # for negative skew; see gh-17050
-        ans[invmask] = sc.gammaincinv(alpha, q)/beta + zeta
+        # For negative skew (beta < 0), the lower tail of X corresponds to the
+        # upper tail of the underlying gamma variate (see gh-17055). Invert the
+        # complementary incomplete gamma function directly instead of forming
+        # `1 - q`, which loses the accuracy of small q
+        neg = beta < 0
+        g = np.empty_like(q)
+        g[~neg] = sc.gammaincinv(alpha[~neg], q[~neg])
+        g[neg] = sc.gammainccinv(alpha[neg], q[neg])
+        ans[invmask] = g/beta + zeta
         return ans
 
     @_call_super_mom
@@ -8741,6 +8752,9 @@ class powerlaw_gen(rv_continuous):
 
     def _ppf(self, q, a):
         return pow(q, 1.0/a)
+
+    def _isf(self, q, a):
+        return np.exp(sc.log1p(-q)/a)
 
     def _sf(self, p, a):
         return -sc.powm1(p, a)
@@ -9143,6 +9157,10 @@ class rdist_gen(rv_continuous):
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
+    def _isf(self, q, c):
+        # The distribution is symmetric about 0.
+        return -self._ppf(q, c)
+
     def _rvs(self, c, size=None, random_state=None):
         return 2 * random_state.beta(c/2, c/2, size) - 1
 
@@ -9403,7 +9421,7 @@ class rice_gen(rv_continuous):
 
         f(x, b) = x \exp(- \frac{x^2 + b^2}{2}) I_0(x b)
 
-    for :math:`x >= 0`, :math:`b > 0`. :math:`I_0` is the modified Bessel
+    for :math:`x \geq 0`, :math:`b \geq 0`. :math:`I_0` is the modified Bessel
     function of order zero (`scipy.special.i0`).
 
     `rice` takes ``b`` as a shape parameter for :math:`b`.
@@ -9435,6 +9453,12 @@ class rice_gen(rv_continuous):
 
     def _ppf(self, q, b):
         return np.sqrt(sc.chndtrix(q, 2, np.square(b)))
+
+    def _sf(self, x, b):
+        return ncx2._sf(np.square(x), 2, np.square(b))
+
+    def _isf(self, q, b):
+        return np.sqrt(ncx2._isf(q, 2, np.square(b)))
 
     def _pdf(self, x, b):
         # rice.pdf(x, b) = x * exp(-(x**2+b**2)/2) * I[0](x*b)
@@ -9637,6 +9661,10 @@ class recipinvgauss_gen(rv_continuous):
         isqx = 1.0/np.sqrt(x)
         return _norm_cdf(isqx*trm1) + np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
 
+    def _isf(self, q, mu):
+        # X = 1/Y with Y ~ invgauss(mu), so isf_X(q) = 1/ppf_Y(q).
+        return 1.0/invgauss._ppf(q, mu)
+
     def _rvs(self, mu, size=None, random_state=None):
         return 1.0/random_state.wald(mu, 1.0, size=size)
 
@@ -9689,6 +9717,10 @@ class semicircular_gen(rv_continuous):
 
     def _ppf(self, q):
         return rdist._ppf(q, 3)
+
+    def _isf(self, q):
+        # The distribution is symmetric about 0.
+        return -self._ppf(q)
 
     def _rvs(self, size=None, random_state=None):
         # generate values uniformly distributed on the area under the pdf
@@ -12555,7 +12587,7 @@ class rel_breitwigner_gen(rv_continuous):
 
     %(after_notes)s
 
-    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
+    :math:`\rho = M_0/\Gamma` and :math:`\Gamma` is the scale parameter. For
     example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
     \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
     [4]_ one can set ``rho=91.1876/2.4952`` and ``scale=2.4952``.

@@ -4,7 +4,7 @@ from pytest import raises as assert_raises
 import numpy as np
 from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
-from scipy.linalg.lapack import HAS_ILP64
+from scipy._lib._util import HAS_ILP64
 
 
 REAL_DTYPES = [np.float32, np.float64]
@@ -15,6 +15,17 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 class TestLU:
     def setup_method(self):
         self.rng = np.random.default_rng(1682281250228846)
+
+    @pytest.mark.parametrize('shape', [(4, 3), (3, 4), (3, 3)])
+    @pytest.mark.parametrize('permute_l', [False, True])
+    def test_overwrite_f_contiguous(self, shape, permute_l):
+        # A 2-D F-contiguous input with overwrite_a=True is factored in place; the
+        # factors must equal those computed from a copy.
+        a = self.rng.standard_normal(shape)
+        ref = lu(a, permute_l=permute_l)
+        res = lu(np.asfortranarray(a), permute_l=permute_l, overwrite_a=True)
+        for x, y in zip(res, ref):
+            assert_array_equal(x, y)
 
     def test_old_lu_smoke_tests(self):
         "Tests from old fortran based lu test suite"

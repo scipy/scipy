@@ -33,6 +33,7 @@
 #include <xsf/cpu/mathieu_legacy.h>
 #include <xsf/ndtri_exp.h>
 #include <xsf/orthogonal_eval.h>
+#include <xsf/cpu/orthogonal_eval.h>
 #include <xsf/cpu/par_cyl.h>
 #include <xsf/sici.h>
 #include <xsf/cpu/specfun.h>
@@ -164,6 +165,54 @@ void xsf_cfresnel(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     xsf::fresnel(to_complex(z), *reinterpret_cast<complex<double> *>(zfs), *reinterpret_cast<complex<double> *>(zfc));
 }
 
+double xsf_eval_chebyc(double n, double x) { return xsf::eval_chebyc(n, x); }
+
+npy_cdouble xsf_ceval_chebyc(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyc(n, to_complex(x)));
+}
+
+double xsf_eval_chebyc_l(npy_intp n, double x) { return xsf::eval_chebyc(n, x); }
+
+double xsf_eval_chebys(double n, double x) { return xsf::eval_chebys(n, x); }
+
+npy_cdouble xsf_ceval_chebys(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebys(n, to_complex(x)));
+}
+
+double xsf_eval_chebys_l(npy_intp n, double x) { return xsf::eval_chebys(n, x); }
+
+double xsf_eval_chebyt(double n, double x) { return xsf::eval_chebyt(n, x); }
+
+npy_cdouble xsf_ceval_chebyt(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyt(n, to_complex(x)));
+}
+
+double xsf_eval_chebyt_l(npy_intp n, double x) { return xsf::eval_chebyt(n, x); }
+
+double xsf_eval_chebyu(double n, double x) { return xsf::eval_chebyu(n, x); }
+
+npy_cdouble xsf_ceval_chebyu(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_chebyu(n, to_complex(x)));
+}
+
+double xsf_eval_chebyu_l(npy_intp n, double x) { return xsf::eval_chebyu(n, x); }
+
+double xsf_eval_gegenbauer(double n, double alpha, double x) { return xsf::eval_gegenbauer(n, alpha, x); }
+
+npy_cdouble xsf_ceval_gegenbauer(double n, double alpha, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_gegenbauer(n, alpha, to_complex(x)));
+}
+
+double xsf_eval_gegenbauer_l(npy_intp n, double alpha, double x) { return xsf::eval_gegenbauer(n, alpha, x); }
+
+double xsf_eval_genlaguerre(double n, double alpha, double x) { return xsf::eval_genlaguerre(n, alpha, x); }
+
+npy_cdouble xsf_ceval_genlaguerre(double n, double alpha, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_genlaguerre(n, alpha, to_complex(x)));
+}
+
+double xsf_eval_genlaguerre_l(npy_intp n, double alpha, double x) { return xsf::eval_genlaguerre(n, alpha, x); }
+
 double xsf_eval_hermite(npy_intp n, double x) { return xsf::eval_hermite(n, x); }
 
 double xsf_eval_hermitenorm(npy_intp n, double x) { return xsf::eval_hermitenorm(n, x); }
@@ -178,6 +227,38 @@ double xsf_eval_jacobi_l(npy_intp n, double alpha, double beta, double x) {
     return xsf::eval_jacobi(n, alpha, beta, x);
 }
 
+double xsf_eval_laguerre(double n, double x) { return xsf::eval_laguerre(n, x); }
+
+npy_cdouble xsf_ceval_laguerre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_laguerre(n, to_complex(x)));
+}
+
+double xsf_eval_laguerre_l(npy_intp n, double x) { return xsf::eval_laguerre(n, x); }
+
+double xsf_eval_legendre(double n, double x) { return xsf::eval_legendre(n, x); }
+
+npy_cdouble xsf_ceval_legendre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_legendre(n, to_complex(x)));
+}
+
+double xsf_eval_legendre_l(npy_intp n, double x) { return xsf::eval_legendre(n, x); }
+
+double xsf_eval_sh_chebyt(double n, double x) { return xsf::eval_sh_chebyt(n, x); }
+
+npy_cdouble xsf_ceval_sh_chebyt(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_chebyt(n, to_complex(x)));
+}
+
+double xsf_eval_sh_chebyt_l(npy_intp n, double x) { return xsf::eval_sh_chebyt(n, x); }
+
+double xsf_eval_sh_chebyu(double n, double x) { return xsf::eval_sh_chebyu(n, x); }
+
+npy_cdouble xsf_ceval_sh_chebyu(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_chebyu(n, to_complex(x)));
+}
+
+double xsf_eval_sh_chebyu_l(npy_intp n, double x) { return xsf::eval_sh_chebyu(n, x); }
+
 double xsf_eval_sh_jacobi(double n, double p, double q, double x) { return xsf::eval_sh_jacobi(n, p, q, x); }
 
 npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
@@ -187,6 +268,14 @@ npy_cdouble xsf_ceval_sh_jacobi(double n, double p, double q, npy_cdouble x) {
 double xsf_eval_sh_jacobi_l(npy_intp n, double p, double q, double x) {
     return xsf::eval_sh_jacobi(n, p, q, x);
 }
+
+double xsf_eval_sh_legendre(double n, double x) { return xsf::eval_sh_legendre(n, x); }
+
+npy_cdouble xsf_ceval_sh_legendre(double n, npy_cdouble x) {
+    return to_ccomplex(xsf::eval_sh_legendre(n, to_complex(x)));
+}
+
+double xsf_eval_sh_legendre_l(npy_intp n, double x) { return xsf::eval_sh_legendre(n, x); }
 
 double cem_cva_wrap(double m, double q) { return xsf::cem_cva(m, q); }
 
@@ -509,6 +598,14 @@ void special_mathieu_cem(double m, double q, double x, double *out, double *out_
 
 void special_mathieu_sem(double m, double q, double x, double *out, double *out_diff) {
    return special::mathieu_sem(m, q, x, *out, *out_diff);
+}
+
+void special_mathieu_ce(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_ce(m, q, x, *out, *out_diff);
+}
+
+void special_mathieu_se(double m, double q, double x, double *out, double *out_diff) {
+   return special::mathieu_se(m, q, x, *out, *out_diff);
 }
 
 // Exp
@@ -926,4 +1023,3 @@ double boost_stdtridf_double(double p, double t) { return stdtridf_double(p, t);
 float boost_stdtrit_float(float df, float p) { return t_ppf_float(df, p); }
 
 double boost_stdtrit_double(double df, double p) { return t_ppf_double(df, p); }
-

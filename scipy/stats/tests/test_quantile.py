@@ -11,7 +11,6 @@ from scipy._lib._array_api import (
     is_cupy,
     is_array_api_strict,
     make_xp_test_case,
-    SCIPY_ARRAY_API,
     xp_size,
     xp_copy,
 )
@@ -231,8 +230,6 @@ class TestQuantile:
             weights, x_rep = None, x
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if weights is not None:
                 pytest.skip("MArray is not yet compatible with weights")
             marray = pytest.importorskip('marray')
@@ -589,8 +586,6 @@ class TestEstimatedCDF:
         dtype = getattr(xp, dtype)
 
         if nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=meth)
             mxp = marray._get_namespace(xp)
@@ -671,8 +666,6 @@ class TestEstimatedCDF:
         elif nan_policy == 'marray':
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             mxp = marray._get_namespace(xp)
             mask = (x > 0.)
@@ -700,8 +693,6 @@ class TestEstimatedCDF:
             x = xpx.at(x)[:].set(xp.nan)
             kwargs = {'nan_policy': 'omit'}
         elif nan_policy == 'marray':
-            if not SCIPY_ARRAY_API:
-                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             if is_jax(xp):
                 pytest.skip("JAX currently incompatible with `marray`")
             marray = pytest.importorskip('marray')

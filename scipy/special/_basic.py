@@ -7,14 +7,19 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, sqrt, where,
-                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
+from numpy import (pi, asarray, floor, isscalar, sqrt,
+                   sin, place, issubdtype, extract, inexact, nan, zeros)
 
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_device
-from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
-                      psi, hankel1, hankel2, yv, kv, poch, binom,
-                      _stirling2_inexact)
+from scipy._lib._array_api import (
+    array_namespace, xp_capabilities, xp_device, xp_result_device
+)
+
+from ._ufuncs import _stirling2_inexact
+from ._support_alternative_backends import (
+    mathieu_a, mathieu_b, iv, gamma, rgamma,
+    hankel1, hankel2, poch, binom,
+    _zeta, _riemann_zeta, jv, yv, kv, eval_genlaguerre,
+)
 
 from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
@@ -31,7 +36,6 @@ __all__ = [
     'berp_zeros',
     'bi_zeros',
     'comb',
-    'digamma',
     'diric',
     'erf_zeros',
     'euler',
@@ -65,11 +69,9 @@ __all__ = [
     'pbdv_seq',
     'pbvv_seq',
     'perm',
-    'polygamma',
     'pro_cv_seq',
     'riccati_jn',
     'riccati_yn',
-    'sinc',
     'softplus',
     'stirling2',
     'y0_zeros',
@@ -90,6 +92,10 @@ _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
                              6: 43, 7: 47, 8: 51, 9: 56}
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[("dask.array", "deprioritized")],
+)
 def diric(x, n):
     """Periodic sinc function, also called the Dirichlet kernel.
 
@@ -156,6 +162,11 @@ def diric(x, n):
     array([ 3.        ,  2.41421356,  1.        , -0.41421356, -1.        ,
            -0.41421356,  1.        ,  2.41421356])
     """
+    # This could be made array-agnostic, but for now just convert to
+    # NumPy and back.
+    xp = array_namespace(x, n)
+    device = xp_result_device(x, n)
+
     x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
@@ -190,9 +201,10 @@ def diric(x, n):
     nsub = extract(mask, n)
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
-    return y
+    return xp.asarray(y, device=device)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnjnp_zeros(nt):
     """Compute zeros of integer-order Bessel functions Jn and Jn'.
 
@@ -234,6 +246,7 @@ def jnjnp_zeros(nt):
     return zo[1:nt+1], n[:nt], m[:nt], t[:nt]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnyn_zeros(n, nt):
     """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
 
@@ -319,6 +332,7 @@ def jnyn_zeros(n, nt):
     return _specfun.jyzo(abs(n), nt)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jn_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel functions Jn.
 
@@ -382,6 +396,7 @@ def jn_zeros(n, nt):
     return jnyn_zeros(n, nt)[0]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def jnp_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function derivatives Jn'.
 
@@ -445,6 +460,7 @@ def jnp_zeros(n, nt):
     return jnyn_zeros(n, nt)[1]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def yn_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function Yn(x).
 
@@ -503,6 +519,7 @@ def yn_zeros(n, nt):
     return jnyn_zeros(n, nt)[2]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def ynp_zeros(n, nt):
     r"""Compute zeros of integer-order Bessel function derivatives Yn'(x).
 
@@ -570,6 +587,7 @@ def ynp_zeros(n, nt):
     return jnyn_zeros(n, nt)[3]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y0_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
 
@@ -646,6 +664,7 @@ def y0_zeros(nt, complex=False):
     return _specfun.cyzo(nt, kf, kc)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y1_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
 
@@ -728,6 +747,7 @@ def y1_zeros(nt, complex=False):
     return _specfun.cyzo(nt, kf, kc)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def y1p_zeros(nt, complex=False):
     """Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
 
@@ -806,7 +826,9 @@ def _bessel_diff_formula(v, z, n, L, phase):
     # L(v, z) = J(v, z), Y(v, z), H1(v, z), H2(v, z), phase = -1
     # L(v, z) = I(v, z) or exp(v*pi*i)K(v, z), phase = 1
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
-    v = asarray(v)
+    xp = array_namespace(v, z)
+    device = xp_result_device(v, z)
+    v, z = xp.asarray(v, device=device), xp.asarray(z, device=device)
     p = 1.0
     s = L(v-n, z)
     for i in range(1, n+1):
@@ -815,6 +837,7 @@ def _bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+@xp_capabilities(cpu_only=True)
 def jvp(v, z, n=1):
     """Compute derivatives of Bessel functions of the first kind.
 
@@ -893,6 +916,7 @@ def jvp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, jv, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def yvp(v, z, n=1):
     """Compute derivatives of Bessel functions of the second kind.
 
@@ -975,6 +999,7 @@ def yvp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, yv, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def kvp(v, z, n=1):
     """Compute derivatives of real-order modified Bessel function Kv(z).
 
@@ -1056,6 +1081,7 @@ def kvp(v, z, n=1):
         return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
+@xp_capabilities(cpu_only=True)
 def ivp(v, z, n=1):
     """Compute derivatives of modified Bessel functions of the first kind.
 
@@ -1137,6 +1163,7 @@ def ivp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, iv, 1)
 
 
+@xp_capabilities(cpu_only=True)
 def h1vp(v, z, n=1):
     """Compute derivatives of Hankel function H1v(z) with respect to `z`.
 
@@ -1206,6 +1233,7 @@ def h1vp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, hankel1, -1)
 
 
+@xp_capabilities(cpu_only=True)
 def h2vp(v, z, n=1):
     """Compute derivatives of Hankel function H2v(z) with respect to `z`.
 
@@ -1275,6 +1303,7 @@ def h2vp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, hankel2, -1)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def riccati_jn(n, x):
     r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
@@ -1363,6 +1392,7 @@ def riccati_jn(n, x):
     return jn[:(n+1)], jnp[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def riccati_yn(n, x):
     """Compute Riccati-Bessel function of the second kind and its derivative.
 
@@ -1452,6 +1482,7 @@ def riccati_yn(n, x):
     return yn[:(n+1)], ynp[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
@@ -1492,6 +1523,7 @@ def erf_zeros(nt):
     return _specfun.cerzo(nt)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of cosine Fresnel integral C(z).
 
@@ -1517,6 +1549,7 @@ def fresnelc_zeros(nt):
     return _specfun.fcszo(1, nt)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def fresnels_zeros(nt):
     """Compute nt complex zeros of sine Fresnel integral S(z).
 
@@ -1542,6 +1575,7 @@ def fresnels_zeros(nt):
     return _specfun.fcszo(2, nt)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def fresnel_zeros(nt):
     """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
 
@@ -1569,6 +1603,7 @@ def fresnel_zeros(nt):
     return _specfun.fcszo(2, nt), _specfun.fcszo(1, nt)
 
 
+@xp_capabilities(cpu_only=True)
 def assoc_laguerre(x, n, k=0.0):
     r"""Compute the generalized (associated) Laguerre polynomial of degree :math:`n`
     and order :math:`k`.
@@ -1637,75 +1672,31 @@ def assoc_laguerre(x, n, k=0.0):
     >>> plt.show()
 
     """
-    return _ufuncs.eval_genlaguerre(n, k, x)
+    return eval_genlaguerre(n, k, x)
 
 
-digamma = psi
-
-
-def polygamma(n, x):
-    r"""Polygamma functions.
-
-    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
-    `digamma` function. See [dlmf]_ for details.
-
-    Parameters
-    ----------
-    n : array_like
-        The order of the derivative of the digamma function; must be
-        integral
-    x : array_like
-        Real valued input
-
-    Returns
-    -------
-    ndarray
-        Function results
-
-    See Also
-    --------
-    digamma
-
-    References
-    ----------
-    .. [dlmf] NIST, Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/5.15
-
-    Examples
-    --------
-    >>> from scipy import special
-    >>> x = [2, 3, 25.5]
-    >>> special.polygamma(1, x)
-    array([ 0.64493407,  0.39493407,  0.03999467])
-    >>> special.polygamma(0, x) == special.psi(x)
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    n, x = asarray(n), asarray(x)
-    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1, x)
-    return where(n == 0, psi(x), fac2)
-
-
+@xp_capabilities(out_of_scope=True)
 def mathieu_even_coef(m, q):
     r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
 
     The Fourier series of the even solutions of the Mathieu differential
     equation are of the form
 
-    .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
+    .. math:: \mathrm{ce}_{2n}(z, q) =
+              \sum_{k=0}^{\infty} A_{2k}^{(2n)}(q) \cos ((2k)z)
 
     .. math:: \mathrm{ce}_{2n+1}(z, q) =
-              \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
+              \sum_{k=0}^{\infty} A_{2k+1}^{(2n+1)}(q) \cos ((2k+1)z)
 
-    This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
-    input m=2n, and the coefficients :math:`A_{(2n+1)}^{(2k+1)}` for odd input
-    m=2n+1.
+    This function returns the coefficients :math:`A_{2k}^{(2n)}(q)` for even
+    input :math:`m=2n`, and the coefficients :math:`A_{2k+1}^{(2n+1)}(q)` for odd input
+    :math:`m=2n+1`.
 
     Parameters
     ----------
     m : int
         Order of Mathieu functions.  Must be non-negative.
-    q : float (>=0)
+    q : float
         Parameter of Mathieu functions.  Must be non-negative.
 
     Returns
@@ -1713,11 +1704,11 @@ def mathieu_even_coef(m, q):
     Ak : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
         The number of coefficients returned is determined by an empirical formula
-        that depends on `m` and `q` [1]_.
+        that depends on :math:`m` and :math:`q` [1]_.
 
     See Also
     --------
-    mathieu_cem
+    mathieu_ce
     mathieu_odd_coef
 
     References
@@ -1732,12 +1723,12 @@ def mathieu_even_coef(m, q):
     Examples
     --------
     We use the Fourier coefficients to construct an approximation of
-    ``mathieu_cem(5, 14, x)``, the even Mathieu function of order `m = 5` and
+    ``mathieu_ce(5, 14, x)``, the even Mathieu function of order `m = 5` and
     parameter `q = 14`.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import mathieu_even_coef, mathieu_cem
+    >>> from scipy.special import mathieu_even_coef, mathieu_ce
     >>> m = 5
     >>> q = 14
 
@@ -1752,21 +1743,25 @@ def mathieu_even_coef(m, q):
 
     Sum the Fourier cosine series on a grid of ``x`` values.
 
-    >>> period = 180 if m % 2 == 0 else 360
+    >>> period = np.pi if m % 2 == 0 else 2*np.pi
     >>> x = np.linspace(0, period, 5000)             # x has shape (5000,)
     >>> k = np.arange(len(a)).reshape((-1, 1))       # k has shape (len(a), 1)
-    >>> c = np.cos((2*k + m % 2) * (np.pi/180) * x)  # c has shape (len(a), 5000)
+    >>> c = np.cos((2*k + m % 2) * x)  # c has shape (len(a), 5000)
     >>> y = a @ c                                    # y has shape (5000,)
 
     Plot the approximation, along with the function computed directly by
-    ``mathieu_cem(m, q, x)``.
+    ``mathieu_ce(m, q, x)``.
 
     >>> plt.plot(x, y, 'k--', label="Fourier sum")
-    >>> ce, _dce = mathieu_cem(m, q, x)
-    >>> plt.plot(x, ce, alpha=0.35, linewidth=3.5, label="mathieu_cem")
+    >>> ce, _dce = mathieu_ce(m, q, x)
+    >>> plt.plot(x, ce, alpha=0.35, linewidth=3.5, label="mathieu_ce")
+    >>> plt.xticks(
+    ...     [0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
+    ...     [r"$0$", r"$\pi/2$", r"$\pi$", r"$3\pi/2$", r"$2\pi$"]
+    ... )
     >>> plt.grid(True)
     >>> plt.title(f'Mathieu Function $\\rm{{ce_{m}}}(x, {q})$')
-    >>> plt.xlabel('x [degrees]')
+    >>> plt.xlabel('x [radians]')
     >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
     >>> plt.tight_layout()
     >>> plt.show()
@@ -1795,6 +1790,7 @@ def mathieu_even_coef(m, q):
     return fc[:km]
 
 
+@xp_capabilities(out_of_scope=True)
 def mathieu_odd_coef(m, q):
     r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
@@ -1802,20 +1798,20 @@ def mathieu_odd_coef(m, q):
     equation are of the form
 
     .. math:: \mathrm{se}_{2n+1}(z, q) =
-              \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
+              \sum_{k=0}^{\infty} B_{2k+1}^{(2n+1)}(q) \sin ((2k+1)z)
 
     .. math:: \mathrm{se}_{2n+2}(z, q) =
-              \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
+              \sum_{k=0}^{\infty} B_{2k+2}^{(2n+2)}(q) \sin ((2k+2)z)
 
-    This function returns the coefficients :math:`B_{(2n+2)}^{(2k+2)}` for even
-    input m=2n+2, and the coefficients :math:`B_{(2n+1)}^{(2k+1)}` for odd
-    input m=2n+1.
+    This function returns the coefficients :math:`B_{2k+2}^{(2n+2)}(q)` for even
+    input :math:`m=2n+2`, and the coefficients :math:`B_{2k+1}^{(2n+1)}(q)` for odd
+    input :math:`m=2n+1`.
 
     Parameters
     ----------
     m : int
-        Order of Mathieu functions.  Must be non-negative.
-    q : float (>=0)
+        Order of Mathieu functions.  Must be positive.
+    q : float
         Parameter of Mathieu functions.  Must be non-negative.
 
     Returns
@@ -1823,11 +1819,11 @@ def mathieu_odd_coef(m, q):
     Bk : ndarray
         Even or odd Fourier coefficients, corresponding to even or odd m.
         The number of coefficients returned is determined by an empirical formula
-        that depends on `m` and `q` [1]_.
+        that depends on :math:`m` and :math:`q` [1]_.
 
     See Also
     --------
-    mathieu_sem
+    mathieu_se
     mathieu_even_coef
 
     References
@@ -1842,12 +1838,12 @@ def mathieu_odd_coef(m, q):
     Examples
     --------
     We use the Fourier coefficients to construct an approximation of
-    ``mathieu_sem(5, 11, x)``, the odd Mathieu function of order `m = 5` and
+    ``mathieu_se(5, 11, x)``, the odd Mathieu function of order `m = 5` and
     parameter `q = 11`.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import mathieu_odd_coef, mathieu_sem
+    >>> from scipy.special import mathieu_odd_coef, mathieu_se
     >>> m = 5
     >>> q = 11
 
@@ -1862,21 +1858,25 @@ def mathieu_odd_coef(m, q):
 
     Sum the Fourier sine series on a grid of ``x`` values.
 
-    >>> period = 180 if m % 2 == 0 else 360
+    >>> period = np.pi if m % 2 == 0 else 2*np.pi
     >>> x = np.linspace(0, period, 5000)               # x has shape (5000,)
     >>> k = np.arange(1, len(b) + 1).reshape((-1, 1))  # k has shape (len(b), 1)
-    >>> c = np.sin((2*k - m % 2) * (np.pi/180) * x)    # c has shape (len(b), 5000)
+    >>> c = np.sin((2*k - m % 2) * x)    # c has shape (len(b), 5000)
     >>> y = b @ c                                      # y has shape (5000,)
 
     Plot the approximation, along with the function computed directly by
-    ``mathieu_sem(m, q, x)``.
+    ``mathieu_se(m, q, x)``.
 
     >>> plt.plot(x, y, 'k--', label="Fourier sum")
-    >>> se, _sce = mathieu_sem(m, q, x)
-    >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_sem")
+    >>> se, _dse = mathieu_se(m, q, x)
+    >>> plt.plot(x, se, alpha=0.35, linewidth=3.5, label="mathieu_se")
+    >>> plt.xticks(
+    ...     [0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
+    ...     [r"$0$", r"$\pi/2$", r"$\pi$", r"$3\pi/2$", r"$2\pi$"]
+    ... )
     >>> plt.grid(True)
     >>> plt.title(f'Mathieu Function $\\rm{{se_{m}}}(x, {q})$')
-    >>> plt.xlabel('x [degrees]')
+    >>> plt.xlabel('x [radians]')
     >>> plt.legend(shadow=True, loc='upper left', bbox_to_anchor=(1, 1))
     >>> plt.tight_layout()
     >>> plt.show()
@@ -1905,6 +1905,7 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
+@xp_capabilities(out_of_scope=True, reason="slated for deprecation.")
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
 
@@ -2105,6 +2106,7 @@ _BERNOULLI_EVEN = [1.0,
                    -7.950212504588525e+302,
                    1.3352784187354634e+306]
 
+@xp_capabilities(out_of_scope=True)
 def bernoulli(n):
     """Bernoulli numbers ``B_0`` through ``B_n`` (inclusive).
 
@@ -2160,6 +2162,7 @@ def bernoulli(n):
     return res
 
 
+@xp_capabilities(out_of_scope=True)
 def euler(n):
     """Euler numbers E(0), E(1), ..., E(n).
 
@@ -2212,6 +2215,7 @@ def euler(n):
     return _specfun.eulerb(n1)[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="slated for deprecation.")
 def lqn(n, z):
     """Legendre functions of the second kind.
 
@@ -2296,6 +2300,7 @@ def lqn(n, z):
     return qn[:(n+1)], qd[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def ai_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Ai and its derivative.
@@ -2347,6 +2352,7 @@ def ai_zeros(nt):
     return _specfun.airyzo(nt, kf)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def bi_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Bi and its derivative.
@@ -2398,6 +2404,7 @@ def bi_zeros(nt):
     return _specfun.airyzo(nt, kf)
 
 
+@xp_capabilities(out_of_scope=True, reason="does not accept numpy arrays")
 def lmbda(v, x):
     r"""Jahnke-Emden Lambda function, Lambdav(x).
 
@@ -2448,6 +2455,7 @@ def lmbda(v, x):
     return vl[:(n+1)], dl[:(n+1)]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbdv_seq(v, x):
     """Parabolic cylinder functions Dv(x) and derivatives.
 
@@ -2485,6 +2493,7 @@ def pbdv_seq(v, x):
     return dv[:n1+1], dp[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbvv_seq(v, x):
     """Parabolic cylinder functions Vv(x) and derivatives.
 
@@ -2522,6 +2531,7 @@ def pbvv_seq(v, x):
     return dv[:n1+1], dp[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def pbdn_seq(n, z):
     """Parabolic cylinder functions Dn(z) and derivatives.
 
@@ -2558,6 +2568,7 @@ def pbdn_seq(n, z):
     return cpb[:n1+1], cpd[:n1+1]
 
 
+@xp_capabilities(out_of_scope=True)
 def ber_zeros(nt):
     """Compute nt zeros of the Kelvin function ber.
 
@@ -2587,6 +2598,7 @@ def ber_zeros(nt):
     return _specfun.klvnzo(nt, 1)
 
 
+@xp_capabilities(out_of_scope=True)
 def bei_zeros(nt):
     """Compute nt zeros of the Kelvin function bei.
 
@@ -2610,12 +2622,20 @@ def bei_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute the first 5 zeros of the Kelvin function bei.
+
+    >>> from scipy import special
+    >>> special.bei_zeros(5)
+    array([ 5.02622395,  9.4554063 , 13.89348785, 18.33398346, 22.77543929])
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return _specfun.klvnzo(nt, 2)
 
 
+@xp_capabilities(out_of_scope=True)
 def ker_zeros(nt):
     """Compute nt zeros of the Kelvin function ker.
 
@@ -2645,6 +2665,7 @@ def ker_zeros(nt):
     return _specfun.klvnzo(nt, 3)
 
 
+@xp_capabilities(out_of_scope=True)
 def kei_zeros(nt):
     """Compute nt zeros of the Kelvin function kei.
 
@@ -2674,6 +2695,7 @@ def kei_zeros(nt):
     return _specfun.klvnzo(nt, 4)
 
 
+@xp_capabilities(out_of_scope=True)
 def berp_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function ber.
 
@@ -2712,6 +2734,7 @@ def berp_zeros(nt):
     return _specfun.klvnzo(nt, 5)
 
 
+@xp_capabilities(out_of_scope=True)
 def beip_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function bei.
 
@@ -2741,6 +2764,7 @@ def beip_zeros(nt):
     return _specfun.klvnzo(nt, 6)
 
 
+@xp_capabilities(out_of_scope=True)
 def kerp_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function ker.
 
@@ -2770,6 +2794,7 @@ def kerp_zeros(nt):
     return _specfun.klvnzo(nt, 7)
 
 
+@xp_capabilities(out_of_scope=True)
 def keip_zeros(nt):
     """Compute nt zeros of the derivative of the Kelvin function kei.
 
@@ -2799,6 +2824,7 @@ def keip_zeros(nt):
     return _specfun.klvnzo(nt, 8)
 
 
+@xp_capabilities(out_of_scope=True)
 def kelvin_zeros(nt):
     """Compute `nt` zeros of all Kelvin functions.
 
@@ -2832,6 +2858,7 @@ def kelvin_zeros(nt):
             _specfun.klvnzo(nt, 8))
 
 
+@xp_capabilities(out_of_scope=True)
 def pro_cv_seq(m, n, c):
     """Characteristic values for prolate spheroidal wave functions.
 
@@ -2868,6 +2895,7 @@ def pro_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, 1)[1][:maxL]
 
 
+@xp_capabilities(out_of_scope=True)
 def obl_cv_seq(m, n, c):
     """Characteristic values for oblate spheroidal wave functions.
 
@@ -2904,6 +2932,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
+@xp_capabilities(out_of_scope=True)
 def comb(N, k, *, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
@@ -2991,6 +3020,7 @@ def comb(N, k, *, exact=False, repetition=False):
         return vals
 
 
+@xp_capabilities(out_of_scope=True)
 def perm(N, k, exact=False):
     """Permutations of N things taken k at a time, i.e., k-permutations of N.
 
@@ -3365,6 +3395,7 @@ def _factorialx_wrapper(fname, n, k, exact, extend):
     return _factorialx_array_approx(n, k=k, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorial(n, exact=False, extend="zero"):
     """
     The factorial of a number or array of numbers.
@@ -3422,6 +3453,7 @@ def factorial(n, exact=False, extend="zero"):
     return _factorialx_wrapper("factorial", n, k=1, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorial2(n, exact=False, extend="zero"):
     """
     Double factorial.
@@ -3479,6 +3511,7 @@ def factorial2(n, exact=False, extend="zero"):
     return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def factorialk(n, k, exact=False, extend="zero"):
     """
     Multifactorial of n of order k, n(!!...!).
@@ -3564,6 +3597,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
 
+@xp_capabilities(out_of_scope=True)
 def stirling2(N, K, *, exact=False):
     r"""Generate Stirling number(s) of the second kind.
 
@@ -3700,6 +3734,15 @@ def stirling2(N, K, *, exact=False):
     return output
 
 
+zeta_extra_note = (
+    """Currently, only NumPy supports ``q = None`` and evaluation of the
+    Riemann Zeta (``q = 1.0`` or ``q = None``) function off of the real line.
+
+    """
+)
+
+
+@xp_capabilities(extra_note=zeta_extra_note)
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -3776,9 +3819,16 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return _ufuncs._riemann_zeta(x, out)
-    else:
-        return _ufuncs._zeta(x, q, out)
+        if out is None:
+            # Need to avoid forwarding ``out`` since backend may be
+            # JAX which doesn't support ``out``.
+            return _riemann_zeta(x)
+        else:
+            return _riemann_zeta(x, out)
+    elif out is None:
+        # as above, avoid forwarding ``out`` to support JAX.
+        return _zeta(x, q)
+    return _zeta(x, q, out)
 
 
 @xp_capabilities()

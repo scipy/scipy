@@ -924,7 +924,7 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes, angles = _promote(axes, angles, xp=xp)
-        cython_compatible = axes.ndim < 3 and angles.ndim < 2  # type:ignore[union-attr]
+        cython_compatible = axes.ndim < 3 and angles.ndim < 3  # type:ignore[union-attr]
         backend = select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)

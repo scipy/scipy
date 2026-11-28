@@ -906,13 +906,8 @@ from .blas import (
     find_best_blas_type as find_best_lapack_type   # to appease the name test
 )
 
-from scipy.__config__ import CONFIG
+from scipy._lib._util import HAS_LP64, HAS_ILP64
 
-# If `_fblas` was built, it means the Cython BLAS ABI is LP64, and we're then also
-# keeping `linalg.blas` as LP64.
-HAS_LP64 = not bool(CONFIG['Build Dependencies']['blas']['cython blas ilp64'])
-HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
-del CONFIG
 
 if HAS_LP64:
     from scipy.linalg import _flapack
@@ -1167,13 +1162,41 @@ def _ensure_dtype_cdsz(*arrays):
         dtype = np.complex64 if complex else np.float32
     elif np.finfo(dtype).bits >= 64:
         dtype = np.complex128 if complex else np.float64
-    return (array.astype(dtype, copy=False) for array in arrays)
+    # .char to tell 'g' from 'd' (and 'G' from 'D') where long double is double: there
+    # astype(copy=False) returns the long double array itself, which is not 'd'
+    dtype = np.dtype(dtype)
+    return (array.astype(dtype, copy=array.dtype.char != dtype.char)
+            for array in arrays)
 
 
 def _ensure_aligned_and_native(a, overwrite_a):
-    """Make sure an input array is aligned and not byteswapped, copy otherwise.
+    """Make sure an input array is aligned and in native byte order, copy otherwise.
+
+    A read-only array is never overwritten.
     """
-    if not (a.flags['ALIGNED'] and a.dtype.byteorder == '='):
+    if not (a.flags['ALIGNED'] and a.dtype.isnative):
         overwrite_a = True
-        a = a.copy()
+        # astype, unlike copy, also converts the byte order. A 2-D copy is F-ordered,
+        # so that the compiled code can work on it in place.
+        a = a.astype(a.dtype.newbyteorder('='), order='F' if a.ndim == 2 else 'C')
+    elif overwrite_a and not a.flags['WRITEABLE']:
+        # only read when needed: for np.broadcast_arrays views it warns
+        overwrite_a = False
     return a, overwrite_a
+
+
+def _broadcast_batch(a, b):
+    """Broadcast the batch dimensions of `a` and `b`, all but the last two.
+
+    An array that already has the full batch shape is returned unchanged rather than
+    passed through np.broadcast_to, because broadcast_to always returns a read-only
+    view, even when the shape stays the same. Wrapping the caller's array in such a
+    view would hide whether it is writeable, and a result written into it (with
+    overwrite_a or overwrite_b) would reach the caller as a read-only array.
+    """
+    batch_shape = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+    if a.shape[:-2] != batch_shape:
+        a = np.broadcast_to(a, batch_shape + a.shape[-2:])
+    if b.shape[:-2] != batch_shape:
+        b = np.broadcast_to(b, batch_shape + b.shape[-2:])
+    return a, b

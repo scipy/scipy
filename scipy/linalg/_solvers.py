@@ -106,7 +106,9 @@ def solve_sylvester(a, b, q):
                            'Sylvester equation solver (TRSYL)')
     y, scale, info = trsyl(r, s, f, tranb='C')
 
-    y = scale*y
+    # TRSYL solves op(R)*Y + Y*op(S) = scale*F with scale <= 1 chosen to
+    # avoid overflow, so the solution of the alternative Sylvester equation is Y/scale.
+    y /= scale
 
     if info < 0:
         raise LinAlgError(f"Illegal value encountered in the {-info} term")
@@ -210,7 +212,9 @@ def solve_continuous_lyapunov(a, q):
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
                       RuntimeWarning, stacklevel=2)
-    y *= scale
+    # TRSYL solves op(A)*Y + Y*op(B) = scale*C with scale <= 1 chosen to
+    # avoid overflow, so the solution of the original equation is Y/scale.
+    y /= scale
 
     return u.dot(y).dot(u.conj().T)
 
@@ -509,6 +513,9 @@ def _solve_continuous_are(a, b, q, r, e, s, balanced):
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
+            # The stable basis below belongs to the scaled pencil, so use its E
+            if e is not None:
+                e = J[:m, :m].copy()
 
     # Deflate the pencil to 2m x 2m ala Ref.1, eq.(55)
     q, r = qr(H[:, -n:])
@@ -726,6 +733,9 @@ def _solve_discrete_are(a, b, q, r, e, s, balanced):
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
+            # The stable basis below belongs to the scaled pencil, so use its E
+            if e is not None:
+                e = J[:m, :m].copy()
 
     # Deflate the pencil by the R column ala Ref.1
     q_of_qr, _ = qr(H[:, -n:])

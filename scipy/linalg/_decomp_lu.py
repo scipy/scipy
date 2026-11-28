@@ -5,11 +5,13 @@ from warnings import warn
 from numpy import asarray, asarray_chkfinite
 import numpy as np
 
-from scipy._lib._util import _apply_over_batch, _deprecate_dtypes
+from scipy._lib._util import _apply_over_batch, _deprecate_dtypes, HAS_ILP64
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
-from .lapack import get_lapack_funcs, _normalize_lapack_dtype, HAS_ILP64
+from .lapack import (
+    get_lapack_funcs, _normalize_lapack_dtype, _ensure_aligned_and_native
+)
 from ._batched_linalg import _lu as _linalg_lu
 
 
@@ -331,6 +333,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+    a1, overwrite_a = _ensure_aligned_and_native(a1, overwrite_a)
 
     *nd, m, n = a1.shape
     k = min(m, n)

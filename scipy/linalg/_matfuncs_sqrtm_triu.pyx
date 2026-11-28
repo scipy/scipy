@@ -1,11 +1,12 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from ._matfuncs_sqrtm import SqrtmError
 
-from numpy cimport complex128_t, float64_t, intp_t
+from numpy cimport float32_t, float64_t, complex64_t, complex128_t, intp_t
 
 
 cdef fused floating:
+    float32_t
     float64_t
+    complex64_t
     complex128_t
 
 
@@ -29,4 +30,6 @@ def within_block_loop(floating[:,::1] R, const floating[:,::1] T, start_stop_pai
                 elif denom == 0 and num == 0:
                     R[i, j] = 0
                 else:
+                    # local import to avoid a circular import at module load
+                    from ._matfuncs_sqrtm import SqrtmError
                     raise SqrtmError('failed to find the matrix square root')

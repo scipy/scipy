@@ -655,8 +655,8 @@ class dlti(LinearTimeInvariant):
             calculated.
         n : int, optional
             Number of frequency points to compute if `w` is not given. The `n`
-            frequencies are logarithmically spaced in an interval chosen to
-            include the influence of the poles and zeros of the system.
+            frequencies are linearly spaced from 0 up to, but not including,
+            the Nyquist frequency.
             Defaults to 100.
 
         Returns
@@ -709,8 +709,9 @@ class dlti(LinearTimeInvariant):
             set will be calculated.
         n : int, optional
             Number of frequency points to compute if `w` is not given. The `n`
-            frequencies are logarithmically spaced in an interval chosen to
-            include the influence of the poles and zeros of the system.
+            frequencies are linearly spaced from 0 up to, but not including,
+            the Nyquist frequency, or up to 2*pi radians/sample if `whole` is
+            True.
         whole : bool, optional
             Normally, if `w` is not given, frequencies are computed from 0 to the
             Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
@@ -870,19 +871,6 @@ class TransferFunction(LinearTimeInvariant):
     @den.setter
     def den(self, den):
         self._den = atleast_1d(den)
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `TransferFunction` object
-
-        Parameters
-        ----------
-        system : `TransferFunction`
-            The `StateSpace` system that is to be copied
-
-        """
-        self.num = system.num
-        self.den = system.den
 
     def to_tf(self):
         """
@@ -1279,20 +1267,6 @@ class ZerosPolesGain(LinearTimeInvariant):
     @gain.setter
     def gain(self, gain):
         self._gain = gain
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `ZerosPolesGain` system.
-
-        Parameters
-        ----------
-        system : instance of `ZerosPolesGain`
-            The zeros, poles gain system that is to be copied
-
-        """
-        self.poles = system.poles
-        self.zeros = system.zeros
-        self.gain = system.gain
 
     def to_tf(self):
         """
@@ -1843,21 +1817,6 @@ class StateSpace(LinearTimeInvariant):
     @D.setter
     def D(self, D):
         self._D = np.atleast_2d(D) if D is not None else None
-
-    def _copy(self, system):
-        """
-        Copy the parameters of another `StateSpace` system.
-
-        Parameters
-        ----------
-        system : instance of `StateSpace`
-            The state-space system that is to be copied
-
-        """
-        self.A = system.A
-        self.B = system.B
-        self.C = system.C
-        self.D = system.D
 
     def to_tf(self, **kwargs):
         """
@@ -3675,8 +3634,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in an interval chosen to
-        include the influence of the poles and zeros of the system.
+        frequencies are linearly spaced from 0 up to, but not including,
+        the Nyquist frequency, or up to 2*pi radians/sample if `whole` is
+        True.
     whole : bool, optional
         Normally, if 'w' is not given, frequencies are computed from 0 to the
         Nyquist frequency, pi radians/sample (upper-half of unit-circle). If
@@ -3780,8 +3740,8 @@ def dbode(system, w=None, n=100):
         value in this array. If not given, a reasonable set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in an interval chosen to
-        include the influence of the poles and zeros of the system.
+        frequencies are linearly spaced from 0 up to, but not including,
+        the Nyquist frequency.
 
     Returns
     -------

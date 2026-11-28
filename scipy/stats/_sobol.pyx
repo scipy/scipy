@@ -335,13 +335,26 @@ cdef void draw(
         num_gen_loc += 1
 
 
+def _fast_forward(
+    n,
+    num_gen,
+    const int dim,
+    const uint_32_64[:, ::1] sv,
+    uint_32_64[::1] quasi
+):
+    # necessary wrapper to guide Cython for n, num_gen
+    cdef uint_32_64 n_ = n
+    cdef uint_32_64 num_gen_ = num_gen
+    fast_forward(n_, num_gen_, dim, sv, quasi)
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fast_forward(const uint_32_64 n,
-                         const uint_32_64 num_gen,
-                         const int dim,
-                         const uint_32_64[:, ::1] sv,
-                         uint_32_64[::1] quasi) noexcept nogil:
+cdef void fast_forward(const uint_32_64 n,
+                       const uint_32_64 num_gen,
+                       const int dim,
+                       const uint_32_64[:, ::1] sv,
+                       uint_32_64[::1] quasi) noexcept nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
     cdef uint_32_64 _i

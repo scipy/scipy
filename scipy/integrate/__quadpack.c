@@ -2165,7 +2165,7 @@ dqawfe(double(*fcn)(double* x), const double a, const double omega, const int in
         // Integration by dqagie if omega is zero.
         if (integr == 1)
         {
-            dqagie(fcn, 0.0, 1.0, epsabs, 0.0, limit, result, abserr, neval, ier,
+            dqagie(fcn, a, 1, epsabs, 0.0, limit, result, abserr, neval, ier,
                    alist, blist, rlist, elist, iord, &last);
         }
         rslst[0] = *result;

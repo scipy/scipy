@@ -573,8 +573,9 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    weights : array
-        1-D sequence of numbers.
+    weights : array_like
+        The 1-D correlation kernel to correlate with each line of `input`
+        along `axis`.
     %(axis)s
     %(output)s
     %(mode_reflect)s
@@ -633,8 +634,9 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    weights : ndarray
-        1-D sequence of numbers.
+    weights : array_like
+        The 1-D convolution kernel to convolve with each line of `input`
+        along `axis`.
     %(axis)s
     %(output)s
     %(mode_reflect)s
@@ -1330,8 +1332,9 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     Parameters
     ----------
     %(input)s
-    weights : ndarray
-        array of weights, same number of dimensions as input
+    weights : array_like
+        The correlation kernel. Must have the same number of dimensions as
+        `input`, unless `axes` is specified.
     %(output)s
     %(mode_reflect)s
     %(cval)s
@@ -1339,9 +1342,9 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
         `input` is filtered along the specified axes. When `axes` is
-        specified, any tuples used for `mode` or `origin` must match the length
-        of `axes`. The ith entry in any of these tuples corresponds to the ith
-        entry in `axes`.
+        specified, the dimensionality of `weights` and the length of any
+        tuple used for `origin` must match the length of `axes`. The ith
+        entry in `origin` corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1401,7 +1404,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     ----------
     %(input)s
     weights : array_like
-        Array of weights, same number of dimensions as input
+        The convolution kernel. Must have the same number of dimensions as
+        `input`, unless `axes` is specified.
     %(output)s
     %(mode_reflect)s
     cval : scalar, optional
@@ -1417,9 +1421,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
         `input` is filtered along the specified axes. When `axes` is
-        specified, any tuples used for `mode` or `origin` must match the length
-        of `axes`. The ith entry in any of these tuples corresponds to the ith
-        entry in `axes`.
+        specified, the dimensionality of `weights` and the length of any
+        tuple used for `origin` must match the length of `axes`. The ith
+        entry in `origin` corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -2010,9 +2014,12 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # if algorithmic fixes are found.
         lim2 = input.size - ((footprint.size - 1) // 2 - origin)
         if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
-            if input.dtype in (np.int64, np.float64, np.float32):
+            if (
+                (input.dtype in (np.int64, np.float64, np.float32))
+                and (input.dtype.char != 'q')   # np.longlong pretending to be int64
+            ):
                 x = input
-                x_out = output
+                x_out = output if output.dtype == x.dtype else np.empty_like(x)
             elif input.dtype == np.float16:
                 x = input.astype('float32')
                 x_out = np.empty(x.shape, dtype='float32')
@@ -2028,7 +2035,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             cval = x.dtype.type(cval)
             _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
                                         origin)
-            if input.dtype not in (np.int64, np.float64, np.float32):
+            if x_out is not output:
                 np.copyto(output, x_out, casting='unsafe')
         else:
             _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)

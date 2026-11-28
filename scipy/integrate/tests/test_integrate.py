@@ -2,6 +2,8 @@
 """
 Tests for numerical integration.
 """
+import sys
+
 import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
@@ -13,6 +15,30 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 from scipy.linalg import expm
+
+
+def test_lsoda_does_not_leak_work_arrays():
+    # gh-26373
+    if not hasattr(sys, 'getrefcount'):
+        pytest.skip('reference counts are unavailable')
+
+    def f(t, y):
+        return -y
+
+    solver = ode(f).set_integrator('lsoda')
+    solver.set_initial_value([1.0], 0.0)
+    solver.integrate(1.0)
+
+    rwork = solver._integrator.rwork
+    iwork = solver._integrator.iwork
+    rwork_refcount = sys.getrefcount(rwork)
+    iwork_refcount = sys.getrefcount(iwork)
+
+    for _ in range(3):
+        solver.integrate(solver.t + 1.0)
+
+    assert sys.getrefcount(rwork) == rwork_refcount
+    assert sys.getrefcount(iwork) == iwork_refcount
 
 #------------------------------------------------------------------------------
 # Test ODE integrators
@@ -153,6 +179,18 @@ class TestOde(TestODEClass):
         res = r.integrate(1.0)
         assert_(r.successful())
         assert_allclose(res, [np.e], rtol=1e-5)
+
+    @pytest.mark.parametrize('integrator', ['dopri5', 'dop853', 'vode', 'lsoda'])
+    def test_integrate_keeps_previous_result(self, integrator):
+        # The array returned by integrate() must not be changed by the
+        # next integrate() call (gh-26794).
+        r = ode(lambda t, y: -y).set_integrator(integrator)
+        r.set_initial_value([1.0], 0.0)
+        y1 = r.integrate(1.0)
+        y1_before = y1.copy()
+        y2 = r.integrate(2.0)
+        assert_array_equal(y1, y1_before)
+        assert not np.shares_memory(y1, y2)
 
     def test_concurrent_fail(self):
         # Test concurrent usage behavior for different solvers

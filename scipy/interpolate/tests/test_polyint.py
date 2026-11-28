@@ -541,7 +541,7 @@ class TestBarycentric:
         _run_concurrent_barrier(10, worker_fn, P)
 
 
-@make_xp_test_case(PchipInterpolator)
+@make_xp_test_case(PchipInterpolator, pchip_interpolate)
 class TestPCHIP:
     def _make_random(self, xp, npts=20):
         rng = np.random.RandomState(1234)
