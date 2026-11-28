@@ -764,10 +764,12 @@ class _spbase(SparseABC):
         elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
-                # eq and ne return True or False instead of an array when the shapes
-                # don't match. Numpy doesn't do this. Is this what we want?
+                # TODO: in SciPy 2.2 remove this if clause to change errmsg
                 if op in (operator.eq, operator.ne):
-                    return op is operator.ne
+                    raise ValueError(
+                        "inconsistent shape no longer returns False.\n"
+                        "Use self.shape == other.shape to get bool result."
+                    )
                 raise ValueError("inconsistent shape")
 
             if self.ndim < 3:
