@@ -3222,6 +3222,24 @@ class TestDecimate:
     def test_zero_phase_IIR(self, xp):
         self._test_phaseshift(method='iir', zero_phase=True)
 
+    @skip_xp_backends(np_only=True, reason="test code is NumPy specific")
+    def test_real_IIR_dlti_uses_sos(self, xp):
+        # gh-26832: complex poles do not mean complex coefficients
+        x = np.random.default_rng(1234).standard_normal(1024)
+        z, p, k = signal.cheby1(8, 0.05, 0.8 / 20, output='zpk')
+        y = signal.decimate(x, 20, ftype=signal.dlti(z, p, k), zero_phase=False)
+        expected = signal.sosfilt(signal.zpk2sos(z, p, k), x)[::20]
+        xp_assert_close(y, expected, rtol=1e-12)
+
+    @skip_xp_backends(np_only=True, reason="test code is NumPy specific")
+    def test_complex_dtype_IIR_dlti_uses_lfilter(self, xp):
+        # complex dtype with zero imaginary parts can't be converted to SOS
+        x = np.random.default_rng(1234).standard_normal(256)
+        b, a = signal.cheby1(8, 0.05, 0.2)
+        system = signal.dlti(b.astype(complex), a.astype(complex))
+        y = signal.decimate(x, 2, ftype=system, zero_phase=False)
+        xp_assert_close(y, signal.lfilter(system.num, system.den, x)[::2])
+
     def _test_phaseshift(self, method, zero_phase):
         # TODO. Look into making tests using this work for CuPy.
         rate = 120
