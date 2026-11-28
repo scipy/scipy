@@ -257,7 +257,10 @@ def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
     """Polynomial fit equivalent to WH for lamb -> infinity."""
     n = len(y)
     x_range = np.arange(n)
-    poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
+    # WH weights multiply the squared residuals, while `Polynomial.fit` applies `w`
+    # to the unsquared residuals.
+    w = None if weights is None else np.sqrt(weights)
+    poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=w)
     if calc_logdet:
         # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
         # (with determinant understood as product of non-zero eigenvalues).

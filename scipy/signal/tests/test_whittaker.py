@@ -281,6 +281,25 @@ def test_whittaker_limit_infinity_penalty(weights, order):
     assert_allclose(wh.x, poly(x_poly), rtol=1e-10)
 
 
+def test_whittaker_limit_infinity_penalty_weights():
+    """Test whittaker with non-uniform weights for penalty lamb close to infinity."""
+    rng = np.random.default_rng(42)
+    n = 30
+    y = np.sin(2*np.pi * np.linspace(0, 1, n)) + 0.1 * rng.standard_normal(n)
+    w = rng.uniform(0.5, 3, size=n)
+
+    # The limit is the linear least squares fit minimizing sum(w * (y - poly)**2).
+    # Note that Polynomial.fit applies its weights to the unsquared residuals.
+    x_poly = np.arange(n)
+    poly = np.polynomial.Polynomial.fit(x=x_poly, y=y, deg=1, w=np.sqrt(w))
+    wh = whittaker_henderson(y, lamb=1e10, order=2, weights=w)
+    assert_allclose(wh.x, poly(x_poly), atol=1e-5)
+
+    # Very large lambda uses the separate code path of a direct polynomial fit.
+    wh = whittaker_henderson(y, lamb=1e20, order=2, weights=w)
+    assert_allclose(wh.x, poly(x_poly), rtol=1e-10)
+
+
 def test_whittaker_unpenalized():
     """Test whittaker for lamb=0."""
     n = 10
