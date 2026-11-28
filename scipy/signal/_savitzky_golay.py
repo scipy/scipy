@@ -234,6 +234,7 @@ def _fit_edge(x, window_start, window_stop, interp_start, interp_stop,
     # Get a view of the data to be replaced by values.
     y_slice = [slice(None)] * y.ndim
     y_slice[axis] = slice(interp_start, interp_stop)
+    values = xp.astype(values, y.dtype)
     y = xpx.at(y, tuple(y_slice)).set(values)
 
     return y
@@ -267,9 +268,14 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     Parameters
     ----------
     x : array_like
-        The data to be filtered. If `x` is not a single or double precision
-        floating point array, it will be converted to type ``numpy.float64``
-        before filtering.
+        The data to be filtered. Single and double precision floating point
+        arrays, real or complex, are filtered as they are. Other complex
+        arrays are converted to ``numpy.complex128``, and any other input to
+        ``numpy.float64``, before filtering.
+
+        .. versionchanged:: 2.0.0
+
+            Complex input is now supported.
     window_length : int
         The length of the filter window (i.e., the number of coefficients).
         If `mode` is 'interp', `window_length` must be less than or equal
@@ -365,8 +371,12 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     xp = array_namespace(x)
     x = xp.asarray(x)
-    # Ensure that x is either single or double precision floating point.
-    if x.dtype != xp.float64 and x.dtype != xp.float32:
+    # Ensure that x is either single or double precision floating point
+    # real or complex.
+    if xp.isdtype(x.dtype, "complex floating"):
+        if x.dtype not in (xp.complex64, xp.complex128):
+            x = xp.astype(x, xp.complex128)
+    elif x.dtype not in (xp.float32, xp.float64):
         x = xp.astype(x, xp.float64)
 
     coeffs = savgol_coeffs(
