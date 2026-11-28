@@ -14,7 +14,7 @@ from .lapack import (
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
-from ._solve_toeplitz import levinson
+from ._solve_toeplitz import levinson, levinson_inverse_columns
 from ._batched_linalg import _det as _linalg_det
 from . import _batched_linalg
 
@@ -727,6 +727,12 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     The solution is computed using Levinson-Durbin recursion, which is faster
     than generic least-squares methods, but can be less numerically stable.
 
+    When `b` has many columns, the recursion is run once to compute the
+    first and last columns of the inverse of the Toeplitz matrix, from which
+    the rows of the inverse are generated (Trench's algorithm) and multiplied
+    with `b` by blocks. The columns of `b` are then handled by matrix-matrix
+    products instead of one Levinson-Durbin recursion each.
+
     Examples
     --------
     Solve the Toeplitz system ``T @ x = b``, where::
@@ -782,12 +788,58 @@ def _solve_toeplitz(c, r, b, check_finite):
 
     if b.ndim == 1:
         x, _ = levinson(vals, np.ascontiguousarray(b))
-    else:
+    elif b.shape[1] < 24 and (b.shape[1] < 8 or b.shape[0] < 500):
+        # Below these sizes one Levinson recursion per column is faster than
+        # generating the rows of the inverse (measured crossover).
         x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
                              for i in range(b.shape[1])])
         x = x.reshape(*b.shape)
+    else:
+        x = _solve_toeplitz_multiple_rhs(vals, b)
 
     return x
+
+
+def _solve_toeplitz_multiple_rhs(vals, b, block_size=256):
+    # Solving each column of `b` with Levinson recursion costs O(n**2) scalar
+    # operations per column. Instead, compute the first and last columns x and
+    # y of the inverse with one Levinson-type recursion [1], generate the rows
+    # of the inverse from them [2]:
+    #
+    #     inv[i+1, j+1] = inv[i, j] + (x[i+1] y[n-2-j] - y[i] x[n-1-j]) / x[0]
+    #
+    # which is the Gohberg-Semencul formula written as a recurrence, and
+    # multiply them with `b` block by block, so that the work on the columns of
+    # `b` is done by matrix-matrix products with O(block_size * n) memory.
+    #
+    # [1] W. F. Trench, "An algorithm for the inversion of finite Toeplitz
+    #     matrices", J. SIAM, 12(3), pp. 515-522, 1964.
+    # [2] I. Gohberg and A. Semencul, "On the inversion of finite Toeplitz
+    #     matrices and their continuous analogs", Mat. Issled., 7(2),
+    #     pp. 201-223, 1972.
+    n = b.shape[0]
+    x, y = levinson_inverse_columns(vals)
+    yr = y[n-2::-1] / x[0]
+    xr = x[n-1:0:-1] / x[0]
+
+    out = np.empty(b.shape, dtype=b.dtype)
+    rows = np.empty((min(block_size, n), n), dtype=x.dtype)
+    prev = y[::-1]  # first row of the inverse
+    for start in range(0, n, block_size):
+        stop = min(start + block_size, n)
+        for i in range(start, stop):
+            row = rows[i - start]
+            if i == 0:
+                row[:] = prev
+            else:
+                row[0] = x[i]
+                np.multiply(x[i], yr, out=row[1:])
+                row[1:] -= y[i-1] * xr
+                row[1:] += prev[:-1]
+            prev = row
+        out[start:stop] = rows[:stop - start] @ b
+        prev = prev.copy()
+    return out
 
 
 def _get_axis_len(aname, a, axis):
