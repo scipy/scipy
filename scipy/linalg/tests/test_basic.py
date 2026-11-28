@@ -14,22 +14,22 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
-                          solve_banded, solveh_banded, solve_triangular,
+from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm, matrix_norm,
+                          vector_norm, solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, qr, lu, LinAlgWarning, svd, eig, eigh,
-                          cholesky, expm, sqrtm, bandwidth)
+                          matrix_balance, qr, lu, LinAlgWarning, svd, svdvals, eig,
+                          eigh, cholesky, expm, sqrtm, bandwidth)
 from scipy.linalg import _batched_linalg, _internal_matfuncs
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy._lib._testutils import check_free_memory, IS_MUSL, IS_WASM
 from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
+_test_dtypes = [np.int64, np.float32, np.float64, np.complex64, np.complex128]
 
 parametrize_overwrite_arg = pytest.mark.parametrize(
     "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}],
@@ -2804,6 +2804,77 @@ class TestVectorNorms:
         del x
         assert_allclose(res, 1.0)
 
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("n", [0, 5])
+    @pytest.mark.parametrize("ord", [0, 1, -1, 2, -2, 5.43, -4.87, np.inf, -np.inf])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_shape_dtype(self, dtype, n, ord, keepdims):
+        rng = np.random.default_rng(seed=123456789)
+        res_dtype = np.finfo(dtype).dtype if dtype != np.int64 else np.dtype("float64")
+        dtype_zero_norm = np.int64 if HAS_ILP64 else np.int32
+
+        if dtype != np.int64:
+            a = rng.normal(size=(n, n))
+            if np.isdtype(dtype, "complex floating"):
+                a = a + 1j * rng.normal(size=(n, n))
+        else:
+            a = rng.integers(-100, 100, size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = vector_norm(a, ord=ord, keepdims=keepdims)
+
+        if n == 0:
+            if ord != 0:
+                ref = (
+                    np.zeros((1, 1), dtype=res_dtype) if keepdims
+                    else res_dtype.type(0.0)
+                )
+            else:
+                ref = np.zeros((1, 1), dtype=dtype_zero_norm) if keepdims else (
+                    dtype_zero_norm(0)
+                )
+        else:
+            if ord == 0:
+                ref = np.sum(a != 0, keepdims=keepdims).astype(dtype_zero_norm)
+            elif ord == np.inf:
+                ref = np.max(np.abs(a), keepdims=keepdims, initial=0)
+            elif ord == -np.inf:
+                ref = np.min(
+                    np.abs(a),
+                    initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+                    keepdims=keepdims,
+                ) if n != 0 else res_dtype.type(0.0)
+            else:
+                if dtype == np.int64:
+                    a = np.astype(a, np.float64)
+                ref = np.pow(np.sum(np.pow(np.abs(a), ord), keepdims=keepdims), 1 / ord)
+
+        if dtype == np.int64 and ord != 0:
+            ref = ref.astype(np.float64)
+
+        if ord == 0:
+            xp_assert_equal(res, ref)
+        else:
+            xp_assert_close(res, ref, atol=10*np.finfo(res_dtype).eps)
+
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("n_slices", [0, 3])
+    @pytest.mark.parametrize("axis", [None, 1, (1, 2)])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    def test_axis(self, dtype, n_slices, axis, keepdims):
+        rng = np.random.default_rng(seed=123456789)
+        n = 5
+
+        a = rng.normal(size=(n_slices, n, n))
+        if np.isdtype(dtype, "complex floating"):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = vector_norm(a, keepdims=keepdims, axis=axis)
+        ref = np.sqrt(np.sum(np.abs(a) ** 2, axis=axis, keepdims=keepdims))
+
+        xp_assert_close(res, ref)
+
 
 class TestMatrixNorms:
 
@@ -2861,6 +2932,55 @@ class TestMatrixNorms:
         assert_allclose(norm(a), 0.)
         assert_allclose(norm(a, axis=0), np.zeros((3,)))
         assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
+    @pytest.mark.parametrize("dtype", _test_dtypes)
+    @pytest.mark.parametrize("ord", ["fro", "nuc", 1, -1, 2, -2, np.inf, -np.inf])
+    @pytest.mark.parametrize("keepdims", [True, False])
+    @pytest.mark.parametrize("n", [0, 5])
+    def test_shape_dtype(self, dtype, ord, keepdims, n):
+        rng = np.random.default_rng(seed=123456)
+        res_dtype = np.finfo(dtype).dtype if dtype != np.int64 else np.dtype("float64")
+
+        a = rng.normal(size=(n, n))
+        if np.isdtype(dtype, "complex floating"):
+            a = a + 1j * rng.normal(size=(n, n))
+        a = np.astype(a, dtype)
+
+        res = matrix_norm(a, ord=ord, keepdims=keepdims)
+
+        if ord == "fro":
+            ref = np.sqrt(np.sum(np.abs(a) ** 2))
+        elif ord == "nuc":
+            s = svdvals(a)
+            ref = np.sum(s)
+        elif ord == 1:
+            ref = np.max(np.sum(np.abs(a), axis=0), initial=0)
+        elif ord == -1:
+            ref = np.min(
+                np.sum(np.abs(a), axis=0),
+                initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+            ) if n != 0 else res_dtype.type(0.0)
+        elif ord == 2:
+            s = svdvals(a)
+            ref = np.max(s, initial=0)
+        elif ord == -2:
+            s = svdvals(a)
+            ref = np.min(s, initial=np.inf) if n != 0 else res_dtype.type(0.0)
+        elif ord == np.inf:
+            ref = np.max(np.sum(np.abs(a), axis=1), initial=0)
+        elif ord == -np.inf:
+            ref = np.min(
+                np.sum(np.abs(a), axis=1),
+                initial=np.inf if dtype != np.int64 else np.iinfo(np.int64).max,
+            ) if n != 0 else res_dtype.type(0.0)
+
+        if keepdims:
+            ref = ref.reshape((1, 1))
+
+        if dtype is np.int64:
+            ref = ref.astype(np.float64)
+
+        xp_assert_close(res, ref, atol=10 * np.finfo(res_dtype).eps)
 
 
 class TestOverwrite:
@@ -3206,6 +3326,16 @@ class TestFieldViewStrides:
         ref = lstsq(a, b, lapack_driver=lapack_driver)
         for x, y in zip(res, ref):
             assert_equal(x, y)
+
+    @pytest.mark.parametrize("func", [vector_norm, matrix_norm])
+    @pytest.mark.parametrize("ord", [1, -1, np.inf, -np.inf])
+    def test_norms(self, func, ord):
+        a = self.matrices()
+
+        res = func(self.field_view(a), ord=ord)
+        ref = func(a, ord=ord)
+        assert_equal(res, ref)
+
 
     def test_most_negative_stride(self):
         # NumPy accepts any stride for a dimension of length 1, the most negative

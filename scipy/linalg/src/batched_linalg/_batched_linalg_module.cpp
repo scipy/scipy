@@ -29,6 +29,7 @@
 #include "_linalg_qr.hpp"
 #include "_linalg_solve.hpp"
 #include "_linalg_svd.hpp"
+#include "_linalg_norm.hpp"
 
 
 using namespace sp_linalg;
@@ -40,13 +41,13 @@ convert_vec_status(SliceStatusVec& vec_status);
 
 /*
  * Minimal checks for an input array:
- *   - ndim >= 2
+ *   - ndim >= exp_ndim
  *   - LAPACK-compatible dtype
  *   - aligned, in native byte order
  *
  * Sets an error if any of these is violated (users to bail out immediately).
  */
-int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
+int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func, const npy_intp exp_ndim=2) {
     int typenum = PyArray_TYPE(ap_Am);
     bool dtype_ok = (typenum == NPY_FLOAT32)
                      || (typenum == NPY_FLOAT64)
@@ -65,7 +66,7 @@ int _check_dtype_and_flags(PyArrayObject *ap_Am, const char *func) {
     }
 
     int ndim = PyArray_NDIM(ap_Am);
-    if (ndim < 2) {
+    if (ndim < exp_ndim) {
         PyErr_Format(PyExc_ValueError, "scipy.linalg.%s: Expected at least a 2D array.", func);
         return 0;
     }
@@ -852,6 +853,92 @@ _linalg_cholesky(PyObject* Py_UNUSED(dummy), PyObject* args) {
 }
 
 
+static PyObject*
+_linalg_vector_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_av = NULL;
+    f64 ord = 2;
+
+    if (!PyArg_ParseTuple(args, "O!|d", &PyArray_Type, (PyArrayObject **)&ap_av, &ord)) {
+        return NULL;
+    }
+
+    // Sanity check input
+    if (!_check_dtype_and_flags(ap_av, "vector_norm", 1)) {
+        return NULL;
+    }
+
+    // Allocate return object
+    int typenum = PyArray_TYPE(ap_av);
+    npy_intp ndim = PyArray_NDIM(ap_av);
+    npy_intp *shape = PyArray_DIMS(ap_av);
+
+    OwnedArray ap_res((PyArrayObject *)PyArray_SimpleNew(ndim - 1, shape, real_typenum(typenum)));
+    if (!ap_res) { return NULL; }
+
+    // Heavy lifting
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _vector_norm<T>(ap_av, ap_res.get(), ord);
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "vector_norm", typenum); }
+
+    return Py_BuildValue("N", PyArray_Return(ap_res.release()));
+}
+
+
+static PyObject *
+_linalg_matrix_norm(PyObject* Py_UNUSED(dummy), PyObject* args) {
+    PyArrayObject *ap_Am = NULL;
+    Py_ssize_t ord_index = 0;
+
+    if (!PyArg_ParseTuple(args, "O!|i", &PyArray_Type, (PyArrayObject **)&ap_Am, &ord_index)) {
+        return NULL;
+    }
+
+    // Sanity check input
+    if (!_check_dtype_and_flags(ap_Am, "matrix_norm", 2)) {
+        return NULL;
+    }
+
+    Matrix_norm_ord ord = (Matrix_norm_ord)ord_index;
+    switch (ord) {
+        case Matrix_norm_ord::m_fro:
+        case Matrix_norm_ord::m_nuc:
+        case Matrix_norm_ord::m_one:
+        case Matrix_norm_ord::m_neg_one:
+        case Matrix_norm_ord::m_two:
+        case Matrix_norm_ord::m_neg_two:
+        case Matrix_norm_ord::m_inf:
+        case Matrix_norm_ord::m_neg_inf:
+            break;
+        default:
+            return PyErr_Format(PyExc_ValueError, "scipy.linalg.matrix_norm: unknown order index %zd.", ord_index);
+    }
+
+    // Allocate return object
+    int typenum = PyArray_TYPE(ap_Am);
+    npy_intp ndim = PyArray_NDIM(ap_Am);
+    npy_intp *shape = PyArray_SHAPE(ap_Am);
+
+    OwnedArray ap_res((PyArrayObject *)PyArray_SimpleNew(ndim - 2, shape, real_typenum(typenum)));
+    if (!ap_res) { return NULL; }
+
+    // Heavy lifting
+    BatchStatus status;
+    Py_BEGIN_ALLOW_THREADS
+    status = dispatch_dtype(typenum, [&](auto tag) {
+        using T = decltype(tag);
+        return _matrix_norm<T>(ap_Am, ap_res.get(), ord);
+    });
+    Py_END_ALLOW_THREADS
+    if (status.code != BatchCode::ok) { return set_batch_error(status, "matrix_norm", typenum); }
+
+    return Py_BuildValue("N", PyArray_Return(ap_res.release()));
+}
+
 /*
  * Helper: convert a vector of slice error statuses to list of dicts
  */
@@ -1149,6 +1236,8 @@ static char doc_eig[] = ("eigenvalue solver.");
 static char doc_eigh[] = ("eigenvalue solver for symmetric/hermitian matrices.");
 static char doc_cholesky[] = ("Cholesky factorization.");
 static char doc_qr[] = ("Compute the qr decomposition.");
+static char doc_matrix_norm[] = ("Compute the matrix norm along the two trailing axes.");
+static char doc_vector_norm[] = ("Compute the vector norm along the trailing axis.");
 
 static struct PyMethodDef module_methods[] = {
   {"_bandwidth", _linalg_bandwidth, METH_VARARGS, doc_bandwidth},
@@ -1162,6 +1251,8 @@ static struct PyMethodDef module_methods[] = {
   {"_eigh", _linalg_eigh, METH_VARARGS, doc_eigh},
   {"_cholesky", _linalg_cholesky, METH_VARARGS, doc_cholesky},
   {"_qr", _linalg_qr, METH_VARARGS, doc_qr},
+  {"_matrix_norm", _linalg_matrix_norm, METH_VARARGS, doc_matrix_norm},
+  {"_vector_norm", _linalg_vector_norm, METH_VARARGS, doc_vector_norm},
   {NULL, NULL, 0, NULL}
 };
 
