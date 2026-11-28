@@ -477,6 +477,7 @@ class AAA(_BarycentricRational):
         R = np.repeat(np.mean(f), M)
         ill_conditioned = False
         ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
+        normalized = False
 
         # AAA iteration
         for m in range(max_terms):
@@ -503,6 +504,7 @@ class AAA(_BarycentricRational):
             if rows >= m + 1:
                 # The usual tall-skinny case
                 if not ill_conditioned:
+                    print('Not ill-conditioned yet')
                     _, s, V = scipy.linalg.svd(
                         A[mask, : m + 1], full_matrices=False, check_finite=False,
                     )
@@ -511,16 +513,24 @@ class AAA(_BarycentricRational):
                             ill_conditioned = True
                 if ill_conditioned:
                     col_norm = np.linalg.norm(A[mask, : m + 1], axis=0)
-                    _, s, V = scipy.linalg.svd(
-                        A[mask, : m + 1]/col_norm, full_matrices=False,
-                        check_finite=False,
-                    )
+                    #If column normalization is possible perform SVD on normalized matrix
+                    if not np.any(col_norm == 0):
+                        _, s, V = scipy.linalg.svd(
+                            A[mask, : m + 1]/col_norm, full_matrices=False,
+                            check_finite=False,
+                        )
+                        normalized=True
+                    else:
+                        _, s, V = scipy.linalg.svd(
+                            A[mask, : m + 1], full_matrices=False, check_finite=False,
+                        )
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
                 # Aim for non-sparse weight vector
                 wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
-                if ill_conditioned:
+                if ill_conditioned and normalized:
                     wj /= col_norm
+                    normalized = False
             else:
                 # Fewer rows than columns
                 V = scipy.linalg.null_space(A[mask, : m + 1], check_finite=False)
