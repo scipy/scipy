@@ -1099,12 +1099,8 @@ class TestNdimageFilters:
         output = func(array, weights=weights, axes=axes, origin=origin)
 
         missing_axis = tuple(set(range(3)) - set(axes))[0]
-        # module 'torch' has no attribute 'expand_dims' so use reshape instead
-        #    weights_3d = xp.expand_dims(weights, axis=missing_axis)
-        shape_3d = (
-            weights.shape[:missing_axis] + (1,) + weights.shape[missing_axis:]
-        )
-        weights_3d = xp.reshape(weights, shape_3d)
+        weights_3d = xp.reshape(weights, weights.shape + (1,))
+        weights_3d = xp.moveaxis(weights_3d, (0, 1, 2), axes + (missing_axis,))
         origin_3d = [0, 0, 0]
         for i, ax in enumerate(axes):
             origin_3d[ax] = origin[i]
@@ -1885,10 +1881,54 @@ class TestNdimageFilters:
             return
         output = filter_func(array, footprint=footprint, axes=axes, **kwargs)
 
-        missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
-
-        footprint_3d = xp.expand_dims(footprint, axis=missing_axis)
+        axes = tuple((axes % array.ndim).tolist())
+        missing_axis = tuple(set(range(3)) - set(axes))[0]
+        footprint_3d = xp.reshape(footprint, footprint.shape + (1,))
+        footprint_3d = xp.moveaxis(footprint_3d, (0, 1, 2), axes + (missing_axis,))
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
+        xp_assert_close(output, expected)
+
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
+    @pytest.mark.parametrize(
+        'shape, axes',
+        [((6, 8, 12), (0, 2)), ((6, 8, 12), (2, 0)), ((6, 8, 12), (2, 1)),
+         ((6, 8, 12), (1, 0)), ((8, 12), (0, 1)), ((8, 12), (1, 0))]
+    )
+    @pytest.mark.parametrize(
+        'filter_func, kwargs',
+        [
+            make_xp_pytest_param(ndimage.correlate, {}),
+            make_xp_pytest_param(ndimage.convolve, {}),
+            make_xp_pytest_param(ndimage.minimum_filter, {}),
+            make_xp_pytest_param(ndimage.maximum_filter, {}),
+            make_xp_pytest_param(ndimage.median_filter, {}),
+            make_xp_pytest_param(ndimage.rank_filter, dict(rank=3)),
+            make_xp_pytest_param(ndimage.percentile_filter, dict(percentile=60)),
+            make_xp_pytest_param(ndimage.generic_filter, dict(function=np.amax)),
+        ]
+    )
+    def test_axes_order(self, filter_func, kwargs, shape, axes, xp):
+        rng = np.random.default_rng(22576)
+        array = xp.asarray(rng.random(shape))
+        kernel = np.tri(3, 5, 1)
+        origin = (1, -2)
+        if filter_func in (ndimage.correlate, ndimage.convolve):
+            kernel_name = 'weights'
+        else:
+            kernel_name = 'footprint'
+            kernel = kernel.astype(bool)
+        output = filter_func(array, axes=axes, origin=origin,
+                             **{kernel_name: xp.asarray(kernel)}, **kwargs)
+
+        other_axes = [ax for ax in range(len(shape)) if ax not in axes]
+        kernel_nd = kernel.reshape(kernel.shape + (1,) * len(other_axes))
+        kernel_nd = np.moveaxis(kernel_nd, range(len(shape)),
+                                list(axes) + other_axes)
+        origin_nd = [0] * len(shape)
+        for o, ax in zip(origin, axes):
+            origin_nd[ax] = o
+        expected = filter_func(array, origin=origin_nd,
+                               **{kernel_name: xp.asarray(kernel_nd)}, **kwargs)
         xp_assert_close(output, expected)
 
     @make_xp_test_case(
