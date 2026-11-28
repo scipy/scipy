@@ -7308,6 +7308,37 @@ class TestPMean:
         res = stats.pmean(x, p, weights=w)
         xp_assert_close(res, xp.asarray(ref))
 
+    @pytest.mark.parametrize(
+        "x, p, weights, ref",
+        [
+            ([1., 2., 4.], 600, None, 3.9926826192569265),
+            ([100., 200.], 150, None, 199.07793582064582),
+            ([100., 200.], 150, [1., 2.], 199.46010987328805),
+            ([1e200, 2e200], 2, None, 1.5811388300841897e+200),
+            ([1e-3, 2e-3], -150, None, 0.0010046316744020537),
+        ],
+    )
+    def test_large_p_and_values_gh26854(self, xp, x, p, weights, ref):
+        # gh-26854: intermediate overflow/underflow for large |p| or large values
+        a = xp.asarray(x, dtype=xp.float64)
+        w = None if weights is None else xp.asarray(weights, dtype=xp.float64)
+        res = stats.pmean(a, p, weights=w)
+        xp_assert_close(res, xp.asarray(ref, dtype=xp.float64))
+
+    def test_large_values_2d_gh26854(self, xp):
+        a = xp.asarray([[100., 200.], [1e200, 2e200]], dtype=xp.float64)
+        res_axis0 = stats.pmean(a, 2, axis=0)
+        ref_axis0 = xp.asarray(
+            [7.071067811865475e+199, 1.4142135623730951e+200], dtype=xp.float64
+        )
+        xp_assert_close(res_axis0, ref_axis0)
+
+        res_axis1 = stats.pmean(a, 2, axis=1)
+        ref_axis1 = xp.asarray(
+            [158.11388300841898, 1.5811388300841897e+200], dtype=xp.float64
+        )
+        xp_assert_close(res_axis1, ref_axis1)
+
 
 @make_xp_test_case(stats.gstd)
 class TestGSTD:
