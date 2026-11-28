@@ -81,7 +81,6 @@ untested = {
     "argrelmin",
     "band_stop_obj",
     "bode",
-    "check_NOLA",
     "coherence",
     "csd",
     "czt",
