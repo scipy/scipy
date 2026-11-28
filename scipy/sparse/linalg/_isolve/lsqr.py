@@ -186,7 +186,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     arnorm : float
         Estimate of ``norm(A'@r - damp^2*(x - x0))``.
     xnorm : float
-        ``norm(x)``
+        ``norm(x - x0)``
     var : ndarray of float
         If ``calc_var`` is True, estimates all diagonals of
         ``(A'A)^{-1}`` (if ``damp == 0``) or more generally ``(A'A +
