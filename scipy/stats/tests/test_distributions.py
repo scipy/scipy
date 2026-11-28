@@ -1881,6 +1881,28 @@ class TestTruncnorm:
         expected = np.array([np.nan, 5, 4.99943581, 3, 1.00056419, 1, np.nan])
         assert_array_almost_equal(vals, expected)
 
+    # Reference values computed with mpmath (mp.dps = 50) by solving
+    #     (ncdf(b) - ncdf(x)) / (ncdf(b) - ncdf(a)) = q
+    # for x.
+    # from mpmath import mp
+    # mp.dps = 50
+    # def truncnorm_isf(q, a, b):
+    #     q = mp.mpf(q)
+    #     Pa, Pb = mp.ncdf(a), mp.ncdf(b)     # ncdf(-inf) = 0
+    #     p = Pb - q*(Pb - Pa)
+    #     return mp.sqrt(2)*mp.erfinv(2*p - 1)
+    @pytest.mark.parametrize(
+        'a, b, ref',
+        [(-3.0, -1.0, [-1.0000065010288968, -1.0672710948611959,
+                       -1.4050542332391105, -2.118167704585518]),
+         (-np.inf, -0.5, [-0.5000087636637651, -0.5897361284837705,
+                          -1.0182955159602791, -1.8683915951266352])]
+    )
+    def test_isf_b_negative(self, a, b, ref):
+        # `_isf` uses a separate formula when b < 0
+        q = [1e-5, 0.1, 0.5, 0.9]
+        assert_allclose(stats.truncnorm.isf(q, a, b), ref, rtol=5e-15)
+
     def test_gh_2477_small_values(self):
         # Check a case that worked in the original issue.
         low, high = -11, -10
@@ -2385,6 +2407,25 @@ class TestLoggamma:
         ref = -8.58200139319556e-40
         assert_allclose(logsf, ref, rtol=5e-15)
 
+    # test branches of `_logcdf` and `_logsf` where x < _LOGXMIN (~-708.4).
+    # Reference values computed with mpmath (mp.dps = 50):
+    #     cdf = mpmath.gammainc(c, 0, mpmath.exp(x), regularized=True)
+    #     logcdf = mpmath.log(cdf), logsf = mpmath.log1p(-cdf)
+    @pytest.mark.parametrize('x, c, ref',
+                             [(-710, 1e-3, -0.7094236064017166),
+                              (-750, 0.01, -7.494309692053931),
+                              (-1000, 0.5, -499.87921776236476),
+                              (-1e5, 1e-5, -0.9999942279255973)])
+    def test_logcdf_far_left(self, x, c, ref):
+        assert_allclose(stats.loggamma.logcdf(x, c), ref, rtol=5e-15)
+
+    @pytest.mark.parametrize('x, c, ref',
+                             [(-710, 1e-3, -0.6771314394042411),
+                              (-750, 0.01, -0.000556395321042081),
+                              (-1e5, 1e-5, -0.4586785046152716)])
+    def test_logsf_far_left(self, x, c, ref):
+        assert_allclose(stats.loggamma.logsf(x, c), ref, rtol=5e-15)
+
     def test_stats(self):
         # The following precomputed values are from the table in section 2.2
         # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
@@ -2834,6 +2875,10 @@ class TestGenpareto:
 
         q = np.linspace(0., 1., 10)
         assert_allclose(rv.ppf(q), stats.expon.ppf(q))
+
+        # With c = 0, `_logsf` returns the exact limit -x
+        x = np.array([1e-300, 1e-10, 0.5, 30, 1000, 1e300])
+        assert_equal(stats.genpareto.logsf(x, 0), -x)
 
     def test_cm1(self):
         # with c=-1, genpareto reduces to the uniform distr on [0, 1]
@@ -9198,19 +9243,23 @@ def test_ncx2_tails_pdf():
 
 @pytest.mark.parametrize('method, expected', [
     ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
+    ('sf', np.array([0.9999999975, 0.9999999997])),
     ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
     ('logpdf', np.array([-15.90413011, -17.88416331])),
-    ('ppf', np.array([4.865182052, 7.017182271]))
+    ('ppf', np.array([4.865182052, 7.017182271])),
+    ('isf', np.array([15.98717917, 22.03825211])),
 ])
 def test_ncx2_zero_nc(method, expected):
     # gh-5441
     # ncx2 with nc=0 is identical to chi2
-    # Comparison to R (v3.5.1)
+    # Comparison to R (v4.6.2)
     # > options(digits=10)
     # > pchisq(0.1, df=10, ncp=c(0,4))
+    # > pchisq(0.1, df=10, ncp=c(0,4), lower.tail=FALSE)
     # > dchisq(0.1, df=10, ncp=c(0,4))
     # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
     # > qchisq(0.1, df=10, ncp=c(0,4))
+    # > qchisq(0.1, df=10, ncp=c(0,4), lower.tail=FALSE)
 
     result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
     assert_allclose(result, expected, atol=1e-15)
