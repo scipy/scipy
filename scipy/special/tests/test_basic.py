@@ -1278,6 +1278,19 @@ class TestCephes:
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
 
+class TestOblateSpheroidal:
+    def test_obl_rad2_gh3777(self):
+        # Reference values generate in Mathematica:
+        # values = N[{
+        #    SpheroidalS2[1, 0, -I/5, 3 I/4],
+        #    I SpheroidalS2Prime[1, 0, -I/5, 3 I/4]
+        # }];
+        # NumberForm[values, 17]
+        ref = (-23.23849788798814, 33.40183608565515)
+        res = special.obl_rad2(0, 1, 0.2, 0.75)
+        assert_allclose(res, ref, atol=5e-13, rtol=0)
+
+
 class TestAiry:
     def test_airy(self):
         # This tests the airy function to ensure 8 place accuracy in computation
@@ -1444,8 +1457,28 @@ class TestAssocLaguerre:
 
 
 class TestBesselpoly:
-    def test_besselpoly(self):
-        pass
+    @pytest.mark.parametrize(
+        "a, expected",
+        [
+            (1.2024127788478864, 0.21587740350984017),
+            (15.317303234215988, -0.0047059843198877663),
+            (23.170594185830907, 0.002529309303650517),
+            (31.024234595113583, -0.0016324898946886075),
+            (46.731859390972389, -0.000883036352328977),
+        ],
+    )
+    def test_besselpoly_gh13750(self, a, expected):
+        # import mpmath as mp
+        # with mp.workdps(80):
+        #     for n in [1, 10, 15, 20, 30]:
+        #         a = float(mp.besseljzero(0, n) / 2)
+        #         a_mp = mp.mpf(a)
+        #         expected = mp.quad(
+        #             lambda r: r * mp.besselj(0, 2 * a_mp * r), [0, 1]
+        #         )
+        #         print(f"({a:.17g}, {float(expected):.17g}),")
+
+        assert_allclose(special.besselpoly(a, 1, 0), expected, rtol=1e-12, atol=0)
 
 
 class TestKelvin:
@@ -3523,6 +3556,14 @@ class TestHankel:
         assert np.isnan(res.real)
         assert np.isposinf(res.imag)
 
+    def test_hankel1_gh3737(self):
+        # from mpmath import mp
+        # mp.dps = 50
+        # complex(mp.hankel1(0, 1e10))
+        res = special.hankel1(0, 1e10)
+        ref = (2.175591750246892e-06-7.676508175792937e-06j)
+        assert_allclose(res, ref, atol=1e-16, rtol=0)
+
 
 class TestHyper:
     def test_h1vp(self):
@@ -4845,6 +4886,17 @@ class TestBessel:
         ive1 = special.ive(0,.1)
         iv1 = special.iv(0,.1)*exp(-.1)
         assert_allclose(ive1, iv1, atol=1.5e-10, rtol=0)
+
+    def test_ive_gh18088(self):
+        # import mpmath as mp
+        # with mp.workdps(80):
+        #     for x in [5e8, 1e9, 5e9, 1e10]:
+        #         y = mp.exp(-mp.mpf(x)) * mp.besseli(1, mp.mpf(x))
+        #         print(f"{float(y):.17g},")
+        ref = [1.7841241148146781e-05, 1.2615662605369927e-05,
+               5.6418958350544206e-06, 3.9894228038647233e-06]
+        res = special.ive(1, [5e8, 1e9, 5e9, 1e10])
+        assert_allclose(res, ref, atol=1e-15, rtol=0)
 
     def test_ivp0(self):
         assert_allclose(special.iv(1, 2), special.ivp(0, 2), atol=1.5e-10, rtol=0)

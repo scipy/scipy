@@ -79,6 +79,12 @@ class TestPolys:
                         param_ranges=[(-0.99, 10), (-0.99, 10)],
                         x_range=[-1, 1], rtol=1e-5)
 
+    def test_jacobi_gh7001(self):
+        # Reference value from Mathematica
+        # N[JacobiP[2, -1, -1, 0], 17]
+        ref = -0.25
+        assert_allclose(_ufuncs.eval_jacobi(2, -1, -1, 0), ref, rtol=1e-14)
+
     def test_sh_jacobi(self):
         self.check_poly(_ufuncs.eval_sh_jacobi, orth.sh_jacobi,
                         param_ranges=[(1, 10), (0, 1)], x_range=[0, 1],
