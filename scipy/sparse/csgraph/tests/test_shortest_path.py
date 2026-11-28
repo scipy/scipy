@@ -130,6 +130,21 @@ def test_directed():
         check(method)
 
 
+@pytest.mark.parametrize('method', methods)
+def test_small_nonzero_weights(method):
+    graph = np.array([[0, 5e-9, 1e-7],
+                      [0, 0, 5e-9],
+                      [0, 0, 0]])
+    expected = np.array([0, 5e-9, 1e-8])
+
+    actual, predecessors = shortest_path(
+        graph, method=method, directed=True, return_predecessors=True
+    )
+
+    assert_allclose(actual[0], expected, rtol=1e-15, atol=0)
+    assert_array_equal(predecessors[0], [-9999, 0, 1])
+
+
 def test_undirected():
     def check(method, directed_in):
         if directed_in:
