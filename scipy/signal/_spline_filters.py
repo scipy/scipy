@@ -22,6 +22,8 @@ __all__ = ['spline_filter', 'gauss_spline',
            'cspline1d', 'qspline1d', 'qspline2d', 'cspline2d',
            'cspline1d_eval', 'qspline1d_eval', 'symiirorder1', 'symiirorder2']
 
+_SINGLE_PRECISION_BOUNDARY_TOLERANCE = 1e-3
+
 
 def spline_filter(Iin, lmbda=5.0):
     """Smoothing spline (cubic) filtering of a rank-2 array.
@@ -68,17 +70,17 @@ def spline_filter(Iin, lmbda=5.0):
     if Iin.dtype not in [np.float32, np.float64, np.complex64, np.complex128]:
         raise TypeError(f"Invalid data type for Iin: {Iin.dtype = }")
 
-    # XXX: note that complex-valued computations are done in single precision
-    # this is historic, and the root reason is unclear,
-    # see https://github.com/scipy/scipy/issues/9209
-    # Attempting to work in complex double precision leads to symiirorder1
-    # failing to converge for the boundary conditions.
     intype = Iin.dtype
-    hcol = array([1.0, 4.0, 1.0], np.float32) / 6.0
     if intype == np.complex128:
-        Iin = Iin.astype(np.complex64)
+        # Preserve the boundary tolerance formerly used for complex128
+        # inputs. The tighter default can fail to converge on short axes.
+        ck = cspline2d(Iin, lmbda, precision=_SINGLE_PRECISION_BOUNDARY_TOLERANCE)
+        kernel_dtype = np.float64
+    else:
+        ck = cspline2d(Iin, lmbda)
+        kernel_dtype = np.float32
 
-    ck = cspline2d(Iin, lmbda)
+    hcol = array([1.0, 4.0, 1.0], dtype=kernel_dtype) / 6.0
     out = sepfir2d(ck, hcol, hcol)
     out = out.astype(intype)
     return xp.asarray(out, device=device)
@@ -505,7 +507,7 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
 
     if precision < 0.0 or precision >= 1.0:
         if signal.dtype in [np.float32, np.complex64]:
-            precision = 1e-3
+            precision = _SINGLE_PRECISION_BOUNDARY_TOLERANCE
         else:
             precision = 1e-6
 
