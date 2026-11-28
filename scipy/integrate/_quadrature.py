@@ -19,6 +19,21 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
+def _promote_integral(a, xp):
+    # Adding or differencing neighbouring samples of narrow integer (or
+    # boolean) input in its own dtype wraps around, so use floating point.
+    # Integers of 64 bits are left alone on purpose: they cannot be held
+    # exactly in a float64 either, and converting them would lose the small
+    # differences between large values such as nanosecond timestamps. This is
+    # why `xp_promote(..., force_floating=True)` is not used for every
+    # integer input.
+    if xp.isdtype(a.dtype, 'bool') or (
+        xp.isdtype(a.dtype, 'integral') and xp.iinfo(a.dtype).bits < 64
+    ):
+        a = xp.astype(a, xp_result_type(a, force_floating=True, xp=xp))
+    return a
+
+
 @xp_capabilities()
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
@@ -128,6 +143,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     # because trapezoid does not follow normal broadcasting rules
     # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
     result_dtype = xp_result_type(y, force_floating=True, xp=xp)
+    y = _promote_integral(y, xp)
     nd = y.ndim
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
@@ -136,7 +152,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     if x is None:
         d = dx
     else:
-        x = _asarray(x, xp=xp, subok=True)
+        x = _promote_integral(_asarray(x, xp=xp, subok=True), xp)
         if x.ndim == 1:
             d = x[1:] - x[:-1]
             # make d broadcastable to y
@@ -311,7 +327,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     """
     xp = array_namespace(y)
-    y = xp.asarray(y)
+    y = _promote_integral(xp.asarray(y), xp)
 
     if y.shape[axis] == 0:
         raise ValueError("At least one point is required along `axis`.")
@@ -319,7 +335,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     if x is None:
         d = dx
     else:
-        x = xp.asarray(x)
+        x = _promote_integral(xp.asarray(x), xp)
         if x.ndim == 1:
             d = xp.diff(x)
             # reshape to correct shape
@@ -843,7 +859,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     array([ 4., 10.])
     """
     xp = array_namespace(y)
-    y = xp.asarray(y)
+    y = _promote_integral(xp.asarray(y), xp)
     nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
