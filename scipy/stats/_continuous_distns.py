@@ -11956,10 +11956,12 @@ def _argus_phi(chi):
     gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
     This can be verified directly by noting that the cdf of Gamma(1.5) can
     be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
-    We use gammainc instead of the usual definition because it is more precise
-    for small chi.
+    We use gammainc instead of the usual definition because the latter
+    suffers from cancellation for small chi.
     """
-    return sc.gammainc(1.5, chi**2/2) / 2
+    # chi**2 overflows for chi > 1.3e154, but gammainc(1.5, inf) = 1
+    with np.errstate(over='ignore'):
+        return sc.gammainc(1.5, chi**2/2) / 2
 
 
 class argus_gen(rv_continuous):
@@ -12006,21 +12008,86 @@ class argus_gen(rv_continuous):
     def _shape_info(self):
         return [_ShapeInfo("chi", False, (0, np.inf), (False, False))]
 
+    def _log_norm_const(self, chi):
+        # log of the normalizing constant chi**3 / (sqrt(2*pi) * Psi(chi)).
+        # With a = chi**2/2 and gammainc(1.5, a) = a**1.5 exp(-a)
+        # hyp1f1(1, 2.5, a) / Gamma(2.5), it equals log(3) + a - log(hyp1f1(1, 2.5, a)).
+        # This form avoids the underflow of Psi(chi) ~ chi**3 for tiny chi and
+        # the cancellation of 3*log(chi) and log(Psi(chi)) for small chi.
+        # hyp1f1(1, 2.5, a) grows like exp(a), so it is used only for
+        # chi <= sqrt(2), i.e., a <= 1.
+        def small(chi):
+            a = 0.5*chi*chi
+            return np.log(3) + a - np.log(sc.hyp1f1(1, 2.5, a))
+
+        def large(chi):
+            return 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
+
+        return xpx.apply_where(chi <= np.sqrt(2), chi, small, large)
+
     def _logpdf(self, x, chi):
         # for x = 0 or 1, logpdf returns -np.inf
-        with np.errstate(divide='ignore'):
-            y = 1.0 - x*x
-            A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
-            return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+        with np.errstate(divide='ignore', over='ignore'):
+            # (1 - x)*(1 + x) instead of 1 - x*x: accurate for x close to 1
+            y = (1 - x)*(1 + x)
+            A = self._log_norm_const(chi)
+            # not chi**2*y/2: chi**2 overflows for chi > 1.3e154, while
+            # (0.5*chi)*(chi*y) overflows only if the result does
+            return A + np.log(x) + 0.5*np.log(y) - (0.5*chi)*(chi*y)
 
     def _pdf(self, x, chi):
-        return np.exp(self._logpdf(x, chi))
+        # log(x) does not go through exp: exp(logpdf) would turn the absolute
+        # error of log(x) into a relative error of the pdf. sqrt(y) does, so
+        # that x = 1 gives exp(-inf) = 0 also if the normalizing constant
+        # overflows (chi > ~1e102), instead of 0*inf.
+        y = (1 - x)*(1 + x)
+        with np.errstate(over='ignore', divide='ignore'):
+            return x*np.exp(self._log_norm_const(chi) + 0.5*np.log(y)
+                            - (0.5*chi)*(chi*y))
 
     def _cdf(self, x, chi):
-        return 1.0 - self._sf(x, chi)
+        # Start from sf = P(b)/P(a) (see _sf), with a = chi**2/2,
+        # b = a*(1 - x**2), P(z) = gammainc(1.5, z) and
+        # Q(z) = gammaincc(1.5, z) = 1 - P(z):
+        #     cdf = 1 - P(b)/P(a) = (P(a) - P(b))/P(a) = (Q(b) - Q(a))/P(a).
+        # one_minus_sf computes the first form, gamma_diff the last one.
+        # Both suffer from cancellation when b is close to a (small x); the
+        # second form is more accurate if Q(b) < P(b), i.e., if b is larger
+        # than the median of Gamma(1.5) (approx. 1.18). We switch at b = 1.
+        def gamma_diff(x, chi, a, b):
+            return (sc.gammaincc(1.5, b) - sc.gammaincc(1.5, a)) / sc.gammainc(1.5, a)
+
+        def one_minus_sf(x, chi, a, b):
+            return 1.0 - self._sf(x, chi)
+
+        # a and b overflow to inf for chi > 1.3e154; the gamma functions
+        # then return the correct limits
+        with np.errstate(over='ignore'):
+            a = 0.5*chi*chi
+            b = (0.5*chi)*(chi*((1 - x)*(1 + x)))
+            return xpx.apply_where(b >= 1, (x, chi, a, b), gamma_diff, one_minus_sf)
 
     def _sf(self, x, chi):
-        return _argus_phi(chi * np.sqrt((1 - x)*(1 + x))) / _argus_phi(chi)
+        # The sf is Psi(chi*sqrt(1 - x**2)) / Psi(chi) [1], Psi = _argus_phi.
+        # With Psi(t) = gammainc(1.5, t**2/2)/2, this is
+        #     sf = P(b)/P(a),  P(z) = gammainc(1.5, z),
+        # where a = chi**2/2 and b = a*y, y = 1 - x**2 (`large` below).
+        # For chi <= sqrt(2), i.e., a <= 1, insert
+        # P(z) = z**1.5 exp(-z) hyp1f1(1, 2.5, z) / Gamma(2.5) (see _log_norm_const):
+        #     sf = (b/a)**1.5 exp(a - b) hyp1f1(1, 2.5, b) / hyp1f1(1, 2.5, a)
+        #        = y**1.5 exp(a*x**2) hyp1f1(1, 2.5, a*y) / hyp1f1(1, 2.5, a).
+        # The factor chi**3 in P(a) and P(b) cancels, so nothing underflows
+        # for tiny chi or x close to 1.
+        def small(x, chi):
+            a = 0.5*chi*chi
+            y = (1 - x)*(1 + x)
+            return (y**1.5 * np.exp(a*(x*x)) * sc.hyp1f1(1, 2.5, a*y)
+                    / sc.hyp1f1(1, 2.5, a))
+
+        def large(x, chi):
+            return _argus_phi(chi * np.sqrt((1 - x)*(1 + x))) / _argus_phi(chi)
+
+        return xpx.apply_where(chi <= np.sqrt(2), (x, chi), small, large)
 
     def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
