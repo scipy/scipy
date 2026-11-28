@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
+import itertools
 import math
 import numpy as np
 import warnings
@@ -1603,6 +1604,66 @@ def _pval_cvm_2samp_exact(s, m, n):
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+# maximum number of rank assignments to enumerate when computing the exact
+# null distribution conditional on ties
+_CVM_2SAMP_TIES_MAX_COMB = 2**22
+
+
+def _pval_cvm_2samp_exact_ties(u, ranks, m, n):
+    """
+    Compute the exact p-value of the Cramer-von Mises two-sample test
+    when the pooled ranks contain ties, for a given value u of the
+    test statistic U.
+
+    The enumeration in `_pval_cvm_2samp_exact` assumes distinct ranks.
+    With ties, the exact null distribution conditional on the observed
+    tie pattern is obtained by enumerating all ``comb(m + n, m)``
+    assignments of the pooled mid-ranks in `ranks` to the two samples,
+    i.e. the permutation distribution of the statistic.
+
+    Parameters
+    ----------
+    u : array_like
+        The observed values of the statistic U.
+    ranks : array_like
+        The pooled mid-ranks, sorted along the last axis; the leading
+        axes must match the shape of `u`.
+    m, n : array_like
+        The sizes of the two samples; scalars or arrays broadcastable
+        to the shape of `u`.
+    """
+    u = np.asarray(u, dtype=np.float64)
+    ranks = np.asarray(ranks)
+    m = np.broadcast_to(np.asarray(m), u.shape)
+    n = np.broadcast_to(np.asarray(n), u.shape)
+    out = np.empty(u.shape, dtype=np.float64)
+    chunk = 65536
+    for i in np.ndindex(u.shape):
+        ranks_i = ranks[i]
+        mi, ni = int(m[i]), int(n[i])
+        N = mi + ni
+        arx = np.arange(1, mi + 1)
+        ary = np.arange(1, ni + 1)
+        comb_iter = itertools.combinations(range(N), mi)
+        n_comb, n_ge = 0, 0
+        while True:
+            rows = list(itertools.islice(comb_iter, chunk))
+            if not rows:
+                break
+            idx = np.asarray(rows, dtype=np.intp)
+            c = idx.shape[0]
+            rxb = ranks_i[idx]
+            mask = np.ones((c, N), dtype=bool)
+            mask[np.arange(c)[:, None], idx] = False
+            ryb = np.broadcast_to(ranks_i, (c, N))[mask].reshape(c, ni)
+            ub = (mi * np.sum((rxb - arx)**2, axis=1)
+                  + ni * np.sum((ryb - ary)**2, axis=1))
+            n_ge += np.count_nonzero(ub >= u[i])
+            n_comb += c
+        out[i] = n_ge / n_comb
+    return out
+
+
 def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
     device = xp_device(t)
@@ -1702,6 +1763,13 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     be conservative (Section 6.2 in [3]_). When ranking the data to compute
     the test statistic, midranks are used if there are ties.
 
+    When ``method='exact'`` and ties are present, the exact p-value is
+    computed from the permutation distribution of the statistic conditional
+    on the observed tie pattern, i.e. by enumerating all
+    ``comb(m + n, m)`` assignments of the pooled mid-ranks to the two
+    samples. If this number of combinations exceeds a feasibility limit,
+    the asymptotic p-value is returned with a warning instead.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Cramer-von_Mises_criterion
@@ -1797,9 +1865,37 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     if method == 'exact':
         if is_marray(xp):
             u, count_x, count_y = u.data, count_x.data, count_y.data
-        p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
-        mask = {'mask': t.mask} if is_marray(xp) else {}
-        p = xp.asarray(p, dtype=dtype, device=xp_device(t), **mask)
+            r = r.data
+        r = np.asarray(r)
+        r_sorted = np.sort(r, axis=-1)
+        ties = np.any(r_sorted[..., 1:] == r_sorted[..., :-1], axis=-1)
+        feasible = True
+        if np.any(ties):
+            # `_pval_cvm_2samp_exact` assumes distinct ranks; with ties, the
+            # exact p-value requires enumerating the permutation distribution
+            # of the pooled mid-ranks over all comb(N, count_x) assignments
+            n_ties = np.atleast_1d(ties)
+            n_x = np.atleast_1d(count_x)[n_ties]
+            n_N = np.atleast_1d(N)[n_ties]
+            max_comb = max(math.comb(int(nn), int(mm))
+                           for nn, mm in zip(n_N, n_x))
+            if max_comb > _CVM_2SAMP_TIES_MAX_COMB:
+                msg = (f"Exact p-value computation with ties requires "
+                       f"enumerating up to {max_comb} combinations; falling "
+                       f"back to the asymptotic p-value. Use "
+                       f"method='asymptotic' to silence this warning.")
+                warnings.warn(msg, RuntimeWarning, stacklevel=2)
+                feasible = False
+        if feasible:
+            if np.any(ties):
+                p = _pval_cvm_2samp_exact_ties(np.asarray(u), r_sorted,
+                                               count_x, count_y)
+            else:
+                p = _pval_cvm_2samp_exact(np.asarray(u), count_x, count_y)
+            mask = {'mask': t.mask} if is_marray(xp) else {}
+            p = xp.asarray(p, dtype=dtype, device=xp_device(t), **mask)
+        else:
+            p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
     else:
         p = _pval_cvm_2samp_asymptotic(t, N, count_x, count_y, k, xp=xp)
 
