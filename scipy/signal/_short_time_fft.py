@@ -112,9 +112,10 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int,
         -----
         For a given window and `hop` interval, all possible dual windows are expressed
         by the `hop` linear conditions of Eq. :math:numref:`eq_STFT_AllDualWinsCond` in
-        the :ref:`tutorial_stft` section of the :ref:`user_guide`. Hence, decreasing
-        `hop`, increases the number of degrees of freedom of the set of all possible
-        dual windows, improving the ability to better approximate a `desired_dual`.
+        the :ref:`tutorial_signal-STFT` section of the :ref:`user_guide`. Hence,
+        decreasing `hop`, increases the number of degrees of freedom of the set of all
+        possible dual windows, improving the ability to better approximate a
+        `desired_dual`.
 
         This function can also be used to determine windows which fulfill the
         so-called "Constant OverLap Add" (COLA) condition [1]_. It states that summing
@@ -257,7 +258,7 @@ class ShortTimeFFT:
     backwards from an array's end like in standard Python indexing but being
     left of t = 0.
 
-    More detailed information can be found in the :ref:`tutorial_stft`
+    More detailed information can be found in the :ref:`tutorial_signal-STFT`
     section of the :ref:`user_guide`.
 
     Note that all parameters of the initializer, except `scale_to` (which uses
@@ -470,7 +471,7 @@ class ShortTimeFFT:
         from a given dual window `dual_win`. All other parameters have the
         same meaning as in the initializer of `ShortTimeFFT`.
 
-        As explained in the :ref:`tutorial_stft` section of the
+        As explained in the :ref:`tutorial_signal-STFT` section of the
         :ref:`user_guide`, an invertible STFT can be interpreted as series
         expansion of time-shifted and frequency modulated dual windows. E.g.,
         the series coefficient S[q,p] belongs to the term, which shifted
@@ -671,7 +672,7 @@ class ShortTimeFFT:
         -----
         The set of all possible windows with identical dual is defined by the set of
         linear constraints of Eq. :math:numref:`eq_STFT_AllDualWinsCond` in the
-        :ref:`tutorial_stft` section of the :ref:`user_guide`. There it is also
+        :ref:`tutorial_signal-STFT` section of the :ref:`user_guide`. There it is also
         derived that ``ShortTimeFFT.dual_win == ShortTimeFFT.m_pts * ShortTimeFFT.win``
         needs to hold for an STFT to be a unitary mapping.
 
@@ -1511,7 +1512,7 @@ class ShortTimeFFT:
             q_max = S.shape[t_range] + self.p_min
             k_max = (q_max - 1) * self.hop + self.m_num - self.m_num_mid
 
-        The :ref:`tutorial_stft` section of the :ref:`user_guide` discussed the
+        The :ref:`tutorial_signal-STFT` section of the :ref:`user_guide` discussed the
         slicing behavior by means of an example.
         """
         if f_axis == t_axis:
@@ -1663,7 +1664,7 @@ class ShortTimeFFT:
         `k_min` is the index of the left-most non-zero value of the lowest
         slice `p_min`. Since the zeroth slice is centered over the zeroth
         sample of the input signal, `k_min` is never positive.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         See Also
@@ -1690,7 +1691,7 @@ class ShortTimeFFT:
 
         Since, per convention the zeroth slice is centered at t=0,
         `p_min` <= 0 always holds.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         See Also
@@ -1741,7 +1742,7 @@ class ShortTimeFFT:
 
         `k_max` - 1 is the largest sample index of the slice `p_max` - 1 for a
         given input signal of `n` samples.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         Parameters
@@ -1774,7 +1775,7 @@ class ShortTimeFFT:
         of samples indexes covered by the window slices is given by `k_max`.
         Furthermore, `p_max` does not denote the number of slices `p_num` since
         `p_min` is typically less than zero.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         Parameters
@@ -1803,7 +1804,7 @@ class ShortTimeFFT:
 
         It is given by `p_num` = `p_max` - `p_min` with `p_min` typically
         being negative.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         Parameters
@@ -1835,7 +1836,7 @@ class ShortTimeFFT:
 
         Describes the point where the window does not stick out to the left
         of the signal domain.
-        A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
+        A detailed example is provided in the :ref:`tutorial_signal-STFT_sliding_win`
         section of the :ref:`user_guide`.
 
         See Also
@@ -1870,7 +1871,7 @@ class ShortTimeFFT:
 
         Describes the point where the window does begin stick out to the right
         of the signal domain.
-        A detailed example is given :ref:`tutorial_stft_sliding_win` section
+        A detailed example is given :ref:`tutorial_signal-STFT_sliding_win` section
         of the :ref:`user_guide`.
 
         Parameters

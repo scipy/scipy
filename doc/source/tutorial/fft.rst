@@ -315,7 +315,7 @@ as the periodic continuation in :math:`f` of the Fourier transform of the
 continuous-time periodic signal.
 
 A brief introduction about analyzing the spectral properties of sampled signals can be
-found in the :ref:`tutorial_SpectralAnalysis` section.
+found in the :ref:`tutorial_signal-SpectralAnalysis` section.
 
 .. _tutorial_FFT_Caveats:
 
@@ -360,7 +360,7 @@ Note that detrending a signal does not necessarily improve its spectrum. I.e., p
 components whose frequencies are not integer multiples of the frequency resolution
 :math:`\Delta f` produce a trend that should not be removed. More information on
 calculating and interpreting spectra can be found in the
-:ref:`tutorial_SpectralAnalysis` section.
+:ref:`tutorial_signal-SpectralAnalysis` section.
 
 
 Periodicity in the Frequency Domain
