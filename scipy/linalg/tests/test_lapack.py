@@ -3610,6 +3610,38 @@ def test_pbcon(dtype, uplo):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+def test_tbcon(dtype, uplo, norm, diag):
+    rng = np.random.default_rng(17273783424)
+
+    # A is triangular of shape n x n, bandwidth kd
+    n, kd = 10, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A += np.diag(rng.permuted(np.logspace(0, 3, n)).astype(dtype))
+    if uplo == 'U':
+        A[np.triu_indices(n, kd + 1)] = 0
+        A[np.tril_indices(n, -1)] = 0
+        ab = _to_banded(0, kd, A)
+    else:
+        A[np.tril_indices(n, -kd - 1)] = 0
+        A[np.triu_indices(n, 1)] = 0
+        ab = _to_banded(kd, 0, A)
+
+    tbcon, = get_lapack_funcs(("tbcon",), (ab,))
+    res, info = tbcon(kd, ab, norm=norm, uplo=uplo, diag=diag)
+    assert info == 0
+
+    trcon, = get_lapack_funcs(("trcon",), (A,))
+    ref = trcon(A, uplo=uplo, norm=norm, diag=diag)[0]
+    assert_allclose(res, ref, rtol=100 * np.finfo(dtype).eps)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('norm', ['1', 'I', 'O'])
 def test_gbcon(dtype, norm):
     rng = np.random.default_rng(17273783424)
