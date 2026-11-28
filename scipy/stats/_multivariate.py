@@ -3916,7 +3916,7 @@ class multinomial_gen(multi_rv_generic):
     -----
     %(_doc_callparams_note)s
 
-    The probability mass function for `multinomial` is
+    The probability mass function for `multinomial` [1]_ is
 
     .. math::
 
@@ -3926,7 +3926,12 @@ class multinomial_gen(multi_rv_generic):
     nonnegative integer and their sum is :math:`n`.
 
     .. versionadded:: 0.19.0
-
+    
+    References
+    ----------
+    .. [1] R Core Team, "The Multinomial Distribution", R stats manual.
+           https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Multinom.html
+           
     Examples
     --------
 
