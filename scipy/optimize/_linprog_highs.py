@@ -408,6 +408,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'status': status,
            'success': res['status'] == HighsModelStatus.kOptimal,
            'message': message,
+           '_primal_feasibility_tolerance':
+               res.get('primal_feasibility_tolerance'),
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
            }

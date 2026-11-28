@@ -1416,7 +1416,7 @@ def _postsolve(x, postsolve_args, complete=False):
 
 
 def _check_result(x, fun, status, slack, con, bounds, tol, message,
-                  integrality):
+                  integrality, *, solver_tol=None):
     """
     Check the validity of the provided solution.
 
@@ -1452,6 +1452,9 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message,
         A string descriptor of the exit status of the optimization.
     tol : float
         Termination tolerance; see [1]_ Section 4.5.
+    solver_tol : float, optional
+        Feasibility tolerance used by the solver. The solution check will not
+        be stricter than this value.
 
     Returns
     -------
@@ -1469,6 +1472,8 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message,
     """
     # Somewhat arbitrary
     tol = np.sqrt(tol) * 10
+    if solver_tol is not None:
+        tol = max(tol, solver_tol)
 
     if x is None:
         # HiGHS does not provide x if infeasible/unbounded

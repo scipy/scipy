@@ -259,6 +259,17 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         )
         return res
 
+    # An input model with integrality can still be solved as an LP, e.g. when
+    # solving its relaxation or when semi-continuous variables are normalized
+    # to continuous variables. Conversely, the tolerance used by IPM is not
+    # necessarily the primal feasibility tolerance alone.
+    if info.mip_node_count < 0:
+        native_options = highs.getOptions()
+        if native_options.solver in ("choose", "simplex"):
+            res["primal_feasibility_tolerance"] = (
+                native_options.primal_feasibility_tolerance
+            )
+
     # Should be safe to read the solution:
     solution = highs.getSolution()
     basis = highs.getBasis()

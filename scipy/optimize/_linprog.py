@@ -660,10 +660,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
                              **solver_options)
+        solver_tol = sol.pop('_primal_feasibility_tolerance')
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
                           sol['con'], lp.bounds, tol, sol['message'],
-                          integrality))
+                          integrality, solver_tol=solver_tol))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
