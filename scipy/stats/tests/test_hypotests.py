@@ -1621,6 +1621,33 @@ class TestCvm_2samp:
         xp_assert_equal(r1.statistic, r2.statistic)
         xp_assert_close(r1.pvalue, r2.pvalue, atol=1e-2)
 
+    def test_exact_pvalue_ties(self, xp):
+        # gh-26849: with ties, the observed statistic can fall outside the
+        # support of the distinct-rank enumeration; the exact p-value is
+        # computed from the permutation distribution of the pooled mid-ranks
+        x = xp.asarray([1., 1.])
+        y = xp.asarray([4., 5.])
+        r = cramervonmises_2samp(x, y, method='exact')
+        # reference: enumeration of the comb(4, 2) mid-rank assignments,
+        # two of which attain the observed U
+        xp_assert_close(r.pvalue, xp.asarray(2./6))
+        x = xp.asarray([1., 2., 2.])
+        y = xp.asarray([2., 3., 4.])
+        r = cramervonmises_2samp(x, y, method='exact')
+        xp_assert_close(r.pvalue, xp.asarray(8./20))
+
+    def test_exact_ties_infeasible(self):
+        # with ties and a very large number of rank assignments, the
+        # exact computation falls back to the asymptotic p-value
+        rng = np.random.default_rng(4367)
+        x = rng.integers(0, 10, size=30)
+        y = rng.integers(0, 10, size=30)
+        msg = "falling back to the asymptotic p-value"
+        with pytest.warns(RuntimeWarning, match=msg):
+            r = cramervonmises_2samp(x, y, method='exact')
+        r2 = cramervonmises_2samp(x, y, method='asymptotic')
+        assert_equal(r.pvalue, r2.pvalue)
+
     def test_method_auto(self, xp):
         x = xp.arange(20.)
         y = xp.asarray([0.5, 4.7, 13.1])

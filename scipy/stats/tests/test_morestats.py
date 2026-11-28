@@ -832,6 +832,34 @@ class TestAnsari:
         pval = stats.ansari(x, y, alternative=alternative, method='exact').pvalue
         xp_assert_close(pval, xp.asarray(expected), atol=1e-12)
 
+    @pytest.mark.parametrize('alternative, expected', [
+        ('two-sided', 3./7),
+        ('less', 3./14),
+        ('greater', 1.0)])
+    def test_exact_pvalue_ties(self, alternative, expected, xp):
+        # gh-26849: with ties, `_ABW` (which assumes distinct ranks) cannot
+        # be used; the exact p-value is computed from the permutation
+        # distribution of the pooled symranks conditional on the observed
+        # tie pattern
+        x = xp.asarray([6., 6.])
+        y = xp.asarray([6., 8., 7., 6., 2., 3.])
+        res = stats.ansari(x, y, alternative=alternative, method='exact')
+        assert_allclose(res.statistic, 9.0)
+        xp_assert_close(res.pvalue, xp.asarray(expected), atol=1e-12)
+
+    def test_exact_ties_infeasible(self):
+        # with ties and a very large number of rank assignments, the exact
+        # computation falls back to the normal approximation
+        rng = np.random.default_rng(4367)
+        x = rng.integers(0, 10, size=30)
+        y = rng.integers(0, 10, size=30)
+        msg = "falling back to the asymptotic p-value"
+        with pytest.warns(RuntimeWarning, match=msg):
+            res = stats.ansari(x, y, method='exact')
+        ref = stats.ansari(x, y, method='asymptotic')
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue)
+
     def test_alternative_approx(self, xp):
         # intuitive tests for approximation
         x1 = xp.asarray(stats.norm.rvs(0, 5, size=100, random_state=123))

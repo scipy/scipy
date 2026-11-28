@@ -2965,6 +2965,62 @@ def _anderson_ksamp(*samples, variant="midrank", method=None, axis=0, k=None, xp
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
+# Maximum number of rank assignments to enumerate when computing the exact
+# Ansari-Bradley null distribution conditional on ties.
+_ABW_TIES_MAX_COMB = 2**22
+
+
+def _ansari_exact_ties_pval(symrank, n, m, AB, alternative):
+    """
+    Compute the exact Ansari-Bradley p-value when ties are present.
+
+    The `_ABW` distribution assumes distinct ranks. With ties, the exact
+    null distribution conditional on the observed tie pattern is obtained
+    by enumerating all ``comb(n + m, n)`` assignments of the pooled
+    symranks in `symrank` to the `x` sample; the statistic is the sum of
+    the assigned symranks.
+
+    Parameters
+    ----------
+    symrank : array_like
+        The pooled symranks; the leading axes must match the shape of `AB`.
+    n, m : int
+        The sizes of the `x` and `y` samples.
+    AB : array_like
+        The observed values of the Ansari-Bradley statistic.
+    alternative : str
+        One of 'two-sided', 'greater', or 'less'.
+    """
+    symrank = np.asarray(symrank)
+    AB = np.asarray(AB, dtype=np.float64)
+    out = np.empty(AB.shape, dtype=np.float64)
+    chunk = 65536
+    ni, mi = int(n), int(m)
+    for i in np.ndindex(AB.shape):
+        sym_i = symrank[i]
+        N = ni + mi
+        comb_iter = itertools.combinations(range(N), ni)
+        n_comb, n_ge, n_le = 0, 0, 0
+        while True:
+            rows = list(itertools.islice(comb_iter, chunk))
+            if not rows:
+                break
+            idx = np.asarray(rows, dtype=np.intp)
+            ab = sym_i[idx].sum(axis=1)
+            n_ge += np.count_nonzero(ab >= AB[i])
+            n_le += np.count_nonzero(ab <= AB[i])
+            n_comb += idx.shape[0]
+        if alternative == 'two-sided':
+            out[i] = 2.0 * min(n_le, n_ge) / n_comb
+        elif alternative == 'greater':
+            # AB statistic is _smaller_ when ratio of scales is larger,
+            # so this is the opposite of the usual calculation
+            out[i] = n_le / n_comb
+        else:  # 'less'
+            out[i] = n_ge / n_comb
+    return out
+
+
 class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
     # TODO: calculate exact distribution considering ties
@@ -3062,7 +3118,9 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
           against the normal distribution, correcting for ties.
         * ``'exact'``: computes the exact *p*-value by comparing the observed
           statistic against the exact distribution of the statistic under the
-          null hypothesis, accounting for ties.
+          null hypothesis, accounting for ties. When ties are present and
+          the number of rank assignments to enumerate is too large, the
+          asymptotic *p*-value is returned with a warning instead.
         * ``'auto'``: chooses ``'exact'`` when the size of both
           samples is less than or equal to 55 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
@@ -3086,7 +3144,10 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
     -----
     The p-value given is exact when the sample sizes are both less than
     55 and there are no ties, otherwise a normal approximation for the
-    p-value is used.
+    p-value is used. The exact p-value may also be computed when there
+    are ties by enumerating all assignments of the pooled symranks to
+    the samples; if there are too many, the normal approximation is
+    used and a warning is emitted.
 
     References
     ----------
@@ -3189,6 +3250,26 @@ def ansari(x, y, alternative='two-sided', *, axis=0, method='auto'):
         method = 'exact' if ((m < 55) and (n < 55) and not repeats) else 'asymptotic'
 
     if method == 'exact':
+        if bool(repeats):
+            # `_ABW` assumes distinct ranks (see its TODO); with ties, the
+            # exact p-value requires enumerating the permutation distribution
+            # of the pooled symranks over all comb(N, n) assignments
+            n_comb = math.comb(N, n)
+            if n_comb > _ABW_TIES_MAX_COMB:
+                msg = (f"Exact p-value computation with ties requires "
+                       f"enumerating {n_comb} combinations; falling back to "
+                       f"the asymptotic p-value. Use method='asymptotic' "
+                       f"to silence this warning.")
+                warnings.warn(msg, RuntimeWarning, stacklevel=2)
+                method = 'asymptotic'
+
+    if method == 'exact':
+        if repeats:
+            pval = _ansari_exact_ties_pval(symrank, n, m, AB, alternative)
+            pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
+            AB = AB[()] if AB.ndim == 0 else AB
+            pval = pval[()] if pval.ndim == 0 else pval
+            return AnsariResult(AB, pval)
         # np.vectorize converts to NumPy here, and we convert back to the result
         # type before returning
         cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
