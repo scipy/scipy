@@ -15,7 +15,7 @@ optimizations. Before upgrading, we recommend that users check that
 their own code does not use deprecated SciPy functionality (to do so,
 run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
-1.18.x branch, and on adding new features on the main branch.
+2.0.x branch, and on adding new features on the main branch.
 
 This release requires Python 3.12-3.15 and NumPy 2.0.0 or greater.
 
@@ -29,6 +29,11 @@ Highlights of this release
 New features
 ************
 
+``scipy.io`` improvements
+=========================
+- `scipy.io.loadmat` now has better performance when reading in data structures
+  with a large number of fields.
+
 ``scipy.cluster`` improvements
 ==============================
 
@@ -39,10 +44,30 @@ New features
 - Added `scipy.interpolate.make_lsq_ndbspline` to construct weighted
   least-squares tensor-product B-splines from scattered or rectilinear-grid
   data.
+- The new ``clamp_values`` argument of `scipy.interpolate.make_lsq_spline` allows
+  creating least-squares spline fits with predefined values at the endpoints of the
+  interpolation interval: ``spl = make_lsq_spline(x, y, t, clamp_values=(42, None))``
+  will satisfy ``spl(x[0]) == 42``.
+- Batched ``y`` inputs are now supported in `scipy.interpolate.make_smoothing_spline`.
+- The performance of several ``BSpline`` and ``NdBSpline`` routines has improved, as has
+  the performance of the fitting routines including ``make_interp_spline`` and
+  ``make_lsq_spline``, thanks to de Boor recursion algorithm improvements.
+- The performance of ``BSpline.design_matrix`` has been improved.
+- `scipy.interpolate.make_smoothing_spline` is now able to detect and warn when solves
+  become numerically singular.
 
 
 ``scipy.linalg`` improvements
 =============================
+- The BLAS and LAPACK functions of `scipy.linalg.blas` and `scipy.linalg.lapack`
+  are provided through C++ wrappers instead of the f2py tool. These were the last
+  consumers of f2py and hence the f2py dependency is removed.
+- `scipy.linalg.cython_blas` and `scipy.linalg.cython_lapack` were upgrade to
+  Reference LAPACK version 3.9.1.
+- The LAPACK function families ``?gesvdx``, ``?pbcon``, ``?lansb`` are now available in
+  `scipy.linalg.lapack` namespace.
+- The performance and memory usage of `scipy.linalg.null_space` has been improved for
+  some tall/long matrices.
 
 
 ``scipy.ndimage`` improvements
@@ -51,6 +76,9 @@ New features
 
 ``scipy.optimize`` improvements
 ===============================
+- A new global optimizer, `scipy.optimize.biteopt` (BITmask Evolution OPTimization)
+  was added. ``biteopt`` provides a competitive alternative for difficult global
+  optimisation problems and showed strong benchmark performance.
 
 
 ``scipy.signal`` improvements
@@ -59,11 +87,18 @@ New features
 
 ``scipy.sparse`` improvements
 =============================
+- The performance of `scipy.sparse.linalg.LaplacianNd.eigenvectors` has been improved
+  by vectorization.
 
 
 
 ``scipy.spatial`` improvements
 ==============================
+- In `scipy.spatial.transform.rotation`, the performances of ``from_quat``, ``mul``,
+  ``from_mrp``, and ``as_mrp`` have improved.
+- Support for batched inputs was added to most `scipy.spatial.distance` functions
+  mentioned in the Array API standard support section below, as well as for
+  ``dice``, ``rogerstanimoto``, ``sokalsneath``, and ``russellrao`` functions.
 
 
 ``scipy.special`` improvements
@@ -77,7 +112,32 @@ New features
 
 ``scipy.stats`` improvements
 ============================
+- The accuracy of ``isf`` has been improved for ``powerlaw``, ``recipinvgauss``,
+  ``rdist``, ``semicircular``, and ``moyal``.
+- The performance of ``multivariate_normal.cdf`` has improved.
+- ``axis``, ``nan_policy``, and ``keepdims`` options are now available for
+  `scipy.stats.anderson_ksamp` and `scipy.stats.anderson`.
 
+
+***************************************
+Array API standard support improvements
+***************************************
+- Array API standard support is now active by default, and the ``SCIPY_ARRAY_API``
+  environment variable is no longer used.
+- Array API support was added for the following functions in `scipy.spatial.distance`:
+  ``braycurtis``, ``jensenshannon``, ``canberra``, ``chebychev``, ``num_obs_y``,
+  ``jaccard``, ``is_valid_y``, ``correlation``, ``sqeuclidean``, ``seuclidan``,
+  ``euclidean``, and ``cosine``.
+- Many functions in `scipy.special` now support mixed ``torch.tensor`` and Python
+  scalar inputs. Backend delegation support has been substantially expanded to
+  include: error functions, ellipsoidal harmonics, othogonal polynomial evaluation,
+  spherical bessel functions, zeta functions, Legendre functions, Bessel functions,
+  integrals of Bessel functions, Airy functions, Elliptic functions.
+- The new `scipy.stats` distribution infrastructure now has support for the CuPy
+  backend.
+- Array API support is now available for `scipy.stats.anderson_ksamp` and
+  `scipy.stats.anderson`.
+- Array API support is now available for `scipy.linalg.diagsvd`.
 
 
 *******************
@@ -94,15 +154,30 @@ Deprecated features
   are also deprecated.
 
 
+********************
+Expired Deprecations
+********************
+- The deprecated parameter ``precenter`` of `scipy.signal.lombscargle` has been removed.
 
 
 ******************************
 Backwards incompatible changes
 ******************************
+- The private ``_cpointer`` attribute on `scipy.linalg.blas` and `scipy.linalg.lapack`
+  functions, an f2py implementation detail, is no longer present. Use
+  `scipy.linalg.cython_blas` / `scipy.linalg.cython_lapack` for direct access from
+  compiled code.
+- The ``.pxd`` Cython headers for `scipy.linalg.cython_blas` /
+  `scipy.linalg.cython_lapack` were updated to no longer contain any parameter names.
+  All function arguments were already expected to be passed positionally, given that
+  that's the natural way to call BLAS and LAPACK functions, and because in Fortran
+  names aren't semantically meaningful and are regularly changed.
 
 *************
 Other changes
 *************
+- It is once again possible to initialize ``LinearOperator`` without specifying
+  its ``shape``.
 
 - `scipy.interpolate.make_smoothing_spline` now uses a single code path for
   default and user-provided knots. Results may differ from previous versions
