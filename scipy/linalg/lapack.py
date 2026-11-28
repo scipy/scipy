@@ -728,6 +728,11 @@ All functions
    csytrs
    zsytrs
 
+   stbcon
+   dtbcon
+   ctbcon
+   ztbcon
+
    stbtrs
    dtbtrs
    ctbtrs

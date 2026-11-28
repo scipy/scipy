@@ -182,6 +182,45 @@ namespace lapack {
         }
 
         template <class T>
+        static PyObject *tbcon(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
+        {
+            static const char *kwlist[] = {"kd", "ab", "norm", "ldab", "uplo",
+                                            "diag", nullptr};
+            static constexpr Ctx<T> ctx("tbcon", "OO|OOOO", kwlist);
+            PARSE_ARGS();
+
+            using R = real_of_t<T>;
+            R rcond = 0.0;
+            CBLAS_INT info = 0;
+
+            SCALAR_OPT(char, norm, '1'); CHECK(norm == '1' || norm == 'O' || norm == 'I', norm);
+            SCALAR_OPT(char, uplo, 'U'); CHECK(uplo == 'U' || uplo == 'L', uplo);
+            SCALAR_OPT(char, diag, 'N'); CHECK(diag == 'N' || diag == 'U', diag);
+            SCALAR_REQ(CBLAS_INT, kd); CHECK(kd >= 0, kd);
+
+            ARRAY_IN(T, ab, 2);
+
+            CBLAS_INT n = shape(ab, 1);
+            CBLAS_INT band_rows;
+            if (!work_size(kd + 1, &band_rows)) { return nullptr; }
+            SCALAR_OPT(CBLAS_INT, ldab, band_rows); CHECK(ldab >= band_rows, ldab);
+            CHECKARRAY(shape(ab, 0) == ldab, ab);
+
+            if constexpr (is_complex_v<T>){
+                ARRAY_HIDDEN(T, work, 2*n);
+                ARRAY_HIDDEN(R, rwork, n);
+                lapack::tbcon(norm, uplo, diag, n, kd, ab.data<T>(), ldab,
+                    &rcond, work.data<T>(), rwork.data<R>(), &info);
+            } else {
+                ARRAY_HIDDEN(R, work, 3*n);
+                ARRAY_HIDDEN(CBLAS_INT, iwork, n);
+                lapack::tbcon(norm, uplo, diag, n, kd, ab.data<T>(), ldab,
+                    &rcond, work.data<T>(), iwork.data<CBLAS_INT>(), &info);
+            }
+            return make_result(rcond, static_cast<long long>(info));
+        }
+
+        template <class T>
         static PyObject *gbcon(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwds) noexcept
         {
             static const char *kwlist[] = {"kl", "ku", "ab", "ipiv", "anorm", "norm", "ldab",
@@ -274,6 +313,7 @@ namespace lapack {
             FAMILY(gbtrf),
             FAMILY(gbtrs),
             FAMILY(pbcon),
+            FAMILY(tbcon),
             FAMILY(gbcon),
             FAMILY(langb),
             FAMILY(lansb),
