@@ -742,6 +742,30 @@ class TestShgoArguments:
         run_test(test1_1, n=None, iters=None, options=options,
                  sampling_method='simplicial')
 
+    def test_8_1_minhgrd_minimize_every_iter(self):
+        """Test that `minhgrd=0` does not force `shgo` to stop after a
+        single iteration when `minimize_every_iter=True`. Before the fix,
+        `hgrd` was always corrupted to 0 by an inner `stopping_criteria`
+        call, so even `minhgrd=0` (a no-op threshold: `hgrd <= 0` should
+        only be true on genuine stalls) stopped the run immediately.
+        Fixes gh-25845"""
+        centers = np.arange(10) + 0.5
+        depths = np.linspace(0.9, 0.05, 10)
+
+        def f(x):
+            x = x[0]
+            i = int(np.clip(x, 0, 9.999))
+            return depths[i] + (x - centers[i]) ** 2
+
+        bounds = [(0, 10)]
+
+        result = shgo(f, bounds, n=10, sampling_method='sobol',
+                       minimizer_kwargs={'method': 'COBYQA'},
+                       options={'minimize_every_iter': True, 'local_iter': 1,
+                                'maxiter': 20, 'minhgrd': 0})
+
+        assert result.nit > 1
+
     def test_9_cons_g(self):
         """Test single function constraint passing"""
         SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
