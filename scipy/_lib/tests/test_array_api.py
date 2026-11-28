@@ -378,6 +378,38 @@ def test_xp_result_type_force_floating(x, y, xp):
     assert dtype_res == dtype_ref
 
 
+@pytest.mark.parametrize('x', scalars + lists + types + arrays)
+@pytest.mark.parametrize('y', scalars + lists + types + arrays)
+@pytest.mark.parametrize('force_floating', [False, True])
+@pytest.mark.uses_xp_capabilities(False, reason="not applicable")
+def test_xp_result_type_force_real(x, y, force_floating, xp):
+    # When `force_real==True`, behavior of `xp_result_type` should match that
+    # without `force_real`, except that complex result types are replaced by the
+    # real floating type of the same precision.
+    x = convert_type(x, xp)
+    y = convert_type(y, xp)
+
+    try:
+        dtype_ref = xp_result_type(x, y, force_floating=force_floating, xp=xp)
+        expected_error = None
+    except Exception as e:
+        expected_error = (type(e), str(e))
+
+    if expected_error is not None:
+        with pytest.raises(expected_error[0], match=re.escape(expected_error[1])):
+            xp_result_type(x, y, force_floating=force_floating, force_real=True,
+                           xp=xp)
+        return
+
+    if dtype_ref == xp.complex64:
+        dtype_ref = xp.float32
+    elif dtype_ref == xp.complex128:
+        dtype_ref = xp.float64
+    dtype_res = xp_result_type(x, y, force_floating=force_floating, force_real=True,
+                               xp=xp)
+    assert dtype_res == dtype_ref
+
+
 @pytest.mark.uses_xp_capabilities(False, reason="not applicable")
 def test_xp_promote_device(xp, devices):
     # Scalars and array-like iterables promoted alongside an array are
