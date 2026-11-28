@@ -270,6 +270,7 @@ Continuous Distributions in `scipy.stats`
    continuous_levy_l
    continuous_levy
    continuous_logistic
+   continuous_logitnorm
    continuous_loglaplace
    continuous_loggamma
    continuous_lognorm
