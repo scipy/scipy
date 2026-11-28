@@ -9,9 +9,27 @@ import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device, is_marray,
-                                   _masked_apply, _share_masks, xp_capabilities)
+                                   _masked_apply, _share_masks, xp_capabilities,
+                                   is_lazy_array, xp_size)
 
 __all__ = ['entropy', 'differential_entropy']
+
+
+def _normalize_entropy_weights(weights, axis, *, xp):
+    # The probabilities stay the same if finite, nonnegative weights are
+    # scaled by a common positive factor before summing them.
+    with np.errstate(over='ignore', invalid='ignore'):
+        total = xp.sum(weights, axis=axis, keepdims=True)
+        overflow = total == xp.inf
+        lazy_or_masked = is_lazy_array(total) or is_marray(xp)
+        if xp_size(weights) != 0 and (lazy_or_masked or xp.any(overflow)):
+            maximum = xp.max(weights, axis=axis, keepdims=True)
+            minimum = xp.min(weights, axis=axis, keepdims=True)
+            rescale = overflow & xp.isfinite(maximum) & (maximum > 0) & (minimum >= 0)
+            weights = weights / xp.where(rescale, maximum, 1)
+            scaled_total = xp.sum(weights, axis=axis, keepdims=True)
+            total = xp.where(rescale, scaled_total, total)
+        return weights / total
 
 
 @xp_capabilities(marray=True)
@@ -144,11 +162,10 @@ def entropy(pk: np.typing.ArrayLike,
     xp = array_namespace(pk, qk)
     pk, qk = xp_promote(pk, qk, broadcast=True, xp=xp)
 
-    with np.errstate(invalid='ignore'):
-        if qk is not None:
-            pk, qk = _share_masks(pk, qk, xp=xp)
-            qk = qk / xp.sum(qk, axis=axis, keepdims=True)
-        pk = pk / xp.sum(pk, axis=axis, keepdims=True)
+    if qk is not None:
+        pk, qk = _share_masks(pk, qk, xp=xp)
+        qk = _normalize_entropy_weights(qk, axis, xp=xp)
+    pk = _normalize_entropy_weights(pk, axis, xp=xp)
 
     if qk is None:
         vec = special.entr(pk)
