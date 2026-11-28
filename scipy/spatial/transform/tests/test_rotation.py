@@ -1475,6 +1475,88 @@ def test_reduction_none_indices(xp):
     assert right_best is None
 
 
+def _reduce_reference(p, left, right):
+    """Brute force reduction of numpy quaternions with leading batch axes.
+
+    The last leading axis of `p` holds the rotations to reduce, the last leading axis
+    of `left` and `right` is the group axis. All preceding axes are batch axes that
+    broadcast. Returns reduced quaternions and best indices, both with shape
+    (*batch, n).
+    """
+    batch = np.broadcast_shapes(p.shape[:-2], left.shape[:-2], right.shape[:-2])
+    p = np.broadcast_to(p, batch + p.shape[-2:])
+    left = np.broadcast_to(left, batch + left.shape[-2:])
+    right = np.broadcast_to(right, batch + right.shape[-2:])
+    reduced = np.empty(p.shape)
+    left_best = np.empty(p.shape[:-1], dtype=int)
+    right_best = np.empty(p.shape[:-1], dtype=int)
+    for b in np.ndindex(*batch):
+        lq = Rotation.from_quat(left[b][:, None, :])
+        rq = Rotation.from_quat(right[b][None, :, :])
+        for n in range(p.shape[-2]):
+            pq = Rotation.from_quat(p[b][n])
+            scalars = np.abs((lq * pq * rq).as_quat()[..., 3])
+            i, k = np.unravel_index(np.argmax(scalars), scalars.shape)
+            left_best[b + (n,)] = i
+            right_best[b + (n,)] = k
+            red = Rotation.from_quat(left[b][i]) * pq * Rotation.from_quat(right[b][k])
+            reduced[b + (n,)] = red.as_quat(canonical=True)
+    return reduced, left_best, right_best
+
+
+@make_xp_test_case((Rotation, "reduce"), (Rotation, "from_quat"))
+@pytest.mark.parametrize("p_shape", [(), (2,), (3, 2)])
+@pytest.mark.parametrize("left_shape", [None, (), (2,), (3, 2), (3, 1)])
+@pytest.mark.parametrize("right_shape", [None, (), (2,), (3, 2), (3, 1)])
+def test_reduction_nd(xp, p_shape, left_shape, right_shape):
+    # Leading axes of the rotations are broadcast: The last leading axis of `self` is
+    # the axis of rotations to reduce, the last leading axis of `left` and `right` is
+    # the group axis, and all other leading axes are batch axes.
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-5
+    rng = np.random.default_rng(1235813)
+
+    def make(shape):
+        if shape is None:
+            return None, None
+        quat = Rotation.from_quat(rng.normal(size=(*shape, 4))).as_quat()
+        return Rotation.from_quat(xp.asarray(quat, dtype=dtype)), quat
+
+    p, p_quat = make(p_shape)
+    left, left_quat = make(left_shape)
+    right, right_quat = make(right_shape)
+
+    reduced, left_best, right_best = p.reduce(left, right, return_indices=True)
+
+    # Single rotations are groups with one element, a single `self` is one rotation
+    # to reduce
+    def group(quat):
+        if quat is None:
+            return np.asarray([[0.0, 0.0, 0.0, 1.0]])
+        return quat[None, :] if quat.ndim == 1 else quat
+
+    p_ref = p_quat[None, :] if p_quat.ndim == 1 else p_quat
+    expected, left_ref, right_ref = _reduce_reference(
+        p_ref, group(left_quat), group(right_quat)
+    )
+    if p_quat.ndim == 1:
+        expected = expected[..., 0, :]
+    assert reduced.shape == expected.shape[:-1]
+    xp_assert_close(
+        reduced.as_quat(canonical=True),
+        xp.asarray(expected, dtype=dtype),
+        atol=atol,
+    )
+    if left_shape is not None:
+        xp_assert_equal(left_best, xp.asarray(left_ref, dtype=left_best.dtype))
+    else:
+        assert left_best is None
+    if right_shape is not None:
+        xp_assert_equal(right_best, xp.asarray(right_ref, dtype=right_best.dtype))
+    else:
+        assert right_best is None
+
+
 @make_xp_test_case((Rotation, "reduce"), (Rotation, "inv"), (Rotation, "magnitude"))
 def test_reduction_scalar_calculation(xp):
     dtype = xpx.default_dtype(xp)

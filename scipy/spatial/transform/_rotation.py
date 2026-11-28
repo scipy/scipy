@@ -2083,10 +2083,14 @@ class Rotation:
         ----------
         left : `Rotation` instance, optional
             Object containing the left rotation(s). Default value (None)
-            corresponds to the identity rotation.
+            corresponds to the identity rotation. A single rotation is a group
+            with one element. The last axis of its shape is the group axis;
+            all leading axes are batch axes that broadcast against the batch
+            axes of this object (all axes of its shape except the last).
         right : `Rotation` instance, optional
             Object containing the right rotation(s). Default value (None)
-            corresponds to the identity rotation.
+            corresponds to the identity rotation. Shape rules are the same as
+            for `left`.
         return_indices : bool, optional
             Whether to return the indices of the rotations from `left` and
             `right` used for reduction.
@@ -2094,18 +2098,34 @@ class Rotation:
         Returns
         -------
         reduced : `Rotation` instance
-            Object containing reduced rotations.
+            Object containing reduced rotations. Its shape is the broadcast
+            batch shape followed by the number of rotations in this object.
         left_best, right_best: int ndarray
-            Indices of elements from `left` and `right` used for reduction.
+            Indices of elements from `left` and `right` used for reduction,
+            with shape ``(*batch, n)``, where ``n`` is the number of rotations
+            in this object. For a single rotation ``n = 1``, so the indices
+            keep a trailing axis of length 1.
         """
-        left = left.as_quat() if left is not None else None
-        right = right.as_quat() if right is not None else None
-        reduced, left_idx, right_idx = self._backend.reduce(
+        # A single rotation is a group with one element
+        if left is not None:
+            left = xpx.atleast_nd(left.as_quat(), ndim=2, xp=self._xp)
+        if right is not None:
+            right = xpx.atleast_nd(right.as_quat(), ndim=2, xp=self._xp)
+        # The Cython backend only supports 2D quaternions
+        cython_compatible = (
+            self._quat.ndim < 3
+            and (left is None or left.ndim < 3)
+            and (right is None or right.ndim < 3)
+        )
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
+        reduced, left_idx, right_idx = backend.reduce(
             self._quat, left=left, right=right
         )
-        if self._single:
-            reduced = reduced[0, ...]
-        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=self._backend)
+        # Backends return reduced quaternions with an axis for the rotations to reduce
+        no_groups = left is None and right is None
+        if self._single or (self._quat.ndim == 1 and not no_groups):
+            reduced = reduced[..., 0, :]
+        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=backend)
         if return_indices:
             left_idx = left_idx if left is not None else None
             right_idx = right_idx if right is not None else None
