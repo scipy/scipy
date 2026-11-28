@@ -1,5 +1,7 @@
 import os
 import copy
+import re
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -10,8 +12,24 @@ from pytest import raises as assert_raises
 import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
+from scipy._lib import messagestream
+from scipy._lib._testutils import IS_WASM
 
 import itertools
+
+
+@pytest.fixture
+def tempfile_streams():
+    # Use the temporary-file message streams of platforms without
+    # open_memstream, starting with none kept for reuse.
+    messagestream._fhcache_clear()
+    messagestream._force_tempfile(True)
+    try:
+        yield
+    finally:
+        messagestream._force_tempfile(False)
+        messagestream._fhcache_clear()
+
 
 def sorted_tuple(x):
     return tuple(sorted(x))
@@ -165,6 +183,86 @@ class Test_Qhull:
             [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]]
         )
         Voronoi(points)
+
+    @staticmethod
+    def _error_message(points):
+        with pytest.raises(qhull.QhullError) as exc:
+            qhull.ConvexHull(points)
+        # the run-id differs between calls
+        return re.sub(r"run-id \d+", "run-id", str(exc.value))
+
+    # Thread safe, but keeps many files open at once
+    @pytest.mark.parallel_threads_limit(1)
+    def test_error_messages_with_reused_streams(self):
+        # Without open_memstream (e.g., on Windows), message streams are
+        # reused; each error must contain its own message and nothing else.
+        flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
+        flat_3d = np.array([[0., 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]])
+        msg_2d = self._error_message(flat_2d)
+        msg_3d = self._error_message(flat_3d)
+        assert msg_2d.startswith("QH6154") and msg_3d.startswith("QH6154")
+        assert len(msg_3d) > len(msg_2d)
+
+        # more coexisting instances than the number of kept spare streams
+        rng = np.random.default_rng(1234)
+        hulls = [qhull.ConvexHull(rng.random((10, 2)), incremental=True)
+                 for _ in range(40)]
+        for hull in hulls:
+            hull.close()
+
+        for _ in range(3):
+            assert self._error_message(flat_3d) == msg_3d
+            assert self._error_message(flat_2d) == msg_2d
+
+    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    @pytest.mark.usefixtures("tempfile_streams")
+    def test_reused_message_stream_starts_empty(self):
+        # Not all users clear a new stream before passing it to C code
+        self._error_message(np.array([[0., 0], [1, 1], [2, 2]]))
+        assert messagestream._fhcache_size() == 1
+        stream = messagestream.MessageStream()
+        assert stream.get() == ""
+        stream.close()
+
+    @pytest.mark.thread_unsafe(reason="changes the global state of MessageStream")
+    @pytest.mark.usefixtures("tempfile_streams")
+    def test_large_message_streams_not_reused(self):
+        # Streams that grew large, here from Qhull's trace option T4, are
+        # closed rather than kept for reuse, so their files don't stay on disk
+        points = np.random.default_rng(1234).random((100, 2))
+        qhull.ConvexHull(points, qhull_options="T4")
+        assert messagestream._fhcache_size() == 0
+
+        # also if the stream was cleared after growing large
+        hull = qhull.ConvexHull(points, qhull_options="T4", incremental=True)
+        hull.add_points([[0.5, 0.5]])
+        hull.close()
+        assert messagestream._fhcache_size() == 0
+
+        qhull.ConvexHull(points)
+        assert messagestream._fhcache_size() == 1
+
+    # Thread safe, but keeps many files open at once
+    @pytest.mark.parallel_threads_limit(1)
+    @pytest.mark.xfail(IS_WASM, reason="cannot start new thread in Pyodide/WASM")
+    @pytest.mark.usefixtures("tempfile_streams")
+    def test_error_messages_threaded(self):
+        flat_2d = np.array([[0., 0], [1, 1], [2, 2]])
+        expected = self._error_message(flat_2d)
+        rng = np.random.default_rng(1234)
+        points = rng.random((30, 2))
+        expected_vertices = qhull.ConvexHull(points).vertices
+
+        def worker(i):
+            for _ in range(20):
+                if i % 2:
+                    assert self._error_message(flat_2d) == expected
+                else:
+                    assert_equal(qhull.ConvexHull(points).vertices,
+                                 expected_vertices)
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            list(executor.map(worker, range(16)))
 
 
 class TestUtilities:
