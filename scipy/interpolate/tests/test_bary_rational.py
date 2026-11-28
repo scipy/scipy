@@ -390,6 +390,17 @@ class TestFloaterHormann:
         mask = (p.real >= -1) & (p.real <= 1) & (np.abs(p.imag) < 1.e-12)
         assert np.sum(mask) == 0
 
+    def test_lawson_optimization(self):
+        z=np.linspace(1,10)
+        f = np.sin(z)
+        r=AAA(z, f,max_terms=5)
+        err=np.max(np.abs(r(z) - f))
+        r.lawson_optimization(lawson_iters=10)
+        err_after = np.max(np.abs(r(z) - f))
+        assert err_after < err
+        assert r.weights.size == 2*r.support_points.size
+
+
     @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
     @pytest.mark.parametrize('axis', [-1, 0, 1])
     def test_batch(self, eval_shape, axis):

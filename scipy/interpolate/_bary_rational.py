@@ -104,7 +104,13 @@ class _BarycentricRational:
             (self._support_values.shape[0], -1)
         )
         weights = self.weights[..., np.newaxis]
-
+        m = self._support_points.size
+        if self.weights.size == 2*m:
+            denominator_weights = self.weights[m:, np.newaxis]
+        elif self.weights.size == m:
+            denominator_weights = self.weights[..., np.newaxis]
+        else:
+            raise ValueError('weight vector must have length=length(support_points), or 2*length(support_points)')
         # Cauchy matrix
         # Ignore errors due to inf/inf at support points, these will be fixed later
         with np.errstate(invalid="ignore", divide="ignore"):
@@ -113,8 +119,8 @@ class _BarycentricRational:
             # NOTE: optimized matrix multiplications are avoided here
             # to prevent the platform-specific deviations noted in
             # gh-23707
-            num = np.einsum('ik,kj->ij', CC, weights * support_values)
-            denom = np.einsum('ik,kj->ij', CC, weights)
+            num = np.einsum('ik,kj->ij', CC, weights[:m] * support_values)
+            denom = np.einsum('ik,kj->ij', CC, denominator_weights)
             r = num / denom
 
         # Deal with input inf: `r(inf) = lim r(z) = sum(w*f) / sum(w)`
@@ -132,7 +138,15 @@ class _BarycentricRational:
             else:
                 # Clean up values `NaN = inf/inf` at support points.
                 # Find the corresponding node and set entry to correct value:
-                r[jj] = support_values[zv[jj] == self._support_points].squeeze()
+                support_mask = zv[jj] == self._support_points
+                if self.weights.size == 2*m:
+                    # Free weights: handle numerator and denominator separately
+                    num_w = weights[:m].ravel()
+                    den_w = weights[m:].ravel()
+                    r[jj] = (support_values[support_mask] * num_w[support_mask] / den_w[support_mask]).squeeze()
+                else:
+                    # Shared weights
+                    r[jj] = support_values[support_mask].squeeze()
 
         res = np.reshape(r, z.shape + self._shape)
         return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
@@ -146,13 +160,20 @@ class _BarycentricRational:
             Poles of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
+        m = self._support_points.size
+        if self.weights.size == 2*m:
+            denominator_weights = self.weights[m:]
+        elif self.weights.size == m:
+            denominator_weights = self.weights
+        else:
+            raise ValueError('weight vector must have length = length(support_points) or 2*length(support_points)')
         if self._poles is None:
             # Compute poles via generalized eigenvalue problem
             m = self.weights.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
 
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = np.zeros_like(B, dtype=np.result_type(denominator_weights,
                                                       self._support_points))
             E[0, 1:] = self.weights
             E[1:, 0] = 1
@@ -175,13 +196,20 @@ class _BarycentricRational:
                                       " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
+            m = self._support_points.size
+            if self.weights.size == 2*m:
+                denominator_weights = self.weights[m:]
+            elif self.weights.size == m:
+                denominator_weights = self.weights
+            else:
+                raise ValueError('weight vector must have length=length(support_points) or 2*length(support_points)')
             with np.errstate(divide="ignore", invalid="ignore"):
                 N = (1/(np.subtract.outer(self.poles(), self._support_points))) @ (
-                    self._support_values * self.weights
+                    self._support_values * self.weights[:m]
                 )
                 Ddiff = (
                     -((1/np.subtract.outer(self.poles(), self._support_points))**2)
-                    @ self.weights
+                    @ denominator_weights
                 )
                 self._residues = N / Ddiff
         return self._residues
@@ -200,13 +228,13 @@ class _BarycentricRational:
                                       " data.")
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
-            m = self.weights.size
+            m = self._support_points.size
             B = np.eye(m + 1, dtype=self.weights.dtype)
             B[0, 0] = 0
-            E = np.zeros_like(B, dtype=np.result_type(self.weights,
+            E = np.zeros_like(B, dtype=np.result_type(self.weights[:m],
                                                       self._support_values,
                                                       self._support_points))
-            E[0, 1:] = self.weights * self._support_values
+            E[0, 1:] = self.weights[:m] * self._support_values
             E[1:, 0] = 1
             np.fill_diagonal(E[1:, 1:], self._support_points)
 
@@ -247,6 +275,13 @@ class AAA(_BarycentricRational):
         Poles with residues less than this number times the geometric mean
         of `values` times the minimum distance to `points` are deemed spurious by the
         cleanup procedure, defaults to 1e-13. See notes for more details.
+    lawson_iters : int, optional
+        Number of Lawson iterations to perform after the initial AAA approximation,
+        defaults to ``None`` (no Lawson optimization).
+    lawson_damping : float, optional
+        Damping factor for Lawson iterations, defaults to ``1.0``.
+    sign_improvement : bool, optional
+        Whether to apply sign improvement to the weights during Lawson optimization, defaults to ``False``.
 
     Attributes
     ----------
@@ -432,15 +467,22 @@ class AAA(_BarycentricRational):
     image then shows the poles after the `clean_up` method has been called.
     """
     def __init__(self, x, y, *, rtol=None, max_terms=100, clean_up=True,
-                 clean_up_tol=1e-13):
-        super().__init__(x, y, rtol=rtol, max_terms=max_terms)
+                 clean_up_tol=1e-13, lawson_iters=0, lawson_damping=1.0, 
+                 sign_improvement=False):
+        super().__init__(x, y, rtol=rtol, max_terms=max_terms, 
+                         lawson_iters=lawson_iters, lawson_damping=lawson_damping,
+                         sign_improvement=sign_improvement)
 
         if clean_up:
             self.clean_up(clean_up_tol)
 
+        if lawson_iters > 0:
+            self.lawson_optimization(lawson_iters=lawson_iters, lawson_damping=lawson_damping)
+
     # pyrefly:ignore[bad-override]
     def _input_validation(self, x, y, rtol=None, max_terms=100, clean_up=True,
-                          clean_up_tol=1e-13):
+                          clean_up_tol=1e-13, lawson_iters=0, lawson_damping=1.0,
+                          sign_improvement=False):
         max_terms = operator.index(max_terms)
         if max_terms < 1:
             raise ValueError("`max_terms` must be an integer value greater than or "
@@ -449,6 +491,21 @@ class AAA(_BarycentricRational):
         if y.ndim != 1:
             raise ValueError("`y` must be 1-D.")
 
+        if sign_improvement not in (True, False):
+            raise ValueError("`sign_improvement` must be a boolean value.")
+
+        if not (isinstance(lawson_iters, (int, np.integer)) or np.isinf(lawson_iters)):
+            raise ValueError("`lawson_iters` must be a non-negative integer or np.inf.")
+        
+        if np.isfinite(lawson_iters) and lawson_iters < 0:
+            raise ValueError("`lawson_iters` must be a non-negative integer or np.inf.")
+        
+        if np.isinf(lawson_iters) and lawson_iters < 0:
+            raise ValueError("`lawson_iters` must be a non-negative integer or np.inf.")
+        
+        if lawson_damping <= 0:
+            raise ValueError("`lawson_damping` must be a positive number.")
+        
         super()._input_validation(x, y)
 
     @property
@@ -460,7 +517,7 @@ class AAA(_BarycentricRational):
         return self._support_values
 
     # pyrefly:ignore[bad-override]
-    def _compute_weights(self, z, f, rtol, max_terms):
+    def _compute_weights(self, z, f, rtol, max_terms, lawson_iters, lawson_damping=1.0, sign_improvement=False):
         # Initialization for AAA iteration
         M = np.size(z)
         mask = np.ones(M, dtype=np.bool_)
@@ -562,8 +619,10 @@ class AAA(_BarycentricRational):
         self.errors = errors[: m + 1]
         self._points = z
         self._values = f
+        
+        
         return zj[i_non_zero], fj[i_non_zero], wj[i_non_zero]
-
+    
     def clean_up(self, cleanup_tol=1e-13):
         """Automatic removal of Froissart doublets.
 
@@ -632,6 +691,120 @@ class AAA(_BarycentricRational):
         self._roots = None
 
         return ni
+
+    def lawson_optimization(self,lawson_iters,lawson_damping=1.0, sign_improvement=False):
+        # Apply Lawson IRLS optimization iterations
+        original_weights = self.weights.copy()
+        m_opt = len(self.support_points)
+        M = self._points.size
+        
+        # Construct the Lawson matrix A for all data points with 2*m columns
+        A_lawson = np.zeros((M, 2*m_opt), dtype=self.support_points.dtype)
+        support_row = np.full(M, -1, dtype=int)
+        
+        # Find which rows correspond to support points
+        for j, point in enumerate(self.support_points):
+            matches = np.flatnonzero(np.isclose(self._points, point, rtol=0, atol=1e-14))
+            support_row[matches] = j
+        
+        # Fill matrix for regular (non-support) points
+        regular = support_row < 0
+        C_lawson = 1.0 / (self._points[regular, np.newaxis] - self.support_points[np.newaxis, :])
+        A_lawson[regular, :m_opt] = -C_lawson * self.support_values[np.newaxis, :]
+        A_lawson[regular, m_opt:] = self._values[regular, np.newaxis] * C_lawson
+        
+        # Fill matrix for support points
+        for row in np.flatnonzero(~regular):
+            j = support_row[row]
+            A_lawson[row, j] = -self.support_values[j]
+            A_lawson[row, m_opt+j] = self._values[row]
+        
+        # Lawson IRLS with damping
+        row_weights = np.ones(M, dtype=self.support_points.dtype)
+        
+        # Compute initial error
+        max_error = np.max(np.abs(self._values - self(self._points)))
+        original_error = max_error
+        best_error = max_error
+        
+        
+        # Determine iteration limits based on lawson_iters
+        # If lawson_iters is np.inf, use adaptive mode (Chebfun-style)
+        # Otherwise, use fixed number of iterations
+        is_adaptive = np.isinf(lawson_iters)
+        max_iters = 1000 if is_adaptive else lawson_iters
+        min_iters = 20 if is_adaptive else 1
+        
+        iteration = 0
+        while iteration < max_iters:
+            # Check stopping criteria for adaptive mode
+            if is_adaptive and iteration >= 20:
+                # Stop if error is not improving (< 0.1% relative improvement)
+                if max_error / best_error >= 0.999:
+                    break
+            
+            # SVD with weighted rows
+            weighted_A = np.sqrt(row_weights)[:, np.newaxis] * A_lawson
+            
+            # Check for invalid values
+            if not np.all(np.isfinite(weighted_A)):
+                # If weighted matrix has issues, skip further iterations
+                break
+            
+            try:
+                _, s_values, Vh = scipy.linalg.svd(
+                    weighted_A,
+                    full_matrices=False,
+                    check_finite=False
+                )
+            except ValueError:
+                # SVD convergence issues, return best found so far
+                break
+            
+            # Extract coefficients from right singular vector
+            V = Vh.conj().T  # Convert from row-major to column vectors
+            coefficients = V[:, -1]  # Rightmost singular vector
+            
+            # Apply sign improvement if requested and all singular values positive
+            if sign_improvement and np.all(s_values > 0):
+                # Weight by inverse square of singular values
+                coefficients = V @ (1.0 / (s_values ** 2))
+                coefficients = coefficients / np.linalg.norm(coefficients)
+            
+            
+            self.weights = coefficients
+            absolute_error = np.abs(self._values - self(self._points))
+            max_error = np.max(absolute_error)
+            
+            # Track best solution
+            if max_error < best_error:
+                best_error = max_error
+                best_coefficients = coefficients.copy()
+            
+            # Stop if error is zero
+            if max_error == 0:
+                break
+            
+            # Update row weights for next iteration
+            relative_error = absolute_error / max_error
+            row_weights *= (
+                (1 - lawson_damping) + lawson_damping * relative_error
+            )
+            row_weights /= np.max(row_weights)
+            
+            iteration += 1
+
+        if(best_error < original_error):
+            #new weights change poles, residues, and zeros and they must be recomputed
+            self.weights = best_coefficients
+            self._poles=None
+            self._residues=None
+            self._zeros=None
+        else:
+            warnings.warn(f"Lawson optimization did not improve the error from {original_error}", RuntimeWarning, stacklevel=2)
+            self.weights = original_weights
+
+        return
 
 
 class FloaterHormannInterpolator(_BarycentricRational):
