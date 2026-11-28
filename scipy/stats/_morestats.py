@@ -2392,6 +2392,12 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
             The p-value corresponding with the test statistic, calculated according to
             the specified `method`.
 
+    Warns
+    -----
+    `~scipy.stats.ConstantInputWarning`
+        If `dist` is ``'norm'`` and all observations in a sample are identical.
+        The statistic and p-value for that sample are returned as ``NaN``.
+
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
@@ -2501,6 +2507,18 @@ def anderson(x, dist='norm', *, method="interpolate", axis=0):
         return SignificanceResult(statistic=NaN, pvalue=NaN)
 
     if dist == 'norm':
+        constant = xp.all(y == y[..., 0:1], axis=-1, keepdims=True)
+        if not is_lazy_array(constant) and xp.any(constant):
+            message = ("An input sample is constant; the Anderson-Darling test "
+                       "for a normal distribution is not defined.")
+            warnings.warn(stats.ConstantInputWarning(message), stacklevel=2)
+            if xp.all(constant):
+                NaN = xp.squeeze(xp.full_like(xbar, xp.nan), axis=-1)
+                NaN = NaN[()] if NaN.ndim == 0 else NaN
+                return SignificanceResult(statistic=NaN, pvalue=NaN)
+        # Mask before division so zero-scale samples do not emit a generic
+        # invalid-value warning. Preserve the other samples in batched input.
+        y = xp.where(constant, xp.nan, y)
         s = xp.std(x, correction=1, axis=-1, keepdims=True)
         w = (y - xbar) / s
         logcdf = _SimpleNormal().logcdf(w)
