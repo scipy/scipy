@@ -180,8 +180,9 @@ def _patch_args(func_name, args):
         c = args[0][1]
         args = (c, np.ones_like(c))
     elif func_name in ('tanhm', 'expm_cond'):
-        # the exponential of the unscaled matrix (1-norm 2184) overflows
-        args = (args[0] / 1000,)
+        # the exponential of the unscaled matrix (1-norm 2184) overflows; astype keeps
+        # 'g'/'G' where longdouble is double, since the division returns float64 there
+        args = ((args[0] / 1000).astype(args[0].dtype),)
     return args
 
 
@@ -193,6 +194,9 @@ def _patch_args(func_name, args):
 @pytest.mark.filterwarnings('ignore:invalid value encountered in dot:RuntimeWarning')
 @pytest.mark.filterwarnings('ignore:logm result may be inaccurate:RuntimeWarning')
 @pytest.mark.filterwarnings('ignore:overflow encountered in multiply:RuntimeWarning')
+@pytest.mark.filterwarnings(
+    'ignore:invalid value encountered in multiply:RuntimeWarning'
+)
 @pytest.mark.parametrize('func_name', _objs.keys())
 @pytest.mark.parametrize('tcode', 'e' + 'mMgG')
 def test_deprecations(func_name, tcode):
