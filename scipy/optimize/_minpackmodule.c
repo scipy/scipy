@@ -3,6 +3,7 @@
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
 #include "src/minpack.h"
+#include <stddef.h>
 
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
@@ -247,7 +248,7 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
     memcpy(fvec, PyArray_DATA(result_array), (*n)*sizeof(double));
   }
   else {         /* iflag == 2 */
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (*n)*(*ldfjac));
+    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (npy_intp)(*n)*(*ldfjac));
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -255,7 +256,7 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
     if (multipack_jac_transpose == 1)
       MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
-      memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
+      memcpy(fjac, PyArray_DATA(result_array), (size_t)(*n)*(*ldfjac)*sizeof(double));
   }
 
   Py_DECREF(result_array);
@@ -314,7 +315,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
     memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
   }
   else {         /* iflag == 2 */
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (*n)*(*ldfjac));
+    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (npy_intp)(*n)*(*ldfjac));
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -322,7 +323,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
     if (multipack_jac_transpose == 1)
       MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
-      memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
+      memcpy(fjac, PyArray_DATA(result_array), (size_t)(*n)*(*ldfjac)*sizeof(double));
   }
 
   Py_DECREF(result_array);
