@@ -176,6 +176,7 @@ The `root_scalar` function supports the following methods:
    optimize.root_scalar-toms748
    optimize.root_scalar-secant
    optimize.root_scalar-halley
+   optimize.root_scalar-muller
 
 
 
