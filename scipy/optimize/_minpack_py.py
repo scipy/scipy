@@ -538,7 +538,7 @@ def _wrap_func(func, xdata, ydata, transform):
     if transform is None:
         def func_wrapped(params):
             return func(xdata, *params) - ydata
-    elif transform.size == 1 or transform.ndim == 1:
+    elif transform.ndim == 0 or transform.ndim == 1:
         def func_wrapped(params):
             return transform * (func(xdata, *params) - ydata)
     else:
@@ -559,6 +559,9 @@ def _wrap_jac(jac, xdata, transform):
     if transform is None:
         def jac_wrapped(params):
             return jac(xdata, *params)
+    elif transform.ndim == 0:
+        def jac_wrapped(params):
+            return transform * np.asarray(jac(xdata, *params))
     elif transform.ndim == 1:
         def jac_wrapped(params):
             return transform[:, np.newaxis] * np.asarray(jac(xdata, *params))
@@ -992,12 +995,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C
-        elif sigma.shape == (ydata.size, ydata.size):
+        if sigma.shape == (ydata.size, ydata.size):
             try:
                 # scipy.linalg.cholesky requires lower=True to return L L^T = A
                 transform = cholesky(sigma, lower=True)
             except LinAlgError as e:
                 raise ValueError("`sigma` must be positive definite.") from e
+        # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
+        elif sigma.size == 1 or sigma.shape == (ydata.size,):
+            transform = 1.0 / sigma
         else:
             raise ValueError("`sigma` has incorrect shape.")
     else:
