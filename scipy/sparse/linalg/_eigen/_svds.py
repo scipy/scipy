@@ -467,8 +467,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            X = rng.standard_normal(size=(min(A.shape), k))
-
+            X = rng.standard_normal(size=(min(A.shape), k)).astype(A.dtype, copy=False)
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
 
